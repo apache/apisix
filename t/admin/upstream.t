@@ -26,13 +26,14 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set upstream(id: 1)
+=== TEST 1: set upstream (use an id can't be referred by other route
+so that we can delete it later)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, body = t('/apisix/admin/upstreams/1',
+            local code, body = t('/apisix/admin/upstreams/admin_up',
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
@@ -50,7 +51,7 @@ __DATA__
                             "type": "roundrobin",
                             "desc": "new upstream"
                         },
-                        "key": "/apisix/upstreams/1"
+                        "key": "/apisix/upstreams/admin_up"
                     },
                     "action": "set"
                 }]]
@@ -59,7 +60,7 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/upstreams/1'))
+            local res = assert(etcd.get('/upstreams/admin_up'))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -75,12 +76,12 @@ passed
 
 
 
-=== TEST 2: get upstream(id: 1)
+=== TEST 2: get upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1',
+            local code, body = t('/apisix/admin/upstreams/admin_up',
                  ngx.HTTP_GET,
                  nil,
                 [[{
@@ -92,7 +93,7 @@ passed
                             "type": "roundrobin",
                             "desc": "new upstream"
                         },
-                        "key": "/apisix/upstreams/1"
+                        "key": "/apisix/upstreams/admin_up"
                     },
                     "action": "get"
                 }]]
@@ -111,12 +112,12 @@ passed
 
 
 
-=== TEST 3: delete upstream(id: 1)
+=== TEST 3: delete upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1',
+            local code, message = t('/apisix/admin/upstreams/admin_up',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -222,38 +223,7 @@ GET /t
 
 
 
-=== TEST 6: empty nodes
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {},
-                    "type": "roundrobin"
-                }]]
-                )
-
-            if code ~= 200 then
-                ngx.status = code
-                ngx.print(message)
-                return
-            end
-
-            ngx.say("[push] code: ", code, " message: ", message)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
-
-
-
-=== TEST 7: invalid upstream id in uri
+=== TEST 6: invalid upstream id in uri
 --- config
     location /t {
         content_by_lua_block {
@@ -279,7 +249,7 @@ GET /t
 
 
 
-=== TEST 8: different id
+=== TEST 7: different id
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +279,7 @@ GET /t
 
 
 
-=== TEST 9: id in the rule
+=== TEST 8: id in the rule
 --- config
     location /t {
         content_by_lua_block {
@@ -350,7 +320,7 @@ passed
 
 
 
-=== TEST 10: integer id less than 1
+=== TEST 9: integer id less than 1
 --- config
     location /t {
         content_by_lua_block {
@@ -380,7 +350,7 @@ GET /t
 
 
 
-=== TEST 11: invalid upstream id: string value
+=== TEST 10: invalid upstream id: string value
 --- config
     location /t {
         content_by_lua_block {
@@ -410,7 +380,7 @@ GET /t
 
 
 
-=== TEST 12: no additional properties is valid
+=== TEST 11: no additional properties is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -441,7 +411,7 @@ GET /t
 
 
 
-=== TEST 13: set upstream(type: chash)
+=== TEST 12: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -483,7 +453,7 @@ passed
 
 
 
-=== TEST 14: invalid type
+=== TEST 13: invalid type
 --- config
     location /t {
         content_by_lua_block {
@@ -507,13 +477,13 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"type\" validation failed: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"type\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 15: invalid weight of node
+=== TEST 14: invalid weight of node
 --- config
     location /t {
         content_by_lua_block {
@@ -543,7 +513,7 @@ GET /t
 
 
 
-=== TEST 16: invalid weight of node
+=== TEST 15: invalid weight of node
 --- config
     location /t {
         content_by_lua_block {
@@ -573,7 +543,7 @@ GET /t
 
 
 
-=== TEST 17: set upstream (missing key)
+=== TEST 16: set upstream (missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -602,7 +572,7 @@ GET /t
 
 
 
-=== TEST 18: wrong upstream id, do not need it
+=== TEST 17: wrong upstream id, do not need it
 --- config
     location /t {
         content_by_lua_block {
@@ -631,7 +601,7 @@ GET /t
 
 
 
-=== TEST 19: wrong upstream id, do not need it
+=== TEST 18: wrong upstream id, do not need it
 --- config
     location /t {
         content_by_lua_block {
@@ -661,7 +631,7 @@ GET /t
 
 
 
-=== TEST 20: patch upstream(whole)
+=== TEST 19: patch upstream(whole)
 --- config
     location /t {
         content_by_lua_block {
@@ -717,7 +687,7 @@ passed
 
 
 
-=== TEST 21: patch upstream(new desc)
+=== TEST 20: patch upstream(new desc)
 --- config
     location /t {
         content_by_lua_block {
@@ -755,7 +725,7 @@ passed
 
 
 
-=== TEST 22: patch upstream(new nodes)
+=== TEST 21: patch upstream(new nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -796,7 +766,7 @@ passed
 
 
 
-=== TEST 23: patch upstream(weight is 0)
+=== TEST 22: patch upstream(weight is 0)
 --- config
     location /t {
         content_by_lua_block {
@@ -836,7 +806,7 @@ passed
 
 
 
-=== TEST 24: patch upstream(whole - sub path)
+=== TEST 23: patch upstream(whole - sub path)
 --- config
     location /t {
         content_by_lua_block {
@@ -878,7 +848,7 @@ passed
 
 
 
-=== TEST 25: patch upstream(new desc - sub path)
+=== TEST 24: patch upstream(new desc - sub path)
 --- config
     location /t {
         content_by_lua_block {
@@ -914,7 +884,7 @@ passed
 
 
 
-=== TEST 26: patch upstream(new nodes)
+=== TEST 25: patch upstream(new nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -952,7 +922,7 @@ passed
 
 
 
-=== TEST 27: patch upstream(weight is 0 - sub path)
+=== TEST 26: patch upstream(weight is 0 - sub path)
 --- config
     location /t {
         content_by_lua_block {
@@ -990,7 +960,7 @@ passed
 
 
 
-=== TEST 28: set upstream(type: chash)
+=== TEST 27: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -1019,7 +989,7 @@ passed
 
 
 
-=== TEST 29:  wrong upstream key, hash_on default vars
+=== TEST 28:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -1051,7 +1021,7 @@ GET /t
 
 
 
-=== TEST 30: set upstream with args(type: chash)
+=== TEST 29: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -1081,7 +1051,7 @@ passed
 
 
 
-=== TEST 31: set upstream(type: chash)
+=== TEST 30: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -1110,7 +1080,7 @@ passed
 
 
 
-=== TEST 32:  wrong upstream key, hash_on default vars
+=== TEST 31:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -1142,7 +1112,7 @@ GET /t
 
 
 
-=== TEST 33: set upstream with args(type: chash)
+=== TEST 32: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -1172,7 +1142,7 @@ passed
 
 
 
-=== TEST 34: type chash, hash_on: vars
+=== TEST 33: type chash, hash_on: vars
 --- config
     location /t {
         content_by_lua_block {
@@ -1203,7 +1173,7 @@ passed
 
 
 
-=== TEST 35: type chash, hash_on: header, header name with '_', underscores_in_headers on
+=== TEST 34: type chash, hash_on: header, header name with '_', underscores_in_headers on
 --- config
     location /t {
         content_by_lua_block {
@@ -1234,7 +1204,7 @@ passed
 
 
 
-=== TEST 36: type chash, hash_on: header, header name with invalid character
+=== TEST 35: type chash, hash_on: header, header name with invalid character
 --- config
     location /t {
         content_by_lua_block {
@@ -1266,7 +1236,7 @@ GET /t
 
 
 
-=== TEST 37: type chash, hash_on: cookie
+=== TEST 36: type chash, hash_on: cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -1297,7 +1267,7 @@ passed
 
 
 
-=== TEST 38: type chash, hash_on: cookie, cookie name with invalid character
+=== TEST 37: type chash, hash_on: cookie, cookie name with invalid character
 --- config
     location /t {
         content_by_lua_block {
@@ -1329,7 +1299,7 @@ GET /t
 
 
 
-=== TEST 39: type chash, hash_on: consumer, do not need upstream key
+=== TEST 38: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1359,7 +1329,7 @@ passed
 
 
 
-=== TEST 40: type chash, hash_on: consumer, set key but invalid
+=== TEST 39: type chash, hash_on: consumer, set key but invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -1390,7 +1360,7 @@ passed
 
 
 
-=== TEST 41: type chash, invalid hash_on type
+=== TEST 40: type chash, invalid hash_on type
 --- config
     location /t {
         content_by_lua_block {
@@ -1416,13 +1386,13 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 42: set upstream(id: 1 + name: test name)
+=== TEST 41: set upstream(id: 1 + name: test name)
 --- config
     location /t {
         content_by_lua_block {
@@ -1464,7 +1434,7 @@ passed
 
 
 
-=== TEST 43: string id
+=== TEST 42: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -1493,7 +1463,7 @@ passed
 
 
 
-=== TEST 44: string id(delete)
+=== TEST 43: string id(delete)
 --- config
     location /t {
         content_by_lua_block {
@@ -1516,7 +1486,7 @@ passed
 
 
 
-=== TEST 45: invalid string id
+=== TEST 44: invalid string id
 --- config
     location /t {
         content_by_lua_block {
@@ -1546,7 +1516,7 @@ GET /t
 
 
 
-=== TEST 46: retries is 0
+=== TEST 45: retries is 0
 --- config
     location /t {
         content_by_lua_block {
@@ -1577,7 +1547,7 @@ passed
 
 
 
-=== TEST 47: retries is -1 (INVALID)
+=== TEST 46: retries is -1 (INVALID)
 --- config
     location /t {
         content_by_lua_block {
@@ -1609,7 +1579,7 @@ GET /t
 
 
 
-=== TEST 48: invalid route: multi nodes with `node` mode to pass host
+=== TEST 47: invalid route: multi nodes with `node` mode to pass host
 --- config
     location /t {
         content_by_lua_block {
@@ -1638,7 +1608,7 @@ GET /t
 
 
 
-=== TEST 49: invalid route: empty `upstream_host` when `pass_host` is `rewrite`
+=== TEST 48: invalid route: empty `upstream_host` when `pass_host` is `rewrite`
 --- config
     location /t {
         content_by_lua_block {
@@ -1668,7 +1638,7 @@ GET /t
 
 
 
-=== TEST 50: set upstream(with labels)
+=== TEST 49: set upstream(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -1718,7 +1688,7 @@ passed
 
 
 
-=== TEST 51: get upstream(with labels)
+=== TEST 50: get upstream(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -1758,7 +1728,7 @@ passed
 
 
 
-=== TEST 52: patch upstream(only labels)
+=== TEST 51: patch upstream(only labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -1802,7 +1772,7 @@ passed
 
 
 
-=== TEST 53: invalid format of label value: set upstream
+=== TEST 52: invalid format of label value: set upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -1834,7 +1804,7 @@ GET /t
 
 
 
-=== TEST 54: patch upstream(whole, create_time)
+=== TEST 53: patch upstream(whole, create_time)
 --- config
     location /t {
         content_by_lua_block {
@@ -1888,7 +1858,7 @@ passed
 
 
 
-=== TEST 55: patch upstream(whole, update_time)
+=== TEST 54: patch upstream(whole, update_time)
 --- config
     location /t {
         content_by_lua_block {
@@ -1942,12 +1912,12 @@ passed
 
 
 
-=== TEST 56: create upstream with create_time and update_time(id: 1)
+=== TEST 55: create upstream with create_time and update_time
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1',
+            local code, body = t('/apisix/admin/upstreams/up_create_update_time',
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
@@ -1967,7 +1937,7 @@ passed
                             "create_time": 1602883670,
                             "update_time": 1602893670
                         },
-                        "key": "/apisix/upstreams/1"
+                        "key": "/apisix/upstreams/up_create_update_time"
                     },
                     "action": "set"
                 }]]
@@ -1986,12 +1956,12 @@ passed
 
 
 
-=== TEST 57: delete test upstream(id: 1)
+=== TEST 56: delete test upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1',
+            local code, message = t('/apisix/admin/upstreams/up_create_update_time',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{

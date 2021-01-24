@@ -31,6 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -63,6 +64,12 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -164,6 +171,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/global_rules/1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local prev_update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -195,6 +210,13 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -211,6 +233,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/global_rules/1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local prev_update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/global_rules/1/plugins',
                 ngx.HTTP_PATCH,
                 [[{
@@ -241,6 +271,13 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -409,5 +446,141 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: not unwanted data, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: not unwanted data, PATCH
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PATCH,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"compareAndSwap","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: not unwanted data, GET
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_GET
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"get","count":"1","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: not unwanted data, DELETE
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"delete","deleted":"1","key":"/apisix/global_rules/1","node":{}}
+--- request
+GET /t
 --- no_error_log
 [error]

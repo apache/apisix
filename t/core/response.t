@@ -61,7 +61,7 @@ GET /t
 
 
 
-=== TEST 3: multiple reponse headers
+=== TEST 3: multiple response headers
 --- config
     location = /t {
         access_by_lua_block {
@@ -82,7 +82,7 @@ ccc: ddd
 
 
 
-=== TEST 4: multiple reponse headers by table
+=== TEST 4: multiple response headers by table
 --- config
     location = /t {
         access_by_lua_block {
@@ -103,7 +103,7 @@ ccc: ddd
 
 
 
-=== TEST 5: multiple reponse headers (add)
+=== TEST 5: multiple response headers (add)
 --- config
     location = /t {
         access_by_lua_block {
@@ -123,7 +123,7 @@ aaa: bbb, bbb
 
 
 
-=== TEST 6: multiple reponse headers by table (add)
+=== TEST 6: multiple response headers by table (add)
 --- config
     location = /t {
         access_by_lua_block {

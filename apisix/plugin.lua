@@ -102,12 +102,27 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
-    if plugin.schema and plugin.schema.type == "object" then
-        if not plugin.schema.properties or
-           core.table.nkeys(plugin.schema.properties) == 0
-        then
-            plugin.schema.properties = core.schema.plugin_disable_schema
+    if type(plugin.schema) ~= "table" then
+        core.log.error("invalid plugin [", name, "] schema field")
+        return
+    end
+
+    if not plugin.schema.properties then
+        plugin.schema.properties = {}
+    end
+
+    local properties = plugin.schema.properties
+    local plugin_injected_schema = core.schema.plugin_injected_schema
+
+    if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
+        if properties.disable then
+            core.log.error("invalid plugin [", name,
+                           "]: found forbidden 'disable' field in the schema")
+            return
         end
+
+        properties.disable = plugin_injected_schema.disable
+        plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
 
     plugin.name = name
@@ -264,7 +279,7 @@ function _M.load(config)
         end
     end
 
-    if ngx.config.subsystem == "http"then
+    if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
         else
@@ -289,13 +304,40 @@ function _M.load(config)
 end
 
 
+local function trace_plugins_info_for_debug(plugins)
+    if not (local_conf and local_conf.apisix.enable_debug) then
+        return
+    end
+
+    local is_http = ngx.config.subsystem == "http"
+
+    if not plugins then
+        if is_http and not ngx.headers_sent then
+            core.response.add_header("Apisix-Plugins", "no plugin")
+        else
+            core.log.warn("Apisix-Plugins: no plugin")
+        end
+
+        return
+    end
+
+    local t = {}
+    for i = 1, #plugins, 2 do
+        core.table.insert(t, plugins[i].name)
+    end
+    if is_http and not ngx.headers_sent then
+        core.response.add_header("Apisix-Plugins", core.table.concat(t, ", "))
+    else
+        core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))
+    end
+end
+
+
 function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("Apisix-Plugins", "no plugin")
-        end
+        trace_plugins_info_for_debug(nil)
         return core.empty_tab
     end
 
@@ -310,13 +352,7 @@ function _M.filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
-        local t = {}
-        for i = 1, #plugins, 2 do
-            core.table.insert(t, plugins[i].name)
-        end
-        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
-    end
+    trace_plugins_info_for_debug(plugins)
 
     return plugins
 end
@@ -326,9 +362,7 @@ function _M.stream_filter(user_route, plugins)
     plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
-        if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("Apisix-Plugins", "no plugin")
-        end
+        trace_plugins_info_for_debug(nil)
         return plugins
     end
 
@@ -342,13 +376,7 @@ function _M.stream_filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
-        local t = {}
-        for i = 1, #plugins, 2 do
-            core.table.insert(t, plugins[i].name)
-        end
-        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
-    end
+    trace_plugins_info_for_debug(plugins)
 
     return plugins
 end
@@ -373,11 +401,8 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-
-        if route_upstream.checks then
-            route_upstream.parent = route_conf
-        end
-
+        -- when route's upstream override service's upstream,
+        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
@@ -393,8 +418,8 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
@@ -465,12 +490,12 @@ end
 
 
 function _M.init_worker()
-    _M.load()
-
     -- some plugins need to be initialized in init* phases
-    if ngx.config.subsystem == "http"then
+    if ngx.config.subsystem == "http" then
         require("apisix.plugins.prometheus.exporter").init()
     end
+
+    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
@@ -495,6 +520,123 @@ end
 
 function _M.get(name)
     return local_plugins_hash and local_plugins_hash[name]
+end
+
+
+function _M.get_all(attrs)
+    local plugins = {}
+
+    if local_plugins_hash then
+        for name, plugin_obj in pairs(local_plugins_hash) do
+            plugins[name] = core.table.pick(plugin_obj, attrs)
+        end
+    end
+
+    if stream_local_plugins_hash then
+        for name, plugin_obj in pairs(stream_local_plugins_hash) do
+            plugins[name] = core.table.pick(plugin_obj, attrs)
+        end
+    end
+
+    return plugins
+end
+
+
+local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
+    for name, plugin_conf in pairs(plugins_conf) do
+        core.log.info("check plugin schema, name: ", name, ", configurations: ",
+                      core.json.delay_encode(plugin_conf, true))
+        if type(plugin_conf) ~= "table" then
+            return false, "invalid plugin conf " ..
+                core.json.encode(plugin_conf, true) ..
+                " for plugin [" .. name .. "]"
+        end
+
+        local plugin_obj = local_plugins_hash[name]
+        if not plugin_obj then
+            if skip_disabled_plugin then
+                goto CONTINUE
+            else
+                return false, "unknown plugin [" .. name .. "]"
+            end
+        end
+
+        if plugin_obj.check_schema then
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+            if not ok then
+                return false, "failed to check the configuration of plugin "
+                              .. name .. " err: " .. err
+            end
+
+            plugin_conf.disable = disable
+        end
+
+        ::CONTINUE::
+    end
+
+    return true
+end
+_M.check_schema = check_schema
+
+
+local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
+    for name, plugin_conf in pairs(plugins_conf) do
+        core.log.info("check stream plugin schema, name: ", name,
+                      ": ", core.json.delay_encode(plugin_conf, true))
+        if type(plugin_conf) ~= "table" then
+            return false, "invalid plugin conf " ..
+                core.json.encode(plugin_conf, true) ..
+                " for plugin [" .. name .. "]"
+        end
+
+        local plugin_obj = stream_local_plugins_hash[name]
+        if not plugin_obj then
+            if skip_disabled_plugin then
+                goto CONTINUE
+            else
+                return false, "unknown plugin [" .. name .. "]"
+            end
+        end
+
+        if plugin_obj.check_schema then
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+            if not ok then
+                return false, "failed to check the configuration of "
+                              .. "stream plugin [" .. name .. "]: " .. err
+            end
+
+            plugin_conf.disable = disable
+        end
+
+        ::CONTINUE::
+    end
+
+    return true
+end
+_M.stream_check_schema = stream_check_schema
+
+
+function _M.plugin_checker(item, schema_type)
+    if item.plugins then
+        return check_schema(item.plugins, schema_type, true)
+    end
+
+    return true
+end
+
+
+function _M.stream_plugin_checker(item)
+    if item.plugins then
+        return stream_check_schema(item.plugins, nil, true)
+    end
+
+    return true
 end
 
 

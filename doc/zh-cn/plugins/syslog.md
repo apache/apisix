@@ -20,12 +20,12 @@
 - [English](../../plugins/syslog.md)
 
 # 摘要
-- [**定义**](#name)
-- [**属性列表**](#attributes)
-- [**如何开启**](#how-to-enable)
-- [**测试插件**](#test-plugin)
-- [**禁用插件**](#disable-plugin)
 
+- [**定义**](#定义)
+- [**属性列表**](#属性列表)
+- [**如何开启**](#如何开启)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
 
 ## 定义
 
@@ -57,7 +57,7 @@
 1. 下面例子展示了如何为指定路由开启 `sys-logger` 插件的。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "syslog": {
@@ -89,11 +89,10 @@ hello, world
 
 ## 禁用插件
 
-
 想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

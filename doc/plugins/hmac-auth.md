@@ -51,14 +51,14 @@ The `consumer` then adds its key to request header to verify its request.
 1. set a consumer and config the value of the `hmac-auth` option
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
         "hmac-auth": {
             "access_key": "user-key",
             "secret_key": "my-secret-key",
-            "clock_skew": 10,
+            "clock_skew": 0,
             "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
@@ -70,7 +70,7 @@ The default `keep_headers` is false and `encode_uri_params` is true.
 2. add a Route or add a Service, and enable the `hmac-auth` plugin
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -125,22 +125,83 @@ HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
-Here is a full example：
+**Signature string splicing example**
+
+Take the following request as an example:
+
+```shell
+$ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
+```
+
+The `signing_string` generated according to the `signature generation formula` is:
 
 ```plain
-GET
-/hello
-your-access-key
-Mon, 28 Sep 2020 06:48:57 GMT
-x-custom-header:value
+"GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+"
 ```
+
+Note: The last request header also needs + `\n`.
+
+**Generate Signature**
+
+Use Python to generate the signature `SIGNATURE`:
+
+```python
+import hashlib
+import hmac
+import base64
+
+secret = bytes('my-secret-key', 'utf-8')
+message = bytes("""GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+""", 'utf-8')
+
+hash = hmac.new(secret, message, hashlib.sha256)
+
+# to lowercase base64
+print(base64.b64encode(hash.digest()))
+```
+
+Type      |                Hash                          |
+----------|----------------------------------------------|
+SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
 ### Use the generated signature to try the request
 
-**Note:**
-1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
-2. **SIGNED_HEADERS is the headers specified by the client to join the encryption calculation. If there are multiple headers, they must be separated by ";": `x-custom-header-a;x-custom-header-b`**
-3. **SIGNATURE needs to use base64 for encryption: `base64_encode(SIGNATURE)`**
+```shell
+$ curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
+-H "X-HMAC-SIGNATURE: 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg=" \
+-H "X-HMAC-ALGORITHM: hmac-sha256" \
+-H "X-HMAC-ACCESS-KEY: user-key" \
+-H "Date: Tue, 19 Jan 2021 11:33:20 GMT" \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Tue, 19 Jan 2021 11:33:20 GMT
+Server: APISIX/2.2
+......
+```
+
+**Below are two assembly forms of signature information**
 
 * The signature information is put together in the request header `Authorization` field:
 
@@ -170,6 +231,12 @@ Accept-Ranges: bytes
 <!DOCTYPE html>
 <html lang="cn">
 ```
+
+**Note:**
+
+1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
+2. **SIGNED_HEADERS is the headers specified by the client to join the encryption calculation. If there are multiple headers, they must be separated by ";": `x-custom-header-a;x-custom-header-b`**
+3. **SIGNATURE needs to use base64 for encryption: `base64_encode(SIGNATURE)`**
 
 ## Custom header key
 
@@ -206,7 +273,7 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -222,6 +289,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ## Generate Signature Examples
 
 Take HMAC SHA256 as an example to introduce the signature generation examples in different languages.
+Need to pay attention to the handling of newline characters in signature strings in various languages, which can easily lead to the problem of `{"message":"Invalid signature"}`.
 
 Example inputs:
 

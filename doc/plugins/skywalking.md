@@ -56,7 +56,7 @@ Then reload APISIX, a background timer will be created to report data to skywalk
 Here's an example, enable the skywalking plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -103,7 +103,7 @@ plugin_attr:
 
 ## Test Plugin
 
-### Run-Skywalking-Example
+### Run Skywalking Example
 
 #### e.g.
 
@@ -193,7 +193,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 
 The skywalking plugin has been disabled now. It works for other plugins.
 
-If you want to disable skywalking plugin totally, for example, stop the background repor timer,
+If you want to disable skywalking plugin totally, for example, stop the background report timer,
 you need to comment out in the `config.yaml`:
 
 ```yaml

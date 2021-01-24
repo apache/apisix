@@ -31,7 +31,6 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 | ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
 | host | string | optional    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
 
-
 ### Examples
 
 #### Enable the plugin
@@ -39,7 +38,7 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 1:  enable the proxy-mirror plugin for a specific route :
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-mirror": {
@@ -74,14 +73,12 @@ hello world
 > Since the specified mirror address is 127.0.0.1:9797, so to verify whether this plugin is in effect, we need to confirm on the service with port 9797.
 > For example, we can start a simple server:  python -m SimpleHTTPServer 9797
 
-
 ## Disable Plugin
 
 Remove the corresponding JSON in the plugin configuration to disable the plugin immediately without restarting the service:
 
-
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

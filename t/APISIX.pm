@@ -28,6 +28,7 @@ no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 
 sub read_file($) {
     my $infile = shift;
@@ -72,7 +73,7 @@ if ($enable_local_dns) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -131,9 +132,58 @@ if ($profile) {
 }
 
 
+my $dubbo_upstream = "";
+my $dubbo_location = "";
+my $version = eval { `$nginx_binary -V 2>&1` };
+if ($version =~ m/\/mod_dubbo/) {
+    $dubbo_upstream = <<_EOC_;
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi 1;
+        keepalive 320;
+    }
+
+_EOC_
+
+    $dubbo_location = <<_EOC_;
+        location \@dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass \$dubbo_service_name \$dubbo_service_version \$dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+_EOC_
+}
+
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
+
+    my $lua_deps_path = <<_EOC_;
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+_EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
@@ -150,9 +200,7 @@ _EOC_
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
-
+    $lua_deps_path
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
@@ -179,6 +227,7 @@ _EOC_
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
+
 
     # fake server, only for test
     server {
@@ -231,13 +280,13 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    $lua_deps_path
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict plugin-limit-conn    10m;
     lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict internal_status      10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
@@ -248,6 +297,7 @@ _EOC_
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
     lua_shared_dict plugin-api-breaker   10m;
+    lua_capture_error_log                 1m;    # plugin error-log-logger
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -264,6 +314,8 @@ _EOC_
         keepalive 32;
     }
 
+    $dubbo_upstream
+
     init_by_lua_block {
         $init_by_lua_block
     }
@@ -271,6 +323,8 @@ _EOC_
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
     }
+
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
 
     # fake server, only for test
     server {
@@ -296,6 +350,12 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+
+        location = /v3/auth/authenticate {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "etcd auth failed!")
+            }
         }
 
         location  = /.well-known/openid-configuration {
@@ -346,6 +406,14 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
+        set \$upstream_scheme             'http';
+        set \$upstream_host               \$host;
+        set \$upstream_uri                '';
+        set \$ctx_ref                     '';
+        set \$dubbo_service_name          '';
+        set \$dubbo_service_version       '';
+        set \$dubbo_method                '';
+
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
@@ -358,13 +426,16 @@ _EOC_
             }
         }
 
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
         location / {
             set \$upstream_mirror_host        '';
-            set \$upstream_scheme             'http';
-            set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
-            set \$upstream_uri                '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
@@ -438,6 +509,8 @@ _EOC_
                 apisix.http_log_phase()
             }
         }
+
+        $dubbo_location
 
         location = /proxy_mirror {
             internal;

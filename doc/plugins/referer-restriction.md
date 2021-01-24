@@ -20,17 +20,17 @@
 - [中文](../zh-cn/plugins/referer-restriction.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 The `referer-restriction` can restrict access to a Service or a Route by
-whitelisting request header Referers.
+whitelisting request header Referrers.
 
 ## Attributes
 
@@ -44,7 +44,7 @@ whitelisting request header Referers.
 Creates a route or service object, and enable plugin `referer-restriction`.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -113,4 +113,3 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 ```
 
 The `referer-restriction` plugin has been disabled now. It works for other plugins.
-

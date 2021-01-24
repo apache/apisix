@@ -21,11 +21,11 @@
 
 # 摘要
 
-- [**定义**](#name)
-- [**属性列表**](#attributes)
-- [**如何开启**](#how-to-enable)
-- [**测试插件**](#test-plugin)
-- [**禁用插件**](#disable-plugin)
+- [**定义**](#定义)
+- [**属性列表**](#属性列表)
+- [**如何开启**](#如何开启)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
 
 ## 定义
 
@@ -54,13 +54,12 @@
 | retry_delay      | integer | 可选   | 1      | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
 | include_req_body | boolean | 可选   |        |         | 是否包括请求 body                                |
 
-
 ## 如何开启
 
 1. 下面例子展示了如何为指定路由开启 `tcp-logger` 插件的。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "tcp-logger": {

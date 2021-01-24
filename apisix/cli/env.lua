@@ -37,6 +37,8 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
             error("failed to fetch current path")
         end
 
+        -- determine whether the current path is under the "/root" folder.
+        -- "/root/" is the root folder flag.
         if str_find(apisix_home .. "/", '/root/', nil, true) == 1 then
             is_root_path = true
         end
@@ -45,6 +47,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
                           .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
 
         local pkg_path = apisix_home .. "/?/init.lua;"
+                         .. apisix_home .. "/deps/share/lua/5.1/?/init.lua;"
                          .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
         package.cpath = pkg_cpath .. package.cpath

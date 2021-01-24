@@ -19,11 +19,11 @@
 
 # FAQ
 
-##  Why a new API gateway?
+## Why a new API gateway?
 
 There are new requirements for API gateways in the field of microservices: higher flexibility, higher performance requirements, and cloud native.
 
-##  What are the differences between APISIX and other API gateways?
+## What are the differences between APISIX and other API gateways?
 
 APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
 
@@ -79,8 +79,9 @@ An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `i
 2. Group B：id > 1000
 
 here is the way:
+
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -93,7 +94,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -107,7 +108,6 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
@@ -116,9 +116,11 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 An example, redirect `http://foo.com` to `https://foo.com`
 
 There are several different ways to do this.
+
 1. Directly use the `http_to_https` in `redirect` plugin：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -133,7 +135,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. Use with advanced routing rule `vars` with `redirect` plugin:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -156,7 +158,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. `serverless` plugin：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -169,11 +171,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 ```
 
 Then test it to see if it works：
+
 ```shell
 curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
 ```
 
 The response body should be:
+
 ```
 HTTP/1.1 301 Moved Permanently
 Date: Mon, 18 May 2020 02:56:04 GMT
@@ -192,8 +196,8 @@ Server: APISIX web server
 </html>
 ```
 
-
 ## How to fix OpenResty Installation Failure on MacOS 10.15
+
 When you install the OpenResty on MacOs 10.15, you may face this error
 
 ```shell
@@ -242,6 +246,7 @@ https://developer.apple.com/download/more/.
 ```
 
 This is an OS incompatible issue, you could fix by these two steps
+
 1. `brew edit openresty/brew/openresty`
 1. add `\ -fno-stack-check` in with-luajit-xcflags line.
 
@@ -257,7 +262,7 @@ Steps:
 
 Now you can trace the info level log in logs/error.log.
 
-## How to reload your own plugin
+## How to reload your own plugin?
 
 The Apache APISIX plugin supports hot reloading.
 See the `Hot reload` section in [plugins](./doc/plugins.md) for how to do that.
@@ -274,7 +279,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
         - 9080
         - 9081
         - 9082
-    ```
+   ```
 
    Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
 
@@ -288,3 +293,51 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
     ```
 
 2. Reload or restart APISIX
+
+## How does APISIX use etcd to achieve millisecond-level configuration synchronization
+
+etcd provides subscription functions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)).
+
+APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
+
+* If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
+* If the monitoring directory has data updates: etcd will return the new subscribed data immediately (in milliseconds), and APISIX will update it to the memory cache.
+
+With the help of etcd which incremental notification feature is millisecond-level , APISIX achieve millisecond-level of configuration synchronization.
+
+## How to customize the APISIX instance id?
+
+By default, APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, APISIX will generate a `uuid` as the instance id.
+
+If you want to specify a meaningful id to bind APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
+
+## Why there are a lot of "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" errors in error.log?
+
+First please make sure the network between APISIX and etcd cluster is not partitioned.
+
+If the network is healthy, please check whether your etcd cluster enables the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/).  However, The default case for this feature is different when use command line options or configuration file to start etcd server.
+
+1. When command line options is in use, this feature is enabled by default, the related option is `--enable-grpc-gateway`.
+
+```sh
+etcd --enable-grpc-gateway --data-dir=/path/to/data
+```
+
+Note this option is not shown in the output of `etcd --help`.
+
+2. When configuration file is used, this feature is disabled by default, please enable `enable-grpc-gateway` explicitly.
+
+```json
+# etcd.json
+{
+    "enable-grpc-gateway": true,
+    "data-dir": "/path/to/data"
+}
+```
+
+Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.

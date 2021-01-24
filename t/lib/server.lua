@@ -14,8 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_decode = require("cjson").decode
-local json_encode = require("cjson").encode
+local json_decode = require("toolkit.json").decode
+local json_encode = require("toolkit.json").encode
 
 local _M = {}
 
@@ -154,32 +154,6 @@ function _M.with_header()
     ngx.say("hello")
     ngx.say("world")
     ngx.say("!")
-end
-
-
-function _M.mock_skywalking_v2_service_register()
-    ngx.say('[{"key":"APISIX","value":1}]')
-end
-
-
-function _M.mock_skywalking_v2_instance_register()
-    ngx.req.read_body()
-    local data = ngx.req.get_body_data()
-    data = json_decode(data)
-    local key = data['instances'][1]['instanceUUID']
-    local ret = {}
-    ret[1] = {key = key, value = 1}
-    ngx.say(json_encode(ret))
-end
-
-
-function _M.mock_skywalking_v2_instance_heartbeat()
-    ngx.say('skywalking heartbeat ok')
-end
-
-
-function _M.mock_skywalking_v2_segments()
-    ngx.say('skywalking segments ok')
 end
 
 
@@ -362,6 +336,11 @@ function _M.log()
         body = json_encode(body)
     end
     ngx.log(ngx.WARN, "request log: ", body or "nil")
+end
+
+
+function _M.server_error()
+    error("500 Internal Server Error")
 end
 
 

@@ -38,6 +38,7 @@ local tonumber     = tonumber
 local xpcall       = xpcall
 local debug        = debug
 local error        = error
+local rand         = math.random
 local created_obj  = {}
 
 
@@ -216,6 +217,14 @@ local function sync_data(self)
                 end
             end
 
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item.value)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item.value))
+                end
+            end
+
             if data_valid then
                 changed = true
                 insert_tab(self.values, item)
@@ -245,7 +254,7 @@ local function sync_data(self)
                     data_valid = false
                     log.error("invalid item data of [", self.key .. "/" .. key,
                               "], val: ", item.value,
-                              ", it shoud be a object")
+                              ", it should be an object")
                 end
 
                 if data_valid and self.item_schema then
@@ -253,6 +262,14 @@ local function sync_data(self)
                     if not data_valid then
                         log.error("failed to check item data of [", self.key,
                                   "] err:", err, " ,val: ", json.encode(item.value))
+                    end
+                end
+
+                if data_valid and self.checker then
+                    data_valid, err = self.checker(item.value)
+                    if not data_valid then
+                        log.error("failed to check item data of [", self.key,
+                                  "] err:", err, " ,val: ", json.delay_encode(item.value))
                     end
                 end
 
@@ -303,24 +320,10 @@ local function sync_data(self)
     local res = dir_res.body.node
     local err_msg = dir_res.body.message
     if err_msg then
-        if err_msg == "The event in requested index is outdated and cleared"
-           and dir_res.body.errorCode == 401 then
-            self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err_msg,
-                     ", need to fully reload")
-            return false
-        end
         return false, err
     end
 
     if not res then
-        if err == "The event in requested index is outdated and cleared" then
-            self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err,
-                     ", need to fully reload")
-            return false
-        end
-
         return false, err
     end
 
@@ -338,7 +341,7 @@ local function sync_data(self)
             self:upgrade_version(res.modifiedIndex)
             return false, "invalid item data of [" .. self.key .. "/" .. key
                             .. "], val: " .. res.value
-                            .. ", it shoud be a object"
+                            .. ", it should be an object"
         end
 
         if res.value and self.item_schema then
@@ -348,6 +351,16 @@ local function sync_data(self)
 
                 return false, "failed to check item data of ["
                                 .. self.key .. "] err:" .. err
+            end
+
+            if self.checker then
+                local ok, err = self.checker(res.value)
+                if not ok then
+                    self:upgrade_version(res.modifiedIndex)
+
+                    return false, "failed to check item data of ["
+                                    .. self.key .. "] err:" .. err
+                end
             end
         end
 
@@ -450,10 +463,44 @@ end
 
 function _M.getkey(self, key)
     if not self.running then
-        return nil, "stoped"
+        return nil, "stopped"
     end
 
     return getkey(self.etcd_cli, key)
+end
+
+
+local get_etcd
+do
+    local etcd_cli
+
+    function get_etcd()
+        if etcd_cli ~= nil then
+            return etcd_cli
+        end
+
+        local local_conf, err = config_local.local_conf()
+        if not local_conf then
+            return nil, err
+        end
+
+        local etcd_conf = clone_tab(local_conf.etcd)
+        etcd_conf.http_host = etcd_conf.host
+        etcd_conf.host = nil
+        etcd_conf.prefix = nil
+        etcd_conf.protocol = "v3"
+        etcd_conf.api_prefix = "/v3"
+
+        -- default to verify etcd cluster certificate
+        etcd_conf.ssl_verify = true
+        if etcd_conf.tls and etcd_conf.tls.verify == false then
+            etcd_conf.ssl_verify = false
+        end
+
+        local err
+        etcd_cli, err = etcd.new(etcd_conf)
+        return etcd_cli, err
+    end
 end
 
 
@@ -468,7 +515,7 @@ local function _automatic_fetch(premature, self)
 
         local ok, err = xpcall(function()
             if not self.etcd_cli then
-                local etcd_cli, err = etcd.new(self.etcd_conf)
+                local etcd_cli, err = get_etcd()
                 if not etcd_cli then
                     error("failed to create etcd instance for key ["
                           .. self.key .. "]: " .. (err or "unknown"))
@@ -492,8 +539,10 @@ local function _automatic_fetch(premature, self)
                         self.last_err = nil
                     end
                 end
-                ngx_sleep(0.5)
+
+                ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
             elseif not ok then
+                -- no error. reentry the sync with different state
                 ngx_sleep(0.05)
             end
 
@@ -502,7 +551,7 @@ local function _automatic_fetch(premature, self)
         if not ok then
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(3)
+            ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
             break
         end
     end
@@ -519,18 +568,11 @@ function _M.new(key, opts)
         return nil, err
     end
 
-    local etcd_conf = clone_tab(local_conf.etcd)
+    local etcd_conf = local_conf.etcd
     local prefix = etcd_conf.prefix
-    etcd_conf.http_host = etcd_conf.host
-    etcd_conf.host = nil
-    etcd_conf.prefix = nil
-    etcd_conf.protocol = "v3"
-    etcd_conf.api_prefix = "/v3"
-    etcd_conf.ssl_verify = true
-
-    -- default to verify etcd cluster certificate
-    if etcd_conf.tls and etcd_conf.tls.verify == false then
-        etcd_conf.ssl_verify = false
+    local resync_delay = etcd_conf.resync_delay
+    if not resync_delay or resync_delay < 0 then
+        resync_delay = 5
     end
 
     local automatic = opts and opts.automatic
@@ -538,13 +580,14 @@ function _M.new(key, opts)
     local filter_fun = opts and opts.filter
     local timeout = opts and opts.timeout
     local single_item = opts and opts.single_item
+    local checker = opts and opts.checker
 
     local obj = setmetatable({
         etcd_cli = nil,
-        etcd_conf = etcd_conf,
         key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,
+        checker = checker,
         sync_times = 0,
         running = true,
         conf_version = 0,
@@ -554,6 +597,7 @@ function _M.new(key, opts)
         prev_index = 0,
         last_err = nil,
         last_err_time = nil,
+        resync_delay = resync_delay,
         timeout = timeout,
         single_item = single_item,
         filter = filter_fun,
@@ -567,7 +611,7 @@ function _M.new(key, opts)
         ngx_timer_at(0, _automatic_fetch, obj)
 
     else
-        local etcd_cli, err = etcd.new(etcd_conf)
+        local etcd_cli, err = get_etcd()
         if not etcd_cli then
             return nil, "failed to start a etcd instance: " .. err
         end
@@ -614,7 +658,7 @@ end
 
 function _M.server_version(self)
     if not self.running then
-        return nil, "stoped"
+        return nil, "stopped"
     end
 
     return read_etcd_version(self.etcd_cli)

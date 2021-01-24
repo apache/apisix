@@ -27,10 +27,10 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 
 | Name              | Type    | Requirement | Default | Valid      | Description                                      |
 | ----------------- | ------- | ----------- | ------- | ---------- | ------------------------------------------------ |
-| abort.http_status | integer | optional    |         | [200, ...] | user-specified http code returned to the client. |
-| abort.body        | string  | optional    |         |            | response data returned to the client.            |
+| abort.http_status | integer | required    |         | [200, ...] | user-specified http code returned to the client. |
+| abort.body        | string  | optional    |         |            | response data returned to the client. Nginx variable can be used inside, like `client addr: $remote_addr\n`           |
 | abort.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be aborted.            |
-| delay.duration    | number  | optional    |         |            | delay time (can be decimal).                     |
+| delay.duration    | number  | required    |         |            | delay time (can be decimal).                     |
 | delay.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be delayed.            |
 
 Note: One of `abort` and `delay` must be specified.
@@ -42,7 +42,7 @@ Note: One of `abort` and `delay` must be specified.
 1: enable the fault-injection plugin for a specific route and specify the abort attribute：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -81,7 +81,7 @@ Fault Injection!
 2: Enable the `fault-injection` plugin for a specific route and specify the `delay` attribute:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -124,7 +124,7 @@ sys     0m0.010s
 Remove the corresponding JSON in the plugin configuration to disable the plugin immediately without restarting the service:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

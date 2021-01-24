@@ -28,26 +28,22 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `node-status` is a plugin which we could get request status information through it's API.
 
-
 ## Attributes
 
 None
-
 
 ## API
 
 This plugin will add `/apisix/status` to get status information.
 You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
-
 ## How To Enable
 
-1. Configure `node-status` in the plugin list of the configuration file `apisix/conf/config.yaml`,
+1. Configure `node-status` in the plugin list of the configuration file `conf/config.yaml`,
 then you can add this plugin in any route.
 
 ```
@@ -65,7 +61,7 @@ After starting `APISIX`, you can get status information through the API `/apisix
 2. Create a route object, and enable plugin `node-status`.
 
 ```sh
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {
@@ -82,7 +78,6 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 You have to configure `node-status` in the configuration file `apisix/conf/config.yaml` before creating a route like this.
 And this plugin will not make any difference in future requests, so usually we don't set this plugin when creating routes.
-
 
 ## Test Plugin
 
@@ -114,7 +109,6 @@ Server: APISIX web server
 | reading      | the current number of connections where APISIX is reading the request header                   |
 | id           | APISIX's uid which is saved in apisix/conf/apisix.uid  |
 
-
 ## Disable Plugin
 
 1. You can delete `node-status` in the plugin list of the configuration file `apisix/conf/config.yaml`,
@@ -134,7 +128,7 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately.
 
 ```sh
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {

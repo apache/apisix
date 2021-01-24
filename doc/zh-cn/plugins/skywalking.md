@@ -57,7 +57,7 @@ plugins:
 下面是一个示例，在指定的 route 上开启了 skywalking 插件:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -65,9 +65,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     ],
     "plugins": {
         "skywalking": {
-            "endpoint": "http://10.110.149.175:12800",
-            "sample_ratio": 1,
-            "service_name": "APISIX_SERVER"
+            "sample_ratio": 1
         }
     },
     "upstream": {

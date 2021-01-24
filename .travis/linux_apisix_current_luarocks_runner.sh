@@ -27,7 +27,6 @@ do_install() {
 script() {
     export_or_prefix
     openresty -V
-    enable_ssl
 
     sudo rm -rf /usr/local/apisix
 
@@ -55,8 +54,9 @@ script() {
     cd ..
 
     # apisix cli test
-    sudo PATH=$PATH .travis/apisix_cli_test.sh
-    sudo PATH=$PATH .travis/apisix_cli_test_in_ci.sh
+    for f in ./.travis/apisix_cli_test/test_*.sh; do
+        sudo PATH="$PATH" "$f"
+    done
 }
 
 case_opt=$1

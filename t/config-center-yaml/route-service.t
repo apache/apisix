@@ -252,3 +252,56 @@ GET /hello
 hello
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: service with bad plugin
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        id: 1
+        uri: /hello
+        service_id: 1
+services:
+    -
+        id: 1
+        plugins:
+            proxy-rewrite:
+                uri: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+property "uri" validation failed
+
+
+
+=== TEST 9: fix service with default value
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        id: 1
+        uri: /hello
+        service_id: 1
+services:
+    -
+        id: 1
+        plugins:
+            uri-blocker:
+                block_rules:
+                    - /h*
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 403

@@ -26,8 +26,6 @@
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-- [**示例**](#示例)
-
 
 ## 名称
 
@@ -45,7 +43,7 @@
 创建一条路由并在该路由上启用 `request-id` 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -59,7 +57,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```
 
 ## 测试插件
@@ -74,7 +72,7 @@ HTTP/1.1 200 OK
 在路由 `plugins` 配置块中删除 `request-id 配置，即可禁用该插件，无需重启 APISIX。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -85,5 +83,5 @@ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```

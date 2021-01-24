@@ -74,7 +74,7 @@ end
 function _M.rewrite(conf, ctx)
     core.log.debug("rewrite phase of skywalking plugin")
     ctx.skywalking_sample = false
-    if conf.sample_ratio == 1 or math.random() <= conf.sample_ratio then
+    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
         ctx.skywalking_sample = true
         sw_tracer:start("upstream service")
         core.log.info("tracer start")

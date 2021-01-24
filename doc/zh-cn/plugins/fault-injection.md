@@ -27,10 +27,10 @@
 
 | 名称              | 类型    | 必选项 | 默认值 | 有效值     | 描述                       |
 | ----------------- | ------- | ------ | ------ | ---------- | -------------------------- |
-| abort.http_status | integer | 可选   |        | [200, ...] | 返回给客户端的 http 状态码 |
-| abort.body        | string  | 可选   |        |            | 返回给客户端的响应数据     |
+| abort.http_status | integer | 必需   |        | [200, ...] | 返回给客户端的 http 状态码 |
+| abort.body        | string  | 可选   |        |            | 返回给客户端的响应数据。支持使用 Nginx 变量，如 `client addr: $remote_addr\n`|
 | abort.percentage  | integer | 可选   |        | [0, 100]   | 将被中断的请求占比         |
-| delay.duration    | number  | 可选   |        |            | 延迟时间，可以指定小数     |
+| delay.duration    | number  | 必需   |        |            | 延迟时间，可以指定小数     |
 | delay.percentage  | integer | 可选   |        | [0, 100]   | 将被延迟的请求占比         |
 
 注：参数 abort 和 delay 至少要存在一个。
@@ -42,7 +42,7 @@
 示例1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -81,7 +81,7 @@ Fault Injection!
 示例2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -124,7 +124,7 @@ sys     0m0.010s
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

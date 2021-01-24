@@ -29,6 +29,7 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
+    enable_debug: true
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -68,8 +69,9 @@ GET /hello
 hello world
 --- error_log
 use config_center: yaml
-load(): new plugins: {"ip-restriction":true,"jwt-auth":true}
-load_stream(): new plugins: {"mqtt-proxy":true}
+load(): loaded plugin and sort by priority: 3000 name: ip-restriction
+load(): loaded plugin and sort by priority: 2510 name: jwt-auth
+load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
 --- grep_error_log eval
 qr/load\(\): new plugins/
 --- grep_error_log_out
@@ -84,6 +86,7 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
+    enable_debug: true
 plugins:
     - ip-restriction
     - jwt-auth
@@ -100,8 +103,9 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-load(): new plugins: {"ip-restriction":true,"jwt-auth":true}
-load_stream(): new plugins: {"mqtt-proxy":true}
+load(): loaded plugin and sort by priority: 3000 name: ip-restriction
+load(): loaded plugin and sort by priority: 2510 name: jwt-auth
+load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
 load(): plugins not changed
 load_stream(): plugins not changed
 

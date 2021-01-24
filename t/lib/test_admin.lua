@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local http              = require("resty.http")
-local json              = require("cjson.safe")
+local json              = require("toolkit.json")
 local core              = require("apisix.core")
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
@@ -36,7 +36,7 @@ local function com_tab(pattern, data, deep)
             v = nil
         end
 
-        if type(v) == "table" then
+        if type(v) == "table" and data[k] then
             local ok, err = com_tab(v, data[k], deep + 1)
             if not ok then
                 return false, err
@@ -108,14 +108,15 @@ function _M.comp_tab(left_tab, right_tab)
     local err
     dir_names = {}
 
+    local _
     if type(left_tab) == "string" then
-        left_tab, err = json.decode(left_tab)
+        left_tab, _, err = json.decode(left_tab)
         if not left_tab then
             return false, "failed to decode expected data: " .. err
         end
     end
     if type(right_tab) == "string" then
-        right_tab, err  = json.decode(right_tab)
+        right_tab, _, err  = json.decode(right_tab)
         if not right_tab then
             return false, "failed to decode expected data: " .. err
         end

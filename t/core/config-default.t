@@ -27,7 +27,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "lib.json_sort" .encode
+            local encode_json = require("toolkit.json").encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("node_listen: ", config.apisix.node_listen)
@@ -61,7 +61,7 @@ apisix:
 --- config
   location /t {
     content_by_lua_block {
-        local encode_json = require "lib.json_sort" .encode
+        local encode_json = require("toolkit.json").encode
         local config = require("apisix.core").config.local_conf()
 
         ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
@@ -81,7 +81,7 @@ apisix:
 --- config
   location /t {
     content_by_lua_block {
-        local encode_json = require "lib.json_sort" .encode
+        local encode_json = require("toolkit.json").encode
         local config = require("apisix.core").config.local_conf()
 
         ngx.say("admin_key: ", encode_json(config.apisix.admin_key))

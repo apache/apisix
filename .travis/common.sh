@@ -34,16 +34,3 @@ create_lua_deps() {
     sudo cp -r deps build-cache/
     sudo cp rockspec/apisix-master-0.rockspec build-cache/
 }
-
-enable_ssl() {
-    echo "
-    apisix:
-        ssl:
-            enable: true
-            ssl_cert: '../t/certs/apisix.crt'
-            ssl_cert_key: '../t/certs/apisix.key'
-        admin_api_mtls:
-            admin_ssl_cert: '../t/certs/mtls_client.crt'
-            admin_ssl_cert_key: '../t/certs/mtls_client.key'
-    " > conf/config.yaml
-}

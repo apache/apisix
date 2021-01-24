@@ -41,7 +41,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | bearer_only                        | boolean | 可选   | false                 |         | 设置为`true`将检查请求中带有承载令牌的授权标头 |
 | logout_path                        | string  | 可选   | "/logout"             |         |                                                |
 | redirect_uri                       | string  | 可选   | "ngx.var.request_uri" |         |                                                |
-| timeout                            | integer | 可选   | 3                     | [1,...] |                                                |
+| timeout                            | integer | 可选   | 3                     | [1,...] | 超时时间，单位为秒                             |
 | ssl_verify                         | boolean | 可选   | false                 |         |                                                |
 | introspection_endpoint             | string  | 可选   |                       |         | 身份服务器的令牌验证端点的 URL                 |
 | introspection_endpoint_auth_method | string  | 可选   | "client_secret_basic" |         | 令牌自省的认证方法名称                         |
@@ -60,7 +60,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get（echo 服务）。
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
     "plugins":{
@@ -99,7 +99,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 以下配置显示了如何向路由添加公钥自省。
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
     "plugins":{

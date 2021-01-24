@@ -23,9 +23,8 @@ local type     = type
 local table    = table
 local ipairs   = ipairs
 local plugin_name = "kafka-logger"
-local stale_timer_running = false;
+local stale_timer_running = false
 local timer_at = ngx.timer.at
-local tostring = tostring
 local ngx = ngx
 local buffers = {}
 
@@ -109,7 +108,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
@@ -181,5 +181,6 @@ function _M.log(conf, ctx)
     buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
+
 
 return _M

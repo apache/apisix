@@ -119,7 +119,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/request log: \{"host":"localhost","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}/
+qr/request log: \{.*route_id":"1".*\}/
 
 
 
@@ -187,10 +187,10 @@ GET /t
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/"host":"127.0.0.1","\@timestamp":/
+qr/"\@timestamp":"20/
 --- grep_error_log_out
-"host":"127.0.0.1","@timestamp":
-"host":"127.0.0.1","@timestamp":
+"@timestamp":"20
+"@timestamp":"20
 
 
 
@@ -247,7 +247,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/request log: \{"host":"localhost","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}/
+qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","route_id":"1"\}/
 
 
 
@@ -315,7 +315,7 @@ GET /t
 --- no_error_log
 [error]
 --- error_log eval
-qr/request log: \[\{"host":"127.0.0.1","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\},\{"host":"127.0.0.1","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}\]/
+qr/request log: \[\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\},\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\}\]/
 
 
 

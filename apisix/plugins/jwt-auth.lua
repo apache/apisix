@@ -17,7 +17,7 @@
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local ck       = require("resty.cookie")
-local consumer = require("apisix.consumer")
+local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 
 local ngx_encode_base64 = ngx.encode_base64
@@ -42,12 +42,11 @@ local schema = {
 
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
+    -- can't use additionalProperties with dependencies
+    -- additionalProperties = false,
     properties = {
         key = {type = "string"},
         secret = {type = "string"},
-        public_key = {type = "string"},
-        private_key= {type = "string"},
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256"},
@@ -57,6 +56,30 @@ local consumer_schema = {
         base64_secret = {
             type = "boolean",
             default = false
+        }
+    },
+    dependencies = {
+        algorithm = {
+            oneOf = {
+                {
+                    properties = {
+                        algorithm = {
+                            enum = {"HS256", "HS512"},
+                            default = "HS256"
+                        },
+                    },
+                },
+                {
+                    properties = {
+                        public_key = {type = "string"},
+                        private_key= {type = "string"},
+                        algorithm = {
+                            enum = {"RS256"},
+                        },
+                    },
+                    required = {"public_key", "private_key"},
+                }
+            }
         }
     },
     required = {"key"},
@@ -242,7 +265,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "missing user key in JWT token"}
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
     end
@@ -264,9 +287,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = jwt_obj.reason}
     end
 
-    ctx.consumer = consumer
-    ctx.consumer_name = consumer.consumer_name
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit jwt-auth rewrite")
 end
 
@@ -279,7 +300,7 @@ local function gen_token()
 
     local key = args.key
 
-    local consumer_conf = consumer.plugin(plugin_name)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
         return core.response.exit(404)
     end

@@ -108,11 +108,33 @@ passed
 
 
 
-=== TEST 3: sign
+=== TEST 3: sign and verify
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- response_body_like eval
-qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
+GET /t
+--- response_body
+hello world
 
 
 

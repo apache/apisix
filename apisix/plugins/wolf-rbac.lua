@@ -29,6 +29,9 @@ local rawset   = rawset
 local setmetatable = setmetatable
 local type     = type
 local string   = string
+local req_read_body = ngx.req.read_body
+local req_get_post_args = ngx.req.get_post_args
+local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
@@ -307,9 +310,9 @@ function _M.rewrite(conf, ctx)
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(prefix .. "UserId", userId)
-        core.request.set_header(prefix .. "Username", username)
-        core.request.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId, ctx)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -327,15 +330,16 @@ end
 local function get_args()
     local ctx = ngx.ctx.api_ctx
     local args, err
-    ngx.req.read_body()
+    req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
                    1, true) then
-        args, err = json.decode(ngx.req.get_body_data())
+        local req_body = req_get_body_data()
+        args, err = json.decode(req_body)
         if err then
-            core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
+            core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
-        args = ngx.req.get_post_args()
+        args = req_get_post_args()
     end
 
     return args

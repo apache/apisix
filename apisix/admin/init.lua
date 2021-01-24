@@ -16,7 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
-local route = require("resty.radixtree")
+local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local ngx = ngx
 local get_method = ngx.req.get_method
@@ -28,6 +28,10 @@ local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
+local type = type
+local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
+
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
@@ -87,6 +91,27 @@ local function check_token(ctx)
     end
 
     return true
+end
+
+
+local function strip_etcd_resp(data)
+    if type(data) == "table"
+        and data.header ~= nil
+        and data.header.revision ~= nil
+        and data.header.raft_term ~= nil
+    then
+        -- strip etcd data
+        data.header = nil
+        data.responses = nil
+        data.succeeded = nil
+
+        if data.node then
+            data.node.createdIndex = nil
+            data.node.modifiedIndex = nil
+        end
+    end
+
+    return data
 end
 
 
@@ -150,6 +175,7 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end
@@ -194,8 +220,8 @@ local function run_stream()
         core.response.exit(404)
     end
 
-    ngx.req.read_body()
-    local req_body = ngx.req.get_body_data()
+    req_read_body()
+    local req_body = req_get_body_data()
 
     if req_body then
         local data, err = core.json.decode(req_body)
@@ -219,6 +245,7 @@ local function run_stream()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end

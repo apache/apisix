@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
-local consumer = require("apisix.consumer")
+local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 local ipairs   = ipairs
 
@@ -83,7 +83,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing API key found in request"}
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
     end
@@ -97,9 +97,7 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    ctx.consumer = consumer
-    ctx.consumer_name = consumer.consumer_name
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit key-auth rewrite")
 end
 

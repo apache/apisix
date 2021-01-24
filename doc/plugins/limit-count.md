@@ -37,7 +37,7 @@ Limit request rate by a fixed number of requests in a given time window.
 | -------------- | ------- | -------------------- | ------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count          | integer | required             |         | [0,...]                                                                  | the specified number of requests threshold.                                                                                                                                                                                                                                                                 |
 | time_window    | integer | required             |         | [0,...]                                                                  | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                               |
-| key            | string  | required             |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                                                                                                                                                                                                                   |
+| key            | string  | optional             | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                                                                                                                                                                                                                   |
 | rejected_code  | integer | optional             | 503     | [200,600]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                              |
 | policy         | string  | optional             | "local" | ["local", "redis", "redis-cluster"]                                                       | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit). |
 | redis_host     | string  | required for `redis` |         |                                                                          | When using the `redis` policy, this property specifies the address of the Redis server.                                                                                                                                                                                                                     |
@@ -46,7 +46,6 @@ Limit request rate by a fixed number of requests in a given time window.
 | redis_timeout  | integer | optional             | 1000    | [1,...]                                                                  | When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server.                                                                                                                                                                            |
 | redis_cluster_nodes | array | optional |         |                                                              | When using `redis-cluster` policy，This property is a list of addresses of Redis cluster service nodes. |
 
-
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## How To Enable
@@ -54,7 +53,7 @@ Limit request rate by a fixed number of requests in a given time window.
 Here's an example, enable the `limit count` plugin on the specified route:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -85,7 +84,7 @@ If you need a cluster-level precision traffic limit, then we can do it with the 
 Here is the example if we use single `redis` policy:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -113,7 +112,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 If using `redis-cluster` policy:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -186,7 +185,7 @@ When you want to disable the `limit count` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

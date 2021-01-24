@@ -110,7 +110,7 @@ function _M.get_format(res, real_key, is_dir)
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
         res.body.node = kvs_to_node(res.body.kvs[1])
         if not res.body.kvs[1].value then
-            -- remove last "/" when necesary
+            -- remove last "/" when necessary
             if string.byte(res.body.node.key, -1) == 47 then
                 res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
             end
@@ -269,12 +269,16 @@ end
 
 
 function _M.push(key, value, ttl)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, _, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    local res, err = etcd_cli:readdir(prefix .. key)
+    -- Create a new revision and use it as the id.
+    -- It will be better if we use snowflake algorithm like manager-api,
+    -- but we haven't found a good library. It costs too much to write
+    -- our own one as the admin-api will be replaced by manager-api finally.
+    local res, err = set("/gen_id", 1)
     if not res then
         return nil, err
     end

@@ -18,6 +18,7 @@
 -->
 
 # 安装依赖
+
 - [注意](#注意)
 - [CentOS 7](#centos-7)
 - [Fedora 31 & 32](#fedora-31--32)
@@ -25,17 +26,15 @@
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 
-注意
-====
+# 注意
+
 - Apache APISIX 从 v2.0 开始不再支持 `v2` 版本的 etcd，并且 etcd 最低支持版本为 v3.4.0，因此请使用 etcd 3.4.0+。更重要的是，因为 etcd v3 使用 gPRC 作为消息传递协议，而 Apache APISIX 使用 HTTP(S) 与 etcd 集群通信，因此请确保启用 [etcd gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) 功能。
 
 - 目前 Apache APISIX 默认使用 HTTP 协议与 etcd 集群通信，这并不安全，如果希望保障数据的安全性和完整性。 请为您的 etcd 集群配置证书及对应私钥，并在您的 Apache APISIX etcd endpoints 配置列表中明确使用 `https` 协议前缀。请查阅 `conf/config-default.yaml` 中 etcd 一节相关的配置来了解更多细节。
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
-
-CentOS 7
-========
+# CentOS 7
 
 ```shell
 # 安装 epel, `luarocks` 需要它
@@ -59,8 +58,7 @@ sudo yum install -y openresty curl git gcc luarocks lua-devel
 nohup etcd &
 ```
 
-Fedora 31 & 32
-==============
+# Fedora 31 & 32
 
 ```shell
 # 添加 OpenResty 源
@@ -80,8 +78,7 @@ sudo yum install -y openresty curl git gcc luarocks lua-devel
 nohup etcd &
 ```
 
-Ubuntu 16.04 & 18.04
-====================
+# Ubuntu 16.04 & 18.04
 
 ```shell
 # 添加 OpenResty 源
@@ -104,8 +101,7 @@ sudo apt-get install -y git openresty curl luarocks
 nohup etcd &
 ```
 
-Debian 9 & 10
-=============
+# Debian 9 & 10
 
 ```shell
 # 可选
@@ -121,9 +117,9 @@ sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_releas
 sudo apt-get update
 
 # 安装 etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
-    cd etcd-v3.3.13-linux-amd64 && \
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
@@ -133,8 +129,7 @@ sudo apt-get install -y git openresty curl luarocks
 nohup etcd &
 ```
 
-Mac OSX
-=======
+# Mac OSX
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具

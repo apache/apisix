@@ -20,6 +20,7 @@
 - [English](../../plugins/echo.md)
 
 # 目录
+
 - [**简介**](#简介)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -29,7 +30,6 @@
 ## 简介
 
 echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
-
 
 该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 包括：init, rewrite, access, balancer, header filer, body filter 以及 log。
 
@@ -52,7 +52,7 @@ echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
 为特定路由启用 echo 插件。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "echo": {
@@ -85,7 +85,7 @@ before the body modification hello world
 当您要禁用`echo`插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

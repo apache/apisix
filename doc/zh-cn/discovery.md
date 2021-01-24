@@ -43,7 +43,6 @@
 
 常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper等
 
-
 ## 如何扩展注册中心？
 
 ### 基本步骤
@@ -169,8 +168,8 @@ discovery:
 discovery:
   eureka:
     host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+      - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
+      - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
     fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
     weight: 100                      # default weight for node
@@ -180,7 +179,7 @@ discovery:
       read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
-通过 `discovery.eureka.host ` 配置 eureka 的服务器地址。
+通过 `discovery.eureka.host` 配置 eureka 的服务器地址。
 
 如果 eureka 的地址是 `http://127.0.0.1:8761/` ，并且不需要用户名和密码验证的话，配置如下：
 
@@ -197,7 +196,7 @@ discovery:
 APISIX是通过 `upstream.discovery_type`选择使用的服务发现， `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/user/*",
     "upstream": {
@@ -220,7 +219,7 @@ Server: APISIX web server
 因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/a/*",
     "plugins": {
@@ -235,7 +234,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/b/*",
     "plugins": {
@@ -253,7 +252,4 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 
 假如 A-SERVICE 和 B-SERVICE 都提供了一个 `/test` 的接口，通过上面的配置，可以通过 `/a/test` 访问 A-SERVICE 的 `/test` 接口，通过 `/b/test` 访问 B-SERVICE 的 `/test` 接口。
 
-
 **注意**：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，而是使用从注册中心的数据来替换，即使注册中心的数据是空的。
-
-

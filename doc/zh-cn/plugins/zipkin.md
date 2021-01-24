@@ -20,6 +20,7 @@
 - [English](../../plugins/zipkin.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -46,7 +47,7 @@
 下面是一个示例，在指定的 route 上开启了 zipkin 插件:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -125,7 +126,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
 
-
 ## 上游服务是Golang的示例代码
 
 ```golang
@@ -164,4 +164,3 @@ func main(){
 
 }
 ```
-

@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -17,33 +15,17 @@
 # limitations under the License.
 #
 
-# This file is like apisix_cli_test.sh, but requires extra dependencies which
-# you don't need them in daily development.
+# 'make init' operates scripts and related configuration files in the current directory
+# The 'apisix' command is a command in the /usr/local/apisix,
+# and the configuration file for the operation is in the /usr/local/apisix/conf
 
 set -ex
 
 clean_up() {
+    make stop || true
     git checkout conf/config.yaml
 }
 
 trap clean_up EXIT
 
 unset APISIX_PROFILE
-
-# check error handling when connecting to old etcd
-git checkout conf/config.yaml
-
-echo '
-etcd:
-  host:
-    - "http://127.0.0.1:3379"
-  prefix: "/apisix"
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'etcd cluster version 3.3.0 is less than the required version 3.4.0'; then
-    echo "failed: properly handle the error when connecting to old etcd"
-    exit 1
-fi
-
-echo "passed: properly handle the error when connecting to old etcd"

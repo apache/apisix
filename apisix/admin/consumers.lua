@@ -49,9 +49,6 @@ local function check_conf(conf)
             local plugin_obj = plugin.get(name)
             if plugin_obj.type == 'auth' then
                 count_auth_plugin = count_auth_plugin + 1
-                if count_auth_plugin > 1 then
-                    return nil, {error_msg = "only one auth plugin is allowed"}
-                end
             end
         end
 

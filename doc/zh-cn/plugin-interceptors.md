@@ -28,7 +28,7 @@
 下面是通过 interceptors 来保护由 prometheus 插件引入的 `/apisix/prometheus/metrics` 接口，限定只能由 `10.0.0.0/24` 网段的用户访问：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/prometheus -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "interceptors": [
         {
@@ -38,7 +38,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus -H 'X-API-K
             }
         }
     ]
-}
+}'
 ```
 
 我们能看到配置 interceptors 就像配置 plugin 一样：name 是 interceptor 的名称，而 conf 是它的配置。

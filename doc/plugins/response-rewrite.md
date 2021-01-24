@@ -32,10 +32,10 @@
 
 response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
 
-**senario**:
+**scenario**:
 
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
+2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can also use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
 
@@ -51,7 +51,7 @@ response rewrite plugin, rewrite the content returned by the upstream as well as
 Here's an example, enable the `response rewrite` plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",
@@ -82,6 +82,7 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
 It will output like below,no matter what kind of content from upstream.
+
 ```
 
 HTTP/1.1 200 OK
@@ -103,7 +104,7 @@ When you want to disable the `response rewrite` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

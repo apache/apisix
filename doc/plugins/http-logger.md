@@ -28,7 +28,6 @@
 - [**Metadata**](#metadata)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.
@@ -39,28 +38,28 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| uri              | string  | required    |               |         | URI of the server                                                                        |
-| auth_header      | string  | optional    | ""            |         | Any authorization headers                                                                |
-| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request                                |
-| name             | string  | optional    | "http logger" |         | A unique identifier to identity the logger                                               |
-| batch_max_size   | integer | optional    | 1000          | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5             | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
-| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
-| include_req_body | boolean | optional    | false         |         | Whether to include the request body                                                      |
-| concat_method    | string  | optional    | "json"        |         | Enum type, `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
+| uri              | string  | required    |               |         | The URI of the `HTTP/HTTPS` server.                                                      |
+| auth_header      | string  | optional    | ""            |         | Any authorization headers.                                                               |
+| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request.                               |
+| name             | string  | optional    | "http logger" |         | A unique identifier to identity the logger.                                              |
+| batch_max_size   | integer | optional    | 1000          | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the `HTTP/HTTPS` service. |
+| inactive_timeout | integer | optional    | 5             | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the `HTTP/HTTPS` service regardless of whether the number of logs in the buffer reaches the maximum number set. |
+| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
+| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
+| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
+| include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+| concat_method    | string  | optional    | "json"        | ["json", "new_line"] | Enum type: `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
 
 ## How To Enable
 
 The following is an example on how to enable the http-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "http-logger": {
-                "uri": "http://127.0.0.1:80/postendpoint?param=1",
+                "uri": "http://127.0.0.1:80/postendpoint?param=1"
             }
        },
       "upstream": {
@@ -88,14 +87,24 @@ hello, world
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    |               |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, the value is [Nginx variable](http://nginx.org/en/docs/varindex.html). |
+| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, it means to get `APISIX` variables or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
 
  Note that the metadata configuration is applied in global scope, which means it will take effect on all Route or Service which use http-logger plugin.
+
+**APISIX Variables**
+
+|   Variable Name  |      Description        | Usage Example  |
+|------------------|-------------------------|----------------|
+| route_id         | id of `route`          | $route_id      |
+| route_name       | name of `route`        | $route_name    |
+| service_id       | id of `service`        | $service_id    |
+| service_name     | name of `service`      | $service_name  |
+| consumer_name    | username of `consumer` | $consumer_name |
 
 ### Example
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
         "host": "$host",

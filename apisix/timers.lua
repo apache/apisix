@@ -21,6 +21,7 @@ local unpack = unpack
 local thread_spawn = ngx.thread.spawn
 local thread_wait = ngx.thread.wait
 
+local check_interval = 0.5
 
 local timers = {}
 
@@ -57,7 +58,10 @@ end
 
 
 function _M.init_worker()
-    local timer, err = core.timer.new("background", background_timer, {check_interval = 0.5})
+    local opts = {
+        check_interval = check_interval,
+    }
+    local timer, err = core.timer.new("background", background_timer, opts)
     if not timer then
         core.log.error("failed to create background timer: ", err)
         return
@@ -82,6 +86,11 @@ function _M.unregister_timer(name, privileged)
     end
 
     timers[name] = nil
+end
+
+
+function _M.check_interval()
+    return check_interval
 end
 
 

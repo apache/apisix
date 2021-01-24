@@ -72,7 +72,7 @@ done
 --- request
 GET /t
 --- response_body
-property "key" validation failed: matches non of the enum values
+property "key" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]
@@ -193,7 +193,7 @@ passed
 
 
 
-=== TEST 8: invalid route: missing key
+=== TEST 8: invalid route: missing count
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +203,6 @@ passed
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -228,7 +227,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -328,7 +327,6 @@ GET /t
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -352,7 +350,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -682,7 +680,7 @@ passed
             end
             ngx.say(body)
         }
-    }    
+    }
 --- pipelined_requests eval
 ["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
 --- error_code eval
@@ -838,7 +836,7 @@ passed
 
 
 === TEST 24: create consumer and bind key-auth plugin
---- config 
+--- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
@@ -1048,7 +1046,7 @@ passed
                                 "rejected_code": 503,
                                 "key": "service_id"
                             }
-                        },                   
+                        },
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -1124,5 +1122,208 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: use 'remote_addr' as default key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: add service and route, upstream is the domain name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 60,
+                            "rejected_code": 503
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1,
+                            "foo.com:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "uri": "/hello",
+                    "service_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: normal, the result is as expected
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+        if domain == "test.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        if domain == "foo.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: plugin is bound to the route and upstream is the domain name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 60,
+                            "rejected_code": 503
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1,
+                            "foo.com:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: normal, the result is as expected
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+        if domain == "test.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        if domain == "foo.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503, 503]
 --- no_error_log
 [error]

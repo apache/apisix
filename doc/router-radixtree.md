@@ -20,6 +20,7 @@
 # libradixtree
 
 ### what's libradixtree?
+
 [libradixtree](https://github.com/iresty/lua-resty-radixtree), adaptive radix trees implemented in Lua for OpenResty.
 
 APISIX using libradixtree as route dispatching library.
@@ -68,13 +69,35 @@ Here are the rules:
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
 
+#### 4. Parameter match
+
+When `radixtree_uri_with_parameter` is used, we can match routes with parameters.
+
+For example, with configuration:
+
+```yaml
+apisix:
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+route like
+
+```
+/blog/:name
+```
+
+will match both `/blog/dog` and `/blog/cat`.
+
+For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
+
 ### How to filter route by Nginx builtin variable
 
 Please take a look at [radixtree-new](https://github.com/iresty/lua-resty-radixtree#new),
 here is an simple example:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -94,3 +117,60 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
+
+### How to filter route by graphql attributes
+
+APISIX supports filtering route by some attributes of graphql. Currently we support:
+
+* graphql_operation
+* graphql_name
+* graphql_root_fields
+
+For instance, with graphql like this:
+
+```graphql
+query getRepo {
+    owner {
+        name
+    }
+    repo {
+        created
+    }
+}
+```
+
+* The `graphql_operation` is `query`
+* The `graphql_name` is `getRepo`,
+* The `graphql_root_fields` is `["owner", "repo"]`
+
+We can filter such route out with:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_graphql",
+    "vars": [
+        ["graphql_operation", "==", "query"],
+        ["graphql_name", "==", "getRepo"],
+        ["graphql_root_fields", "has", "owner"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+To prevent spending too much time reading invalid graphql request body, we only read the first 1 MiB
+data from the request body. This limitation is configured via:
+
+```yaml
+graphql:
+  max_size: 1048576
+
+```
+
+If you need to pass a graphql body which is larger than the limitation, you can increase the value in `conf/config.yaml`.

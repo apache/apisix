@@ -38,6 +38,7 @@ __DATA__
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")
@@ -63,6 +64,7 @@ done
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")

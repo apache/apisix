@@ -33,7 +33,7 @@
 
 This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other TCP servers.
 
-This plugin provides the ability to push Log data as a batch to you're external TCP servers. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability to push Log data as a batch to your external TCP servers. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
@@ -59,7 +59,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 The following is an example on how to enable the tcp-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "tcp-logger": {

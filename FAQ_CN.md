@@ -23,7 +23,6 @@
 
 微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
 
-
 ## APISIX 和其他的 API 网关有什么不同之处？
 
 APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者 MySQL 这类关系型数据库。
@@ -83,7 +82,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 可以这么做：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -96,7 +95,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -110,7 +109,6 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
@@ -119,9 +117,11 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 比如，将 `http://foo.com` 重定向到 `https://foo.com`
 
 有几种不同的方法来实现：
+
 1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -136,7 +136,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -159,7 +159,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用`serverless`插件：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -172,11 +172,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 ```
 
 然后测试下是否生效：
+
 ```shell
 curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
 ```
 
 响应体应该是：
+
 ```
 HTTP/1.1 301 Moved Permanently
 Date: Mon, 18 May 2020 02:56:04 GMT
@@ -250,3 +252,40 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 * 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
+
+## 如何自定义 APISIX 实例 id
+
+默认情况下，APISIX 会从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
+
+如果你想指定一个有意义的 id 来绑定 APISIX 实例到你的内部系统，你可以在 `conf/config.yaml` 中进行配置，示例：
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
+
+## 为什么 `error.log` 中会有许多诸如 "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" 的错误？
+
+首先请确保 APISIX 和 etcd 之间不存在网络分区的情况。
+
+如果网络的确是健康的，请检查你的 etcd 集群是否启用了 [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) 特性。然而，当你使用命令行参数或配置文件启动 etcd 时，此特性的默认启用情况又是不同的。
+
+1. 当使用命令行参数启动 etcd，该特性默认被启用，相关选项是 `enable-grpc-gateway`。
+
+```sh
+etcd --enable-grpc-gateway --data-dir=/path/to/data
+```
+
+注意该选项并没有展示在 `etcd --help` 的输出中。
+
+2. 使用配置文件时，该特性默认被关闭，请明确启用 `enable-grpc-gateway` 配置项。
+
+```json
+# etcd.json
+{
+    "enable-grpc-gateway": true,
+    "data-dir": "/path/to/data"
+}
+```
+
+事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。

@@ -24,6 +24,7 @@
 代理缓存插件，该插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘的缓存，未来也会支持基于内存的缓存。目前可以根据响应码、请求 Method 来指定需要缓存的数据，另外也可以通过 no_cache 和 cache_bypass 配置更复杂的缓存策略。
 
 基于磁盘的缓存需要注意：
+
 1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存10秒钟
 2. 如果后端服务不可用， APISIX 将返回502或504，那么502或504将被缓存10秒钟
 
@@ -63,7 +64,7 @@ proxy_cache:                       # 代理缓存配置
 1、为特定路由启用 `proxy-cache` 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -139,7 +140,7 @@ proxy_cache:
 2、为特定路由启用 `proxy-cache` 插件：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -201,7 +202,7 @@ hello
 示例3：指定 cache_zone 为 `invalid_disk_cache` 与 `conf/config.yaml` 文件中指定的缓存区域 `disk_cache_one` 不一致。
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -273,7 +274,7 @@ Server: APISIX web server
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

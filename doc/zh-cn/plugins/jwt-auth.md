@@ -27,7 +27,6 @@
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-
 ## 名字
 
 `jwt-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
@@ -37,7 +36,6 @@
 有关 JWT 的更多信息，可参考 [JWT](https://jwt.io/) 查看更多信息。
 
 ## 属性
-
 
 | 名称           | 类型    | 必选项 | 默认值    | 有效值                       | 描述                                                                                           |
 |:--------------|:--------|:------|:--------|:----------------------------|:-----------------------------------------------------------------------------------------------|
@@ -59,7 +57,7 @@
 1. 创建一个 consumer 对象，并设置插件 `jwt-auth` 的值。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -74,7 +72,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 `jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥与私钥，示例如下：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "kerouac",
     "plugins": {
@@ -97,7 +95,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -113,7 +111,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 #### 首先进行登录获取 `jwt-auth` token:
 
@@ -204,4 +202,3 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     }
 }'
 ```
-

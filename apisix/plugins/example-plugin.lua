@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
@@ -51,14 +52,8 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
 end
 
 
@@ -104,8 +99,29 @@ function _M.access(conf, ctx)
 
     local matched_route = ctx.matched_route
     upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                 ctx.conf_version, up_conf, matched_route)
+                 ctx.conf_version, up_conf)
     return
+end
+
+
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
 end
 
 

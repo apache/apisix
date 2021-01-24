@@ -26,6 +26,7 @@ local tcp = ngx.socket.tcp
 local buffers = {}
 local tostring = tostring
 local ipairs = ipairs
+local table = table
 local schema = {
     type = "object",
     properties = {
@@ -126,18 +127,16 @@ local function remove_stale_objects(premature)
 end
 
 local function combine_syslog(entries)
-    local data
+    local items = {}
     for _, entry in ipairs(entries) do
-        if not data then
-           data = entry.data
-        end
-
-        data = data .. entry.data
+        table.insert(items, entry.data)
         core.log.info("buffered logs:", entry.data)
     end
 
-    return data
+    return table.concat(items)
 end
+
+_M.combine_syslog = combine_syslog
 
 local function handle_log(entries)
     local data = combine_syslog(entries)
@@ -145,7 +144,6 @@ local function handle_log(entries)
         return true
     end
 
-    -- get the config from entries, replace of local value
     return send_tcp_data(entries[1].route_conf, data)
 end
 
@@ -190,7 +188,9 @@ function _M.log(conf, ctx)
         batch_max_size = conf.batch_max_size,
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout
+        inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     log_buffer, err = batch_processor:new(handle_log, process_conf)
@@ -202,5 +202,6 @@ function _M.log(conf, ctx)
     buffers[entry.route_id] = log_buffer
     log_buffer:push(process_context)
 end
+
 
 return _M

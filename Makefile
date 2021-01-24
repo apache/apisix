@@ -21,7 +21,7 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
-OR_EXEC ?= $(shell which openresty)
+OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
 SHELL := /bin/bash -o pipefail
@@ -65,12 +65,17 @@ ifeq ("$(wildcard utils/lj-releng)", "")
 	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
+ifeq ("$(wildcard utils/reindex)", "")
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+	chmod a+x utils/reindex
+endif
 
 
-### lint:             Lint Lua source code
+### lint:             Lint source code
 .PHONY: lint
 lint: utils
 	./utils/check-lua-code-style.sh
+	./utils/check-test-code-style.sh
 
 
 ### init:             Initialize the runtime environment
@@ -83,11 +88,10 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-ifeq ("$(wildcard logs/nginx.pid)", "")
-	mkdir -p logs
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
-else
+ifneq ("$(wildcard logs/nginx.pid)", "")
 	@echo "APISIX is running..."
+else
+	./bin/apisix start
 endif
 
 
@@ -124,6 +128,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
@@ -133,6 +138,9 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
 	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
@@ -188,6 +196,7 @@ install: default
 
 ### test:             Run the test case
 test:
+	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
 ### license-check:    Check Lua source code for Apache License
@@ -216,6 +225,7 @@ release-src:
 	--exclude logs \
 	--exclude t \
 	--exclude release \
+	--exclude $(RELEASE_SRC).tgz \
 	.
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz

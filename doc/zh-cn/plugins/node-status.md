@@ -28,25 +28,21 @@
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-
 ## 插件简介
 
 `node-status` 是 `APISIX` 的请求状态查询插件，返回基本的状态信息。
-
 
 ## 插件属性
 
 无。
 
-
 ## 插件接口
 
 插件增加接口 `/apisix/status`，可通过 [interceptors](plugin-interceptors.md) 保护该接口。
 
-
 ## 启用插件
 
-1. 配置文件 `apisix/conf/config.yaml` 的 plugin list 中配置 `node-status`
+1. 配置文件 `conf/config.yaml` 的 plugin list 中配置 `node-status`
 
 ```
 plugins:                          # plugin list
@@ -63,7 +59,7 @@ plugins:                          # plugin list
 2. 在创建 route 时添加插件 `node-status`
 
 ```sh
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {
@@ -79,7 +75,6 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 发送该请求的前提是 `apisix/conf/config.yaml` 中已经配置 `node-status`，此时 `node-status` 插件对该请求处理无影响，所以一般不会将 `node-status` 插件设置到路由中。
-
 
 ## 测试插件
 
@@ -111,7 +106,6 @@ Server: APISIX web server
 | reading      | 当前正在读取请求头的连接数                   |
 | id           | APISIX uid 信息，保存在 apisix/conf/apisix.uid  |
 
-
 ## 禁用插件
 
 1. 配置文件 `apisix/conf/config.yaml` 的 plugin list 中删除 `node-status`
@@ -128,7 +122,7 @@ plugins:                          # plugin list
 2. 删除 route 中的 `node-status` 插件信息
 
 ```sh
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {

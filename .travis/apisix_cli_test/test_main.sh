@@ -21,15 +21,7 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-set -ex
-
-clean_up() {
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-unset APISIX_PROFILE
+. ./.travis/apisix_cli_test/common.sh
 
 git checkout conf/config.yaml
 
@@ -67,9 +59,6 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
         listen_port: 8443
 " > conf/config.yaml
 
@@ -98,9 +87,6 @@ apisix:
     - 9081
     - 9082
   ssl:
-    enable: true
-    ssl_cert: '../t/certs/apisix.crt'
-    ssl_cert_key: '../t/certs/apisix.key'
     listen_port:
       - 9443
       - 9444
@@ -166,6 +152,12 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "can't find environment variable"; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
 echo "passed: resolve variables"
 
 echo '
@@ -210,6 +202,114 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: resolve variables wrapped with whitespace"
+
+# support environment variables in local_conf
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+# don't override user's envs configuration
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST=1.1.1.1
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo "pass: support environment variables in local_conf"
+
+# support merging worker_processes
+echo '
+nginx_config:
+    worker_processes: 1
+' > conf/config.yaml
+
+make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+nproc=1 make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+out=$(nproc=false make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo "passed: merge worker_processes"
 
 # check nameserver imported
 git checkout conf/config.yaml
@@ -273,10 +373,6 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
-    ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
@@ -312,7 +408,7 @@ make init
 
 set +ex
 
-grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+grep "listen 9080 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 1 ]; then
     echo "failed: failed to rollback to the default admin config"
     exit 1
@@ -442,7 +538,7 @@ if [ $count_test_access_log -eq 0 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -eq 2 ]; then
+if [ $count_access_log_off -eq 3 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -477,7 +573,7 @@ if [ $count_test_access_log -eq 1 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 2 ]; then
+if [ $count_access_log_off -ne 3 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi
@@ -579,6 +675,8 @@ nginx_config:
         set $my "var";
     http_admin_configuration_snippet: |
         log_format admin "$request_time $pipe";
+    http_end_configuration_snippet: |
+        server_names_hash_bucket_size 128;
     stream_configuration_snippet: |
         tcp_nodelay off;
 ' > conf/config.yaml
@@ -606,6 +704,18 @@ fi
 grep 'log_format admin "$request_time $pipe";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: can't inject admin server configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 3 conf/nginx.conf | grep "}" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
     exit 1
 fi
 
@@ -651,14 +761,6 @@ echo "passed: using env to set worker processes"
 # set worker processes with env
 git checkout conf/config.yaml
 
-echo '
-apisix:
-    ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
-' > conf/config.yaml
-
 make init
 
 count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
@@ -670,9 +772,6 @@ fi
 echo '
 apisix:
     ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
         ssl_session_tickets: true
 ' > conf/config.yaml
 
@@ -717,6 +816,74 @@ make stop
 
 echo "passed: access log with JSON format"
 
+# check uninitialized variable in access log
+git checkout conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log"
+
+# port_admin set
+echo '
+apisix:
+  port_admin: 9180
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log (port_admin set)"
+
+# It is forbidden to run apisix under the "/root" directory.
+git checkout conf/config.yaml
+
+mkdir /root/apisix
+
+cp -r ./*  /root/apisix
+cd /root/apisix
+make init
+
+out=$(make run 2>&1 || true)
+if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
+    echo "failed: should echo It is forbidden to run APISIX in the /root directory"
+    exit 1
+fi
+
+cd -
+
+echo "passed: successfully prohibit APISIX from running in the /root directory"
+
+rm -rf /root/apisix
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 
@@ -746,38 +913,103 @@ etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
 init_kv=(
-/apisix/consumers/
-init_dir
-/apisix/global_rules/
-init_dir
-/apisix/node_status/
-init_dir
-/apisix/plugin_metadata/
-init_dir
-/apisix/plugins/
-init_dir
-/apisix/proto/
-init_dir
-/apisix/routes/
-init_dir
-/apisix/services/
-init_dir
-/apisix/ssl/
-init_dir
-/apisix/stream_routes/
-init_dir
-/apisix/upstreams/
-init_dir
+"/apisix/consumers/ init_dir"
+"/apisix/global_rules/ init_dir"
+"/apisix/node_status/ init_dir"
+"/apisix/plugin_metadata/ init_dir"
+"/apisix/plugins/ init_dir"
+"/apisix/proto/ init_dir"
+"/apisix/routes/ init_dir"
+"/apisix/services/ init_dir"
+"/apisix/ssl/ init_dir"
+"/apisix/stream_routes/ init_dir"
+"/apisix/upstreams/ init_dir"
 )
-i=0
 
-for kv in $cmd_res
+IFS=$'\n'
+for kv in ${init_kv[@]}
 do
-    if [ "${init_kv[$i]}" != "$kv" ]; then
-        echo "failed: index=$i, $kv is not equal to ${init_kv[$i]}"
-        exit 1
-    fi
-    let i=$i+1
+count=`echo $cmd_res | grep -c ${kv} || true`
+if [ $count -ne 1 ]; then
+    echo "failed: failed to match ${kv}"
+    exit 1
+fi
 done
 
 echo "passed: etcd auth enabled and init kv has been set up correctly"
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'authentication is not enabled'; then
+    echo "failed: properly handle the error when connecting to etcd without auth"
+    exit 1
+fi
+
+echo "passed: properly handle the error when connecting to etcd without auth"
+
+# Admin API can only be used with etcd config_center
+echo '
+apisix:
+    enable_admin: true
+    config_center: yaml
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
+    echo "failed: Admin API can only be used with etcd config_center"
+    exit 1
+fi
+
+echo "passed: Admin API can only be used with etcd config_center"
+
+# Check etcd connect refused
+git checkout conf/config.yaml
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2389"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "connection refused"; then
+    echo "failed: apisix should echo \"connection refused\""
+    exit 1
+fi
+
+echo "passed: Show connection refused info successfully"
+
+# check etcd auth error
+git checkout conf/config.yaml
+
+export ETCDCTL_API=3
+etcdctl version
+etcdctl --endpoints=127.0.0.1:2379 user add "root:apache-api6"
+etcdctl --endpoints=127.0.0.1:2379 role add root
+etcdctl --endpoints=127.0.0.1:2379 user grant-role root root
+etcdctl --endpoints=127.0.0.1:2379 user get root
+etcdctl --endpoints=127.0.0.1:2379 auth enable
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+  timeout: 30
+  user: root
+  password: apache-api7
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "invalid user ID or password"; then
+    echo "failed: should echo \"invalid user ID or password\""
+    exit 1
+fi
+
+echo "passed: show password error successfully"
+
+# clean etcd auth
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
+etcdctl --endpoints=127.0.0.1:2379 role delete root
+etcdctl --endpoints=127.0.0.1:2379 user delete root
