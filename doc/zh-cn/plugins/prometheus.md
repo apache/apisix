@@ -92,8 +92,8 @@ scrape_configs:
 
 我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的uri
 
-| 名称         | 类型   | 默认值   | 描述                                                  |
-| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| 名称       | 类型   | 默认值                       | 描述          |
+| ---------- | ------ | ---------------------------- | ------------- |
 | export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的uri |
 
 配置示例:
@@ -140,6 +140,19 @@ apisix_bandwidth{type="egress",service="foo.com"} 2379
 apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
 apisix_bandwidth{type="ingress",service="bar.com"} 76
 apisix_bandwidth{type="ingress",service="foo.com"} 988
+# HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
+# TYPE apisix_etcd_modify_indexes gauge
+apisix_etcd_modify_indexes{key="consumers"} 0
+apisix_etcd_modify_indexes{key="global_rules"} 0
+apisix_etcd_modify_indexes{key="max_modify_index"} 222
+apisix_etcd_modify_indexes{key="prev_index"} 35
+apisix_etcd_modify_indexes{key="protos"} 0
+apisix_etcd_modify_indexes{key="routes"} 222
+apisix_etcd_modify_indexes{key="services"} 0
+apisix_etcd_modify_indexes{key="ssls"} 0
+apisix_etcd_modify_indexes{key="stream_routes"} 0
+apisix_etcd_modify_indexes{key="upstreams"} 0
+apisix_etcd_modify_indexes{key="x_etcd_index"} 223
 # HELP apisix_batch_process_entries batch process remaining entries
 # TYPE apisix_batch_process_entries gauge
 apisix_batch_process_entries{name="http-logger",route_id="9",server_addr="127.0.0.1"} 1
