@@ -1,6 +1,6 @@
-name: Chaos
+name: Chaos Test
 
-on: [pull_request]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
         kubectl version
     - uses: actions/checkout@v2
 
-    #TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
+    # TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
     - name: Deploy Etcd Operator
       run: |
         git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1

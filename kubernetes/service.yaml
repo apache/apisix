@@ -32,14 +32,14 @@ spec:
       port: 9443
       protocol: TCP
       targetPort: 9443
-    # - name: admin-port
-    #   port: 9180
-    #   protocol: TCP
-    #   targetPort: 9180
-  externalIPs:
-    - 10.253.0.11
+      # - name: admin-port
+      #   port: 9180
+      #   protocol: TCP
+      #   targetPort: 9180
   selector:
     app: apisix-gw
   type: NodePort
   externalTrafficPolicy: Local
   # sessionAffinity: None
+  externalIPs:
+    - 10.253.0.11
