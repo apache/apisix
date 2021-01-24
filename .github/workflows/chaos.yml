@@ -13,7 +13,7 @@ jobs:
       with:
         go-version: '1.13'
 
-    - name: Creating kind cluster 
+    - name: Creating kind cluster
       uses: helm/kind-action@v1.0.0-rc.1
 
     - name: Print cluster information
@@ -55,7 +55,7 @@ jobs:
     - name: Deploy Chaos mesh
       run: |
         curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
-        
+
     - name: run test
       working-directory: ./t/chaos-test
       run: go test -v
