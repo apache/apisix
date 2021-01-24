@@ -26,7 +26,7 @@ jobs:
         kubectl version
     - uses: actions/checkout@v2
 
-    #TODO: should not use personal repo, while it's hard to modify an archived repo. Could we use api7's repo
+    #TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
     - name: Deploy Etcd Operator
       run: |
         git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
@@ -39,7 +39,13 @@ jobs:
 
     - name: Deploy APISIX
       run: |
-        cd ${{ github.repository }}
+        echo '
+        dns_resolver:
+          - 10.96.0.10
+        etcd:
+          host:
+            - "http://etcd-cluster-client.default.svc.cluster.local:2379"
+        ' > conf/config.yaml
         example/rbac/create_role.sh
         kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
         kubectl apply -f deployment.yaml

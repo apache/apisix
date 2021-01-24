@@ -107,4 +107,5 @@ spec:
           name: apisix-config-yaml-configmap
         - hostPath:
             path: /etc/localtime
+            type: File
           name: localtime
