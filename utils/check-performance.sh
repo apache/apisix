@@ -37,6 +37,10 @@ install_dependencies() {
     cd wrk
     make
     sudo cp wrk /usr/local/bin
+
+    # install sysbench
+    curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | sudo bash
+    sudo apt -y install sysbench
 }
 
 run_apisix() {
@@ -45,7 +49,6 @@ run_apisix() {
     make init
     sed -i 's/worker_processes: auto/worker_processes: 1/g' ~/work/apisix/apisix/conf/config-default.yaml
     make run
-    cat ~/work/apisix/apisix/conf/nginx.conf
 
     # create route
     curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -62,8 +65,14 @@ run_apisix() {
     }'
 }
 
+get_cpu_perf() {
+    sysbench cpu --cpu-max-prime=20000 --threads=1 run > ~/work/apisix/apisix/utils/sysbench.log
+    grep "^Requests/sec:" ~/work/apisix/apisix/utils/sysbench.log | awk {'print int($5)'}
+}
+
 run_test() {
-    for((i=0;i<10;i++));
+    get_cpu_perf
+    for((i=0;i<5;i++));
     do
         wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
         result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print int($2)'}`
@@ -72,7 +81,6 @@ run_test() {
     done
     # sort the array
     IFS=$'\n' result_array=($(sort -n <<<"${result_array[*]}")); unset IFS
-    printf "[%s]\n" "${result_array[*]}"
     length=${#result_array[*]}
     sum=0
     # remove the highest and lowest values
