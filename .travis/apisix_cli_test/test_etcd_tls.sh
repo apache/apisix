@@ -60,4 +60,4 @@ if echo "$out" | grep "certificate verify failed"; then
     exit 1
 fi
 
-echo "passed: Show certificate verify failed info successfully"
+echo "passed: Certificate verification successfully"
