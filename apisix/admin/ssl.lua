@@ -172,7 +172,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf)
+function _M.patch(id, conf, sub_path)
     if not id then
         return 400, {error_msg = "missing route id"}
     end
@@ -206,7 +206,16 @@ function _M.patch(id, conf)
     local node_value = res_old.body.node.value
     local modified_index = res_old.body.node.modifiedIndex
 
-    node_value = core.table.merge(node_value, conf);
+    if sub_path and sub_path ~= "" then
+        local code, err, node_val = core.table.patch(node_value, sub_path, conf)
+        node_value = node_val
+        if code then
+            return code, err
+        end
+    else
+        node_value = core.table.merge(node_value, conf);
+    end
+
 
     utils.inject_timestamp(node_value, nil, conf)
 
