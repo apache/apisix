@@ -96,7 +96,7 @@ function _M.check_schema(conf)
 
     if conf.abort and conf.abort.vars then
         for _, var in ipairs(conf.abort.vars) do
-            local expr, err = expr.new(var)
+            local _, err = expr.new(var)
             if err then
                 core.log.error("failed to create vars expression: ", err)
                 return false, err
@@ -106,7 +106,7 @@ function _M.check_schema(conf)
 
     if conf.delay and conf.delay.vars then
         for _, var in ipairs(conf.delay.vars) do
-            local expr, err = expr.new(var)
+            local _, err = expr.new(var)
             if err then
                 core.log.error("failed to create vars expression: ", err)
                 return false, err
@@ -121,7 +121,6 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    local err
     local abort_vars = true
     if conf.abort and conf.abort.vars then
         abort_vars = vars_match(conf.abort.vars, ctx)
