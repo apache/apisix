@@ -253,3 +253,36 @@ GET /index.html
 --- error_code: 502
 --- error_log
 no valid upstream node
+
+
+
+=== TEST 9: upstream timeouts equal to zero
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "timeout": {
+                        "connect": 0,
+                        "send": 0,
+                        "read": 0
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration: property \\\"timeout\\\" validation failed: property \\\"(connect|send|read)\\\" validation failed: expected 0 to be sctrictly greater than 0"}/
+--- no_error_log
+[error]
