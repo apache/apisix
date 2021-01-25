@@ -282,7 +282,7 @@ no valid upstream node
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"timeout\" validation failed: property \"send\" validation failed: expected 0 to be sctrictly greater than 0"}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration: property \\\"timeout\\\" validation failed: property \\\"(connect|send|read)\\\" validation failed: expected 0 to be sctrictly greater than 0"}/
 --- no_error_log
 [error]
