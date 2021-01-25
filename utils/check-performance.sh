@@ -74,7 +74,7 @@ run_test() {
     get_cpu_perf
     for((i=0;i<5;i++));
     do
-        wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
+        wrk -c100 -d30 -t1 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
         result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print int($2)'}`
         result_array[i]=$result
         sleep 10
