@@ -62,6 +62,7 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 \.*
 !.github/
 !.travis/
+.travis/openwhisk-utilities/
 !.gitmodules
 !.markdownlint.yml
 !.yamllint
