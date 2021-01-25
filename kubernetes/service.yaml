@@ -21,7 +21,7 @@ metadata:
   name: apisix-gw-lb
   # namespace: default
   labels:
-    app: apisix-gw   # useful for service discovery, for example, prometheus-operator.
+    app: apisix-gw # useful for service discovery, for example, prometheus-operator.
 spec:
   ports:
     - name: http
@@ -36,8 +36,8 @@ spec:
       #   port: 9180
       #   protocol: TCP
       #   targetPort: 9180
-      selector:
-        app: apisix-gw
-      type: NodePort
-      externalTrafficPolicy: Local
-      # sessionAffinity: None
+  selector:
+    app: apisix-gw
+  type: NodePort
+  externalTrafficPolicy: Local
+  # sessionAffinity: None
