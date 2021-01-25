@@ -37,7 +37,7 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 
 Note: One of `abort` and `delay` must be specified.
 
-`vars` is composed of a three-layer array structure, which can flexibly implement the `and/or` relationship between rules. Example:
+The `vars` is a list of expression which is from the `lua-resty-expr`, which can flexibly implement the `and/or` relationship between rules. Example:
 
 ```json
 [
