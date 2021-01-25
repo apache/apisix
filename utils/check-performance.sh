@@ -68,6 +68,7 @@ run_apisix() {
 get_cpu_perf() {
     sysbench cpu --cpu-max-prime=20000 --threads=1 run > ~/work/apisix/apisix/utils/sysbench.log
     grep ".*total number of events:" ~/work/apisix/apisix/utils/sysbench.log | awk {'print int($5)'}
+    cat /proc/cpuinfo | grep 'model name'
 }
 
 run_test() {
