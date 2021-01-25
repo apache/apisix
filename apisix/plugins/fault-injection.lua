@@ -30,43 +30,6 @@ local vars_schema = {
         type = "array",
         items = {
             type = "array",
-            items = {
-                {
-                    type = "string",
-                    minLength = 1,
-                    maxLength = 100
-                },
-                {
-                    type = "string",
-                    minLength = 1,
-                    maxLength = 2
-                }
-            },
-            additionalItems = {
-                anyOf = {
-                    {type = "string"},
-                    {type = "number"},
-                    {type = "boolean"},
-                    {
-                        type = "array",
-                        items = {
-                            anyOf = {
-                                {
-                                    type = "string",
-                                    minLength = 1, maxLength = 100
-                                },
-                                {
-                                    type = "number"
-                                },
-                                {
-                                    type = "boolean"
-                                }
-                            }
-                        },
-                        uniqueItems = true
-                    }
-                }
-            },
             minItems = 0,
             maxItems = 10
         }
@@ -124,7 +87,7 @@ local function vars_match(vars, ctx)
     for _, var in ipairs(vars) do
         local expr, err = expr.new(var)
         if err then
-            core.log.error("vars expression does not match: ", err)
+            core.log.error("failed to create vars expression: ", err)
             return nil, err
         end
 
@@ -144,6 +107,20 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.abort and conf.abort.vars then
+        local ok, err = core.schema.check(vars_schema, conf.abort.vars)
+        if not ok then
+            return false, err
+        end
+    end
+
+    if conf.delay and conf.delay.vars then
+        local ok, err = core.schema.check(vars_schema, conf.delay.vars)
+        if not ok then
+            return false, err
+        end
+    end
+
     return true
 end
 
@@ -156,6 +133,7 @@ function _M.rewrite(conf, ctx)
     if conf.abort and conf.abort.vars then
         abort_vars, err = vars_match(conf.abort.vars, ctx)
         if err then
+            -- the error log has been recorded in the vars_match method
             return 500, err
         end
     end
@@ -165,6 +143,7 @@ function _M.rewrite(conf, ctx)
     if conf.delay and conf.delay.vars then
         delay_vars, err = vars_match(conf.delay.vars, ctx)
         if err then
+            -- the error log has been recorded in the vars_match method
             return 500, err
         end
     end

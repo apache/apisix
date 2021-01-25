@@ -30,28 +30,14 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 | abort.http_status | integer | required    |         | [200, ...] | user-specified http code returned to the client. |
 | abort.body        | string  | optional    |         |            | response data returned to the client. Nginx variable can be used inside, like `client addr: $remote_addr\n`           |
 | abort.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be aborted.            |
-| abort.vars        | array[] | optional    |         |            | The rules for executing fault injection will only be executed when the rules are matched. `vars` is a list consisting of one or more [[var, operator, val]] elements, like this: [[[var, operator, val],[var, operator, val]], ...]. For example: [[["arg_name", "==", "json"]]], indicating that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
+| abort.vars        | array[] | optional    |         |            | The rules for executing fault injection will only be executed when the rules are matched. `vars` is a list of expressions, which is from the [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
 | delay.duration    | number  | required    |         |            | delay time (can be decimal).                     |
 | delay.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be delayed.            |
-| delay.vars        | array[] | optional    |         |            | Execute the request delay rule, and the request will be delayed only after the rule matches. `vars` is a list consisting of one or more [[var, operator, val]] elements, like this: [[[var, operator, val],[var, operator, val]], ...]. For example: [[["arg_name", "==", "json"]]], indicating that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
+| delay.vars        | array[] | optional    |         |            | Execute the request delay rule, and the request will be delayed only after the rule matches. `vars` is a list of expressions, which is from the [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
 
 Note: One of `abort` and `delay` must be specified.
 
-`vars` is composed of a three-level array structure, as shown below:
-
-```json
-array[
-    array[
-        array[]
-    ],
-    array[
-        array[]
-    ],
-    ......
-]
-```
-
-It can implement the `and/or` relationship between rules flexibly, such as the following three expressions:
+`vars` is composed of a three-layer array structure, which can flexibly implement the `and/or` relationship between rules. Example:
 
 ```json
 [
@@ -65,7 +51,7 @@ It can implement the `and/or` relationship between rules flexibly, such as the f
 ]
 ```
 
-Indicates that the relationship between the first two expressions is `and`, and the relationship between the first two expressions and the third expression is `or`.
+This means that the relationship between the first two expressions is `and`, and the relationship between the first two expressions and the third expression is `or`.
 
 ## How To Enable
 

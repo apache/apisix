@@ -744,7 +744,98 @@ GET /hello
 
 
 
-=== TEST 24: set route and configure the vars rule in abort
+=== TEST 24: vars schema validation passed
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.fault-injection")
+            local ok, err = plugin.check_schema({
+                abort = {
+                    http_status = 403,
+                    body = "Fault Injection!\n",
+                    vars = {
+                        {
+                            {"arg_name","==","jack"},
+                            {"arg_age","!","<",18}
+                        },
+                        {
+                            {"http_apikey","==","api-key"}
+                        }
+                    }
+                },
+                delay = {
+                    duration = 2,
+                    vars = {
+                        {
+                            {"arg_name","==","jack"},
+                            {"arg_age","!","<",18}
+                        },
+                        {
+                            {"http_apikey","==","api-key"}
+                        }
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: vars schema validation failed(abort failed)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.fault-injection")
+            local ok, err = plugin.check_schema({
+                abort = {
+                    http_status = 403,
+                    body = "Fault Injection!\n",
+                    vars = {
+                        {"arg_name","==","jack"},
+                        {"arg_age","!","<",18}
+                    }
+                },
+                delay = {
+                    duration = 2,
+                    vars = {
+                        {
+                            {"arg_name","==","jack"},
+                            {"arg_age","!","<",18}
+                        },
+                        {
+                            {"http_apikey","==","api-key"}
+                        }
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/property \"abort\" validation failed: property \"vars\" validation failed: failed to validate item 1:.*/
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: set route and configure the vars rule in abort
 --- config
        location /t {
            content_by_lua_block {
@@ -794,7 +885,7 @@ passed
 
 
 
-=== TEST 25: hit the route (all vars rules pass), execute abort
+=== TEST 27: hit the route (all vars rules pass), execute abort
 --- request
 GET /hello?name=jack&age=18
 --- more_headers
@@ -807,7 +898,7 @@ Fault Injection!
 
 
 
-=== TEST 26: hit the route (missing apikey), execute abort
+=== TEST 28: hit the route (missing apikey), execute abort
 --- request
 GET /hello?name=jack&age=20
 --- error_code: 403
@@ -818,7 +909,7 @@ Fault Injection!
 
 
 
-=== TEST 27: hit the route (missing request parameters), execute abort
+=== TEST 29: hit the route (missing request parameters), execute abort
 --- request
 GET /hello
 --- more_headers
@@ -831,7 +922,7 @@ Fault Injection!
 
 
 
-=== TEST 28: hit route(`vars` do not match, `age` is missing)
+=== TEST 30: hit route(`vars` do not match, `age` is missing)
 --- request
 GET /hello?name=allen
 --- response_body
@@ -841,7 +932,7 @@ hello world
 
 
 
-=== TEST 29: hit route(all `vars` do not match)
+=== TEST 31: hit route(all `vars` do not match)
 --- request
 GET /hello
 --- response_body
@@ -851,7 +942,7 @@ hello world
 
 
 
-=== TEST 30: set route and configure the vars rule in delay
+=== TEST 32: set route and configure the vars rule in delay
 --- config
        location /t {
            content_by_lua_block {
@@ -897,7 +988,7 @@ passed
 
 
 
-=== TEST 31: hit route(delay 2 seconds and return hello world)
+=== TEST 33: hit route(delay 2 seconds and return hello world)
 --- request
 GET /hello?name=jack&age=22
 --- response_body
@@ -907,7 +998,7 @@ hello world
 
 
 
-=== TEST 32: hit route (no wait and return hello1 world)
+=== TEST 34: hit route (no wait and return hello1 world)
 --- request
 GET /hello HTTP/1.1
 --- error_code: 200
@@ -918,7 +1009,7 @@ hello world
 
 
 
-=== TEST 33: set route and configure the vars rule in abort and delay
+=== TEST 35: set route and configure the vars rule in abort and delay
 --- config
        location /t {
            content_by_lua_block {
@@ -973,7 +1064,7 @@ passed
 
 
 
-=== TEST 34: hit the route (all vars rules are passed), execute abort and delay
+=== TEST 36: hit the route (all vars rules are passed), execute abort and delay
 --- request
 GET /hello?name=jack&age=18
 --- more_headers
@@ -986,7 +1077,7 @@ Fault Injection!
 
 
 
-=== TEST 35: hit the route (abort rule does not match), only execute delay
+=== TEST 37: hit the route (abort rule does not match), only execute delay
 --- request
 GET /hello?name=jack&age=16
 --- more_headers
