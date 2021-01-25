@@ -1,4 +1,4 @@
-module chaos
+module github.com/apache/apisix/t/chaos
 
 require github.com/gavv/httpexpect/v2 v2.1.0
 

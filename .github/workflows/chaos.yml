@@ -6,56 +6,56 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: setup go
+        uses: actions/setup-go@v2.1.3
+        with:
+          go-version: "1.14"
 
-    - name: setup go
-      uses: actions/setup-go@v2.1.3
-      with:
-        go-version: '1.13'
+      - name: Creating minikube cluster
+        run: |
+          bash ./t/chaos/utils.sh startMinikube
 
-    - name: Creating kind cluster
-      uses: helm/kind-action@v1.0.0-rc.1
+      - name: Print cluster information
+        run: |
+          kubectl config view
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get pods -n kube-system
+          kubectl version
 
-    - name: Print cluster information
-      run: |
-        kubectl config view
-        kubectl cluster-info
-        kubectl get nodes
-        kubectl get pods -n kube-system
-        helm version
-        kubectl version
-    - uses: actions/checkout@v2
+      # TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
+      - name: Deploy Etcd Operator
+        run: |
+          git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
+          cd etcd-operator
+          bash example/rbac/create_role.sh
+          kubectl create -f example/deployment.yaml
+          bash ./t/chaos/utils.sh ensure_pods_ready etcd-operator "True"
+          kubectl create -f example/example-etcd-cluster.yaml
+          bash ./t/chaos/utils.sh ensure_pods_ready etcd "True True True"
 
-    # TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
-    - name: Deploy Etcd Operator
-      run: |
-        git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
-        cd etcd-operator
-        example/rbac/create_role.sh
-        kubectl create -f example/deployment.yaml
-        while [[ $(kubectl get pods -l app=etcd-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "Waiting for pod running" && sleep 10; done
-        kubectl create -f example/example-etcd-cluster.yaml
-        while [[ $(kubectl get pods -l app=etcd -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True True True" ]]; do echo "Waiting for pod running" && sleep 10; done
+      - uses: actions/checkout@v2
+      - name: Deploy APISIX
+        run: |
+          DNS_IP=$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o 'jsonpath={..spec.clusterIP}')
+          echo "
+          dns_resolver:
+            - ${DNS_IP}
+          etcd:
+            host:
+              - "http://etcd-cluster-client.default.svc.cluster.local:2379"
+          " > conf/config.yaml
+          example/rbac/create_role.sh
+          kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
+          while [[ $(kubectl get pods -l app=apisix-gw -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True True" ]]; do echo "Waiting for pod running" && sleep 10; done
 
-    - name: Deploy APISIX
-      run: |
-        echo '
-        dns_resolver:
-          - 10.96.0.10
-        etcd:
-          host:
-            - "http://etcd-cluster-client.default.svc.cluster.local:2379"
-        ' > conf/config.yaml
-        example/rbac/create_role.sh
-        kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
-        kubectl apply -f deployment.yaml
-        kubectl apply -f service.yaml
-        while [[ $(kubectl get pods -l app=apisix-gw -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True True" ]]; do echo "Waiting for pod running" && sleep 10; done
+      - name: Deploy Chaos mesh
+        run: |
+          curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
 
-    - name: Deploy Chaos mesh
-      run: |
-        curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
-
-    - name: run test
-      working-directory: ./t/chaos-test
-      run: go test -v
+      - name: run test
+        working-directory: ./t/chaos
+        run: go test -v

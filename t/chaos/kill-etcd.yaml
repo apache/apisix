@@ -23,7 +23,7 @@ metadata:
 spec:
   action: pod-kill
   mode: all
-  value: ''
+  value: ""
   selector:
     labelSelectors:
-      'app': 'etcd'
+      "app": "etcd"
