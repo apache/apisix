@@ -32,10 +32,8 @@
 # If the configured environment variable can't be found, an error will be thrown.
 apisix:
   admin_key:
-    -
-      name: "admin"
+    - name: "admin"
       # yamllint disable rule:comments-indentation
-      key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please
-                                             # update it when you deploy to production environment
+      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
       # yamllint enable rule:comments-indentation
       role: admin
