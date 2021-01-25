@@ -367,7 +367,7 @@ passed
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
                             "method": "Plus",
-                            "pb_option":["int64_as_string"]
+                            "pb_option":["int64_as_string", "enum_as_name"]
                         }
                     },
                     "upstream": {
