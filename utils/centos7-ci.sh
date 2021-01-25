@@ -36,6 +36,9 @@ install_dependencies() {
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty-debug
 
+    # install openssl
+    yum install -y openssl-devel
+
     # install etcdctl
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
     tar xf etcd-v3.4.0-linux-amd64.tar.gz

@@ -54,7 +54,7 @@ jobs:
           submodules: recursive
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libssl-dev
 
       - name: Linux Before install
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
