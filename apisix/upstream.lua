@@ -22,6 +22,7 @@ local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
+local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
@@ -122,6 +123,17 @@ local function fetch_healthchecker(upstream)
 end
 
 
+local function set_upstream_scheme(ctx, upstream)
+    -- plugins like proxy-rewrite may already set ctx.upstream_scheme
+    if not ctx.upstream_scheme then
+        -- the old configuration doesn't have scheme field, so fallback to "http"
+        ctx.upstream_scheme = upstream.scheme or "http"
+    end
+
+    ctx.var["upstream_scheme"] = ctx.upstream_scheme
+end
+
+
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         core.log.warn("upstream node has been specified, ",
@@ -175,11 +187,16 @@ function _M.set_by_route(route, api_ctx)
         return 502, "no valid upstream node"
     end
 
+    if not is_http then
+        return
+    end
+
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)
         api_ctx.up_checker = checker
     end
 
+    set_upstream_scheme(api_ctx, up_conf)
     return
 end
 

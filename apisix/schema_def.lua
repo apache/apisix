@@ -341,6 +341,10 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
+        scheme = {
+            default = "http",
+            enum = {"grpc", "grpcs", "http"}
+        },
         labels = {
             description = "key/value pairs to specify attributes",
             type = "object",

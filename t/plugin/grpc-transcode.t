@@ -144,7 +144,6 @@ passed
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -153,6 +152,7 @@ passed
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -210,7 +210,7 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 8: wrong service protocol
+=== TEST 8: wrong upstream scheme
 --- config
     location /t {
         content_by_lua_block {
@@ -220,7 +220,6 @@ qr/\{"message":"Hello world"\}/
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpctest",
-                    "service_protocol": "asf",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -229,6 +228,7 @@ qr/\{"message":"Hello world"\}/
                         }
                     },
                     "upstream": {
+                        "scheme": "asf",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -261,7 +261,6 @@ GET /t
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -270,6 +269,7 @@ GET /t
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:1970": 1
@@ -361,7 +361,6 @@ passed
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpc_plus",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -371,6 +370,7 @@ passed
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -424,7 +424,6 @@ qr/\{"result":"#2251799813685261"\}/
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpc_deadline",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -434,6 +433,7 @@ qr/\{"result":"#2251799813685261"\}/
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -476,7 +476,6 @@ qr/\{"message":"Hello apisix"\}/
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpc_delay",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -486,6 +485,7 @@ qr/\{"message":"Hello apisix"\}/
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -607,6 +607,7 @@ passed
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
