@@ -209,6 +209,7 @@ create new checker: table: 0x
                 ngx.say(body)
                 return
             end
+            ngx.sleep(0.5) -- wait for routes delete event synced
 
             code, _, body = t('/apisix/admin/upstreams/stopchecker', "DELETE")
 

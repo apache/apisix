@@ -71,7 +71,7 @@ location /t {
     content_by_lua_block {
         local core = require "apisix.core"
         local config_util   = require("apisix.core.config_util")
-        ngx.sleep(0.1) -- make sure the sync happened when admin starts is already finished
+        ngx.sleep(0.5) -- make sure the sync happened when admin starts is already finished
 
         local before_reload = true
         local plugins_conf, err
