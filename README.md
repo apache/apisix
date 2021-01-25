@@ -19,51 +19,34 @@
 
 # Apache APISIX
 
-[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
+
+[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-<p align="center">
-  <a href="https://github.com/apache/apisix">English</a> •
-  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
-</p>
-
-<p align="center">
-  <a href="https://apisix.apache.org/">Website</a> •
-  <a href="https://github.com/apache/apisix/tree/master/doc">Docs</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
-  <a href="https://twitter.com/apacheapisix">Twitter</a>
-</p>
-
-## What's Apache APISIX?
-
-Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
+**Apache APISIX** is a dynamic, real-time, high-performance API gateway.
 
 APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
 You can use Apache APISIX to handle traditional north-south traffic,
 as well as east-west traffic between services.
-It can also be used as a k8s ingress controller.
+It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
 The technical architecture of Apache APISIX:
 
 ![](doc/images/apisix.png)
 
-## Contents
+## Community
 
-- [Features](#features)
-- [Documentation](#documentation)
-- [Get Started](#get-started)
-- [Benchmark](#benchmark)
-- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Community](#community)
-- [Videos And Articles](#videos-and-articles)
-- [User Stories](#user-stories)
-- [Who Uses APISIX?](#who-uses-apisix)
-- [Landscape](#landscape)
-- [Logos](#logos)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
+- QQ Group - 578997126
+- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
+- [bilibili video](https://space.bilibili.com/551921247)
+- **Good first issues**:
+  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -79,6 +62,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Multi protocols**
 
   - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
+  - [Dubbo Proxy](doc/plugins/dubbo-proxy.md): Dynamic HTTP to Dubbo proxy.
   - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
   - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
   - [gRPC transcoding](doc/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
@@ -99,6 +83,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+  - [Traffic Split](doc/plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 - **Fine-grained routing**
 
@@ -141,15 +126,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Fault Injection](doc/plugins/fault-injection.md)
   - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
   - External Loggers: Export access logs to external log management tools. ([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
+  - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **Highly scalable**
   - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
-
-## Documentation
-
-[Document Indexing for Apache APISIX](doc/README.md)
 
 ## Get Started
 
@@ -164,23 +146,31 @@ There are several ways to install the Apache Release version of APISIX:
 1. Source code compilation (applicable to all systems)
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
+
      ```shell
-     $ mkdir apisix-2.1
-     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
+     $ mkdir apisix-2.2
+     $ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
+     $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
      ```
+
    - Install the dependencies：
+
      ```shell
      $ make deps
      ```
+
    - check version of APISIX:
+
      ```shell
      $ ./bin/apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ ./bin/apisix start
      ```
+
 2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
 
    By default, the latest Apache release package will be pulled:
@@ -194,14 +184,19 @@ There are several ways to install the Apache Release version of APISIX:
 3. RPM package（only for CentOS 7）
    - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
    - install APISIX：
+
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
    ```
+
    - check version of APISIX:
+
      ```shell
      $ apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ apisix start
      ```
@@ -250,7 +245,7 @@ For more documents, please refer to [Apache APISIX Document Index](doc/README.md
 
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
 
-[benckmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
+[Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
 ## Apache APISIX vs Kong
 
@@ -294,19 +289,12 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Community
-
-- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
-- QQ Group - 578997126, 552030619
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [bilibili video](https://space.bilibili.com/551921247)
-
 ### Contributor Over Time
 
 ![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Videos And Articles
+
 - [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
 - [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
@@ -342,12 +330,6 @@ CNCF API Gateway Landscape.</a>
 
 - [Apache APISIX logo(PNG)](logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
-
-## Contributing
-
-We welcome all kinds of contributions from the open-source community, individuals and partners.
-
-- [Contributing Guide](CONTRIBUTING.md)
 
 ## Acknowledgments
 

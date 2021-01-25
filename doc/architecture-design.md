@@ -30,8 +30,8 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
-- [**Global Rule**](#Global-Rule)
-- [**Debug mode**](#Debug-mode)
+- [**Global Rule**](#global-rule)
+- [**Debug mode**](#debug-mode)
 
 ## APISIX
 
@@ -67,7 +67,7 @@ Other default configurations can be found in the `conf/config-default.yaml` file
 
 **Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Route
 
@@ -111,7 +111,7 @@ When we receive a successful response, it indicates that the route was successfu
 
 For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Service
 
@@ -180,7 +180,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 Note: When both Route and Service enable the same plugin, the Route parameter has a higher priority than Service.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Plugin
 
@@ -225,9 +225,11 @@ The plugin configuration is submitted as part of Route or Service and placed und
 
 Not all plugins have specific configuration items. For example, there is no specific configuration item under `prometheus`. In this case, an empty object identifier can be used.
 
+If a request is rejected by a plugin, there will be warn level log like `ip-restriction exits with http status code 403`.
+
 [APISIX supported plugin list](README.md#plugins)
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Script
 
@@ -260,40 +262,14 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 ### Configuration
 
-In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
+In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the link below.
 
-|Name    |Optional|Description|
-|-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required if `service_name` and `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
-|service_name    |required if `nodes` and `k8s_deployment_info` not configured |The name of the upstream service and used with the registry, refer to [Integration service discovery registry](discovery.md).|
-|k8s_deployment_info |required if `nodes` and `service_name` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
-|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
-|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
-|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
-|timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|desc     |optional|Identifies route names, usage scenarios, and more.|
-|labels   |optional|The key/value pairs to specify attributes. |
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
-|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
+https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
 
 Create an upstream object use case:
 
 ```json
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "type": "roundrobin",
-    "k8s_deployment_info": {
-        "namespace": "test-namespace",
-        "deploy_name": "test-deploy-name",
-        "service_name": "test-service-name",
-        "backend_type": "pod",
-        "port": 8080
-    }
-}'
-
-curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
@@ -310,7 +286,7 @@ After the upstream object is created, it can be referenced by specific `Route` o
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
-    "upstream_id": 2
+    "upstream_id": 1
 }'
 ```
 
@@ -473,7 +449,7 @@ The client requests with header `Content-Type`:
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Router
 
@@ -487,12 +463,13 @@ Set the route that best suits your business needs in the local configuration `co
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
+    * `radixtree_uri_with_parameter`: Like `radixtree_uri` but also support parameter match.
     * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and URL for the current request.
 
 * `apisix.router.ssl`: SSL loads the matching route.
     * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Consumer
 
@@ -600,12 +577,12 @@ HTTP/1.1 403
 
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Global Rule
 
-[Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
-We can register a global [Plugin](#Plugin) with `GlobalRule`:
+[Plugin](#plugin) just can be binded to [Service](#service) or [Route](#route), if we want a [Plugin](#plugin) work on all requests, how to do it?
+We can register a global [Plugin](#plugin) with `GlobalRule`:
 
 ```shell
 curl -X PUT \
@@ -633,7 +610,7 @@ we can list all `GlobalRule` via admin api as below:
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Debug mode
 
@@ -694,4 +671,4 @@ hook_phase:                     # Module Function List, Name: hook_phase
 #END
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)

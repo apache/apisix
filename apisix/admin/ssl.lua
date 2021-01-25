@@ -16,11 +16,9 @@
 --
 local core              = require("apisix.core")
 local utils             = require("apisix.admin.utils")
+local apisix_ssl        = require("apisix.ssl")
 local tostring          = tostring
-local aes               = require "resty.aes"
-local ngx_encode_base64 = ngx.encode_base64
 local type              = type
-local assert            = assert
 
 local _M = {
     version = 0.1,
@@ -54,37 +52,25 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    local ok, err = apisix_ssl.validate(conf.cert, conf.key)
+    if not ok then
+        return nil, {error_msg = err}
+    end
+
     local numcerts = conf.certs and #conf.certs or 0
     local numkeys = conf.keys and #conf.keys or 0
     if numcerts ~= numkeys then
         return nil, {error_msg = "mismatched number of certs and keys"}
     end
 
-    return need_id and id or true
-end
-
-
-local function aes_encrypt(origin)
-    local local_conf = core.config.local_conf()
-    local iv
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
-            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
-
-    if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
-        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
-        if encrypted == nil then
-            core.log.error("failed to encrypt key[", origin, "] ")
-            return origin
+    for i = 1, numcerts do
+        local ok, err = apisix_ssl.validate(conf.certs[i], conf.keys[i])
+        if not ok then
+            return nil, {error_msg = "failed to handle cert-key pair[" .. i .. "]: " .. err}
         end
-
-        return ngx_encode_base64(encrypted)
     end
 
-    return origin
+    return need_id and id or true
 end
 
 
@@ -95,11 +81,11 @@ function _M.put(id, conf)
     end
 
     -- encrypt private key
-    conf.key = aes_encrypt(conf.key)
+    conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
 
     if conf.keys then
         for i = 1, #conf.keys do
-            conf.keys[i] = aes_encrypt(conf.keys[i])
+            conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
         end
     end
 
@@ -148,11 +134,11 @@ function _M.post(id, conf)
     end
 
     -- encrypt private key
-    conf.key = aes_encrypt(conf.key)
+    conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
 
     if conf.keys then
         for i = 1, #conf.keys do
-            conf.keys[i] = aes_encrypt(conf.keys[i])
+            conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
         end
     end
 

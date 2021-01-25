@@ -102,12 +102,27 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
-    if plugin.schema and plugin.schema.type == "object" then
-        if not plugin.schema.properties or
-           core.table.nkeys(plugin.schema.properties) == 0
-        then
-            plugin.schema.properties = core.schema.plugin_disable_schema
+    if type(plugin.schema) ~= "table" then
+        core.log.error("invalid plugin [", name, "] schema field")
+        return
+    end
+
+    if not plugin.schema.properties then
+        plugin.schema.properties = {}
+    end
+
+    local properties = plugin.schema.properties
+    local plugin_injected_schema = core.schema.plugin_injected_schema
+
+    if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
+        if properties.disable then
+            core.log.error("invalid plugin [", name,
+                           "]: found forbidden 'disable' field in the schema")
+            return
         end
+
+        properties.disable = plugin_injected_schema.disable
+        plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
 
     plugin.name = name
@@ -386,11 +401,8 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-
-        if route_upstream.checks then
-            route_upstream.parent = route_conf
-        end
-
+        -- when route's upstream override service's upstream,
+        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
@@ -406,8 +418,8 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
@@ -478,12 +490,12 @@ end
 
 
 function _M.init_worker()
-    _M.load()
-
     -- some plugins need to be initialized in init* phases
     if ngx.config.subsystem == "http" then
         require("apisix.plugins.prometheus.exporter").init()
     end
+
+    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
@@ -508,6 +520,25 @@ end
 
 function _M.get(name)
     return local_plugins_hash and local_plugins_hash[name]
+end
+
+
+function _M.get_all(attrs)
+    local plugins = {}
+
+    if local_plugins_hash then
+        for name, plugin_obj in pairs(local_plugins_hash) do
+            plugins[name] = core.table.pick(plugin_obj, attrs)
+        end
+    end
+
+    if stream_local_plugins_hash then
+        for name, plugin_obj in pairs(stream_local_plugins_hash) do
+            plugins[name] = core.table.pick(plugin_obj, attrs)
+        end
+    end
+
+    return plugins
 end
 
 
@@ -591,9 +622,9 @@ end
 _M.stream_check_schema = stream_check_schema
 
 
-function _M.plugin_checker(item)
+function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        return check_schema(item.plugins, nil, true)
+        return check_schema(item.plugins, schema_type, true)
     end
 
     return true

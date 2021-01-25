@@ -52,14 +52,8 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
 end
 
 
@@ -105,7 +99,7 @@ function _M.access(conf, ctx)
 
     local matched_route = ctx.matched_route
     upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                 ctx.conf_version, up_conf, matched_route)
+                 ctx.conf_version, up_conf)
     return
 end
 
@@ -120,17 +114,14 @@ local function hello()
 end
 
 
-function _M.control_api(ver)
-    if ver == 1 then
-        return {
-            -- /v1/plugin/example-plugin/hello
-            {
-                methods = {"GET"},
-                uris = {"/plugin/example-plugin/hello"},
-                handler = hello,
-            }
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
         }
-    end
+    }
 end
 
 

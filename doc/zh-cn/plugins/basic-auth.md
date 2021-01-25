@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 - 缺少 Authorization header
 

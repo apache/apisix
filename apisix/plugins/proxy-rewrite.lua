@@ -143,7 +143,7 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     if conf.uri ~= nil then
-        upstream_uri = conf.uri
+        upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
     elseif conf.regex_uri ~= nil then
         local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
@@ -192,7 +192,8 @@ function _M.rewrite(conf, ctx)
 
     local field_cnt = #conf.headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.req.set_header(conf.headers_arr[i], conf.headers_arr[i+1])
+        ngx.req.set_header(conf.headers_arr[i],
+                           core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
 end
 

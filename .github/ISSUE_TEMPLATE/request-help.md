@@ -9,8 +9,8 @@ assignees: ''
 
 ### Issue description
 
-
 ### Environment
 
 * apisix version (cmd: `apisix version`):
-* OS:
+* OS: (cmd: `uname -a`)
+* OpenResty / Nginx version: (cmd: `nginx -V` or `openresty -V`)

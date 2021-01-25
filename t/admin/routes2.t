@@ -518,3 +518,96 @@ GET /t
 {"error_msg":"only one of remote_addr or remote_addrs is allowed"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: labels in Chinese
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "您好": "世界"
+                    },
+
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "您好": "世界"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: labels value with whitespace
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "您好": "世 界"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/invalid configuration: property \\"labels\\" validation failed/
+--- no_error_log
+[error]

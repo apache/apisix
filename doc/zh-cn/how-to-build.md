@@ -34,21 +34,22 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-$ mkdir apisix-2.1
-$ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-$ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
+$ mkdir apisix-2.2
+$ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
+$ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
 ```
 
 安装运行时依赖的 Lua 库：
+
 ```
-cd apache-apisix-2.1
+cd apache-apisix-2.2
 make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
@@ -64,11 +65,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/
 > 通过 Luarocks 安装指定的版本:
 
 ```shell
-# 安装 apisix 的 2.1 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.1
+# 安装 apisix 的 2.2 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.2
 
 # 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 2.1
+sudo luarocks install apisix 2.2
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
@@ -107,8 +108,8 @@ Makefile rules:
 ## 4. 运行测试案例
 
 1. 先安装 perl 的包管理器 cpanminus
-2. 然后通过 cpanm 来安装 test-nginx：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
-3. 然后 clone 最新的源码：`git clone https://github.com/openresty/test-nginx.git`
+2. 然后通过 cpanm 来安装 test-nginx 的依赖：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. 然后 clone 最新的源码：`git clone https://github.com/iresty/test-nginx.git`。注意使用我们 fork 出来的版本。
 4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
     * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
     * 直接运行：`make test`

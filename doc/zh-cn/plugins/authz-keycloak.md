@@ -20,6 +20,7 @@
 - [English](../../plugins/authz-keycloak.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -78,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```
 
 ## 测试插件
@@ -103,7 +104,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```
 
 ## 示例

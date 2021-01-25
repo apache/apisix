@@ -263,7 +263,8 @@ end
 
 ```lua
 --Yes
-local t = {}
+local new_tab = require "table.new"
+local t = new_tab(100, 0)
 for i = 1, 100000 do
     t[i] = "a"
 end

@@ -45,6 +45,10 @@ local function get_chash_key_schema(hash_on)
         return nil, nil
     end
 
+    if hash_on == "vars_combinations" then
+        return core.schema.upstream_hash_vars_combinations_schema
+    end
+
     return nil, "invalid hash_on type " .. hash_on
 end
 

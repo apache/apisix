@@ -25,6 +25,7 @@
 * [架构设计](architecture-design.md)
 * [如何构建 Apache APISIX](how-to-build.md)
 * [管理 API](admin-api.md)
+* [控制 API](../control-api.md)
 * [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * [路由 radixtree](../router-radixtree.md)
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
@@ -81,6 +82,7 @@
 * [request-validation](plugins/request-validation.md): 请求验证。
 * [proxy-mirror](plugins/proxy-mirror.md)：代理镜像插件提供镜像客户端请求的能力。
 * [api-breaker](plugins/api-breaker.md): API的断路器，在状态不正常的情况下停止将请求转发到上游。
+* [traffic-split](plugins/traffic-split.md)：允许用户逐步控制各个上游之间的流量百分比。
 
 ### Monitoring
 

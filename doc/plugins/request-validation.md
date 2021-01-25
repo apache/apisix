@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/request-validation.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -98,7 +99,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```
 
 ## Examples:

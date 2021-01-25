@@ -15,8 +15,10 @@
 -- limitations under the License.
 --
 local require = require
+local http_route = require("apisix.http.route")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local str_lower = string.lower
 local error   = error
 local pairs   = pairs
 local ipairs  = ipairs
@@ -31,7 +33,21 @@ local function filter(route)
         return
     end
 
-    if not route.value.upstream or not route.value.upstream.nodes then
+    if route.value.host then
+        route.value.host = str_lower(route.value.host)
+    elseif route.value.hosts then
+        for i, v in ipairs(route.value.hosts) do
+            route.value.hosts[i] = str_lower(v)
+        end
+    end
+
+    if not route.value.upstream then
+        return
+    end
+
+    route.value.upstream.parent = route
+
+    if not route.value.upstream.nodes then
         return
     end
 
@@ -63,7 +79,28 @@ local function filter(route)
         route.value.upstream.nodes = new_nodes
     end
 
-    core.log.info("filter route: ", core.json.delay_encode(route))
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
+end
+
+
+-- attach common methods if the router doesn't provide its custom implementation
+local function attach_http_router_common_methods(http_router)
+    if http_router.routes == nil then
+        http_router.routes = function ()
+            if not http_router.user_routes then
+                return nil, nil
+            end
+
+            local user_routes = http_router.user_routes
+            return user_routes.values, user_routes.conf_version
+        end
+    end
+
+    if http_router.init_worker == nil then
+        http_router.init_worker = function (filter)
+            http_router.user_routes = http_route.init_worker(filter)
+        end
+    end
 end
 
 
@@ -78,6 +115,7 @@ function _M.http_init_worker()
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
+    attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
 

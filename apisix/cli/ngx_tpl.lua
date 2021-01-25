@@ -26,6 +26,12 @@ worker_processes {* worker_processes *};
 worker_cpu_affinity auto;
 {% end %}
 
+# main configuration snippet starts
+{% if main_configuration_snippet then %}
+{* main_configuration_snippet *}
+{% end %}
+# main configuration snippet ends
+
 error_log {* error_log *} {* error_log_level or "warn" *};
 pid logs/nginx.pid;
 
@@ -47,12 +53,6 @@ env APISIX_PROFILE;
 env {*name*};
 {% end %}
 {% end %}
-
-# main configuration snippet starts
-{% if main_configuration_snippet then %}
-{* main_configuration_snippet *}
-{% end %}
-# main configuration snippet ends
 
 {% if stream_proxy then %}
 stream {
@@ -139,8 +139,10 @@ http {
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
     lua_shared_dict plugin-api-breaker   10m;
 
-    # for openid-connect plugin
+    # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
+
+    # for openid-connect plugin
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
 
@@ -239,6 +241,18 @@ http {
 
         keepalive 320;
     }
+
+    {% if enabled_plugins["dubbo-proxy"] then %}
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi {* dubbo_upstream_multiplex_count *};
+        keepalive 320;
+    }
+    {% end %}
 
     init_by_lua_block {
         require "resty.core"
@@ -398,6 +412,13 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $host;
         set $upstream_uri                '';
+        set $ctx_ref                     '';
+
+        {% if enabled_plugins["dubbo-proxy"] then %}
+        set $dubbo_service_name          '';
+        set $dubbo_service_version       '';
+        set $dubbo_method                '';
+        {% end %}
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
@@ -556,6 +577,30 @@ http {
             }
         }
 
+        {% if enabled_plugins["dubbo-proxy"] then %}
+        location @dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass $dubbo_service_name $dubbo_service_version $dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+        {% end %}
+
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
@@ -570,5 +615,10 @@ http {
         }
         {% end %}
     }
+    # http end configuration snippet starts
+    {% if http_end_configuration_snippet then %}
+    {* http_end_configuration_snippet *}
+    {% end %}
+    # http end configuration snippet ends
 }
 ]=]
