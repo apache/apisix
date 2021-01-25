@@ -802,8 +802,7 @@ done
                     http_status = 403,
                     body = "Fault Injection!\n",
                     vars = {
-                        {"arg_name","==","jack"},
-                        {"arg_age","!","<",18}
+                        {"arg_name","==","jack"}
                     }
                 },
                 delay = {
@@ -828,10 +827,11 @@ done
     }
 --- request
 GET /t
---- response_body eval
-qr/property \"abort\" validation failed: property \"vars\" validation failed: failed to validate item 1:.*/
---- no_error_log
-[error]
+--- response_body
+invalid expression
+done
+--- error_log eval
+qr/failed to create vars expression:.*/
 
 
 

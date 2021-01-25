@@ -24,20 +24,6 @@ local ipairs = ipairs
 local plugin_name   = "fault-injection"
 
 
-local vars_schema = {
-    type = "array",
-    items = {
-        type = "array",
-        items = {
-            type = "array",
-            minItems = 0,
-            maxItems = 10
-        }
-    },
-    maxItems = 20
-}
-
-
 local schema = {
     type = "object",
     properties = {
@@ -47,7 +33,10 @@ local schema = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
                 percentage = {type = "integer", minimum = 0, maximum = 100},
-                vars = vars_schema
+                vars = {
+                    type = "array",
+                    maxItems = 20
+                }
             },
             required = {"http_status"},
         },
@@ -56,7 +45,10 @@ local schema = {
             properties = {
                 duration = {type = "number", minimum = 0},
                 percentage = {type = "integer", minimum = 0, maximum = 100},
-                vars = vars_schema
+                vars = {
+                    type = "array",
+                    maxItems = 20
+                }
             },
             required = {"duration"},
         }
@@ -85,19 +77,14 @@ end
 local function vars_match(vars, ctx)
     local match_result
     for _, var in ipairs(vars) do
-        local expr, err = expr.new(var)
-        if err then
-            core.log.error("failed to create vars expression: ", err)
-            return nil, err
-        end
-
+        local expr, _ = expr.new(var)
         match_result = expr:eval(ctx.var)
         if match_result then
             break
         end
     end
 
-    return match_result, nil
+    return match_result
 end
 
 
@@ -108,16 +95,22 @@ function _M.check_schema(conf)
     end
 
     if conf.abort and conf.abort.vars then
-        local ok, err = core.schema.check(vars_schema, conf.abort.vars)
-        if not ok then
-            return false, err
+        for _, var in ipairs(conf.abort.vars) do
+            local expr, err = expr.new(var)
+            if err then
+                core.log.error("failed to create vars expression: ", err)
+                return false, err
+            end
         end
     end
 
     if conf.delay and conf.delay.vars then
-        local ok, err = core.schema.check(vars_schema, conf.delay.vars)
-        if not ok then
-            return false, err
+        for _, var in ipairs(conf.delay.vars) do
+            local expr, err = expr.new(var)
+            if err then
+                core.log.error("failed to create vars expression: ", err)
+                return false, err
+            end
         end
     end
 
@@ -131,21 +124,13 @@ function _M.rewrite(conf, ctx)
     local err
     local abort_vars = true
     if conf.abort and conf.abort.vars then
-        abort_vars, err = vars_match(conf.abort.vars, ctx)
-        if err then
-            -- the error log has been recorded in the vars_match method
-            return 500, err
-        end
+        abort_vars = vars_match(conf.abort.vars, ctx)
     end
     core.log.info("abort_vars: ", abort_vars)
 
     local delay_vars = true
     if conf.delay and conf.delay.vars then
-        delay_vars, err = vars_match(conf.delay.vars, ctx)
-        if err then
-            -- the error log has been recorded in the vars_match method
-            return 500, err
-        end
+        delay_vars = vars_match(conf.delay.vars, ctx)
     end
     core.log.info("delay_vars: ", delay_vars)
 
