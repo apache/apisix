@@ -88,6 +88,13 @@ local function create_checker(upstream)
         return nil
     end
 
+    if healthcheck_parent.checker then
+        core.config_util.cancel_clean_handler(healthcheck_parent,
+                                              healthcheck_parent.checker_idx, true)
+    end
+
+    core.log.info("create new checker: ", tostring(checker))
+
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     for _, node in ipairs(upstream.nodes) do
@@ -97,13 +104,6 @@ local function create_checker(upstream)
                     port or node.port, " err: ", err)
         end
     end
-
-    if healthcheck_parent.checker then
-        core.config_util.cancel_clean_handler(healthcheck_parent,
-                                              healthcheck_parent.checker_idx, true)
-    end
-
-    core.log.info("create new checker: ", tostring(checker))
 
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
