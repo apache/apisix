@@ -98,7 +98,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks openresty-openssl-devel
+sudo apt-get install -y git openresty curl luarocks openresty-openssl-dev
 
 # start etcd server
 nohup etcd &
@@ -126,7 +126,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks make openresty-openssl-devel
+sudo apt-get install -y git openresty curl luarocks make openresty-openssl-dev
 
 # start etcd server
 nohup etcd &

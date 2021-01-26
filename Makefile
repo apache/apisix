@@ -54,11 +54,17 @@ help: default
 ### deps:             Installation dependencies
 .PHONY: deps
 deps: default
+ifeq ($(LUAROCKS_VER),luarocks 3.)
 	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
 	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
-ifeq ($(LUAROCKS_VER),luarocks 3.)
 	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
+	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
+	@echo "variables = {"
+	@echo "    OPENSSL_LIBDIR=$(addprefix $(OR_PREFIX), openssl/lib)"
+	@echo "    OPENSSL_INCDIR=$(addprefix $(OR_PREFIX), openssl/include)"
+	@echo "}"
+
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
 

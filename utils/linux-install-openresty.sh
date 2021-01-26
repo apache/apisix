@@ -64,8 +64,6 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     sudo make install
 
     sudo apt-get install lua5.1 liblua5.1-0-dev
-    sudo apt-get install openresty-openssl-devel
-
     exit 0
 fi
 
@@ -82,4 +80,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-devel
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-dev
