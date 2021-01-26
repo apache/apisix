@@ -16,11 +16,11 @@
 # limitations under the License.
 #
 
-wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
-tar -xf v2.4.4.tar.gz
-cd luarocks-2.4.4 || exit
+wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
+tar -xf v3.4.0.tar.gz
+cd luarocks-3.4.0 || exit
 ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
-rm -rf luarocks-2.4.4
+rm -rf luarocks-3.4.0
