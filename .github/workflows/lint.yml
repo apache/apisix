@@ -29,4 +29,5 @@ jobs:
           pip install yamllint
       - name: 🧹 YAML Lint
         run: |
-          yamllint .
+          # return non-zero exit code on warnings
+          yamllint --strict .
