@@ -1033,7 +1033,7 @@ sleep 0.5
 make stop
 
 if grep "failed to load plugin [3rd-party]" logs/error.log > /dev/null; then
-    echo "failed: 3rd party plugin can not be loaded"
+    echo "failed: 3rd-party plugin can not be loaded"
     exit 1
 fi
-echo "passed: 3rd party plugin can be loaded"
+echo "passed: 3rd-party plugin can be loaded"
