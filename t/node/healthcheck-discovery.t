@@ -156,6 +156,8 @@ qr/(create new checker|try to release checker): table/
 create new checker: table
 try to release checker: table
 create new checker: table
+--- no_error_log
+all upstream nodes is unhealthy, use default
 
 
 
