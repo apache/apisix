@@ -176,10 +176,6 @@ http {
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
-    {% if http.proxy_ssl_server_name then %}
-    proxy_ssl_server_name on;
-    {% end %}
-
     {% if http.underscores_in_headers then %}
     underscores_in_headers {* http.underscores_in_headers *};
     {%end%}
@@ -486,6 +482,11 @@ http {
             proxy_set_header   Connection        $upstream_connection;
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
+
+            {% if http.proxy_ssl_server_name then %}
+            proxy_ssl_name $host;
+            proxy_ssl_server_name on;
+            {% end %}
 
             ### the following x-forwarded-* headers is to send to upstream server
 

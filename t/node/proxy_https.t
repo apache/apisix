@@ -34,10 +34,15 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "scheme": "https"
+                        }
+                    },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1985": 1
+                            "127.0.0.1:1983": 1
                         }
                     },
                     "uri": "/hello"
@@ -60,12 +65,9 @@ passed
 
 
 === TEST 2: get upstream carrying host
---- http_config
-proxy_ssl_server_name on;
 --- request
 GET /hello
 --- more_headers
-host: www.wrong.com
---- error_code: 502
+host: www.sni.com
 --- error_log
-ssl
+Receive SNI: www.sni.com
