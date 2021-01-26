@@ -74,20 +74,17 @@ do_install() {
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
-    if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
+    if [ ! -f "build-cache/grpc_server_example_20210122" ]; then
+        wget https://github.com/api7/grpc_server_example/releases/download/20210122/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
-    fi
 
-    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-        if [ ! -f "grpc_server_example/main.go" ]; then
-            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-        fi
-
-        cd grpc_server_example/
+        git clone --depth 1 https://github.com/api7/grpc_server_example.git grpc_server_example
+        pushd grpc_server_example/ || exit 1
         mv proto/ ../build-cache/
-        cd ..
+        popd || exit 1
+
+        touch build-cache/grpc_server_example_20210122
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
@@ -101,7 +98,10 @@ script() {
     export_or_prefix
     openresty -V
 
-    ./build-cache/grpc_server_example &
+    ./build-cache/grpc_server_example \
+        -grpc-address :50051 -grpcs-address :50052 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key \
+        &
 
     ./bin/apisix help
     ./bin/apisix init
