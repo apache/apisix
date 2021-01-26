@@ -18,6 +18,8 @@
 
 set -ex
 
+echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+
 #set ssl
 curl http://127.0.0.1:9080/apisix/admin/ssl/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -31,6 +33,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 {
     "methods": ["POST"],
     "uri": "/helloworld.Greeter/SayHello",
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
+
+# the old way
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHello",
     "service_protocol": "grpc",
     "upstream": {
         "type": "roundrobin",
@@ -40,10 +58,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 
-echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
-./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello
+#test grpcs proxy
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHello",
+    "upstream": {
+        "scheme": "grpcs",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50052": 1
+        }
+    }
+}'
 
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
 #delete test data
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE

@@ -64,7 +64,6 @@
 |upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
 |upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
-|service_protocol|可选|上游协议类型|只可以是 "grpc"|启用 `gRPC proxy` 或 `gRPC transcode` 插件时，必须用 "grpc"|
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
@@ -534,6 +533,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
 |pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
 |upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
+|scheme|可选 |辅助|跟上游通信时使用的 scheme。需要是 ['http', 'grpc', 'grpcs'] 其中的一个，默认是 'http'。|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|

@@ -51,6 +51,58 @@ __DATA__
 upstreams:
     - id: 1
       type: roundrobin
+      scheme: grpc
+      nodes:
+        "127.0.0.1:9088": 1
+routes:
+    - id: 1
+      methods:
+          - POST
+      uri: "/hello"
+      upstream_id: 1
+#END
+--- error_code: 502
+--- error_log
+proxy request to 127.0.0.1:9088
+
+
+
+=== TEST 2: with consummer
+--- apisix_yaml
+consumers:
+  - username: jack
+    id: jack
+    plugins:
+        key-auth:
+            key: user-key
+#END
+routes:
+    - id: 1
+      methods:
+          - POST
+      uri: "/hello"
+      plugins:
+          key-auth:
+          consumer-restriction:
+              whitelist:
+                  - jack
+      upstream:
+          scheme: grpc
+          type: roundrobin
+          nodes:
+              "127.0.0.1:9088": 1
+#END
+--- more_headers
+apikey: user-key
+--- error_code: 502
+
+
+
+=== TEST 3: with upstream_id (old way)
+--- apisix_yaml
+upstreams:
+    - id: 1
+      type: roundrobin
       nodes:
         "127.0.0.1:9088": 1
 routes:
@@ -67,7 +119,7 @@ proxy request to 127.0.0.1:9088
 
 
 
-=== TEST 2: with consummer
+=== TEST 4: with consummer (old way)
 --- apisix_yaml
 consumers:
   - username: jack

@@ -124,7 +124,6 @@ end
 
 do
     local upstream_vars = {
-        scheme     = "upstream_scheme",
         host       = "upstream_host",
         upgrade    = "upstream_upgrade",
         connection = "upstream_connection",
@@ -139,6 +138,9 @@ function _M.rewrite(conf, ctx)
         if conf[name] then
             ctx.var[upstream_vars[name]] = conf[name]
         end
+    end
+    if conf["scheme"] then
+        ctx.upstream_scheme = conf["scheme"]
     end
 
     local upstream_uri = ctx.var.uri
