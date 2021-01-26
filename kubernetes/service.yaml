@@ -41,5 +41,3 @@ spec:
   type: NodePort
   externalTrafficPolicy: Local
   # sessionAffinity: None
-  externalIPs:
-    - 10.253.0.11

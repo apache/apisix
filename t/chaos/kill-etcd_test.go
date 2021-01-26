@@ -18,16 +18,20 @@
 package chaos
 
 import (
+	"fmt"
 	"net/http"
 	"os/exec"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gavv/httpexpect/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
 	token = "edd1c9f034335f136f87ad84b625c8f1"
-	host  = "http://10.253.0.11:9080"
+	host  = "http://127.0.0.1:9080"
 )
 
 type httpTestCase struct {
@@ -37,6 +41,7 @@ type httpTestCase struct {
 	Body         string
 	Headers      map[string]string
 	ExpectStatus int
+	ExpectBody   string
 }
 
 func caseCheck(tc httpTestCase) {
@@ -51,6 +56,7 @@ func caseCheck(tc httpTestCase) {
 	}
 
 	if req == nil {
+		fmt.Printf("%#v", tc)
 		panic("fail to init request")
 	}
 	for key, val := range tc.Headers {
@@ -64,16 +70,24 @@ func caseCheck(tc httpTestCase) {
 	if tc.ExpectStatus != 0 {
 		resp.Status(tc.ExpectStatus)
 	}
+
+	if tc.ExpectBody != "" {
+		resp.Body().Contains(tc.ExpectBody)
+	}
 }
 
 func setRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:       e,
+		Method:  http.MethodPut,
 		Path:    "/apisix/admin/routes/1",
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
 			"uri": "/hello",
 			"host": "foo.com",
+			"plugins": {
+				"prometheus": {}
+			},
 			"upstream": {
 				"nodes": {
 					"bar.org": 1
@@ -88,28 +102,72 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 func getRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
+		Method:       http.MethodGet,
 		Path:         "/hello",
 		Headers:      map[string]string{"Host": "foo.com"},
 		ExpectStatus: expectStatus,
 	})
 }
 
+func deleteRoute(e *httpexpect.Expect, expectStatus int) {
+	caseCheck(httpTestCase{
+		E:            e,
+		Method:       http.MethodDelete,
+		Path:         "/apisix/admin/routes/1",
+		Headers:      map[string]string{"X-API-KEY": token},
+		ExpectStatus: expectStatus,
+	})
+}
+
+func getPrometheusMetric(e *httpexpect.Expect, expectEtcd int) {
+	caseCheck(httpTestCase{
+		E:          e,
+		Method:     http.MethodGet,
+		Path:       "/apisix/prometheus/metrics",
+		ExpectBody: fmt.Sprintf("apisix_etcd_reachable %d", expectEtcd),
+	})
+}
+
+func runCommand(t *testing.T, cmd string) string {
+	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		t.Fatalf("fail to run command %s: %s, %s", cmd, err.Error(), out)
+	}
+	return string(out)
+}
+
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
+	g := NewWithT(t)
 	e := httpexpect.New(t, host)
 
 	// check if everything works
-	setRoute(e, http.StatusOK)
+	setRoute(e, http.StatusCreated)
 	getRoute(e, http.StatusOK)
+	getPrometheusMetric(e, 1)
+
+	podName := runCommand(t, "kubectl get pod -l app=apisix-gw -o 'jsonpath={..metadata.name}'")
+	t.Run("error log not contains etcd error", func(t *testing.T) {
+		errorLog := runCommand(t, fmt.Sprintf("kubectl exec -it %s -- cat logs/error.log", podName))
+		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeFalse())
+	})
 
 	// TODO: use client-go
 	// apply chaos to kill all etcd pods
-	_, err := exec.Command("kubectl apply kill-etcd.yaml").CombinedOutput()
-	if err != nil {
-		panic("fail to apply chaos yaml")
-	}
+	t.Run("kill all etcd pods", func(t *testing.T) {
+		_ = runCommand(t, "kubectl apply -f kill-etcd.yaml")
+		time.Sleep(3 * time.Second)
+	})
 
 	// fail to set route since etcd is all killed
 	// while get route could still succeed
 	setRoute(e, http.StatusInternalServerError)
 	getRoute(e, http.StatusOK)
+	getPrometheusMetric(e, 0)
+
+	t.Run("error log contains etcd error", func(t *testing.T) {
+		errorLog := runCommand(t, fmt.Sprintf("kubectl exec -it %s -- cat logs/error.log", podName))
+		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
+	})
+
+	//deleteRoute(e, http.StatusOK)
 }

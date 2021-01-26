@@ -19,30 +19,41 @@
 
 set -ex
 
-startMinikube() {
+start_minikube() {
     curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
     chmod +x ./kubectl
     sudo mv ./kubectl /usr/local/bin/kubectl
 
     curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
     sudo dpkg -i --force-architecture minikube_latest_amd64.deb
-    sudo mv ./minikube /usr/local/bin/minikube
     minikube start
+}
+
+modify_config() {
+    DNS_IP=$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o 'jsonpath={..spec.clusterIP}')
+    echo "dns_resolver:
+  - ${DNS_IP}
+etcd:
+  host:
+    - \"http://etcd-cluster-client.default.svc.cluster.local:2379\" " > ./conf/config.yaml
 }
 
 ensure_pods_ready() {
     local app=$1
     local status=$2
+    local retries=$3
 
     count=0
-    while [ -n "$(kubectl get pods -l app=${app} -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != ${status})" ];
+    while [[ $(kubectl get pods -l app=${app} -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != ${status} ]];
     do
         echo "Waiting for pod running" && sleep 10;
 
         ((count=count+1))
-        # waiting for 300s, or timeout
-        if [ $count -gt 30 ]; then
+        if [ $count -gt ${retries} ]; then
             printf "Waiting for pod status running timeout\n"
+            kubectl describe pod -l app=${app}
+            printf "\n\n"
+            kubectl logs -l app=${app}
             exit 1
         fi
     done

@@ -23,7 +23,7 @@ metadata:
   name: apisix-gw-deployment
   # namespace: default
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: apisix-gw
