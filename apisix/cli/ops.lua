@@ -184,9 +184,23 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("ERROR: Admin API can only be used with etcd config_center.\n")
     end
 
-    local or_ver = util.execute_cmd("openresty -V 2>&1")
+    local or_ver = get_openresty_version()
+    if or_ver == nil then
+        util.die("can not find openresty\n")
+    end
+
+    local use_or_1_15 = true
+    local need_ver = "1.15.8"
+    if not check_version(or_ver, need_ver) then
+        util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
+    end
+    if check_version(or_ver, "1.17.8") then
+        use_or_1_15 = false
+    end
+
+    local or_info = util.execute_cmd("openresty -V 2>&1")
     local with_module_status = true
-    if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
+    if or_info and not or_info:find("http_stub_status_module", 1, true) then
         stderr:write("'http_stub_status_module' module is missing in ",
                      "your openresty, please check it out. Without this ",
                      "module, there will be fewer monitoring indicators.\n")
@@ -245,6 +259,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     -- Using template.render
     local sys_conf = {
+        use_or_1_15 = use_or_1_15,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
@@ -364,16 +379,6 @@ Please modify "admin_key" in conf/config.yaml .
                                     ngxconf)
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
-    end
-
-    local op_ver = get_openresty_version()
-    if op_ver == nil then
-        util.die("can not find openresty\n")
-    end
-
-    local need_ver = "1.15.8"
-    if not check_version(op_ver, need_ver) then
-        util.die("openresty version must >=", need_ver, " current ", op_ver, "\n")
     end
 end
 

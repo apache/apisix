@@ -73,7 +73,6 @@
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
-|service_protocol|False|Upstream protocol type|only `grpc`|Must set `grpc` if using `gRPC proxy` or `gRPC transcode`. |
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
@@ -525,6 +524,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |desc     |optional|upstream usage scenarios, and more.|
 |pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
+|scheme|optional |The scheme used when talk with the upstream. The value is one of ['http', 'grpc', 'grpcs'], default to 'http'.|
 |labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|

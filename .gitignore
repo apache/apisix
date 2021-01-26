@@ -71,5 +71,6 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 /conf/config-*.yaml
 !/conf/config-default.yaml
 /conf/debug-*.yaml
+/build-cache/
 # release tar package
 *.tgz
