@@ -30,7 +30,9 @@ install_dependencies() {
     # install epel and luarocks
     wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     rpm -ivh epel-release-latest-7.noarch.rpm
-    yum install -y luarocks lua-devel
+    yum install -y lua-devel
+
+    ./utils/linux-install-luarocks.sh
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
