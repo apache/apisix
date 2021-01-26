@@ -372,6 +372,9 @@ _EOC_
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
+    proxy_ssl_name \$host;
+    proxy_ssl_server_name on;
+
     resolver $dns_addrs_str;
     resolver_timeout 5;
 
@@ -447,6 +450,11 @@ _EOC_
         lua_ssl_trusted_certificate cert/apisix.crt;
 
         server_tokens off;
+
+        ssl_certificate_by_lua_block {
+            local ngx_ssl = require "ngx.ssl"
+            ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+        }
 
         location / {
             content_by_lua_block {

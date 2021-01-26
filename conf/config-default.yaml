@@ -180,6 +180,10 @@ nginx_config:                     # config for render the template to generate n
     # lua_shared_dicts:            # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
+    # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
+    # when establishing a connection with the proxied HTTPS server.
+    proxy_ssl_server_name: true
+
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
     - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,

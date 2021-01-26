@@ -483,6 +483,11 @@ http {
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
 
+            {% if http.proxy_ssl_server_name then %}
+            proxy_ssl_name $host;
+            proxy_ssl_server_name on;
+            {% end %}
+
             ### the following x-forwarded-* headers is to send to upstream server
 
             set $var_x_forwarded_for        $remote_addr;
