@@ -23,6 +23,7 @@ INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
+OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 
 SHELL := /bin/bash -o pipefail
 
@@ -53,6 +54,8 @@ help: default
 ### deps:             Installation dependencies
 .PHONY: deps
 deps: default
+	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
+	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else

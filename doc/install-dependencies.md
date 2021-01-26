@@ -55,7 +55,7 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc luarocks lua-devel openresty-openssl-devel
 
 # start etcd server
 nohup etcd &
@@ -75,7 +75,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc luarocks lua-devel openresty-openssl-devel
 
 # start etcd server
 nohup etcd &
@@ -98,7 +98,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks
+sudo apt-get install -y git openresty curl luarocks openresty-openssl-devel
 
 # start etcd server
 nohup etcd &
@@ -126,7 +126,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks make
+sudo apt-get install -y git openresty curl luarocks make openresty-openssl-devel
 
 # start etcd server
 nohup etcd &

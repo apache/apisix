@@ -74,6 +74,8 @@ build = {
         LUA_BINDIR="$(LUA_BINDIR)",
         LUA_INCDIR="$(LUA_INCDIR)",
         LUA="$(LUA)",
+        OPENSSL_INCDIR="$(OPENSSL_INCDIR)",
+        OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
         INST_PREFIX="$(PREFIX)",
