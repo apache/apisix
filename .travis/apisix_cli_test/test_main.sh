@@ -1013,3 +1013,27 @@ echo "passed: show password error successfully"
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
+
+# support 3rd-party plugin
+echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_cpath: "\$prefix/example/?.lua"
+plugins:
+    - 3rd-party
+stream_plugins:
+    - 3rd-party
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+sleep 0.5
+make stop
+
+if grep "failed to load plugin [3rd-party]" logs/error.log > /dev/null; then
+    echo "failed: 3rd party plugin can not be loaded"
+    exit 1
+fi
+echo "passed: 3rd party plugin can be loaded"

@@ -36,6 +36,7 @@ local getenv = os.getenv
 local max = math.max
 local floor = math.floor
 local str_find = string.find
+local str_byte = string.byte
 local str_sub = string.sub
 
 
@@ -118,6 +119,19 @@ _M.local_dns_resolver = local_dns_resolver
 
 local function version()
     print(ver['VERSION'])
+end
+
+
+local function get_lua_path(conf)
+    if conf then
+        local path = conf
+        if path:byte(-1) ~= str_byte(';') then
+            path = path .. ';'
+        end
+        return path
+    end
+
+    return ""
 end
 
 
@@ -356,6 +370,10 @@ Please modify "admin_key" in conf/config.yaml .
             end
         end
     end
+
+    -- fix up lua path
+    sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
+    sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
 
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
