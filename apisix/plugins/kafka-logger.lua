@@ -28,6 +28,11 @@ local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
 
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -66,7 +71,13 @@ function _M.check_schema(conf)
 end
 
 
-local function send_kafka_data(conf, log_message)
+local function create_producer(broker_list, broker_config)
+    core.log.info("create new kafka producer instance")
+    return producer:new(broker_list,broker_config)
+end
+
+
+local function send_kafka_data(conf, log_message, ctx)
     if core.table.nkeys(conf.broker_list) == 0 then
         core.log.error("failed to identify the broker specified")
     end
@@ -87,7 +98,8 @@ local function send_kafka_data(conf, log_message)
 
     broker_config["request_timeout"] = conf.timeout * 1000
 
-    local prod, err = producer:new(broker_list,broker_config)
+    local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
+                                               broker_list, broker_config)
     if err then
         return nil, "failed to identify the broker specified: " .. err
     end
@@ -141,6 +153,10 @@ function _M.log(conf, ctx)
         return
     end
 
+    local api_ctx = {}
+    api_ctx.conf_type = ctx.conf_type
+    api_ctx.conf_id = ctx.conf_id
+    api_ctx.conf_version = ctx.conf_version
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
@@ -158,7 +174,7 @@ function _M.log(conf, ctx)
         end
 
         core.log.info("send data to kafka: ", data)
-        return send_kafka_data(conf, data)
+        return send_kafka_data(conf, data, api_ctx)
     end
 
     local config = {
