@@ -30,7 +30,7 @@
 - [**register public API**](#register-public-api)
 - [**register control API**](#register-control-api)
 
-## where to put your plugin
+## where to put your plugins
 
 There are two ways to add new features based on APISIX.
 
