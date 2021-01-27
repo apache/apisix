@@ -56,6 +56,12 @@ function _M.hello_()
 end
 
 
+-- Fake endpoint, needed for testing authz-keycloak plugin.
+function _M.course_foo()
+    ngx.say("course foo")
+end
+
+
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
