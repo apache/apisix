@@ -123,7 +123,13 @@ end
 
 
 local function get_lua_path(conf)
-    if conf then
+    -- we use "" as the placeholder to enforce the type to be string
+    if conf and conf ~= "" then
+        if #conf < 2 then
+            -- the shortest valid path is ';;'
+            util.die("invalid extra_lua_path/extra_lua_cpath: \"", conf, "\"\n")
+        end
+
         local path = conf
         if path:byte(-1) ~= str_byte(';') then
             path = path .. ';'

@@ -23,6 +23,20 @@
 
 . ./.travis/apisix_cli_test/common.sh
 
+# validate extra_lua_path
+echo '
+apisix:
+    extra_lua_path: ";"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'invalid extra_lua_path'; then
+    echo "failed: can't detect invalid extra_lua_path"
+    exit 1
+fi
+
+echo "passed: detect invalid extra_lua_path"
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
