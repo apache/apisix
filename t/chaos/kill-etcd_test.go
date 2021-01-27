@@ -19,7 +19,6 @@ package chaos
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -123,6 +122,8 @@ func deleteRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
+/*
+// not working, don't know why
 func getWithoutTest(g *WithT, path string, headers map[string]string) string {
 	client := &http.Client{}
 	url := host + path
@@ -142,6 +143,7 @@ func getWithoutTest(g *WithT, path string, headers map[string]string) string {
 
 	return string(body)
 }
+*/
 
 func testPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 	caseCheck(httpTestCase{
@@ -153,9 +155,13 @@ func testPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 }
 
 // get the first line which contains the key
-func getPrometheusMetric(g *WithT, key string) string {
-	body := getWithoutTest(g, "/apisix/prometheus/metrics", nil)
-	resps := strings.Split(body, "\n")
+func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
+	resp := caseCheck(httpTestCase{
+		E:      e,
+		Method: http.MethodGet,
+		Path:   "/apisix/prometheus/metrics",
+	})
+	resps := strings.Split(resp.Body().Raw(), "\n")
 	var targetLine string
 	for _, line := range resps {
 		if strings.Contains(line, key) {
@@ -168,18 +174,18 @@ func getPrometheusMetric(g *WithT, key string) string {
 	return targetSlice[1]
 }
 
-func getIngressBandwidthPerSecond(g *WithT) float64 {
+func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	key := "apisix_bandwidth{type=\"ingress\","
-	bandWidthString := getPrometheusMetric(g, key)
+	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
 
-	time.Sleep(5 * time.Second)
-	bandWidthString = getPrometheusMetric(g, key)
+	time.Sleep(10 * time.Second)
+	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
 
-	return (bandWidthEnd - bandWidthStart) / 5.0
+	return (bandWidthEnd - bandWidthStart) / 10.0
 }
 
 func runCommand(t *testing.T, cmd string) string {
@@ -192,7 +198,7 @@ func runCommand(t *testing.T, cmd string) string {
 
 func roughCompare(a float64, b float64) bool {
 	ratio := a / b
-	if ratio < 1.2 && ratio > 0.8 {
+	if ratio < 1.3 && ratio > 0.7 {
 		return true
 	}
 	return false
@@ -210,14 +216,14 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// run in background
 	go func() {
 		for i := 1; ; i++ {
-			go getWithoutTest(g, "/hello", map[string]string{"Host": "foo.com"})
-			time.Sleep(100 * time.Millisecond)
+			go getRoute(e, http.StatusOK)
+			time.Sleep(1000 * time.Millisecond)
 		}
 	}()
 
 	// wait 5 second to let first route access returns
 	time.Sleep(5 * time.Second)
-	bpsBefore := getIngressBandwidthPerSecond(g)
+	bpsBefore := getIngressBandwidthPerSecond(e, g)
 	g.Expect(bpsBefore).NotTo(BeZero())
 
 	podName := runCommand(t, "kubectl get pod -l app=apisix-gw -o 'jsonpath={..metadata.name}'")
@@ -228,10 +234,9 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// TODO: use client-go
 	// apply chaos to kill all etcd pods
-	t.Run("kill all etcd pods", func(t *testing.T) {
-		_ = runCommand(t, "kubectl apply -f kill-etcd.yaml")
-		time.Sleep(3 * time.Second)
-	})
+	t.Log("kill all etcd pods")
+	_ = runCommand(t, "kubectl apply -f kill-etcd.yaml")
+	time.Sleep(3 * time.Second)
 
 	// fail to set route since etcd is all killed
 	// while get route could still succeed
@@ -244,8 +249,9 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
-	bpsAfter := getIngressBandwidthPerSecond(g)
+	bpsAfter := getIngressBandwidthPerSecond(e, g)
 	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
+		t.Log(bpsBefore, bpsAfter)
 		g.Expect(roughCompare(bpsBefore, bpsAfter)).To(BeTrue())
 	})
 }
