@@ -382,6 +382,7 @@ _EOC_
 
     underscores_in_headers on;
     lua_socket_log_errors off;
+    client_body_buffer_size 8k;
 
     upstream apisix_backend {
         server 0.0.0.1;
