@@ -1034,11 +1034,9 @@ echo "passed: detect invalid extra_lua_path"
 # check restart with old nginx.pid exist
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
-if  echo "$out" | grep "APISIX is running"; then
+if echo "$out" | grep "APISIX is running"; then
     echo "failed: should ignore stale nginx.pid"
     exit 1
 fi
-
-make stop
 
 echo "pass: ignore stale nginx.pid"
