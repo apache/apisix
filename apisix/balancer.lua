@@ -60,7 +60,8 @@ local function fetch_health_nodes(upstream, checker)
             -- TODO filter with metadata
             up_nodes[node.host .. ":" .. node.port] = node.weight
         elseif err then
-            core.log.error("failed to get health check target status, addr: ", node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            core.log.error("failed to get health check target status, addr: ",
+                node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
         end
     end
 
