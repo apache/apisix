@@ -43,6 +43,10 @@ apisix:
   enable_server_tokens: true       # Whether the APISIX version number should be shown in Server header.
                                    # It's enabled by default.
 
+  # configurations to load third party code and/or override the builtin one.
+  extra_lua_path: ""               # extend lua_package_path to load third party code
+  extra_lua_cpath: ""              # extend lua_package_cpath to load third party code
+
   proxy_cache:                     # Proxy Caching configuration
     cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
     zones:                         # The parameters of a cache
