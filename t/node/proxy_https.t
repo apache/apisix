@@ -21,11 +21,21 @@ no_long_string();
 no_root_location();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    $block;
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1: add route
+=== TEST 1: add route to HTTPS upstream (old way)
 --- config
     location /t {
         content_by_lua_block {
@@ -59,12 +69,101 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 2: get upstream carrying host
+=== TEST 2: hit the upstream (old way)
+--- request
+GET /hello
+--- more_headers
+host: www.sni.com
+--- error_log
+Receive SNI: www.sni.com
+
+
+
+=== TEST 3: add route to HTTPS upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1983": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: hit the upstream
+--- request
+GET /hello
+--- more_headers
+host: www.sni.com
+--- error_log
+Receive SNI: www.sni.com
+
+
+
+=== TEST 5: add route to HTTPS upstream (mix)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "scheme": "https"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1983": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: hit the upstream
 --- request
 GET /hello
 --- more_headers
