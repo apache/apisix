@@ -19,8 +19,10 @@ package chaos
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -44,7 +46,7 @@ type httpTestCase struct {
 	ExpectBody   string
 }
 
-func caseCheck(tc httpTestCase) {
+func caseCheck(tc httpTestCase) *httpexpect.Response {
 	e := tc.E
 	var req *httpexpect.Request
 	switch tc.Method {
@@ -74,6 +76,8 @@ func caseCheck(tc httpTestCase) {
 	if tc.ExpectBody != "" {
 		resp.Body().Contains(tc.ExpectBody)
 	}
+
+	return resp
 }
 
 func setRoute(e *httpexpect.Expect, expectStatus int) {
@@ -119,13 +123,63 @@ func deleteRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func getPrometheusMetric(e *httpexpect.Expect, expectEtcd int) {
+func getWithoutTest(g *WithT, path string, headers map[string]string) string {
+	client := &http.Client{}
+	url := host + path
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	g.Expect(err).To(BeNil())
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
+	resp, err := client.Do(req)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	g.Expect(err).To(BeNil())
+
+	return string(body)
+}
+
+func testPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 	caseCheck(httpTestCase{
 		E:          e,
 		Method:     http.MethodGet,
 		Path:       "/apisix/prometheus/metrics",
 		ExpectBody: fmt.Sprintf("apisix_etcd_reachable %d", expectEtcd),
 	})
+}
+
+// get the first line which contains the key
+func getPrometheusMetric(g *WithT, key string) string {
+	body := getWithoutTest(g, "/apisix/prometheus/metrics", nil)
+	resps := strings.Split(body, "\n")
+	var targetLine string
+	for _, line := range resps {
+		if strings.Contains(line, key) {
+			targetLine = line
+			break
+		}
+	}
+	targetSlice := strings.Fields(targetLine)
+	g.Expect(len(targetSlice) == 2).To(BeTrue())
+	return targetSlice[1]
+}
+
+func getIngressBandwidthPerSecond(g *WithT) float64 {
+	key := "apisix_bandwidth{type=\"ingress\","
+	bandWidthString := getPrometheusMetric(g, key)
+	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
+	g.Expect(err).To(BeNil())
+
+	time.Sleep(5 * time.Second)
+	bandWidthString = getPrometheusMetric(g, key)
+	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
+	g.Expect(err).To(BeNil())
+
+	return (bandWidthEnd - bandWidthStart) / 5.0
 }
 
 func runCommand(t *testing.T, cmd string) string {
@@ -136,6 +190,14 @@ func runCommand(t *testing.T, cmd string) string {
 	return string(out)
 }
 
+func roughCompare(a float64, b float64) bool {
+	ratio := a / b
+	if ratio < 1.2 && ratio > 0.8 {
+		return true
+	}
+	return false
+}
+
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
 	e := httpexpect.New(t, host)
@@ -143,7 +205,20 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// check if everything works
 	setRoute(e, http.StatusCreated)
 	getRoute(e, http.StatusOK)
-	getPrometheusMetric(e, 1)
+	testPrometheusEtcdMetric(e, 1)
+
+	// run in background
+	go func() {
+		for i := 1; ; i++ {
+			go getWithoutTest(g, "/hello", map[string]string{"Host": "foo.com"})
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	// wait 5 second to let first route access returns
+	time.Sleep(5 * time.Second)
+	bpsBefore := getIngressBandwidthPerSecond(g)
+	g.Expect(bpsBefore).NotTo(BeZero())
 
 	podName := runCommand(t, "kubectl get pod -l app=apisix-gw -o 'jsonpath={..metadata.name}'")
 	t.Run("error log not contains etcd error", func(t *testing.T) {
@@ -162,12 +237,15 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// while get route could still succeed
 	setRoute(e, http.StatusInternalServerError)
 	getRoute(e, http.StatusOK)
-	getPrometheusMetric(e, 0)
+	testPrometheusEtcdMetric(e, 0)
 
 	t.Run("error log contains etcd error", func(t *testing.T) {
 		errorLog := runCommand(t, fmt.Sprintf("kubectl exec -it %s -- cat logs/error.log", podName))
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
-	//deleteRoute(e, http.StatusOK)
+	bpsAfter := getIngressBandwidthPerSecond(g)
+	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
+		g.Expect(roughCompare(bpsBefore, bpsAfter)).To(BeTrue())
+	})
 }
