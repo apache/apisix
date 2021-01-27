@@ -122,3 +122,51 @@ GET /hello
 host: www.sni.com
 --- error_log
 Receive SNI: www.sni.com
+
+
+
+=== TEST 5: add route to HTTPS upstream (mix)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "scheme": "https"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1983": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: hit the upstream
+--- request
+GET /hello
+--- more_headers
+host: www.sni.com
+--- error_log
+Receive SNI: www.sni.com
