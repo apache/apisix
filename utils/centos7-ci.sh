@@ -25,7 +25,7 @@ install_dependencies() {
 
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        curl git which
+        curl git which sudo
 
     # install epel and luarocks
     wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm

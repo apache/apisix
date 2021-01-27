@@ -21,6 +21,6 @@ tar -xf v3.4.0.tar.gz
 cd luarocks-3.4.0 || exit
 ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
 make build > build.log 2>&1 || (cat build.log && exit 1)
-sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
 rm -rf luarocks-3.4.0

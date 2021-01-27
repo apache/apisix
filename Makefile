@@ -58,7 +58,7 @@ ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir ~/.luarocks || true
 	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
 	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
-	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
