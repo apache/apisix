@@ -32,7 +32,7 @@ install_dependencies() {
     rpm -ivh epel-release-latest-7.noarch.rpm
     yum install -y lua-devel
 
-    ./utils/linux-install-luarocks.sh
+    ./apisix/utils/linux-install-luarocks.sh
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
