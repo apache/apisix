@@ -20,7 +20,6 @@ local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
 local pairs    = pairs
 local type     = type
-local table    = table
 local ipairs   = ipairs
 local plugin_name = "kafka-logger"
 local stale_timer_running = false
@@ -116,7 +115,7 @@ end
 
 local function create_producer(broker_list, broker_config)
     core.log.info("create new kafka producer instance")
-    return producer:new(broker_list,broker_config)
+    return producer:new(broker_list, broker_config)
 end
 
 
@@ -144,17 +143,17 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = {}
+    local broker_list = core.table.new(0, core.table.nkeys(conf.broker_list))
     local broker_config = {}
 
     for host, port in pairs(conf.broker_list) do
         if type(host) == 'string'
                 and type(port) == 'number' then
-
             local broker = {
-                host = host, port = port
+                host = host,
+                port = port
             }
-            table.insert(broker_list,broker)
+            core.table.insert(broker_list, broker)
         end
     end
 
