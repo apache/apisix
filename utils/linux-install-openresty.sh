@@ -80,5 +80,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-debug-dev tree
-tree /usr/local/openresty-debug/openssl
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-debug-dev
