@@ -71,40 +71,24 @@ function _M.check_schema(conf)
 end
 
 
-local function create_producer(broker_list, broker_config)
-    core.log.info("create new kafka producer instance")
-    return producer:new(broker_list,broker_config)
+local function partition_id(sendbuffer, topic, offset)
+    for i, message in pairs(sendbuffer.topics[topic]) do
+        if message.offset == offset then
+            return i
+        end
+    end
 end
 
 
-local function send_kafka_data(conf, log_message, ctx)
+local function send_kafka_data(conf, log_message, prod)
     if core.table.nkeys(conf.broker_list) == 0 then
         core.log.error("failed to identify the broker specified")
     end
 
-    local broker_list = {}
-    local broker_config = {}
-
-    for host, port  in pairs(conf.broker_list) do
-        if type(host) == 'string'
-            and type(port) == 'number' then
-
-            local broker = {
-                host = host, port = port
-            }
-            table.insert(broker_list,broker)
-        end
-    end
-
-    broker_config["request_timeout"] = conf.timeout * 1000
-
-    local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
-                                               broker_list, broker_config)
-    if err then
-        return nil, "failed to identify the broker specified: " .. err
-    end
-
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
+    core.log.info("partition_id: ", partition_id(prod.sendbuffer,
+                                                 conf.kafka_topic, ok))
+
     if not ok then
         return nil, "failed to send data to Kafka topic: " .. err
     end
@@ -127,6 +111,12 @@ local function remove_stale_objects(premature)
     end
 
     stale_timer_running = false
+end
+
+
+local function create_producer(broker_list, broker_config)
+    core.log.info("create new kafka producer instance")
+    return producer:new(broker_list,broker_config)
 end
 
 
@@ -153,10 +143,29 @@ function _M.log(conf, ctx)
         return
     end
 
-    local api_ctx = {}
-    api_ctx.conf_type = ctx.conf_type
-    api_ctx.conf_id = ctx.conf_id
-    api_ctx.conf_version = ctx.conf_version
+    -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
+    local broker_list = {}
+    local broker_config = {}
+
+    for host, port in pairs(conf.broker_list) do
+        if type(host) == 'string'
+                and type(port) == 'number' then
+
+            local broker = {
+                host = host, port = port
+            }
+            table.insert(broker_list,broker)
+        end
+    end
+
+    broker_config["request_timeout"] = conf.timeout * 1000
+
+    local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
+                                               broker_list, broker_config)
+    if err then
+        return nil, "failed to identify the broker specified: " .. err
+    end
+
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
@@ -174,7 +183,7 @@ function _M.log(conf, ctx)
         end
 
         core.log.info("send data to kafka: ", data)
-        return send_kafka_data(conf, data, api_ctx)
+        return send_kafka_data(conf, data, prod)
     end
 
     local config = {
