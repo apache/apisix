@@ -20,6 +20,7 @@
 
 # table of contents
 
+- [**where to put your plugin**](#where-to-put-your-plugin)
 - [**check dependencies**](#check-dependencies)
 - [**name and config**](#name-and-config)
 - [**schema and check**](#schema-and-check)
@@ -29,10 +30,39 @@
 - [**register public API**](#register-public-api)
 - [**register control API**](#register-control-api)
 
+## where to put your plugins
+
+There are two ways to add new features based on APISIX.
+
+1. modify the source of APISIX and redistribute it (not so recommended)
+1. setup the `extra_lua_path` and `extra_lua_cpath` in `conf/config.yaml` to load your own code. Your own code will be loaded instead of the builtin one with the same name, so you can use this way to override the builtin behavior if needed.
+
+For example, you can create a directory structure like this:
+
+```
+├── example
+│   └── apisix
+│       ├── plugins
+│       │   └── 3rd-party.lua
+│       └── stream
+│           └── plugins
+│               └── 3rd-party.lua
+```
+
+Then add this configuration into your `conf/config.yaml`:
+
+```yaml
+apisix:
+    ...
+    extra_lua_path: "/path/to/example/?.lua"
+```
+
+Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like `require "apisix.plugins.jwt-auth"` will load the `jwt-auth` plugin.
+
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
- needs to declare in __bin/apisix__, for example :
+ needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
 
 ```nginx
     lua_shared_dict plugin-limit-req     10m;
@@ -100,7 +130,23 @@ plugins:                          # plugin list
 
 Note : the order of the plugins is not related to the order of execution.
 
-If your plugin has a new code directory of its own, you will need to modify the `Makefile` to create directory, such as:
+To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
+
+```yaml
+apisix:
+  admin_key:
+    - name: "admin"
+      # yamllint disable rule:comments-indentation
+      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
+      # yamllint enable rule:comments-indentation
+      role: admin
+
+plugins: # copied from config-default.yaml
+  ...
+  - your-plugin
+```
+
+If your plugin has a new code directory of its own, and you need to redistribute it with the APISIX source code, you will need to modify the `Makefile` to create directory, such as:
 
 ```
 $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
