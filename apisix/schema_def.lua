@@ -343,7 +343,7 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http"}
+            enum = {"grpc", "grpcs", "http", "https"}
         },
         labels = {
             description = "key/value pairs to specify attributes",
