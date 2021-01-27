@@ -38,24 +38,50 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 
 ## Attributes
 
-| Name                    | Type          | Requirement | Default                                       | Valid                                                              | Description                                                                                                                                                 |
-| ----------------------- | ------------- | ----------- | --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| discovery               | string        | optional    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to discovery document for Keycloak Authorization Services.                                                                                              |
-| token_endpoint          | string        | optional    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. Overrides value from discovery, if given.     |
-| grant_type              | string        | optional    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                             |
-| audience                | string        | optional    |                                               |                                                                    | The client identifier of the resource server to which the client is seeking access. <br>This parameter is mandatory when parameter permission is defined.   |
-| permissions             | array[string] | optional    |                                               |                                                                    | A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.    |
-| timeout                 | integer       | optional    | 3000                                          | [1000, ...]                                                        | Timeout(ms) for the http connection with the Identity Server.                                                                                               |
-| ssl_verify              | boolean       | optional    | true                                          |                                                                    | Verify if SSL cert matches hostname.                                                                                                                        |
-| policy_enforcement_mode | string        | optional    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                             |
+| Name                           | Type          | Requirement | Default                                       | Valid                                                              | Description                                                                                                                                                 |
+| ------------------------------ | ------------- | ----------- | --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| discovery                      | string        | optional    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to discovery document for Keycloak Authorization Services.                                                                                              |
+| token_endpoint                 | string        | optional    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. Overrides value from discovery, if given.     |
+| resource_registration_endpoint | string        | optional    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | A Keycloak Protection API-compliant resource registration endpoint. Overrides value from discovery, if given.                                               |
+| client_id                      | string        | optional    |                                               |                                                                    | The client identifier of the resource server to which the client is seeking access. One of `client_id` or `audience` is required.                           |
+| audience                       | string        | optional    |                                               |                                                                    | Legacy parameter now replaced by `client_id`. Kept for backwards compatibility. One of `client_id` or `audience` is required.                               |
+| client_secret                  | string        | optional    |                                               |                                                                    | The client secret, if required.                                                                                                                             |
+| grant_type                     | string        | optional    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                             |
+| policy_enforcement_mode        | string        | optional    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                             |
+| permissions                    | array[string] | optional    |                                               |                                                                    | Static permission to request, an array of strings each representing a resources and optionally one or more scopes the client is seeking access.             |
+| lazy_load_paths                | boolean       | optional    | false                                         |                                                                    | Dynamically resolve the request URI to resource(s) using the resource registration endpoint instead of using the static permission.                         |
+| http_method_as_scope           | boolean       | optional    | false                                         |                                                                    | Map HTTP request type to scope of same name and add to all permissions requested.                                                                           |
+| timeout                        | integer       | optional    | 3000                                          | [1000, ...]                                                        | Timeout(ms) for the http connection with the Identity Server.                                                                                               |
+| ssl_verify                     | boolean       | optional    | true                                          |                                                                    | Verify if TLS certificate matches hostname.                                                                                                                 |
+| cache_ttl_seconds              | integer       | optional    | 86400 (equivalent to 24h)                     | positive integer >= 1                                              | The maximum period in seconds up to which the plugin caches discovery documents and tokens, used by the plugin to authenticate to Keycloak.                 |
+| keepalive                      | boolean       | optional    | true                                          |                                                                    | Enable HTTP keep-alive to keep connections open after use. Set to `true` if you expect a lot of requests to Keycloak.                                       |
+| keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
+| keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
 
-### Endpoints
+### Discovery and Endpoints
 
-Endpoints can optionally be discovered by providing a URL pointing to Keycloak's discovery document for Authorization Services for the realm
-in the `discovery` attribute. The token endpoint URL will then be determined from that document. Alternatively, the token endpoint can be
-specified explicitly via the `token_endpoint` attribute.
+The plugin can discover Keycloak API endpoints from a URL in the `discovery` attribute that points to
+Keycloak's discovery document for Authorization Services for the respective realm. This is the recommended
+option and typically most convenient.
 
-One of `discovery` and `token_endpoint` has to be set. If both are given, the value from `token_endpoint` is used.
+If the discovery document is available, the plugin determines the token endpoint URL from it. If present, the
+`token_endpoint` attribute overrides the URL.
+
+Analogously, the plugin determines the registration endpoint from the discovery document. The
+`resource_registration_endpoint` overrides, if present.
+
+### Client ID and Secret
+
+The plugin needs the `client_id` attribute to identify itself when interacting with Keycloak.
+For backwards compatibility, you can still use the `audience` attribute as well instead. The plugin
+prefers `client_id` over `audience` if both are configured.
+
+The plugin always needs the `client_id` or `audience` to specify the context in which Keycloak
+should evaluate permissions.
+
+If `lazy_load_paths` is `true` then the plugin additionally needs to obtain an access token for
+itself from Keycloak. In this case, if the client access to Keycloak is confidential, the plugin
+needs the `client_secret` attribute as well.
 
 ### Policy Enforcement Mode
 
@@ -68,6 +94,35 @@ Specifies how policies are enforced when processing authorization requests sent 
 **Permissive**
 
 - Requests are allowed even when there is no policy associated with a given resource.
+
+### Permissions
+
+When handling an incoming request, the plugin can determine the permissions to check with Keycloak either
+statically, or dynamically from properties of the request.
+
+If `lazy_load_paths` is `false`, the plugin takes the permissions from the `permissions` attribute. Each entry
+needs to be formatted as expected by the token endpoint's `permission` parameter;
+see https://www.keycloak.org/docs/latest/authorization_services/index.html#_service_obtaining_permissions.
+Note that a valid permission can be a single resource, or a resource paired with one or more scopes.
+
+if `lazy_load_paths` is `true`, the plugin resolves the request URI to one or more resources, as configured
+in Keycloak. It uses the resource registration endpoint to do so. The plugin uses the resolved resources
+as the permissions to check.
+
+Note that this requires that the plugin can obtain a separate access token for itself from the token endpoint.
+Therefore, in the respective client settings in Keycloak, make sure to set the `Service Accounts Enabled`
+option. Also make sure that the issued access token contains the `resource_access` claim with the
+`uma_protection` role. Otherwise, plugin may be unable to query resources through the Protection API.
+
+### Automatic Mapping of HTTP Method to Scope
+
+This option is often used together with `lazy_load_paths`, but can also be used with a static permission list.
+
+If the `http_method_as_scope` attribute is set to `true`, the plugin maps the request's HTTP method to a scope
+of the same name. The scope is then added to every permission to check.
+
+If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
+in the `permissions` attribute, even if they contain one or more scopes alreay.
 
 ## How To Enable
 
