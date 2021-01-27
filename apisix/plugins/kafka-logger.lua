@@ -71,6 +71,10 @@ end
 
 
 local function partition_id(sendbuffer, topic, offset)
+    if not sendbuffer.topics[topic] then
+        core.log.info("current topic in sendbuffer has no messages")
+        return nil
+    end
     for i, message in pairs(sendbuffer.topics[topic]) do
         if message.offset == offset then
             return i
