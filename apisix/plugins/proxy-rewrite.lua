@@ -48,7 +48,7 @@ local schema = {
         host = {
             description = "new host for upstream",
             type        = "string",
-            pattern     = "^[0-9a-zA-Z-.]+$",
+            pattern     = [[^[0-9a-zA-Z-.]+(:\d{1,5})?$]],
         },
         scheme = {
             description = "new scheme for upstream",
