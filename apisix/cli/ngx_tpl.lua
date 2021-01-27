@@ -317,7 +317,7 @@ http {
         # admin configuration snippet ends
 
         set $upstream_scheme             'http';
-        set $upstream_host               $host;
+        set $upstream_host               $http_host;
         set $upstream_uri                '';
 
         location /apisix/admin {
@@ -410,7 +410,7 @@ http {
         # http server configuration snippet ends
 
         set $upstream_scheme             'http';
-        set $upstream_host               $host;
+        set $upstream_host               $http_host;
         set $upstream_uri                '';
         set $ctx_ref                     '';
 
