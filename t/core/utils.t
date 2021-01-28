@@ -78,7 +78,7 @@ GET /t
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -104,7 +104,7 @@ qr/"address":.+,"name":"github.com"/
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
-            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
+            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.get_resolver()))
         }
     }
 --- request

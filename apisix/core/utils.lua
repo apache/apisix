@@ -19,7 +19,7 @@ local table    = require("apisix.core.table")
 local log      = require("apisix.core.log")
 local string   = require("apisix.core.string")
 local ngx_re   = require("ngx.re")
-local resolver = require("resty.dns.resolver")
+local dns_client = require("resty.dns.client")
 local ipmatcher= require("resty.ipmatcher")
 local ffi      = require("ffi")
 local base     = require("resty.core.base")
@@ -39,6 +39,8 @@ local exiting = ngx.worker.exiting
 local ngx_sleep    = ngx.sleep
 
 local hostname
+local dns_resolvers
+local current_inited_resolvers
 local max_sleep_interval = 1
 
 ffi.cdef[[
@@ -80,19 +82,22 @@ function _M.split_uri(uri)
 end
 
 
-local function dns_parse(domain, resolvers)
-    resolvers = resolvers or _M.resolvers
-    local r, err = resolver:new{
-        nameservers = table.clone(resolvers),
-        retrans = 5,  -- 5 retransmissions on receive timeout
-        timeout = 2000,  -- 2 sec
-    }
+local function dns_parse(domain)
+    if dns_resolvers ~= current_inited_resolvers then
+        local opts = {
+            nameservers = table.clone(dns_resolvers),
+            retrans = 5,  -- 5 retransmissions on receive timeout
+            timeout = 2000,  -- 2 sec
+        }
+        local ok, err = dns_client.init(opts)
+        if not ok then
+            return nil, "failed to init the dns client: " .. err
+        end
 
-    if not r then
-        return nil, "failed to instantiate the resolver: " .. err
+        current_inited_resolvers = dns_resolvers
     end
 
-    local answers, err = r:query(domain, nil, {})
+    local answers, err = dns_client.resolve(domain)
     if not answers then
         return nil, "failed to query the DNS server: " .. err
     end
@@ -105,20 +110,25 @@ local function dns_parse(domain, resolvers)
     local idx = math.random(1, #answers)
     local answer = answers[idx]
     if answer.type == 1 then
-        return answer
+        return table.deepcopy(answer)
     end
 
     if answer.type ~= 5 then
         return nil, "unsupport DNS answer"
     end
 
-    return dns_parse(answer.cname, resolvers)
+    return dns_parse(answer.cname)
 end
 _M.dns_parse = dns_parse
 
 
 function _M.set_resolver(resolvers)
-    _M.resolvers = resolvers
+    dns_resolvers = resolvers
+end
+
+
+function _M.get_resolver(resolvers)
+    return dns_resolvers
 end
 
 

@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "lua-resty-dns-client = 5.2.0",
     "lua-resty-template = 1.9",
     "lua-resty-etcd = 1.4.3",
     "lua-resty-balancer = 0.02rc5",
