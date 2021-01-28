@@ -648,10 +648,10 @@ The checker would judge whether the file data changed according to the last modi
 | Key                             | Optional | Description                                                                                                                               | Default |
 | ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
-| hook_conf.name                  | required | The module list name of hook which has enabled debug trace                                                                                |         |
-| hook_conf.log_level             | required | Logging levels for input arguments & returned value                                                                                       | warn    |
-| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print                                                                                                      | true    |
-| hook_conf.is_print_return_value | required | Enable/Disable returned value print                                                                                                       | true    |
+| hook_conf.name                  | required | The module list name of hook which has enabled debug trace.                                                                               |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned value.                                                                                      | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print.                                                                                                     | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable returned value print.                                                                                                      | true    |
 
 Example:
 

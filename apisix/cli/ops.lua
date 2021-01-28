@@ -457,15 +457,15 @@ local function start(env, ...)
     local local_conf_path = profile:yaml_path("config")
 
     if customized_yaml then
-        execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        execute("ln " .. customized_yaml .. " " .. local_conf_path)
+        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
         print("Use customized yaml: ", customized_yaml)
     end
 
     init(env, ...)
     init_etcd(env, ...)
 
-    execute(env.openresty_args)
+    util.execute_cmd(env.openresty_args)
 end
 
 
@@ -473,11 +473,11 @@ local function stop(env)
     local local_conf_path = profile:yaml_path("config")
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
-        execute("rm " .. local_conf_path)
-        execute("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+        util.execute_cmd("rm " .. local_conf_path)
+        util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
     end
     local cmd = env.openresty_args .. [[ -s stop]]
-    execute(cmd)
+    util.execute_cmd(cmd)
 end
 
 
