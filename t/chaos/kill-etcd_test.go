@@ -155,15 +155,17 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
-	fmt.Printf("time: %v \t bandwidth: %f", time.Now(), bandWidthStart)
+	// after etcd got killed, it would take longer time to get the metrics
+	// so need to calculate the duration
+	timeStart := time.Now()
 
 	time.Sleep(10 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
-	fmt.Printf("time: %v \t bandwidth: %f", time.Now(), bandWidthEnd)
+	duration := time.Now().Sub(timeStart)
 
-	return (bandWidthEnd - bandWidthStart) / 10.0
+	return (bandWidthEnd - bandWidthStart) / duration.Seconds()
 }
 
 func runCommand(t *testing.T, cmd string) string {
