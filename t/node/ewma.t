@@ -290,4 +290,4 @@ GET /t
 [{"count":12,"port":"1980"}]
 --- error_code: 200
 --- error_log
-timed out) while reading response header from upstream
+upstream timed out
