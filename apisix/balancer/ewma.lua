@@ -8,7 +8,6 @@ local resty_lock = require("resty.lock")
 
 local nkeys = core.table.nkeys
 local table_insert = core.table.insert
-local table_deepcopy = core.table.deepcopy
 local ngx = ngx
 local ngx_shared = ngx.shared
 local ngx_now = ngx.now
