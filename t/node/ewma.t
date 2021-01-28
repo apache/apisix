@@ -219,7 +219,7 @@ GET /t
 
 
 === TEST 4: about filter tried servers
---- timeout: 5
+--- timeout: 10
 --- config
     location /t {
         content_by_lua_block {
@@ -233,10 +233,15 @@ GET /t
                  [[{
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 100,
-                                "127.0.0.1:1984": 100
+                                "127.0.0.1:1980": 1,
+                                "127.0.0.1:1984": 1
                             },
-                            "type": "ewma"
+                            "type": "ewma",
+                            "timeout": {
+                                "connect": 0.5,
+                                "send": 0.5,
+                                "read": 0.5
+                            }
                         },
                         "uri": "/ewma"
                 }]]
@@ -251,11 +256,11 @@ GET /t
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/ewma"
 
-            --should select the 1984 node, because it is invalid
+            --should select the 1980 node, because 1984 is invalid
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
-                httpc:set_timeout(1000)
+                httpc:set_timeout(2000)
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
@@ -284,5 +289,5 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- error_code: 200
---- no_error_log
-[error]
+--- error_log
+timed out) while reading response header from upstream
