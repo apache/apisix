@@ -217,6 +217,7 @@ GET /t
 [error]
 
 
+
 === TEST 4: about filter tried servers
 --- timeout: 5
 --- config
@@ -284,5 +285,3 @@ GET /t
 --- error_code: 200
 --- no_error_log
 [error]
-
-
