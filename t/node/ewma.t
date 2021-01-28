@@ -226,7 +226,7 @@ GET /t
             local t = require("lib.test_admin").test
 
             --remove the 1981 node,
-            --add the 0 node (invalid node)
+            --add the 9527 node (invalid node)
             --keep two nodes for triggering ewma logic in server_picker function of balancer phase
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -234,7 +234,7 @@ GET /t
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "127.0.0.1:0": 1
+                                "127.0.0.1:9527": 1
                             },
                             "type": "ewma",
                             "timeout": {
@@ -308,7 +308,7 @@ Connection refused) while connecting to upstream
             local t = require("lib.test_admin").test
 
             --add the 9527 node (invalid node)
-            --remove the 1980 node
+            --add the 9528 node (invalid node)
             --keep two nodes for triggering ewma logic in server_picker function of balancer phase
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -316,7 +316,7 @@ Connection refused) while connecting to upstream
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:9527": 1,
-                                "127.0.0.1:0": 1
+                                "127.0.0.1:9528": 1
                             },
                             "type": "ewma",
                             "timeout": {
