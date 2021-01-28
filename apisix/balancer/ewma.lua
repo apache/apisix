@@ -141,7 +141,8 @@ end
 local function _ewma_find(ctx, up_nodes)
     local peers
 
-    if not up_nodes or nkeys(up_nodes) == 0 then
+    if not up_nodes or nkeys(up_nodes) == 0 or
+        (ctx.balancer_tried_servers and ctx.balancer_tried_servers_count == nkeys(up_nodes)) then
         return nil, 'up_nodes empty'
     end
 
@@ -150,27 +151,22 @@ local function _ewma_find(ctx, up_nodes)
         return nil, 'up_nodes trans error'
     end
 
-    local tried_endpoints
-    if not ctx.balancer_tried_servers then
-        tried_endpoints = {}
-        ctx.balancer_tried_servers = tried_endpoints
-    else
-        tried_endpoints = ctx.balancer_tried_servers
-    end
-
     local filtered_peers
     for _, peer in ipairs(peers) do
-        if not tried_endpoints[get_upstream_name(peer)] then
-            if not filtered_peers then
-                filtered_peers = {}
+        if ctx.balancer_tried_servers then
+            if not ctx.balancer_tried_servers[get_upstream_name(peer)] then
+                if not filtered_peers then
+                    filtered_peers = {}
+                end
+
+                table_insert(filtered_peers, peer)
             end
-            table_insert(filtered_peers, peer)
         end
     end
 
     if not filtered_peers then
         core.log.warn("all endpoints have been retried")
-        filtered_peers = table_deepcopy(peers)
+        filtered_peers = peers
     end
 
     local endpoint = filtered_peers[1]

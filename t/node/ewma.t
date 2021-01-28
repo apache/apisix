@@ -257,17 +257,23 @@ GET /t
                         .. "/ewma"
 
             --should always select the 1980 node, because 8888 is invalid
+            local t = {}
             local ports_count = {}
             for i = 1, 12 do
-                local httpc = http.new()
-                httpc:set_timeout(2000)
-                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-
-                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    httpc:set_timeout(2000)
+                    local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                    if not res then
+                        ngx.say(err)
+                        return
+                    end
+                    ports_count[res.body] = (ports_count[res.body] or 0) + 1
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
             end
 
             local ports_arr = {}
@@ -288,6 +294,88 @@ GET /t
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
+--- error_code: 200
+--- error_log
+Connection refused) while connecting to upstream
+
+
+
+=== TEST 5: about all endpoints have been retried
+--- timeout: 10
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            --add the 9527 node (invalid node)
+            --remove the 1980 node
+            --keep two nodes for triggering ewma logic in server_picker function of balancer phase
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:9527": 1,
+                                "127.0.0.1:8888": 1
+                            },
+                            "type": "ewma",
+                            "timeout": {
+                                "connect": 0.1,
+                                "send": 0.5,
+                                "read": 0.5
+                            }
+                        },
+                        "uri": "/ewma"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.say("update route failed")
+                return
+            end
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/ewma"
+
+            --should always select the 1980 node, because 8888 is invalid
+            local t = {}
+            local ports_count = {}
+            for i = 1, 12 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    httpc:set_timeout(2000)
+                    local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                    if not res then
+                        ngx.say(err)
+                        return
+                    end
+                    ports_count[res.status] = (ports_count[res.status] or 0) + 1
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("toolkit.json").encode(ports_arr))
+            ngx.exit(200)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[{"count":12,"port":502}]
 --- error_code: 200
 --- error_log
 Connection refused) while connecting to upstream
