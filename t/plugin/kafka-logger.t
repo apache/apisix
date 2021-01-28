@@ -633,7 +633,7 @@ passed
             t('/hello',ngx.HTTP_GET)
             t('/hello',ngx.HTTP_GET)
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(6)
+            ngx.sleep(5)
         }
     }
 --- request
