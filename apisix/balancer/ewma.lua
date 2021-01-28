@@ -14,6 +14,7 @@ local ngx_shared = ngx.shared
 local ngx_now = ngx.now
 local math = math
 local pairs = pairs
+local ipairs = ipairs
 local next = next
 local error = error
 
