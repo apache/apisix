@@ -186,6 +186,9 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)
+
+	// to avoid route haven't been set yet
+	time.Sleep(1 * time.Second)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
@@ -227,7 +230,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	bpsAfter := getIngressBandwidthPerSecond(e, g)
 	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
-		t.Log(bpsBefore, bpsAfter)
+		t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
 		g.Expect(roughCompare(bpsBefore, bpsAfter)).To(BeTrue())
 	})
 }
