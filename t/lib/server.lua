@@ -86,8 +86,15 @@ end
 function _M.plugin_proxy_rewrite_args()
     ngx.say("uri: ", ngx.var.uri)
     local args = ngx.req.get_uri_args()
-    for k,v in pairs(args) do
-        ngx.say(k, ": ", v)
+
+    local keys = {}
+    for k, _ in pairs(args) do
+        table.insert(keys, k)
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        ngx.say(key, ": ", args[key])
     end
 end
 
