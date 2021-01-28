@@ -57,7 +57,6 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	}
 
 	if req == nil {
-		fmt.Printf("%#v", tc)
 		panic("fail to init request")
 	}
 	for key, val := range tc.Headers {
@@ -121,29 +120,6 @@ func deleteRoute(e *httpexpect.Expect, expectStatus int) {
 		ExpectStatus: expectStatus,
 	})
 }
-
-/*
-// not working, don't know why
-func getWithoutTest(g *WithT, path string, headers map[string]string) string {
-	client := &http.Client{}
-	url := host + path
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	g.Expect(err).To(BeNil())
-	for key, value := range headers {
-		req.Header.Add(key, value)
-	}
-
-	resp, err := client.Do(req)
-	g.Expect(err).To(BeNil())
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	g.Expect(err).To(BeNil())
-
-	return string(body)
-}
-*/
 
 func testPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 	caseCheck(httpTestCase{
