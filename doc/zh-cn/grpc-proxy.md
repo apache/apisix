@@ -25,8 +25,8 @@
 
 ## 参数
 
-* `service_protocol`:  这个 Route 的属性 `service_protocol` 必须设置为 `grpc`
-* `uri`:   格式为 /service/method 如：/helloworld.Greeter/SayHello
+* `scheme`: Route 对应的 Upstream 的 `scheme` 必须设置为 `grpc` 或者 `grpcs`
+* `uri`: 格式为 /service/method 如：/helloworld.Greeter/SayHello
 
 ## 示例
 
@@ -34,17 +34,17 @@
 
 在指定 Route 中，代理 gRPC 服务接口:
 
-* 注意： 这个 Route 的属性 `service_protocol` 必须设置为 `grpc`；
+* 注意：这个 Route 对应的 Upstream 的 `scheme` 必须设置为 `grpc` 或者 `grpcs`。
 * 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https.md)；
-* 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)。
+* 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",
-    "service_protocol": "grpc",
     "upstream": {
+        "scheme": "grpc",
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:50051": 1
@@ -66,3 +66,22 @@ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
 ```
 
 这表示已成功代理。
+
+### gRPCS
+
+如果你的 gRPC 服务使用了自己的 TLS 加密，即所谓的 `gPRCS` (gRPC + TLS)，那么需要修改 scheme 为 `grpcs`。继续上面的例子，50052 端口上跑的是 gPRCS 的服务，这时候应该这么配置：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST", "GET"],
+    "uri": "/helloworld.Greeter/SayHello",
+    "upstream": {
+        "scheme": "grpcs",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50052": 1
+        }
+    }
+}'
+```

@@ -431,7 +431,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"create","node":{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log
@@ -471,7 +471,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"set","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log
@@ -502,7 +502,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"get","count":"1","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log

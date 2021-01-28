@@ -365,3 +365,43 @@ wzarryret/7GFW1/3cz+hTj9/d45i25zArr3Pocfpur5mfz3fJO8jg==
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"snis\" validation failed: expect array to have at least 1 items"}
+
+
+
+=== TEST 11: update snis, PATCH with sub path
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, snis = {"test.com"}}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+
+            local data = {"update1.com", "update2.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1/snis',
+                ngx.HTTP_PATCH,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            ngx.say(res)
+        }
+    }
+--- response_body_like eval
+qr/"snis":\["update1.com","update2.com"\]/

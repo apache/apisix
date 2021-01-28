@@ -24,7 +24,7 @@ before_install() {
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
     docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # Runs Keycloak version 10.0.2 with inbuilt policies for unit tests
-    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix
+    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix:1.0.0
     # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
     docker pull bitnami/zookeeper:3.6.0
     docker pull bitnami/kafka:latest
@@ -74,20 +74,17 @@ do_install() {
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
-    if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
+    if [ ! -f "build-cache/grpc_server_example_20210122" ]; then
+        wget https://github.com/api7/grpc_server_example/releases/download/20210122/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
-    fi
 
-    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-        if [ ! -f "grpc_server_example/main.go" ]; then
-            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-        fi
-
-        cd grpc_server_example/
+        git clone --depth 1 https://github.com/api7/grpc_server_example.git grpc_server_example
+        pushd grpc_server_example/ || exit 1
         mv proto/ ../build-cache/
-        cd ..
+        popd || exit 1
+
+        touch build-cache/grpc_server_example_20210122
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
@@ -101,7 +98,10 @@ script() {
     export_or_prefix
     openresty -V
 
-    ./build-cache/grpc_server_example &
+    ./build-cache/grpc_server_example \
+        -grpc-address :50051 -grpcs-address :50052 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key \
+        &
 
     ./bin/apisix help
     ./bin/apisix init

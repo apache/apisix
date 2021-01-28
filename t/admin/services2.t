@@ -70,7 +70,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"create","node":{"value":{"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -105,7 +105,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"set","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -140,7 +140,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -167,7 +167,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}}
+{"action":"get","count":"1","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 

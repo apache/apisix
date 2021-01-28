@@ -203,7 +203,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
+{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
 --- no_error_log
 [error]
 
@@ -245,7 +245,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index.html"}}}
+{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}}
 --- no_error_log
 [error]
 
@@ -286,7 +286,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
@@ -317,7 +317,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
+{"action":"get","count":"1","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
@@ -516,5 +516,98 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"only one of remote_addr or remote_addrs is allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: labels in Chinese
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "您好": "世界"
+                    },
+
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "您好": "世界"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: labels value with whitespace
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "您好": "世 界"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/invalid configuration: property \\"labels\\" validation failed/
 --- no_error_log
 [error]

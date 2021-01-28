@@ -902,27 +902,6 @@ fi
 
 echo "pass: uninitialized variable not found during writing access log (port_admin set)"
 
-# It is forbidden to run apisix under the "/root" directory.
-git checkout conf/config.yaml
-
-mkdir /root/apisix
-
-cp -r ./*  /root/apisix
-cd /root/apisix
-make init
-
-out=$(make run 2>&1 || true)
-if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
-    echo "failed: should echo It is forbidden to run APISIX in the /root directory"
-    exit 1
-fi
-
-cd -
-
-echo "passed: successfully prohibit APISIX from running in the /root directory"
-
-rm -rf /root/apisix
-
 # check etcd while enable auth
 git checkout conf/config.yaml
 
@@ -1052,3 +1031,51 @@ echo "passed: show password error successfully"
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
+
+# support 3rd-party plugin
+echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_cpath: "\$prefix/example/?.lua"
+plugins:
+    - 3rd-party
+stream_plugins:
+    - 3rd-party
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+sleep 0.5
+make stop
+
+if grep "failed to load plugin [3rd-party]" logs/error.log > /dev/null; then
+    echo "failed: 3rd-party plugin can not be loaded"
+    exit 1
+fi
+echo "passed: 3rd-party plugin can be loaded"
+
+# validate extra_lua_path
+echo '
+apisix:
+    extra_lua_path: ";"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'invalid extra_lua_path'; then
+    echo "failed: can't detect invalid extra_lua_path"
+    exit 1
+fi
+
+echo "passed: detect invalid extra_lua_path"
+
+# check restart with old nginx.pid exist
+echo "-1" > logs/nginx.pid
+out=$(./bin/apisix start 2>&1 || true)
+if echo "$out" | grep "APISIX is running"; then
+    echo "failed: should ignore stale nginx.pid"
+    exit 1
+fi
+
+echo "pass: ignore stale nginx.pid"

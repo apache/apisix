@@ -16,6 +16,10 @@
 #
 use t::APISIX 'no_plan';
 
+# As the test framework doesn't support sending grpc request, this
+# test file is only for grpc irrelative configuration check.
+# To avoid confusion, we configure a closed port so if th configuration works,
+# the result will be `connect refused`.
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -29,26 +33,12 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
-    enable_debug: true
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    my $routes = <<_EOC_;
-routes:
-  -
-    uri: /hello
-    upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
-#END
-_EOC_
-
-    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
+    if (!$block->request) {
+        $block->set_value("request", "POST /hello");
     }
 });
 
@@ -56,58 +46,36 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: validate consumer
+=== TEST 1: with upstream_id
 --- apisix_yaml
-consumers:
-  - username: jwt-auth
+upstreams:
+    - id: 1
+      type: roundrobin
+      scheme: grpc
+      nodes:
+        "127.0.0.1:9088": 1
+routes:
+    - id: 1
+      methods:
+          - POST
+      uri: "/hello"
+      upstream_id: 1
 #END
---- request
-GET /hello
---- response_body
-hello world
+--- error_code: 502
 --- error_log
-property "username" validation failed
+proxy request to 127.0.0.1:9088
 
 
 
-=== TEST 2: validate the plugin under consumer
---- apisix_yaml
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            secret: my-secret-key
-#END
---- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- error_log
-plugin jwt-auth err: property "key" is required
---- error_code: 404
-
-
-
-=== TEST 3: provide default value for the plugin
---- apisix_yaml
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            key: user-key
-            secret: my-secret-key
-#END
---- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- error_code: 200
-
-
-
-=== TEST 4: consummer restriction
+=== TEST 2: with consummer
 --- apisix_yaml
 consumers:
   - username: jack
+    id: jack
     plugins:
         key-auth:
             key: user-key
+#END
 routes:
     - id: 1
       methods:
@@ -119,11 +87,63 @@ routes:
               whitelist:
                   - jack
       upstream:
+          scheme: grpc
           type: roundrobin
           nodes:
-              "127.0.0.1:1980": 1
+              "127.0.0.1:9088": 1
 #END
 --- more_headers
 apikey: user-key
---- request
-POST /hello
+--- error_code: 502
+
+
+
+=== TEST 3: with upstream_id (old way)
+--- apisix_yaml
+upstreams:
+    - id: 1
+      type: roundrobin
+      nodes:
+        "127.0.0.1:9088": 1
+routes:
+    - id: 1
+      methods:
+          - POST
+      service_protocol: grpc
+      uri: "/hello"
+      upstream_id: 1
+#END
+--- error_code: 502
+--- error_log
+proxy request to 127.0.0.1:9088
+
+
+
+=== TEST 4: with consummer (old way)
+--- apisix_yaml
+consumers:
+  - username: jack
+    id: jack
+    plugins:
+        key-auth:
+            key: user-key
+#END
+routes:
+    - id: 1
+      methods:
+          - POST
+      service_protocol: grpc
+      uri: "/hello"
+      plugins:
+          key-auth:
+          consumer-restriction:
+              whitelist:
+                  - jack
+      upstream:
+          type: roundrobin
+          nodes:
+              "127.0.0.1:9088": 1
+#END
+--- more_headers
+apikey: user-key
+--- error_code: 502

@@ -28,6 +28,7 @@ local upstream_util = require("apisix.utils.upstream")
 local ctxdump       = require("resty.ctxdump")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
+local ngx_version   = ngx.config.nginx_version
 local get_method    = ngx.req.get_method
 local ngx_exit      = ngx.exit
 local math          = math
@@ -379,10 +380,6 @@ function _M.http_access_phase()
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
 
-    if route.value.service_protocol == "grpc" then
-        return ngx.exec("@grpc_pass")
-    end
-
     local enable_websocket = route.value.enable_websocket
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
@@ -515,6 +512,10 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
+    if route.value.service_protocol == "grpc" then
+        api_ctx.upstream_scheme = "grpc"
+    end
+
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)
@@ -522,6 +523,16 @@ function _M.http_access_phase()
     end
 
     set_upstream_host(api_ctx)
+
+    local up_scheme = api_ctx.upstream_scheme
+    if up_scheme == "grpcs" or up_scheme == "grpc" then
+        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+        if ngx_version < 1017008 then
+            return ngx.exec("@1_15_" .. up_scheme .. "_pass")
+        end
+
+        return ngx.exec("@grpc_pass")
+    end
 
     if api_ctx.dubbo_proxy_enabled then
         ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
@@ -536,70 +547,7 @@ end
 
 
 function _M.grpc_access_phase()
-    local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
-
-    core.ctx.set_vars_meta(api_ctx)
-
-    router.router_http.match(api_ctx)
-
-    core.log.info("route: ",
-                  core.json.delay_encode(api_ctx.matched_route, true))
-
-    local route = api_ctx.matched_route
-    if not route then
-        return core.response.exit(404)
-    end
-
-    if route.value.service_id then
-        -- core.log.info("matched route: ", core.json.delay_encode(route.value))
-        local service = service_fetch(route.value.service_id)
-        if not service then
-            core.log.error("failed to fetch service configuration by ",
-                           "id: ", route.value.service_id)
-            return core.response.exit(404)
-        end
-
-        local changed
-        route, changed = plugin.merge_service_route(service, route)
-        api_ctx.matched_route = route
-
-        if changed then
-            api_ctx.conf_type = "route&service"
-            api_ctx.conf_version = route.modifiedIndex .. "&"
-                                   .. service.modifiedIndex
-            api_ctx.conf_id = route.value.id .. "&"
-                              .. service.value.id
-        else
-            api_ctx.conf_type = "service"
-            api_ctx.conf_version = service.modifiedIndex
-            api_ctx.conf_id = service.value.id
-        end
-
-    else
-        api_ctx.conf_type = "route"
-        api_ctx.conf_version = route.modifiedIndex
-        api_ctx.conf_id = route.value.id
-    end
-
-    -- todo: support upstream id
-
-    api_ctx.matched_upstream = (route.dns_value and
-                                route.dns_value.upstream)
-                               or route.value.upstream
-
-    local plugins = core.tablepool.fetch("plugins", 32, 0)
-    api_ctx.plugins = plugin.filter(route, plugins)
-
-    run_plugin("rewrite", plugins, api_ctx)
-    run_plugin("access", plugins, api_ctx)
-
-    set_upstream(route, api_ctx)
+    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
 end
 
 

@@ -334,3 +334,45 @@ Host: t.com
 --- error_code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: request host with uppercase
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /server_port
+    host: test.com
+    upstream:
+        nodes:
+            "127.0.0.1:1981": 1
+        type: roundrobin
+#END
+--- request
+GET /server_port
+--- more_headers
+Host: tEst.com
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: configure host with uppercase
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /server_port
+    host: test.coM
+    upstream:
+        nodes:
+            "127.0.0.1:1981": 1
+        type: roundrobin
+#END
+--- request
+GET /server_port
+--- more_headers
+Host: test.com
+--- no_error_log
+[error]

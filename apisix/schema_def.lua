@@ -81,7 +81,7 @@ local remote_addr_def = {
 local label_value_def = {
     description = "value of label",
     type = "string",
-    pattern = [[^[a-zA-Z0-9-_.]+$]],
+    pattern = [[^\S+$]],
     maxLength = 64,
     minLength = 1
 }
@@ -314,9 +314,9 @@ local upstream_schema = {
         timeout = {
             type = "object",
             properties = {
-                connect = {type = "number", minimum = 0},
-                send = {type = "number", minimum = 0},
-                read = {type = "number", minimum = 0},
+                connect = {type = "number", exclusiveMinimum = 0},
+                send = {type = "number", exclusiveMinimum = 0},
+                read = {type = "number", exclusiveMinimum = 0},
             },
             required = {"connect", "send", "read"},
         },
@@ -340,6 +340,10 @@ local upstream_schema = {
         key = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
+        },
+        scheme = {
+            default = "http",
+            enum = {"grpc", "grpcs", "http", "https"}
         },
         labels = {
             description = "key/value pairs to specify attributes",
