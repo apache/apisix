@@ -140,9 +140,12 @@ end
 local function _ewma_find(ctx, up_nodes)
     local peers
 
-    if not up_nodes or nkeys(up_nodes) == 0 or
-        (ctx.balancer_tried_servers and ctx.balancer_tried_servers_count == nkeys(up_nodes)) then
+    if not up_nodes or nkeys(up_nodes) == 0 then
         return nil, 'up_nodes empty'
+    end
+
+    if ctx.balancer_tried_servers and ctx.balancer_tried_servers_count == nkeys(up_nodes) then
+        return nil, "all upstream servers tried"
     end
 
     peers = lrucache_trans_format(ctx.upstream_key, ctx.upstream_version, _trans_format, up_nodes)
