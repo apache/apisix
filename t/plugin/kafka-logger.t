@@ -590,10 +590,10 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
                         "plugins": {
                             "kafka-logger": {
                                 "broker_list" : {
-                                    "127.0.0.1":9092
+                                    "127.0.0.1": 9092
                                 },
                                 "kafka_topic" : "test3",
-                                "timeout" : 1,
+                                "timeout" : 2,
                                 "batch_max_size": 1,
                                 "include_req_body": false
                             }
@@ -628,16 +628,17 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(1)
+            t('/hello',ngx.HTTP_GET)
+            t('/hello',ngx.HTTP_GET)
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(6)
         }
     }
 --- request
 GET /t
---- timeout: 5
+--- timeout: 10s
 --- ignore_response
 --- no_error_log
 [error]
