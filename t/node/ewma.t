@@ -251,6 +251,7 @@ GET /t
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/ewma"
 
+            --should select the 1984 node, because it is invalid
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
