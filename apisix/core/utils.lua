@@ -14,29 +14,30 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core_str = require("apisix.core.string")
-local table    = require("apisix.core.table")
-local log      = require("apisix.core.log")
-local string   = require("apisix.core.string")
-local ngx_re   = require("ngx.re")
-local dns_client = require("resty.dns.client")
-local ipmatcher= require("resty.ipmatcher")
-local ffi      = require("ffi")
-local base     = require("resty.core.base")
-local open     = io.open
-local math     = math
-local sub_str  = string.sub
-local str_byte = string.byte
-local tonumber = tonumber
-local tostring = tostring
-local re_gsub  = ngx.re.gsub
-local type     = type
-local io_popen = io.popen
-local C        = ffi.C
-local ffi_string = ffi.string
+local core_str       = require("apisix.core.string")
+local table          = require("apisix.core.table")
+local log            = require("apisix.core.log")
+local string         = require("apisix.core.string")
+local ngx_re         = require("ngx.re")
+local dns_mod        = require("resty.dns.resolver")
+local dns_client     = require("resty.dns.client")
+local ipmatcher      = require("resty.ipmatcher")
+local ffi            = require("ffi")
+local base           = require("resty.core.base")
+local open           = io.open
+local math           = math
+local sub_str        = string.sub
+local str_byte       = string.byte
+local tonumber       = tonumber
+local tostring       = tostring
+local re_gsub        = ngx.re.gsub
+local type           = type
+local io_popen       = io.popen
+local C              = ffi.C
+local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
-local exiting = ngx.worker.exiting
-local ngx_sleep    = ngx.sleep
+local exiting        = ngx.worker.exiting
+local ngx_sleep      = ngx.sleep
 
 local hostname
 local dns_resolvers
@@ -83,11 +84,13 @@ end
 
 
 local function dns_parse(domain)
+    log.alert("find ", domain)
+
     if dns_resolvers ~= current_inited_resolvers then
         local opts = {
             nameservers = table.clone(dns_resolvers),
-            retrans = 5,  -- 5 retransmissions on receive timeout
-            timeout = 2000,  -- 2 sec
+            retrans = 1,  -- 5 retransmissions on receive timeout
+            timeout = 500,  -- 2 sec
         }
         local ok, err = dns_client.init(opts)
         if not ok then
@@ -97,6 +100,7 @@ local function dns_parse(domain)
         current_inited_resolvers = dns_resolvers
     end
 
+    -- this function will dereference the CNAME records
     local answers, err = dns_client.resolve(domain)
     if not answers then
         return nil, "failed to query the DNS server: " .. err
@@ -109,15 +113,13 @@ local function dns_parse(domain)
 
     local idx = math.random(1, #answers)
     local answer = answers[idx]
-    if answer.type == 1 then
+    local dns_type = answer.type
+    -- TODO: support AAAA & SRV
+    if dns_type == dns_mod.TYPE_A then
         return table.deepcopy(answer)
     end
 
-    if answer.type ~= 5 then
-        return nil, "unsupport DNS answer"
-    end
-
-    return dns_parse(answer.cname)
+    return nil, "unsupport DNS answer"
 end
 _M.dns_parse = dns_parse
 
