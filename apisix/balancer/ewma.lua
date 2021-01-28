@@ -7,6 +7,8 @@ local core = require("apisix.core")
 local resty_lock = require("resty.lock")
 
 local nkeys = core.table.nkeys
+local table_insert = core.table.insert
+local table_deepcopy = core.table.deepcopy
 local ngx = ngx
 local ngx_shared = ngx.shared
 local ngx_now = ngx.now
@@ -24,8 +26,7 @@ local shm_last_touched_at = ngx_shared.balancer_ewma_last_touched_at
 local lrucache_addr = core.lrucache.new({ttl = 300, count = 1024})
 local lrucache_trans_format = core.lrucache.new({ttl = 300, count = 256})
 
-local ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
-                                                {timeout = 0, exptime = 0.1})
+local ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks", {timeout = 0, exptime = 0.1})
 
 local _M = {name = "ewma"}
 
@@ -143,22 +144,44 @@ local function _ewma_find(ctx, up_nodes)
         return nil, 'up_nodes empty'
     end
 
-    peers = lrucache_trans_format(ctx.upstream_key, ctx.upstream_version,
-                                  _trans_format, up_nodes)
+    peers = lrucache_trans_format(ctx.upstream_key, ctx.upstream_version, _trans_format, up_nodes)
     if not peers then
         return nil, 'up_nodes trans error'
     end
 
-    local endpoint = peers[1]
+    local tried_endpoints
+    if not ctx.balancer_tried_servers then
+        tried_endpoints = {}
+        ctx.balancer_tried_servers = tried_endpoints
+    else
+        tried_endpoints = ctx.balancer_tried_servers
+    end
 
-    if #peers > 1 then
-        local a, b = math.random(1, #peers), math.random(1, #peers - 1)
+    local filtered_peers
+    for _, peer in ipairs(peers) do
+        if not tried_endpoints[get_upstream_name(peer)] then
+            if not filtered_peers then
+                filtered_peers = {}
+            end
+            table_insert(filtered_peers, peer)
+        end
+    end
+
+    if not filtered_peers then
+        core.log.warn("all endpoints have been retried")
+        filtered_peers = table_deepcopy(peers)
+    end
+
+    local endpoint = filtered_peers[1]
+
+    if #filtered_peers > 1 then
+        local a, b = math.random(1, #filtered_peers), math.random(1, #filtered_peers - 1)
         if b >= a then
             b = b + 1
         end
 
         local backendpoint
-        endpoint, backendpoint = peers[a], peers[b]
+        endpoint, backendpoint = filtered_peers[a], filtered_peers[b]
         if score(endpoint) > score(backendpoint) then
             endpoint = backendpoint
         end
@@ -169,8 +192,19 @@ end
 
 local function _ewma_after_balance(ctx, before_retry)
     if before_retry then
-        -- don't count tries which fail to complete
+        if not ctx.balancer_tried_servers then
+            ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
+        end
+
+        ctx.balancer_tried_servers[ctx.balancer_server] = true
+        ctx.balancer_tried_servers_count = (ctx.balancer_tried_servers_count or 0) + 1
+
         return nil
+    end
+
+    if ctx.balancer_tried_servers then
+        core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+        ctx.balancer_tried_servers = nil
     end
 
     local response_time = ctx.var.upstream_response_time or 0
