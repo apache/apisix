@@ -155,11 +155,13 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
+	fmt.Printf("time: %v \t bandwidth: %f", time.Now(), bandWidthStart)
 
 	time.Sleep(10 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
+	fmt.Printf("time: %v \t bandwidth: %f", time.Now(), bandWidthEnd)
 
 	return (bandWidthEnd - bandWidthStart) / 10.0
 }
