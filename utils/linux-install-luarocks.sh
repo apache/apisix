@@ -16,6 +16,10 @@
 # limitations under the License.
 #
 
+if [ -z ${OR_PREFIX} ]; then
+    OR_PREFIX="/usr/local/openresty"
+fi
+
 wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
 tar -xf v3.4.0.tar.gz
 cd luarocks-3.4.0 || exit
@@ -24,3 +28,7 @@ make build > build.log 2>&1 || (cat build.log && exit 1)
 make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
 rm -rf luarocks-3.4.0
+
+mkdir ~/.luarocks || true
+luarocks config variables.OPENSSL_LIBDIR ${OR_PREFIX}/openssl/lib
+luarocks config variables.OPENSSL_INCDIR ${OR_PREFIX}/openssl/include

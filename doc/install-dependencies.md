@@ -57,12 +57,8 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 # install OpenResty and some compilation tools
 sudo yum install -y openresty curl git gcc luarocks lua-devel openresty-openssl-devel
 
-# if the luarocks installed by yum is not the 3.x, installing it from source.
+# install LuaRocks
 sudo bash ./utils/linux-install-luarocks.sh
-
-# configure your LuaRocks with the paths of OPENSSL_LIBDIR and OPENSSL_INCDIR
-luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl/lib
-luarocks config variables.OPENSSL_INCDIR /usr/local/openresty/openssl/include
 
 # configure
 
@@ -86,12 +82,8 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
 # install OpenResty and some compilation tools
 sudo yum install -y openresty curl git gcc luarocks lua-devel openresty-openssl-devel
 
-# if the luarocks installed by yum is not the 3.x, installing it from source.
+# install LuaRocks
 sudo bash ./utils/linux-install-luarocks.sh
-
-# configure your LuaRocks with the paths of OPENSSL_LIBDIR and OPENSSL_INCDIR
-luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl/lib
-luarocks config variables.OPENSSL_INCDIR /usr/local/openresty/openssl/include
 
 # start etcd server
 nohup etcd &
@@ -114,14 +106,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks openresty-openssl-dev
+sudo apt-get install -y git openresty curl openresty-openssl-dev
 
-# if the luarocks installed by yum is not the 3.x, installing it from source.
+# install LuaRocks
 sudo bash ./utils/linux-install-luarocks.sh
-
-# configure your LuaRocks with the paths of OPENSSL_LIBDIR and OPENSSL_INCDIR
-luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl/lib
-luarocks config variables.OPENSSL_INCDIR /usr/local/openresty/openssl/include
 
 # start etcd server
 nohup etcd &
@@ -149,14 +137,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks make openresty-openssl-dev
+sudo apt-get install -y git openresty curl make openresty-openssl-dev
 
-# if the luarocks installed by yum is not the 3.x, installing it from source.
+# install LuaRocks
 sudo bash ./utils/linux-install-luarocks.sh
-
-# configure your LuaRocks with the paths of OPENSSL_LIBDIR and OPENSSL_INCDIR
-luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl/lib
-luarocks config variables.OPENSSL_INCDIR /usr/local/openresty/openssl/include
 
 # start etcd server
 nohup etcd &
