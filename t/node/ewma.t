@@ -166,7 +166,7 @@ GET /t
                 return
             end
 
-            ngx.sleep(20)
+            ngx.sleep(11)
             --keep the node 1980 hot
             for i = 1, 12 do
                 local httpc = http.new()
@@ -226,7 +226,7 @@ GET /t
             local t = require("lib.test_admin").test
 
             --remove the 1981 node,
-            --add the 1984 node (invalid node)
+            --add the 8888 node (invalid node)
             --keep two nodes for triggering ewma logic in server_picker function of balancer phase
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -234,11 +234,11 @@ GET /t
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "127.0.0.1:1984": 1
+                                "127.0.0.1:8888": 1
                             },
                             "type": "ewma",
                             "timeout": {
-                                "connect": 0.5,
+                                "connect": 0.1,
                                 "send": 0.5,
                                 "read": 0.5
                             }
@@ -256,7 +256,7 @@ GET /t
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/ewma"
 
-            --should select the 1980 node, because 1984 is invalid
+            --should always select the 1980 node, because 8888 is invalid
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
@@ -290,4 +290,4 @@ GET /t
 [{"count":12,"port":"1980"}]
 --- error_code: 200
 --- error_log
-upstream timed out
+Connection refused) while connecting to upstream
