@@ -628,12 +628,16 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
+            ngx.sleep(1)
         }
     }
 --- request
 GET /t
+--- timeout: 5
 --- ignore_response
 --- no_error_log
 [error]
