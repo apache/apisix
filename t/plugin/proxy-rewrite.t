@@ -515,13 +515,10 @@ passed
 === TEST 17: rewrite uri args
 --- request
 GET /hello?q=apisix&a=iresty HTTP/1.1
---- response_body_like eval
-qr/uri: \/plugin_proxy_rewrite_args(
-q: apisix
-a: iresty|
+--- response_body
+uri: /plugin_proxy_rewrite_args
 a: iresty
-q: apisix)
-/
+q: apisix
 --- no_error_log
 [error]
 
