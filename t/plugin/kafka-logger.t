@@ -593,7 +593,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
                                     "127.0.0.1": 9092
                                 },
                                 "kafka_topic" : "test3",
-                                "timeout" : 2,
+                                "timeout" : 1,
                                 "batch_max_size": 1,
                                 "include_req_body": false
                             }
@@ -630,19 +630,14 @@ passed
             t('/hello',ngx.HTTP_GET)
             t('/hello',ngx.HTTP_GET)
             t('/hello',ngx.HTTP_GET)
-            t('/hello',ngx.HTTP_GET)
-            t('/hello',ngx.HTTP_GET)
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(5)
         }
     }
 --- request
 GET /t
---- timeout: 10s
 --- ignore_response
 --- no_error_log
 [error]
 --- error_log eval
 [qr/partition_id: 1/,
-qr/partition_id: 2/,
-qr/partition_id: 0/]
+qr/partition_id: 0/,
+qr/partition_id: 2/]
