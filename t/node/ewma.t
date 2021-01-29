@@ -338,7 +338,7 @@ Connection refused) while connecting to upstream
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/ewma"
 
-            --should always select the 1980 node, because 0 is invalid
+            --should always return 502, because both 9527 and 9528 are invalid
             local t = {}
             local ports_count = {}
             for i = 1, 12 do
