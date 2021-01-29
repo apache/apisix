@@ -120,6 +120,10 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ![](../../doc/images/plugin/grafana_3.png)
 
+![](../../doc/images/plugin/grafana_4.png)
+
+![](../../doc/images/plugin/grafana_5.png)
+
 ### Available metrics
 
 * `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.

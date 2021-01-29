@@ -118,6 +118,10 @@ plugin_attr:
 
 ![](../../images/plugin/grafana_3.png)
 
+![](../../images/plugin/grafana_4.png)
+
+![](../../images/plugin/grafana_5.png)
+
 ### 可有的指标
 
 * `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
