@@ -20,7 +20,7 @@
 
 do_install() {
     ./utils/linux-install-openresty.sh
-    ./utils/linux-install-luarocks.sh
+    OR_PREFIX=/usr/local/openresty-debug ./utils/linux-install-luarocks.sh
     ./utils/linux-install-etcd-client.sh
 }
 
