@@ -1,36 +1,46 @@
-#!/usr/bin/env lua
+#!/bin/bash
 
---
--- Licensed to the Apache Software Foundation (ASF) under one or more
--- contributor license agreements.  See the NOTICE file distributed with
--- this work for additional information regarding copyright ownership.
--- The ASF licenses this file to You under the Apache License, Version 2.0
--- (the "License"); you may not use this file except in compliance with
--- the License.  You may obtain a copy of the License at
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
---
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-local pkg_cpath_org = package.cpath
-local pkg_path_org = package.path
+if [ -s './apisix/cli/apisix.lua' ]; then
+    APISIX_LUA=./apisix/cli/apisix.lua
+elif [ -s '/usr/share/lua/5.1/apisix/cli/apisix.lua' ]; then
+    APISIX_LUA=/usr/share/lua/5.1/apisix/cli/apisix.lua
+else
+    APISIX_LUA=/usr/local/apisix/apisix/cli/apisix.lua
+fi
 
-local apisix_home = "/usr/local/apisix"
-local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
-                  .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
-local pkg_path = apisix_home .. "/deps/share/lua/5.1/?.lua;;"
+# find the openresty
+OR_BIN=$(which openresty)
+OR_EXEC=${OR_BIN:-'/usr/local/openresty-debug/bin/openresty'}
+OR_VER=$(openresty -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
+LUA_VERSION=$(lua -v 2>&1| grep -E -o  "Lua [0-9]+.[0-9]+")
 
--- modify the load path to load our dependencies
-package.cpath = pkg_cpath .. pkg_cpath_org
-package.path  = pkg_path .. pkg_path_org
+if [[ -e $OR_EXEC && "$OR_VER" =~ "1.19" ]]; then
+    # OpenResty version is 1.19, use luajit by default
+    # find the luajit binary of openresty
+    LUAJIT_BIN=$(${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit/bin/luajit
 
--- pass path to construct the final result
-local env = require("apisix.cli.env")(apisix_home, pkg_cpath_org, pkg_path_org)
-local ops = require("apisix.cli.ops")
-
-ops.execute(env, arg)
+    # use the luajit of openresty
+    $LUAJIT_BIN $APISIX_LUA $*
+elif [[ "$LUA_VERSION" =~ "Lua 5.1" ]]; then
+    # OpenResty version is not 1.19, use Lua 5.1 by default
+    lua $APISIX_LUA $*
+else
+    echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19 and Lua 5.1 are recommended before install Apache APISIX."
+fi

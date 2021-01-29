@@ -34,6 +34,8 @@
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
+- Apache APISIX 运行默认使用 OpenResty 1.19 内置的 LuaJIT（优先推荐）或 Lua 5.1。若运行过程中出现问题 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，是因 OpenResty 版本兼容性问题，建议更换 OpenResty 版本为 1.19，请参考 [linux-install-openresty](../../utils/linux-install-openresty.sh)。
+
 # CentOS 7
 
 ```shell
