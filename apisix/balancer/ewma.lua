@@ -187,8 +187,6 @@ local function _ewma_find(ctx, up_nodes)
 end
 
 local function _ewma_after_balance(ctx, before_retry)
-    ngx.log(ngx.WARN,"--------",core.json.encode(ctx.balancer_tried_servers), ctx.balancer_tried_servers_count)
-
     if before_retry then
         if not ctx.balancer_tried_servers then
             ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
