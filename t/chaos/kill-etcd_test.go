@@ -198,7 +198,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// run in background
 	go func() {
-		for i := 1; ; i++ {
+		for {
 			go getRoute(e, http.StatusOK)
 			time.Sleep(1000 * time.Millisecond)
 		}
