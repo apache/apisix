@@ -158,6 +158,6 @@ passed
 === TEST 6: hit route
 --- request
 GET /server_port
---- error_code: 500
+--- error_code: 503
 --- error_log
 failed to parse domain: xxxx.invalid
