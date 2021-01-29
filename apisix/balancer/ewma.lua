@@ -154,8 +154,8 @@ local function _ewma_find(ctx, up_nodes)
     end
 
     local filtered_peers
-    for _, peer in ipairs(peers) do
-        if ctx.balancer_tried_servers then
+    if ctx.balancer_tried_servers then
+        for _, peer in ipairs(peers) do
             if not ctx.balancer_tried_servers[get_upstream_name(peer)] then
                 if not filtered_peers then
                     filtered_peers = {}
@@ -164,10 +164,7 @@ local function _ewma_find(ctx, up_nodes)
                 table_insert(filtered_peers, peer)
             end
         end
-    end
-
-    if not filtered_peers then
-        core.log.warn("all endpoints have been retried")
+    else
         filtered_peers = peers
     end
 
@@ -190,6 +187,8 @@ local function _ewma_find(ctx, up_nodes)
 end
 
 local function _ewma_after_balance(ctx, before_retry)
+    ngx.log(ngx.WARN,"--------",core.json.encode(ctx.balancer_tried_servers), ctx.balancer_tried_servers_count)
+
     if before_retry then
         if not ctx.balancer_tried_servers then
             ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
