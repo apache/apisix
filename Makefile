@@ -98,7 +98,7 @@ endif
 ### stop:             Stop the apisix server
 .PHONY: stop
 stop: default
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
+	./bin/apisix stop
 
 
 ### verify:           Verify the configuration of apisix server
