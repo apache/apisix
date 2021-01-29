@@ -27,7 +27,7 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        rate = {type = "number", minimum = 0},
+        rate = {type = "number", exclusiveMinimum = 0},
         burst = {type = "number",  minimum = 0},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
