@@ -290,7 +290,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -721,7 +721,7 @@ passed
 
 
 
-=== TEST 20： delete route
+=== TEST 20: delete route
 --- config
     location /t {
         content_by_lua_block {
@@ -736,5 +736,27 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: check_schema failed (the `rate` attribute is equal to 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-req")
+            local ok, err = plugin.check_schema({rate = 0, burst = 0, rejected_code = 503, key = 'remote_addr'})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/property \"rate\" validation failed: expected 0 to be sctrictly greater than 0/
 --- no_error_log
 [error]

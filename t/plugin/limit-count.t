@@ -269,7 +269,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -311,7 +311,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -391,7 +391,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -432,7 +432,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -1325,5 +1325,49 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: check_schema failed (the `count` attribute is equal to 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-count")
+            local ok, err = plugin.check_schema({count = 0, time_window = 60, rejected_code = 503, key = 'remote_addr'})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/property \"count\" validation failed: expected 0 to be sctrictly greater than 0/
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: check_schema failed (the `time_window` attribute is equal to 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-count")
+            local ok, err = plugin.check_schema({count = 2, time_window = 0, rejected_code = 503, key = 'remote_addr'})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/property \"time_window\" validation failed: expected 0 to be sctrictly greater than 0/
 --- no_error_log
 [error]
