@@ -250,7 +250,7 @@ passed
 === TEST 8: hit empty nodes upstream
 --- request
 GET /index.html
---- error_code: 502
+--- error_code: 503
 --- error_log
 no valid upstream node
 
