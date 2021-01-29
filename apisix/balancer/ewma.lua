@@ -76,9 +76,8 @@ local function store_stats(upstream, ewma, now)
 end
 
 local function get_or_update_ewma(upstream, rtt, update)
-    local lock_err = nil
     if update then
-        lock_err = lock(upstream)
+        local lock_err = lock(upstream)
         if lock_err ~= nil then
             return 0, lock_err
         end
