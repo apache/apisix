@@ -57,9 +57,12 @@ env {*name*};
 {% if stream_proxy then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
+                      .. [=[/usr/share/lua/5.1/?.lua;/usr/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+                      .. [=[/usr/lib64/lua/5.1/?.so;]=]
+                      .. [=[/usr/lib/lua/5.1/?.so;]=]
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
@@ -120,9 +123,12 @@ http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
+                       .. [=[/usr/share/lua/5.1/?.lua;/usr/share/lua/5.1/?/init.lua;]=]
                        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+                      .. [=[/usr/lib64/lua/5.1/?.so;]=]
+                      .. [=[/usr/lib/lua/5.1/?.so;]=]
                       .. [=[{*lua_cpath*};";
 
     lua_shared_dict internal_status      10m;
