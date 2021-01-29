@@ -34,7 +34,9 @@ local schema = {
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for", "consumer_name"},
         },
-        rejected_code = {type = "integer", minimum = 200, default = 503},
+        rejected_code = {
+            type = "integer", minimum = 200, maximum = 599, default = 503
+        },
     },
     required = {"conn", "burst", "default_conn_delay", "key"}
 }
