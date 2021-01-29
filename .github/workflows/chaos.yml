@@ -1,0 +1,52 @@
+name: Chaos Test
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup go
+        uses: actions/setup-go@v2.1.3
+        with:
+          go-version: "1.14"
+
+      - name: Creating minikube cluster
+        run: |
+          bash ./t/chaos/utils.sh start_minikube
+
+      - name: Print cluster information
+        run: |
+          kubectl config view
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get pods -n kube-system
+          kubectl version
+
+      # TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
+      - name: Deploy Etcd Operator
+        run: |
+          git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
+          bash etcd-operator/example/rbac/create_role.sh
+          kubectl create -f etcd-operator/example/deployment.yaml
+          bash ./t/chaos/utils.sh ensure_pods_ready etcd-operator "True" 30
+          kubectl create -f etcd-operator/example/example-etcd-cluster.yaml
+          bash ./t/chaos/utils.sh ensure_pods_ready etcd "True True True" 30
+
+      - name: Deploy APISIX
+        run: |
+          bash ./t/chaos/utils.sh modify_config
+          kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
+          kubectl apply -f ./kubernetes/deployment.yaml
+          kubectl apply -f ./kubernetes/service.yaml
+          bash ./t/chaos/utils.sh ensure_pods_ready apisix-gw "True" 30
+          nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
+
+      - name: Deploy Chaos mesh
+        run: |
+          curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
+
+      - name: run test
+        working-directory: ./t/chaos
+        run: go test -v
