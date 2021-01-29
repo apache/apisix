@@ -43,8 +43,7 @@ local schema = {
             default = "remote_addr",
         },
         rejected_code = {
-            type = "integer", minimum = 200, maximum = 600,
-            default = 503
+            type = "integer", minimum = 200, maximum = 599, default = 503
         },
         policy = {
             type = "string",
