@@ -79,12 +79,12 @@ local function get_or_update_ewma(upstream, rtt, update)
     local lock_err = nil
     if update then
         lock_err = lock(upstream)
+        if lock_err ~= nil then
+            return 0, lock_err
+        end
     end
 
     local ewma = shm_ewma:get(upstream) or 0
-    if lock_err ~= nil then
-        return ewma, lock_err
-    end
 
     local now = ngx_now()
     local last_touched_at = shm_last_touched_at:get(upstream) or 0
