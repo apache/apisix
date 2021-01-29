@@ -90,7 +90,7 @@ local function compare_semantic_version(v1, v2)
 end
 
 
-function _M.init(env, show_output)
+function _M.init(env)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
@@ -246,9 +246,6 @@ function _M.init(env, show_output)
                 break
             end
 
-            if show_output then
-                print(res_put)
-            end
         end
 
         if is_success then
