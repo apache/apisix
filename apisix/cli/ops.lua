@@ -19,7 +19,9 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local profile = require("apisix.core.profile")
 local template = require("resty.template")
+local argparse = require("argparse")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -407,8 +409,8 @@ Please modify "admin_key" in conf/config.yaml .
 end
 
 
-local function init_etcd(env, show_output)
-    etcd.init(env, show_output)
+local function init_etcd(env)
+    etcd.init(env)
 end
 
 
@@ -445,16 +447,37 @@ local function start(env, ...)
               ", the file will be overwritten")
     end
 
+    local parser = argparse()
+    parser:argument("_", "Placeholder")
+    parser:option("-c --config", "location of customized config.yaml")
+    local args = parser:parse()
+    local customized_yaml = args["config"]
+
+    profile.apisix_home = env.apisix_home .. "/"
+    local local_conf_path = profile:yaml_path("config")
+
+    if customized_yaml then
+        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
+        print("Use customized yaml: ", customized_yaml)
+    end
+
     init(env, ...)
     init_etcd(env, ...)
 
-    execute(env.openresty_args)
+    util.execute_cmd(env.openresty_args)
 end
 
 
 local function stop(env)
+    local local_conf_path = profile:yaml_path("config")
+    local bak_exist = io_open(local_conf_path .. ".bak")
+    if bak_exist then
+        util.execute_cmd("rm " .. local_conf_path)
+        util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+    end
     local cmd = env.openresty_args .. [[ -s stop]]
-    execute(cmd)
+    util.execute_cmd(cmd)
 end
 
 
