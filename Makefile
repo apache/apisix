@@ -33,8 +33,10 @@ RELEASE_SRC = apache-apisix-${VERSION}-src
 default:
 ifeq ($(OR_EXEC), )
 ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
-	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+	@echo "WARNING: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
 	exit 1
+else
+	OR_EXEC=/usr/local/openresty-debug/bin/openresty
 endif
 endif
 
