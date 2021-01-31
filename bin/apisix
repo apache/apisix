@@ -18,10 +18,16 @@
 #
 
 if [ -s './apisix/cli/apisix.lua' ]; then
+    # install via source
     APISIX_LUA=./apisix/cli/apisix.lua
 elif [ -s '/usr/share/lua/5.1/apisix/cli/apisix.lua' ]; then
+    # install via luarock
     APISIX_LUA=/usr/share/lua/5.1/apisix/cli/apisix.lua
+elif [ -s '/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua' ]; then
+    # install via shell
+    APISIX_LUA=/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua
 else
+    # install via official rpm or docker
     APISIX_LUA=/usr/local/apisix/apisix/cli/apisix.lua
 fi
 
@@ -37,9 +43,11 @@ if [[ -e $OR_EXEC && "$OR_VER" =~ "1.19" ]]; then
     LUAJIT_BIN=$(${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit/bin/luajit
 
     # use the luajit of openresty
+    echo "$LUAJIT_BIN $APISIX_LUA $*"
     $LUAJIT_BIN $APISIX_LUA $*
 elif [[ "$LUA_VERSION" =~ "Lua 5.1" ]]; then
     # OpenResty version is not 1.19, use Lua 5.1 by default
+    echo "lua $APISIX_LUA $*"
     lua $APISIX_LUA $*
 else
     echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19 and Lua 5.1 are recommended before install Apache APISIX."

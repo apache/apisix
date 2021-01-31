@@ -35,6 +35,7 @@ before_install() {
     docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
     docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+    docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 3 --topic test3
 
     # start skywalking
     docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
@@ -110,7 +111,7 @@ script() {
 
     #start again  --> fial
     res=`./bin/apisix start`
-    if [ "$res" != "APISIX is running..." ]; then
+    if ! echo "$res" | grep "APISIX is running"; then
         echo "failed: APISIX runs repeatedly"
         exit 1
     fi
@@ -120,7 +121,7 @@ script() {
 
     #start -> ok
     res=`./bin/apisix start`
-    if [ "$res" == "APISIX is running..." ]; then
+    if echo "$res" | grep "APISIX is running"; then
         echo "failed: shouldn't stop APISIX running after kill the old process."
         exit 1
     fi
