@@ -259,7 +259,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - udp-logger
   - uri-blocker
   - wolf-rbac
-  - web-hook
+  - auth-hook
   - zipkin
   - server-info
   - traffic-split
