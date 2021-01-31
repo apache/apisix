@@ -576,3 +576,72 @@ hello world
 --- error_log_like eval
 qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
+
+
+
+=== TEST 17: use the topic with 3 partitions
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1": 9092
+                                },
+                                "kafka_topic" : "test3",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: report log to kafka by different partitions
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+        }
+    }
+--- request
+GET /t
+--- timeout: 5s
+--- ignore_response
+--- no_error_log
+[error]
+--- error_log eval
+[qr/partition_id: 1/,
+qr/partition_id: 0/,
+qr/partition_id: 2/]
