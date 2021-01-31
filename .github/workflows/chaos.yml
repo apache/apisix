@@ -24,10 +24,9 @@ jobs:
           kubectl get pods -n kube-system
           kubectl version
 
-      # TODO: should not use personal repo, while it's hard to modify a lot in an archived repo. Could we use api7's repo?
       - name: Deploy Etcd Operator
         run: |
-          git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
+          git clone https://github.com/api7/etcd-operator.git --depth 1
           bash etcd-operator/example/rbac/create_role.sh
           kubectl create -f etcd-operator/example/deployment.yaml
           bash ./t/chaos/utils.sh ensure_pods_ready etcd-operator "True" 30
