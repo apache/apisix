@@ -36,10 +36,7 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 
 
 -- Default set of latency buckets, 1ms to 60s:
-local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
-    80, 90, 100, 200, 300, 400, 500, 1000,
-    2000, 5000, 10000, 30000, 60000
-}
+local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
 local metrics = {}
 
