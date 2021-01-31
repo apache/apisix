@@ -26,6 +26,7 @@ local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
+local http_code_upstream_unavailable = ngx.HTTP_SERVICE_UNAVAILABLE
 
 local _M = {}
 
@@ -184,7 +185,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return 502, "no valid upstream node"
+        return http_code_upstream_unavailable, "no valid upstream node"
     end
 
     if not is_http then

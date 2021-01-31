@@ -230,7 +230,7 @@ local function parse_domain_for_nodes(nodes)
             end
 
             if err then
-                return nil, err
+                core.log.error("dns resolver domain: ", host, " error: ", err)
             end
         else
             core.table.insert(new_nodes, node)

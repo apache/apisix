@@ -27,8 +27,8 @@ local schema = {
                     type = "string",
                     enum = {"consumer_name", "service_id"},
                     default = "consumer_name"
-               },
-		blacklist = {
+                },
+                blacklist = {
                     type = "array",
                     minItems = 1,
                     items = {type = "string"}
@@ -40,17 +40,17 @@ local schema = {
         {
             title = "whitelist",
             properties = {
-	        type = {
+                type = {
                     type = "string",
                     enum = {"consumer_name", "service_id"},
                     default = "consumer_name"
-               },
+                },
                 whitelist = {
                     type = "array",
                     minItems = 1,
                     items = {type = "string"}
-	       },
-               rejected_code = {type = "integer", minimum = 200, default = 403}
+                },
+                rejected_code = {type = "integer", minimum = 200, default = 403}
             },
             required = {"whitelist"},
         }

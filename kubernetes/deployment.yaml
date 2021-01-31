@@ -23,7 +23,7 @@ metadata:
   name: apisix-gw-deployment
   # namespace: default
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: apisix-gw
@@ -57,6 +57,7 @@ spec:
               sysctl -w fs.inotify.max_user_watches=524288
               sysctl -w fs.inotify.max_queued_events=16384
           image: busybox:latest
+          imagePullPolicy: IfNotPresent
           name: init-sysctl
           resources: {}
           securityContext:
