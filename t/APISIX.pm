@@ -69,6 +69,10 @@ if ($enable_local_dns) {
     $dns_addrs_str = "8.8.8.8 114.114.114.114";
     $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
 }
+my $custom_dns_server = $ENV{"CUSTOM_DNS_SERVER"};
+if ($custom_dns_server) {
+    $dns_addrs_tbl_str = "{\"$custom_dns_server\"}";
+}
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
