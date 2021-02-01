@@ -105,23 +105,6 @@ do
 
 end -- do
 
---获取请求缓存
-local token_auth_cache
-do
-    local token_anth = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.auth_id] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
 
 
 local function fail_response(message, init_values)
