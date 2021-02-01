@@ -195,6 +195,13 @@ tengine_install() {
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
     rm -rf openresty-${OPENRESTY_VERSION}
+
+    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+    sudo apt-get -y update --fix-missing
+    sudo apt-get -y install software-properties-common
+    sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    sudo apt-get update
+    sudo apt-get install openresty-openssl-debug-dev
 }
 
 do_install() {
