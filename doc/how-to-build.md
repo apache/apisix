@@ -43,7 +43,7 @@ Install the Lua libraries that the runtime depends on:
 
 ```shell
 cd apache-apisix-2.2
-make deps
+sudo make deps
 ```
 
 ### Installation via RPM package (CentOS 7)

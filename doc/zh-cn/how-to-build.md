@@ -43,7 +43,7 @@ $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
 
 ```
 cd apache-apisix-2.2
-make deps
+sudo make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
