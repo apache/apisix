@@ -31,6 +31,7 @@ local type     = type
 local string   = string
 local req_read_body = ngx.req.read_body
 local req_get_post_args = ngx.req.get_post_args
+local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
@@ -332,9 +333,10 @@ local function get_args()
     req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
                    1, true) then
-        args, err = json.decode(ngx.req.get_body_data())
+        local req_body = req_get_body_data()
+        args, err = json.decode(req_body)
         if err then
-            core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
+            core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
         args = req_get_post_args()

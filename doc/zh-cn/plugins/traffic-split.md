@@ -55,12 +55,15 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 
->注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 中只有 `weight` 值，表示到达 `route` 或 `service` 上配置的 upstream 流量权重值。如：
+>注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 域中，如果存在只有 `weight` 的结构，表示 `route` 或 `service` 上的 upstream 流量权重值。例如：
 
 ```json
-{
-    "weight": 2
-}
+"weighted_upstreams": [
+    ......
+    {
+        "weight": 2
+    }
+]
 ```
 
 ## 如何启用
@@ -334,7 +337,7 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-**示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `and` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
+**示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `or` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -350,7 +353,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                 ["arg_name","==","jack"],
                                 ["http_user-id",">","23"],
                                 ["http_apisix-key","~~","[a-z]+"]
-                            ],
+                            ]
+                        },
+                        {
                             "vars": [
                                 ["arg_name2","==","rose"],
                                 ["http_user-id2","!",">","33"],
@@ -437,7 +442,7 @@ hello 1980
 >3、两个 `vars` 的表达式校验失败（缺少 `name` 和 `name2` 请求参数），`match` 规则校验失败, 响应都为默认 `route` 的 upstream 数据 `hello 1980`。
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......

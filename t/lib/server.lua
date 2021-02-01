@@ -56,6 +56,12 @@ function _M.hello_()
 end
 
 
+-- Fake endpoint, needed for testing authz-keycloak plugin.
+function _M.course_foo()
+    ngx.say("course foo")
+end
+
+
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
@@ -80,8 +86,15 @@ end
 function _M.plugin_proxy_rewrite_args()
     ngx.say("uri: ", ngx.var.uri)
     local args = ngx.req.get_uri_args()
-    for k,v in pairs(args) do
-        ngx.say(k, ": ", v)
+
+    local keys = {}
+    for k, _ in pairs(args) do
+        table.insert(keys, k)
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        ngx.say(key, ": ", args[key])
     end
 end
 

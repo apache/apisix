@@ -18,6 +18,7 @@ local require = require
 local http_route = require("apisix.http.route")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local str_lower = string.lower
 local error   = error
 local pairs   = pairs
 local ipairs  = ipairs
@@ -32,7 +33,21 @@ local function filter(route)
         return
     end
 
-    if not route.value.upstream or not route.value.upstream.nodes then
+    if route.value.host then
+        route.value.host = str_lower(route.value.host)
+    elseif route.value.hosts then
+        for i, v in ipairs(route.value.hosts) do
+            route.value.hosts[i] = str_lower(v)
+        end
+    end
+
+    if not route.value.upstream then
+        return
+    end
+
+    route.value.upstream.parent = route
+
+    if not route.value.upstream.nodes then
         return
     end
 
@@ -64,7 +79,7 @@ local function filter(route)
         route.value.upstream.nodes = new_nodes
     end
 
-    core.log.info("filter route: ", core.json.delay_encode(route))
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
 
 

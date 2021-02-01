@@ -19,6 +19,7 @@ local plugin_name   = "request-validation"
 local ngx           = ngx
 local io           = io
 local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
 
 local schema = {
     type = "object",
@@ -88,7 +89,7 @@ function _M.rewrite(conf)
     if conf.body_schema then
         req_read_body()
         local req_body, error
-        local body = ngx.req.get_body_data()
+        local body = req_get_body_data()
 
         if not body then
             local filename = ngx.req.get_body_file()

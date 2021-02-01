@@ -500,6 +500,45 @@ fi
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
 
+# check customized config.yaml is copied and reverted.
+
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    admin_api_mtls:
+        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+    port_admin: 9180
+    https_admin: true
+" > conf/customized_config.yaml
+
+cp conf/config.yaml conf/config_original.yaml
+
+make init
+
+./bin/apisix start -c conf/customized_config.yaml
+
+if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
+    echo "failed: customized config.yaml copied failed"
+    exit 1
+fi
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: customized config.yaml not be used"
+    exit 1
+fi
+
+make stop
+
+if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
+    echo "failed: customized config.yaml reverted failed"
+    exit 1
+fi
+
+echo "passed: customized config.yaml copied and reverted succeeded"
+
 # log format
 
 git checkout conf/config.yaml
@@ -958,7 +997,7 @@ fi
 
 echo "passed: Show connection refused info successfully"
 
-# check etcd auth error
+# Check etcd auth error
 git checkout conf/config.yaml
 
 export ETCDCTL_API=3
@@ -993,3 +1032,50 @@ etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
+# support 3rd-party plugin
+echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_cpath: "\$prefix/example/?.lua"
+plugins:
+    - 3rd-party
+stream_plugins:
+    - 3rd-party
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+sleep 0.5
+make stop
+
+if grep "failed to load plugin [3rd-party]" logs/error.log > /dev/null; then
+    echo "failed: 3rd-party plugin can not be loaded"
+    exit 1
+fi
+echo "passed: 3rd-party plugin can be loaded"
+
+# validate extra_lua_path
+echo '
+apisix:
+    extra_lua_path: ";"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'invalid extra_lua_path'; then
+    echo "failed: can't detect invalid extra_lua_path"
+    exit 1
+fi
+
+echo "passed: detect invalid extra_lua_path"
+
+# check restart with old nginx.pid exist
+echo "-1" > logs/nginx.pid
+out=$(./bin/apisix start 2>&1 || true)
+if echo "$out" | grep "APISIX is running"; then
+    echo "failed: should ignore stale nginx.pid"
+    exit 1
+fi
+
+echo "pass: ignore stale nginx.pid"

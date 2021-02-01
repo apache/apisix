@@ -19,6 +19,8 @@
 . ./.travis/common.sh
 
 do_install() {
+    export_or_prefix
+
     ./utils/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./utils/linux-install-etcd-client.sh
@@ -37,6 +39,8 @@ script() {
     # install APISIX by shell
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
+    cp ../bin/apisix /usr/bin/apisix
+    tree /usr/local/apisix/
 
     which apisix
 

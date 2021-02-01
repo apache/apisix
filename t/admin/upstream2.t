@@ -68,8 +68,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
-
+{"action":"create","node":{"value":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 
 
 
@@ -79,7 +78,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
@@ -102,8 +101,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
-
+{"action":"set","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 
 
 
@@ -113,7 +111,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_PATCH,
                  [[{
                     "nodes": {
@@ -136,7 +134,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 
 
 
@@ -146,7 +144,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_GET
                 )
 
@@ -163,7 +161,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
+{"action":"get","count":"1","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 
 
 
@@ -173,7 +171,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_DELETE
                 )
 
@@ -188,7 +186,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/upstreams/1","node":{}}
+{"action":"delete","deleted":"1","key":"/apisix/upstreams/unwanted","node":{}}
 
 
 
@@ -248,9 +246,43 @@ passed
 passed
 
 
+
 === TEST 8: hit empty nodes upstream
 --- request
 GET /index.html
---- error_code: 502
+--- error_code: 503
 --- error_log
 no valid upstream node
+
+
+
+=== TEST 9: upstream timeouts equal to zero
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "timeout": {
+                        "connect": 0,
+                        "send": 0,
+                        "read": 0
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration: property \\\"timeout\\\" validation failed: property \\\"(connect|send|read)\\\" validation failed: expected 0 to be sctrictly greater than 0"}/
+--- no_error_log
+[error]

@@ -19,7 +19,9 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local profile = require("apisix.core.profile")
 local template = require("resty.template")
+local argparse = require("argparse")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -36,6 +38,7 @@ local getenv = os.getenv
 local max = math.max
 local floor = math.floor
 local str_find = string.find
+local str_byte = string.byte
 local str_sub = string.sub
 
 
@@ -121,6 +124,25 @@ local function version()
 end
 
 
+local function get_lua_path(conf)
+    -- we use "" as the placeholder to enforce the type to be string
+    if conf and conf ~= "" then
+        if #conf < 2 then
+            -- the shortest valid path is ';;'
+            util.die("invalid extra_lua_path/extra_lua_cpath: \"", conf, "\"\n")
+        end
+
+        local path = conf
+        if path:byte(-1) ~= str_byte(';') then
+            path = path .. ';'
+        end
+        return path
+    end
+
+    return ""
+end
+
+
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -184,9 +206,23 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("ERROR: Admin API can only be used with etcd config_center.\n")
     end
 
-    local or_ver = util.execute_cmd("openresty -V 2>&1")
+    local or_ver = get_openresty_version()
+    if or_ver == nil then
+        util.die("can not find openresty\n")
+    end
+
+    local use_or_1_15 = true
+    local need_ver = "1.15.8"
+    if not check_version(or_ver, need_ver) then
+        util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
+    end
+    if check_version(or_ver, "1.17.8") then
+        use_or_1_15 = false
+    end
+
+    local or_info = util.execute_cmd("openresty -V 2>&1")
     local with_module_status = true
-    if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
+    if or_info and not or_info:find("http_stub_status_module", 1, true) then
         stderr:write("'http_stub_status_module' module is missing in ",
                      "your openresty, please check it out. Without this ",
                      "module, there will be fewer monitoring indicators.\n")
@@ -235,8 +271,17 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
+    local dubbo_upstream_multiplex_count = 32
+    if yaml_conf.plugin_attr and yaml_conf.plugin_attr["dubbo-proxy"] then
+        local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
+        if tonumber(dubbo_conf.upstream_multiplex_count) >= 1 then
+            dubbo_upstream_multiplex_count = dubbo_conf.upstream_multiplex_count
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
+        use_or_1_15 = use_or_1_15,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
@@ -244,6 +289,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
+        dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
     }
 
     if not yaml_conf.apisix then
@@ -348,6 +394,10 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    -- fix up lua path
+    sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
+    sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
+
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
@@ -356,50 +406,78 @@ Please modify "admin_key" in conf/config.yaml .
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
     end
-
-    local op_ver = get_openresty_version()
-    if op_ver == nil then
-        util.die("can not find openresty\n")
-    end
-
-    local need_ver = "1.15.8"
-    if not check_version(op_ver, need_ver) then
-        util.die("openresty version must >=", need_ver, " current ", op_ver, "\n")
-    end
 end
 
 
-local function init_etcd(env, show_output)
-    etcd.init(env, show_output)
+local function init_etcd(env)
+    etcd.init(env)
 end
 
 
 local function start(env, ...)
+    -- Because the worker process started by apisix has "nobody" permission,
+    -- it cannot access the `/root` directory. Therefore, it is necessary to
+    -- prohibit APISIX from running in the /root directory.
+    if env.is_root_path then
+        util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
+    end
+
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
     local pid = util.read_file(pid_path)
+    pid = tonumber(pid)
     if pid then
-        local hd = popen("lsof -p " .. pid)
+        local lsof_cmd = "lsof -p " .. pid
+        local hd = popen(lsof_cmd)
         local res = hd:read("*a")
-        if res and res ~= "" then
-            print("APISIX is running...")
+        if not (res and res == "") then
+            if not res then
+                print("failed to read the result of command: " .. lsof_cmd)
+            else
+                print("APISIX is running...")
+            end
+
             return
         end
+
+        print("nginx.pid exists but there's no corresponding process with pid ", pid,
+              ", the file will be overwritten")
+    end
+
+    local parser = argparse()
+    parser:argument("_", "Placeholder")
+    parser:option("-c --config", "location of customized config.yaml")
+    local args = parser:parse()
+    local customized_yaml = args["config"]
+
+    profile.apisix_home = env.apisix_home .. "/"
+    local local_conf_path = profile:yaml_path("config")
+
+    if customized_yaml then
+        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
+        print("Use customized yaml: ", customized_yaml)
     end
 
     init(env, ...)
     init_etcd(env, ...)
 
-    execute(env.openresty_args)
+    util.execute_cmd(env.openresty_args)
 end
 
 
 local function stop(env)
+    local local_conf_path = profile:yaml_path("config")
+    local bak_exist = io_open(local_conf_path .. ".bak")
+    if bak_exist then
+        util.execute_cmd("rm " .. local_conf_path)
+        util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+    end
     local cmd = env.openresty_args .. [[ -s stop]]
-    execute(cmd)
+    util.execute_cmd(cmd)
 end
 
 

@@ -64,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 Here's an example, to enable the grpc-transcode plugin to specified route:
 
-* attention: the route's option `service_protocol` must be `grpc`
+* attention: the `scheme` in the route's upstream must be `grpc`
 * the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
@@ -72,7 +72,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
 {
     "methods": ["GET"],
     "uri": "/grpctest",
-    "service_protocol": "grpc",
     "plugins": {
         "grpc-transcode": {
             "proto_id": "1",
@@ -81,6 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
         }
     },
     "upstream": {
+        "scheme": "grpc",
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:50051": 1
@@ -141,7 +141,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f1
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
-    "service_protocol": "grpc",
     "plugins": {
         "grpc-transcode": {
             "proto_id": "1",
@@ -151,6 +150,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f1
         }
     },
     "upstream": {
+        "scheme": "grpc",
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:26500": 1
@@ -192,6 +192,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/grpctest",
     "plugins": {},
     "upstream": {
+        "scheme": "grpc",
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:50051": 1

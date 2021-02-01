@@ -320,35 +320,7 @@ GET /t
 
 
 
-=== TEST 8: invalid empty plugins (todo)
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {}
-                }]]
-                )
-
-            if code ~= 200 then
-                ngx.status = code
-                ngx.print(message)
-                return
-            end
-
-            ngx.say("[push] code: ", code, " message: ", message)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- SKIP
-
-
-
-=== TEST 9: invalid service id
+=== TEST 8: invalid service id
 --- config
     location /t {
         content_by_lua_block {
@@ -378,7 +350,7 @@ GET /t
 
 
 
-=== TEST 10: invalid id
+=== TEST 9: invalid id
 --- config
     location /t {
         content_by_lua_block {
@@ -405,7 +377,7 @@ GET /t
 
 
 
-=== TEST 11: id in the rule
+=== TEST 10: id in the rule
 --- config
     location /t {
         content_by_lua_block {
@@ -440,7 +412,7 @@ passed
 
 
 
-=== TEST 12: integer id less than 1
+=== TEST 11: integer id less than 1
 --- config
     location /t {
         content_by_lua_block {
@@ -467,7 +439,7 @@ GET /t
 
 
 
-=== TEST 13: invalid service id: contains symbols value
+=== TEST 12: invalid service id: contains symbols value
 --- config
     location /t {
         content_by_lua_block {
@@ -494,7 +466,7 @@ GET /t
 
 
 
-=== TEST 14: no additional properties is valid
+=== TEST 13: no additional properties is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -521,7 +493,7 @@ GET /t
 
 
 
-=== TEST 15: invalid upstream_id
+=== TEST 14: invalid upstream_id
 --- config
     location /t {
         content_by_lua_block {
@@ -548,7 +520,7 @@ GET /t
 
 
 
-=== TEST 16: not exist upstream_id
+=== TEST 15: not exist upstream_id
 --- config
     location /t {
         content_by_lua_block {
@@ -575,7 +547,7 @@ GET /t
 
 
 
-=== TEST 17: wrong service id
+=== TEST 16: wrong service id
 --- config
     location /t {
         content_by_lua_block {
@@ -601,7 +573,7 @@ GET /t
 
 
 
-=== TEST 18: wrong service id
+=== TEST 17: wrong service id
 --- config
     location /t {
         content_by_lua_block {
@@ -628,7 +600,7 @@ GET /t
 
 
 
-=== TEST 19: patch service(whole)
+=== TEST 18: patch service(whole)
 --- config
     location /t {
         content_by_lua_block {
@@ -674,7 +646,7 @@ passed
 
 
 
-=== TEST 20: patch service(new desc)
+=== TEST 19: patch service(new desc)
 --- config
     location /t {
         content_by_lua_block {
@@ -714,7 +686,7 @@ passed
 
 
 
-=== TEST 21: patch service(new nodes)
+=== TEST 20: patch service(new nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -759,7 +731,7 @@ passed
 
 
 
-=== TEST 22: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, default hash_on: vars, missing key)
+=== TEST 21: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, default hash_on: vars, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -790,7 +762,7 @@ GET /t
 
 
 
-=== TEST 23: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: header, missing key)
+=== TEST 22: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: header, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -822,7 +794,7 @@ GET /t
 
 
 
-=== TEST 24: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: cookie, missing key)
+=== TEST 23: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: cookie, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -854,7 +826,7 @@ GET /t
 
 
 
-=== TEST 25: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: consumer, missing key is ok)
+=== TEST 24: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {

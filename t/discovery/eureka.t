@@ -84,7 +84,7 @@ routes:
 #END
 --- request
 GET /eureka/apps/APISIX-EUREKA
---- error_code: 502
+--- error_code: 503
 --- error_log eval
 qr/.* no valid upstream node.*/
 

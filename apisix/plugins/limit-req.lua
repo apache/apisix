@@ -27,13 +27,15 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        rate = {type = "number", minimum = 0},
+        rate = {type = "number", exclusiveMinimum = 0},
         burst = {type = "number",  minimum = 0},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for", "consumer_name"},
         },
-        rejected_code = {type = "integer", minimum = 200, default = 503},
+        rejected_code = {
+            type = "integer", minimum = 200, maximum = 599, default = 503
+        },
     },
     required = {"rate", "burst", "key"}
 }

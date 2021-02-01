@@ -26,8 +26,7 @@
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 
-注意
-====
+# 注意
 
 - Apache APISIX 从 v2.0 开始不再支持 `v2` 版本的 etcd，并且 etcd 最低支持版本为 v3.4.0，因此请使用 etcd 3.4.0+。更重要的是，因为 etcd v3 使用 gPRC 作为消息传递协议，而 Apache APISIX 使用 HTTP(S) 与 etcd 集群通信，因此请确保启用 [etcd gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) 功能。
 
@@ -35,8 +34,9 @@
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
-CentOS 7
-========
+- Apache APISIX 运行默认使用 OpenResty 1.19 内置的 LuaJIT（优先推荐）或 Lua 5.1。若运行过程中出现问题 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，是因 OpenResty 版本兼容性问题，建议更换 OpenResty 版本为 1.19，请参考 [linux-install-openresty](../../utils/linux-install-openresty.sh)。
+
+# CentOS 7
 
 ```shell
 # 安装 epel, `luarocks` 需要它
@@ -60,8 +60,7 @@ sudo yum install -y openresty curl git gcc luarocks lua-devel
 nohup etcd &
 ```
 
-Fedora 31 & 32
-==============
+# Fedora 31 & 32
 
 ```shell
 # 添加 OpenResty 源
@@ -81,8 +80,7 @@ sudo yum install -y openresty curl git gcc luarocks lua-devel
 nohup etcd &
 ```
 
-Ubuntu 16.04 & 18.04
-====================
+# Ubuntu 16.04 & 18.04
 
 ```shell
 # 添加 OpenResty 源
@@ -105,8 +103,7 @@ sudo apt-get install -y git openresty curl luarocks
 nohup etcd &
 ```
 
-Debian 9 & 10
-=============
+# Debian 9 & 10
 
 ```shell
 # 可选
@@ -134,8 +131,7 @@ sudo apt-get install -y git openresty curl luarocks
 nohup etcd &
 ```
 
-Mac OSX
-=======
+# Mac OSX
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具

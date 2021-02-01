@@ -30,8 +30,8 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
-- [**Global Rule**](#Global-Rule)
-- [**Debug mode**](#Debug-mode)
+- [**Global Rule**](#global-rule)
+- [**Debug mode**](#debug-mode)
 
 ## APISIX
 
@@ -45,7 +45,9 @@
 
 ## APISIX Config
 
-For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config` flag when start APISIX like `apisix start -c <path string>`
+
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -53,7 +55,7 @@ apisix:
 ```
 
 Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
-and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -63,11 +65,11 @@ etcd:
   host: "http://foo:2379"       # etcd address
 ```
 
-Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `config.yaml` file.
 
 **Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Route
 
@@ -111,7 +113,7 @@ When we receive a successful response, it indicates that the route was successfu
 
 For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Service
 
@@ -180,7 +182,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 Note: When both Route and Service enable the same plugin, the Route parameter has a higher priority than Service.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Plugin
 
@@ -229,7 +231,7 @@ If a request is rejected by a plugin, there will be warn level log like `ip-rest
 
 [APISIX supported plugin list](README.md#plugins)
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Script
 
@@ -449,7 +451,7 @@ The client requests with header `Content-Type`:
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Router
 
@@ -469,7 +471,7 @@ Set the route that best suits your business needs in the local configuration `co
 * `apisix.router.ssl`: SSL loads the matching route.
     * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Consumer
 
@@ -479,10 +481,10 @@ For the API gateway, it is usually possible to identify a certain type of reques
 
 As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
-|Field|Required|Description|
-|---|----|----|
-|username|Yes|Consumer Name.|
-|plugins|No|The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section.|
+| Field    | Required | Description                                                                                                                                                                                      |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| username | Yes      | Consumer Name.                                                                                                                                                                                   |
+| plugins  | No       | The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section. |
 
 In APISIX, the process of identifying a Consumer is as follows:
 
@@ -577,12 +579,12 @@ HTTP/1.1 403
 
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Global Rule
 
-[Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
-We can register a global [Plugin](#Plugin) with `GlobalRule`:
+[Plugin](#plugin) just can be binded to [Service](#service) or [Route](#route), if we want a [Plugin](#plugin) work on all requests, how to do it?
+We can register a global [Plugin](#plugin) with `GlobalRule`:
 
 ```shell
 curl -X PUT \
@@ -610,7 +612,7 @@ we can list all `GlobalRule` via admin api as below:
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Debug mode
 
@@ -643,13 +645,13 @@ Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` f
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
-|Key|Optional|Description|Default|
-|----|-----|---------|---|
-|hook_conf.enable|required|Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled.|false|
-|hook_conf.name|required|The module list name of hook which has enabled debug trace||
-|hook_conf.log_level|required|Logging levels for input arguments & returned value|warn|
-|hook_conf.is_print_input_args|required|Enable/Disable input arguments print|true|
-|hook_conf.is_print_return_value|required|Enable/Disable returned value print|true|
+| Key                             | Optional | Description                                                                                                                               | Default |
+| ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
+| hook_conf.name                  | required | The module list name of hook which has enabled debug trace.                                                                               |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned value.                                                                                      | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print.                                                                                                     | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable returned value print.                                                                                                      | true    |
 
 Example:
 
@@ -671,4 +673,4 @@ hook_phase:                     # Module Function List, Name: hook_phase
 #END
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)

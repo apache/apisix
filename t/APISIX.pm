@@ -28,6 +28,7 @@ no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 
 sub read_file($) {
     my $infile = shift;
@@ -128,6 +129,123 @@ if ($profile) {
     $apisix_file = "apisix.yaml";
     $debug_file = "debug.yaml";
     $config_file = "config.yaml";
+}
+
+
+my $dubbo_upstream = "";
+my $dubbo_location = "";
+my $version = eval { `$nginx_binary -V 2>&1` };
+if ($version =~ m/\/mod_dubbo/) {
+    $dubbo_upstream = <<_EOC_;
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi 1;
+        keepalive 320;
+    }
+
+_EOC_
+
+    $dubbo_location = <<_EOC_;
+        location \@dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass \$dubbo_service_name \$dubbo_service_version \$dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+_EOC_
+}
+
+my $grpc_location = <<_EOC_;
+        location \@grpc_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         \$upstream_scheme://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+_EOC_
+
+if ($version =~ m/\/1.15.8/) {
+    $grpc_location = <<_EOC_;
+        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
+        location \@1_15_grpc_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         grpc://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+        location \@1_15_grpcs_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         grpcs://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+_EOC_
 }
 
 
@@ -251,14 +369,20 @@ _EOC_
     lua_shared_dict balancer_ewma_last_touched_at  1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
+    lua_shared_dict access_tokens         1m;    # plugin authz-keycloak
+    lua_shared_dict discovery             1m;    # plugin authz-keycloak
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
+
+    proxy_ssl_name \$host;
+    proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;
     lua_socket_log_errors off;
+    client_body_buffer_size 8k;
 
     upstream apisix_backend {
         server 0.0.0.1;
@@ -268,6 +392,8 @@ _EOC_
 
         keepalive 32;
     }
+
+    $dubbo_upstream
 
     init_by_lua_block {
         $init_by_lua_block
@@ -328,6 +454,11 @@ _EOC_
 
         server_tokens off;
 
+        ssl_certificate_by_lua_block {
+            local ngx_ssl = require "ngx.ssl"
+            ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+        }
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
@@ -360,8 +491,12 @@ _EOC_
         }
 
         set \$upstream_scheme             'http';
-        set \$upstream_host               \$host;
+        set \$upstream_host               \$http_host;
         set \$upstream_uri                '';
+        set \$ctx_ref                     '';
+        set \$dubbo_service_name          '';
+        set \$dubbo_service_version       '';
+        set \$dubbo_method                '';
 
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -437,27 +572,8 @@ _EOC_
             }
         }
 
-        location \@grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
+        $grpc_location
+        $dubbo_location
 
         location = /proxy_mirror {
             internal;

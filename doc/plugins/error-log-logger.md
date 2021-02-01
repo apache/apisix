@@ -24,7 +24,7 @@
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable And Disable**](#how-to-enable-and-disable)
-- [**How To Update**](#how-to-update)
+- [**How to set the TCP server address**](#how-to-set-the-tcp-server-address)
 
 ## Name
 
