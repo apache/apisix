@@ -24,17 +24,20 @@ install_dependencies() {
     export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
 
     # install development tools
-    yum install -y wget tar gcc automake autoconf libtool make \
-        curl git which
+    yum install -y wget tar gcc automake autoconf libtool make unzip \
+        curl git which sudo
 
     # install epel and luarocks
     wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     rpm -ivh epel-release-latest-7.noarch.rpm
-    yum install -y luarocks lua-devel
+    yum install -y lua-devel
+
+    OR_PREFIX=/usr/local/openresty-debug ./apisix/utils/linux-install-luarocks.sh
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty-debug
+    yum install -y openresty-openssl-debug-devel
 
     # install etcdctl
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz

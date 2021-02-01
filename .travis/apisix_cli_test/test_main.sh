@@ -997,7 +997,7 @@ fi
 
 echo "passed: Show connection refused info successfully"
 
-# check etcd auth error
+# Check etcd auth error
 git checkout conf/config.yaml
 
 export ETCDCTL_API=3

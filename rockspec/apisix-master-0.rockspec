@@ -62,6 +62,7 @@ dependencies = {
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
     "luasocket = 3.0rc1-2",
+    "luasec = 0.9-1",
 }
 
 build = {
@@ -73,6 +74,8 @@ build = {
         LUA_BINDIR="$(LUA_BINDIR)",
         LUA_INCDIR="$(LUA_INCDIR)",
         LUA="$(LUA)",
+        OPENSSL_INCDIR="$(OPENSSL_INCDIR)",
+        OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
         INST_PREFIX="$(PREFIX)",

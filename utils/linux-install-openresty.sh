@@ -17,6 +17,13 @@
 #
 set -euo pipefail
 
+wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+sudo apt-get -y update --fix-missing
+sudo apt-get -y install software-properties-common
+sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
+
+sudo apt-get update
+
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
 
@@ -63,17 +70,9 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     make
     sudo make install
 
-    sudo apt-get install lua5.1 liblua5.1-0-dev
-
+    sudo apt-get install lua5.1 liblua5.1-0-dev openresty-openssl-debug-dev
     exit 0
 fi
-
-wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-sudo apt-get -y update --fix-missing
-sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
-
-sudo apt-get update
 
 if [ "$OPENRESTY_VERSION" == "default" ]; then
     openresty='openresty-debug'
@@ -81,4 +80,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-debug-dev

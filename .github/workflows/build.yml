@@ -89,7 +89,6 @@ jobs:
           redis-cli -h 127.0.0.1 -p 5000 cluster nodes
 
       - name: Running etcd server with TLS
-        if: startsWith(matrix.os_name, 'linux_openresty')
         run: |
             sudo docker run -d -p 12379:12379 -p 12380:12380 \
             -e ALLOW_NONE_AUTHENTICATION=yes \
