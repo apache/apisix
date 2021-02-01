@@ -16,12 +16,10 @@
 # limitations under the License.
 #
 
-#!/bin/bash
-
-set -ex
+. ./apisix/.travis/common.sh
 
 install_dependencies() {
-    export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
+    export_or_prefix
 
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make unzip \
@@ -32,7 +30,7 @@ install_dependencies() {
     rpm -ivh epel-release-latest-7.noarch.rpm
     yum install -y lua-devel
 
-    OR_PREFIX=/usr/local/openresty-debug ./apisix/utils/linux-install-luarocks.sh
+    ./apisix/utils/linux-install-luarocks.sh
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
@@ -70,7 +68,8 @@ install_dependencies() {
 }
 
 run_case() {
-    export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
+    export_or_prefix
+
     cd apisix
 
     # run test cases
