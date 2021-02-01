@@ -1,13 +1,13 @@
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
+# contributor license agreements. See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
 # (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
+# the License. You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,80 +17,81 @@
 #
 -->
 
-- [中文](../zh-cn/plugins/auth-hook.md)
+-[English](../../plugins/auth-hook.md)
 
-# Summary
+# table of Contents
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Dependencies**](#dependencies)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+-[**Name**](#名) -[**Attribute**](#Attribute) -[**Dependencies**](#Dependencies) -[**How ​​to enable**](#How to enable) -[**Test plugin**](#Test plugin) -[**Disable plugins**](#Disable plugins)
 
-## Name
+## first name
 
-`auth-hook` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `auth-hook` to a `service` or `route`.
-The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more information about `wolf`, please refer to [wolf documentation](https://github.com/iGeeky/wolf).
+`auth-hook` is an authentication and authorization plug-in, it needs to cooperate with `consumer` to work. At the same time, you need to add `auth-hook` to a `service` or `route`.
+The auth-hook function is provided by its own auth-server, and it is sufficient to provide an authorization authentication interface according to the corresponding data structure.
 
 ## Attributes
 
-| Name          | Type   | Requirement | Default                  | Valid | Description                                               |
-| ------------- | ------ | ----------- | ------------------------ | ----- | --------------------------------------------------------- |
-| server        | string | optional    | "http://127.0.0.1:10080" |       | Set the service address of `wolf-server`.                 |
-| appid         | string | optional    | "unset"                  |       | Set the app id. The app id must be added in wolf-console. |
-| header_prefix | string | optional    | "X-"                     |       | prefix of custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`. |
-
-## API
-
-This plugin will add several API:
-
-* /apisix/plugin/auth-hook/login
-* /apisix/plugin/auth-hook/change_pwd
-* /apisix/plugin/auth-hook/user_info
-
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+| Name                      | Type          | Required | Default Value | Valid Value | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------- | ------------- | -------- | ------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hook_uri                  | string        | Required |               |             | Set the access route of `auth-server`                                                                                                                                                                                                                                                                                                                                                                                 |
+| auth_id                   | string        | Optional | "unset"       |             | Set `auth_id`, this `auth_id` needs to be carried in the header of the business request `x-auth-id` or carried in the query `auth_id`                                                                                                                                                                                                                                                                                 |
+| hook_headers              | array[string] | Optional |               |             | Specify request header parameters proxy request hook service                                                                                                                                                                                                                                                                                                                                                          |
+| hook_args                 | array[string] | Optional |               |             | Specify request query parameters, proxy requests hook service with query parameters                                                                                                                                                                                                                                                                                                                                   |
+| hook_res_to_headers       | array[string] | Optional |               |             | Specify the fields in the data body of the data returned by the hook service, add the headers parameter and pass it to the upstream service, such as `user_id=15` in the data data, splicing `hook_res_to_header_prefix` and Replace the next `_` with `-` in the header, request upstream services with `X-user-id`, if the selected field is an object or array, it will be converted to a json string as its value |
+| hook_res_to_header_prefix | string        | Optional |               |             | User `hook_res_to_headers` carries parameters and converts to the prefix of the header field                                                                                                                                                                                                                                                                                                                          |
+| hook_cache                | boolean       | Optional | false         |             | Whether to cache the data body of the same token request hook service, the default is `false` according to your own business situation                                                                                                                                                                                                                                                                                |
 
 ## Dependencies
 
-### Install wolf and start the service
+### Deploy your own auth service
 
-[Wolf quick start](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md)
+The service needs to provide auth interface routing, and at least the following data structure is required to return the data body,
 
-### Add `application`, `admin`, `normal user`, `permission`, `resource` and user authorize
+```json
+{
+    "message":"success",
+    "data":{
+        "user_id":15,
+        "......": "......"
+    }
+}
+```
 
-[Wolf-console usage](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
+## How to enable
 
-## How To Enable
-
-1. set a consumer and config the value of the `auth-hook`。
+1. Create a consumer object and set the value of the plug-in `auth-hook`.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-  "username":"wolf_rbac",
-  "plugins":{
-    "auth-hook":{
-      "server":"http://127.0.0.1:10080",
-      "appid":"restful"
+  "username": "auth_hook",
+  "plugins": {
+    "auth-hook": {
+      "hook_uri": "http://127.0.0.1/xxxx/xxx",
+      "auth_id": "shaozeming",
+      "hook_headers": [
+        "X-APP-NAME",
+        "..."
+      ],
+      "hook_args": [
+        "field_1",
+        "..."
+      ],
+      "hook_res_to_headers": [
+        "user_id",
+        "..."
+      ]
     }
   },
-  "desc":"auth-hook"
+  "desc": "auth-hook"
 }'
 ```
 
-You can visit the dashboard: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operations through the web interface, first add a consumer:
-![](../images/plugin/auth-hook-1.png)
+You can use a browser to open the dashboard: `http://127.0.0.1:9080/apisix/dashboard/`, complete the above operations through the web interface, first add a consumer, and then add the auth-hook plugin to the consumer page
 
-Then add the auth-hook plugin to the consumer page:
-![](../images/plugin/auth-hook-2.png)
-
-Notes: The `appid` filled in above needs to already exist in the wolf system.
-
-1. Add a `Route` or `Service` and enable the auth-hook plugin.
+2. Create a Route or Service object and enable the `auth-hook` plugin.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -106,64 +107,40 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Test Plugin
+## Test plugin
 
-#### Login and get `auth-hook` token:
+#### First log in to the hook-server service to obtain a custom `auth-hook` token:
 
-The following `appid`, `username`, and `password` must be real ones in the wolf system.
+Assume that the user token acquired as `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWNlbnRlciIsIm5iZiI6MTYxMjA2MzI1NCwic3R1ZGVudF9pZCI6NjU1ODQ3LCJ1c2VyX2lkIjo5NzAwNjF9.3K5-cb8tlsk_rz-76_1ET-Oik9vQG2vFJk662CLl_aQ`
 
-* Login as `POST application/json`
+#### Use the obtained token to make a request attempt
 
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/auth-hook/login -i \
--H "Content-Type: application/json" \
--d '{"appid": "restful", "username":"test", "password":"user-password"}'
-
-HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-{"rbac_token":"V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts","user_info":{"nickname":"test","username":"test","id":"749"}}
-```
-
-* Login as `POST x-www-form-urlencoded`
-
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/auth-hook/login -i \
--H "Content-Type: application/x-www-form-urlencoded" \
--d 'appid=restful&username=test&password=user-password'
-```
-
-#### try request with token
-
-* without token
+-Missing token
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" -i
 
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Missing rbac token in request"}
+{"message":"Missing auth token in request"}
 ```
 
-* request header(Authorization) with token:
+-The token is placed in the request header (Authorization):
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
--H 'Authorization: V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -i
+-H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWNlbnRlciIsIm5iZiI6MTYxMjA2MzI1NCwic3R1ZGVudF9pZCI6NjU1ODQ3LCJ1c2VyX2lkIjo5NzAwNjF9.3K5-cb8tlsk_rz-76_1ET-Oik9vQG2vFJk662CLl_aQ' -H 'X-Auth-Id: shaozeming' -i
 
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
 
-* request header(x-rbac-token) with token:
+-Put token in the request header (x-auth-token):
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
--H 'x-rbac-token: V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -i
+-H 'x-auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWNlbnRlciIsIm5iZiI6MTYxMjA2MzI1NCwic3R1ZGVudF9pZCI6NjU1ODQ3LCJ1c2VyX2lkIjo5NzAwNjF9.3K5-cb8tlsk_rz-76_1ET-Oik9vQG2vFJk662CLl_aQ' -H 'X-Auth-Id: shaozeming' -i
 
 
 HTTP/1.1 200 OK
@@ -171,10 +148,10 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-* request params with token:
+-The token is placed in the request parameters:
 
 ```shell
-curl 'http://127.0.0.1:9080?rbac_token=V1%23restful%23eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -H"Host: www.baidu.com" -i
+curl 'http://127.0.0.1:9080?auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWNlbnRlciIsIm5iZiI6MTYxMjA2MzI1NCwic3R1ZGVudF9pZCI6NjU1ODQ3LCJ1c2VyX2lkIjo5NzAwNjF9.3K5-cb8tlsk_rz-76_1ET-Oik9vQG2vFJk662CLl_aQ&auth_id=shaozeming' -i
 
 
 HTTP/1.1 200 OK
@@ -182,64 +159,12 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-* request cookie with token:
+## Disable plugin
+
+When you want to remove the `auth-hook` plug-in, it is very simple, just delete the corresponding `plug-in` configuration in the plug-in configuration in routes, no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9080 -H"Host: www.baidu.com" \
---cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
-
-
-HTTP/1.1 200 OK
-
-<!DOCTYPE html>
-```
-
-#### Get `RBAC` user information
-
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/auth-hook/user_info \
---cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
-
-
-HTTP/1.1 200 OK
-{
-    "user_info":{
-        "nickname":"test",
-        "lastLogin":1582816780,
-        "id":749,
-        "username":"test",
-        "appIDs":["restful"],
-        "manager":"none",
-        "permissions":{"USER_LIST":true},
-        "profile":null,
-        "roles":{},
-        "createTime":1578820506,
-        "email":""
-    }
-}
-```
-
-#### Change 'RBAC' user password
-
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/auth-hook/change_pwd \
--H "Content-Type: application/json" \
---cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i \
--X PUT -d '{"oldPassword": "old password", "newPassword": "new password"}'
-
-
-HTTP/1.1 200 OK
-{"message":"success to change password"}
-```
-
-## Disable Plugin
-
-When you want to disable the `auth-hook` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

@@ -65,7 +65,7 @@ local schema = {
             }
         },
         hook_res_to_headers = {
-            description = "指定hook服务返回data数据中的字段，加入headers参数传递到上游服务”",
+            description = "指定hook服务返回data数据中的字段，加入headers参数传递到上游服务",
             type = "array",
             items = {
                 description = "hook res.body.data 中的字段名称",
@@ -92,7 +92,6 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
-
 
 function _M.check_schema(conf)
     core.log.info("input conf: ", core.json.delay_encode(conf))
@@ -121,9 +120,24 @@ do
 end -- do
 
 
+local function get_auth_id(ctx)
+
+    local auth_id = ctx.var.http_x_auth_id
+    if auth_id then
+        return auth_id
+    end
+
+    auth_id = ctx.var.arg_auth_id
+    if auth_id then
+        return auth_id
+    end
+
+    return nil;
+end
+
 local function get_auth_token(ctx)
 
-    token = ctx.var.http_x_auth_token
+    local token = ctx.var.http_x_auth_token
     if token then
         return token
     end
@@ -180,7 +194,7 @@ local function get_config(auth_id)
     local config = consumers[auth_id]
     if not config then
         core.log.info("request auth_id [", auth_id, "] not found")
-        core.response.exit(400, fail_response("auth_id [" .. tostring(auth_id) .. "] not found",{status_code = 400}))
+        core.response.exit(400, fail_response("auth_id [" .. tostring(auth_id) .. "] not found", { status_code = 400 }))
     end
     return config.auth_conf
 end
@@ -207,7 +221,7 @@ end
 local function res_to_headers(config, data)
 
     local prefix = config.hook_res_to_header_prefix or ''
-    local hook_res_to_headers =config.hook_res_to_headers;
+    local hook_res_to_headers = config.hook_res_to_headers;
     if (not hook_res_to_headers) or (not data) then
         return
     end
@@ -215,12 +229,15 @@ local function res_to_headers(config, data)
     for field in pairs(hook_res_to_headers) do
         local v = data[field]
         if v then
-           local f = string.gsub(field,'_','-')
+            if type(v) == "table" then
+                v = core.json.delay_encode(perm_item)
+            end
+            local f = string.gsub(field, '_', '-')
             core.response.set_header(prefix .. f, v)
             core.request.set_header(prefix .. f, v)
         end
     end
-    return;
+    return ;
 end
 
 --获取需要传输的args
@@ -263,11 +280,9 @@ local function http_req(method, uri, body, myheaders, timeout)
     return res
 end
 
-
 local function http_get(uri, myheaders, timeout)
     return http_req("GET", uri, nil, myheaders, timeout)
 end
-
 
 local function get_auth_info(config, ctx, hook_url, action, path, client_ip, auth_token)
     local retry_max = 2
@@ -283,7 +298,7 @@ local function get_auth_info(config, ctx, hook_url, action, path, client_ip, aut
     args['hook_path'] = path
     args['hook_action'] = action
     args['hook_client_ip'] = client_ip
-    local  url = hook_url .. "?" .. ngx.encode_args(args)
+    local url = hook_url .. "?" .. ngx.encode_args(args)
     for i = 1, retry_max do
         -- TODO: read apisix info.
         res, err = http_get(url, headers, timeout)
@@ -329,12 +344,11 @@ local function get_auth_info(config, ctx, hook_url, action, path, client_ip, aut
     end
 end
 
-
 function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
-    local auth_id = ctx.var.http_x_auth_id
+    local auth_id = get_auth_id(ctx)
     local perm_item = { auth_id = auth_id, action = action, url = url, clientIP = client_ip }
     core.log.info("hit web-auth rewrite")
 
@@ -359,14 +373,14 @@ function _M.rewrite(conf, ctx)
         data = res.body
         if data then
             ctx.auth_data = data
-            res_to_headers(config,data)
+            res_to_headers(config, data)
         end
     end
 
     if res.status ~= 200 then
         -- no permission.
         core.log.error(" get_auth_info(", core.json.delay_encode(perm_item), ") failed, res: ", core.json.delay_encode(res))
-        return 401, fail_response(res.err, { status_code = 401})
+        return 401, fail_response(res.err, { status_code = 401 })
     end
     core.log.info("web-auth check permission passed")
 end
