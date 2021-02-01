@@ -47,14 +47,14 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 
 ## Attributes
 
-| Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
-| ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
-| break_response_code           | integer | required |          | [200, ..., 600] | return error code when unhealthy |
-| max_breaker_sec | integer | optional | 300 | >=60 | Maximum breaker time(seconds) |
+| Name                    | Type          | Requirement | Default | Valid            | Description                                                                 |
+| ----------------------- | ------------- | ----------- | -------- | --------------- | --------------------------------------------------------------------------- |
+| break_response_code     | integer        | required |            | [200, ..., 599] | Return error code when unhealthy |
+| max_breaker_sec         | integer        | optional | 300        | >=60            | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
-| unhealthy.failures      | integer        | optional | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
-| healthy.http_statuses   | array[integer] | optional | {200, 206} | [200, ..., 499] | Status codes when healthy |
-| healthy.successes | integer        | optional | 1          | >=1             | Number of consecutive normal requests that trigger health status |
+| unhealthy.failures      | integer        | optional | 3          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
+| healthy.http_statuses   | array[integer] | optional | {200}      | [200, ..., 499] | Status codes when healthy |
+| healthy.successes       | integer        | optional | 3          | >=1             | Number of consecutive normal requests that trigger health status |
 
 ## How To Enable
 
