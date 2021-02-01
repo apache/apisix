@@ -20,6 +20,7 @@ local dkjson = require("dkjson")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local http = require("socket.http")
+local https = require("ssl.https")
 local ltn12 = require("ltn12")
 
 local type = type
@@ -27,6 +28,7 @@ local ipairs = ipairs
 local print = print
 local tonumber = tonumber
 local str_format = string.format
+local str_sub = string.sub
 local table_concat = table.concat
 
 local _M = {}
@@ -90,6 +92,44 @@ local function compare_semantic_version(v1, v2)
 end
 
 
+local function request(url, yaml_conf)
+    local response_body = {}
+    local single_request = false
+    if type(url) == "string" then
+        url = {
+            url = url,
+            method = "GET",
+            sink = ltn12.sink.table(response_body),
+        }
+        single_request = true
+    end
+
+    local res, code
+
+    if str_sub(url.url, 1, 8) == "https://" then
+        local verify = "peer"
+        if yaml_conf.etcd.tls and yaml_conf.etcd.tls.verify == false then
+            verify = "none"
+        end
+
+        url.verify = verify
+        res, code = https.request(url)
+    else
+
+        res, code = http.request(url)
+    end
+
+    -- In case of failure, request returns nil followed by an error message.
+    -- Else the first return value is the response body
+    -- and followed by the response status code.
+    if single_request and res ~= nil then
+        return table_concat(response_body), code
+    end
+
+    return res, code
+end
+
+
 function _M.init(env)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
@@ -137,7 +177,7 @@ function _M.init(env)
         local version_url = host .. "/version"
         local errmsg
 
-        local res, err = http.request(version_url)
+        local res, err = request(version_url, yaml_conf)
         -- In case of failure, request returns nil followed by an error message.
         -- Else the first return value is the response body
         -- and followed by the response status code.
@@ -179,10 +219,15 @@ function _M.init(env)
 
             local post_json_auth = dkjson.encode(json_auth)
             local response_body = {}
-            local res, err = http.request{url = auth_url, method = "POST",
-                                        source = ltn12.source.string(post_json_auth),
-                                        sink = ltn12.sink.table(response_body),
-                                        headers = {["Content-Length"] = #post_json_auth}}
+            local res, err = request({
+                url = auth_url,
+                method = "POST",
+                source = ltn12.source.string(post_json_auth),
+                sink = ltn12.sink.table(response_body),
+                headers = {
+                    ["Content-Length"] = #post_json_auth
+                }
+            }, yaml_conf)
             -- In case of failure, request returns nil followed by an error message.
             -- Else the first return value is just the number 1
             -- and followed by the response status code.
@@ -219,10 +264,13 @@ function _M.init(env)
                 headers["Authorization"] = auth_token
             end
 
-            local res, err = http.request{url = put_url, method = "POST",
-                                        source = ltn12.source.string(post_json),
-                                        sink = ltn12.sink.table(response_body),
-                                        headers = headers}
+            local res, err = request({
+                url = put_url,
+                method = "POST",
+                source = ltn12.source.string(post_json),
+                sink = ltn12.sink.table(response_body),
+                headers = headers
+            }, yaml_conf)
             if not res then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", put_url, err)
                 util.die(errmsg)

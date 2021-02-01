@@ -55,7 +55,12 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc lua-devel openresty-openssl-devel
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
+
+# configure
 
 # start etcd server
 nohup etcd &
@@ -75,7 +80,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc lua-devel openresty-openssl-devel
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
@@ -98,7 +106,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks
+sudo apt-get install -y git openresty curl openresty-openssl-dev
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
@@ -126,7 +137,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks make
+sudo apt-get install -y git openresty curl make openresty-openssl-dev
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
