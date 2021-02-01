@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.3.0](#230)
 - [2.2.0](#220)
 - [2.1.0](#210)
 - [2.0.0](#200)
@@ -33,6 +34,44 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.3.0
+
+### Change
+
+- 默认使用 LuaJIT 运行命令行 [#3335](https://github.com/apache/apisix/pull/3335)
+- 命令行采用 luasocket 而不是 curl 访问 etcd [#2965](https://github.com/apache/apisix/pull/2965)
+
+### Core
+
+- :sunrise: 命令行中访问 etcd 可以禁用 HTTPS 检验 [#3415](https://github.com/apache/apisix/pull/3415)
+- :sunrise: 添加 etcd 无法连接时的 Chaos 测试 [#3404](https://github.com/apache/apisix/pull/3404)
+- :sunrise: ewma 负载均衡算法更新 [#3300](https://github.com/apache/apisix/pull/3300)
+- :sunrise: 允许在 Upstream 中配置 HTTPS scheme 来跟 HTTPS 后端通信 [#3430](https://github.com/apache/apisix/pull/3430)
+- :sunrise: 允许自定义 lua_package_path & lua_package_cpath [#3417](https://github.com/apache/apisix/pull/3417)
+- :sunrise: HTTPS 代理时传递 SNI [#3420](https://github.com/apache/apisix/pull/3420)
+- :sunrise: 支持 gRPCS [#3411](https://github.com/apache/apisix/pull/3411)
+- :sunrise: 支持通过 control API 获得健康检查状态 [#3345](https://github.com/apache/apisix/pull/3345)
+- :sunrise: 支持代理 HTTP 到 dubbo 后端 [#3224](https://github.com/apache/apisix/pull/3224)
+- :sunrise: 支持最少连接负载均衡算法 [#3304](https://github.com/apache/apisix/pull/3304)
+
+### Plugin
+
+- :sunrise: kafka-logger 支持复用 kafka 生产者对象 [#3429](https://github.com/apache/apisix/pull/3429)
+- :sunrise: authz-keycloak 支持动态 scope & resource 映射 [#3308](https://github.com/apache/apisix/pull/3308)
+- :sunrise: proxy-rewrite 支持在域名中带端口 [#3428](https://github.com/apache/apisix/pull/3428)
+- :sunrise: fault-injection 支持通过变量条件动态做错误注入 [#3363](https://github.com/apache/apisix/pull/3363)
+
+### Bugfix
+
+- 修复 standalone 下 consumer 的 id 跟 username 可以不一致的问题 [#3394](https://github.com/apache/apisix/pull/3394)
+- gRPC 中可以用 upstream_id & consumer [#3387](https://github.com/apache/apisix/pull/3387)
+- 修复没有匹配规则时命中 global rule 报错的问题 [#3332](https://github.com/apache/apisix/pull/3332)
+- 避免缓存过期的服务发现得到的节点 [#3295](https://github.com/apache/apisix/pull/3295)
+- 应该在 access 阶段创建 health checker [#3240](https://github.com/apache/apisix/pull/3240)
+- 修复 chash 负载均衡算法时重试的问题 [#2676](https://github.com/apache/apisix/pull/2676)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/12)
 
 ## 2.2.0
 

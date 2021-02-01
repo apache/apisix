@@ -34,22 +34,22 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-$ mkdir apisix-2.2
-$ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
-$ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
+$ mkdir apisix-2.3
+$ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
+$ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
 ```
 
 安装运行时依赖的 Lua 库：
 
 ```
-cd apache-apisix-2.2
+cd apache-apisix-2.3
 make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
@@ -65,11 +65,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/
 > 通过 Luarocks 安装指定的版本:
 
 ```shell
-# 安装 apisix 的 2.2 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.2
+# 安装 apisix 的 2.3 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.3
 
 # 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 2.2
+sudo luarocks install apisix 2.3
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
