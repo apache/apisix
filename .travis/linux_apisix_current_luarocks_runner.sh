@@ -19,8 +19,10 @@
 . ./.travis/common.sh
 
 do_install() {
+    export_or_prefix
+
     ./utils/linux-install-openresty.sh
-    OR_PREFIX=/usr/local/openresty-debug ./utils/linux-install-luarocks.sh
+    ./utils/linux-install-luarocks.sh
     ./utils/linux-install-etcd-client.sh
 }
 
