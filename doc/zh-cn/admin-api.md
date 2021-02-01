@@ -531,7 +531,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |hash_on         |可选|辅助|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
-|pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
+|pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。默认为 `pass`。||
 |upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
 |scheme|可选 |辅助|跟上游通信时使用的 scheme。需要是 ['http', 'https', 'grpc', 'grpcs'] 其中的一个，默认是 'http'。|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
