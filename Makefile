@@ -99,11 +99,7 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-ifneq ("$(wildcard logs/nginx.pid)", "")
-	@echo "APISIX is running..."
-else
 	./bin/apisix start
-endif
 
 
 ### stop:             Stop the apisix server
