@@ -34,15 +34,13 @@
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
-- Apache APISIX 运行默认使用 OpenResty 1.19 内置的 LuaJIT（优先推荐）或 Lua 5.1。若运行过程中出现问题 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，是因 OpenResty 版本兼容性问题，建议更换 OpenResty 版本为 1.19，请参考 [linux-install-openresty](../../utils/linux-install-openresty.sh)。
+- 如果是 OpenResty 1.19，APISIX 会使用 OpenResty 内置的 LuaJIT 来运行 `bin/apisix`；否则会使用 Lua 5.1。如果运行过程中遇到 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，这是低版本 OpenResty 内置的 LuaJIT 在特定编译条件下的问题。
+
+- 在某些平台上，通过包管理器安装 LuaRocks 会导致 Lua 被升级为 Lua 5.3，所以我们建议通过源代码的方式安装 LuaRocks。如果你通过官方仓库安装 OpenResty 和 OpenResty 的 OpenSSL 开发库（rpm 版本：openresty-openssl-devel，deb 版本：openresty-openssl-dev），那么 [我们提供了自动安装的脚本](../../utils/linux-install-luarocks.sh)。如果你是自己编译的 OpenResty，可以参考上述脚本并修改里面的路径。如果编译时没有指定 OpenSSL 库的路径，那么无需配置 LuaRocks 内跟 OpenSSL 相关的变量，因为默认都是用的系统自带的 OpenSSL。如果编译时指定了 OpenSSL 库，那么需要保证 LuaRocks 的 OpenSSL 配置跟 OpenResty 的相一致。
 
 # CentOS 7
 
 ```shell
-# 安装 epel, `luarocks` 需要它
-wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-sudo rpm -ivh epel-release-latest-7.noarch.rpm
-
 # 安装 etcd
 wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
 tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
@@ -54,7 +52,10 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc openresty-openssl-devel
+
+# 安装 LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # 开启 etcd server
 nohup etcd &
@@ -74,7 +75,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc openresty-openssl-devel
+
+# 安装 LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # 开启 etcd server
 nohup etcd &
@@ -97,7 +101,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl luarocks
+sudo apt-get install -y git openresty curl openresty-openssl-dev
+
+# 安装 LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # 开启 etcd server
 nohup etcd &
@@ -125,7 +132,10 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl luarocks
+sudo apt-get install -y git openresty curl make openresty-openssl-dev
+
+# 安装 LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # 开启 etcd server
 nohup etcd &
