@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-. ./apisix/.travis/common.sh
+. ./.travis/common.sh
 
 install_dependencies() {
     pwd
@@ -32,7 +32,7 @@ install_dependencies() {
     yum install -y openresty-debug openresty-openssl-debug-devel
 
     # install luarocks
-    ./apisix/utils/linux-install-luarocks.sh
+    ./utils/linux-install-luarocks.sh
 
     # install etcdctl
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
@@ -59,16 +59,15 @@ install_dependencies() {
 
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    cd apisix
     make deps
     make init
 }
 
 run_case() {
     export_or_prefix
-    ./apisix/utils/set-dns.sh
+    ./utils/set-dns.sh
     # run test cases
-    prove -I./test-nginx/lib -r ./apisix/t/
+    prove -I./test-nginx/lib -I./ -r -s t/
 }
 
 case_opt=$1
