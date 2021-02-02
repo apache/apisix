@@ -19,8 +19,6 @@
 . ./.travis/common.sh
 
 install_dependencies() {
-    pwd
-    ls
     export_or_prefix
 
     # install development tools
