@@ -58,11 +58,10 @@ install_dependencies() {
     sleep 3
 
     # install dependencies
-    pwd
-    ls
+    git clone https://github.com/iresty/test-nginx.git test-nginx
+    cd apisix
     make deps
     make init
-    git clone https://github.com/iresty/test-nginx.git test-nginx
 }
 
 run_case() {
