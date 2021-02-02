@@ -66,9 +66,6 @@ install_dependencies() {
 
 run_case() {
     export_or_prefix
-
-
-
     ./apisix/utils/set-dns.sh
     # run test cases
     prove -Itest-nginx/lib -I./ -r ./apisix/t/

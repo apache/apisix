@@ -85,6 +85,6 @@ jobs:
         docker exec centos7Instance bash -c "ls"
         docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh install_dependencies"
 
-    # - name: run test cases
-    #   run: |
-    #     docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh run_case"
+    - name: run test cases
+      run: |
+        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh run_case"
