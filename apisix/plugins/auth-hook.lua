@@ -41,50 +41,39 @@ local hook_lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        hook_uri = {
-            type = "string"
-        },
-        auth_id = {
-            type = "string",
-            default = "unset"
-        },
+        hook_uri = {type = "string", minLength = 1, maxLength = 4096},
+        auth_id = {type = "string", minLength = 1, maxLength = 100},
         hook_headers = {
-            description = "指定header参数 请求hook服务",
             type = "array",
             items = {
-                description = "header name",
-                type = "string"
-            }
+                type = "string",
+                minLength = 1, maxLength = 100
+            },
+            uniqueItems = true
         },
         hook_args = {
-            description = "指定query参数 请求hook服务",
             type = "array",
             items = {
-                description = "arg name",
                 type = "string",
-            }
+                minLength = 1, maxLength = 100
+            },
+            uniqueItems = true
         },
         hook_res_to_headers = {
-            description = "指定hook服务返回data数据中的字段，加入headers参数传递到上游服务",
             type = "array",
             items = {
-                description = "hook res.body.data 中的字段名称",
                 type = "string",
-            }
+                minLength = 1, maxLength = 100
+            },
+            uniqueItems = true
         },
-        hook_res_to_header_prefix = {
-            type = "string",
-            description = "传递上游服务参数，header前缀”",
-            default = "X-"
-        },
-        hook_cache = {
-            type = "boolean",
-            default = false
-        }
+        hook_res_to_header_prefix = {type = "string", minLength = 1, maxLength = 100},
+        hook_cache = {type = "boolean", default = false},
     },
-    required = { "hook_uri" }
-
+    required = { "hook_uri","auth_id" },
 }
+
+
 
 local _M = {
     version = 0.1,
@@ -94,11 +83,13 @@ local _M = {
 }
 
 function _M.check_schema(conf)
-    core.log.info("input conf: ", core.json.delay_encode(conf))
+    core.log.warn("input conf: ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(schema, conf)
+
     if not ok then
         return false, err
     end
+
     return true
 end
 
@@ -117,7 +108,7 @@ do
         return consumer_names
     end
 
-end -- do
+end
 
 
 local function get_auth_id(ctx)
@@ -348,9 +339,11 @@ function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
-    local auth_id = get_auth_id(ctx)
-    local perm_item = { auth_id = auth_id, action = action, url = url, clientIP = client_ip }
-    core.log.info("hit web-auth rewrite")
+    --local auth_id = get_auth_id(ctx)
+    --local config = get_config(auth_id)
+    local config = conf
+    local perm_item = {action = action, url = url, clientIP = client_ip }
+    --core.log.error("hit web-auth rewrite")
 
     local auth_token, err = get_auth_token(ctx)
     if not auth_token then
@@ -358,7 +351,6 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing auth token in request", { status_code = 401 })
     end
 
-    local config = get_config(auth_id)
     local hook_uri = config.hook_uri
     local res
     if config.hook_cache then
