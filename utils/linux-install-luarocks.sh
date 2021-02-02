@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+# you might need sudo to run this script
 if [ -z ${OPENRESTY_PREFIX} ]; then
     OPENRESTY_PREFIX="/usr/local/openresty"
 fi
