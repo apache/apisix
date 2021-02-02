@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-./apisix/.travis/common.sh
+. ./apisix/.travis/common.sh
 
 install_dependencies() {
     pwd
@@ -72,8 +72,7 @@ run_case() {
 
     ./apisix/utils/set-dns.sh
     # run test cases
-    cd apisix
-    prove -Itest-nginx/lib -I./ -r t/
+    prove -Itest-nginx/lib -I./ -r ./apisix/t/
 }
 
 case_opt=$1
