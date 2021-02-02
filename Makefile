@@ -55,9 +55,7 @@ help: default
 .PHONY: deps
 deps: default
 ifeq ($(LUAROCKS_VER),luarocks 3.)
-ifeq ("$(wildcard ~/.luarocks)", "")
-	mkdir ~/.luarocks || true
-endif
+	mkdir -p ~/.luarocks || true
 	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
 	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
