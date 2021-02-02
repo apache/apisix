@@ -235,6 +235,7 @@ release-src:
 	--exclude deps \
 	--exclude logs \
 	--exclude t \
+	--exclude utils \
 	--exclude release \
 	--exclude $(RELEASE_SRC).tgz \
 	.
