@@ -70,7 +70,7 @@ function _M.check_schema(conf)
 end
 
 
-local function partition_id(sendbuffer, topic, log_message)
+local function get_partition_id(sendbuffer, topic, log_message)
     if not sendbuffer.topics[topic] then
         core.log.info("current topic in sendbuffer has no message")
         return nil
@@ -113,8 +113,9 @@ local function send_kafka_data(conf, log_message, prod)
     end
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
-    core.log.info("partition_id: ", partition_id(prod.sendbuffer,
-            conf.kafka_topic, log_message))
+    core.log.info("partition_id: ",
+                  core.log.delay_exec(get_partition_id,
+                                      prod.sendbuffer, conf.kafka_topic, log_message))
 
     if not ok then
         return nil, "failed to send data to Kafka topic: " .. err
