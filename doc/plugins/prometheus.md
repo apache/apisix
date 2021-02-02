@@ -129,12 +129,12 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name         | Description         |
     | -------------| --------------------|
     | code         | The HTTP status code returned by the upstream service. |
-    | route        | The route_id of the request to match the route. If it does not match, the default is `""`. |
-    | matched_uri  | Request to match the uri of the route. If it does not match, the default is `""`. |
-    | matched_host | Request to match the hsot of the route. If it does not match, the default is `""`. |
-    | service      | The request matches the service_id of the route. If it does not match, the default is host. |
-    | consumer     | The request matches the consumer_name of the consumer. If it does not match, the default is `""`. |
-    | node         | The request hits the ip of the upstream node. |
+    | route        | The `route_id` of the matched route is requested. If it does not match, the default is `""`. |
+    | matched_uri  | The `uri` of the route matching the request, if it does not match, the default is `""`. |
+    | matched_host | The `hsot` of the route that matches the request. If it does not match, the default is `""`. |
+    | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | node         | The `ip` of the upstream node. |
 
 * `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
 
@@ -143,10 +143,10 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name         | Description |
     | -------------| ------------- |
     | type         | The type of bandwidth(egress/ingress). |
-    | route        | The route_id of the request to match the route. If it does not match, the default is `""`. |
-    | service      | The request matches the service_id of the route. If it does not match, the default is host. |
-    | consumer     | The request matches the consumer_name of the consumer. If it does not match, the default is `""`. |
-    | node         | The request hits the ip of the upstream node. |
+    | route        | The `route_id` of the matched route is requested. If it does not match, the default is `""`. |
+    | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | node         | The `ip` of the upstream node. |
 
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
@@ -158,9 +158,9 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name      | Description |
     | ----------| ------------- |
     | type      | The type of request. |
-    | service   | The request matches the service_id of the route. If it does not match, the default is host. |
-    | consumer  | The request matches the consumer_name of the consumer. If it does not match, the default is `""`. |
-    | node      | The request hits the ip of the upstream node. |
+    | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | node      | The `ip` of the upstream node. |
 
 * `Overhead`: HTTP request overhead (in milliseconds) added per service in APISIX.
 
@@ -168,9 +168,9 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name     | Description |
     | ---------| ------------- |
     | type     | The type of request. |
-    | service  | The request matches the service_id of the route. If it does not match, the default is host. |
-    | consumer | The request matches the consumer_name of the consumer. If it does not match, the default is `""`. |
-    | node     | The request hits the ip of the upstream node. |
+    | service  | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | node     | The `ip` of the upstream node. |
 
 * `Info`: the information of APISIX node.
 
