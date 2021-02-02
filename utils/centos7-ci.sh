@@ -72,6 +72,7 @@ run_case() {
 
     cd apisix
 
+    ./utils/set-dns.sh
     # run test cases
     prove -Itest-nginx/lib -I./ -r t/
 }
