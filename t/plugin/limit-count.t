@@ -1240,7 +1240,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         if domain == "test.com" then
             return {address = "127.0.0.1"}
         end
@@ -1310,7 +1310,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         if domain == "test.com" then
             return {address = "127.0.0.1"}
         end
