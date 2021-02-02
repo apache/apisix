@@ -23,7 +23,19 @@ fi
 wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
 tar -xf v3.4.0.tar.gz
 cd luarocks-3.4.0 || exit
-./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+
+OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
+OR_VER=$($OR_BIN -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
+if [[ -e $OR_BIN && "$OR_VER" == 1.19 ]]; then
+    WITH_LUA_OPT="--with-lua=${OPENRESTY_PREFIX}/luajit"
+else
+    # For old version OpenResty, we still need to install LuaRocks with Lua
+    WITH_LUA_OPT=
+fi
+
+./configure --prefix=/usr $WITH_LUA_OPT \
+    > build.log 2>&1 || (cat build.log && exit 1)
+
 make build > build.log 2>&1 || (cat build.log && exit 1)
 make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
