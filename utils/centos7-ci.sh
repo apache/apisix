@@ -32,7 +32,7 @@ install_dependencies() {
     yum install -y openresty-debug openresty-openssl-debug-devel
 
     # install luarocks
-    ./utils/linux-install-luarocks.sh
+    ./apisix/utils/linux-install-luarocks.sh
 
     # install etcdctl
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
@@ -58,6 +58,8 @@ install_dependencies() {
     sleep 3
 
     # install dependencies
+    pwd
+    ls
     make deps
     make init
     git clone https://github.com/iresty/test-nginx.git test-nginx
