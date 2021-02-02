@@ -16,6 +16,8 @@
 --
 local core = require("apisix.core")
 local nkeys = core.table.nkeys
+local pairs = pairs
+local next = next
 local _M = {}
 
 local function find(self, tried)
