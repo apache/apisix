@@ -81,8 +81,10 @@ jobs:
     - name: install dependencies
       run: |
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
-        docker exec centos7Instance bash -c "./utils/centos7-ci.sh install_dependencies"
+        docker exec centos7Instance bash -c "pwd"
+        docker exec centos7Instance bash -c "ls"
+        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh install_dependencies"
 
     - name: run test cases
       run: |
-        docker exec centos7Instance bash -c "./utils/centos7-ci.sh run_case"
+        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh run_case"
