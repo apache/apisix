@@ -52,7 +52,7 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc openresty-openssl-devel
+sudo yum install -y openresty curl git gcc openresty-openssl-devel unzip
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
