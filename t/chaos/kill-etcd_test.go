@@ -159,7 +159,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	// so need to calculate the duration
 	timeStart := time.Now()
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
@@ -184,9 +184,33 @@ func roughCompare(a float64, b float64) bool {
 	return false
 }
 
+type silentPrinter struct {
+	logger httpexpect.Logger
+}
+
+func newSilentPrinter(logger httpexpect.Logger) silentPrinter {
+	return silentPrinter{logger}
+}
+
+// Request implements Printer.Request.
+func (p silentPrinter) Request(req *http.Request) {
+}
+
+// Response implements Printer.Response.
+func (silentPrinter) Response(*http.Response, time.Duration) {
+}
+
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
 	e := httpexpect.New(t, host)
+
+	eSilent := httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  host,
+		Reporter: httpexpect.NewAssertReporter(t),
+		Printers: []httpexpect.Printer{
+			newSilentPrinter(t),
+		},
+	})
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)
@@ -199,8 +223,8 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// run in background
 	go func() {
 		for {
-			go getRoute(e, http.StatusOK)
-			time.Sleep(1000 * time.Millisecond)
+			go getRoute(eSilent, http.StatusOK)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
