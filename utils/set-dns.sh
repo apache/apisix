@@ -28,7 +28,7 @@ echo "search apache.org" | sudo tee -a /etc/resolv.conf
 mkdir -p build-cache
 
 if [ ! -f "build-cache/coredns_1_8_1" ]; then
-     wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
+    wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
     tar -xvf coredns_1.8.1_linux_amd64.tgz
     mv coredns build-cache/
 
