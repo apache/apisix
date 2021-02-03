@@ -109,4 +109,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     * `passive.unhealthy.timeouts`: 如果被动健康检查超时次数超过 `timeouts` 次，则将upstream节点设置为 `unhealthy` 状态。
     * `passive.unhealthy.http_failures`: 如果被动健康检查的HTTP请求失败（由 `passive.unhealthy.http_statuses` 定义）的次数超过 `http_failures`次，则将upstream节点设置为 `unhealthy` 状态。
 
-健康检查信息可以通过 [控制接口](./control_api.md) 中的 `GET /v1/healthcheck` 接口得到。
+健康检查信息可以通过 [控制接口](../control-api.md) 中的 `GET /v1/healthcheck` 接口得到。
