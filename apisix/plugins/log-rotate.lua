@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local timers = require("apisix.timers")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local ngx = ngx
@@ -23,13 +24,11 @@ local lfs = require("lfs")
 local io = io
 local os = os
 local table = table
-local select = select
-local type = type
 local string = string
+local str_find = core.string.find
 local local_conf
 
 
-local timer
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
@@ -59,7 +58,7 @@ end
 
 local function get_last_index(str, key)
     local rev = string.reverse(str)
-    local _, idx = string.find(rev, key, 1, true)
+    local _, idx = str_find(rev, key)
     local n
     if idx then
         n = string.len(rev) - idx + 1
@@ -152,26 +151,13 @@ local function scan_log_folder()
 end
 
 
-local function try_attr(t, ...)
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        t = t[attr]
-        if type(t) ~= "table" then
-            return false
-        end
-    end
-
-    return true
-end
-
-
 local function rotate()
     local local_conf = core.config.local_conf()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
-    if try_attr(local_conf, "plugin_attr", "log-rotate") then
-        local attr = local_conf.plugin_attr["log-rotate"]
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          "log-rotate")
+    if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
     end
@@ -220,23 +206,12 @@ end
 
 
 function _M.init()
-    core.log.info("enter log-rotate plugin, process type: ", process.type())
+    timers.register_timer("plugin#log-rotate", rotate, true)
+end
 
-    if process.type() ~= "privileged agent" and process.type() ~= "single" then
-        return
-    end
 
-    if timer then
-        return
-    end
-
-    local err
-    timer, err = core.timer.new("logrotate", rotate, {check_interval = 0.5})
-    if not timer then
-        core.log.error("failed to create timer log rotate: ", err)
-    else
-        core.log.notice("succeed to create timer: log rotate")
-    end
+function _M.destory()
+    timers.unregister_timer("plugin#log-rotate", true)
 end
 
 

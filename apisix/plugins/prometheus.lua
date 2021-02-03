@@ -16,9 +16,10 @@
 --
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
+
+
 local plugin_name = "prometheus"
-
-
+local default_export_uri = "/apisix/prometheus/metrics"
 local schema = {
     type = "object",
     additionalProperties = false,
@@ -29,7 +30,6 @@ local _M = {
     version = 0.2,
     priority = 500,
     name = plugin_name,
-    init = exporter.init,
     log  = exporter.log,
     schema = schema,
 }
@@ -46,10 +46,18 @@ end
 
 
 function _M.api()
+    local export_uri = default_export_uri
+    local local_conf = core.config.local_conf()
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          plugin_name)
+    if attr and attr.export_uri then
+        export_uri = attr.export_uri
+    end
+
     return {
         {
             methods = {"GET"},
-            uri = "/apisix/prometheus/metrics",
+            uri = export_uri,
             handler = exporter.collect
         }
     }

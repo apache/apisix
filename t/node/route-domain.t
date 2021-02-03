@@ -97,7 +97,7 @@ qr/dns resolver domain: github.com to \d+.\d+.\d+.\d+/
                             },
                             "type": "roundrobin",
                             "pass_host": "rewrite",
-                            "upstream_host": "httpbin.org"                        
+                            "upstream_host": "httpbin.org"
                         },
                         "uri": "/uri"
                 }]]

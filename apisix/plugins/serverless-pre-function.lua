@@ -14,4 +14,4 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return require("apisix.plugins.serverless")("serverless-pre-function", 10000)
+return require("apisix.plugins.serverless.init")("serverless-pre-function", 10000)

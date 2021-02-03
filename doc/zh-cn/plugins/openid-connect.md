@@ -41,7 +41,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | bearer_only                        | boolean | 可选   | false                 |         | 设置为`true`将检查请求中带有承载令牌的授权标头 |
 | logout_path                        | string  | 可选   | "/logout"             |         |                                                |
 | redirect_uri                       | string  | 可选   | "ngx.var.request_uri" |         |                                                |
-| timeout                            | integer | 可选   | 3                     | [1,...] |                                                |
+| timeout                            | integer | 可选   | 3                     | [1,...] | 超时时间，单位为秒                             |
 | ssl_verify                         | boolean | 可选   | false                 |         |                                                |
 | introspection_endpoint             | string  | 可选   |                       |         | 身份服务器的令牌验证端点的 URL                 |
 | introspection_endpoint_auth_method | string  | 可选   | "client_secret_basic" |         | 令牌自省的认证方法名称                         |

@@ -22,7 +22,7 @@ local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
 local sub_str     = string.sub
-local find_str    = string.find
+local str_find    = core.string.find
 
 local schema = {
     type = "object",
@@ -48,7 +48,7 @@ local schema = {
         host = {
             description = "new host for upstream",
             type        = "string",
-            pattern     = "^[0-9a-zA-Z-.]+$",
+            pattern     = [[^[0-9a-zA-Z-.]+(:\d{1,5})?$]],
         },
         scheme = {
             description = "new scheme for upstream",
@@ -124,7 +124,6 @@ end
 
 do
     local upstream_vars = {
-        scheme     = "upstream_scheme",
         host       = "upstream_host",
         upgrade    = "upstream_upgrade",
         connection = "upstream_connection",
@@ -140,10 +139,13 @@ function _M.rewrite(conf, ctx)
             ctx.var[upstream_vars[name]] = conf[name]
         end
     end
+    if conf["scheme"] then
+        ctx.upstream_scheme = conf["scheme"]
+    end
 
     local upstream_uri = ctx.var.uri
     if conf.uri ~= nil then
-        upstream_uri = conf.uri
+        upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
     elseif conf.regex_uri ~= nil then
         local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
@@ -158,7 +160,7 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local index = find_str(upstream_uri, "?", 1, true)
+    local index = str_find(upstream_uri, "?")
     if index then
         upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
                        sub_str(upstream_uri, index)
@@ -192,7 +194,8 @@ function _M.rewrite(conf, ctx)
 
     local field_cnt = #conf.headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.req.set_header(conf.headers_arr[i], conf.headers_arr[i+1])
+        ngx.req.set_header(conf.headers_arr[i],
+                           core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
 end
 

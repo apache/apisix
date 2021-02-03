@@ -37,6 +37,7 @@ __DATA__
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
 upstreams:
@@ -60,6 +61,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1111
 upstreams:
@@ -82,6 +84,7 @@ failed to find upstream by id: 1111
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
         upstream:
@@ -109,6 +112,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
 upstreams:
@@ -139,6 +143,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /get
         upstream_id: 1
 upstreams:

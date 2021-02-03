@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local expr = require("resty.expr.v1")
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
+local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -49,10 +51,6 @@ local function check_conf(id, conf, need_id)
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.route))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
 
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
@@ -61,6 +59,11 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
+    end
+
+    local ok, err = core.schema.check(core.schema.route, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_conf = conf.upstream
@@ -112,6 +115,13 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    if conf.vars then
+        ok, err = expr.new(conf.vars)
+        if not ok then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
+        end
+    end
+
     if conf.filter_func then
         local func, err = loadstring("return " .. conf.filter_func)
         if not func then
@@ -147,6 +157,12 @@ function _M.put(id, conf, sub_path, args)
     end
 
     local key = "/routes/" .. id
+
+    local ok, err = utils.inject_conf_with_prev_conf("route", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "] to etcd: ", err)
@@ -163,7 +179,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get route[", key, "] from etcd: ", err)
         return 500, {error_msg = err}
@@ -181,6 +197,7 @@ function _M.post(id, conf, sub_path, args)
 
     local key = "/routes"
     -- core.log.info("key: ", key)
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "] to etcd: ", err)
@@ -252,6 +269,8 @@ function _M.patch(id, conf, sub_path, args)
     else
         node_value = core.table.merge(node_value, conf);
     end
+
+    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 

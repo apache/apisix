@@ -35,10 +35,10 @@ apisix:
   stream_proxy:                 # TCP/UDP proxy
     tcp:                        # TCP proxy address list
       - 9100
-      - 127.0.0.1:9101
+      - "127.0.0.1:9101"
     udp:                        # UDP proxy address list
       - 9200
-      - 127.0.0.1:9211
+      - "127.0.0.1:9211"
 ```
 
 ## 如何设置 route ?

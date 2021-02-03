@@ -20,12 +20,12 @@
 - [English](../../plugins/jwt-auth.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-
 
 ## 名字
 
@@ -37,18 +37,19 @@
 
 ## 属性
 
-
-| 名称          | 类型    | 必选项 | 默认值  | 有效值                                        | 描述                                                                                                          |
-| ------------- | ------- | ------ | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| key           | string  | 必须   |         |                                               | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
-| secret        | string  | 可选   |         |                                               | 加密秘钥。如果您未指定，后台将会自动帮您生成。                                                                |
-| algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                                      |
-| exp           | integer | 可选   | 86400   | [1,...]                                       | token 的超时时间                                                                                              |
-| base64_secret | boolean | 可选   | false   |                                               | 密钥是否为 base64 编码                                                                                        |
+| 名称           | 类型    | 必选项 | 默认值    | 有效值                       | 描述                                                                                           |
+|:--------------|:--------|:------|:--------|:----------------------------|:-----------------------------------------------------------------------------------------------|
+| key           | string  | 必须   |         |                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
+| secret        | string  | 可选   |         |                             | 加密秘钥。如果您未指定，后台将会自动帮您生成。                                                         |
+| public_key    | string  | 可选   |         |                             | RSA公钥， `algorithm` 属性选择 `RS256` 算法时必填                                                     |
+| private_key   | string  | 可选   |         |                             | RSA私钥， `algorithm` 属性选择 `RS256` 算法时必填                                                     |
+| algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                        |
+| exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                |
+| base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                           |
 
 ## 接口
 
-插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
 来保护它。
 
 ## 如何启用
@@ -67,6 +68,24 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
+`jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥与私钥，示例如下：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "kerouac",
+    "plugins": {
+        "jwt-auth": {
+            "key": "user-key",
+            "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
+            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
+            "algorithm": "RS256"
+        }
+    }
+}'
+```
+
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
 ![](../../images/plugin/jwt-auth-1.png)
 
@@ -92,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 #### 首先进行登录获取 `jwt-auth` token:
 

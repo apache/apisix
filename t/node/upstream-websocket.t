@@ -33,17 +33,17 @@ __DATA__
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "enable_websocket": true,
-                            "type": "roundrobin"
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "uri": "/websocket_handshake"
+                        "type": "roundrobin"
+                    },
+                    "enable_websocket": true,
+                    "uri": "/websocket_handshake"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -98,7 +98,6 @@ Sec-WebSocket-Protocol: chat
                         "127.0.0.1:1981": 1
                     },
                     "type": "roundrobin",
-                    "enable_websocket": true,
                     "desc": "new upstream"
                 }]]
                 )
@@ -124,10 +123,11 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/6',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/websocket_handshake/route",
-                        "upstream_id": "6"
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/websocket_handshake/route",
+                    "enable_websocket": true,
+                    "upstream_id": "6"
                 }]]
                 )
 
@@ -177,15 +177,12 @@ Sec-WebSocket-Protocol: chat
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/6',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {
-                        "127.0.0.1:1981": 1
-                    },
-                    "type": "roundrobin",
+            local code, body = t('/apisix/admin/routes/6',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/websocket_handshake/route",
                     "enable_websocket": false,
-                    "desc": "new upstream"
+                    "upstream_id": "6"
                 }]]
                 )
 

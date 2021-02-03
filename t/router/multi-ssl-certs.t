@@ -32,8 +32,8 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/apisix.crt")
-        local ssl_key =  t.read_file("conf/cert/apisix.key")
+        local ssl_cert = t.read_file("t/certs/apisix.crt")
+        local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com"}
 
         local code, body = t.test('/apisix/admin/ssl/1',
@@ -162,7 +162,6 @@ received: Content-Type: text/plain
 received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
@@ -180,8 +179,8 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/test2.crt")
-        local ssl_key =  t.read_file("conf/cert/test2.key")
+        local ssl_cert = t.read_file("t/certs/test2.crt")
+        local ssl_key =  t.read_file("t/certs/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
         local code, body = t.test('/apisix/admin/ssl/2',
@@ -265,8 +264,8 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/apisix_admin_ssl.crt")
-        local ssl_key =  t.read_file("conf/cert/apisix_admin_ssl.key")
+        local ssl_cert = t.read_file("t/certs/apisix_admin_ssl.crt")
+        local ssl_key =  t.read_file("t/certs/apisix_admin_ssl.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "apisix.dev"}
 
         local code, body = t.test('/apisix/admin/ssl/3',
@@ -343,7 +342,7 @@ we have more than 1 ssl certs now
 
 
 
-=== TEST 8: remove test ssl certs 
+=== TEST 8: remove test ssl certs
 --- config
 location /t {
     content_by_lua_block {

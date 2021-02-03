@@ -20,6 +20,7 @@ local setmetatable = setmetatable
 local select       = select
 local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
+local ipairs       = ipairs
 local pairs        = pairs
 local type         = type
 local ngx_re       = require("ngx.re")
@@ -59,6 +60,33 @@ function _M.set(tab, ...)
 end
 
 
+function _M.try_read_attr(tab, ...)
+    local count = select('#', ...)
+
+    for i = 1, count do
+        local attr = select(i, ...)
+        if type(tab) ~= "table" then
+            return nil
+        end
+
+        tab = tab[attr]
+    end
+
+    return tab
+end
+
+
+function _M.array_find(array, val)
+    for i, v in ipairs(array) do
+        if v == val then
+            return i
+        end
+    end
+
+    return nil
+end
+
+
 -- only work under lua51 or luajit
 function _M.setmt__gc(t, mt)
     local prox = newproxy(true)
@@ -68,24 +96,43 @@ function _M.setmt__gc(t, mt)
 end
 
 
-local function deepcopy(orig)
-    local orig_type = type(orig)
-    if orig_type ~= 'table' then
-        return orig
+local deepcopy
+do
+    local function _deepcopy(orig, copied)
+        -- prevent infinite loop when a field refers its parent
+        copied[orig] = true
+        -- If the array-like table contains nil in the middle,
+        -- the len might be smaller than the expected.
+        -- But it doesn't affect the correctness.
+        local len = #orig
+        local copy = new_tab(len, nkeys(orig) - len)
+        for orig_key, orig_value in pairs(orig) do
+            if type(orig_value) == "table" and not copied[orig_value] then
+                copy[orig_key] = _deepcopy(orig_value, copied)
+            else
+                copy[orig_key] = orig_value
+            end
+        end
+
+        return copy
     end
 
-    -- If the array-like table contains nil in the middle,
-    -- the len might be smaller than the expected.
-    -- But it doesn't affect the correctness.
-    local len = #orig
-    local copy = new_tab(len, nkeys(orig) - len)
-    for orig_key, orig_value in pairs(orig) do
-        copy[orig_key] = deepcopy(orig_value)
-    end
 
-    return copy
+    local copied_recorder = {}
+
+    function deepcopy(orig)
+        local orig_type = type(orig)
+        if orig_type ~= 'table' then
+            return orig
+        end
+
+        local res = _deepcopy(orig, copied_recorder)
+        _M.clear(copied_recorder)
+        return res
+    end
 end
 _M.deepcopy = deepcopy
+
 
 local ngx_null = ngx.null
 local function merge(origin, extend)
@@ -143,6 +190,63 @@ local function patch(node_value, sub_path, conf)
     return nil, nil, node_value
 end
 _M.patch = patch
+
+
+-- Compare two tables as if they are sets (only compare the key part)
+function _M.set_eq(a, b)
+    if nkeys(a) ~= nkeys(b) then
+        return false
+    end
+
+    for k in pairs(a) do
+        if b[k] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+-- Compare two elements, including their descendants
+local function deep_eq(a, b)
+    local type_a = type(a)
+    local type_b = type(b)
+
+    if type_a ~= 'table' or type_b ~= 'table' then
+        return a == b
+    end
+
+    local n_a = nkeys(a)
+    local n_b = nkeys(b)
+    if n_a ~= n_b then
+        return false
+    end
+
+    for k, v_a in pairs(a) do
+        local v_b = b[k]
+        local eq = deep_eq(v_a, v_b)
+        if not eq then
+            return false
+        end
+    end
+
+    return true
+end
+_M.deep_eq = deep_eq
+
+
+-- pick takes the given attributes out of object
+function _M.pick(obj, attrs)
+    local data = {}
+    for k, v in pairs(obj) do
+        if attrs[k] ~= nil then
+            data[k] = v
+        end
+    end
+
+    return data
+end
 
 
 return _M

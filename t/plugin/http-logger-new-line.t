@@ -76,8 +76,8 @@ hello world
 --- wait: 0.5
 --- no_error_log
 [error]
---- error_log
-request log: {"upstream":"127.0.0.1:1982"
+--- error_log eval
+qr/request log: .*"upstream":"127.0.0.1:1982"/
 
 
 

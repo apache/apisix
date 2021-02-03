@@ -32,10 +32,10 @@ __DATA__
             local t = {"first"}
             core.table.insert_tail(t, 'a', 1, true)
 
-            ngx.say("encode: ", core.json.encode(t))
+            ngx.say("encode: ", require("toolkit.json").encode(t))
 
             core.table.set(t, 'a', 1, true)
-            ngx.say("encode: ", core.json.encode(t))
+            ngx.say("encode: ", require("toolkit.json").encode(t))
         }
     }
 --- request
@@ -75,5 +75,132 @@ encode: ["a",1,true,true]
 GET /t
 --- response_body
 ok
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: try_read_attr
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local try_read_attr = core.table.try_read_attr
+
+            local t = {level1 = {level2 = "value"}}
+
+            local v = try_read_attr(t, "level1", "level2")
+            ngx.say(v)
+
+            local v2 = try_read_attr(t, "level1", "level3")
+            ngx.say(v2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
+nil
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: set_eq
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local cases = {
+                {expect = true, a = {}, b = {}},
+                {expect = true, a = {a = 1}, b = {a = 1}},
+                {expect = true, a = {a = 1}, b = {a = 2}},
+                {expect = false, a = {b = 1}, b = {a = 1}},
+                {expect = false, a = {a = 1, b = 1}, b = {a = 1}},
+                {expect = false, a = {a = 1}, b = {a = 1, b = 2}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.set_eq(t.a, t.b)
+                local expect = t.expect
+                if actual ~= expect then
+                    ngx.say("expect ", expect, ", actual ", actual)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: deep_eq
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local cases = {
+                {expect = true, a = {}, b = {}},
+                {expect = true, a = nil, b = nil},
+                {expect = false, a = nil, b = {}},
+                {expect = false, a = {}, b = nil},
+                {expect = true, a = {a = {b = 1}}, b = {a = {b = 1}}},
+                {expect = false, a = {a = {b = 1}}, b = {a = {b = 1, c = 2}}},
+                {expect = false, a = {a = {b = 1}}, b = {a = {b = 2}}},
+                {expect = true, a = {{a = {b = 1}}}, b = {{a = {b = 1}}}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.deep_eq(t.a, t.b)
+                local expect = t.expect
+                if actual ~= expect then
+                    ngx.say("expect ", expect, ", actual ", actual)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: pick
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local cases = {
+                {expect = {}, a = {}, b = {priority = true}},
+                {expect = {priority = 1}, a = {priority = 1}, b = {priority = true}},
+                {expect = {}, a = {priorities = 1}, b = {priority = true}},
+                {expect = {priority = 1}, a = {priority = 1, ver = "2"}, b = {priority = true}},
+                {expect = {priority = 1, ver = "2"}, a = {priority = 1, ver = "2"}, b = {priority = true, ver = true}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.pick(t.a, t.b)
+                local expect = t.expect
+                if not core.table.deep_eq(actual, expect) then
+                    ngx.say("expect ", json.encode(expect), ", actual ", json.encode(actual))
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
 --- no_error_log
 [error]

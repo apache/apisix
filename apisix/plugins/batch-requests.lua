@@ -20,7 +20,7 @@ local plugin    = require("apisix.plugin")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
-local str_find  = string.find
+local str_find  = core.string.find
 local str_lower = string.lower
 
 
@@ -163,7 +163,7 @@ local function set_common_header(data)
 
         if outer_headers then
             for k, v in pairs(outer_headers) do
-                local is_content_header = str_find(k, "content-", 1, true) == 1
+                local is_content_header = str_find(k, "content-") == 1
                 -- skip header start with "content-"
                 if not req.headers[k] and not is_content_header then
                     req.headers[k] = v

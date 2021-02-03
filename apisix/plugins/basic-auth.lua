@@ -23,6 +23,9 @@ local consumer = require("apisix.consumer")
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+local consumers_lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -107,22 +110,22 @@ end
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, cur_consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ",
                           core.json.delay_encode(cur_consumer))
-            consumer_ids[cur_consumer.auth_conf.username] = cur_consumer
+            consumer_names[cur_consumer.auth_conf.username] = cur_consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 end
 
-function _M.access(conf, ctx)
+function _M.rewrite(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
@@ -143,9 +146,9 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = consumers_lrucache("consumers_key",
+        consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     -- 3. check user exists
     local cur_consumer = consumers[username]
@@ -160,9 +163,7 @@ function _M.access(conf, ctx)
         return 401, { message = "Password is error" }
     end
 
-    ctx.consumer = cur_consumer
-    ctx.consumer_id = cur_consumer.consumer_id
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
 
     core.log.info("hit basic-auth access")
 end

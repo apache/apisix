@@ -18,6 +18,7 @@
 -->
 
 # Install Dependencies
+
 - [Install Dependencies](#install-dependencies)
 - [Note](#note)
 - [CentOS 7](#centos-7)
@@ -26,21 +27,21 @@
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 
-Note
-====
-- Since v2.0 Apache APISIX would not support the v2 protocol storage to etcd anymore, and the minimum etcd version supported is v3.4.0.
+# Note
+
+- Since v2.0 Apache APISIX would not support the v2 protocol storage to etcd anymore, and the minimum etcd version supported is v3.4.0. What's more, etcd v3 uses gRPC as the messaging protocol, while Apache APISIX uses HTTP(S) to communicate with etcd cluster, so be sure the [etcd gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) is enabled.
+
+- Now by default Apache APISIX uses HTTP protocol to talk with etcd cluster, which is insecure. Please configure certificate and corresponding private key for your etcd cluster, and use "https" scheme explicitly in the etcd endpoints list in your Apache APISIX configuration, if you want to keep the data secure and integral. See the etcd section in `conf/config-default.yaml` for more details.
 
 - If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).
 
+- If it is OpenResty 1.19, APISIX will use OpenResty's built-in LuaJIT to run `bin/apisix`; otherwise it will use Lua 5.1. If you encounter `luajit: lj_asm_x86.h:2819: asm_loop_ fixup: Assertion '((intptr_t)target & 15) == 0' failed`, this is a problem with the low version of OpenResty's built-in LuaJIT under certain compilation conditions.
 
-CentOS 7
-========
+- - On some platforms, installing LuaRocks via the package manager will cause Lua to be upgraded to Lua 5.3, so we recommend installing LuaRocks via source code. if you install OpenResty and its OpenSSL develop library (openresty-openssl-devel for rpm and openresty-openssl-dev for deb) via the official repository, then [we provide a script for automatic installation](. /... /utils/linux-install-luarocks.sh). If you compile OpenResty yourself, you can refer to the above script and change the path in it. If you don't specify the OpenSSL library path when you compile, you don't need to configure the OpenSSL variables in LuaRocks, because the system's OpenSSL is used by default. If the OpenSSL library is specified at compile time, then you need to ensure that LuaRocks' OpenSSL configuration is consistent with OpenResty's.
+
+# CentOS 7
 
 ```shell
-# install epel, `luarocks` need it.
-wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-sudo rpm -ivh epel-release-latest-7.noarch.rpm
-
 # install etcd
 wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
 tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
@@ -52,14 +53,16 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel unzip
+sudo yum install -y openresty curl git gcc openresty-openssl-devel unzip
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
 ```
 
-Fedora 31 & 32
-==============
+# Fedora 31 & 32
 
 ```shell
 # add OpenResty source
@@ -73,14 +76,16 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel
+sudo yum install -y openresty curl git gcc openresty-openssl-devel
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
 ```
 
-Ubuntu 16.04 & 18.04
-====================
+# Ubuntu 16.04 & 18.04
 
 ```shell
 # add OpenResty source
@@ -97,14 +102,16 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks
+sudo apt-get install -y git openresty curl openresty-openssl-dev
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
 ```
 
-Debian 9 & 10
-=============
+# Debian 9 & 10
 
 ```shell
 # optional
@@ -126,14 +133,16 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl luarocks make
+sudo apt-get install -y git openresty curl make openresty-openssl-dev
+
+# install LuaRocks
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
 
 # start etcd server
 nohup etcd &
 ```
 
-Mac OSX
-=======
+# Mac OSX
 
 ```shell
 # install OpenResty, etcd and some compilation tools
@@ -141,4 +150,7 @@ brew install openresty/brew/openresty etcd luarocks curl git
 
 # start etcd server
 etcd &
+
+# enable TLS for etcd server
+etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
 ```

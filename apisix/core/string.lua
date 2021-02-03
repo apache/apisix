@@ -36,6 +36,7 @@ setmetatable(_M, {__index = string})
 
 
 -- find a needle from a haystack in the plain text way
+-- note: Make sure that the haystack is 'string' type, otherwise an exception will be thrown.
 function _M.find(haystack, needle, from)
     return str_find(haystack, needle, from or 1, true)
 end

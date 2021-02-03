@@ -477,7 +477,7 @@ Location: https://www.iresty.com
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

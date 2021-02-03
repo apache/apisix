@@ -16,14 +16,22 @@
 --
 local require = require
 local core = require("apisix.core")
-local route = require("resty.radixtree")
+local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local ngx = ngx
 local get_method = ngx.req.get_method
+local ngx_time = ngx.time
+local ngx_timer_at = ngx.timer.at
+local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
+local error = error
+local type = type
+local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
+
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
@@ -83,6 +91,27 @@ local function check_token(ctx)
     end
 
     return true
+end
+
+
+local function strip_etcd_resp(data)
+    if type(data) == "table"
+        and data.header ~= nil
+        and data.header.revision ~= nil
+        and data.header.raft_term ~= nil
+    then
+        -- strip etcd data
+        data.header = nil
+        data.responses = nil
+        data.succeeded = nil
+
+        if data.node then
+            data.node.createdIndex = nil
+            data.node.modifiedIndex = nil
+        end
+    end
+
+    return data
 end
 
 
@@ -146,6 +175,7 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end
@@ -190,8 +220,8 @@ local function run_stream()
         core.response.exit(404)
     end
 
-    ngx.req.read_body()
-    local req_body = ngx.req.get_body_data()
+    req_read_body()
+    local req_body = req_get_body_data()
 
     if req_body then
         local data, err = core.json.decode(req_body)
@@ -215,6 +245,7 @@ local function run_stream()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end
@@ -245,18 +276,49 @@ local function post_reload_plugins()
         core.response.exit(401)
     end
 
-    local success, err = events.post(reload_event, get_method(), ngx.time())
+    local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
         core.response.exit(500, err)
     end
 
-    core.response.exit(200, success)
+    core.response.exit(200, "done")
+end
+
+
+local function sync_local_conf_to_etcd()
+    core.log.warn("sync local conf to etcd")
+
+    local local_conf = core.config.local_conf()
+
+    local plugins = {}
+    for _, name in ipairs(local_conf.plugins) do
+        core.table.insert(plugins, {
+            name = name,
+        })
+    end
+
+    for _, name in ipairs(local_conf.stream_plugins) do
+        core.table.insert(plugins, {
+            name = name,
+            stream = true,
+        })
+    end
+
+    -- need to store all plugins name into one key so that it can be updated atomically
+    local res, err = core.etcd.set("/plugins", plugins)
+    if not res then
+        core.log.error("failed to set plugins: ", err)
+    end
 end
 
 
 local function reload_plugins(data, event, source, pid)
     core.log.info("start to hot reload plugins")
     plugin.load()
+
+    if ngx_worker_id() == 0 then
+        sync_local_conf_to_etcd()
+    end
 end
 
 
@@ -294,6 +356,20 @@ function _M.init_worker()
     events = require("resty.worker.events")
 
     events.register(reload_plugins, reload_event, "PUT")
+
+    if ngx_worker_id() == 0 then
+        local ok, err = ngx_timer_at(0, function(premature)
+            if premature then
+                return
+            end
+
+            sync_local_conf_to_etcd()
+        end)
+
+        if not ok then
+            error("failed to sync local configure to etcd: " .. err)
+        end
+    end
 end
 
 

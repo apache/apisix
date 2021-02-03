@@ -26,15 +26,16 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
+- [**Attention**](#Attention)
 
 ## Name
 
-response rewrite plugin, rewrite the content from upstream.
+response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
 
-**senario**:
+**scenario**:
 
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
+2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can also use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
 
@@ -81,6 +82,7 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
 It will output like below,no matter what kind of content from upstream.
+
 ```
 
 HTTP/1.1 200 OK
@@ -116,3 +118,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 The `response rewrite` plugin has been disabled now. It works for other plugins.
+
+## Attention
+
+`ngx.exit` will interrupt the execution of the current request and return status code to Nginx.
+
+![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+
+However, if you execute `ngx.exit` during the access phase, it only interrupts the request processing phase, and the response phase will still process it, i.e. if you configure the `response-rewrite` plugin, it will force overwriting of your response information (e.g. response status code).

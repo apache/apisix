@@ -534,7 +534,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"method\" validation failed: matches non of the enum values"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"method\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 
@@ -564,7 +564,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"version\" validation failed: matches non of the enum values"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"version\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 

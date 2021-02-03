@@ -20,6 +20,7 @@
 - [English](../../plugins/mqtt-proxy.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -29,7 +30,7 @@
 
 `mqtt-proxy` 只工作在流模式，它可以帮助你根据 MQTT 的 `client_id` 实现动态负载均衡。
 
-这个插件支持 MQTT [3.1.* ]( http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html )及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )两个协议。
+这个插件支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )两个协议。
 
 ## 属性
 
@@ -89,4 +90,5 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
 ```
+
 现在就已经移除了 mqtt-proxy 插件了。

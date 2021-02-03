@@ -874,7 +874,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/1',
+            local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
@@ -912,7 +912,7 @@ passed
 
 
 
-=== TEST 49: pipeline of client request with successfuly authorized
+=== TEST 49: pipeline of client request with successfully authorized
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
@@ -1036,3 +1036,444 @@ GET /apisix/prometheus/metrics
 qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
+
+
+
+=== TEST 58: customize export uri, not found
+--- yaml_config
+plugin_attr:
+    prometheus:
+        export_uri: /a
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 59: customize export uri, found
+--- yaml_config
+plugin_attr:
+    prometheus:
+        export_uri: /a
+--- request
+GET /a
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 60: customize export uri, missing plugin, use default
+--- yaml_config
+plugin_attr:
+    x:
+        y: z
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: customize export uri, missing attr, use default
+--- yaml_config
+plugin_attr:
+    prometheus:
+        y: z
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 62: set sys plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "syslog": {
+			                    "host": "127.0.0.1",
+			                    "include_req_body": false,
+			                    "max_retry_times": 1,
+			                    "tls": false,
+			                    "retry_interval": 1,
+			                    "batch_max_size": 1000,
+			                    "buffer_duration": 60,
+			                    "port": 1000,
+			                    "name": "sys-logger",
+			                    "flush_limit": 4096,
+			                    "sock_type": "tcp",
+			                    "timeout": 3,
+			                    "drop_limit": 1048576,
+			                    "pool_size": 5
+		                    }                        
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 63: hit batch-process-metrics
+--- request
+GET /batch-process-metrics
+--- error_code: 404
+
+
+
+=== TEST 64: check sys logger metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 65: set zipkin plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9447",
+                                "service_name": "APISIX",
+                                "sample_ratio": 1
+                            }                     
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 66: hit batch-process-metrics
+--- request
+GET /batch-process-metrics
+--- error_code: 404
+
+
+
+=== TEST 67: check zipkin log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 68: set http plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "http-logger": {
+                                "inactive_timeout": 5,
+                                "include_req_body": false,
+                                "timeout": 3,
+                                "name": "http-logger",
+                                "retry_delay": 1,
+                                "buffer_duration": 60,
+                                "uri": "http://127.0.0.1:19080/report",
+                                "concat_method": "json",
+                                "batch_max_size": 1000,
+                                "max_retry_count": 0
+                            }                     
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 69: hit batch-process-metrics
+--- request
+GET /batch-process-metrics
+--- error_code: 404
+
+
+
+=== TEST 70: check http log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 71: set tcp-logger plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/10',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "include_req_body": false,
+                                "timeout": 1000,
+                                "name": "tcp-logger",
+                                "retry_delay": 1,
+                                "buffer_duration": 60,
+                                "port": 1000,
+                                "batch_max_size": 1000,
+                                "inactive_timeout": 5,
+                                "tls": false,
+                                "max_retry_count": 0
+                            }                    
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics-10"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 72:  tigger metircs batch-process-metrics
+--- request
+GET /batch-process-metrics-10
+--- error_code: 404
+
+
+
+=== TEST 73: check tcp log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 74: set udp-logger plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/10',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 1000,
+                                "include_req_body": false,
+                                "timeout": 3,
+                                "batch_max_size": 1000,
+                                "name": "udp-logger",
+                                "inactive_timeout": 5,
+                                "buffer_duration": 60
+                            }                     
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics-10"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 75:  tigger metircs batch-process-metrics
+--- request
+GET /batch-process-metrics-10
+--- error_code: 404
+
+
+
+=== TEST 76: check udp log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 77: set sls-logger plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/10',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "sls-logger": {
+                                "host": "127.0.0.1",
+                                "batch_max_size": 1000,
+                                "name": "sls-logger",
+                                "inactive_timeout": 5,
+                                "logstore": "your_logstore",
+                                "buffer_duration": 60,
+                                "port": 10009,
+                                "max_retry_count": 0,
+                                "retry_delay": 1,
+                                "access_key_id": "your_access_id",
+                                "access_key_secret": "your_key_secret",
+                                "timeout": 5000,
+                                "project": "your_project"
+                            }                      
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics-10"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 78:  tigger metircs batch-process-metrics
+--- request
+GET /batch-process-metrics-10
+--- error_code: 404
+
+
+
+=== TEST 79: check sls-logger metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="127.0.0.1"\} \d+/

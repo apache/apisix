@@ -19,8 +19,6 @@ local core = require("apisix.core")
 local process = require("ngx.process")
 local ngx = ngx
 local math = math
-local select = select
-local type = type
 local require = require
 
 local plugin_name = "skywalking"
@@ -76,7 +74,7 @@ end
 function _M.rewrite(conf, ctx)
     core.log.debug("rewrite phase of skywalking plugin")
     ctx.skywalking_sample = false
-    if conf.sample_ratio == 1 or math.random() <= conf.sample_ratio then
+    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
         ctx.skywalking_sample = true
         sw_tracer:start("upstream service")
         core.log.info("tracer start")
@@ -103,28 +101,15 @@ function _M.log(conf, ctx)
 end
 
 
-local function try_read_attr(t, ...)
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        if type(t) ~= "table" then
-            return nil
-        end
-        t = t[attr]
-    end
-
-    return t
-end
-
-
 function _M.init()
     if process.type() ~= "worker" and process.type() ~= "single" then
         return
     end
 
     local local_conf = core.config.local_conf()
-    local local_plugin_info = try_read_attr(local_conf, "plugin_attr",
-                                            plugin_name) or {}
+    local local_plugin_info = core.table.try_read_attr(local_conf,
+                                                       "plugin_attr",
+                                                       plugin_name) or {}
     local_plugin_info = core.table.clone(local_plugin_info)
     local ok, err = core.schema.check(metadata_schema, local_plugin_info)
     if not ok then

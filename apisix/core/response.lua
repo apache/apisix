@@ -135,7 +135,7 @@ end
 
 
 function _M.get_upstream_status(ctx)
-    -- $upstream_status maybe including mutiple status, only need the last one
+    -- $upstream_status maybe including multiple status, only need the last one
     return tonumber(str_sub(ctx.var.upstream_status or "", -3))
 end
 

@@ -16,23 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
-
-export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-}
-
-create_lua_deps() {
-    echo "Create lua deps cache"
-
-    rm -rf deps
-    make deps
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
-
-    sudo rm -rf build-cache/deps
-    sudo cp -r deps build-cache/
-    sudo cp rockspec/apisix-master-0.rockspec build-cache/
-}
+. ./.travis/common.sh
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
@@ -51,6 +35,7 @@ before_install() {
     docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
     docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+    docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 3 --topic test3
 }
 
 tengine_install() {
@@ -63,26 +48,15 @@ tengine_install() {
         return
     fi
 
-    export OPENRESTY_VERSION=1.15.8.3
+    export OPENRESTY_VERSION=1.17.8.2
     wget https://openresty.org/download/openresty-$OPENRESTY_VERSION.tar.gz
     tar zxf openresty-$OPENRESTY_VERSION.tar.gz
     wget https://codeload.github.com/alibaba/tengine/tar.gz/2.3.2
     tar zxf 2.3.2
-    wget https://codeload.github.com/openresty/luajit2/tar.gz/v2.1-20190912
-    tar zxf v2.1-20190912
-    wget https://codeload.github.com/simplresty/ngx_devel_kit/tar.gz/v0.3.1
-    tar zxf v0.3.1
 
-    rm -rf openresty-$OPENRESTY_VERSION/bundle/nginx-1.15.8
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/nginx-1.17.8
     mv tengine-2.3.2 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-$OPENRESTY_VERSION/bundle/LuaJIT-2.1-20190507
-    mv luajit2-2.1-20190912 openresty-$OPENRESTY_VERSION/bundle/
-
-    rm -rf openresty-$OPENRESTY_VERSION/bundle/ngx_devel_kit-0.3.1rc1
-    mv ngx_devel_kit-0.3.1 openresty-$OPENRESTY_VERSION/bundle/
-
-    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-$OPENRESTY_VERSION/configure
     sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-$OPENRESTY_VERSION/configure
 
     cd openresty-$OPENRESTY_VERSION
@@ -221,6 +195,13 @@ tengine_install() {
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
     rm -rf openresty-${OPENRESTY_VERSION}
+
+    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+    sudo apt-get -y update --fix-missing
+    sudo apt-get -y install software-properties-common
+    sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    sudo apt-get update
+    sudo apt-get install openresty-openssl-debug-dev
 }
 
 do_install() {
@@ -234,14 +215,7 @@ do_install() {
 
     tengine_install
 
-    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
-    tar -xf v2.4.4.tar.gz
-    cd luarocks-2.4.4
-    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
-    make build > build.log 2>&1 || (cat build.log && exit 1)
-    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
-    cd ..
-    rm -rf luarocks-2.4.4
+    ./utils/linux-install-luarocks.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -268,17 +242,10 @@ do_install() {
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
-
-    if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
-        tar -xvf grpc_server_example-amd64.tar.gz
-        mv grpc_server_example build-cache/
-    fi
 }
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
 
 

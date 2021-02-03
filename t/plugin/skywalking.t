@@ -27,6 +27,19 @@ BEGIN {
 
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - skywalking
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+
+    $block;
+});
+
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -92,7 +105,7 @@ passed
 
 
 
-=== TEST 2: tiger skywalking
+=== TEST 2: trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -105,19 +118,7 @@ segments reported
 
 
 
-=== TEST 3: test heartbeat(TODO: need to update skywalking library)
---- request
-GET /opentracing
---- response_body
-opentracing
---- no_error_log
-[error]
---- wait: 4
---- SKIP
-
-
-
-=== TEST 4: change sample ratio
+=== TEST 3: change sample ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -175,7 +176,7 @@ passed
 
 
 
-=== TEST 5: not tiger skywalking
+=== TEST 4: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -187,7 +188,7 @@ miss sampling, ignore
 
 
 
-=== TEST 6: disabled
+=== TEST 5: disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -239,7 +240,7 @@ passed
 
 
 
-=== TEST 7: not tiger skywalking
+=== TEST 6: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -249,7 +250,7 @@ rewrite phase of skywalking plugin
 
 
 
-=== TEST 8: enable skywalking(sample_ratio=1)
+=== TEST 7: enable skywalking(sample_ratio=1)
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +308,7 @@ passed
 
 
 
-=== TEST 9: test segments report
+=== TEST 8: test segments report
 --- request
 GET /opentracing
 --- response_body

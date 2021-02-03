@@ -48,8 +48,8 @@ qr/"plugins":\{"type":"object"}/
                 ngx.say("found `anyOf`")
                 return
             end
-            
-            ngx.say("passed") 
+
+            ngx.say("passed")
         }
     }
 --- request
@@ -146,7 +146,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/limit-count
 --- response_body eval
-qr/"required":\["count","time_window","key"\]/
+qr/"required":\["count","time_window"\]/
 --- no_error_log
 [error]
 
@@ -245,7 +245,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/udp-logger
 --- response_body  eval
-qr/{"properties":/
+qr/"properties":/
 --- no_error_log
 [error]
 
@@ -255,7 +255,7 @@ qr/{"properties":/
 --- request
 GET /apisix/admin/schema/plugins/grpc-transcode
 --- response_body eval
-qr/"proto_id".*additionalProperties/
+qr/("proto_id".*additionalProperties|additionalProperties.*"proto_id")/
 --- no_error_log
 [error]
 
@@ -272,9 +272,22 @@ qr/"disable":\{"type":"boolean"\}/
 
 
 === TEST 14: get plugin node-status schema
+--- extra_yaml_config
+plugins:
+    - node-status
 --- request
 GET /apisix/admin/schema/plugins/node-status
 --- response_body eval
 qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: get global_rule schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/global_rule
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
 --- no_error_log
 [error]

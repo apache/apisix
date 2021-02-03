@@ -30,7 +30,7 @@ add_block_preprocessor(sub {
     apisix = require("apisix")
     apisix.http_init()
 
-    json = require("cjson.safe")
+    json = require("toolkit.json")
     req_data = json.decode([[{
         "methods": ["GET"],
         "upstream": {
@@ -258,7 +258,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"type\" validation failed: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"type\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 
@@ -288,7 +288,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 2 and 1 are equal"}
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 1 and 2 are equal"}
 --- no_error_log
 [error]
 

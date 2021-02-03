@@ -37,7 +37,6 @@ for us to fix.
 
 * If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/apache/apisix/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
 
-
 ## How to add a new feature or change an existing one
 
 _Before making any significant changes, please [open an issue](https://github.com/apache/apisix/issues)._ Discussing your proposed changes ahead of time will make the contribution process smooth for everyone.
@@ -48,13 +47,16 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Includes tests for new functionality.
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
 
 ## Contribution Guidelines for Documentation
 
 * Linting/Style
 
-    Use a markdown linting tool to lint the content. The following is a [plugin](https://github.com/apache/apisix/issues/1273)
-    used by our community to lint the docs.
+    For linting both our Markdown and YAML files we use:
+
+    - npm based [markdownlint-cli](https://www.npmjs.com/package/markdownlint-cli)
+    - [yamllint](https://yamllint.readthedocs.io/en/stable/) which can be installed in multiple ways
 
 * Active Voice
 
@@ -96,6 +98,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * code style
     * Please take a look at [APISIX Lua Coding Style Guide](CODE_STYLE.md).
     * Use tool to check your code statically by command: `make lint`.
+
 ```shell
         # install `luacheck` first before run it
         $ luarocks install luacheck
@@ -114,8 +117,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
             apisix/plugins/limit-count/*.lua > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 ```
+
+      The `lj-releng` will be downloaded automatically by `make lint` if not exists.
+
 * test case style
     * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
+
 ```shell
     # install `reindex` first before run it
     # wget https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
@@ -128,7 +135,10 @@ Once we've discussed your changes and you've got your code ready, make sure that
     reindex: t/plugin/udp-logger.t:	done.
     reindex: t/plugin/zipkin.t:	skipped.
 ```
+
     * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
+    * When the test file is too large, for example > 800 lines, you should split it to a new file.
+      Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
 
 ## Do you have questions about the source code?
 

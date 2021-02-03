@@ -51,13 +51,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"whitelist":["10.255.254.0\/24","192.168.0.0\/16"]}
+{"whitelist":["10.255.254.0/24","192.168.0.0/16"]}
 --- no_error_log
 [error]
 
@@ -77,15 +77,16 @@ GET /t
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid ip address: 10.255.256.0\/24/
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -105,15 +106,16 @@ qr/invalid ip address: 10.255.256.0\/24/
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid ip address: 10.255.254.0/38@
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -267,6 +269,8 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
+--- error_log
+ip-restriction exits with http status code 403
 --- no_error_log
 [error]
 

@@ -14,29 +14,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local healthcheck
 local require     = require
-local discovery   = require("apisix.discovery.init").discovery
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
 local ipairs      = ipairs
-local tostring    = tostring
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 
 
 local module_name = "balancer"
-local pickers = {
-    roundrobin = require("apisix.balancer.roundrobin"),
-    chash = require("apisix.balancer.chash"),
-    ewma = require("apisix.balancer.ewma")
-}
+local pickers = {}
 
 local lrucache_server_picker = core.lrucache.new({
-    ttl = 300, count = 256
-})
-local lrucache_checker = core.lrucache.new({
     ttl = 300, count = 256
 })
 local lrucache_addr = core.lrucache.new({
@@ -65,15 +55,18 @@ local function fetch_health_nodes(upstream, checker)
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     local up_nodes = core.table.new(0, #nodes)
     for _, node in ipairs(nodes) do
-        local ok = checker:get_target_status(node.host, port or node.port, host)
+        local ok, err = checker:get_target_status(node.host, port or node.port, host)
         if ok then
             -- TODO filter with metadata
             up_nodes[node.host .. ":" .. node.port] = node.weight
+        elseif err then
+            core.log.error("failed to get health check target status, addr: ",
+                node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
         end
     end
 
     if core.table.nkeys(up_nodes) == 0 then
-        core.log.warn("all upstream nodes is unhealth, use default")
+        core.log.warn("all upstream nodes is unhealthy, use default")
         for _, node in ipairs(nodes) do
             up_nodes[node.host .. ":" .. node.port] = node.weight
         end
@@ -83,62 +76,13 @@ local function fetch_health_nodes(upstream, checker)
 end
 
 
-local function create_checker(upstream, healthcheck_parent)
-    if healthcheck == nil then
-        healthcheck = require("resty.healthcheck")
-    end
-    local checker = healthcheck.new({
-        name = "upstream#" .. healthcheck_parent.key,
-        shm_name = "upstream-healthcheck",
-        checks = upstream.checks,
-    })
-
-    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
-    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    for _, node in ipairs(upstream.nodes) do
-        local ok, err = checker:add_target(node.host, port or node.port, host)
-        if not ok then
-            core.log.error("failed to add new health check target: ", node.host, ":",
-                    port or node.port, " err: ", err)
-        end
-    end
-
-    if upstream.parent then
-        core.table.insert(upstream.parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:stop()
-        end)
-
-    else
-        core.table.insert(healthcheck_parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:stop()
-        end)
-    end
-
-    core.log.info("create new checker: ", tostring(checker))
-    return checker
-end
-
-
-local function fetch_healthchecker(upstream, healthcheck_parent, version)
-    if not upstream.checks then
-        return
-    end
-
-    if upstream.checker then
-        return
-    end
-
-    local checker = lrucache_checker(upstream, version,
-                                     create_checker, upstream,
-                                     healthcheck_parent)
-    return checker
-end
-
-
 local function create_server_picker(upstream, checker)
     local picker = pickers[upstream.type]
+    if not picker then
+        pickers[upstream.type] = require("apisix.balancer." .. upstream.type)
+        picker = pickers[upstream.type]
+    end
+
     if picker then
         local up_nodes = fetch_health_nodes(upstream, checker)
         core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
@@ -160,21 +104,6 @@ local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
-    if up_conf.service_name then
-        if not discovery then
-            return nil, "discovery is uninitialized"
-        end
-        up_conf.nodes = discovery.nodes(up_conf.service_name)
-    end
-
-    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-    if nodes_count == 0 then
-        return nil, "no valid upstream node"
-    end
-
-    if ctx.server_picker and ctx.server_picker.after_balance then
-        ctx.server_picker.after_balance(ctx, true)
-    end
 
     if up_conf.timeout then
         local timeout = up_conf.timeout
@@ -185,6 +114,7 @@ local function pick_server(route, ctx)
         end
     end
 
+    local nodes_count = #up_conf.nodes
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
@@ -192,25 +122,29 @@ local function pick_server(route, ctx)
         return node
     end
 
-    local healthcheck_parent = ctx.upstream_healthcheck_parent
     local version = ctx.upstream_version
     local key = ctx.upstream_key
-    local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
-    ctx.up_checker = checker
+    local checker = ctx.up_checker
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
-    if checker and ctx.balancer_try_count > 1 then
-        local state, code = get_last_failure()
-        local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
-        local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
-        if state == "failed" then
-            if code == 504 then
-                checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+    if ctx.balancer_try_count > 1 then
+        if ctx.server_picker and ctx.server_picker.after_balance then
+            ctx.server_picker.after_balance(ctx, true)
+        end
+
+        if checker then
+            local state, code = get_last_failure()
+            local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
+            local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
+            if state == "failed" then
+                if code == 504 then
+                    checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+                else
+                    checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+                end
             else
-                checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+                checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
             end
-        else
-            checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
         end
     end
 
@@ -240,6 +174,7 @@ local function pick_server(route, ctx)
         err = err or "no valid upstream node"
         return nil, "failed to find valid upstream server, " .. err
     end
+    ctx.balancer_server = server
 
     local res, err = lrucache_addr(server, nil, parse_addr, server)
     ctx.balancer_ip = res.host

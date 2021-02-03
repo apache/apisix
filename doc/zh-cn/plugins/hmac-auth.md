@@ -21,11 +21,12 @@
 
 # 目录
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+  - [**名字**](#名字)
+  - [**属性**](#属性)
+  - [**如何启用**](#如何启用)
+  - [**测试插件**](#测试插件)
+  - [**禁用插件**](#禁用插件)
+  - [**签名生成示例**](#签名生成示例)
 
 ## 名字
 
@@ -43,6 +44,7 @@
 | clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 | keep_headers | boolean | 可选   |      false        |           [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。 |
+| encode_uri_param | boolean | 可选   |      true        |           [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 
 ## 如何启用
 
@@ -56,12 +58,14 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
         "hmac-auth": {
             "access_key": "user-key",
             "secret_key": "my-secret-key",
-            "clock_skew": 10,
+            "clock_skew": 0,
             "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
 }'
 ```
+
+默认 `keep_headers` 为 false，`encode_uri_param` 为 true。
 
 2. 创建 Route 或 Service 对象，并开启 `hmac-auth` 插件。
 
@@ -97,9 +101,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 * 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
 * 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
-* 对拆开后的每一项进行编码处理，分以下两种情况:
+* 根据 uri 参数是否编码，有下面两种情况：
+* `encode_uri_param` 为 true 时：
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
   * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
   * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
+  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
+* `encode_uri_param` 为 false 时:
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
+  * 当该项只有 key 时，转换公式为 key + "=" 的形式。
+  * 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
   * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
 
 > signed_headers_string 生成步骤如下：
@@ -114,21 +125,83 @@ HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
-拼接后的示例：
+**签名字符串拼接示例**
+
+以下面请求为例：
+
+```shell
+$ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
+```
+
+根据`签名生成公式`生成的 `signing_string` 为：
 
 ```plain
-GET
-/hello
-
-your-access-key
-Mon, 28 Sep 2020 06:48:57 GMT
-x-custom-header:value
+"GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+"
 ```
+
+注意：最后一个请求头也需要 + `\n`。
+
+**生成签名**
+
+使用 Python 来生成签名 `SIGNATURE`：
+
+```python
+import hashlib
+import hmac
+import base64
+
+secret = bytes('my-secret-key', 'utf-8')
+message = bytes("""GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+""", 'utf-8')
+
+hash = hmac.new(secret, message, hashlib.sha256)
+
+# to lowercase base64
+print(base64.b64encode(hash.digest()))
+```
+
+Type      |                        Hash                  |
+----------|----------------------------------------------|
+SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
 ### 使用生成好的签名进行请求尝试
 
-**注： ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
-**注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers**
+```shell
+$ curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
+-H "X-HMAC-SIGNATURE: 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg=" \
+-H "X-HMAC-ALGORITHM: hmac-sha256" \
+-H "X-HMAC-ACCESS-KEY: user-key" \
+-H "Date: Tue, 19 Jan 2021 11:33:20 GMT" \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Tue, 19 Jan 2021 11:33:20 GMT
+Server: APISIX/2.2
+......
+```
+
+**下面是签名信息的两种组装形式**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
 
@@ -159,6 +232,11 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
+**注:**
+
+1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
+2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
+3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
 
 ## 自定义 header 名称
 
@@ -188,7 +266,6 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-
 ## 禁用插件
 
 当你想去掉 `hmac-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
@@ -206,3 +283,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+## 签名生成示例
+
+以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。需要注意各种语言中对签名字符串的换行符的处理方式，这很容易导致出现 `{"message":"Invalid signature"}` 的问题。
+
+示例入参说明:
+
+Variable | Value
+---|---
+secret | this is secret key
+message | this is signature string
+
+示例出参说明：
+
+Type | Hash
+---|---
+hexit | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345
+base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=
+
+具体代码请参考：[**HMAC Generate Signature Examples**](../../examples/plugins-hmac-auth-generate-signature.md)
