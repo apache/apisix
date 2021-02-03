@@ -33,7 +33,7 @@ else
     WITH_LUA_OPT=
 fi
 
-./configure --prefix=/usr $WITH_LUA_OPT \
+./configure $WITH_LUA_OPT \
     > build.log 2>&1 || (cat build.log && exit 1)
 
 make build > build.log 2>&1 || (cat build.log && exit 1)
