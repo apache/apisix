@@ -450,6 +450,7 @@ local function start(env, ...)
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
+    -- TODO: more logs for APISIX cli could be added using this feature
     parser:flag("--verbose", "show init_etcd debug information")
     local args = parser:parse()
 
