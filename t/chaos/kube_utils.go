@@ -28,8 +28,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	clientScheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
-	kubectlscheme "k8s.io/kubectl/pkg/scheme"
+	kubectlScheme "k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -42,6 +43,7 @@ type clientSet struct {
 func initClientSet(g *gomega.WithT) *clientSet {
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
+	clientScheme.AddToScheme(scheme)
 
 	restConfig := config.GetConfigOrDie()
 	ctrlCli, err := client.New(restConfig, client.Options{Scheme: scheme})
@@ -52,14 +54,14 @@ func initClientSet(g *gomega.WithT) *clientSet {
 	return &clientSet{ctrlCli, kubeCli}
 }
 
-func getPod(g *gomega.WithT, cli client.Client, listOption client.MatchingLabels) *corev1.Pod {
-	pod := &corev1.Pod{}
-	err := cli.List(context.Background(), pod, listOption)
+func getPod(g *gomega.WithT, cli client.Client, ns string, listOption client.MatchingLabels) *corev1.Pod {
+	podList := &corev1.PodList{}
+	err := cli.List(context.Background(), podList, client.InNamespace(ns), listOption)
 	g.Expect(err).To(gomega.BeNil())
-	return pod
+	return &podList.Items[0]
 }
 
-func execInPod(cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
+func execInPod(g *gomega.WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
 	name := pod.GetName()
 	namespace := pod.GetNamespace()
 	// only get the first container, no harm for now
@@ -78,7 +80,7 @@ func execInPod(cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
 		Stdout:    true,
 		Stderr:    true,
 		TTY:       false,
-	}, kubectlscheme.ParameterCodec)
+	}, kubectlScheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
 	exec, err := remotecommand.NewSPDYExecutor(config.GetConfigOrDie(), "POST", req.URL())
