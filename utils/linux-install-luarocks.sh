@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-# you might need sudo to run this script 
 if [ -z ${OPENRESTY_PREFIX} ]; then
     OPENRESTY_PREFIX="/usr/local/openresty"
 fi
@@ -30,6 +29,6 @@ make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
 rm -rf luarocks-3.4.0
 
-mkdir -p ~/.luarocks
+mkdir ~/.luarocks || true
 luarocks config variables.OPENSSL_LIBDIR ${OPENRESTY_PREFIX}/openssl/lib
 luarocks config variables.OPENSSL_INCDIR ${OPENRESTY_PREFIX}/openssl/include
