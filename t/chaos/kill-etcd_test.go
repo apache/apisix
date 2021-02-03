@@ -19,7 +19,6 @@ package chaos
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -29,12 +28,10 @@ import (
 	"github.com/gavv/httpexpect/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createEtcdKillChaos(g *WithT) {
-	cli := initClient(g)
-	ctx := context.Background()
-
+func createEtcdKillChaos(g *WithT, cli client.Client) {
 	chaos := &v1alpha1.PodChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kill-etcd",
@@ -52,13 +49,14 @@ func createEtcdKillChaos(g *WithT) {
 		},
 	}
 
-	err := cli.Create(ctx, chaos)
+	err := cli.Create(context.Background(), chaos)
 	g.Expect(err).To(BeNil())
 }
 
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
 	e := httpexpect.New(t, host)
+	cliSet := initClientSet(g)
 
 	eSilent := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
@@ -89,15 +87,17 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	bpsBefore := getIngressBandwidthPerSecond(e, g)
 	g.Expect(bpsBefore).NotTo(BeZero())
 
-	podName := runCommand(t, "kubectl get pod -l app=apisix-gw -o 'jsonpath={..metadata.name}'")
+	listOption := client.MatchingLabels{"app": "apisix-gw"}
+	apisixPod := getPod(g, cliSet.ctrlCli, listOption)
+
 	t.Run("error log not contains etcd error", func(t *testing.T) {
-		errorLog := runCommand(t, fmt.Sprintf("kubectl exec -it %s -- cat logs/error.log", podName))
+		errorLog := execInPod(cliSet.kubeCli, apisixPod, "cat logs/error.log")
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeFalse())
 	})
 
 	// apply chaos to kill all etcd pods
 	t.Run("kill all etcd pods", func(t *testing.T) {
-		createEtcdKillChaos(g)
+		createEtcdKillChaos(g, cliSet.ctrlCli)
 		time.Sleep(3 * time.Second)
 	})
 
@@ -108,7 +108,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	testPrometheusEtcdMetric(e, 0)
 
 	t.Run("error log contains etcd error", func(t *testing.T) {
-		errorLog := runCommand(t, fmt.Sprintf("kubectl exec -it %s -- cat logs/error.log", podName))
+		errorLog := execInPod(cliSet.kubeCli, apisixPod, "cat logs/error.log")
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 

@@ -20,18 +20,12 @@ package chaos
 import (
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strconv"
 	"strings"
-	"testing"
 	"time"
 
-	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/gavv/httpexpect/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -172,29 +166,12 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	return (bandWidthEnd - bandWidthStart) / duration.Seconds()
 }
 
-func runCommand(t *testing.T, cmd string) string {
-	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
-	if err != nil {
-		t.Fatalf("fail to run command %s: %s, %s", cmd, err.Error(), out)
-	}
-	return string(out)
-}
-
 func roughCompare(a float64, b float64) bool {
 	ratio := a / b
 	if ratio < 1.3 && ratio > 0.7 {
 		return true
 	}
 	return false
-}
-
-func initClient(g *WithT) client.Client {
-	scheme := runtime.NewScheme()
-	v1alpha1.AddToScheme(scheme)
-
-	cli, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
-	g.Expect(err).To(BeNil())
-	return cli
 }
 
 type silentPrinter struct {
