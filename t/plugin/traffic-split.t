@@ -1550,3 +1550,140 @@ GET /t
 1980, 1981, 1981, 1982, 1982
 --- no_error_log
 [error]
+
+
+
+=== TEST 44: set upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:1981": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: set upstream(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/2',
+                 ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1982": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: the upstream is bound by upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_x-api-name", "==", "jack"], ["arg_x-api-age", ">", "23"],["http_x-api-appkey", "~~", "[a-z]{1,5}"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 2, "weight": 2},
+                                        {"upstream_id": 1, "weight": 2},
+                                        {"weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 47: `match` rule passed
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["x-api-appkey"] = "hello"
+        for i = 1, 5 do
+            local _, _, body = t('/server_port?x-api-name=jack&x-api-age=36', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981, 1982, 1982
+--- no_error_log
+[error]
