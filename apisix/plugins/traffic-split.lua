@@ -327,6 +327,7 @@ function _M.access(conf, ctx)
         return
     end
 
+    core.log.info("default_up: ", upstream)
     ctx.matched_route.value.upstream_id = nil
     return
 end

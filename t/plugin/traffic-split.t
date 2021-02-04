@@ -1850,22 +1850,14 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
 
-            do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            end
-
-            ngx.sleep(2.5)
-
             local ports_count = {}
-            for i = 1, 12 do
+            for i = 1, 10 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
                     return
                 end
-
                 ports_count[res.body] = (ports_count[res.body] or 0) + 1
             end
 
@@ -1886,13 +1878,13 @@ qr/^.*?\[error\](?!.*process exiting).*/
 --- request
 GET /t
 --- response_body
-[{"count":6,"port":"1981"},{"count":6,"port":"1980"}]
+[{"count":5,"port":"1981"},{"count":5,"port":"1980"}]
 --- grep_error_log eval
 qr/\([^)]+\) unhealthy .* for '.*'/
 --- grep_error_log_out
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
---- timeout: 10
+--- timeout: 12
 
 
 
@@ -1928,7 +1920,7 @@ passed
 
 
 
-=== TEST 53: set route(id: 1)
+=== TEST 53: set route(id: 1, upstream_id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1936,7 +1928,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [=[{
-                    "uri": "/server_port",
+                    "uri": "/hello",
                     "plugins": {
                         "traffic-split": {
                             "rules": [
@@ -1951,7 +1943,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1982": 1
+                            "127.0.0.1:1980": 1
                         }
                     }
                 }]=]
@@ -1972,28 +1964,27 @@ passed
 
 
 
-=== TEST 54: /not_found
+=== TEST 54: hit routes
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        do
+            local code, _ = t('/hello', ngx.HTTP_GET)
+        end
+
+        local code, _ = t('/hello', ngx.HTTP_GET)
+        if code >= 300 then
+            ngx.status = code
+        end
+    }
+}
 --- request
-GET /not_found
---- error_code: 404
---- response_body
-{"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
---- LAST
-
-
-=== TEST 55: hit routes
---- pipelined_requests eval
-["GET /server_port", "GET /server_port"]
---- error_code eval
-[200, 502]
+GET /t
+--- error_code: 502
 --- grep_error_log eval
 qr/\[error\]/
 --- grep_error_log_out
 [error]
 [error]
 [error]
-[error]
-
-
