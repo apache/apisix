@@ -52,6 +52,7 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	case http.MethodPut:
 		req = e.PUT(tc.Path)
 	default:
+	    panic("invalid HTTP method")
 	}
 
 	if req == nil {
