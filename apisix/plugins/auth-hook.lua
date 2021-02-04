@@ -83,9 +83,7 @@ local _M = {
 }
 
 function _M.check_schema(conf)
-    core.log.warn("input conf: ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(schema, conf)
-
     if not ok then
         return false, err
     end
@@ -110,21 +108,6 @@ do
 
 end
 
-
-local function get_auth_id(ctx)
-
-    local auth_id = ctx.var.http_x_auth_id
-    if auth_id then
-        return auth_id
-    end
-
-    auth_id = ctx.var.arg_auth_id
-    if auth_id then
-        return auth_id
-    end
-
-    return nil;
-end
 
 local function get_auth_token(ctx)
 
@@ -175,21 +158,6 @@ local function new_table()
     return setmetatable(t, _mt)
 end
 
-local function get_config(auth_id)
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        core.response.exit(500)
-    end
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
-    local config = consumers[auth_id]
-    if not config then
-        core.log.info("request auth_id [", auth_id, "] not found")
-        core.response.exit(400, fail_response("auth_id [" .. tostring(auth_id) .. "] not found", { status_code = 400 }))
-    end
-    return config.auth_conf
-end
-
 
 --获取需要传输的headers
 local function request_headers(config, ctx)
@@ -208,37 +176,44 @@ local function request_headers(config, ctx)
     return req_headers;
 end
 
+
 --获取需要传输的headers
 local function res_to_headers(config, data)
 
+
     local prefix = config.hook_res_to_header_prefix or ''
     local hook_res_to_headers = config.hook_res_to_headers;
-    if (not hook_res_to_headers) or (not data) then
+
+    if  type(hook_res_to_headers) ~= "table" or type(data) ~= "table" then
         return
     end
 
-    for field in pairs(hook_res_to_headers) do
-        local v = data[field]
+    core.request.set_header(prefix .. "auth-data", core.json.encode(data))
+    for field,val in pairs(hook_res_to_headers) do
+        local v = data[val]
+        core.log.warn(v,'---',field,'-----',val)
         if v then
+            core.log.warn(v)
             if type(v) == "table" then
-                v = core.json.delay_encode(perm_item)
+                v = core.json.encode(v)
             end
-            local f = string.gsub(field, '_', '-')
-            core.response.set_header(prefix .. f, v)
+            local f = string.gsub(val, '_', '-')
             core.request.set_header(prefix .. f, v)
+            core.response.set_header(prefix .. f, v)
+
         end
     end
     return ;
 end
 
+
 --获取需要传输的args
 local function request_args(hook_args)
 
-    if not hook_args then
-        return nil
-    end
-
     local req_args = new_table();
+    if not hook_args then
+        return req_args
+    end
     local args = ngx.req.get_uri_args()
     for field in pairs(hook_args) do
         local v = args[field]
@@ -262,6 +237,8 @@ local function http_req(method, uri, body, myheaders, timeout)
     end
 
     local params = { method = method, headers = myheaders, body = body, ssl_verify = false }
+
+    core.log.warn("input conf: ", core.json.delay_encode(params))
     local res, err = httpc:request_uri(uri, params)
     if err then
         core.log.error("FAIL REQUEST [ ", core.json.delay_encode({ method = method, uri = uri, body = body, headers = myheaders }), " ] failed! res is nil, err:", err)
@@ -271,9 +248,10 @@ local function http_req(method, uri, body, myheaders, timeout)
     return res
 end
 
-local function http_get(uri, myheaders, timeout)
-    return http_req("GET", uri, nil, myheaders, timeout)
+local function http_post(uri, myheaders, timeout)
+    return http_req("POST", uri, nil, myheaders, timeout)
 end
+
 
 local function get_auth_info(config, ctx, hook_url, action, path, client_ip, auth_token)
     local retry_max = 2
@@ -282,22 +260,22 @@ local function get_auth_info(config, ctx, hook_url, action, path, client_ip, aut
     local res
     local err
     local headers = request_headers(config, ctx)
-    headers["X-client-id"] = client_ip
+    headers["X-Client-Ip"] = client_ip
     headers["Authorization"] = auth_token
     headers["Content-Type"] = "application/json; charset=utf-8"
     local args = request_args(config.hook_args)
     args['hook_path'] = path
     args['hook_action'] = action
     args['hook_client_ip'] = client_ip
+    core.response.set_header("hook-cache", 'no-cache')
     local url = hook_url .. "?" .. ngx.encode_args(args)
     for i = 1, retry_max do
         -- TODO: read apisix info.
-        res, err = http_get(url, headers, timeout)
+        res, err = http_post(url, headers, timeout)
         if err then
             break
         else
-            core.log.info("check permission request:", url, ", status:", res.status,
-                    ",body:", core.json.delay_encode(res.body))
+            core.log.error("check permission request:", url, ", status:", res.status, ",body:", core.json.delay_encode(res.body))
             if res.status < 500 then
                 break
             else
@@ -339,41 +317,43 @@ function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
-    --local auth_id = get_auth_id(ctx)
-    --local config = get_config(auth_id)
     local config = conf
     local perm_item = {action = action, url = url, clientIP = client_ip }
-    --core.log.error("hit web-auth rewrite")
-
     local auth_token, err = get_auth_token(ctx)
     if not auth_token then
         core.log.info("no permission to access ", core.json.delay_encode(perm_item), ", need login!")
+        core.response.set_header("Content-Type", "application/json; charset=utf-8")
         return 401, fail_response("Missing auth token in request", { status_code = 401 })
     end
 
     local hook_uri = config.hook_uri
     local res
     if config.hook_cache then
+        core.response.set_header("hook-cache", 'cache')
+        core.log.info("hook_cache true")
         res = hook_lrucache(plugin_name .. "#" .. auth_token, config.version, get_auth_info, config, ctx, hook_uri, action, url, client_ip, auth_token)
     else
+        core.log.warn("hook_cache false")
         res = get_auth_info(config, ctx, hook_uri, action, url, client_ip, auth_token)
     end
     core.log.info(" get_auth_info(", core.json.delay_encode(perm_item), ") res: ", core.json.delay_encode(res))
 
     local data
     if res.body then
-        data = res.body
-        if data then
-            ctx.auth_data = data
+        data = res.body.data
+        if type(data) == "table" then
             res_to_headers(config, data)
         end
     end
 
+
     if res.status ~= 200 then
         -- no permission.
-        core.log.error(" get_auth_info(", core.json.delay_encode(perm_item), ") failed, res: ", core.json.delay_encode(res))
+        core.response.set_header("Content-Type", "application/json; charset=utf-8")
         return 401, fail_response(res.err, { status_code = 401 })
     end
+
+
     core.log.info("web-auth check permission passed")
 end
 
