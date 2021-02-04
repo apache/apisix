@@ -21,14 +21,14 @@
 
 # Summary
 
-  - [**Name**](#name)
-  - [**Attributes**](#attributes)
-  - [**How To Enable**](#how-to-enable)
-  - [**Example**](#example)
-    - [**Grayscale Release**](#grayscale-release)
-    - [**Blue-green Release**](#blue-green-release)
-    - [**Custom Release**](#custom-release)
-  - [**Disable Plugin**](#disable-plugin)
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Example**](#example)
+  - [**Grayscale Release**](#grayscale-release)
+  - [**Blue-green Release**](#blue-green-release)
+  - [**Custom Release**](#custom-release)
+- [**Disable Plugin**](#disable-plugin)
 
 ## Name
 

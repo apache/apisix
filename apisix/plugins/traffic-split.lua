@@ -261,7 +261,7 @@ local function new_rr_obj(weighted_upstreams)
         if not upstream_obj.upstream and not upstream_obj.upstream_id then
             -- If the `upstream` object has only the `weight` value, it means
             -- that the `upstream` weight value on the default `route` has been reached.
-            -- Need to set an identifier to mark the empty upstream.
+            -- Mark empty upstream services in the plugin, but with weight.
             upstream_obj.upstream = "plugin#upstream#is#empty"
             server_list[upstream_obj.upstream] = upstream_obj.weight
         end
@@ -322,6 +322,9 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
+        -- There is a problem here. When the plugin only binds upstream
+        -- services through upstream_id, by default the first request
+        -- will access the upstream service configured on the route.
         ctx.matched_route.value.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
