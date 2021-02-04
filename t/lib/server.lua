@@ -340,6 +340,16 @@ function _M.headers()
 end
 
 
+function _M.echo()
+    ngx.req.read_body()
+    local hdrs = ngx.req.get_headers()
+    for k, v in pairs(hdrs) do
+        ngx.header[k] = v
+    end
+    ngx.say(ngx.req.get_body_data() or "")
+end
+
+
 function _M.log()
     ngx.req.read_body()
     local body = ngx.req.get_body_data()
