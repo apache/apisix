@@ -248,6 +248,5 @@ compress-tar:
 	--exclude t \
 	--exclude utils \
 	--exclude release \
-	--exclude $(RELEASE_SRC).tgz \
 	. || true
 	# to avoid file-change warning
