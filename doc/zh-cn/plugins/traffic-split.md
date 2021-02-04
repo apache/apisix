@@ -21,14 +21,14 @@
 
 # 目录
 
-- [名字](#名字)
-- [属性](#属性)
-- [如何启用](#如何启用)
-- [示例](#示例)
-  - [灰度发布](#灰度发布)
-  - [蓝绿发布](#蓝绿发布)
-  - [自定义发布](#自定义发布)
-- [禁用插件](#禁用插件)
+  - [名字](#名字)
+  - [属性](#属性)
+  - [如何启用](#如何启用)
+  - [示例](#示例)
+    - [灰度发布](#灰度发布)
+    - [蓝绿发布](#蓝绿发布)
+    - [自定义发布](#自定义发布)
+  - [禁用插件](#禁用插件)
 
 ## 名字
 
@@ -43,7 +43,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | rules.match                    | array[object] | 可选  |        |        | 匹配规则列表  |
 | rules.match.vars               | array[array]  | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
+| weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
 | weighted_upstreams.upstream    | object | 可选   |        |        | 上游配置信息。 |
 | upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
 | upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
@@ -68,7 +68,9 @@ traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成�
 
 ## 如何启用
 
-创建一个路由并启用 `traffic-split` 插件：
+创建一个路由并启用 `traffic-split` 插件，在配置插件上游信息时，有以下两种方式：
+
+1、通过插件中的 `upstream` 属性配置上游信息。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -110,6 +112,40 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+2、通过插件中的 `upstream_id` 属性绑定上游服务。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream_id": 1,
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+>注：1、通过 `upstream_id` 方式绑定上游服务，可以复用上游服务具有的健康检测、重试机制等功能。2、支持 `upstream` 和 `upstream_id` 的两种配置方式一起使用。
 
 ## 示例
 

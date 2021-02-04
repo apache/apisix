@@ -262,17 +262,15 @@ local function new_rr_obj(weighted_upstreams)
             -- If the `upstream` object has only the `weight` value, it means
             -- that the `upstream` weight value on the default `route` has been reached.
             -- Need to set an identifier to mark the empty upstream.
-            upstream_obj.upstream = "empty_upstream"
+            upstream_obj.upstream = "plugin#upstream#is#empty"
             server_list[upstream_obj.upstream] = upstream_obj.weight
         end
 
         if upstream_obj.upstream_id then
             server_list[upstream_obj.upstream_id] = upstream_obj.weight
-        else
-            if type(upstream_obj.upstream) == "table" then
-                -- Add a virtual id field to uniquely identify the upstream `key`.
-                upstream_obj.upstream.vid = i
-            end
+        elseif type(upstream_obj.upstream) == "table" then
+            -- Add a virtual id field to uniquely identify the upstream `key`.
+            upstream_obj.upstream.vid = i
             server_list[upstream_obj.upstream] = upstream_obj.weight
         end
     end
@@ -323,7 +321,7 @@ function _M.access(conf, ctx)
     if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
-    elseif upstream and upstream ~= "empty_upstream" then
+    elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.matched_route.value.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
