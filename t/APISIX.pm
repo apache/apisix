@@ -638,4 +638,21 @@ _EOC_
     $block;
 });
 
+sub run_or_exit ($) {
+    my ($cmd) = @_;
+    my $output = `$cmd`;
+    if ($?) {
+        warn "$output";
+        exit 1;
+    }
+}
+
+add_cleanup_handler(sub {
+    if ($ENV{FLUSH_ETCD}) {
+        delete $ENV{APISIX_PROFILE};
+        run_or_exit "etcdctl del --prefix /apisix";
+        run_or_exit "./bin/apisix init_etcd";
+    }
+});
+
 1;
