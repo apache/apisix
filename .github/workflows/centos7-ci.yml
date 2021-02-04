@@ -80,9 +80,9 @@ jobs:
 
     - name: install dependencies
       run: |
-        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./apisix"
-        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh install_dependencies"
+        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: run test cases
       run: |
-        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh run_case"
+        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh run_case"
