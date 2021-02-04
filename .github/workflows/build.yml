@@ -58,8 +58,8 @@ jobs:
         run: |
           export VERSION=${GITHUB_REF#refs/heads/}
           RELEASE_SRC=apache-apisix-${VERSION}-src
-          make release-src
-          mv release/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
+          make compress-tar
+          # mv release/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
 
       - name: Remove everything except tarball/.travis/t
         # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
