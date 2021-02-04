@@ -145,9 +145,6 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
-            local ssl_cert = t.read_file("t/certs/apisix.crt")
-            local ssl_key =  t.read_file("t/certs/apisix.key")
-            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
             local code, message, res = t.test('/apisix/admin/ssl/1',
                 ngx.HTTP_GET
             )
@@ -159,15 +156,21 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            res.node.value.cert = ""
-            res.node.value.key = ""
+            local value = res.node.value
+            assert(value.create_time ~= nil)
+            value.create_time = nil
+            assert(value.update_time ~= nil)
+            value.update_time = nil
+            assert(value.cert ~= nil)
+            value.cert = ""
+            assert(value.key == nil)
+            assert(res.count ~= nil)
+            res.count = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1}}}
+{"action":"get","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","sni":"t.com","status":1}}}
 
 
 

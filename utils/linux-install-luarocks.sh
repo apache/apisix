@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+# you might need sudo to run this script
 if [ -z ${OPENRESTY_PREFIX} ]; then
     OPENRESTY_PREFIX="/usr/local/openresty"
 fi
@@ -33,7 +34,7 @@ else
     WITH_LUA_OPT=
 fi
 
-./configure --prefix=/usr $WITH_LUA_OPT \
+./configure $WITH_LUA_OPT \
     > build.log 2>&1 || (cat build.log && exit 1)
 
 make build > build.log 2>&1 || (cat build.log && exit 1)
