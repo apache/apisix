@@ -53,6 +53,20 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Create tarball
+        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        run: |
+          export VERSION=${GITHUB_REF#refs/heads/}
+          RELEASE_SRC=apache-apisix-${VERSION}-src
+          make release-src
+          mv release/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
+
+      - name: Remove everything except tarball/.travis/t
+        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        run: |
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
+          tar zxvf apache-apisix-${VERSION}-src.tgz
+
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
 
@@ -108,3 +122,10 @@ jobs:
 
       - name: Linux Script
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
+
+      - name: Publish Artifact
+        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        uses: actions/upload-artifact@v1
+        with:
+          name: release-package-${{ matrix.os_name }}
+          path: apache-apisix-${VERSION}-src.tgz

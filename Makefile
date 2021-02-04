@@ -221,7 +221,7 @@ endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
 release-src:
-	tar -zcvf $(RELEASE_SRC).tgz \
+	tar --warning=no-file-changed -zcvf $(RELEASE_SRC).tgz \
 	--exclude .github \
 	--exclude .git \
 	--exclude .gitattributes \
@@ -239,7 +239,8 @@ release-src:
 	--exclude utils \
 	--exclude release \
 	--exclude $(RELEASE_SRC).tgz \
-	.
+	. || true
+	# to avoid file-change warning
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
