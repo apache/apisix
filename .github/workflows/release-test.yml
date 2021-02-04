@@ -55,12 +55,15 @@ jobs:
 
       - name: Create tarball
         run: |
-          VERSION=${GITHUB_REF#refs/heads/}
+          export VERSION=${GITHUB_REF#refs/heads/}
+          RELEASE_SRC=apache-apisix-${VERSION}-src
+          touch $(RELEASE_SRC).tgz # to avoid file-change warning when `tar`
           make release-src
+          mv release/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
 
       - name: Remove everything except tarball/.travis/t
         run: |
-          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t)
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
           tar zxvf apache-apisix-${VERSION}-src.tgz
 
       - name: Linux Get dependencies
