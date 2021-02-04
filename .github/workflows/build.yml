@@ -64,8 +64,10 @@ jobs:
       - name: Remove everything except tarball/.travis/t
         # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
         run: |
+          export RELEASE_SRC=apache-apisix-${GITHUB_REF#refs/heads/}-src
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
           tar zxvf $(RELEASE_SRC).tgz
+          ls
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
