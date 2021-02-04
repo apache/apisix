@@ -55,7 +55,7 @@ jobs:
 
       - name: Create tarball
         run: |
-          VERSION=${${GITHUB_REF#refs/heads/}:1}
+          VERSION=${GITHUB_REF#refs/heads/}
           make release-src
 
       - name: Remove everything except tarball/.travis/t
