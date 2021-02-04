@@ -415,3 +415,147 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 [200, 200, 200, 403]
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: check zipkin headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: set x-b3-sampled if sampled
+--- request
+GET /echo
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 16: don't sample if disabled
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: 0
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 17: don't sample if disabled (old way)
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: false
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 18: sample according to the header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 0.00001
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: don't sample by default
+--- request
+GET /echo
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 20: sample if needed
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: 1
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 21: sample if debug
+--- request
+GET /echo
+--- more_headers
+x-b3-flags: 1
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 22: sample if needed (old way)
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: true
+--- response_headers
+x-b3-sampled: 1
