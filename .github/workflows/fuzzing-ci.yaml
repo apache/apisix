@@ -39,6 +39,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git openresty curl openresty-openssl-dev
         sudo ./utils/linux-install-luarocks.sh
+        ls /home/runner/.luarocks/
+        ls ~
         make deps
         make init
         make run
