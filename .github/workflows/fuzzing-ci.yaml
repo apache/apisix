@@ -50,7 +50,7 @@ jobs:
 
     - name: install boofuzz
       run: |
-        pip install boofuzz
+        pip install boofuzz typing
 
     - name: run test
       run: |
