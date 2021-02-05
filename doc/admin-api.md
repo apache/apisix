@@ -265,7 +265,7 @@ After successful execution, status nodes will be updated to:
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Service
 
@@ -414,7 +414,7 @@ After successful execution, upstream nodes will not retain the original data, an
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Consumer
 
@@ -485,7 +485,7 @@ Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Upstream
 
@@ -653,7 +653,7 @@ After the execution is successful, nodes will not retain the original data, and 
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## SSL
 
@@ -752,7 +752,7 @@ Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Plugin
 
@@ -791,4 +791,4 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 |---------|-------------------------|--|------|
 |GET      |/apisix/admin/plugins?all=true|NULL|Fetch resource|
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
