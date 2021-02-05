@@ -1,0 +1,50 @@
+name: fuzzing
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test_apisix:
+    name: run fuzzing
+    runs-on: ubuntu-latest
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: install apisix
+      run: |
+        pwd
+        ls
+        make init
+        make deps
+        make run
+
+    - name: run upstream
+      run: |
+        sudo openresty -c $PWD/t/fuzzing/upstream/nginx.conf
+
+    - name: install boofuzz
+      run: |
+        pip install boofuzz
+
+    - name: run test
+      run: |
+        python $PWD/t/fuzzing/getcase.py
