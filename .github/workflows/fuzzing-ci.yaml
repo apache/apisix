@@ -9,19 +9,9 @@ on:
       - master
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - ubuntu-18.04
-        os_name:
-          - linux_openresty
-
-    runs-on: ${{ matrix.platform }}
-    env:
-      SERVER_NAME: ${{ matrix.os_name }}
-      OPENRESTY_VERSION: default
+  test_apisix:
+    name: run fuzzing
+    runs-on: ubuntu-latest
 
     services:
       etcd:
@@ -42,8 +32,13 @@ jobs:
     - name: install apisix
       run: |
         ls
-        sudo --preserve-env=OPENRESTY_VERSION \
-            ./.travis/${{ matrix.os_name }}_runner.sh do_install
+        wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+        sudo apt-get update
+        sudo apt-get install -y git openresty curl openresty-openssl-dev
+        ./utils/linux-install-luarocks.sh
 
         make init
         make deps
