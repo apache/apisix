@@ -279,6 +279,12 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.apisix.dns_resolver_valid then
+        if tonumber(yaml_conf.apisix.dns_resolver_valid) == nil then
+            util.die("apisix->dns_resolver_valid should be a number")
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
         use_or_1_15 = use_or_1_15,
