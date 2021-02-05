@@ -31,7 +31,6 @@ jobs:
 
     - name: install apisix
       run: |
-        ls
         wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
         sudo apt-get update
         sudo apt-get -y install software-properties-common
@@ -47,7 +46,7 @@ jobs:
 
     - name: run upstream
       run: |
-        openresty -c $PWD/t/fuzzing/upstream/nginx.conf
+        sudo openresty -c $PWD/t/fuzzing/upstream/nginx.conf
 
     - name: install boofuzz
       run: |
