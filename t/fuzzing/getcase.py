@@ -29,7 +29,7 @@ def main():
     with s_block("Request-Line"):
         s_group("Method", ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE'])
         s_delim(" ", name='space-1')
-        s_string("/get?", name='Request-URI')
+        s_string("/get", name='Request-URI')
         s_delim(" ", name='space-2')
         s_string('HTTP/1.1', name='HTTP-Version')
         s_static("\r\n", name="Request-Line-CRLF")
