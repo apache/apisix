@@ -222,23 +222,18 @@ endif
 
 release-src:
 	tar -zcvf $(RELEASE_SRC).tgz \
+	--exclude-vcs \
+	--exclude-vcs-ignores \
 	--exclude .github \
-	--exclude .git \
-	--exclude .gitattributes \
-	--exclude .idea \
 	--exclude .travis \
-	--exclude .gitignore \
-	--exclude .DS_Store \
 	--exclude benchmark \
 	--exclude doc \
 	--exclude kubernetes \
 	--exclude logos \
-	--exclude deps \
 	--exclude logs \
 	--exclude t \
 	--exclude utils \
 	--exclude release \
-	--exclude $(RELEASE_SRC).tgz \
 	.
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
