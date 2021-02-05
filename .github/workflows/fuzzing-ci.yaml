@@ -39,7 +39,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git openresty curl openresty-openssl-dev unzip make gcc
 
-        ./utils/linux-install-luarocks.sh
+        sudo ./utils/linux-install-luarocks.sh
 
         sudo make deps
         make init
