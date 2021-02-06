@@ -79,7 +79,7 @@
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
-For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
+For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will respond with an error.
 
 Config Example:
 
