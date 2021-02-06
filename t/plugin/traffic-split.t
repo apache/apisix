@@ -2050,8 +2050,8 @@ passed
 GET /hello
 --- error_code: 502
 --- grep_error_log eval
-qr/\[error\]/
+qr/\([^)]+\) while connecting to upstream/
 --- grep_error_log_out
-[error]
-[error]
-[error]
+(111: Connection refused) while connecting to upstream
+(111: Connection refused) while connecting to upstream
+(111: Connection refused) while connecting to upstream
