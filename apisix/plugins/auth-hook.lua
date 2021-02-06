@@ -16,24 +16,16 @@
 --
 
 local core = require("apisix.core")
-local consumer = require("apisix.consumer")
 local json = require("apisix.core.json")
-local sleep = core.sleep
 local http = require("resty.http")
-local ipairs = ipairs
+local ck = require("resty.cookie")
 local ngx = ngx
-local tostring = tostring
 local rawget = rawget
 local rawset = rawset
 local setmetatable = setmetatable
 local string = string
 
 local plugin_name = "auth-hook"
-
-local lrucache = core.lrucache.new({
-    type = "plugin"
-})
-
 local hook_lrucache = core.lrucache.new({
     ttl = 60, count = 1024
 })
@@ -41,8 +33,13 @@ local hook_lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        hook_uri = {type = "string", minLength = 1, maxLength = 4096},
-        auth_id = {type = "string", minLength = 1, maxLength = 100},
+        auth_hook_id = { type = "string", minLength = 1, maxLength = 100 },
+        auth_hook_uri = { type = "string", minLength = 1, maxLength = 4096 },
+        auth_hook_method = {
+            type = "string",
+            default = "GET",
+            enum = { "GET", "POST" },
+        },
         hook_headers = {
             type = "array",
             items = {
@@ -67,13 +64,15 @@ local schema = {
             },
             uniqueItems = true
         },
-        hook_res_to_header_prefix = {type = "string", minLength = 1, maxLength = 100},
-        hook_cache = {type = "boolean", default = false},
+        hook_keepalive = { type = "boolean", default = true },
+        hook_keepalive_timeout = { type = "integer", minimum = 1000, default = 60000 },
+        hook_keepalive_pool = { type = "integer", minimum = 1, default = 5 },
+        hook_res_to_header_prefix = { type = "string", default = "X-", minLength = 1, maxLength = 100 },
+        hook_cache = { type = "boolean", default = false },
+        check_termination = { type = "boolean", default = true },
     },
-    required = { "hook_uri","auth_id" },
+    required = { "auth_hook_uri", "auth_hook_id" },
 }
-
-
 
 local _M = {
     version = 0.1,
@@ -91,26 +90,7 @@ function _M.check_schema(conf)
     return true
 end
 
--- 获取配置缓存
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer_val in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer_val))
-            consumer_names[consumer_val.auth_conf.auth_id] = consumer_val
-        end
-        return consumer_names
-    end
-
-end
-
-
 local function get_auth_token(ctx)
-
     local token = ctx.var.http_x_auth_token
     if token then
         return token
@@ -142,7 +122,6 @@ local function fail_response(message, init_values)
 end
 
 --初始化headers
-
 local function new_table()
     local t = {}
     local lt = {}
@@ -178,20 +157,36 @@ end
 
 
 --获取需要传输的headers
-local function res_to_headers(config, data)
-
+local function res_init_headers(config)
 
     local prefix = config.hook_res_to_header_prefix or ''
     local hook_res_to_headers = config.hook_res_to_headers;
 
-    if  type(hook_res_to_headers) ~= "table" or type(data) ~= "table" then
+    if type(hook_res_to_headers) ~= "table" then
         return
     end
+    core.request.set_header(prefix .. "auth-data", nil)
+    for field, val in pairs(hook_res_to_headers) do
+        local f = string.gsub(val, '_', '-')
+        core.request.set_header(prefix .. f, nil)
+        core.response.set_header(prefix .. f, nil)
 
+    end
+    return ;
+end
+
+--获取需要传输的headers
+local function res_to_headers(config, data)
+
+    local prefix = config.hook_res_to_header_prefix or ''
+    local hook_res_to_headers = config.hook_res_to_headers;
+    if type(hook_res_to_headers) ~= "table" or type(data) ~= "table" then
+        return
+    end
     core.request.set_header(prefix .. "auth-data", core.json.encode(data))
-    for field,val in pairs(hook_res_to_headers) do
+    for field, val in pairs(hook_res_to_headers) do
         local v = data[val]
-        core.log.warn(v,'---',field,'-----',val)
+        core.log.warn(v, '---', field, '-----', val)
         if v then
             core.log.warn(v)
             if type(v) == "table" then
@@ -208,7 +203,7 @@ end
 
 
 --获取需要传输的args
-local function request_args(hook_args)
+local function get_hook_args(hook_args)
 
     local req_args = new_table();
     if not hook_args then
@@ -224,137 +219,124 @@ local function request_args(hook_args)
     return req_args;
 end
 
+-- Configure request parameters.
+local function hook_configure_params(args, config, myheaders)
+    -- TLS verification.
+    myheaders["Content-Type"] = "application/json; charset=utf-8"
+    local auth_hook_params = {
+        ssl_verify = false,
+        method = config.auth_hook_method,
+        headers = myheaders,
+    };
+    local url = config.auth_hook_uri;
+    -- Keepalive options.
+    if config.hook_keepalive then
+        auth_hook_params.keepalive_timeout = config.hook_keepalive_timeout
+        auth_hook_params.keepalive_pool = config.hook_keepalive_pool
+    else
+        auth_hook_params.keepalive = config.hook_keepalive
+    end
+    url = config.auth_hook_uri .. "?" .. ngx.encode_args(args)
+    if config.auth_hook_method == 'POST' then
+        auth_hook_params.body = nil
+    else
+        auth_hook_params.body = nil
+    end
+    return auth_hook_params, url
+end
 
 -- timeout in ms
-local function http_req(method, uri, body, myheaders, timeout)
-    if myheaders == nil then
-        myheaders = new_table()
-    end
+local function http_req(url, auth_hook_params)
 
     local httpc = http.new()
-    if timeout then
-        httpc:set_timeout(timeout)
-    end
-
-    local params = { method = method, headers = myheaders, body = body, ssl_verify = false }
-
-    core.log.warn("input conf: ", core.json.delay_encode(params))
-    local res, err = httpc:request_uri(uri, params)
+    httpc:set_timeout(1000 * 10)
+    core.log.warn("input conf: ", core.json.encode(auth_hook_params))
+    local res, err = httpc:request_uri(url, auth_hook_params)
     if err then
-        core.log.error("FAIL REQUEST [ ", core.json.delay_encode({ method = method, uri = uri, body = body, headers = myheaders }), " ] failed! res is nil, err:", err)
+        core.log.error("FAIL REQUEST [ ", core.json.encode(auth_hook_params), " ] failed! res is nil, err:", err)
         return nil, err
     end
 
     return res
 end
 
-local function http_post(uri, myheaders, timeout)
-    return http_req("POST", uri, nil, myheaders, timeout)
-end
 
 
-local function get_auth_info(config, ctx, hook_url, action, path, client_ip, auth_token)
-    local retry_max = 2
-    local timeout = 1000 * 10
+local function get_auth_info(config, ctx, action, path, client_ip, auth_token)
     local errmsg
-    local res
-    local err
-    local headers = request_headers(config, ctx)
-    headers["X-Client-Ip"] = client_ip
-    headers["Authorization"] = auth_token
-    headers["Content-Type"] = "application/json; charset=utf-8"
-    local args = request_args(config.hook_args)
+    local myheaders = request_headers(config, ctx)
+    myheaders["X-Client-Ip"] = client_ip
+    myheaders["Authorization"] = auth_token
+    myheaders["Auth-Hook-Id"] = config.auth_hook_id
+    local args = get_hook_args(config.hook_args)
     args['hook_path'] = path
     args['hook_action'] = action
     args['hook_client_ip'] = client_ip
     core.response.set_header("hook-cache", 'no-cache')
-    local url = hook_url .. "?" .. ngx.encode_args(args)
-    for i = 1, retry_max do
-        -- TODO: read apisix info.
-        res, err = http_post(url, headers, timeout)
-        if err then
-            break
-        else
-            core.log.error("check permission request:", url, ", status:", res.status, ",body:", core.json.delay_encode(res.body))
-            if res.status < 500 then
-                break
-            else
-                core.log.info("request [curl -v ", url, "] failed! status:", res.status)
-                if i < retry_max then
-                    sleep(0.1)
-                end
-            end
-        end
-    end
-
+    local auth_hook_params, url = hook_configure_params(args, config, myheaders)
+    local res, err = http_req(url, auth_hook_params)
     if err then
         core.log.error("fail request: ", url, ", err:", err)
         return {
             status = 500,
-            err = "request to web-server failed, err:" .. err
+            err = "request to hook-server failed, err:" .. err
         }
     end
 
     if res.status ~= 200 and res.status ~= 401 then
         return {
             status = 500,
-            err = 'request to web-server failed, status:' .. res.status
+            err = 'request to hook-server failed, status:' .. res.status
         }
     end
 
-    local body, err = json.decode(res.body)
+    local res_body, err = json.decode(res.body)
     if err then
         errmsg = 'check permission failed! parse response json failed!'
         core.log.error("json.decode(", res.body, ") failed! err:", err)
         return { status = res.status, err = errmsg }
     else
-        errmsg = body.message
-        return { status = res.status, err = errmsg, body = body }
+        errmsg = res_body.message
+        return { status = res.status, err = errmsg, body = res_body }
     end
 end
 
 function _M.rewrite(conf, ctx)
+
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
     local config = conf
-    local perm_item = {action = action, url = url, clientIP = client_ip }
     local auth_token, err = get_auth_token(ctx)
-    if not auth_token then
-        core.log.info("no permission to access ", core.json.delay_encode(perm_item), ", need login!")
+    res_init_headers(config)
+    if auth_token then
+        local res
+        if config.hook_cache then
+            core.response.set_header("hook-cache", 'cache')
+            res = hook_lrucache(plugin_name .. "#" .. auth_token, config.version, get_auth_info, config, ctx, action, url, client_ip, auth_token)
+        else
+            res = get_auth_info(config, ctx, action, url, client_ip, auth_token)
+        end
+
+        if res.status ~= 200 and config.check_termination then
+            -- no permission.
+            core.response.set_header("Content-Type", "application/json; charset=utf-8")
+            return 401, fail_response(res.err, { status_code = 401 })
+        end
+
+        local data
+        if res.body then
+            data = res.body.data
+            if type(data) == "table" then
+                res_to_headers(config, data)
+            end
+        end
+
+    elseif config.check_termination then
         core.response.set_header("Content-Type", "application/json; charset=utf-8")
         return 401, fail_response("Missing auth token in request", { status_code = 401 })
     end
-
-    local hook_uri = config.hook_uri
-    local res
-    if config.hook_cache then
-        core.response.set_header("hook-cache", 'cache')
-        core.log.info("hook_cache true")
-        res = hook_lrucache(plugin_name .. "#" .. auth_token, config.version, get_auth_info, config, ctx, hook_uri, action, url, client_ip, auth_token)
-    else
-        core.log.warn("hook_cache false")
-        res = get_auth_info(config, ctx, hook_uri, action, url, client_ip, auth_token)
-    end
-    core.log.info(" get_auth_info(", core.json.delay_encode(perm_item), ") res: ", core.json.delay_encode(res))
-
-    local data
-    if res.body then
-        data = res.body.data
-        if type(data) == "table" then
-            res_to_headers(config, data)
-        end
-    end
-
-
-    if res.status ~= 200 then
-        -- no permission.
-        core.response.set_header("Content-Type", "application/json; charset=utf-8")
-        return 401, fail_response(res.err, { status_code = 401 })
-    end
-
-
-    core.log.info("web-auth check permission passed")
+    core.log.info("auth-hook check permission passed")
 end
 
 return _M
