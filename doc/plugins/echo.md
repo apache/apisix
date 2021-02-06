@@ -29,7 +29,7 @@
 
 ## Name
 
-`echo` is a a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.
+`echo` is a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.
 
 This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer, header filer, body filter and log.
 
