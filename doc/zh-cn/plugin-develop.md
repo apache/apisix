@@ -304,7 +304,7 @@ end
 
 ### 注册控制接口
 
-如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
+如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](../control-api.md) 来暴露它。
 
 Take a look at example-plugin plugin:
 
