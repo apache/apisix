@@ -64,24 +64,6 @@ end
 
 
 local function create_tracer(conf,ctx)
-
-    local headers = core.request.headers(ctx)
-
-    -- X-B3-Sampled: if the client decided to sample this request, we do too.
-    local sample = headers["x-b3-sampled"]
-    if sample == "1" or sample == "true" then
-        conf.sample_ratio = 1
-    elseif sample == "0" or sample == "false" then
-        conf.sample_ratio = 0
-    end
-
-    -- X-B3-Flags: if it equals '1' then it overrides sampling policy
-    -- We still want to warn on invalid sample header, so do this after the above
-    local debug = headers["x-b3-flags"]
-    if debug == "1" then
-        conf.sample_ratio = 1
-    end
-
     conf.route_id = ctx.route_id
     local reporter = new_reporter(conf)
     reporter:init_processor()
@@ -100,10 +82,28 @@ function _M.rewrite(plugin_conf, ctx)
         conf.server_addr = ctx.var["server_addr"]
     end
 
-    local tracer = core.lrucache.plugin_ctx(lrucache, ctx, conf.server_addr,
-                            create_tracer, conf, ctx)
+    local tracer = core.lrucache.plugin_ctx(lrucache, ctx, conf.server_addr .. conf.server_port,
+                                            create_tracer, conf, ctx)
 
-    ctx.opentracing_sample = tracer.sampler:sample()
+    local headers = core.request.headers(ctx)
+    local per_req_sample_ratio
+
+    -- X-B3-Sampled: if the client decided to sample this request, we do too.
+    local sample = headers["x-b3-sampled"]
+    if sample == "1" or sample == "true" then
+        per_req_sample_ratio = 1
+    elseif sample == "0" or sample == "false" then
+        per_req_sample_ratio = 0
+    end
+
+    -- X-B3-Flags: if it equals '1' then it overrides sampling policy
+    -- We still want to warn on invalid sample header, so do this after the above
+    local debug = headers["x-b3-flags"]
+    if debug == "1" then
+        per_req_sample_ratio = 1
+    end
+
+    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
     if not ctx.opentracing_sample then
         core.request.set_header("x-b3-sampled", "0")
         return

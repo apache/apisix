@@ -559,3 +559,46 @@ GET /echo
 x-b3-sampled: true
 --- response_headers
 x-b3-sampled: 1
+
+
+
+=== TEST 23: don't cache the per-req sample ratio
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/echo"
+            -- force to trace
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ['x-b3-sampled'] = 1
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.headers['x-b3-sampled'])
+
+            -- force not to trace
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ['x-b3-sampled'] = 0
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.headers['x-b3-sampled'])
+        }
+    }
+--- request
+GET /t
+--- response_body
+1
+0
