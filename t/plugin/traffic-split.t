@@ -1690,7 +1690,81 @@ GET /t
 
 
 
-=== TEST 48: use upstream and upstream_id in the plugin
+=== TEST 48: only use upstream_id in the plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_x-api-name", "==", "jack"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 1, "weight": 1},
+                                        {"upstream_id": 2, "weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: `match` rule passed(only use upstream_id)
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["x-api-appkey"] = "hello"
+        for i = 1, 4 do
+            local _, _, body = t('/server_port?x-api-name=jack', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1981, 1981, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 50: use upstream and upstream_id in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1740,7 +1814,7 @@ passed
 
 
 
-=== TEST 49: `match` rule passed(upstream + upstream_id)
+=== TEST 51: `match` rule passed(upstream + upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1765,7 +1839,7 @@ GET /t
 
 
 
-=== TEST 50: set route + upstream (two upstream node: one healthy + one unhealthy)
+=== TEST 52: set route + upstream (two upstream node: one healthy + one unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -1810,8 +1884,7 @@ GET /t
                             "rules": [
                                 {
                                     "weighted_upstreams": [
-                                        {"upstream_id": 1, "weight": 1},
-                                        {"weight": 1}
+                                        {"upstream_id": 1, "weight": 1}
                                     ]
                                 }
                             ]
@@ -1842,53 +1915,61 @@ qr/^.*?\[error\](?!.*process exiting).*/
 
 
 
-=== TEST 51: hit routes, ensure the checker is bound to the upstream
+=== TEST 53: hit routes, ensure the checker is bound to the upstream
 --- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/server_port"
+location /t {
+    content_by_lua_block {
+        local http = require "resty.http"
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                    .. "/server_port"
 
-            local ports_count = {}
-            for i = 1, 10 do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+        do
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+        end
+
+        ngx.sleep(2.5)
+
+        local ports_count = {}
+        for i = 1, 6 do
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            if not res then
+                ngx.say(err)
+                return
             end
 
-            local ports_arr = {}
-            for port, count in pairs(ports_count) do
-                table.insert(ports_arr, {port = port, count = count})
-            end
+            ports_count[res.body] = (ports_count[res.body] or 0) + 1
+        end
 
-            local function cmd(a, b)
-                return a.port > b.port
-            end
-            table.sort(ports_arr, cmd)
+        local ports_arr = {}
+        for port, count in pairs(ports_count) do
+            table.insert(ports_arr, {port = port, count = count})
+        end
 
-            ngx.say(require("toolkit.json").encode(ports_arr))
-            ngx.exit(200)
-        }
+        local function cmd(a, b)
+            return a.port > b.port
+        end
+        table.sort(ports_arr, cmd)
+
+        ngx.say(require("toolkit.json").encode(ports_arr))
+        ngx.exit(200)
     }
+}
 --- request
 GET /t
 --- response_body
-[{"count":5,"port":"1981"},{"count":5,"port":"1980"}]
+[{"count":6,"port":"1981"}]
 --- grep_error_log eval
 qr/\([^)]+\) unhealthy .* for '.*'/
 --- grep_error_log_out
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
---- timeout: 12
+--- timeout: 10
 
 
 
-=== TEST 52: set upstream(id: 1), by default retries count = number of nodes
+=== TEST 54: set upstream(id: 1), by default retries count = number of nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -1920,7 +2001,7 @@ passed
 
 
 
-=== TEST 53: set route(id: 1, upstream_id: 1)
+=== TEST 55: set route(id: 1, upstream_id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1964,23 +2045,9 @@ passed
 
 
 
-=== TEST 54: hit routes
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-        do
-            local code, _ = t('/hello', ngx.HTTP_GET)
-        end
-
-        local code, _ = t('/hello', ngx.HTTP_GET)
-        if code >= 300 then
-            ngx.status = code
-        end
-    }
-}
+=== TEST 56: hit routes
 --- request
-GET /t
+GET /hello
 --- error_code: 502
 --- grep_error_log eval
 qr/\[error\]/

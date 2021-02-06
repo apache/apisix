@@ -322,15 +322,12 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
-        -- There is a problem here. When the plugin only binds upstream
-        -- services through upstream_id, by default the first request
-        -- will access the upstream service configured on the route.
         ctx.matched_route.value.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
     end
 
-    core.log.info("default_up: ", upstream)
+    core.log.info("route_up: ", upstream)
     ctx.matched_route.value.upstream_id = nil
     return
 end
