@@ -68,7 +68,7 @@ jobs:
           export RELEASE_SRC=${{ steps.branch_env.outputs.fullname }}
           make compress-tar
 
-      - name: Remove everything except tarball/.travis/t
+      - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
@@ -131,7 +131,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
-        if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/v') && endsWith(matrix.os_name, 'linux_openresty') }}
         uses: actions/upload-artifact@v1
         with:
           name: release-package-${{ matrix.os_name }}
