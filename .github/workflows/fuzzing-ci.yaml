@@ -54,4 +54,4 @@ jobs:
 
     - name: run test
       run: |
-        python $PWD/t/fuzzing/getcase.py
+        python $PWD/t/fuzzing/route_test.py > $PWD/t/fuzzing/route_test.log
