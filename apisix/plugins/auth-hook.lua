@@ -184,8 +184,7 @@ local function res_to_headers(config, data)
         return
     end
     core.request.set_header(prefix .. "auth-data", core.json.encode(data))
-    core.response.set_header(prefix .. "auth-data", core.json.encode(data))
-    for field, val in pairs(hook_res_to_headers) do
+    for field,val in pairs(hook_res_to_headers) do
         local v = data[val]
         core.log.warn(v, '---', field, '-----', val)
         if v then
