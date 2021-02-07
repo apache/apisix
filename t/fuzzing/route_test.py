@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-#! /usr/bin/env python 
+#! /usr/bin/env python
 import subprocess
 from boofuzz import *
 
@@ -37,9 +37,10 @@ def create_route():
     print(r.stdout.read())
 
 def main():
+    fw = open(r'test.log','wb')
     session = Session(
         target=Target(
-            connection=SocketConnection("127.0.0.1", 9080, proto='tcp')
+            connection=TCPSocketConnection("127.0.0.1", 9080, send_timeout=5.0, recv_timeout=5.0, server=False)  
         ),
         sleep_time=0.1,
     )
