@@ -50,8 +50,8 @@ jobs:
 
     - name: install boofuzz
       run: |
-        pip install boofuzz typing
+        pip install typing boofuzz
 
     - name: run test
       run: |
-        python $PWD/t/fuzzing/route_test.py > $PWD/t/fuzzing/route_test.log
+        python $PWD/t/fuzzing/route_test.py
