@@ -67,7 +67,7 @@
   "gnetId": 11719,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1611894832880,
+  "iteration": 1612708778662,
   "links": [],
   "panels": [
     {
@@ -810,7 +810,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 23,
+        "w": 15,
         "x": 0,
         "y": 26
       },
@@ -839,7 +839,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "HTTP Latency",
+      "title": "HTTP Latency (ms)",
       "type": "bargauge"
     },
     {
@@ -867,7 +867,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 23,
+        "w": 15,
         "x": 0,
         "y": 32
       },
@@ -896,7 +896,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "HTTP Overhead",
+      "title": "HTTP Overhead (ms)",
       "type": "bargauge"
     },
     {
@@ -1394,11 +1394,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "label_values(apisix_http_status,route)",
-        "error": {
-          "data": {
-            "message": "Unexpected error"
-          }
-        },
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": null,
@@ -1421,11 +1417,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "label_values(apisix_http_status,instance)",
-        "error": {
-          "data": {
-            "message": "Unexpected error"
-          }
-        },
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": null,
@@ -1448,11 +1440,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "label_values(apisix_http_status,consumer)",
-        "error": {
-          "data": {
-            "message": "Unexpected error"
-          }
-        },
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": null,
