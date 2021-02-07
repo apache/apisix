@@ -67,7 +67,7 @@ local function create_tracer(conf,ctx)
 
     local headers = core.request.headers(ctx)
 
--- X-B3-Sampled: if an upstream decided to sample this request, we do too.
+    -- X-B3-Sampled: if the client decided to sample this request, we do too.
     local sample = headers["x-b3-sampled"]
     if sample == "1" or sample == "true" then
         conf.sample_ratio = 1
@@ -75,8 +75,8 @@ local function create_tracer(conf,ctx)
         conf.sample_ratio = 0
     end
 
--- X-B3-Flags: if it equals '1' then it overrides sampling policy
--- We still want to warn on invalid sample header, so do this after the above
+    -- X-B3-Flags: if it equals '1' then it overrides sampling policy
+    -- We still want to warn on invalid sample header, so do this after the above
     local debug = headers["x-b3-flags"]
     if debug == "1" then
         conf.sample_ratio = 1
@@ -105,6 +105,7 @@ function _M.rewrite(plugin_conf, ctx)
 
     ctx.opentracing_sample = tracer.sampler:sample()
     if not ctx.opentracing_sample then
+        core.request.set_header("x-b3-sampled", "0")
         return
     end
 

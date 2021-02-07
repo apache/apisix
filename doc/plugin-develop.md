@@ -20,7 +20,7 @@
 
 # table of contents
 
-- [**where to put your plugin**](#where-to-put-your-plugin)
+- [**where to put your plugins**](#where-to-put-your-plugins)
 - [**check dependencies**](#check-dependencies)
 - [**name and config**](#name-and-config)
 - [**schema and check**](#schema-and-check)
