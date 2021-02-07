@@ -67,7 +67,7 @@ jobs:
           export VERSION=${{ steps.branch_env.outputs.version }}
           export RELEASE_SRC=${{ steps.branch_env.outputs.fullname }}
           make compress-tar
-          mv release/${RELEASE_SRC} ${RELEASE_SRC}
+          # mv release/${RELEASE_SRC} ${RELEASE_SRC}
           ls
 
       - name: Remove everything except tarball/.travis/t
