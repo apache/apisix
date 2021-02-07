@@ -222,12 +222,17 @@ endif
 
 release-src:
 	compress-tar
-	gpg --batch --yes --armor --detach-sig release/$(RELEASE_SRC).tgz
-	shasum -a 512 release/$(RELEASE_SRC).tgz > release/$(RELEASE_SRC).tgz.sha512
+
+	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
+	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
+
+	mkdir -p release
+	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
+	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
+	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
 
 compress-tar:
-	mkdir -p release
-	tar -zcvf release/$(RELEASE_SRC).tgz \
+	tar -zcvf $(RELEASE_SRC).tgz \
 	./apisix \
 	./bin \
 	./conf \

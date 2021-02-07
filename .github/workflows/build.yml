@@ -62,7 +62,7 @@ jobs:
           echo "##[set-output name=fullname;]$(echo apache-apisix-${VERSION:1}-src.tgz)"
 
       - name: Create tarball
-        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        # if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           export VERSION=${{ steps.branch_env.outputs.version }}
           export RELEASE_SRC=${{ steps.branch_env.outputs.fullname }}
@@ -71,7 +71,7 @@ jobs:
           ls
 
       - name: Remove everything except tarball/.travis/t
-        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        # if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
@@ -134,7 +134,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
-        # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
+        # if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
         uses: actions/upload-artifact@v1
         with:
           name: release-package-${{ matrix.os_name }}
