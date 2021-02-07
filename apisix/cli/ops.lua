@@ -246,7 +246,7 @@ Please modify "admin_key" in conf/config.yaml .
         if type(yaml_conf.apisix.node_listen[1]) == "number" then
             local node_listen = {}
             for idx, value in ipairs(yaml_conf.apisix.node_listen) do
-                table_insert(node_listen, idx, value)
+                table_insert(node_listen, idx, {port = value})
             end
             yaml_conf.apisix.node_listen = node_listen
         end
