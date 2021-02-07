@@ -362,11 +362,8 @@ http {
     {% end %}
 
     server {
-        {% for _, port in ipairs(node_listen) do %}
-        listen {* port *} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
-        {% for _, item in ipairs(listen) do %}
-        listen {* item.port *} {% if item.enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        {% for _, item in ipairs(node_listen) do %}
+        listen {* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}

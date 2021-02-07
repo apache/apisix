@@ -240,8 +240,16 @@ Please modify "admin_key" in conf/config.yaml .
 
     --support multiple ports listen, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        local node_listen = {yaml_conf.apisix.node_listen}
+        local node_listen = {{port=yaml_conf.apisix.node_listen}}
         yaml_conf.apisix.node_listen = node_listen
+    elseif type(yaml_conf.apisix.node_listen) == "table" then
+        if type(yaml_conf.apisix.node_listen[1]) == "number" then
+            local node_listen = {}
+            for idx, value in ipairs(yaml_conf.apisix.node_listen) do
+                table_insert(node_listen, idx, value)
+            end
+            yaml_conf.apisix.node_listen = node_listen
+        end
     end
 
     if type(yaml_conf.apisix.ssl.listen_port) == "number" then

@@ -21,10 +21,6 @@
 
 apisix:
   node_listen: 9080                # APISIX listening port
-  listen:
-    - port: 9081                   # APISIX listening port
-      enable_http2: true           # Enable http2 protocol
-      enable_reuseport: true       # Enable nginx SO_REUSEPORT switch if set to true.
   enable_admin: true
   enable_admin_cors: true          # Admin API support CORS response headers.
   enable_debug: false
