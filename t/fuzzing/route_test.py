@@ -38,7 +38,7 @@ def create_route():
 
 def main():
     fw = open(r'test.log','wb')
-    fuzz_loggers = [FuzzLoggerText(file_handle=fw)] 
+    fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
     session = Session(
         target=Target(
             connection=TCPSocketConnection("127.0.0.1", 9080, send_timeout=5.0, recv_timeout=5.0, server=False)
