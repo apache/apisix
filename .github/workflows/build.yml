@@ -131,4 +131,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: release-package-${{ matrix.os_name }}
-          path: apache-apisix-${VERSION}-src.tgz
+          path: apache-apisix-${GITHUB_REF##*/}-src.tgz
