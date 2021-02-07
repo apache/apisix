@@ -184,11 +184,9 @@ local function res_to_headers(config, data)
         return
     end
     core.request.set_header(prefix .. "auth-data", core.json.encode(data))
-    for field,val in pairs(hook_res_to_headers) do
+    for field, val in pairs(hook_res_to_headers) do
         local v = data[val]
-        core.log.warn(v, '---', field, '-----', val)
         if v then
-            core.log.warn(v)
             if type(v) == "table" then
                 v = core.json.encode(v)
             end
@@ -250,7 +248,6 @@ local function http_req(url, auth_hook_params)
 
     local httpc = http.new()
     httpc:set_timeout(1000 * 10)
-    core.log.warn("input conf: ", core.json.encode(auth_hook_params))
     local res, err = httpc:request_uri(url, auth_hook_params)
     if err then
         core.log.error("FAIL REQUEST [ ", core.json.encode(auth_hook_params), " ] failed! res is nil, err:", err)
