@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -40,28 +40,28 @@ type clientSet struct {
 	kubeCli *kubernetes.Clientset
 }
 
-func initClientSet(g *gomega.WithT) *clientSet {
+func initClientSet(g *WithT) *clientSet {
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
 	clientScheme.AddToScheme(scheme)
 
 	restConfig := config.GetConfigOrDie()
 	ctrlCli, err := client.New(restConfig, client.Options{Scheme: scheme})
-	g.Expect(err).To(gomega.BeNil())
+	g.Expect(err).To(BeNil())
 	kubeCli, err := kubernetes.NewForConfig(restConfig)
-	g.Expect(err).To(gomega.BeNil())
+	g.Expect(err).To(BeNil())
 
 	return &clientSet{ctrlCli, kubeCli}
 }
 
-func getPod(g *gomega.WithT, cli client.Client, ns string, listOption client.MatchingLabels) *corev1.Pod {
+func getPod(g *WithT, cli client.Client, ns string, listOption client.MatchingLabels) *corev1.Pod {
 	podList := &corev1.PodList{}
 	err := cli.List(context.Background(), podList, client.InNamespace(ns), listOption)
-	g.Expect(err).To(gomega.BeNil())
+	g.Expect(err).To(BeNil())
 	return &podList.Items[0]
 }
 
-func execInPod(g *gomega.WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
+func execInPod(g *WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
 	name := pod.GetName()
 	namespace := pod.GetNamespace()
 	// only get the first container, no harm for now
