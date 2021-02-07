@@ -113,7 +113,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-2. Binding upstream services through the `upstream_id` attribute in the plugin.
+2. Use the `upstream_id` attribute in the plugin to bind upstream.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -145,7 +145,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
->Note: **1.** Binding upstream services via `upstream_id`. It can reuse functions such as health detection and retry mechanism of upstream services. **2.** Support the two configuration methods of `upstream` and `upstream_id` to be used together.
+>Note: **1.** Use the `upstream_id` to bind the defined upstream, it can reuse upstream health detection, retry and other functions. **2.** Support the two configuration methods of `upstream` and `upstream_id` to be used together.
 
 ## Example
 

@@ -145,7 +145,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
->注：1、通过 `upstream_id` 方式绑定上游服务，可以复用上游服务具有的健康检测、重试机制等功能。2、支持 `upstream` 和 `upstream_id` 的两种配置方式一起使用。
+>注：1、通过 `upstream_id` 方式来绑定已定义的上游，它可以复用上游具有的健康检测、重试等功能。2、支持 `upstream` 和 `upstream_id` 的两种配置方式一起使用。
 
 ## 示例
 

@@ -258,19 +258,17 @@ end
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
-        if not upstream_obj.upstream and not upstream_obj.upstream_id then
-            -- If the `upstream` object has only the `weight` value, it means
-            -- that the `upstream` weight value on the default `route` has been reached.
-            -- Mark empty upstream services in the plugin, but with weight.
-            upstream_obj.upstream = "plugin#upstream#is#empty"
-            server_list[upstream_obj.upstream] = upstream_obj.weight
-        end
-
         if upstream_obj.upstream_id then
             server_list[upstream_obj.upstream_id] = upstream_obj.weight
-        elseif type(upstream_obj.upstream) == "table" then
-            -- Add a virtual id field to uniquely identify the upstream `key`.
+        elseif upstream_obj.upstream then
+            -- Add a virtual id field to uniquely identify the upstream key.
             upstream_obj.upstream.vid = i
+            server_list[upstream_obj.upstream] = upstream_obj.weight
+        else
+            -- If the upstream object has only the weight value, it means
+            -- that the upstream weight value on the default route has been reached.
+            -- Mark empty upstream services in the plugin.
+            upstream_obj.upstream = "plugin#upstream#is#empty"
             server_list[upstream_obj.upstream] = upstream_obj.weight
         end
     end
