@@ -56,16 +56,16 @@ jobs:
       - name: Create tarball
         # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
         run: |
-          export VERSION=${GITHUB_REF#refs/heads/}
+          export VERSION=${GITHUB_REF##*/}
           export RELEASE_SRC=apache-apisix-${VERSION}-src
           make compress-tar
-          # mv release/${RELEASE_SRC}.tgz ${RELEASE_SRC}.tgz
+          mv release/${RELEASE_SRC}.tgz ${RELEASE_SRC}.tgz
           ls
 
       - name: Remove everything except tarball/.travis/t
         # if: ${{ github.ref != "refs/heads/master" && ! endsWith(matrix.os_name, "luarocks") }}
         run: |
-          export RELEASE_SRC=apache-apisix-${GITHUB_REF#refs/heads/}-src
+          export RELEASE_SRC=apache-apisix-${GITHUB_REF##*/}-src
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${RELEASE_SRC}.tgz
           ls
