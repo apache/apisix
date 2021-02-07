@@ -41,6 +41,7 @@ def main():
         target=Target(
             connection=SocketConnection("127.0.0.1", 9080, proto='tcp')
         ),
+        sleep_time=0.1,
     )
 
     s_initialize(name="Request")
