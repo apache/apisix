@@ -584,6 +584,6 @@ GET /t
 --- error_code eval
 500
 --- response_body
-{"error_msg":"failed to limit count: failed to change redis database `999999` err: ERR DB index is out of range"}
+{"error_msg":"failed to limit count: failed to change redis database, err: ERR DB index is out of range"}
 --- error_log
-failed to limit count: failed to change redis database `999999` err: ERR DB index is out of range
+failed to limit count: failed to change redis database, err: ERR DB index is out of range

@@ -66,7 +66,7 @@ function _M.incoming(self, key)
         if conf.redis_database ~= 0 then
             local ok, err = red:select(conf.redis_database)
             if not ok then
-                return false, "failed to change redis database `" .. conf.redis_database .. "`, err: " .. err
+                return false, "failed to change redis database, err: " .. err
             end
         end
     elseif err then
