@@ -205,7 +205,7 @@ function _M.rewrite(conf, ctx)
         core.log.warn("Invalid HTTP method: ", conf.method)
       end
 
-      core.log.info("HTTP method changed to: ", conf.method)
+      core.log.info("changed HTTP method from ", old_method, " to ", conf.method)
     end
 
     if not conf.headers then
