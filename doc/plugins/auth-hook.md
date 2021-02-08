@@ -21,11 +21,16 @@
 
 # table of Contents
 
--[**Name**](#first name) -[**Attribute**](#Attribute) -[**Dependencies**](#Dependencies) -[**How ​​to enable**](#How to enable) -[**Test plugin**](#Test plugin) -[**Disable plugins**](#Disable plugins)
+- [**Name**](#name)
+- [**Attribute**](#Attribute)
+- [**Dependencies**](#Dependencies)
+- [**How to enable**](#How-to-enable)
+- [**Test plugin**](#Test-plugin)
+- [**Disable plugins**](#Disable-plugins)
 
-## first name
+## name
 
-`auth-hook` is an authentication and authorization plug-in, add `auth-hook` to a `service` or `route`.
+`auth-hook` is an authentication/authorization plug-in, add `auth-hook` to a `service` or `route`.
 The auth-hook function is provided by its own auth-server, and it is sufficient to provide an authorization authentication interface according to the corresponding data structure.
 
 ## Attributes
