@@ -56,6 +56,6 @@ jobs:
         python $PWD/t/fuzzing/route_test.py
 
     - name: echo test log
-      # more than 150k lines, so only display the last log, actually, this step is not needed. 
+      # more than 150k lines, so only display the last log, actually, this step is not needed.
       run: |
-        tail -n 300 $PWD/t/fuzzing/test.log
+        tail -n 100 $PWD/t/fuzzing/test.log
