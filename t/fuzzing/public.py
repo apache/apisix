@@ -37,7 +37,7 @@ def check_process():
     cmd = "ps -ef | grep apisix/conf/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
-    parent = psutil.Process(p.stdout.read().strip())
+    parent = psutil.Process(int(p.stdout.read().strip()))
     children = parent.children(recursive=True)
     process = {p.pid for p in children}
     process.add(parent.pid)
