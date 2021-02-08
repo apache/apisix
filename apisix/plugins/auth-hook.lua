@@ -20,6 +20,8 @@ local json = require("apisix.core.json")
 local http = require("resty.http")
 local ck = require("resty.cookie")
 local ngx = ngx
+local ipairs = ipairs
+local type = type
 local rawget = rawget
 local rawset = rawset
 local setmetatable = setmetatable
@@ -143,7 +145,7 @@ local function get_auth_token(ctx)
     end
 
     local val, error = cookie:get("auth-token")
-    if  error then
+    if error then
         return nil
     end
     return val
