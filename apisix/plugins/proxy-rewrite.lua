@@ -58,7 +58,7 @@ local schema = {
         method = {
           description = "new method",
           type    = "string",
-          enum    = {"GET", "POST","PUT","DELETE"}
+          enum    = {"GET", "POST","PUT","PATCH","DELETE"}
         },
         headers = {
             description = "new headers for request",
@@ -183,8 +183,8 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri
     end
 
-    -- enum    = {"GET", "POST","PUT","DELETE"}
-    -- change Http method
+    -- enum    = {"GET", "POST","PUT",""PATCH,"DELETE"}
+    -- change HTTP method
     if conf.method ~=nil then
 
       if conf.method == "GET" then
@@ -195,14 +195,17 @@ function _M.rewrite(conf, ctx)
 
       elseif conf.method == "PUT" then
         ngx.req.set_method(ngx.HTTP_PUT)
+                
+      elseif conf.method == "PATCH" then
+        ngx.req.set_method(ngx.HTTP_PATCH)
 
       elseif conf.method == "DELETE" then
         ngx.req.set_method(ngx.HTTP_DELETE)
       else
-        core.log.warn("Invalid method: ", conf.method)
+        core.log.warn("Invalid HTTP method: ", conf.method)
       end
 
-      core.log.info("Http method changed to: ", conf.method)
+      core.log.info("HTTP method changed to: ", conf.method)
     end
 
     if not conf.headers then
