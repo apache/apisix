@@ -45,7 +45,9 @@ def main():
         ),
         sleep_time=0.1,
         fuzz_loggers=fuzz_loggers,
+        keep_web_open=False,
     )
+
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
