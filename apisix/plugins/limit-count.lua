@@ -79,6 +79,9 @@ local schema = {
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
                         },
+                        redis_database = {
+                            type = "integer", minimum = 0, default = 0,
+                        },
                     },
                     required = {"redis_host"},
                 },
