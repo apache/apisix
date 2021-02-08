@@ -36,7 +36,7 @@
 
 * 注意：这个 Route 对应的 Upstream 的 `scheme` 必须设置为 `grpc` 或者 `grpcs`。
 * 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https.md)；
-* 注意： APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务，这不需要配置 SSL 证书，通常用于内网环境代理gRPC服务
+* 注意： APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务，这不需要依赖 SSL，通常用于内网环境代理gRPC服务
 * 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
 ```shell
