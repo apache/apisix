@@ -61,13 +61,13 @@ jobs:
           echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
 
       - name: Create tarball
-        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           export VERSION=${{ steps.branch_env.outputs.version }}
           make compress-tar
 
       - name: Remove source code
-        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
@@ -129,8 +129,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
-        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        if: ${{ matrix.os_name == 'linux_openresty' }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.branch_env.outputs.fullname }}
