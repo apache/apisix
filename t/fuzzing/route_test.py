@@ -36,7 +36,7 @@ def create_route():
     subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
 
 def main():
-    fw = open(r'test.log','wb')
+    fw = open(cur_dir() + "/test.log",'wb')
     fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
     session = Session(
         target=Target(
@@ -75,11 +75,14 @@ def main():
 if __name__ == "__main__":
     # before test
     r = check_process()
+    print(r)
     create_route()
     main()
     # after test
     boofuzz_log = cur_dir() + "/test.log"
-    apisix_errorlog = "~/apisix/logs/error.log"
-    apisix_accesslog = "~/apisix/logs/access.log"
+    apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
+    apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
     checklog(boofuzz_log, apisix_errorlog, apisix_accesslog)
-    assert check_process() == r
+    if check_process() != r:
+        print(check_process())
+        raise AssertionError
