@@ -138,12 +138,15 @@ local function get_auth_token(ctx)
     end
 
     local cookie, err = ck:new()
-    if not cookie then
-        return nil, err
+    if not cookie or err then
+        return nil
     end
 
     local val, error = cookie:get("auth-token")
-    return val, error
+    if  error then
+        return nil
+    end
+    return val
 end
 
 local function fail_response(message, init_values)
@@ -332,8 +335,10 @@ function _M.rewrite(conf, ctx)
     local action = ctx.var.request_method
     local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
     local config = conf
-    local auth_token, err = get_auth_token(ctx)
+    local auth_token = get_auth_token(ctx)
+
     res_init_headers(config)
+
     if auth_token then
         local res
         if config.hook_cache then
