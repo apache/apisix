@@ -27,7 +27,7 @@ def checklog(*logs):
     boofuzz_log = logs[0]
     apisix_errorlog = logs[1]
     apisix_accesslog = logs[2]
-    
+
     cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     for cmd in cmds:
         r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
