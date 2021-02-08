@@ -267,11 +267,6 @@ local function hook_configure_params(args, config, myheaders)
         auth_hook_params.keepalive = config.hook_keepalive
     end
     local url = config.auth_hook_uri .. "?" .. ngx.encode_args(args)
-    if config.auth_hook_method == 'POST' then
-        auth_hook_params.body = nil
-    else
-        auth_hook_params.body = nil
-    end
     return auth_hook_params, url
 end
 
