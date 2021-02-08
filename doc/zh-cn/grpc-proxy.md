@@ -53,31 +53,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
-#### testing HTTP/2 with TLS‑encrypted
-
-Invoking the route created before：
-
-```shell
-$ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
-{
-  "message": "Hello apisix"
-}
-```
 
 This means that the proxying is working.
 
-#### testing HTTP/2 with plaintext
-
-Invoking the route created before：
-
-```shell
-$ grpcurl -plaintext -import-path /pathtoprotos  -proto helloworld.proto  -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHello
-{
-  "message": "Hello apisix"
-}
-```
-
-This means that the proxying is working.
 ### 测试 TLS 加密的 HTTP/2
 
 访问上面配置的 Route：
