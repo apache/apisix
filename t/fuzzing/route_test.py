@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +17,7 @@
 
 #! /usr/bin/env python
 import subprocess
+from public import *
 from boofuzz import *
 
 def create_route():
@@ -33,8 +33,7 @@ def create_route():
     }
 }'
     '''
-    r = subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
-    print(r.stdout.read())
+    subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
 
 def main():
     fw = open(r'test.log','wb')
@@ -43,11 +42,9 @@ def main():
         target=Target(
             connection=TCPSocketConnection("127.0.0.1", 9080, send_timeout=5.0, recv_timeout=5.0, server=False)
         ),
-        sleep_time=0.1,
         fuzz_loggers=fuzz_loggers,
         keep_web_open=False,
     )
-
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
@@ -71,12 +68,18 @@ def main():
         s_static("\r\n", name="User-Agent-Line-CRLF")
 
     s_static("\r\n", "Request-CRLF")
-
     session.connect(s_get("Request"))
-
     session.fuzz()
 
 
 if __name__ == "__main__":
+    # before test
+    r = check_process()
     create_route()
     main()
+    # after test
+    boofuzz_log = cur_dir() + "/test.log"
+    apisix_errorlog = "~/apisix/logs/error.log"
+    apisix_accesslog = "~/apisix/logs/access.log"
+    checklog(boofuzz_log, apisix_errorlog, apisix_accesslog)
+    assert check_process() == r
