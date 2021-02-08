@@ -55,7 +55,7 @@ local schema = {
             type    = "string",
             enum    = {"http", "https"}
         },
-        scheme = {
+        method = {
           description = "new method",
           type    = "string",
           enum    = {"GET", "POST","PUT","DELETE"}
