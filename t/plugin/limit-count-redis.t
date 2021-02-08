@@ -122,7 +122,146 @@ passed
 
 
 
-=== TEST 3: set route(default value: port and timeout)
+=== TEST 3: set route, with redis host and port and default database
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_timeout": 1001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: set route, with redis host and port but wrong database
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 999999,
+                            "redis_timeout": 1001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code eval
+500
+--- response_body
+{"error_msg":"failed to limit count: failed to change redis db, err: ERR DB index is out of range"}
+--- error_log
+failed to limit count: failed to change redis db, err: ERR DB index is out of range
+
+
+
+=== TEST 5: set route, with redis host and port and right database
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: set route(default value: port and timeout)
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +331,7 @@ passed
 
 
 
-=== TEST 4: up the limit
+=== TEST 7: up the limit
 --- request
 GET /hello
 --- no_error_log
@@ -203,7 +342,7 @@ unlock with key route#1#redis
 
 
 
-=== TEST 5: up the limit
+=== TEST 8: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -213,7 +352,7 @@ unlock with key route#1#redis
 
 
 
-=== TEST 6: up the limit
+=== TEST 9: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -223,7 +362,7 @@ unlock with key route#1#redis
 
 
 
-=== TEST 7: set route, with redis host, port and right password
+=== TEST 10: set route, with redis host, port and right password
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +448,7 @@ passed
 
 
 
-=== TEST 8: up the limit
+=== TEST 11: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -319,7 +458,7 @@ passed
 
 
 
-=== TEST 9: up the limit
+=== TEST 12: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -329,7 +468,7 @@ passed
 
 
 
-=== TEST 10: set route, with redis host, port and wrong password
+=== TEST 13: set route, with redis host, port and wrong password
 --- config
     location /t {
         content_by_lua_block {
@@ -375,7 +514,7 @@ GET /t
 
 
 
-=== TEST 11: request for TEST 10
+=== TEST 14: request for TEST 10
 --- request
 GET /hello_new
 --- error_code eval
@@ -387,7 +526,7 @@ failed to limit req: ERR invalid password
 
 
 
-=== TEST 12: multi request for TEST 10
+=== TEST 15: multi request for TEST 10
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
 --- error_code eval
@@ -395,7 +534,7 @@ failed to limit req: ERR invalid password
 
 
 
-=== TEST 13: restore redis password to ''
+=== TEST 16: restore redis password to ''
 --- config
     location /t {
         content_by_lua_block {
@@ -454,142 +593,3 @@ GET /t
 200
 --- no_error_log
 [error]
-
-
-
-=== TEST 14: set route, with redis host and port and default database
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr",
-                            "policy": "redis",
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "redis_timeout": 1001
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 15: set route, with redis host and port and right database
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr",
-                            "policy": "redis",
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "redis_database": 1,
-                            "redis_timeout": 1001
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 16: set route, with redis host and port but wrong database
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr",
-                            "policy": "redis",
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "redis_database": 999999,
-                            "redis_timeout": 1001
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- error_code eval
-500
---- response_body
-{"error_msg":"failed to limit count: failed to change redis database, err: ERR DB index is out of range"}
---- error_log
-failed to limit count: failed to change redis database, err: ERR DB index is out of range
