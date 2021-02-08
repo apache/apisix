@@ -54,8 +54,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-This means that the proxying is working.
-
 ### 测试 TLS 加密的 HTTP/2
 
 访问上面配置的 Route：
