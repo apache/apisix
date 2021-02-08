@@ -243,13 +243,15 @@ Please modify "admin_key" in conf/config.yaml .
         local node_listen = {{port = yaml_conf.apisix.node_listen}}
         yaml_conf.apisix.node_listen = node_listen
     elseif type(yaml_conf.apisix.node_listen) == "table" then
-        if type(yaml_conf.apisix.node_listen[1]) == "number" then
-            local node_listen = {}
-            for idx, value in ipairs(yaml_conf.apisix.node_listen) do
-                table_insert(node_listen, idx, {port = value})
+        local node_listen = {}
+        for index, value in ipairs(yaml_conf.apisix.node_listen) do
+            if type(value) == "number" then
+                table_insert(node_listen, index, {port = value})
+            elseif type(value) == "table" then
+                table_insert(node_listen, index, value)
             end
-            yaml_conf.apisix.node_listen = node_listen
         end
+        yaml_conf.apisix.node_listen = node_listen
     end
 
     if type(yaml_conf.apisix.ssl.listen_port) == "number" then

@@ -35,8 +35,8 @@
 在指定 Route 中，代理 gRPC 服务接口:
 
 * 注意：这个 Route 对应的 Upstream 的 `scheme` 必须设置为 `grpc` 或者 `grpcs`。
-* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务 (默认端口9443), 所以需要先 [配置 SSL 证书](https.md)；
-* 注意： APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务 (默认端口9081)，这不需要配置 SSL 证书，通常用于内网环境代理gRPC服务
+* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https.md)；
+* 注意： APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务，这不需要配置 SSL 证书，通常用于内网环境代理gRPC服务
 * 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
 ```shell
@@ -69,6 +69,17 @@ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
 这表示已成功代理。
 
 ### 测试纯文本的 HTTP/2
+
+默认情况下，APISIX只在 `9443` 端口支持 TLS 加密的 HTTP/2。你也可以支持纯本文的 HTTP/2，只需要修改 `conf/config.yaml` 文件中的 `node_listen` 配置即可。
+
+```yaml
+apisix:
+    node_listen:
+        - port: 9080
+          enable_http2: false
+        - port: 9081
+          enable_http2: true
+```
 
 访问上面配置的 Route：
 

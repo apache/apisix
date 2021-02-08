@@ -36,8 +36,8 @@ gRPC client -> APISIX -> gRPC/gRPCS server
 Here's an example, to proxying gRPC service by specified route:
 
 * attention: the `scheme` of the route's upstream must be `grpc` or `grpcs`.
-* attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service (default port 9443), so need to [config SSL certificate](https.md)
-* attention: APISIX also support to expose gRPC service with plaintext HTTP/2 (default port 9081), which do not need to config SSL certificate, usually used to proxy gRPC service in intranet environment
+* attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service, so need to [config SSL certificate](https.md)
+* attention: APISIX also support to expose gRPC service with plaintext HTTP/2, which do not need to config SSL certificate, usually used to proxy gRPC service in intranet environment
 * the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
@@ -69,6 +69,17 @@ $ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"n
 This means that the proxying is working.
 
 #### testing HTTP/2 with plaintext
+
+By default, the APISIX only listens to `9443` for TLS‑encrypted HTTP/2. You can support HTTP/2 with plaintext via the `node_listen` section under `apisix` in `conf/config.yaml`:
+
+```yaml
+apisix:
+    node_listen:
+        - port: 9080
+          enable_http2: false
+        - port: 9081
+          enable_http2: true
+```
 
 Invoking the route created before：
 
