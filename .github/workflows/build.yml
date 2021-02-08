@@ -53,26 +53,17 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Extract branch name
-        id: branch_env
-        shell: bash
+      - name: Create tarball
+        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           export VERSION=${GITHUB_REF##*/}
-          echo "##[set-output name=version;]$(echo ${VERSION:1})"
-          echo "##[set-output name=fullname;]$(echo apache-apisix-${VERSION:1}-src.tgz)"
-
-      - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
-        run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          export RELEASE_SRC=${{ steps.branch_env.outputs.fullname }}
           make compress-tar
 
       - name: Remove source code
-        if: ${{ startsWith(github.ref, 'refs/heads/v') && !endsWith(matrix.os_name, 'luarocks') }}
+        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
-          tar zxvf ${{ steps.branch_env.outputs.fullname }}
+          tar zxvf apache-apisix-${GITHUB_REF##*/}-src.tgz
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
@@ -131,8 +122,9 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
-        if: ${{ startsWith(github.ref, 'refs/heads/v') && matrix.os_name == 'linux_openresty') }}
+        # if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
+        if: ${{ matrix.os_name == 'linux_openresty' }}
         uses: actions/upload-artifact@v1
         with:
-          name: release-package-${{ matrix.os_name }}
-          path: ${{ steps.branch_env.outputs.fullname }}
+          name: apache-apisix-${GITHUB_REF##*/}-src.tgz
+          path: apache-apisix-${GITHUB_REF##*/}-src.tgz
