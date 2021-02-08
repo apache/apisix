@@ -35,7 +35,8 @@
 在指定 Route 中，代理 gRPC 服务接口:
 
 * 注意：这个 Route 对应的 Upstream 的 `scheme` 必须设置为 `grpc` 或者 `grpcs`。
-* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https.md)；
+* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务 (默认端口9443), 所以需要先 [配置 SSL 证书](https.md)；
+* 注意： APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务 (默认端口9081)，这不需要配置 SSL 证书，通常用于内网环境代理gRPC服务
 * 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
 ```shell
@@ -52,14 +53,52 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+#### testing HTTP/2 with TLS‑encrypted
 
-### 测试
+Invoking the route created before：
+
+```shell
+$ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
+{
+  "message": "Hello apisix"
+}
+```
+
+This means that the proxying is working.
+
+#### testing HTTP/2 with plaintext
+
+Invoking the route created before：
+
+```shell
+$ grpcurl -plaintext -import-path /pathtoprotos  -proto helloworld.proto  -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHello
+{
+  "message": "Hello apisix"
+}
+```
+
+This means that the proxying is working.
+### 测试 TLS 加密的 HTTP/2
 
 访问上面配置的 Route：
 
 ```shell
 grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
     -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
+{
+  "message": "Hello apisix"
+}
+```
+
+这表示已成功代理。
+
+### 测试纯文本的 HTTP/2
+
+访问上面配置的 Route：
+
+```shell
+grpcurl -plaintext -import-path /pathtoprotos  -proto helloworld.proto  \
+    -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHello
 {
   "message": "Hello apisix"
 }
