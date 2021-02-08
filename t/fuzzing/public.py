@@ -39,6 +39,6 @@ def check_process():
     p.wait()
     parent = psutil.Process(int(p.stdout.read().strip()))
     children = parent.children(recursive=True)
-    process = {p.pid for p in children}
+    process = {p.pid for p in children if "cache loader process" not in p.cmdline()[0]}
     process.add(parent.pid)
     return process
