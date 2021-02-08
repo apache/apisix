@@ -455,6 +455,8 @@ GET /t
 --- no_error_log
 [error]
 
+
+
 === TEST 14: set route, with redis host and port and default database
 --- config
     location /t {
@@ -497,6 +499,8 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 15: set route, with redis host and port and right database
 --- config
@@ -541,6 +545,8 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 16: set route, with redis host and port but wrong database
 --- config
