@@ -57,3 +57,4 @@ jobs:
         ps -ef | grep nginx
         python $PWD/t/fuzzing/route_test.py
         ps -ef | grep nginx
+        tail $PWD/t/fuzzing/test.log
