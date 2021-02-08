@@ -227,7 +227,6 @@ function _M.rewrite(conf, ctx)
         ngx.req.set_header(conf.headers_arr[i],
                            core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
-
 end
 
 end  -- do
