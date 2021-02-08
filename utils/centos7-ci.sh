@@ -64,7 +64,7 @@ run_case() {
     export_or_prefix
     ./utils/set-dns.sh
     # run test cases
-    prove -I./test-nginx/lib -I./ -r -s t/
+    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ -r t/
 }
 
 case_opt=$1
