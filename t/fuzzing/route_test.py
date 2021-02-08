@@ -71,7 +71,6 @@ def main():
     session.connect(s_get("Request"))
     session.fuzz()
 
-
 if __name__ == "__main__":
     # before test
     create_route()

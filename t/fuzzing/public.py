@@ -34,7 +34,7 @@ def check_log(*logs):
         assert r == ""
 
 def check_process():
-    cmd = "ps -ef | grep fuzzing/upstream/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
+    cmd = "ps -ef | grep apisix/conf/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
     parent = psutil.Process(int(p.stdout.read().strip()))
