@@ -21,9 +21,9 @@
 
 # Summary
 
-- [**Description**](#Description)
-- [**Attributes**](#Attributes)
-- [**How To Enable**](#how-to-Enable)
+- [**Description**](#description)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
 - [**How To Configure**](#how-to-configure)
 - [**Metadata**](#metadata)
 - [**Batch Api Request/Response**](#batch-api-requestresponse)

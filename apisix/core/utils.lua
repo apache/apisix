@@ -16,6 +16,7 @@
 --
 local core_str       = require("apisix.core.string")
 local table          = require("apisix.core.table")
+local json           = require("apisix.core.json")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
 local ngx_re         = require("ngx.re")
@@ -98,8 +99,6 @@ local function dns_parse(domain)
         current_inited_resolvers = dns_resolvers
     end
 
-    log.info("dns resolve ", domain)
-
     -- this function will dereference the CNAME records
     local answers, err = dns_client.resolve(domain)
     if not answers then
@@ -114,8 +113,8 @@ local function dns_parse(domain)
     local idx = math.random(1, #answers)
     local answer = answers[idx]
     local dns_type = answer.type
-    -- TODO: support AAAA & SRV
-    if dns_type == dns_client.TYPE_A then
+    if dns_type == dns_client.TYPE_A or dns_type == dns_client.TYPE_AAAA then
+        log.info("dns resolve ", domain, ", result: ", json.delay_encode(answer))
         return table.deepcopy(answer)
     end
 
