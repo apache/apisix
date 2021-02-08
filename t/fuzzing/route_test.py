@@ -74,15 +74,15 @@ def main():
 
 if __name__ == "__main__":
     # before test
-    r = check_process()
-    print(r)
     create_route()
+    r1 = check_process()
     main()
     # after test
     boofuzz_log = cur_dir() + "/test.log"
     apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
     apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
-    checklog(boofuzz_log, apisix_errorlog, apisix_accesslog)
-    if check_process() != r:
-        print(check_process())
+    check_log(boofuzz_log, apisix_errorlog, apisix_accesslog)
+    r2 = check_process()
+    if r2 != r1:
+        print("before test, nginx's process list:%s,\nafter test, nginx's process list:%s"%(r1,r2))
         raise AssertionError
