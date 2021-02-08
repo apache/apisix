@@ -110,10 +110,12 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 example-plugin 插件为例，看看他的配置数据：
 
 ```json
-"example-plugin" : {
-    "i": 1,
-    "s": "s",
-    "t": [1]
+{
+    "example-plugin" : {
+        "i": 1,
+        "s": "s",
+        "t": [1]
+    }
 }
 ```
 
@@ -193,7 +195,7 @@ local _M = {
 
 为了检验这个配置，这个插件使用了如下的schema:
 
-```json
+```lua
 local consumer_schema = {
     type = "object",
     additionalProperties = false,
@@ -285,7 +287,7 @@ __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据
 
 ```lua
 local function gen_token()
-    ...
+    -- ...
 end
 
 function _M.api()
