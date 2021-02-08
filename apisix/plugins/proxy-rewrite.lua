@@ -55,6 +55,11 @@ local schema = {
             type    = "string",
             enum    = {"http", "https"}
         },
+        scheme = {
+          description = "new method",
+          type    = "string",
+          enum    = {"GET", "POST","PUT","DELETE"}
+        },
         headers = {
             description = "new headers for request",
             type = "object",
@@ -178,6 +183,28 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri
     end
 
+    -- enum    = {"GET", "POST","PUT","DELETE"}
+    -- change Http method
+    if conf.method ~=nil then
+
+      if conf.method == "GET" then
+        ngx.req.set_method(ngx.HTTP_GET)
+
+      elseif conf.method == "POST" then
+        ngx.req.set_method(ngx.HTTP_POST)
+
+      elseif conf.method == "PUT" then
+        ngx.req.set_method(ngx.HTTP_PUT)
+
+      elseif conf.method == "DELETE" then
+        ngx.req.set_method(ngx.HTTP_DELETE)
+      else
+        core.log.warn("Invalid method: ", conf.method)
+      end
+
+      core.log.info("Http method changed to: ", conf.method)
+    end
+
     if not conf.headers then
         return
     end
@@ -197,6 +224,7 @@ function _M.rewrite(conf, ctx)
         ngx.req.set_header(conf.headers_arr[i],
                            core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
+
 end
 
 end  -- do
