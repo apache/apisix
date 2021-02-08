@@ -31,12 +31,6 @@
 #
 # If the configured environment variable can't be found, an error will be thrown.
 apisix:
-  node_listen:
-    - port: 9080                     # APISIX listening port
-      enable_http2: false            # Disable to support HTTP proxy, nginx currently do not support HTTP and HTTP/2 with plaintext on the same port
-                                     # Details can be found in https://trac.nginx.org/nginx/ticket/816
-    - port: 9081                     # APISIX listening port for HTTP/2 with plaintext
-      enable_http2: true             # Enable to support HTTP/2 proxy
   admin_key:
     - name: "admin"
       # yamllint disable rule:comments-indentation
