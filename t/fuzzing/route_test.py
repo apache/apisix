@@ -36,13 +36,10 @@ def create_route():
     subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
 
 def main():
-    fw = open(cur_dir() + "/test.log",'wb')
-    fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
     session = Session(
         target=Target(
             connection=TCPSocketConnection("127.0.0.1", 9080, send_timeout=5.0, recv_timeout=5.0, server=False)
         ),
-        fuzz_loggers=fuzz_loggers,
         keep_web_open=False,
     )
 
