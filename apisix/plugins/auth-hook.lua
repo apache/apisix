@@ -16,7 +16,6 @@
 --
 
 local core = require("apisix.core")
-local json = require("apisix.core.json")
 local http = require("resty.http")
 local ck = require("resty.cookie")
 local ngx = ngx
@@ -309,7 +308,7 @@ function _M.rewrite(conf, ctx)
     res_init_headers(config, ctx)
 
     if auth_token then
-        local res, hook_data, hook_err
+        local res, hook_data
         if config.hook_cache then
             core.response.set_header("APISIX-Hook-Cache", 'cache')
             res = hook_lrucache(plugin_name .. "#" .. auth_token, config.version,
@@ -326,13 +325,15 @@ function _M.rewrite(conf, ctx)
 
         if hook_res.status ~= 200 and config.check_termination then
             core.response.set_header("Content-Type", "application/json; charset=utf-8")
-            return hook_res.status, fail_response('auth-hook check permission failed', { status_code = hook_res.status })
+            return hook_res.status, fail_response('auth-hook check permission failed',
+                    { status_code = hook_res.status })
         end
 
         local hook_body, err = core.json.decode(hook_res.body)
         if not hook_body and config.check_termination then
             core.response.set_header("Content-Type", "application/json; charset=utf-8")
-            return 500, fail_response("JSON decoding failed: " .. err, { status_code = 500 })
+            return 500, fail_response("JSON decoding failed: " .. err,
+                    { status_code = 500 })
         end
 
         hook_data = hook_body.data
