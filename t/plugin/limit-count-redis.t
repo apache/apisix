@@ -33,6 +33,7 @@ no_root_location();
 run_tests;
 
 __DATA__
+
 === TEST 1: set route, missing redis host
 --- config
     location /t {
@@ -59,6 +60,7 @@ __DATA__
                     "uri": "/hello"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -72,6 +74,9 @@ GET /t
 {"error_msg":"failed to check the configuration of plugin limit-count err: failed to validate dependent schema for \"policy\": value should match only one schema, but matches none"}
 --- no_error_log
 [error]
+
+
+
 === TEST 2: set route, with redis host and port
 --- config
     location /t {
@@ -101,6 +106,7 @@ GET /t
                     }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -113,6 +119,9 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
 === TEST 3: set route(default value: port and timeout)
 --- config
     location /t {
@@ -167,6 +176,7 @@ passed
                     "action": "set"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -179,6 +189,9 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
 === TEST 4: up the limit
 --- request
 GET /hello
@@ -187,6 +200,9 @@ GET /hello
 --- error_log
 try to lock with key route#1#redis
 unlock with key route#1#redis
+
+
+
 === TEST 5: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
@@ -194,6 +210,9 @@ unlock with key route#1#redis
 [200, 503, 503]
 --- no_error_log
 [error]
+
+
+
 === TEST 6: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
@@ -201,6 +220,9 @@ unlock with key route#1#redis
 [404, 503, 404, 503, 503]
 --- no_error_log
 [error]
+
+
+
 === TEST 7: set route, with redis host, port and right password
 --- config
     location /t {
@@ -208,19 +230,24 @@ unlock with key route#1#redis
             local t = require("lib.test_admin").test
             -- set redis password
             local redis = require "resty.redis"
+
             local red = redis:new()
+
             red:set_timeout(1000) -- 1 sec
+
             local ok, err = red:connect("127.0.0.1", 6379)
             if not ok then
                 ngx.say("failed to connect: ", err)
                 return
             end
+
             -- for get_reused_times works
             -- local ok, err = red:set_keepalive(10000, 100)
             -- if not ok then
             --     ngx.say("failed to set keepalive: ", err)
             --     return
             -- end
+
             local count
             count, err = red:get_reused_times()
             if 0 == count then
@@ -240,6 +267,7 @@ unlock with key route#1#redis
                 -- ngx.say("already set requirepass done: ", err)
                 return
             end
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -265,6 +293,7 @@ unlock with key route#1#redis
                     }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -277,6 +306,9 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
 === TEST 8: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
@@ -284,6 +316,9 @@ passed
 [200, 200, 503, 503]
 --- no_error_log
 [error]
+
+
+
 === TEST 9: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
@@ -291,6 +326,9 @@ passed
 [404, 503, 404, 503, 503]
 --- no_error_log
 [error]
+
+
+
 === TEST 10: set route, with redis host, port and wrong password
 --- config
     location /t {
@@ -321,6 +359,7 @@ passed
                     "uri": "/hello_new"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -333,6 +372,9 @@ GET /t
 200
 --- no_error_log
 [error]
+
+
+
 === TEST 11: request for TEST 10
 --- request
 GET /hello_new
@@ -342,11 +384,17 @@ GET /hello_new
 {"error_msg":"failed to limit count: ERR invalid password"}
 --- error_log
 failed to limit req: ERR invalid password
+
+
+
 === TEST 12: multi request for TEST 10
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
 --- error_code eval
 [500, 404, 404, 500]
+
+
+
 === TEST 13: restore redis password to ''
 --- config
     location /t {
@@ -354,19 +402,24 @@ failed to limit req: ERR invalid password
             local t = require("lib.test_admin").test
             -- set redis password
             local redis = require "resty.redis"
+
             local red = redis:new()
+
             red:set_timeout(1000) -- 1 sec
+
             local ok, err = red:connect("127.0.0.1", 6379)
             if not ok then
                 ngx.say("failed to connect: ", err)
                 return
             end
+
             -- for get_reused_times works
             -- local ok, err = red:set_keepalive(10000, 100)
             -- if not ok then
             --     ngx.say("failed to set keepalive: ", err)
             --     return
             -- end
+
             local count
             count, err = red:get_reused_times()
             if 0 == count then
