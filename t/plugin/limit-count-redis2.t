@@ -131,9 +131,9 @@ GET /hello
 --- error_code eval
 500
 --- response_body
-{"error_msg":"failed to limit count: failed to change redis db, err: ERR DB index is out of range"}
+{"error_msg":"failed to limit count: failed to change redis db, err: ERR invalid DB index"}
 --- error_log
-failed to limit count: failed to change redis db, err: ERR DB index is out of range
+failed to limit count: failed to change redis db, err: ERR invalid DB index
 
 
 
@@ -185,8 +185,8 @@ passed
 
 === TEST 5: up the limit
 --- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503, 503]
 --- no_error_log
 [error]
