@@ -334,13 +334,11 @@ function _M.http_access_phase()
         end
     end
 
+    local matched_internal_api = false
     if router.api.has_route_not_under_apisix() or
         core.string.has_prefix(uri, "/apisix/")
     then
-        local matched = router.api.match(api_ctx)
-        if matched then
-            return
-        end
+        matched_internal_api = router.api.match(api_ctx)
     end
 
     router.router_http.match(api_ctx)
@@ -348,7 +346,8 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
 
     -- load and run global rule
-    if router.global_rules and router.global_rules.values
+    if not (matched_internal_api and local_conf.apisix.global_rule_skip_internal_api)
+       and router.global_rules and router.global_rules.values
        and #router.global_rules.values > 0 then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = router.global_rules.values
@@ -370,6 +369,10 @@ function _M.http_access_phase()
         api_ctx.conf_id = nil
 
         api_ctx.global_rules = router.global_rules
+    end
+
+    if matched_internal_api then
+        return
     end
 
     if not route then
