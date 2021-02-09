@@ -200,7 +200,8 @@ local function res_init_headers(config, ctx)
         return
     end
     core.request.set_header(ctx, prefix .. "auth-data", nil)
-    for i, f in ipairs(hook_res_to_headers) do
+    for i, val in ipairs(hook_res_to_headers) do
+        local f = string.gsub(val, '_', '-')
         core.request.set_header(ctx, prefix .. f, nil)
         core.response.set_header(prefix .. f, nil)
 
@@ -217,12 +218,13 @@ local function res_to_headers(config, data, ctx)
         return
     end
     core.request.set_header(ctx, prefix .. "auth-data", core.json.encode(data))
-    for i, f in ipairs(hook_res_to_headers) do
-        local v = data[f]
+    for i, val in ipairs(hook_res_to_headers) do
+        local v = data[val]
         if v then
             if type(v) == "table" then
                 v = core.json.encode(v)
             end
+            local f = string.gsub(val, '_', '-')
             core.request.set_header(ctx, prefix .. f, v)
             core.response.set_header(prefix .. f, v)
 
