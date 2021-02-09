@@ -222,24 +222,15 @@ endif
 
 release-src:
 	tar -zcvf $(RELEASE_SRC).tgz \
-	--exclude .github \
-	--exclude .git \
-	--exclude .gitattributes \
-	--exclude .idea \
-	--exclude .travis \
-	--exclude .gitignore \
-	--exclude .DS_Store \
-	--exclude benchmark \
-	--exclude doc \
-	--exclude kubernetes \
-	--exclude logos \
-	--exclude deps \
-	--exclude logs \
-	--exclude t \
-	--exclude utils \
-	--exclude release \
-	--exclude $(RELEASE_SRC).tgz \
-	.
+	./apisix \
+	./bin \
+	./conf \
+	./doc \
+	./rockspec \
+	LICENSE \
+	Makefile \
+	NOTICE \
+	*.md
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
