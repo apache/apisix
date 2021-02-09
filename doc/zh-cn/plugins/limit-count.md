@@ -44,6 +44,7 @@
 | redis_host      | string   | `redis` 必须 |         |                                                              | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的地址。   |
 | redis_port      | integer  | 可选         | 6379    | [1,...]                                                      | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口     |
 | redis_password  | string   | 可选         |         |                                                              | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的密码。   |
+| redis_database  | integer  | 可选         | 0       | redis_database >= 0                                          | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点中使用的 database，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的Redis公有云服务）生效。    |
 | redis_timeout   | integer  | 可选         | 1000    | [1,...]                                                      | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间 |
 | redis_cluster_nodes | array | 可选         |         |                                                              | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表。 |
 
@@ -100,6 +101,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "redis_host": "127.0.0.1",
             "redis_port": 6379,
             "redis_password": "password",
+            "redis_database": 1,
             "redis_timeout": 1001
         }
     },
