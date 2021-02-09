@@ -123,6 +123,7 @@ function _M.check_schema(conf)
 end
 
 local function get_auth_token(ctx)
+
     local token = ctx.var.http_x_auth_token
     if token then
         return token
@@ -148,12 +149,15 @@ local function get_auth_token(ctx)
         return nil
     end
     return val
+
 end
 
 local function fail_response(message, init_values)
+
     local response = init_values or {}
     response.message = message
     return response
+
 end
 
 local function new_table()
@@ -171,9 +175,9 @@ local function new_table()
     return setmetatable(t, _mt)
 end
 
-
 --proxy headers
 local function request_headers(config, ctx)
+
     local req_headers = new_table()
     local headers = core.request.headers(ctx)
     local hook_headers = config.hook_headers
@@ -187,6 +191,7 @@ local function request_headers(config, ctx)
         end
     end
     return req_headers
+
 end
 
 
@@ -199,6 +204,7 @@ local function res_init_headers(config, ctx)
     if type(hook_res_to_headers) ~= "table" then
         return
     end
+
     core.request.set_header(ctx, prefix .. "auth-data", nil)
     for i, val in ipairs(hook_res_to_headers) do
         local f = string.gsub(val, '_', '-')
@@ -231,6 +237,7 @@ local function res_to_headers(config, data, ctx)
         end
     end
     return
+
 end
 
 
@@ -249,16 +256,17 @@ local function get_hook_args(hook_args)
         end
     end
     return req_args
+
 end
 
 -- Configure request parameters.
-local function hook_configure_params(args, config, myheaders)
-    -- TLS verification.
-    myheaders["Content-Type"] = "application/json; charset=utf-8"
+local function hook_configure_params(args, config, hook_headers)
+
+    hook_headers["Content-Type"] = "application/json; charset=utf-8"
     local auth_hook_params = {
         ssl_verify = false,
         method = config.auth_hook_method,
-        headers = myheaders,
+        headers = hook_headers,
     }
     if config.hook_keepalive then
         auth_hook_params.keepalive_timeout = config.hook_keepalive_timeout
@@ -268,6 +276,7 @@ local function hook_configure_params(args, config, myheaders)
     end
     local url = config.auth_hook_uri .. "?" .. ngx.encode_args(args)
     return auth_hook_params, url
+
 end
 
 -- timeout in ms
@@ -282,21 +291,24 @@ local function http_req(url, auth_hook_params)
         return nil, err
     end
     return res
+
 end
 
 local function get_auth_info(config, ctx, action, path, client_ip, auth_token)
-    local myheaders = request_headers(config, ctx)
-    myheaders["X-Client-Ip"] = client_ip
-    myheaders["Authorization"] = auth_token
-    myheaders["Auth-Hook-Id"] = config.auth_hook_id
+
+    local hook_headers = request_headers(config, ctx)
+    hook_headers["X-Client-Ip"] = client_ip
+    hook_headers["Authorization"] = auth_token
+    hook_headers["Auth-Hook-Id"] = config.auth_hook_id
     local args = get_hook_args(config.hook_args)
     args['hook_path'] = path
     args['hook_action'] = action
     args['hook_client_ip'] = client_ip
     core.response.set_header("APISIX-Hook-Cache", 'no-cache')
-    local auth_hook_params, url = hook_configure_params(args, config, myheaders)
+    local auth_hook_params, url = hook_configure_params(args, config, hook_headers)
     local res, err = http_req(url, auth_hook_params)
     return { res = res, err = err }
+
 end
 
 function _M.rewrite(conf, ctx)
@@ -349,6 +361,7 @@ function _M.rewrite(conf, ctx)
                 { status_code = 401 })
     end
     core.log.info("auth-hook check permission passed")
+
 end
 
 return _M
