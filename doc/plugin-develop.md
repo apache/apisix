@@ -20,7 +20,7 @@
 
 # table of contents
 
-- [**where to put your plugin**](#where-to-put-your-plugin)
+- [**where to put your plugins**](#where-to-put-your-plugins)
 - [**check dependencies**](#check-dependencies)
 - [**name and config**](#name-and-config)
 - [**schema and check**](#schema-and-check)
@@ -159,10 +159,12 @@ Write [Json Schema](https://json-schema.org) descriptions and check functions. S
  configuration data :
 
 ```json
-"example-plugin" : {
-    "i": 1,
-    "s": "s",
-    "t": [1]
+{
+    "example-plugin" : {
+        "i": 1,
+        "s": "s",
+        "t": [1]
+    }
 }
 ```
 
@@ -243,7 +245,7 @@ It will be used when you try to create a [Consumer](https://github.com/apache/ap
 
 To validate the configuration, the plugin uses a schema like this:
 
-```json
+```lua
 local consumer_schema = {
     type = "object",
     additionalProperties = false,
@@ -355,7 +357,7 @@ A plugin can register API which exposes to the public. Take jwt-auth plugin as a
 
 ```lua
 local function gen_token()
-    ...
+    --...
 end
 
 function _M.api()

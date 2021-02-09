@@ -130,7 +130,7 @@ local function request(url, yaml_conf)
 end
 
 
-function _M.init(env)
+function _M.init(env, args)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
@@ -294,6 +294,9 @@ function _M.init(env)
                 break
             end
 
+            if args and args["verbose"] then
+                print(res_put)
+            end
         end
 
         if is_success then
