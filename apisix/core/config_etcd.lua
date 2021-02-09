@@ -310,7 +310,7 @@ local function sync_data(self)
         if err == "compacted" then
             self.need_reload = true
             log.warn("waitdir [", self.key, "] err: ", err,
-                     ", need to fully reload")
+                     ", will read the configuration again via readdir")
             return false
         end
 

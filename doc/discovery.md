@@ -20,7 +20,7 @@
 
 # Integration service discovery registry
 
-* [**Summary**](#Summary)
+* [**Summary**](#summary)
 * [**How extend the discovery client?**](#how-extend-the-discovery-client)
     * [**Basic steps**](#basic-steps)
     * [**the example of Eureka**](#the-example-of-eureka)

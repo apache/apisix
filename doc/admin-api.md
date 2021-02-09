@@ -73,14 +73,13 @@
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
-|service_protocol|False|Upstream protocol type|only `grpc`|Must set `grpc` if using `gRPC proxy` or `gRPC transcode`. |
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
-For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
+For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will respond with an error.
 
 Config Example:
 
@@ -266,7 +265,7 @@ After successful execution, status nodes will be updated to:
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Service
 
@@ -415,7 +414,7 @@ After successful execution, upstream nodes will not retain the original data, an
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Consumer
 
@@ -486,7 +485,7 @@ Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Upstream
 
@@ -523,8 +522,9 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |name     |optional|Identifies upstream names|
 |desc     |optional|upstream usage scenarios, and more.|
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
+|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`. Default to `pass`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
+|scheme|optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
 |labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
@@ -653,7 +653,7 @@ After the execution is successful, nodes will not retain the original data, and 
 
 Return response from etcd currently.
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## SSL
 
@@ -752,7 +752,7 @@ Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)
 
 ## Plugin
 
@@ -791,4 +791,4 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 |---------|-------------------------|--|------|
 |GET      |/apisix/admin/plugins?all=true|NULL|Fetch resource|
 
-[Back to TOC](#Table-of-Contents)
+[Back to TOC](#table-of-contents)

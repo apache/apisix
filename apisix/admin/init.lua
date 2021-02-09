@@ -281,7 +281,7 @@ local function post_reload_plugins()
         core.response.exit(500, err)
     end
 
-    core.response.exit(200, success)
+    core.response.exit(200, "done")
 end
 
 

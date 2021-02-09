@@ -56,7 +56,7 @@ do_install() {
 
 do_remove() {
     sudo rm -f /usr/bin/apisix
-    sudo luarocks purge /usr/local/apisix/deps --tree=/usr/local/apisix/deps
+    sudo luarocks purge --tree /usr/local/apisix/deps
 }
 
 

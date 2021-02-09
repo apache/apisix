@@ -31,7 +31,7 @@ local pb_option_def = {
     },
     {   description = "int64 as result",
         type = "string",
-        enum = {"ienum_as_name", "enum_as_value"},
+        enum = {"enum_as_name", "enum_as_value"},
     },
     {   description ="default values option",
         type = "string",

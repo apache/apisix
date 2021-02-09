@@ -1016,7 +1016,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1131,7 +1131,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1246,7 +1246,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4

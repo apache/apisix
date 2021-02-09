@@ -24,7 +24,7 @@ before_install() {
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
     docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # Runs Keycloak version 10.0.2 with inbuilt policies for unit tests
-    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix
+    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix:1.0.0
     # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
     docker pull bitnami/zookeeper:3.6.0
     docker pull bitnami/kafka:latest
@@ -35,6 +35,7 @@ before_install() {
     docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
     docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+    docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 3 --topic test3
 
     # start skywalking
     docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
@@ -74,20 +75,17 @@ do_install() {
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
-    if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
+    if [ ! -f "build-cache/grpc_server_example_20210122" ]; then
+        wget https://github.com/api7/grpc_server_example/releases/download/20210122/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
-    fi
 
-    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-        if [ ! -f "grpc_server_example/main.go" ]; then
-            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-        fi
-
-        cd grpc_server_example/
+        git clone --depth 1 https://github.com/api7/grpc_server_example.git grpc_server_example
+        pushd grpc_server_example/ || exit 1
         mv proto/ ../build-cache/
-        cd ..
+        popd || exit 1
+
+        touch build-cache/grpc_server_example_20210122
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
@@ -101,7 +99,12 @@ script() {
     export_or_prefix
     openresty -V
 
-    ./build-cache/grpc_server_example &
+    ./utils/set-dns.sh
+
+    ./build-cache/grpc_server_example \
+        -grpc-address :50051 -grpcs-address :50052 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key \
+        &
 
     ./bin/apisix help
     ./bin/apisix init
@@ -110,7 +113,7 @@ script() {
 
     #start again  --> fial
     res=`./bin/apisix start`
-    if [ "$res" != "APISIX is running..." ]; then
+    if ! echo "$res" | grep "APISIX is running"; then
         echo "failed: APISIX runs repeatedly"
         exit 1
     fi
@@ -120,7 +123,7 @@ script() {
 
     #start -> ok
     res=`./bin/apisix start`
-    if [ "$res" == "APISIX is running..." ]; then
+    if echo "$res" | grep "APISIX is running"; then
         echo "failed: shouldn't stop APISIX running after kill the old process."
         exit 1
     fi
@@ -128,7 +131,7 @@ script() {
     sleep 1
     cat logs/error.log
 
-    sudo sh ./t/grpc-proxy-test.sh
+    sh ./t/grpc-proxy-test.sh
     sleep 1
 
     ./bin/apisix stop
@@ -139,7 +142,7 @@ script() {
     make lint && make license-check || exit 1
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {

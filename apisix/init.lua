@@ -28,6 +28,7 @@ local upstream_util = require("apisix.utils.upstream")
 local ctxdump       = require("resty.ctxdump")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
+local ngx_version   = ngx.config.nginx_version
 local get_method    = ngx.req.get_method
 local ngx_exit      = ngx.exit
 local math          = math
@@ -229,7 +230,7 @@ local function parse_domain_for_nodes(nodes)
             end
 
             if err then
-                return nil, err
+                core.log.error("dns resolver domain: ", host, " error: ", err)
             end
         else
             core.table.insert(new_nodes, node)
@@ -512,6 +513,10 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
+    if route.value.service_protocol == "grpc" then
+        api_ctx.upstream_scheme = "grpc"
+    end
+
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)
@@ -520,8 +525,13 @@ function _M.http_access_phase()
 
     set_upstream_host(api_ctx)
 
-    if route.value.service_protocol == "grpc" then
+    local up_scheme = api_ctx.upstream_scheme
+    if up_scheme == "grpcs" or up_scheme == "grpc" then
         ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+        if ngx_version < 1017008 then
+            return ngx.exec("@1_15_" .. up_scheme .. "_pass")
+        end
+
         return ngx.exec("@grpc_pass")
     end
 

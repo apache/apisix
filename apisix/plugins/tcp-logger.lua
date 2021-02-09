@@ -79,7 +79,7 @@ local function send_tcp_data(conf, log_message)
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                           .. conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end

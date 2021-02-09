@@ -49,12 +49,12 @@
 
 | 名称                    | 类型           | 必选项 | 默认值     | 有效值          | 描述                             |
 | ----------------------- | -------------- | ------ | ---------- | --------------- | -------------------------------- |
-| break_response_code | integer        | 必须   | 无         | [200, ..., 600] | 不健康返回错误码                 |
-| max_breaker_sec     | integer        | 可选   | 300        | >=60            | 最大熔断持续时间                 |
+| break_response_code     | integer        | 必须   | 无         | [200, ..., 599] | 不健康返回错误码                 |
+| max_breaker_sec         | integer        | 可选   | 300        | >=60            | 最大熔断持续时间                 |
 | unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
-| unhealthy.failures      | integer        | 可选   | 1          | >=1             | 触发不健康状态的连续错误请求次数 |
-| healthy.http_statuses   | array[integer] | 可选   | {200, 206} | [200, ..., 499] | 健康时候的状态码                 |
-| healthy.successes       | integer        | 可选   | 1          | >=1             | 触发健康状态的连续正常请求次数   |
+| unhealthy.failures      | integer        | 可选   | 3          | >=1             | 触发不健康状态的连续错误请求次数 |
+| healthy.http_statuses   | array[integer] | 可选   | {200}      | [200, ..., 499] | 健康时候的状态码                 |
+| healthy.successes       | integer        | 可选   | 3          | >=1             | 触发健康状态的连续正常请求次数   |
 
 ## 启用方式
 

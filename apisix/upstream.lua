@@ -22,9 +22,11 @@ local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
+local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
+local http_code_upstream_unavailable = ngx.HTTP_SERVICE_UNAVAILABLE
 
 local _M = {}
 
@@ -87,6 +89,13 @@ local function create_checker(upstream)
         return nil
     end
 
+    if healthcheck_parent.checker then
+        core.config_util.cancel_clean_handler(healthcheck_parent,
+                                              healthcheck_parent.checker_idx, true)
+    end
+
+    core.log.info("create new checker: ", tostring(checker))
+
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     for _, node in ipairs(upstream.nodes) do
@@ -96,13 +105,6 @@ local function create_checker(upstream)
                     port or node.port, " err: ", err)
         end
     end
-
-    if healthcheck_parent.checker then
-        core.config_util.cancel_clean_handler(healthcheck_parent,
-                                              healthcheck_parent.checker_idx, true)
-    end
-
-    core.log.info("create new checker: ", tostring(checker))
 
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
@@ -119,6 +121,17 @@ local function fetch_healthchecker(upstream)
     end
 
     return create_checker(upstream)
+end
+
+
+local function set_upstream_scheme(ctx, upstream)
+    -- plugins like proxy-rewrite may already set ctx.upstream_scheme
+    if not ctx.upstream_scheme then
+        -- the old configuration doesn't have scheme field, so fallback to "http"
+        ctx.upstream_scheme = upstream.scheme or "http"
+    end
+
+    ctx.var["upstream_scheme"] = ctx.upstream_scheme
 end
 
 
@@ -172,7 +185,11 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return 502, "no valid upstream node"
+        return http_code_upstream_unavailable, "no valid upstream node"
+    end
+
+    if not is_http then
+        return
     end
 
     if nodes_count > 1 then
@@ -180,6 +197,7 @@ function _M.set_by_route(route, api_ctx)
         api_ctx.up_checker = checker
     end
 
+    set_upstream_scheme(api_ctx, up_conf)
     return
 end
 
