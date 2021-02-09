@@ -112,11 +112,10 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 1000,
+    priority = 1007,
     name = plugin_name,
     schema = schema,
 }
-
 
 function _M.check_schema(conf)
 
@@ -158,7 +157,6 @@ local function fail_response(message, init_values)
     return response
 end
 
-
 local function new_table()
     local t = {}
     local lt = {}
@@ -194,7 +192,7 @@ end
 
 
 --init headers
-local function res_init_headers(config)
+local function res_init_headers(config, ctx)
 
     local prefix = config.hook_res_to_header_prefix or ''
     local hook_res_to_headers = config.hook_res_to_headers
@@ -202,10 +200,9 @@ local function res_init_headers(config)
     if type(hook_res_to_headers) ~= "table" then
         return
     end
-    core.request.set_header(prefix .. "auth-data", nil)
-    for i, val in ipairs(hook_res_to_headers) do
-        local f = string.gsub(val, '_', '-')
-        core.request.set_header(prefix .. f, nil)
+    core.request.set_header(ctx, prefix .. "auth-data", nil)
+    for i, f in ipairs(hook_res_to_headers) do
+        core.request.set_header(ctx, prefix .. f, nil)
         core.response.set_header(prefix .. f, nil)
 
     end
@@ -213,22 +210,21 @@ local function res_init_headers(config)
 end
 
 --res headers
-local function res_to_headers(config, data)
+local function res_to_headers(config, data, ctx)
 
     local prefix = config.hook_res_to_header_prefix or ''
     local hook_res_to_headers = config.hook_res_to_headers
     if type(hook_res_to_headers) ~= "table" or type(data) ~= "table" then
         return
     end
-    core.request.set_header(prefix .. "auth-data", core.json.encode(data))
-    for i, val in ipairs(hook_res_to_headers) do
-        local v = data[val]
+    core.request.set_header(ctx, prefix .. "auth-data", core.json.encode(data))
+    for i, f in ipairs(hook_res_to_headers) do
+        local v = data[f]
         if v then
             if type(v) == "table" then
                 v = core.json.encode(v)
             end
-            local f = string.gsub(val, '_', '-')
-            core.request.set_header(prefix .. f, v)
+            core.request.set_header(ctx, prefix .. f, v)
             core.response.set_header(prefix .. f, v)
 
         end
@@ -284,12 +280,10 @@ local function http_req(url, auth_hook_params)
                 " ] failed! res is nil, err:", err)
         return nil, err
     end
-
     return res
 end
 
 local function get_auth_info(config, ctx, action, path, client_ip, auth_token)
-    local errmsg
     local myheaders = request_headers(config, ctx)
     myheaders["X-Client-Ip"] = client_ip
     myheaders["Authorization"] = auth_token
@@ -298,33 +292,10 @@ local function get_auth_info(config, ctx, action, path, client_ip, auth_token)
     args['hook_path'] = path
     args['hook_action'] = action
     args['hook_client_ip'] = client_ip
-    core.response.set_header("hook-cache", 'no-cache')
+    core.response.set_header("APISIX-Hook-Cache", 'no-cache')
     local auth_hook_params, url = hook_configure_params(args, config, myheaders)
     local res, err = http_req(url, auth_hook_params)
-    if err then
-        core.log.error("fail request: ", url, ", err:", err)
-        return {
-            status = 500,
-            err = "request to hook-server failed, err:" .. err
-        }
-    end
-
-    if res.status ~= 200 and res.status ~= 401 then
-        return {
-            status = 500,
-            err = 'request to hook-server failed, status:' .. res.status
-        }
-    end
-
-    local res_body, res_err = json.decode(res.body)
-    if res_err then
-        errmsg = 'check permission failed! parse response json failed!'
-        core.log.error("json.decode(", res.body, ") failed! err:", res_err)
-        return { status = res.status, err = errmsg }
-    else
-        errmsg = res_body.message
-        return { status = res.status, err = errmsg, body = res_body }
-    end
+    return { res = res, err = err }
 end
 
 function _M.rewrite(conf, ctx)
@@ -335,30 +306,38 @@ function _M.rewrite(conf, ctx)
     local config = conf
     local auth_token = get_auth_token(ctx)
 
-    res_init_headers(config)
+    res_init_headers(config, ctx)
 
     if auth_token then
-        local res
+        local res, hook_data, hook_err
         if config.hook_cache then
-            core.response.set_header("hook-cache", 'cache')
+            core.response.set_header("APISIX-Hook-Cache", 'cache')
             res = hook_lrucache(plugin_name .. "#" .. auth_token, config.version,
                     get_auth_info, config, ctx, action, url, client_ip, auth_token)
         else
             res = get_auth_info(config, ctx, action, url, client_ip, auth_token)
         end
 
-        if res.status ~= 200 and config.check_termination then
-            -- no permission.
+        local hook_res = res.res
+        if res.err then
             core.response.set_header("Content-Type", "application/json; charset=utf-8")
-            return 401, fail_response(res.err, { status_code = 401 })
+            return 500, fail_response(res.err, { status_code = 500 })
         end
 
-        local data
-        if res.body then
-            data = res.body.data
-            if type(data) == "table" then
-                res_to_headers(config, data)
-            end
+        if hook_res.status ~= 200 and config.check_termination then
+            core.response.set_header("Content-Type", "application/json; charset=utf-8")
+            return hook_res.status, fail_response('auth-hook check permission failed', { status_code = hook_res.status })
+        end
+
+        local hook_body, err = core.json.decode(hook_res.body)
+        if not hook_body and config.check_termination then
+            core.response.set_header("Content-Type", "application/json; charset=utf-8")
+            return 500, fail_response("JSON decoding failed: " .. err, { status_code = 500 })
+        end
+
+        hook_data = hook_body.data
+        if type(hook_data) == "table" then
+            res_to_headers(config, hook_data, ctx)
         end
 
     elseif config.check_termination then
