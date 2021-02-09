@@ -117,6 +117,7 @@ local _M = {
     schema = schema,
 }
 
+
 function _M.check_schema(conf)
 
     return core.schema.check(schema, conf)
@@ -157,7 +158,7 @@ local function fail_response(message, init_values)
     return response
 end
 
---初始化headers
+
 local function new_table()
     local t = {}
     local lt = {}
