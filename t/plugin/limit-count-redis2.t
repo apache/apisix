@@ -117,6 +117,16 @@ passed
         }
     }
 --- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: use wrong database
+--- request
 GET /hello
 --- error_code eval
 500
@@ -127,7 +137,7 @@ failed to limit count: failed to change redis db, err: ERR DB index is out of ra
 
 
 
-=== TEST 3: set route, with redis host and port and right database
+=== TEST 4: set route, with redis host and port and right database
 --- config
     location /t {
         content_by_lua_block {
@@ -173,7 +183,7 @@ passed
 
 
 
-=== TEST 4: up the limit
+=== TEST 5: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
