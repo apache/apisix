@@ -131,7 +131,7 @@ script() {
     sleep 1
     cat logs/error.log
 
-    sh ./t/grpc-proxy-test.sh
+    ./t/grpc-proxy-test.sh
     sleep 1
 
     ./bin/apisix stop
