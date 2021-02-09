@@ -117,7 +117,7 @@ passed
         }
     }
 --- request
-GET /t
+GET /hello
 --- error_code eval
 500
 --- response_body
@@ -168,5 +168,15 @@ failed to limit count: failed to change redis db, err: ERR DB index is out of ra
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 503, 503]
 --- no_error_log
 [error]
