@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +17,6 @@
 # limitations under the License.
 #
 
-#! /usr/bin/env python
 import subprocess
 from public import *
 from boofuzz import *
@@ -33,7 +34,7 @@ def create_route():
     }
 }'
     '''
-    subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+    subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 def main():
     fw = open(cur_dir() + "/test.log",'wb')

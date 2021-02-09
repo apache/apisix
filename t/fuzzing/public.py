@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +17,6 @@
 # limitations under the License.
 #
 
-#! /usr/bin/env python
 import subprocess
 import os
 import psutil
@@ -30,8 +31,8 @@ def check_log(*logs):
 
     cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     for cmd in cmds:
-        r = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
-        assert r == ""
+        r = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        assert r.stdout.read().strip() == ""
 
 def check_process():
     cmd = "ps -ef | grep apisix/conf/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
