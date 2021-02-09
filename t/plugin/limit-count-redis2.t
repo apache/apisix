@@ -132,8 +132,6 @@ GET /hello
 500
 --- response_body
 {"error_msg":"failed to limit count: failed to change redis db, err: ERR invalid DB index"}
---- no_error_log
-[error]
 
 
 
