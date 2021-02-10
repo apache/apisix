@@ -80,7 +80,7 @@ An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `i
 
 There are two different ways to do this：
 
-1. Use the vars attribute of route to do it.
+1. Use the `vars` field of route to do it.
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -348,7 +348,7 @@ Note this option is not shown in the output of `etcd --help`.
 
 Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.
 
-## How to achieve high availability of APISIX?
+## How to set up high available Apache APISIX clusters?
 
 The high availability of APISIX can be divided into two parts:
 
