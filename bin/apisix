@@ -20,9 +20,9 @@
 if [ -s './apisix/cli/apisix.lua' ]; then
     # install via source
     APISIX_LUA=./apisix/cli/apisix.lua
-elif [ -s '/usr/share/lua/5.1/apisix/cli/apisix.lua' ]; then
+elif [ -s '/usr/local/share/lua/5.1/apisix/cli/apisix.lua' ]; then
     # install via luarock
-    APISIX_LUA=/usr/share/lua/5.1/apisix/cli/apisix.lua
+    APISIX_LUA=/usr/local/share/lua/5.1/apisix/cli/apisix.lua
 elif [ -s '/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua' ]; then
     # install via shell
     APISIX_LUA=/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua

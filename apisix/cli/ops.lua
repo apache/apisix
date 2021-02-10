@@ -279,6 +279,12 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.apisix.dns_resolver_valid then
+        if tonumber(yaml_conf.apisix.dns_resolver_valid) == nil then
+            util.die("apisix->dns_resolver_valid should be a number")
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
         use_or_1_15 = use_or_1_15,
@@ -409,8 +415,8 @@ Please modify "admin_key" in conf/config.yaml .
 end
 
 
-local function init_etcd(env)
-    etcd.init(env)
+local function init_etcd(env, args)
+    etcd.init(env, args)
 end
 
 
@@ -450,20 +456,21 @@ local function start(env, ...)
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
+    -- TODO: more logs for APISIX cli could be added using this feature
+    parser:flag("--verbose", "show init_etcd debug information")
     local args = parser:parse()
+
     local customized_yaml = args["config"]
-
-    profile.apisix_home = env.apisix_home .. "/"
-    local local_conf_path = profile:yaml_path("config")
-
     if customized_yaml then
+        profile.apisix_home = env.apisix_home .. "/"
+        local local_conf_path = profile:yaml_path("config")
         util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
         util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
         print("Use customized yaml: ", customized_yaml)
     end
 
-    init(env, ...)
-    init_etcd(env, ...)
+    init(env)
+    init_etcd(env, args)
 
     util.execute_cmd(env.openresty_args)
 end

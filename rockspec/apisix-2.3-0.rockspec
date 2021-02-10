@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.3-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.3",
 }
 
 description = {
@@ -32,7 +32,6 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "lua-resty-dns-client = 5.2.0",
     "lua-resty-template = 1.9",
     "lua-resty-etcd = 1.4.3",
     "lua-resty-balancer = 0.02rc5",
@@ -49,7 +48,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 1.0",
-    "nginx-lua-prometheus = 0.20210206",
+    "nginx-lua-prometheus = 0.20201218",
     "jsonschema = 0.9.3",
     "lua-resty-ipmatcher = 0.6",
     "lua-resty-kafka = 0.07",
@@ -75,8 +74,6 @@ build = {
         LUA_BINDIR="$(LUA_BINDIR)",
         LUA_INCDIR="$(LUA_INCDIR)",
         LUA="$(LUA)",
-        OPENSSL_INCDIR="$(OPENSSL_INCDIR)",
-        OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
         INST_PREFIX="$(PREFIX)",

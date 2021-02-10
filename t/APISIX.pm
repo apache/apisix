@@ -69,6 +69,10 @@ if ($enable_local_dns) {
     $dns_addrs_str = "8.8.8.8 114.114.114.114";
     $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
 }
+my $custom_dns_server = $ENV{"CUSTOM_DNS_SERVER"};
+if ($custom_dns_server) {
+    $dns_addrs_tbl_str = "{\"$custom_dns_server\"}";
+}
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
@@ -632,6 +636,23 @@ _EOC_
     $block->set_value("user_files", $user_files);
 
     $block;
+});
+
+sub run_or_exit ($) {
+    my ($cmd) = @_;
+    my $output = `$cmd`;
+    if ($?) {
+        warn "$output";
+        exit 1;
+    }
+}
+
+add_cleanup_handler(sub {
+    if ($ENV{FLUSH_ETCD}) {
+        delete $ENV{APISIX_PROFILE};
+        run_or_exit "etcdctl del --prefix /apisix";
+        run_or_exit "./bin/apisix init_etcd";
+    }
 });
 
 1;

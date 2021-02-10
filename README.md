@@ -47,6 +47,10 @@ The technical architecture of Apache APISIX:
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -121,7 +125,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
   - [Stand-alone mode](doc/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
-  - [Global Rule](doc/architecture-design.md#Global-Rule): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
+  - [Global Rule](doc/architecture-design.md#global-rule): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
   - [Fault Injection](doc/plugins/fault-injection.md)
   - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
@@ -148,9 +152,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.2
-     $ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
-     $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
+     $ mkdir apisix-2.3
+     $ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
+     $ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
      ```
 
    - Install the dependencies：
@@ -186,7 +190,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
    ```
 
    - check version of APISIX:
@@ -227,7 +231,7 @@ There are several ways to install the Apache Release version of APISIX:
 
    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](doc/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](doc/README.md#Plugins).
+   Further, you can follow the documentation to try more [plugins](doc/README.md#plugins).
 
 3. Admin API
 

@@ -78,7 +78,7 @@ GET /t
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -104,7 +104,7 @@ qr/"address":.+,"name":"github.com"/
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
-            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
+            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.get_resolver()))
         }
     }
 --- request
@@ -245,3 +245,47 @@ res:John and \$me
 res:John_David
 res:JohnDavid
 res:JohnDavid
+
+
+
+=== TEST 7: resolve host from /etc/hosts
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("test.com")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body
+ip_info: {"address":"127.0.0.1","class":1,"name":"test.com","ttl":315360000,"type":1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: search host with '.org' suffix
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("apisix")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+.+"name":"apisix\.apache\.org".+
+--- no_error_log
+[error]

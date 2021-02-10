@@ -1,0 +1,4 @@
+test.local {
+    file db.test.local
+    log
+}
