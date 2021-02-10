@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +27,6 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
-
 
     services:
       etcd:

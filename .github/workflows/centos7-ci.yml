@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_apisix:
-    name: run ci on centos7
+    name: Run ci on centos7
     runs-on: ubuntu-latest
 
     services:
@@ -60,11 +60,11 @@ jobs:
         -v /home/runner/work/apisix/apisix/t/certs:/certs \
         bitnami/etcd:3.4.0
 
-    - name: run centos7 docker and mapping apisix into container
+    - name: Run centos7 docker and mapping apisix into container
       run: |
         docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
 
-    - name: run other docker containers for test
+    - name: Run other docker containers for test
       run: |
         docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
         docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
@@ -78,11 +78,11 @@ jobs:
         docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 3 --topic test3
         docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
 
-    - name: install dependencies
+    - name: Install dependencies
       run: |
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
-    - name: run test cases
+    - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh run_case"

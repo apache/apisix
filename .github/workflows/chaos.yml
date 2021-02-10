@@ -4,10 +4,11 @@ on: [pull_request]
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: setup go
+      - name: Setup Go
         uses: actions/setup-go@v2.1.3
         with:
           go-version: "1.14"
@@ -46,6 +47,6 @@ jobs:
         run: |
           curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
 
-      - name: run test
+      - name: Run test
         working-directory: ./t/chaos
         run: go test -v

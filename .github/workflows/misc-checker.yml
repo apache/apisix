@@ -1,13 +1,13 @@
-name: misc
+name: Misc
 on:
   pull_request:
     branches: [master]
 jobs:
   misc:
-    name: misc checker
+    name: Misc checker
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code.
+      - name: Check out code
         uses: actions/checkout@v1
       - name: Install
         run: |
