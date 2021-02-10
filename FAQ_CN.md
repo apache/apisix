@@ -296,7 +296,7 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 
 事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
 
-## 如何设置高可用的 Apache APISIX 集群？
+## 如何创建高可用的 Apache APISIX 集群？
 
 APISIX 的高可用可分为两个部分：
 
