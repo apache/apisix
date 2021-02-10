@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Global Rule](#global-rule)
+* [Plugin Config](#plugin-config)
 * [Plugin Metadata](#plugin-metadata)
 * [Plugin](#plugin)
 
@@ -73,6 +74,7 @@
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
+|plugin_config_id|False, can't be used with `script` |Plugin|Binded plugin config object, see [Plugin Config](architecture-design.md#plugin-config) for more ||
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
@@ -720,6 +722,34 @@ Config Example:
 |plugins     |True |See [Plugin](architecture-design.md#plugin)||
 |create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
+
+## Plugin config
+
+*API*：/apisix/admin/plugin_configs/{id}
+
+*Description*: Provide a group of plugins which can be reused across routes.
+
+> Request Methods：
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_configs|NULL|Fetch resource list|
+|GET      |/apisix/admin/plugin_configs/{id}|NULL|Fetch resource|
+|PUT      |/apisix/admin/plugin_configs/{id}|{...}|Create resource by ID|
+|DELETE   |/apisix/admin/plugin_configs/{id}|NULL|Remove resource|
+|PATCH    |/apisix/admin/plugin_configs/{id}|{...}|Standard PATCH. Update some attributes of the existing plugin config, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full|
+|PATCH    |/apisix/admin/plugin_configs/{id}/{path}|{...}|SubPath PATCH, specify the attribute of plugin config to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.|
+
+> Request Body Parameters：
+
+|Parameter|Required|Description|Example|
+|---------|---------|-----------|----|
+|plugins    |True |See [Plugin](architecture-design.md#plugin)||
+|desc       |False|description, usage scenarios, and more.|customer xxxx|
+|create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
+|update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
+
+[Back to TOC](#table-of-contents)
 
 ## Plugin Metadata
 
