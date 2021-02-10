@@ -53,6 +53,21 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.xin.com/" rel="nofollow">Xin 优信二手车</a>
 1. <a href="https://www.zuzuche.com/" rel="nofollow">zuzuche 租租车</a>
 1. <a href="https://www.zybang.com/" rel="nofollow">zybang 作业帮</a>
+1. <a href="https://www.daocloud.io/" rel="nofollow">DaoCloud</a>
+1. <a href="http://aimiaobi.com/" rel="nofollow">妙笔 AI</a>
+1. <a href="http://www.10086.cn/" rel="nofollow">中国移动杭研</a>
+1. <a href="https://open.youtu.qq.com/" rel="nofollow">腾讯优图</a>
+1. <a href="https://www.ihomefnt.com/" rel="nofollow">艾佳生活</a>
+1. <a href="http://51tiangou.com/" rel="nofollow">大商天狗</a>
+1. <a href="http://dian.so/" rel="nofollow">小电科技</a>
+1. <a href="https://www.huya.com/" rel="nofollow">虎牙</a>
+1. <a href="https://ezone.work/" rel="nofollow">简单一点科技</a>
+1. <a href="https://www.htzhiyun.cn/" rel="nofollow">航天网信</a>
+1. <a href="https://www.didachuxing.com/" rel="nofollow">嘀嗒出行</a>
+1. <a href="https://www.zihao.biz/" rel="nofollow">紫豪网络</a>
+1. <a href="https://xueqiu.com/" rel="nofollow">雪球</a>
+1. <a href="https://www.mingyuanyun.com/" rel="nofollow">明源云客</a>
+1. <a href="https://www.teamones.cn/" rel="nofollow">万思</a>
 
 <img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
 
