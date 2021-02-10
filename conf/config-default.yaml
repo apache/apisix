@@ -106,7 +106,7 @@ apisix:
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
-  dns_resolver_valid: 30          # valid time for dns result 30 seconds
+  # dns_resolver_valid: 30        # if given, override the TTL of the valid records. The unit is second.
   resolver_timeout: 5             # resolver timeout
   ssl:
     enable: true

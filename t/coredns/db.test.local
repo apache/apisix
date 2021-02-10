@@ -11,3 +11,6 @@ $ORIGIN test.local.
     3600 IN NS b.iana-servers.net.
 
 ipv6     IN AAAA  ::1
+
+ttl 300  IN A     127.0.0.1
+ttl.1s 1  IN A     127.0.0.1
