@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -17,6 +17,16 @@
 #
 
 set -ex
+
+# ensure grpc server example is already started
+for (( i = 0; i <= 100; i++ )); do
+    if [[ "$i" -eq 100 ]]; then
+        echo "failed to start grpc_server_example in time"
+        exit 1
+    fi
+    nc -zv 127.0.0.1 50051 && break
+    sleep 1
+done
 
 #set ssl
 curl http://127.0.0.1:9080/apisix/admin/ssl/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
