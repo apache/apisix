@@ -120,7 +120,61 @@ GET /hello
 
 
 
-=== TEST 6: delete global rule
+=== TEST 6: skip global rule for internal api (not limited)
+--- yaml_config
+plugins:
+  - limit-count
+  - node-status
+--- request
+GET /apisix/status
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: skip global rule for internal api - 2 (not limited)
+--- yaml_config
+plugins:
+  - limit-count
+  - node-status
+--- request
+GET /apisix/status
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: skip global rule for internal api - 3 (not limited)
+--- yaml_config
+plugins:
+  - limit-count
+  - node-status
+--- request
+GET /apisix/status
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: doesn't skip global rule for internal api (should limit)
+--- yaml_config
+apisix:
+  global_rule_skip_internal_api: false
+plugins:
+  - limit-count
+  - node-status  
+--- request
+GET /apisix/status
+--- error_code: 503
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: delete global rule
 --- config
     location /t {
         content_by_lua_block {

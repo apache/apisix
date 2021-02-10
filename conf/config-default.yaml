@@ -89,6 +89,8 @@ apisix:
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
+  global_rule_skip_internal_api: true    # does not run global rule in internal apis
+                                         # api that path starts with "/apisix" is considered to be internal api
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
