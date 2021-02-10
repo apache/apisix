@@ -119,7 +119,7 @@ local health_checker = {
                 healthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1, default = 0},
+                        interval = {type = "integer", minimum = 1, default = 1},
                         http_statuses = {
                             type = "array",
                             minItems = 1,
@@ -142,7 +142,7 @@ local health_checker = {
                 unhealthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1, default = 0},
+                        interval = {type = "integer", minimum = 1, default = 1},
                         http_statuses = {
                             type = "array",
                             minItems = 1,
