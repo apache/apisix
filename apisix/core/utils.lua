@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local config_local   = require("apisix.core.config_local")
 local core_str       = require("apisix.core.string")
 local table          = require("apisix.core.table")
 local json           = require("apisix.core.json")
@@ -85,11 +86,16 @@ end
 
 local function dns_parse(domain)
     if dns_resolvers ~= current_inited_resolvers then
+        local local_conf = config_local.local_conf()
+        local valid = table.try_read_attr(local_conf, "apisix", "dns_resolver_valid")
+
         local opts = {
             ipv6 = true,
             nameservers = table.clone(dns_resolvers),
             retrans = 5,  -- 5 retransmissions on receive timeout
             timeout = 2000,  -- 2 sec
+            order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV (we don't support it yet)
+            validTtl = valid,
         }
         local ok, err = dns_client.init(opts)
         if not ok then

@@ -69,3 +69,165 @@ upstreams:
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 2: default ttl
+--- log_level: debug
+--- apisix_yaml
+upstreams:
+    -
+    id: 1
+    nodes:
+        ttl.test.local:1980: 1
+    type: roundrobin
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET"})
+                if not res or res.body ~= "hello world\n" then
+                    ngx.say(err)
+                    return
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- error_log
+"ttl":300
+--- grep_error_log eval
+qr/connect to 127.0.0.1:1053/
+--- grep_error_log_out
+connect to 127.0.0.1:1053
+
+
+
+=== TEST 3: override ttl
+--- log_level: debug
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+    dns_resolver_valid: 900
+--- apisix_yaml
+upstreams:
+    -
+    id: 1
+    nodes:
+        ttl.test.local:1980: 1
+    type: roundrobin
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET"})
+                if not res or res.body ~= "hello world\n" then
+                    ngx.say(err)
+                    return
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/connect to 127.0.0.1:1053/
+--- grep_error_log_out
+connect to 127.0.0.1:1053
+--- error_log
+"ttl":900
+
+
+
+=== TEST 4: cache expire
+--- log_level: debug
+--- apisix_yaml
+upstreams:
+    -
+    id: 1
+    nodes:
+        ttl.1s.test.local:1980: 1
+    type: roundrobin
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for i = 1, 2 do
+                for j = 1, 3 do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri, {method = "GET"})
+                    if not res or res.body ~= "hello world\n" then
+                        ngx.say(err)
+                        return
+                    end
+                end
+
+                if i < 2 then
+                    ngx.sleep(1.1)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/connect to 127.0.0.1:1053/
+--- grep_error_log_out
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053
+
+
+
+=== TEST 5: cache expire (override ttl)
+--- log_level: debug
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+    dns_resolver_valid: 1
+--- apisix_yaml
+upstreams:
+    -
+    id: 1
+    nodes:
+        ttl.test.local:1980: 1
+    type: roundrobin
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for i = 1, 2 do
+                for j = 1, 3 do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri, {method = "GET"})
+                    if not res or res.body ~= "hello world\n" then
+                        ngx.say(err)
+                        return
+                    end
+                end
+
+                if i < 2 then
+                    ngx.sleep(1.1)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/connect to 127.0.0.1:1053/
+--- grep_error_log_out
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053

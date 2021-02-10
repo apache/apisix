@@ -47,7 +47,6 @@ end
 local load_balancer
 local local_conf
 local dns_resolver
-local lru_resolved_domain
 local ver_header    = "APISIX/" .. core.version.VERSION
 
 
@@ -121,12 +120,6 @@ function _M.http_init_worker()
     require("apisix.upstream").init_worker()
 
     local_conf = core.config.local_conf()
-    local dns_resolver_valid = local_conf and local_conf.apisix and
-                        local_conf.apisix.dns_resolver_valid
-
-    lru_resolved_domain = core.lrucache.new({
-        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
-    })
 
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
@@ -420,16 +413,8 @@ function _M.http_access_phase()
             end
 
             if upstream.has_domain then
-                -- try to fetch the resolved domain, if we got `nil`,
-                -- it means we need to create the cache by handle.
-                -- the `api_ctx.conf_version` is different after we called
-                -- `parse_domain_in_up`, need to recreate the cache by new
-                -- `api_ctx.conf_version`
                 local err
-                upstream, err = lru_resolved_domain(upstream,
-                                                    upstream.modifiedIndex,
-                                                    parse_domain_in_up,
-                                                    upstream)
+                upstream, err = parse_domain_in_up(upstream)
                 if err then
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
@@ -454,8 +439,7 @@ function _M.http_access_phase()
     else
         if route.has_domain then
             local err
-            route, err = lru_resolved_domain(route, api_ctx.conf_version,
-                                             parse_domain_in_route, route)
+            route, err = parse_domain_in_route(route)
             if err then
                 core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
@@ -806,12 +790,6 @@ function _M.stream_init_worker()
     load_balancer = require("apisix.balancer").run
 
     local_conf = core.config.local_conf()
-    local dns_resolver_valid = local_conf and local_conf.apisix and
-                        local_conf.apisix.dns_resolver_valid
-
-    lru_resolved_domain = core.lrucache.new({
-        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
-    })
 end
 
 
