@@ -352,6 +352,6 @@ Indeed this distinction was eliminated by etcd in their master branch, but not b
 
 The high availability of APISIX can be divided into two parts:
 
->1.Data plane: The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
+1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
 
->2.Control plane: This part relies on the high-availability implementation of `etcd cluster` without any relational database dependency.
+2. The control plane of Apache APISIX relies on the highly available implementation of `etcd cluster` and does not require any relational database dependency.
