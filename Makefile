@@ -24,6 +24,10 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+GO ?= go
+GOFMT ?= gofmt "-s"
+GOFILES := $(shell find . -name "*.go")
+VETPACKAGES ?= $(shell $(GO) list ./...)
 
 SHELL := /bin/bash -o pipefail
 
@@ -219,6 +223,22 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 	cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
+
+.PHONY: fmt
+fmt:
+	$(GOFMT) -w $(GOFILES)
+
+.PHONY: fmt-check
+fmt-check:
+	@diff=$$($(GOFMT) -d $(GOFILES)); \
+	if [ -n "$$diff" ]; then \
+		echo "Please run 'make fmt' and commit the result:"; \
+		echo "$${diff}"; \
+		exit 1; \
+	fi;
+
+vet:
+	$(GO) vet $(VETPACKAGES)
 
 release-src:
 	tar -zcvf $(RELEASE_SRC).tgz \
