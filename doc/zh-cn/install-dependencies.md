@@ -78,11 +78,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
 sudo yum install -y openresty curl git gcc openresty-openssl-devel
 
 # 安装 LuaRocks
-<<<<<<< HEAD
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
-=======
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
->>>>>>> master
 
 # 开启 etcd server
 nohup etcd &
@@ -108,11 +104,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
 sudo apt-get install -y git openresty curl openresty-openssl-dev
 
 # 安装 LuaRocks
-<<<<<<< HEAD
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
-=======
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
->>>>>>> master
 
 # 开启 etcd server
 nohup etcd &
@@ -143,11 +135,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
 sudo apt-get install -y git openresty curl make openresty-openssl-dev
 
 # 安装 LuaRocks
-<<<<<<< HEAD
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | sudo bash -
-=======
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
->>>>>>> master
 
 # 开启 etcd server
 nohup etcd &
