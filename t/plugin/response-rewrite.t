@@ -126,7 +126,7 @@ property "body" validation failed: wrong type: expected string, got number
                             "headers" : {
                                 "X-Server-id": 3,
                                 "X-Server-status": "on",
-                                "Content-Type": ""
+                                "Content-Type": "22"
                             },
                             "body": "new body\n"
                         }
@@ -507,5 +507,71 @@ GET /t
 GET /t
 --- response_body
 additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set http status code as expr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "new body3\n"
+                            "status_code": 403,
+                            "vars": [
+                                ["status","==",500]
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/server_error","/hello"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: check http code that matchs http_status 
+--- request
+GET /server_error
+--- response_body
+new body3
+--- error_code eval
+403
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: check http code that not matchs http_status
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_code eval
+200
 --- no_error_log
 [error]
