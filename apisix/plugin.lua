@@ -640,4 +640,78 @@ function _M.stream_plugin_checker(item)
 end
 
 
+function _M.run_plugin(phase, plugins, api_ctx)
+    api_ctx = api_ctx or ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    plugins = plugins or api_ctx.plugins
+    if not plugins or #plugins == 0 then
+        return api_ctx
+    end
+
+    if phase ~= "log"
+        and phase ~= "header_filter"
+        and phase ~= "body_filter"
+    then
+        for i = 1, #plugins, 2 do
+            local phase_func = plugins[i][phase]
+            if phase_func then
+                local code, body = phase_func(plugins[i + 1], api_ctx)
+                if code or body then
+                    if code >= 400 then
+                        core.log.warn(plugins[i].name, " exits with http status code ", code)
+                    end
+
+                    core.response.exit(code, body)
+                end
+            end
+        end
+        return api_ctx
+    end
+
+    for i = 1, #plugins, 2 do
+        local phase_func = plugins[i][phase]
+        if phase_func then
+            phase_func(plugins[i + 1], api_ctx)
+        end
+    end
+
+    return api_ctx
+end
+
+
+function _M.run_global_rules(api_ctx, global_rules, phase_name)
+    if global_rules and global_rules.values
+       and #global_rules.values > 0 then
+        local orig_conf_type = api_ctx.conf_type
+        local orig_conf_version = api_ctx.conf_version
+        local orig_conf_id = api_ctx.conf_id
+
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        local values = global_rules.values
+        for _, global_rule in config_util.iterate_values(values) do
+            api_ctx.conf_type = "global_rule"
+            api_ctx.conf_version = global_rule.modifiedIndex
+            api_ctx.conf_id = global_rule.value.id
+
+            core.table.clear(plugins)
+            plugins = _M.filter(global_rule, plugins)
+            if phase_name == "access" then
+                _M.run_plugin("rewrite", plugins, api_ctx)
+                _M.run_plugin("access", plugins, api_ctx)
+            else
+                _M.run_plugin(phase_name, plugins, api_ctx)
+            end
+        end
+        core.tablepool.release("plugins", plugins)
+
+        api_ctx.conf_type = orig_conf_type
+        api_ctx.conf_version = orig_conf_version
+        api_ctx.conf_id = orig_conf_id
+    end
+end
+
+
 return _M
