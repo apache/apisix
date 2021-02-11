@@ -186,7 +186,7 @@ There are several ways to install the Apache Release version of APISIX:
    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
-   - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
+   - Installation runtime dependencies: OpenResty, etcd and OpenSSL develop library, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
    - install APISIX：
 
    ```shell

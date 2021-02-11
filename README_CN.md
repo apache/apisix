@@ -184,7 +184,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/apisix-docker/tree/master/example)来启动一个测试集群。
 
 3. RPM 包（只适用于 CentOS 7）
-   - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
+   - 安装依赖：OpenResty, etcd 和 OpenSSL develop library，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
    - 安装 APISIX：
 
    ```shell
