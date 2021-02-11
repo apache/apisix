@@ -48,7 +48,6 @@ title: response-rewrite
 | headers     | object  | 可选   |        |            | 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可 |
 | vars        | array[] | 可选   |        |            | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。 |
 
-
 ## 示例
 
 ### 开启插件

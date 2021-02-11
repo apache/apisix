@@ -87,7 +87,7 @@ Testing based on the above examples :
 curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
-It will output like below,no matter what kind of content from upstream, the `vars` will make sure that only reponse with status is `200` get overridden.
+It will output like below,no matter what kind of content from upstream, the `vars` will make sure that only rewrite response that http status is `200`.
 
 ```
 

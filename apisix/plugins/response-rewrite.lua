@@ -118,7 +118,7 @@ function _M.check_schema(conf)
             return nil, "failed to validate the 'vars' expression: " .. err
         end
     end
- 
+
     return true
 end
 
