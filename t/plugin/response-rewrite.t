@@ -512,7 +512,7 @@ additional properties forbidden, found invalid_att
 
 
 
-=== TEST 17: set http status code as expr
+=== TEST 17: set route with http status code as expr
 --- config
     location /t {
         content_by_lua_block {
@@ -522,7 +522,7 @@ additional properties forbidden, found invalid_att
                  [[{
                     "plugins": {
                         "response-rewrite": {
-                            "body": "new body3\n"
+                            "body": "new body3\n",
                             "status_code": 403,
                             "vars": [
                                 ["status","==",500]
