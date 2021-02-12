@@ -71,13 +71,13 @@ local function vars_matched(conf, ctx)
     if not conf.vars then
         return false
     end
-    --cache
+
     if not conf.response_expr then
         local response_expr, _ = expr.new(conf.vars)
         conf.response_expr = response_expr
     end
 
-    local match_result = expr:eval(ctx.var)
+    local match_result = conf.response_expr:eval(ctx.vars)
 
     return match_result
 end
