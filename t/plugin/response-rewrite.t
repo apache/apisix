@@ -126,7 +126,7 @@ property "body" validation failed: wrong type: expected string, got number
                             "headers" : {
                                 "X-Server-id": 3,
                                 "X-Server-status": "on",
-                                "Content-Type": "22"
+                                "Content-Type": ""
                             },
                             "body": "new body\n"
                         }
@@ -561,8 +561,8 @@ GET /server_error
 new body3
 --- error_code eval
 403
---- no_error_log
-[error]
+--- error_log
+500 Internal Server Error
 
 
 
