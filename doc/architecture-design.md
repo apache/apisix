@@ -243,7 +243,7 @@ The `Script` configuration can be directly bound to the `Route`.
 
 In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
 
-`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
+`Script` also has the concept of execution phase, supporting `access`, `header_filter`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
 
 ```json
 {
