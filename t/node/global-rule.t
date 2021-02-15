@@ -174,7 +174,54 @@ GET /apisix/status
 
 
 
-=== TEST 10: delete global rule
+=== TEST 10: update global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "X-VERSION":"1.0"
+                            }
+                        },
+                        "uri-blocker": {
+                            "block_rules": ["select.+(from|limit)", "(?:(union(.*?)select))"]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit block rule
+--- request
+GET /hello?name=;union%20select%20
+--- error_code: 403
+--- response_headers
+X-VERSION: 1.0
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: delete global rule
 --- config
     location /t {
         content_by_lua_block {
