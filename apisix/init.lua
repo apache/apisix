@@ -297,7 +297,6 @@ function _M.http_access_phase()
     router.router_http.match(api_ctx)
 
     -- run global rule
-    api_ctx.global_rules = router.global_rules
     plugin.run_global_rules(api_ctx, router.global_rules, "access")
 
     local route = api_ctx.matched_route
