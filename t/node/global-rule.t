@@ -262,7 +262,7 @@ apisix:
 plugins:
   - response-rewrite
   - uri-blocker
-  - node-status  
+  - node-status
 --- request
 GET /apisix/status?name=;union%20select%20
 --- error_code: 403
