@@ -165,7 +165,7 @@ apisix:
   global_rule_skip_internal_api: false
 plugins:
   - limit-count
-  - node-status  
+  - node-status
 --- request
 GET /apisix/status
 --- error_code: 503

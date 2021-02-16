@@ -207,7 +207,7 @@ plugins:
                         },
                         "key-auth": {}
                     },
-                    "uris": ["/hello"] 
+                    "uris": ["/hello"]
                 }]]
             )
 
