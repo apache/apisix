@@ -201,7 +201,7 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
-	
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
 	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
