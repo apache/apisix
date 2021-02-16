@@ -368,7 +368,7 @@ GET /apisix/prometheus/metrics
 			                    "timeout": 3,
 			                    "drop_limit": 1048576,
 			                    "pool_size": 5
-		                    }                        
+		                    }
                         },
                         "upstream": {
                             "nodes": {
@@ -426,7 +426,7 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
                                 "endpoint": "http://127.0.0.1:9447",
                                 "service_name": "APISIX",
                                 "sample_ratio": 1
-                            }                     
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -491,7 +491,7 @@ qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="
                                 "concat_method": "json",
                                 "batch_max_size": 1000,
                                 "max_retry_count": 0
-                            }                     
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -557,7 +557,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                                 "inactive_timeout": 5,
                                 "tls": false,
                                 "max_retry_count": 0
-                            }                    
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -620,7 +620,7 @@ qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="12
                                 "name": "udp-logger",
                                 "inactive_timeout": 5,
                                 "buffer_duration": 60
-                            }                     
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -688,7 +688,7 @@ qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="12
                                 "access_key_secret": "your_key_secret",
                                 "timeout": 5000,
                                 "project": "your_project"
-                            }                      
+                            }
                         },
                         "upstream": {
                             "nodes": {
