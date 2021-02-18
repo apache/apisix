@@ -104,7 +104,7 @@ local function send_to_server(data)
         ok, err = sock:sslhandshake(false, config.tls_server_name, false)
         if not ok then
             sock:close()
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                 .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
         end
     end
