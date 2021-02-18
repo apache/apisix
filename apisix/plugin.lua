@@ -689,6 +689,10 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
+        if phase_name == "access" then
+            api_ctx.global_rules = global_rules
+        end
+
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
