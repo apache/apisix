@@ -227,7 +227,7 @@ There are several ways to install the Apache Release version of APISIX:
    $ sudo docker build -f alpine-dev/Dockerfile .
    ```
 
-2. Getting start
+2. Getting started
 
    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](doc/getting-started.md).
 
