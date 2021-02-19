@@ -57,12 +57,11 @@
 
 ### Authentication
 
-* [authz-keycloak](plugins/authz-keycloak.md): 支持 Keycloak 身份认证服务器
-* [wolf-rbac](plugins/wolf-rbac.md) 基于 *RBAC* 的用户认证及授权。
 * [key-auth](plugins/key-auth.md)：基于 Key Authentication 的用户认证。
 * [JWT-auth](plugins/jwt-auth.md)：基于 [JWT](https://jwt.io/) (JSON Web Tokens) Authentication 的用户认证。
 * [basic-auth](plugins/basic-auth.md)：基于 basic auth 的用户认证。
-* [oauth](plugins/openid-connect.md): 提供 OAuth 2 身份验证和自省。
+* [authz-keycloak](plugins/authz-keycloak.md): 支持 Keycloak 身份认证服务器
+* [wolf-rbac](plugins/wolf-rbac.md) 基于 *RBAC* 的用户认证及授权。
 * [openid-connect](plugins/openid-connect.md)
 
 ### Security
