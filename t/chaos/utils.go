@@ -85,7 +85,7 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
 			 "uri": "/hello",
-			 "host": "http://127.0.0.1",
+			 "host": "127.0.0.1",
 			 "plugins": {
 				 "prometheus": {}
 			 },
@@ -105,7 +105,7 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/hello",
-		Headers:      map[string]string{"Host": "http://127.0.0.1"},
+		Headers:      map[string]string{"Host": "127.0.0.1"},
 		ExpectStatus: expectStatus,
 	})
 }
