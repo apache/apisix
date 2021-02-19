@@ -70,7 +70,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     make
     sudo make install
 
-    sudo apt-get install openresty-openssl-debug-dev
+    sudo apt-get install openresty-openssl111-debug-dev
     exit 0
 fi
 
@@ -80,4 +80,23 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl-debug-dev
+verlte() {
+    [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+}
+
+verlt() {
+    [ "$1" = "$2" ] && return 1 || verlte $1 $2
+}
+
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
+
+if [ $OPENRESTY_VERSION == "default" ]; then
+    sudo apt-get install openresty-openssl111-debug-dev
+else
+    verlt $OPENRESTY_VERSION 1.17.8
+    if [ $? -eq 0 ]; then
+        sudo apt-get install openresty-openssl-debug-dev
+    else
+        sudo apt-get install openresty-openssl111-debug-dev
+    fi
+fi
