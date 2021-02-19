@@ -238,9 +238,19 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
-    --support multiple ports listen, compatible with the original style
+    -- support multiple ports listen, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        local node_listen = {yaml_conf.apisix.node_listen}
+        local node_listen = {{port = yaml_conf.apisix.node_listen}}
+        yaml_conf.apisix.node_listen = node_listen
+    elseif type(yaml_conf.apisix.node_listen) == "table" then
+        local node_listen = {}
+        for index, value in ipairs(yaml_conf.apisix.node_listen) do
+            if type(value) == "number" then
+                table_insert(node_listen, index, {port = value})
+            elseif type(value) == "table" then
+                table_insert(node_listen, index, value)
+            end
+        end
         yaml_conf.apisix.node_listen = node_listen
     end
 
