@@ -195,7 +195,7 @@ function _M.rewrite(conf, ctx)
 
       elseif conf.method == "PUT" then
         ngx.req.set_method(ngx.HTTP_PUT)
-                
+       
       elseif conf.method == "PATCH" then
         ngx.req.set_method(ngx.HTTP_PATCH)
 
@@ -205,7 +205,7 @@ function _M.rewrite(conf, ctx)
         core.log.warn("Invalid HTTP method: ", conf.method)
       end
 
-      core.log.info("changed HTTP method from ", old_method, " to ", conf.method)
+      core.log.info("changed HTTP method from ", ctx.var.request_method, " to ", conf.method)
     end
 
     if not conf.headers then
