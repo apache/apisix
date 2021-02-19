@@ -88,15 +88,22 @@ verlt() {
     [ "$1" = "$2" ] && return 1 || verlte $1 $2
 }
 
+echo "before install openresty"
+
 sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
 
+echo "after install openresty"
+
 if [ $OPENRESTY_VERSION == "default" ]; then
+    echo "install openresty-openssl111 default"
     sudo apt-get install openresty-openssl111-debug-dev
 else
     verlt $OPENRESTY_VERSION 1.17.8.1
     if [ $? -eq 0 ]; then
+        echo "install openresty-openssl"
         sudo apt-get install openresty-openssl-debug-dev
     else
+        echo "install openresty-openssl111-debug"
         sudo apt-get install openresty-openssl111-debug-dev
     fi
 fi
