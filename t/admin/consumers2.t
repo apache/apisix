@@ -87,13 +87,18 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            local value = res.node.value
+            assert(value.create_time ~= nil)
+            value.create_time = nil
+            assert(value.update_time ~= nil)
+            value.update_time = nil
+            assert(res.count ~= nil)
+            res.count = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
+{"action":"get","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
 
 
 

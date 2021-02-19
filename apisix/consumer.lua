@@ -97,13 +97,29 @@ local function check_consumer(consumer)
 end
 
 
+local function filter(consumer)
+    if not consumer.value then
+        return
+    end
+
+    -- We expect the id is the same as username. Fix up it here if it isn't.
+    consumer.value.id = consumer.value.username
+end
+
+
 function _M.init_worker()
     local err
-    consumers, err = core.config.new("/consumers", {
-            automatic = true,
-            item_schema = core.schema.consumer,
-            checker = check_consumer,
-        })
+    local config = core.config.new()
+    local cfg = {
+        automatic = true,
+        item_schema = core.schema.consumer,
+        checker = check_consumer,
+    }
+    if config.type ~= "etcd" then
+        cfg.filter = filter
+    end
+
+    consumers, err = core.config.new("/consumers", cfg)
     if not consumers then
         error("failed to create etcd instance for fetching consumers: " .. err)
         return

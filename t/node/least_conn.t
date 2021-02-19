@@ -38,7 +38,7 @@ _EOC_
 
     my $route = <<_EOC_;
 routes:
-    - 
+    -
     upstream_id: 1
     uris:
         - /mysleep

@@ -157,8 +157,8 @@ passed
 --- request
 GET /t
 --- response_body
-status: 500
-status: 500
+status: 503
+status: 503
 --- error_log
 failed to parse domain: httpbin.orgx
 failed to parse domain: httpbin.orgx

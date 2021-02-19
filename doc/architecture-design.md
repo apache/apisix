@@ -45,7 +45,9 @@
 
 ## APISIX Config
 
-For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config` flag when start APISIX like `apisix start -c <path string>`
+
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -53,7 +55,7 @@ apisix:
 ```
 
 Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
-and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -63,7 +65,7 @@ etcd:
   host: "http://foo:2379"       # etcd address
 ```
 
-Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `config.yaml` file.
 
 **Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
@@ -79,7 +81,7 @@ The following image shows an example of some Route rules. When some attribute va
 
 <img src="./images/routes-example.png" width="50%" height="50%">
 
-We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it adding a lot of complexity of management and maintenance.
+We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it's adding a lot of complexity of management and maintenance.
 
 The shortcomings mentioned above are independently abstracted in APISIX by the two concepts [Service](#service) and [Upstream](#upstream).
 
@@ -241,7 +243,7 @@ The `Script` configuration can be directly bound to the `Route`.
 
 In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
 
-`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
+`Script` also has the concept of execution phase, supporting `access`, `header_filter`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
 
 ```json
 {
@@ -479,10 +481,10 @@ For the API gateway, it is usually possible to identify a certain type of reques
 
 As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
-|Field|Required|Description|
-|---|----|----|
-|username|Yes|Consumer Name.|
-|plugins|No|The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section.|
+| Field    | Required | Description                                                                                                                                                                                      |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| username | Yes      | Consumer Name.                                                                                                                                                                                   |
+| plugins  | No       | The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section. |
 
 In APISIX, the process of identifying a Consumer is as follows:
 
@@ -643,13 +645,13 @@ Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` f
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
-|Key|Optional|Description|Default|
-|----|-----|---------|---|
-|hook_conf.enable|required|Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled.|false|
-|hook_conf.name|required|The module list name of hook which has enabled debug trace||
-|hook_conf.log_level|required|Logging levels for input arguments & returned value|warn|
-|hook_conf.is_print_input_args|required|Enable/Disable input arguments print|true|
-|hook_conf.is_print_return_value|required|Enable/Disable returned value print|true|
+| Key                             | Optional | Description                                                                                                                               | Default |
+| ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
+| hook_conf.name                  | required | The module list name of hook which has enabled debug trace.                                                                               |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned value.                                                                                      | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print.                                                                                                     | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable returned value print.                                                                                                      | true    |
 
 Example:
 

@@ -18,7 +18,12 @@
 local ngx = ngx
 local ngx_log  = ngx.log
 local require  = require
+local select = select
 local setmetatable = setmetatable
+local tostring = tostring
+local unpack = unpack
+-- avoid loading other module since core.log is the most foundational one
+local tab_clear = require("table.clear")
 
 
 local _M = {version = 0.4}
@@ -85,6 +90,49 @@ setmetatable(_M, {__index = function(self, cmd)
     _M[cmd] = method
     return method
 end})
+
+
+local delay_tab = setmetatable({
+    func = function() end,
+    args = {},
+    res = nil,
+    }, {
+    __tostring = function(self)
+        -- the `__tostring` will be called twice, the first to get the length and
+        -- the second to get the data
+        if self.res then
+            local res = self.res
+            -- avoid unexpected reference
+            self.res = nil
+            return res
+        end
+
+        local res, err = self.func(unpack(self.args))
+        if err then
+            ngx.log(ngx.WARN, "failed to exec: ", err)
+        end
+
+        -- avoid unexpected reference
+        tab_clear(self.args)
+        self.res = tostring(res)
+        return self.res
+    end
+})
+
+
+-- It works well with log.$level, eg: log.info(..., log.delay_exec(func, ...))
+-- Should not use it elsewhere.
+function _M.delay_exec(func, ...)
+    delay_tab.func = func
+
+    tab_clear(delay_tab.args)
+    for i = 1, select('#', ...) do
+        delay_tab.args[i] = select(i, ...)
+    end
+
+    delay_tab.res = nil
+    return delay_tab
+end
 
 
 return _M
