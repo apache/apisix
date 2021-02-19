@@ -50,6 +50,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 
+# test grpc proxy with plaintext
+./build-cache/grpcurl -plaintext -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHello | grep 'Hello apisix'
+
+# test grpc proxy with ssl
 ./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
 # the old way
