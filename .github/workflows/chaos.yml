@@ -3,7 +3,7 @@ name: Chaos Test
 on: [pull_request]
 
 jobs:
-  build:
+  chaos-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -45,6 +45,10 @@ jobs:
       - name: Deploy Chaos mesh
         run: |
           curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
+
+      - name: Setup Upstream
+        run: |
+          bash ./t/chaos/setup_chaos_utils.sh setup_upstream
 
       - name: run test
         working-directory: ./t/chaos

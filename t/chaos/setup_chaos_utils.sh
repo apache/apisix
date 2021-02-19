@@ -38,6 +38,17 @@ etcd:
     - \"http://etcd-cluster-client.default.svc.cluster.local:2379\" " > ./conf/config.yaml
 }
 
+setup_upstream() {
+    cd t/chaos/upstream-setup
+    openresty -p `pwd` -c ./conf/nginx.conf
+    ret=$(curl http://127.0.0.1:8080)
+    if [ "$ret" = "hello, world" ]; then
+        echo "failed to setup upstream"
+        exit 1
+    fi
+    cd ../../..
+}
+
 ensure_pods_ready() {
     local app=$1
     local status=$2

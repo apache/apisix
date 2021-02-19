@@ -29,8 +29,9 @@ import (
 )
 
 var (
-	token = "edd1c9f034335f136f87ad84b625c8f1"
-	host  = "http://127.0.0.1:9080"
+	token    = "edd1c9f034335f136f87ad84b625c8f1"
+	host     = "http://127.0.0.1:9080"
+	upstream = "http://127.0.0.1:8080"
 )
 
 type httpTestCase struct {
@@ -85,13 +86,13 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
 			 "uri": "/hello",
-			 "host": "foo.com",
+			 "host": "httpbin.org",
 			 "plugins": {
 				 "prometheus": {}
 			 },
 			 "upstream": {
 				 "nodes": {
-					 "bar.org": 1
+					 "http://127.0.0.1:8080": 1
 				 },
 				 "type": "roundrobin"
 			 }
@@ -105,7 +106,7 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/hello",
-		Headers:      map[string]string{"Host": "foo.com"},
+		Headers:      map[string]string{"Host": "httpbin.org"},
 		ExpectStatus: expectStatus,
 	})
 }

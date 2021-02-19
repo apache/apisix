@@ -19,8 +19,8 @@ package chaos
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -54,6 +54,28 @@ func createEtcdKillChaos(g *WithT, cli client.Client) {
 }
 
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
+	e := httpexpect.New(t, host)
+
+	// check if everything works
+	setRoute(e, http.StatusCreated)
+
+	getRoute(e, http.StatusOK)
+
+	// run in background
+	go func() {
+		for i := 1; i < 100; i++ {
+			go func() {
+				getRoute(e, http.StatusOK)
+				fmt.Println("###############################################")
+			}()
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+	time.Sleep(5 * time.Second)
+}
+
+/*
+func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
 	e := httpexpect.New(t, host)
 	cliSet := initClientSet(g)
@@ -69,8 +91,6 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// check if everything works
 	setRoute(e, http.StatusCreated)
 
-	// to avoid route haven't been set yet
-	time.Sleep(1 * time.Second)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
@@ -118,3 +138,4 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		g.Expect(roughCompare(bpsBefore, bpsAfter)).To(BeTrue())
 	})
 }
+*/
