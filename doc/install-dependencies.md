@@ -54,6 +54,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
+# install OpenResty and some compilation tools
 sudo yum install -y openresty curl git gcc openresty-openssl-devel unzip
 
 # install LuaRocks
