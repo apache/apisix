@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, 'release/**']
   pull_request:
     branches: [master]
 
@@ -52,6 +52,25 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - name: Extract branch name
+        id: branch_env
+        shell: bash
+        run: |
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+          echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
+
+      - name: Create tarball
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        run: |
+          export VERSION=${{ steps.branch_env.outputs.version }}
+          make compress-tar
+
+      - name: Remove source code
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        run: |
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
+          tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
@@ -108,3 +127,10 @@ jobs:
 
       - name: Linux Script
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
+
+      - name: Publish Artifact
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.branch_env.outputs.fullname }}
+          path: ${{ steps.branch_env.outputs.fullname }}

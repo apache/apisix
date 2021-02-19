@@ -220,7 +220,17 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
-release-src:
+release-src: compress-tar
+
+	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
+	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
+
+	mkdir -p release
+	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
+	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
+	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
+
+compress-tar:
 	tar -zcvf $(RELEASE_SRC).tgz \
 	./apisix \
 	./bin \
@@ -231,11 +241,3 @@ release-src:
 	Makefile \
 	NOTICE \
 	*.md
-
-	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
-	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
-
-	mkdir -p release
-	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
-	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
-	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
