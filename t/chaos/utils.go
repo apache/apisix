@@ -29,9 +29,8 @@ import (
 )
 
 var (
-	token    = "edd1c9f034335f136f87ad84b625c8f1"
-	host     = "http://127.0.0.1:9080"
-	upstream = "http://127.0.0.1:8080"
+	token = "edd1c9f034335f136f87ad84b625c8f1"
+	host  = "http://127.0.0.1:9080"
 )
 
 type httpTestCase struct {
