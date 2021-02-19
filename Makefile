@@ -24,6 +24,12 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
+	OPENSSL_PREFIX=$(addprefix $(OR_PREFIX), openssl111)
+endif
 
 SHELL := /bin/bash -o pipefail
 
@@ -57,18 +63,18 @@ deps: default
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)
-	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
-	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
+	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 else
-	luarocks config --local variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
-	luarocks config --local variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
+	luarocks config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	luarocks config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 endif
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
-	@echo "    OPENSSL_LIBDIR=$(addprefix $(OR_PREFIX), openssl/lib)"
-	@echo "    OPENSSL_INCDIR=$(addprefix $(OR_PREFIX), openssl/include)"
+	@echo "    OPENSSL_LIBDIR=$(addprefix $(OPENSSL_PREFIX), /lib)"
+	@echo "    OPENSSL_INCDIR=$(addprefix $(OPENSSL_PREFIX), /include)"
 	@echo "}"
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
