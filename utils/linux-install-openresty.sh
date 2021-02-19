@@ -93,7 +93,7 @@ sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
 if [ $OPENRESTY_VERSION == "default" ]; then
     sudo apt-get install openresty-openssl111-debug-dev
 else
-    verlt $OPENRESTY_VERSION 1.17.8
+    verlt $OPENRESTY_VERSION 1.17.8.1
     if [ $? -eq 0 ]; then
         sudo apt-get install openresty-openssl-debug-dev
     else
