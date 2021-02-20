@@ -16,8 +16,8 @@
 --
 local require       = require
 local core          = require("apisix.core")
-local config_util   = require("apisix.core.config_util")
 local plugin        = require("apisix.plugin")
+local plugin_config = require("apisix.plugin_config")
 local script        = require("apisix.script")
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
@@ -47,7 +47,6 @@ end
 local load_balancer
 local local_conf
 local dns_resolver
-local lru_resolved_domain
 local ver_header    = "APISIX/" .. core.version.VERSION
 
 
@@ -111,6 +110,7 @@ function _M.http_init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin.init_worker()
+    plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
@@ -121,58 +121,10 @@ function _M.http_init_worker()
     require("apisix.upstream").init_worker()
 
     local_conf = core.config.local_conf()
-    local dns_resolver_valid = local_conf and local_conf.apisix and
-                        local_conf.apisix.dns_resolver_valid
-
-    lru_resolved_domain = core.lrucache.new({
-        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
-    })
 
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
-end
-
-
-local function run_plugin(phase, plugins, api_ctx)
-    api_ctx = api_ctx or ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-
-    plugins = plugins or api_ctx.plugins
-    if not plugins or #plugins == 0 then
-        return api_ctx
-    end
-
-    if phase ~= "log"
-        and phase ~= "header_filter"
-        and phase ~= "body_filter"
-    then
-        for i = 1, #plugins, 2 do
-            local phase_func = plugins[i][phase]
-            if phase_func then
-                local code, body = phase_func(plugins[i + 1], api_ctx)
-                if code or body then
-                    if code >= 400 then
-                        core.log.warn(plugins[i].name, " exits with http status code ", code)
-                    end
-
-                    core.response.exit(code, body)
-                end
-            end
-        end
-        return api_ctx
-    end
-
-    for i = 1, #plugins, 2 do
-        local phase_func = plugins[i][phase]
-        if phase_func then
-            phase_func(plugins[i + 1], api_ctx)
-        end
-    end
-
-    return api_ctx
 end
 
 
@@ -325,31 +277,6 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    -- load and run global rule
-    if router.global_rules and router.global_rules.values
-       and #router.global_rules.values > 0 then
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = router.global_rules.values
-        for _, global_rule in config_util.iterate_values(values) do
-            api_ctx.conf_type = "global_rule"
-            api_ctx.conf_version = global_rule.modifiedIndex
-            api_ctx.conf_id = global_rule.value.id
-
-            core.table.clear(plugins)
-            api_ctx.plugins = plugin.filter(global_rule, plugins)
-            run_plugin("rewrite", plugins, api_ctx)
-            run_plugin("access", plugins, api_ctx)
-        end
-
-        core.tablepool.release("plugins", plugins)
-        api_ctx.plugins = nil
-        api_ctx.conf_type = nil
-        api_ctx.conf_version = nil
-        api_ctx.conf_id = nil
-
-        api_ctx.global_rules = router.global_rules
-    end
-
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
         if str_byte(uri, #uri) == str_byte("/") then
@@ -362,13 +289,17 @@ function _M.http_access_phase()
     if router.api.has_route_not_under_apisix() or
         core.string.has_prefix(uri, "/apisix/")
     then
-        local matched = router.api.match(api_ctx)
+        local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
+        local matched = router.api.match(api_ctx, skip)
         if matched then
             return
         end
     end
 
     router.router_http.match(api_ctx)
+
+    -- run global rule
+    plugin.run_global_rules(api_ctx, router.global_rules, "access")
 
     local route = api_ctx.matched_route
     if not route then
@@ -381,6 +312,18 @@ function _M.http_access_phase()
                   core.json.delay_encode(api_ctx.matched_route, true))
 
     local enable_websocket = route.value.enable_websocket
+
+    if route.value.plugin_config_id then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
+            core.log.error("failed to fetch plugin config by ",
+                            "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
+
+        route = plugin_config.merge(route, conf)
+    end
+
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
@@ -420,16 +363,8 @@ function _M.http_access_phase()
             end
 
             if upstream.has_domain then
-                -- try to fetch the resolved domain, if we got `nil`,
-                -- it means we need to create the cache by handle.
-                -- the `api_ctx.conf_version` is different after we called
-                -- `parse_domain_in_up`, need to recreate the cache by new
-                -- `api_ctx.conf_version`
                 local err
-                upstream, err = lru_resolved_domain(upstream,
-                                                    upstream.modifiedIndex,
-                                                    parse_domain_in_up,
-                                                    upstream)
+                upstream, err = parse_domain_in_up(upstream)
                 if err then
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
@@ -454,8 +389,7 @@ function _M.http_access_phase()
     else
         if route.has_domain then
             local err
-            route, err = lru_resolved_domain(route, api_ctx.conf_version,
-                                             parse_domain_in_route, route)
+            route, err = parse_domain_in_route(route)
             if err then
                 core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
@@ -492,7 +426,7 @@ function _M.http_access_phase()
         local plugins = plugin.filter(route)
         api_ctx.plugins = plugins
 
-        run_plugin("rewrite", plugins, api_ctx)
+        plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
             route, changed = plugin.merge_consumer_route(
@@ -509,7 +443,7 @@ function _M.http_access_phase()
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
             end
         end
-        run_plugin("access", plugins, api_ctx)
+        plugin.run_plugin("access", plugins, api_ctx)
     end
 
     if route.value.service_protocol == "grpc" then
@@ -557,33 +491,12 @@ local function common_phase(phase_name)
         return
     end
 
-    if api_ctx.global_rules then
-        local orig_conf_type = api_ctx.conf_type
-        local orig_conf_version = api_ctx.conf_version
-        local orig_conf_id = api_ctx.conf_id
-
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = api_ctx.global_rules.values
-        for _, global_rule in config_util.iterate_values(values) do
-            api_ctx.conf_type = "global_rule"
-            api_ctx.conf_version = global_rule.modifiedIndex
-            api_ctx.conf_id = global_rule.value.id
-
-            core.table.clear(plugins)
-            plugins = plugin.filter(global_rule, plugins)
-            run_plugin(phase_name, plugins, api_ctx)
-        end
-        core.tablepool.release("plugins", plugins)
-
-        api_ctx.conf_type = orig_conf_type
-        api_ctx.conf_version = orig_conf_version
-        api_ctx.conf_id = orig_conf_id
-    end
+    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
 
     if api_ctx.script_obj then
         script.run(phase_name, api_ctx)
     else
-        run_plugin(phase_name, nil, api_ctx)
+        plugin.run_plugin(phase_name, nil, api_ctx)
     end
 
     return api_ctx
@@ -806,12 +719,6 @@ function _M.stream_init_worker()
     load_balancer = require("apisix.balancer").run
 
     local_conf = core.config.local_conf()
-    local dns_resolver_valid = local_conf and local_conf.apisix and
-                        local_conf.apisix.dns_resolver_valid
-
-    lru_resolved_domain = core.lrucache.new({
-        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
-    })
 end
 
 
@@ -847,7 +754,7 @@ function _M.stream_preread_phase()
     api_ctx.conf_version = matched_route.modifiedIndex
     api_ctx.conf_id = matched_route.value.id
 
-    run_plugin("preread", plugins, api_ctx)
+    plugin.run_plugin("preread", plugins, api_ctx)
 
     local code, err = set_upstream(matched_route, api_ctx)
     if code then
@@ -872,7 +779,7 @@ end
 function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
     -- core.ctx.release_vars(api_ctx)
-    run_plugin("log")
+    plugin.run_plugin("log")
 end
 
 

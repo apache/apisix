@@ -15,7 +15,8 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "true"
+    $ENV{"ETCD_ENABLE_AUTH"} = "true";
+    delete $ENV{"FLUSH_ETCD"};
 }
 
 use t::APISIX 'no_plan';

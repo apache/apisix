@@ -130,7 +130,7 @@ local function request(url, yaml_conf)
 end
 
 
-function _M.init(env)
+function _M.init(env, args)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
@@ -251,7 +251,7 @@ function _M.init(env)
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                    "/plugins", "/consumers", "/node_status",
                                    "/ssl", "/global_rules", "/stream_routes",
-                                   "/proto", "/plugin_metadata"}) do
+                                   "/proto", "/plugin_metadata", "/plugin_configs"}) do
 
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
 
@@ -294,6 +294,9 @@ function _M.init(env)
                 break
             end
 
+            if args and args["verbose"] then
+                print(res_put)
+            end
         end
 
         if is_success then

@@ -249,7 +249,7 @@ Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
 

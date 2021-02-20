@@ -69,6 +69,10 @@ if ($enable_local_dns) {
     $dns_addrs_str = "8.8.8.8 114.114.114.114";
     $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
 }
+my $custom_dns_server = $ENV{"CUSTOM_DNS_SERVER"};
+if ($custom_dns_server) {
+    $dns_addrs_tbl_str = "{\"$custom_dns_server\"}";
+}
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
@@ -89,6 +93,7 @@ apisix:
     tcp:
       - 9100
   admin_key: null
+  enable_resolv_search_opt: false
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
@@ -252,6 +257,15 @@ _EOC_
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
+
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+_EOC_
+    }
 
     my $lua_deps_path = <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
@@ -632,6 +646,23 @@ _EOC_
     $block->set_value("user_files", $user_files);
 
     $block;
+});
+
+sub run_or_exit ($) {
+    my ($cmd) = @_;
+    my $output = `$cmd`;
+    if ($?) {
+        warn "$output";
+        exit 1;
+    }
+}
+
+add_cleanup_handler(sub {
+    if ($ENV{FLUSH_ETCD}) {
+        delete $ENV{APISIX_PROFILE};
+        run_or_exit "etcdctl del --prefix /apisix";
+        run_or_exit "./bin/apisix init_etcd";
+    }
 });
 
 1;

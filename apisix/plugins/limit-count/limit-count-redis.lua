@@ -61,6 +61,14 @@ function _M.incoming(self, key)
                 return nil, err
             end
         end
+
+        -- select db
+        if conf.redis_database ~= 0 then
+            local ok, err = red:select(conf.redis_database)
+            if not ok then
+                return false, "failed to change redis db, err: " .. err
+            end
+        end
     elseif err then
         -- core.log.info(" err: ", err)
         return nil, err

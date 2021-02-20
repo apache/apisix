@@ -170,3 +170,40 @@ GET /hello
 host: www.sni.com
 --- error_log
 Receive SNI: www.sni.com
+
+
+
+=== TEST 7: use 443 as the default port
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        scheme: https
+        nodes:
+            "127.0.0.1": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream: "https://127.0.0.1:443/hello"
+
+
+
+=== TEST 8: use 80 as the http's default port
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream: "http://127.0.0.1:80/hello"

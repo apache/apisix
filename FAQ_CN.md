@@ -79,7 +79,9 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 1. A组：id <= 1000
 2. B组：id > 1000
 
-可以这么做：
+有两种不同的方法来实现：
+
+1、使用 route 的 `vars` 字段来实现
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -111,6 +113,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
+
+2、通过 traffic-split 插件来实现
+
+详细使用示例请参考 [traffic-split.md](doc/zh-cn/plugins/traffic-split.md) 插件文档。
 
 ## 如何支持 http 自动跳转到 https？
 
@@ -289,3 +295,11 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 ```
 
 事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
+
+## 如何创建高可用的 Apache APISIX 集群？
+
+APISIX 的高可用可分为两个部分：
+
+1、Apache APISIX 的数据平面是无状态的，可以进行随意的弹性伸缩，前面加一层 LB 即可。
+
+2、Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，不需要任何关系型数据库的依赖。

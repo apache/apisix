@@ -544,13 +544,18 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            local value = res.node.value
+            assert(value.create_time ~= nil)
+            value.create_time = nil
+            assert(value.update_time ~= nil)
+            value.update_time = nil
+            assert(res.count ~= nil)
+            res.count = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
 --- request
 GET /t
 --- no_error_log

@@ -57,18 +57,15 @@ env {*name*};
 {% if stream_proxy then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                      .. [=[/usr/share/lua/5.1/?.lua;/usr/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[/usr/lib64/lua/5.1/?.so;]=]
-                      .. [=[/usr/lib/lua/5.1/?.so;]=]
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %}valid={*dns_resolver_valid*}{% end %};
     resolver_timeout {*resolver_timeout*};
 
     # stream configuration snippet starts
@@ -123,12 +120,9 @@ http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                       .. [=[/usr/share/lua/5.1/?.lua;/usr/share/lua/5.1/?/init.lua;]=]
                        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[/usr/lib64/lua/5.1/?.so;]=]
-                      .. [=[/usr/lib/lua/5.1/?.so;]=]
                       .. [=[{*lua_cpath*};";
 
     lua_shared_dict internal_status      10m;
@@ -193,7 +187,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %}valid={*dns_resolver_valid*}{% end %};
     resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;
@@ -368,8 +362,8 @@ http {
     {% end %}
 
     server {
-        {% for _, port in ipairs(node_listen) do %}
-        listen {* port *} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, item in ipairs(node_listen) do %}
+        listen {* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}
@@ -384,8 +378,8 @@ http {
         {% end %}
 
         {% if enable_ipv6 then %}
-        {% for _, port in ipairs(node_listen) do %}
-        listen [::]:{* port *} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, item in ipairs(node_listen) do %}
+        listen [::]:{* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}

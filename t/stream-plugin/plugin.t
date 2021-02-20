@@ -52,3 +52,27 @@ __DATA__
     }
 --- stream_response
 ok
+
+
+
+=== TEST 2: ensure all plugins have unique priority
+--- stream_enable
+--- stream_server_config
+        content_by_lua_block {
+            local lfs = require("lfs")
+            local pri_name = {}
+            for file_name in lfs.dir(ngx.config.prefix() .. "/../../apisix/stream/plugins/") do
+                if string.match(file_name, ".lua$") then
+                    local name = file_name:sub(1, #file_name - 4)
+                    local plugin = require("apisix.stream.plugins." .. name)
+                    if pri_name[plugin.priority] then
+                        ngx.say(name, " has same priority with ", pri_name[plugin.priority])
+                        return
+                    end
+                    pri_name[plugin.priority] = plugin.name
+                end
+            end
+            ngx.say('ok')
+        }
+--- stream_response
+ok

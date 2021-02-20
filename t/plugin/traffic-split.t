@@ -1358,7 +1358,7 @@ qr/additional properties forbidden, found additional_properties/
         content_by_lua_block {
             local plugin = require("apisix.plugins.traffic-split")
             local ok, err = plugin.check_schema({
-                rules = {                    
+                rules = {
                     {
                         additional_properties = "hello",
                         match = {

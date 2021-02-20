@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-. ./apisix/.travis/common.sh
+. ./.travis/common.sh
 
 install_dependencies() {
     export_or_prefix
@@ -27,20 +27,19 @@ install_dependencies() {
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-debug openresty-openssl-debug-devel
+    yum install -y openresty-debug openresty-openssl111-debug-devel
 
     # install luarocks
-    ./apisix/utils/linux-install-luarocks.sh
+    ./utils/linux-install-luarocks.sh
 
     # install etcdctl
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
     tar xf etcd-v3.4.0-linux-amd64.tar.gz
-    cp /etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
+    cp ./etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
     rm -rf etcd-v3.4.0-linux-amd64
 
     # install test::nginx
     yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
-    cp -r /tmp/apisix ./apisix
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # install and start grpc_server_example
@@ -56,20 +55,16 @@ install_dependencies() {
     sleep 3
 
     # install dependencies
-    cd apisix
+    git clone https://github.com/iresty/test-nginx.git test-nginx
     make deps
     make init
-    git clone https://github.com/iresty/test-nginx.git test-nginx
 }
 
 run_case() {
     export_or_prefix
-
-    cd apisix
-
     ./utils/set-dns.sh
     # run test cases
-    prove -Itest-nginx/lib -I./ -r t/
+    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ -r t/
 }
 
 case_opt=$1

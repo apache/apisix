@@ -91,3 +91,53 @@ apisix:
 GET /t
 --- response_body
 admin_key: null
+
+
+
+=== TEST 5: support listen multiple ports with array
+--- yaml_config
+apisix:
+  node_listen:
+    - 1985
+    - 1986
+--- config
+  location /t {
+    content_by_lua_block {
+        local encode_json = require("toolkit.json").encode
+        local config = require("apisix.core").config.local_conf()
+
+        ngx.say("node_listen: ", encode_json(config.apisix.node_listen))
+    }
+}
+--- request
+GET /t
+--- response_body
+node_listen: [1985,1986]
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: support listen multiple ports with array table
+--- yaml_config
+apisix:
+  node_listen:
+    - port: 1985
+      enable_http2: true
+    - port: 1986
+      enable_http2: true
+--- config
+  location /t {
+    content_by_lua_block {
+        local encode_json = require("toolkit.json").encode
+        local config = require("apisix.core").config.local_conf()
+
+        ngx.say("node_listen: ", encode_json(config.apisix.node_listen))
+    }
+}
+--- request
+GET /t
+--- response_body
+node_listen: [{"enable_http2":true,"port":1985},{"enable_http2":true,"port":1986}]
+--- no_error_log
+[error]

@@ -89,6 +89,8 @@ apisix:
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
+  global_rule_skip_internal_api: true    # does not run global rule in internal apis
+                                         # api that path starts with "/apisix" is considered to be internal api
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
@@ -106,8 +108,9 @@ apisix:
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
-  dns_resolver_valid: 30          # valid time for dns result 30 seconds
+  # dns_resolver_valid: 30        # if given, override the TTL of the valid records. The unit is second.
   resolver_timeout: 5             # resolver timeout
+  enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
     enable_http2: true
