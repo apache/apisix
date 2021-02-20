@@ -89,7 +89,6 @@ verlt() {
     [ "$1" = "$2" ] && return 1 || verlte $1 $2
 }
 
-echo "OR: $openresty"
 sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
 
 if [ "$OPENRESTY_VERSION" == "default" ]; then
