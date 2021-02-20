@@ -195,7 +195,7 @@ function _M.rewrite(conf, ctx)
 
       elseif conf.method == "PUT" then
         ngx.req.set_method(ngx.HTTP_PUT)
-       
+
       elseif conf.method == "PATCH" then
         ngx.req.set_method(ngx.HTTP_PATCH)
 
