@@ -48,9 +48,10 @@ setup_upstream() {
     sudo apt-get install -y openresty
     
     cd t/chaos/upstream-setup
+    mkdir -p logs
     openresty -p `pwd` -c ./conf/nginx.conf
     ret=$(curl http://127.0.0.1:8080)
-    if [ "$ret" = "hello, world" ]; then
+    if [ ! "$ret" = "hello, world" ]; then
         echo "failed to setup upstream"
         exit 1
     fi
