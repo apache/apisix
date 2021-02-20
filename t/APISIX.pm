@@ -93,6 +93,7 @@ apisix:
     tcp:
       - 9100
   admin_key: null
+  enable_resolv_search_opt: false
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
