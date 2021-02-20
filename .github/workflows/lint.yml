@@ -36,6 +36,18 @@ jobs:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
       - run: markdownlint '**/*.md'
+  spelling:
+    name: Spell checker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Install
+        run: |
+          wget -O - -q https://git.io/misspell | sh -s -- -b .
+      - name: Misspell
+        run: |
+          find *.md apisix doc bin t -not -path "README_ES.md" -not -path "t/toolkit/*.lua" -type f | xargs ./misspell -error
   yamllint:
     name: 🍺 YAML
     runs-on: ubuntu-latest
