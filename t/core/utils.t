@@ -271,6 +271,10 @@ ip_info: {"address":"127.0.0.1","class":1,"name":"test.com","ttl":315360000,"typ
 
 
 === TEST 8: search host with '.org' suffix
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: true
 --- config
     location /t {
         content_by_lua_block {
@@ -289,3 +293,27 @@ GET /t
 .+"name":"apisix\.apache\.org".+
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: disable search option
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("apisix")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- error_log
+error: failed to query the DNS server
