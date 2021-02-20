@@ -15,7 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-set -euo pipefail
+# set -euo pipefail
+set -uo pipefail
 
 wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 sudo apt-get -y update --fix-missing
