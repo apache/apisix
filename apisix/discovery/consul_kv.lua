@@ -104,14 +104,11 @@ local _M = {
 }
 
 
--- 注册的时候已经绑定了source和event为提高效率，这里不做判断
 local function discovery_consul_callback(data, event, source, pid)
     applications = data
-    --if source == events_list._source and event == events_list.updating then
-    --    applications = data
-    --end
     log.notice("update local variable application, event is: ", event,
-            "source: ", source, "server pid:", pid, ", application: ", core.json.encode(applications, true))
+        "source: ", source, "server pid:", pid,
+        ", application: ", core.json.encode(applications, true))
 end
 
 
@@ -121,7 +118,6 @@ end
 
 
 function _M.nodes(service_name)
-    -- 没有加载到数据或未查到配置信息，则返回默认配置
     if not applications then
         log.error("application is nil, failed to fetch nodes for : ", service_name)
         return
@@ -141,7 +137,6 @@ function _M.nodes(service_name)
 end
 
 
--- 返回参数列表 第一个返回参数 成功或失败
 local function parse_instance(node, server_name_prefix)
     local cj = cjson
     local key = node.Key
@@ -149,7 +144,7 @@ local function parse_instance(node, server_name_prefix)
 
     if key == cj.null or not key or #key == 0 then
         log.error("consul_key_empty, server_name_prefix: ", server_name_prefix,
-                ", node: ", core.json.delay_encode(node, true))
+            ", node: ", core.json.delay_encode(node, true))
         return false
     end
 
@@ -159,13 +154,13 @@ local function parse_instance(node, server_name_prefix)
         host = host0
         port = port0
     end
-    -- 兼容跳过的key
+    -- if exist, skip special kesy
     if sn and skip_keys_map[sn] then
         return false
     end
     if not sn or not host or not port then
         log.error("server name error, server_name_prefix: ", server_name_prefix,
-                ", node: ", core.json.delay_encode(node, true))
+            ", node: ", core.json.delay_encode(node, true))
         return false
     end
     -- base64 value   = "IHsid2VpZ2h0IjogMTIwLCAibWF4X2ZhaWxzIjogMiwgImZhaWxfdGltZW91dCI6IDJ9"
@@ -173,18 +168,18 @@ local function parse_instance(node, server_name_prefix)
     local metadataBase64 = node.Value
     if metadataBase64 == cj.null or not metadataBase64 or #metadataBase64 == 0 then
         log.error("error: consul_value_empty, server_name_prefix: ", server_name_prefix,
-                ", node: ", core.json.delay_encode(node, true))
+            ", node: ", core.json.delay_encode(node, true))
         return false
     end
 
     local metadata, err = core.json.decode(ngx_decode_base64(metadataBase64))
     if err then
         log.error("invalid upstream value, server_name_prefix: ", server_name_prefix,
-                ",err: ", err, ", node: ", core.json.delay_encode(node, true))
+            ",err: ", err, ", node: ", core.json.delay_encode(node, true))
         return false
     elseif metadata.check_status == false or metadata.check_status == "false" then
         log.error("server node unhealthy, server_name_prefix: ", server_name_prefix,
-                ", node: ", core.json.delay_encode(node, true))
+            ", node: ", core.json.delay_encode(node, true))
         return false
     end
 
@@ -192,8 +187,6 @@ local function parse_instance(node, server_name_prefix)
 end
 
 
--- 更新consul中的upstream到application，只更新不存在check_status不存在的或是check_status为true的。
--- 循环解析consul中的数据时出现错误，仅记录错误信息并发报警，不中断程序。
 local function update_application(server_name_prefix, data)
     local sn
     local up_apps = core.table.new(0, #data)
@@ -222,7 +215,6 @@ local function update_application(server_name_prefix, data)
         applications[k] = nil
     end
     core.table.clear(old_apps)
-    old_apps = nil
 
     for k, v in pairs(up_apps) do
         applications[k] = v
@@ -248,16 +240,22 @@ function _M.connect(premature, consul_server)
 
     log.info("consul_server: ", core.json.delay_encode(consul_server, true))
     local result, err = consul_client:get(consul_server.consul_key)
-    local error_info = (err ~= nil and err) or ((result ~= nil and result.status ~= 200) and result.status)
+    local error_info = (err ~= nil and err)
+            or ((result ~= nil and result.status ~= 200)
+            and result.status)
     if error_info then
-        log.error("connect consul: ", consul_server.server_name_key, " by key: ", consul_server.consul_key, ", got result: ", core.json.delay_encode(result, true), ", with error: ", error_info)
+        log.error("connect consul: ", consul_server.server_name_key,
+            " by key: ", consul_server.consul_key,
+            ", got result: ", core.json.delay_encode(result, true),
+            ", with error: ", error_info)
 
         goto ERR
     end
 
     log.info("connect consul: ", consul_server.server_name_key,
-            ", result status: ", result.status, ", result.headers.index: ", result.headers['X-Consul-Index'],
-            ", result body: ", core.json.delay_encode(result.body))
+        ", result status: ", result.status,
+        ", result.headers.index: ", result.headers['X-Consul-Index'],
+        ", result body: ", core.json.delay_encode(result.body))
 
     -- if current index different last index then update application
     if consul_server.index ~= result.headers['X-Consul-Index'] then
@@ -270,14 +268,15 @@ function _M.connect(premature, consul_server)
         -- decode body, decode json, update application, error handling
         if result.body and #result.body ~= 0 then
             log.notice("server_name: ", consul_server.server_name_key,
-                    ", header: ", core.json.encode(result.headers, true),
-                    ", body: ", core.json.encode(result.body, true))
+                ", header: ", core.json.encode(result.headers, true),
+                ", body: ", core.json.encode(result.body, true))
 
             update_application(consul_server.server_name_key, result.body)
             --update events
             local ok, err = events.post(events_list._source, events_list.updating, applications)
             if not ok then
-                log.error("post_event failure with ", events_list._source, ", update application error: ", err)
+                log.error("post_event failure with ", events_list._source,
+                    ", update application error: ", err)
             end
         end
     end
@@ -410,4 +409,3 @@ end
 
 
 return _M
-

@@ -35,25 +35,25 @@ Add following configuration in `conf/config.yaml` :
 discovery:
   consul_kv:
     servers:
-      - "http://127.0.0.1:8500" 
+      - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
     prefix: "upstreams"
-    skip_keys: # for some cases, we need to skip special keys; if not need, ignore it 
+    skip_keys:                    # if you need to skip special keys
       - "upstreams/unused_api/"
     timeout:
-      connect: 1000 # default 2000
-      read: 1000         # default 2000
-      wait: 60              # default 2000
-    weight: 1             # default 1
-    delay: 5                # default 3
-    connect_type: "long" # default use the long pull way to query consul servers
-    default_server: # you can define default server when missing hit
+      connect: 1000               # default 2000
+      read: 1000                  # default 2000
+      wait: 60                    # default 2000
+    weight: 1                     # default 1
+    delay: 5                      # default 3
+    connect_type: "long"          # default use the long pull way to query consul servers
+    default_server:               # you can define default server when missing hit
       host: "127.0.0.1"
       port: 20999
       metadata:
-        fail_timeout: 1 # default 1
-        weight: 1           # default 1
-        max_fails: 1       # default 1
+        fail_timeout: 1           # default 1
+        weight: 1                 # default 1
+        max_fails: 1              # default 1
 ```
 
 And you can config it in short by default value:
