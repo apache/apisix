@@ -1,0 +1,61 @@
+name: fuzzing
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test_apisix:
+    name: run fuzzing
+    runs-on: ubuntu-latest
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: run apisix
+      run: |
+        wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+        sudo apt-get update
+        sudo apt-get install -y git openresty curl openresty-openssl-dev unzip make gcc
+        ./utils/linux-install-luarocks.sh
+
+        make deps
+        make init
+        make run
+
+    - name: run upstream
+      run: |
+        sudo openresty -c $PWD/t/fuzzing/upstream/nginx.conf
+
+    - name: install boofuzz
+      run: |
+        pip install typing boofuzz
+
+    - name: run test
+      run: |
+        python $PWD/t/fuzzing/route_test.py
+
+    - name: echo test log
+      # more than 150k lines, so only display the last log, actually, this step is not needed.
+      run: |
+        tail -n 100 $PWD/t/fuzzing/test.log

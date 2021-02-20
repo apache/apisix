@@ -147,3 +147,41 @@ routes:
 --- more_headers
 apikey: user-key
 --- error_code: 502
+
+
+
+=== TEST 5: use 443 as the grpcs' default port
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        scheme: grpcs
+        nodes:
+            "127.0.0.1": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream: "grpcs://127.0.0.1:443"
+
+
+
+=== TEST 6: use 80 as the grpc's default port
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        scheme: grpc
+        nodes:
+            "127.0.0.1": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream: "grpc://127.0.0.1:80"

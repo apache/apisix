@@ -78,7 +78,9 @@ An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `i
 1. Group A：id <= 1000
 2. Group B：id > 1000
 
-here is the way:
+There are two different ways to do this：
+
+1. Use the `vars` field of route to do it.
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -110,6 +112,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
+
+2. Use `traffic-split` plugin to do it.
+
+Please refer to the [traffic-split.md](doc/plugins/traffic-split.md) plugin documentation for usage examples.
 
 ## How to redirect http to https via APISIX?
 
@@ -341,3 +347,11 @@ Note this option is not shown in the output of `etcd --help`.
 ```
 
 Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.
+
+## How to set up high available Apache APISIX clusters?
+
+The high availability of APISIX can be divided into two parts:
+
+1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
+
+2. The control plane of Apache APISIX relies on the highly available implementation of `etcd cluster` and does not require any relational database dependency.
