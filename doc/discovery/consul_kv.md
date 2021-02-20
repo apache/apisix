@@ -20,9 +20,9 @@
 
 ## Summary
 
-For users who used [nginx-upsync-module](https://github.com/weibocom/nginx-upsync-module) and consul key value for service discovery way, as we, maybe need it.
+For users who used [nginx-upsync-module](https://github.com/weibocom/nginx-upsync-module) and consul key value for service discovery way, as we Weibo Mobile Team, maybe need it.
 
-This module is called `consul_kv`,  and its worker process data flow is below:
+Thanks to @fatman-x guy, who developed this module, called `consul_kv`, and its worker process data flow is below:
 ![](https://user-images.githubusercontent.com/548385/107141841-6ced3e00-6966-11eb-8aa4-bc790a4ad113.png)
 
 ## Configuration for discovery client
@@ -135,6 +135,8 @@ The format response as below:
   "action": "set"
 }
 ```
+
+More usage you can find in `apisix/t/discovery/consul_kv.t` file.
 
 ## Debugging API
 
