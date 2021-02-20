@@ -27,7 +27,7 @@ install_dependencies() {
 
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-debug openresty-openssl-debug-devel
+    yum install -y openresty-debug openresty-openssl111-debug-devel
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
