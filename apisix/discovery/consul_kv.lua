@@ -14,14 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require            = require
 local local_conf         = require("apisix.core.config_local").local_conf()
 local core               = require("apisix.core")
 local resty_consul       = require('resty.consul')
 local cjson              = require('cjson')
+local http               = require('resty.http')
 local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
 local unpack             = unpack
+local string_gmatch      = string.gmatch
+local tonumber           = tonumber
+local pairs              = pairs
+local ipairs             = ipairs
 local ngx_timer_at       = ngx.timer.at
 local log                = core.log
 local ngx_decode_base64  = ngx.decode_base64
@@ -149,7 +155,7 @@ local function parse_instance(node, server_name_prefix)
     end
 
     local host, port, sn
-    for sn0, host0, port0 in string.gmatch(key, pr) do
+    for sn0, host0, port0 in string_gmatch(key, pr) do
         sn  = sn0
         host = host0
         port = port0
@@ -312,7 +318,6 @@ local function format_consul_params(consul_conf)
         }
     end
 
-    local http = require('resty.http')
     for _, v in pairs(consul_conf.servers) do
         local scheme, host, port, path = unpack(http.parse_uri(nil, v))
         if scheme ~= "http" then
@@ -378,7 +383,7 @@ function _M.init_worker()
     log.info("default params, default_weight: ", default_weight,
             ", default_prefix_rule: ", default_prefix_rule)
     if consul_conf.skip_keys then
-        skip_keys_map = table.new(0, #consul_conf.skip_keys)
+        skip_keys_map = core.table.new(0, #consul_conf.skip_keys)
         for _, v in ipairs(consul_conf.skip_keys) do
             skip_keys_map[v] = true
         end

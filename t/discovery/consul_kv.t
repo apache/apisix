@@ -97,8 +97,6 @@ run_tests();
 
 __DATA__
 
-
-
 === TEST 1: clean consul kv register nodes
 --- config
 location /consul1 {
