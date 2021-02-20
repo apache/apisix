@@ -125,11 +125,11 @@ plugin_attr:
     | 名称          |    描述             |
     | -------------| --------------------|
     | code         | upstream 服务返回的 HTTP 状态码。 |
-    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为`""`。 |
-    | matched_uri  | 请求匹配的 route 的 `uri`，未匹配，则默认为`""`。 |
-    | matched_host | 请求匹配的 route 的 `hsot`，未匹配，则默认为`""`。 |
+    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
+    | matched_uri  | 请求匹配的 route 的 `uri`，未匹配，则默认为空字符串。 |
+    | matched_host | 请求匹配的 route 的 `hsot`，未匹配，则默认为空字符串。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为`""`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。|
 
 * `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。具有的维度：
@@ -137,9 +137,9 @@ plugin_attr:
     | 名称          |    描述        |
     | -------------| ------------- |
     | type         | 带宽的类型。 |
-    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为`""`。 |
+    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为`""`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
 
 * `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
@@ -151,7 +151,7 @@ plugin_attr:
     | -------------| ------------- |
     | type         | 请求的类型。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为`""`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
 
 * `Overhead`: 每个服务在 APISIX 中的请求开销（以毫秒为单位）。具有的维度：
@@ -159,8 +159,8 @@ plugin_attr:
     | 名称          |    描述        |
     | -------------| ------------- |
     | type         | 请求的类型。 |
-    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host` |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为`""`。 |
+    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
 
 * `Info`: 当前 APISIX 节点信息。

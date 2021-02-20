@@ -129,11 +129,11 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name         | Description         |
     | -------------| --------------------|
     | code         | The HTTP status code returned by the upstream service. |
-    | route        | The `route_id` of the matched route is requested. If it does not match, the default is `""`. |
-    | matched_uri  | The `uri` of the route matching the request, if it does not match, the default is `""`. |
-    | matched_host | The `hsot` of the route that matches the request. If it does not match, the default is `""`. |
+    | route        | The `route_id` of the matched route is requested. If it does not match, the default value is an empty string. |
+    | matched_uri  | The `uri` of the route matching the request, if it does not match, the default value is an empty string. |
+    | matched_host | The `hsot` of the route that matches the request. If it does not match, the default value is an empty string. |
     | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
-    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
 * `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
@@ -143,9 +143,9 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | Name         | Description |
     | -------------| ------------- |
     | type         | The type of bandwidth(egress/ingress). |
-    | route        | The `route_id` of the matched route is requested. If it does not match, the default is `""`. |
+    | route        | The `route_id` of the matched route is requested. If it does not match, the default value is an empty string.. |
     | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
-    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
@@ -159,7 +159,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | ----------| ------------- |
     | type      | The type of request. |
     | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
-    | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node      | The `ip` of the upstream node. |
 
 * `Overhead`: HTTP request overhead (in milliseconds) added per service in APISIX.
@@ -169,7 +169,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | ---------| ------------- |
     | type     | The type of request. |
     | service  | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
-    | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default is `""`. |
+    | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node     | The `ip` of the upstream node. |
 
 * `Info`: the information of APISIX node.
