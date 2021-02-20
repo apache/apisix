@@ -46,7 +46,7 @@ setup_upstream() {
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
     sudo apt-get update
     sudo apt-get install -y openresty
-    
+
     cd t/chaos/upstream-setup
     mkdir -p logs
     openresty -p `pwd` -c ./conf/nginx.conf
