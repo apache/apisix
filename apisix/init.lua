@@ -385,14 +385,14 @@ function _M.http_access_phase()
     local enable_websocket = route.value.enable_websocket
 
     if route.value.plugin_config_id then
-        local pc = plugin_config.get(route.value.plugin_config_id)
-        if not pc then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
             core.log.error("failed to fetch plugin config by ",
                             "id: ", route.value.plugin_config_id)
             return core.response.exit(503)
         end
 
-        route = plugin_config.merge(route, pc)
+        route = plugin_config.merge(route, conf)
     end
 
     if route.value.service_id then

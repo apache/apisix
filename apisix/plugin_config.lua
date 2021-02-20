@@ -45,22 +45,24 @@ end
 
 
 function _M.merge(route_conf, plugin_config)
-    if route_conf.prev_plugin_config_ver ~= plugin_config.modifiedIndex then
-        if not route_conf.value.plugins then
-            route_conf.value.plugins = {}
-        elseif not route_conf.orig_plugins then
-            route_conf.orig_plugins = route_conf.value.plugins
-            route_conf.value.plugins = core.table.clone(route_conf.value.plugins)
-        end
-
-        for name, value in pairs(plugin_config.value.plugins) do
-            route_conf.value.plugins[name] = value
-        end
-
-        route_conf.update_count = route_conf.update_count + 1
-        route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. route_conf.update_count
-        route_conf.prev_plugin_config_ver = plugin_config.modifiedIndex
+    if route_conf.prev_plugin_config_ver == plugin_config.modifiedIndex then
+        return route_conf
     end
+
+    if not route_conf.value.plugins then
+        route_conf.value.plugins = {}
+    elseif not route_conf.orig_plugins then
+        route_conf.orig_plugins = route_conf.value.plugins
+        route_conf.value.plugins = core.table.clone(route_conf.value.plugins)
+    end
+
+    for name, value in pairs(plugin_config.value.plugins) do
+        route_conf.value.plugins[name] = value
+    end
+
+    route_conf.update_count = route_conf.update_count + 1
+    route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. route_conf.update_count
+    route_conf.prev_plugin_config_ver = plugin_config.modifiedIndex
 
     return route_conf
 end
