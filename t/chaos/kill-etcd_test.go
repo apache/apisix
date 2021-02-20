@@ -19,7 +19,9 @@ package chaos
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -55,9 +57,11 @@ func createEtcdKillChaos(g *WithT, cli client.Client) {
 
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
-	e := httpexpect.New(t, host)
-	cliSet := initClientSet(g)
-
+	e := httpexpect.WithConfig(httpexpect.Config{
+		BaseURL: host,
+		// failures would be fatal
+		Reporter: httpexpect.NewRequireReporter(t),
+	})
 	eSilent := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
 		Reporter: httpexpect.NewAssertReporter(t),
@@ -65,6 +69,13 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 			newSilentPrinter(t),
 		},
 	})
+	cliSet := initClientSet(g)
+
+	ret, err := exec.Command("bash", "-c", "curl 127.0.0.1:8080").CombinedOutput()
+	if err != nil {
+		panic("fail to execute commands")
+	}
+	fmt.Printf(string(ret))
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)

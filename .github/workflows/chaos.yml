@@ -49,7 +49,10 @@ jobs:
       - name: Setup Upstream
         run: |
           bash ./t/chaos/setup_chaos_utils.sh setup_upstream
+          bash ./t/chaos/setup_chaos_utils.sh test_upstream
 
       - name: run test
         working-directory: ./t/chaos
-        run: go test -v
+        run: |
+          bash ./t/chaos/setup_chaos_utils.sh test_upstream
+          go test -v
