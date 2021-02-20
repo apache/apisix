@@ -241,7 +241,7 @@ passed
                 ngx.HTTP_PATCH,
                 [[{
                     "limit-count": {
-                        "count": 3,
+                        "count": 2,
                         "time_window": 60,
                         "rejected_code": 503,
                         "key": "remote_addr"
@@ -252,7 +252,7 @@ passed
                         "value": {
                             "plugins": {
                                 "limit-count": {
-                                    "count": 3,
+                                    "count": 2,
                                     "time_window": 60,
                                     "rejected_code": 503,
                                     "key": "remote_addr"

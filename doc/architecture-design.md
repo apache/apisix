@@ -617,7 +617,7 @@ curl https://{apisix_listen_address}/apisix/admin/global_rules
 
 ## Plugin Config
 
-To reuse common plugin configurations, you can exact them into a plugin config and
+To reuse common plugin configurations, you can extract them into a plugin config and
 bind it with a route directly.
 
 For instance, you can do something like:

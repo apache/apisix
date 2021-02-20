@@ -75,7 +75,7 @@ function _M.put(id, conf)
 
     local res, err = core.etcd.set(key, conf)
     if not res then
-        core.log.error("failed to put global rule[", key, "]: ", err)
+        core.log.error("failed to put plugin config[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -90,7 +90,7 @@ function _M.get(id)
     end
     local res, err = core.etcd.get(key, not id)
     if not res then
-        core.log.error("failed to get global rule[", key, "]: ", err)
+        core.log.error("failed to get plugin config[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -102,7 +102,7 @@ function _M.delete(id)
     local key = "/plugin_configs/" .. id
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete global rule[", key, "]: ", err)
+        core.log.error("failed to delete plugin config[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -112,7 +112,7 @@ end
 
 function _M.patch(id, conf, sub_path)
     if not id then
-        return 400, {error_msg = "missing global rule id"}
+        return 400, {error_msg = "missing plugin config id"}
     end
 
     if not conf then
