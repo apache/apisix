@@ -28,7 +28,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /echo");
     }
 
-    if (!$block->no_error_log) {
+    if (!$block->no_error_log && !$block->error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 });
@@ -91,6 +91,7 @@ new span context: trace id: 80f198ee56343ba864fe8b2a57d3eff7, span id: e457b5a2e
 b3: 80f198ee56343ba864fe8b2a57d3eff7
 --- response_headers
 x-b3-sampled:
+--- error_code: 400
 --- error_log
 invalid b3 header
 

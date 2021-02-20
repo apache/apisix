@@ -127,8 +127,8 @@ function _M.rewrite(plugin_conf, ctx)
         err, trace_id, request_span_id, sampled, parent_span_id = parse_b3(b3)
 
         if err then
-            core.log.warn("invalid b3 header: ", b3, ", ignored: ", err)
-            return
+            core.log.error("invalid b3 header: ", b3, ", ignored: ", err)
+            return 400
         end
 
         if sampled == "d" then
