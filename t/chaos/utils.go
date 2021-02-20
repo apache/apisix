@@ -148,7 +148,7 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 }
 
 func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
-	key := "apisix_bandwidth{type=\"ingress\","
+	key := "apisix_bandwidth{type=\"ingress\",route=\"1\",service=\"\",consumer=\"\",node=\"127.0.0.1\"}"
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
