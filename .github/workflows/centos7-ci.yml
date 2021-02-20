@@ -32,7 +32,7 @@ jobs:
     - name: Build rpm package
       run: |
         sudo gem install --no-document fpm
-        # WOULD CHANGE TO MASTER WHEN PR GOT MERGED
+        # WOULD CHANGE TO MASTER WHEN PR GETS MERGED
         git clone https://github.com/idbeta/build-tools.git
         cd build-tools
         git checkout new-method-to-package
