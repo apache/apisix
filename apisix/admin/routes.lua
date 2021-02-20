@@ -108,6 +108,23 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    local plugin_config_id = conf.plugin_config_id
+    if plugin_config_id then
+        local key = "/plugin_configs/" .. plugin_config_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
     if conf.plugins then
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
