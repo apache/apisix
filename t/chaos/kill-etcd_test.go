@@ -58,13 +58,15 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	e := httpexpect.New(t, host)
 	cliSet := initClientSet(g)
 
-	eSilent := httpexpect.WithConfig(httpexpect.Config{
-		BaseURL:  host,
-		Reporter: httpexpect.NewAssertReporter(t),
-		Printers: []httpexpect.Printer{
-			newSilentPrinter(t),
-		},
-	})
+	/*
+		eSilent := httpexpect.WithConfig(httpexpect.Config{
+			BaseURL:  host,
+			Reporter: httpexpect.NewAssertReporter(t),
+			Printers: []httpexpect.Printer{
+				newSilentPrinter(t),
+			},
+		})
+	*/
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)
@@ -77,7 +79,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	// run in background
 	go func() {
 		for {
-			go getRoute(eSilent, http.StatusOK)
+			go getRoute(e, http.StatusOK)
 			time.Sleep(500 * time.Millisecond)
 		}
 	}()
