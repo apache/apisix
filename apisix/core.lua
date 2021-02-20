@@ -46,7 +46,6 @@ return {
     id          = require("apisix.core.id"),
     utils       = utils,
     etcd        = require("apisix.core.etcd"),
-    http        = require("apisix.core.http"),
     tablepool   = require("tablepool"),
     empty_tab   = {},
 }

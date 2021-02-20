@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
+local plugin_config = require("apisix.plugin_config")
 local script        = require("apisix.script")
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
@@ -109,6 +110,7 @@ function _M.http_init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin.init_worker()
+    plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
@@ -310,6 +312,18 @@ function _M.http_access_phase()
                   core.json.delay_encode(api_ctx.matched_route, true))
 
     local enable_websocket = route.value.enable_websocket
+
+    if route.value.plugin_config_id then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
+            core.log.error("failed to fetch plugin config by ",
+                            "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
+
+        route = plugin_config.merge(route, conf)
+    end
+
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
