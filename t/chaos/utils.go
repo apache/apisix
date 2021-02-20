@@ -84,7 +84,7 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Path:    "/apisix/admin/routes/1",
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
-			 "uri": "/hello",
+			 "uri": "/team",
 			 "host": "apisix.apache.org",
 			 "plugins": {
 				 "prometheus": {}
@@ -104,7 +104,7 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
-		Path:         "/hello",
+		Path:         "/team",
 		Headers:      map[string]string{"Host": "apisix.apache.org"},
 		ExpectStatus: expectStatus,
 	})

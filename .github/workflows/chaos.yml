@@ -3,7 +3,7 @@ name: Chaos Test
 on: [pull_request]
 
 jobs:
-  build:
+  chaos-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
