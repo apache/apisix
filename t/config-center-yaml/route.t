@@ -281,3 +281,25 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: script with plugin_config_id
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    script: "local ngx = ngx"
+    plugin_config_id: "1"
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+failed to check item data of [routes]

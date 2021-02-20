@@ -110,6 +110,7 @@ apisix:
   #  - 8.8.8.8
   # dns_resolver_valid: 30        # if given, override the TTL of the valid records. The unit is second.
   resolver_timeout: 5             # resolver timeout
+  enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
     enable_http2: true
