@@ -48,12 +48,12 @@ qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
         content_by_lua_block {
             local parse_addr = require("apisix.core.utils").parse_addr
             local cases = {
-                {addr = "127.0.0.1", host = "127.0.0.1", port = 80},
+                {addr = "127.0.0.1", host = "127.0.0.1"},
                 {addr = "127.0.0.1:90", host = "127.0.0.1", port = 90},
-                {addr = "www.test.com", host = "www.test.com", port = 80},
+                {addr = "www.test.com", host = "www.test.com"},
                 {addr = "www.test.com:90", host = "www.test.com", port = 90},
-                {addr = "[127.0.0.1:90", host = "[127.0.0.1:90", port = 80},
-                {addr = "[::1]", host = "[::1]", port = 80},
+                {addr = "[127.0.0.1:90", host = "[127.0.0.1:90"},
+                {addr = "[::1]", host = "[::1]"},
                 {addr = "[::1]:1234", host = "[::1]", port = 1234},
                 {addr = "[::1234:1234]:12345", host = "[::1234:1234]", port = 12345},
             }
