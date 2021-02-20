@@ -258,6 +258,15 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+_EOC_
+    }
+
     my $lua_deps_path = <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
     lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
