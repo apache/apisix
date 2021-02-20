@@ -91,7 +91,7 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 			 },
 			 "upstream": {
 				 "nodes": {
-					 "apisix.apache.org:80": 1
+					 "apisix.apache.org": 1
 				 },
 				 "type": "roundrobin"
 			 }
@@ -149,7 +149,7 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 	return targetSlice[1]
 }
 
-func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
+func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
 	key := "apisix_bandwidth{type=\"ingress\","
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
@@ -164,7 +164,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	g.Expect(err).To(BeNil())
 	duration := time.Now().Sub(timeStart)
 
-	return (bandWidthEnd - bandWidthStart) / duration.Seconds()
+	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }
 
 func roughCompare(a float64, b float64) bool {
