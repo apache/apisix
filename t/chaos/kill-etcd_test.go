@@ -68,9 +68,6 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)
-
-	// to avoid route haven't been set yet
-	time.Sleep(1 * time.Second)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
@@ -78,13 +75,14 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	go func() {
 		for {
 			go getRoute(eSilent, http.StatusOK)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}()
 
 	// wait 5 second to let first route access returns
 	time.Sleep(5 * time.Second)
-	bpsBefore := getIngressBandwidthPerSecond(e, g)
+	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
+	bpsBefore := bandwidthBefore / durationBefore
 	g.Expect(bpsBefore).NotTo(BeZero())
 
 	listOption := client.MatchingLabels{"app": "apisix-gw"}
@@ -112,8 +110,11 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
-	bpsAfter := getIngressBandwidthPerSecond(e, g)
+	bandwidthAfter, durationAfter := getIngressBandwidthPerSecond(e, g)
+	bpsAfter := bandwidthAfter / durationAfter
 	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
+		t.Logf("bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)
+		t.Logf("duration before: %f, after: %f", durationBefore, durationAfter)
 		t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
 		g.Expect(roughCompare(bpsBefore, bpsAfter)).To(BeTrue())
 	})
