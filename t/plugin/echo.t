@@ -28,7 +28,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.echo")
-            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach" ,
+            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach",
             after_body = "body to attach"})
             if not ok then
                 ngx.say(err)
@@ -51,7 +51,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.echo")
-            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach" ,
+            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach",
             after_body = 10})
             if not ok then
                 ngx.say(err)
@@ -519,7 +519,7 @@ GET /t
             local plugin = require("apisix.plugins.echo")
             local ok, err = plugin.check_schema({
                 before_body = "body before",
-                body = "body to attach" ,
+                body = "body to attach",
                 after_body = "body to attach",
                 invalid_att = "invalid",
             })
