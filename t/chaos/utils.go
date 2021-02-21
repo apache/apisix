@@ -85,13 +85,12 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
 			 "uri": "/get",
-			 "host": "httpbin.org",
 			 "plugins": {
 				 "prometheus": {}
 			 },
 			 "upstream": {
 				 "nodes": {
-					 "httpbin.org:80": 1
+					 "http://httpbin.default.svc.cluster.local:8000": 1
 				 },
 				 "type": "roundrobin"
 			 }
@@ -105,7 +104,7 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/get",
-		Headers:      map[string]string{"Host": "httpbin.org"},
+		Headers:      map[string]string{"Host": "http://httpbin.default.svc.cluster.local"},
 		ExpectStatus: expectStatus,
 	})
 }
