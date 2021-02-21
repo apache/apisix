@@ -70,7 +70,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	setRoute(e, http.StatusCreated)
 
 	// to avoid route haven't been set yet
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
@@ -78,12 +78,12 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	go func() {
 		for {
 			go getRoute(eSilent, http.StatusOK)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}()
 
 	// wait 5 second to let first route access returns
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
 	bpsBefore := bandwidthBefore / durationBefore
 	g.Expect(bpsBefore).NotTo(BeZero())
