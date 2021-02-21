@@ -47,6 +47,7 @@ jobs:
       - name: Deploy Chaos mesh
         run: |
           curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
+          ps -ef | grep port-forward
 
       - name: run test
         working-directory: ./t/chaos
