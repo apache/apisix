@@ -67,7 +67,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	})
 	cliSet := initClientSet(g)
 
-	ret, err := exec.Command("bash", "-c", "curl 127.0.0.1:8080").CombinedOutput()
+	ret, err := exec.Command("bash", "-c", "curl -i -X GET \"http://127.0.0.1:9080/hello\"").CombinedOutput()
 	if err != nil {
 		panic("fail to execute commands")
 	}
