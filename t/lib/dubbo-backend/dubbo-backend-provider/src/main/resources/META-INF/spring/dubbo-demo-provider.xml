@@ -29,7 +29,7 @@
 
     <!-- use dubbo protocol to export service on port 20880 -->
     <dubbo:protocol name="dubbo" port="20880" threads="1024"/>
-    
+
     <!-- service implementation, as same as regular local bean -->
     <bean id="demoService" class="org.apache.dubbo.backend.provider.DemoServiceImpl"/>
 

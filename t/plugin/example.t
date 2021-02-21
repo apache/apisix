@@ -150,11 +150,13 @@ done
             end
 
             local encode_json = require("toolkit.json").encode
+            local conf = {}
+            local ctx = {}
             for _, plugin in ipairs(plugins) do
                 ngx.say("plugin name: ", plugin.name,
                         " priority: ", plugin.priority)
 
-                plugin.rewrite()
+                plugin.rewrite(conf, ctx)
             end
         }
     }

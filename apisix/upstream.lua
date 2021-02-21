@@ -135,6 +135,25 @@ local function set_upstream_scheme(ctx, upstream)
 end
 
 
+local fill_node_info
+do
+    local scheme_to_node = {
+        http = 80,
+        https = 443,
+        grpc = 80,
+        grpcs = 443,
+    }
+
+    function fill_node_info(nodes, scheme)
+        for _, n in ipairs(nodes) do
+            if not n.port then
+                n.port = scheme_to_node[scheme]
+            end
+        end
+    end
+end
+
+
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         core.log.warn("upstream node has been specified, ",
@@ -192,12 +211,15 @@ function _M.set_by_route(route, api_ctx)
         return
     end
 
+    set_upstream_scheme(api_ctx, up_conf)
+
+    fill_node_info(up_conf.nodes, api_ctx.upstream_scheme)
+
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)
         api_ctx.up_checker = checker
     end
 
-    set_upstream_scheme(api_ctx, up_conf)
     return
 end
 
