@@ -50,6 +50,7 @@ jobs:
         run: |
           bash ./t/chaos/setup_chaos_utils.sh setup_upstream
           bash ./t/chaos/setup_chaos_utils.sh test_upstream
+          nohup kubectl port-forward svc/apisix-gw-lb 8080:8080 >/dev/null 2>&1 &
 
       - name: run test
         working-directory: ./t/chaos
