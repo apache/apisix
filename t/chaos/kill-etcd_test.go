@@ -57,11 +57,7 @@ func createEtcdKillChaos(g *WithT, cli client.Client) {
 
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	g := NewWithT(t)
-	e := httpexpect.WithConfig(httpexpect.Config{
-		BaseURL: host,
-		// failures would be fatal
-		Reporter: httpexpect.NewRequireReporter(t),
-	})
+	e := httpexpect.New(t, host)
 	eSilent := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  host,
 		Reporter: httpexpect.NewAssertReporter(t),
