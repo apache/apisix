@@ -181,3 +181,28 @@ GET /apisix/plugin/blah
 --- error_code: 401
 --- response_body
 {"message":"Missing JWT token in request"}
+
+
+
+=== TEST 6: ensure all plugins have unique priority
+--- config
+    location /t {
+        content_by_lua_block {
+            local lfs = require("lfs")
+            local pri_name = {}
+            for file_name in lfs.dir(ngx.config.prefix() .. "/../../apisix/plugins/") do
+                if string.match(file_name, ".lua$") then
+                    local name = file_name:sub(1, #file_name - 4)
+                    local plugin = require("apisix.plugins." .. name)
+                    if pri_name[plugin.priority] then
+                        ngx.say(name, " has same priority with ", pri_name[plugin.priority])
+                        return
+                    end
+                    pri_name[plugin.priority] = plugin.name
+                end
+            end
+            ngx.say('ok')
+        }
+    }
+--- response_body
+ok

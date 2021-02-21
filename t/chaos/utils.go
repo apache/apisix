@@ -149,6 +149,7 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 
 func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	key := "apisix_bandwidth{type=\"ingress\",route=\"1\",service=\"\",consumer=\"\",node=\"127.0.0.1\"}"
+
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
@@ -156,13 +157,13 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) float64 {
 	// so need to calculate the duration
 	timeStart := time.Now()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
 	duration := time.Now().Sub(timeStart)
 
-	return (bandWidthEnd - bandWidthStart) / duration.Seconds()
+	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }
 
 func roughCompare(a float64, b float64) bool {
