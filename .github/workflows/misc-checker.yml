@@ -14,7 +14,7 @@ jobs:
           wget -O - -q https://git.io/misspell | sh -s -- -b .
       - name: Misspell
         run: |
-          find *.md apisix doc bin t -not -path "t/toolkit/*.lua" -type f | xargs ./misspell -error
+          find *.md apisix doc bin t -not -path "README_ES.md" -not -path "t/toolkit/*.lua" -type f | xargs ./misspell -error
       - name: Merge conflict
         run: |
           grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
