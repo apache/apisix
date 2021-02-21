@@ -54,5 +54,5 @@ jobs:
       - name: run test
         working-directory: ./t/chaos
         run: |
-          bash ./t/chaos/setup_chaos_utils.sh test_upstream
+          bash ./setup_chaos_utils.sh test_upstream
           go test -v

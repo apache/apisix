@@ -58,6 +58,8 @@ test_upstream() {
     if [ ! "$ret" = "hello, world" ]; then
         echo "failed to setup upstream"
         exit 1
+    else
+        echo "upstream works as expect"
     fi
 }
 
