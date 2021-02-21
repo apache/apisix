@@ -512,7 +512,34 @@ additional properties forbidden, found invalid_att
 
 
 
-=== TEST 17: set route with http status code as expr
+=== TEST 17: add validate vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                vars = {
+                    {"status","==",200}
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: set route with http status code as expr
 --- config
     location /t {
         content_by_lua_block {
@@ -554,7 +581,7 @@ passed
 
 
 
-=== TEST 18: check http code that matchs http_status 
+=== TEST 19: check http code that matchs http_status 
 --- request
 GET /server_error
 --- response_body
@@ -566,7 +593,7 @@ new body3
 
 
 
-=== TEST 19: check http code that not matchs http_status
+=== TEST 20: check http code that not matchs http_status
 --- request
 GET /hello
 --- response_body

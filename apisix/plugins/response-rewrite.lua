@@ -115,7 +115,7 @@ function _M.check_schema(conf)
     if conf.vars then
         local ok, err = expr.new(conf.vars)
         if not ok then
-            return nil, "failed to validate the 'vars' expression: " .. err
+            return false, "failed to validate the 'vars' expression: " .. err
         end
     end
 
@@ -126,9 +126,7 @@ end
 do
 
 function _M.body_filter(conf, ctx)
-
-    local ok =  vars_matched(conf, ctx)
-    if not ok then
+    if not ctx.reponse_rewrite_matched then
         return
     end
 
@@ -145,9 +143,8 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-
-    local ok =  vars_matched(conf, ctx)
-    if not ok then
+    ctx.reponse_rewrite_matched =  vars_matched(conf, ctx)
+    if not ctx.reponse_rewrite_matched then
         return
     end
 
