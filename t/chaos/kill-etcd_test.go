@@ -68,6 +68,9 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// check if everything works
 	setRoute(e, http.StatusCreated)
+
+	// to avoid route haven't been set yet
+	time.Sleep(1 * time.Second)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
