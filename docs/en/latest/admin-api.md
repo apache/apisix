@@ -549,7 +549,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details|
-|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details|
+|tls.client_key  |optional| Set the client private key when connecting to TLS upstream, see below for more details|
 
 `type` can be one of:
 

@@ -87,4 +87,3 @@ build = {
         INST_CONFDIR="$(CONFDIR)",
     },
 }
-

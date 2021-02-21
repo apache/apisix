@@ -51,9 +51,42 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Contribution Guidelines for Documentation
 
+* pre-commit
+
+    A framework for managing and maintaining multi-language pre-commit hooks.
+    Pre-commit can be [installed](https://pre-commit.com/#installation) with `pip`, `curl`, `brew` or `conda`.
+    You need to first install pre-commit and then install the pre-commit hooks with `pre-commit install`.
+    Now pre-commit will run automatically on git commit!
+
+    It's usually a good idea to run the hooks against all the files when adding new hooks (usually pre-commit will only run on the changed files during git hooks).
+    Use `pre-commit run --all-files` to check all files.
+
+    To run a single hook use `pre-commit run --all-files <hook_id>`
+
+    To update use `pre-commit autoupdate`
+
+    * [Quick start](https://pre-commit.com/#quick-start)
+    * [Usage](https://pre-commit.com/#usage)
+    * [pre-commit-autoupdate](https://pre-commit.com/#pre-commit-autoupdate)
+
+* Spell Checking
+
+    We are running [misspell](https://github.com/client9/misspell) which is mainly written in
+    [Golang](https://golang.org/) to check spelling with [GitHub Actions](.github/workflows/lint.yml). Correct
+    commonly misspelled English words quickly with `misspell`. `misspell` is different from most other spell checkers
+    because it doesn't use a custom dictionary. You can run `misspell` locally against all files with:
+
+    Notable `misspell` help options or flags are:
+
+    - `-i` string: ignore the following corrections, comma separated
+    - `-w`: Overwrite file with corrections (default is just to display)
+
+    We also run [codespell](https://github.com/codespell-project/codespell) with `pre-commit` to check spelling and
+    [codespell](https://pypi.org/project/codespell/) runs against a [small custom dictionary](codespell.txt).
+
 * Linting/Style
 
-    For linting both our Markdown and YAML files we use:
+    We use `pre-commit` to lint our Markdown and YAML files, and we use:
 
     - npm based [markdownlint-cli](https://www.npmjs.com/package/markdownlint-cli)
     - [yamllint](https://yamllint.readthedocs.io/en/stable/) which can be installed in multiple ways

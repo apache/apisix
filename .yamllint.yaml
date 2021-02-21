@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,4 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-find lua -type d | sort | awk '{print "$(INSTALL) -d $(INST_LUADIR)/apisix/" $0 "\n" "$(INSTALL) " $0 "/*.lua $(INST_LUADIR)/apisix/" $0 "/\n" }'
+---
+
+extends: default
+
+rules:
+  colons: disable
+  comments-indentation: disable
+  document-start: disable
+  indentation: disable
+  line-length: disable
+  truthy: disable

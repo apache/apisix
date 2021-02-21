@@ -216,4 +216,3 @@ The following components are provided under the Apache License. See project link
 The text of each license is the standard Apache 2.0 license.
 
    ewma.lua file from kubernetes/ingress-nginx: https://github.com/kubernetes/ingress-nginx Apache 2.0
-

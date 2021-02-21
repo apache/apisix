@@ -79,7 +79,7 @@ $ cd apisix-docker/example
 $ docker-compose -p docker-apisix up -d
 ```
 
-It will take some time to download all needed files, and this depends on your network, please be patient. Once this step gets done, we could `curl` our Admin API to tell if the Apache APISIX launchs successfully.
+It will take some time to download all needed files, and this depends on your network, please be patient. Once this step gets done, we could `curl` our Admin API to tell if the Apache APISIX launches successfully.
 
 ```bash
 # NOTE: Please curl on the machine which you run above Docker commands.

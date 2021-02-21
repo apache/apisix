@@ -1,0 +1,193 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+default_stages: [commit, push]
+default_language_version:
+  # force all unspecified Python hooks to run python3
+  python: python3
+minimum_pre_commit_version: "1.20.0"
+repos:
+  - repo: meta
+    hooks:
+      - id: identity
+      - id: check-hooks-apply
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.10
+    hooks:
+      # - id: insert-license
+      #  name: Add license for all Golang files
+      #  exclude: ^\.github/.*$
+      #  files: \.go
+      #  args:
+      #    - --comment-style
+      #    - "/*|| */"
+      #    - --license-filepath
+      #    - license-templates/LICENSE.txt
+      #    - --fuzzy-match-generates-todo
+      # - id: insert-license
+      #  name: Add license for all Java files
+      #  exclude: ^\.github/.*$
+      #  files: \.java$
+      #  args:
+      #    - --comment-style
+      #    - "/*|| */"
+      #    - --license-filepath
+      #    - license-templates/LICENSE.txt
+      #    - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Lua files
+        exclude: ^\.github/.*$
+        files: \.lua$|\.luacov$
+        args:
+          - --comment-style
+          - "|--|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      # - id: insert-license
+      #  name: Add license for all Markdown files
+      #  files: \.md$
+      #  exclude: ^\.github/.*$
+      #  args:
+      #    - --comment-style
+      #    - "<!--|| -->"
+      #    - --license-filepath
+      #    - license-templates/LICENSE.txt
+      #    - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Other files
+        exclude: ^\.github/.*$
+        files: >
+          \.conf$|^Makefile$|\.properties$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Perl files
+        exclude: ^\.github/.*$
+        files: \.t$|\.pm$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Python files
+        exclude: ^\.github/.*$
+        types: [python]
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all Shell files
+        exclude: ^\.github/.*$
+        files: \.sh$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      # - id: insert-license
+      #  name: Add license for all XML files
+      #  exclude: ^\.github/.*$
+      #  files: \.xml$
+      #  args:
+      #    - --comment-style
+      #    - "<!--||-->"
+      #    - --license-filepath
+      #    - license-templates/LICENSE.txt
+      #    - --fuzzy-match-generates-todo
+      - id: insert-license
+        name: Add license for all YAML files
+        exclude: ^\.github/.*$
+        types: [yaml]
+        files: \.(yaml|yml)$
+        args:
+          - --comment-style
+          - "|#|"
+          - --license-filepath
+          - license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-xml
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: ^license-templates/LICENSE\.txt$
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+        exclude: ^t/node/remote-addr-ipv6\.t$
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.0.0
+    hooks:
+      - id: codespell
+        name: Run codespell
+        description: Check Spelling with codespell
+        entry: codespell --ignore-words=codespell.txt
+        exclude: ^docs/ar|^docs/es|^docs/zh|^.git|^.*\.crt$|^.*\.sum$
+  - repo: https://github.com/Calinou/pre-commit-luacheck
+    rev: v1.0.0
+    hooks:
+      - id: luacheck
+        name: Run luacheck
+        description: Checks Lua files with luacheck
+        exclude: ^apisix|^t/lib|^example/apisix/plugins/3rd-party\.lua$|^benchmark/fake-apisix/lua/apisix\.lua$
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.27.1
+    hooks:
+      - id: markdownlint
+        name: Run markdownlint
+        description: Checks the style of Markdown files
+        entry: markdownlint -c .markdownlint.yaml
+        types: [markdown]
+        files: \.(md|mdown|markdown)$
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.26.1
+    hooks:
+      - id: yamllint
+        name: Run yamllint
+        description: Check YAML files with yamllint
+        entry: yamllint --strict -c .yamllint.yaml
+        types: [yaml]
+        files: \.(yaml|yml)$
+  - repo: local
+    hooks:
+      - id: check-for-trailing-whitespace
+        name: Trailing whitespace
+        description: Check for trailing whitespace
+        language: system
+        entry: ./utils/pre-commit/check-for-trailing-whitespace.sh
+      - id: sort-codespell-wordlist
+        name: Sort codespell.txt
+        description: Sort alphabetically and uniquify codespell.txt
+        entry: ./utils/pre-commit/sort-codespell-wordlist.sh
+        language: system
+        files: ^\.pre-commit-config\.yaml$|^codespell\.txt$
+        require_serial: true

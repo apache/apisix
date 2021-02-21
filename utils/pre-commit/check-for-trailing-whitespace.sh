@@ -16,4 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-find lua -type d | sort | awk '{print "$(INSTALL) -d $(INST_LUADIR)/apisix/" $0 "\n" "$(INSTALL) " $0 "/*.lua $(INST_LUADIR)/apisix/" $0 "/\n" }'
+
+var=$(git grep -EIn $'[ \t]+$' | grep -v 'received: ')
+# then exit with fail if found
+if test -z "$var"; then
+	exit 0
+else
+	exit 1
+fi

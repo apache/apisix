@@ -1,21 +1,21 @@
-name: ❄️ Lint
+name: Lint
 
 on: [pull_request]
 
 jobs:
-  markdownlint:
-    name: 🍇 Markdown
+  misspell:
+    name: misspell
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: 🚀 Use Node.js
-        uses: actions/setup-node@v2.1.5
-        with:
-          node-version: '12.x'
-      - run: npm install -g markdownlint-cli@0.25.0
-      - run: markdownlint '**/*.md'
-  yamllint:
-    name: 🍺 YAML
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Install
+        run: wget -O - -q https://git.io/misspell | sh -s -- -b .
+      - name: misspell
+        run: |
+          git ls-files | grep -v "codespell.txt" | grep -v "docs/es" | grep -v "t/toolkit" | xargs ./misspell -error
+  pre-commit:
+    name: pre-commit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -26,15 +26,19 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yamllint
-      - name: 🧹 YAML Lint
-        run: |
-          # return non-zero exit code on warnings
-          yamllint --strict .
+          pip install pre-commit
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run pre-commit
+        run: SKIP=luacheck pre-commit run --all-files
   trailing-whitespace:
-    name: 🌌 Trailing whitespace
+    name: trailing whitespace
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: 🧹 Check for trailing whitespace
+      - name: Check for trailing whitespace
         run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"

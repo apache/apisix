@@ -16,4 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-find lua -type d | sort | awk '{print "$(INSTALL) -d $(INST_LUADIR)/apisix/" $0 "\n" "$(INSTALL) " $0 "/*.lua $(INST_LUADIR)/apisix/" $0 "/\n" }'
+
+CODESPELL_WORDLIST="codespell.txt"
+temp_file=$(mktemp)
+sort <"${CODESPELL_WORDLIST}" | uniq >"${temp_file}"
+cat "${temp_file}" >"${CODESPELL_WORDLIST}"
+rm "${temp_file}"
