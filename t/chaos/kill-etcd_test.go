@@ -78,7 +78,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	go func() {
 		for {
 			go getRoute(eSilent, http.StatusOK)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
