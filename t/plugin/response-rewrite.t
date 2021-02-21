@@ -581,7 +581,7 @@ passed
 
 
 
-=== TEST 19: check http code that matchs http_status 
+=== TEST 19: check http code that matchs http_status
 --- request
 GET /server_error
 --- response_body
