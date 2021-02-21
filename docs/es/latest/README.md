@@ -273,27 +273,27 @@ Al usar el servidor de 8 núcleos de AWS, los QPS de APISIX alcanzan 140,000 con
 
 #### Las ventajas de Apache APISIX
 
-| **Prestaciones**                                                     | **Apache APISIX**                                        | **Kong**               |
-| :------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
-| Le pertenece a                                                       | Apache Software Foundation                               | Kong Inc.              |
-| Arquitectura de la tecnología                                        | Nginx + etcd                                             | Nginx + postgres       |
-| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
-| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                    | 1700                   |
-| Latencia                                                             | 0.2 ms                                                   | 2 ms                   |
-| Dubbo                                                                | Sí                                                       | No                     |
-| Retroceso-deshacer de configuration                                  | Sí                                                       | No                     |
-| Ruta con TTL                                                         | Sí                                                       | No                     |
-| Plug-in carga en caliente                                            | Sí                                                       | No                     |
-| LB y ruta personalizados                                             | Sí                                                       | No                     |
-| REST API <--> transcodificación gRPC                                 | Sí                                                       | No                     |
-| Tengine                                                              | Sí                                                       | No                     |
-| MQTT                                                                 | Sí                                                       | No                     |
-| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                       | Recabando datos, 5 seg |
-| Tablero                                                              | Sí                                                       | No                     |
-| IdP                                                                  | Sí                                                       | No                     |
-| Centro de configuración HA                                           | Sí                                                       | No                     |
-| Límite de velocidad para una ventana específica de tiempo            | Sí                                                       | No                     |
-| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                       | No                     |
+| **Prestaciones**                                                     | **Apache APISIX**                                               | **Kong**               |
+| :------------------------------------------------------------------- | :-------------------------------------------------------------- | :--------------------- |
+| Le pertenece a                                                       | Apache Software Foundation                                      | Kong Inc.              |
+| Arquitectura de la tecnología                                        | Nginx + etcd                                                    | Nginx + postgres       |
+| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, [GitHub](https://github.com/apache/apisix/issues), [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg), meetup | GitHub, freenode, foro |
+| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                           | 1700                   |
+| Latencia                                                             | 0.2 ms                                                          | 2 ms                   |
+| Dubbo                                                                | Sí                                                              | No                     |
+| Retroceso-deshacer de configuration                                  | Sí                                                              | No                     |
+| Ruta con TTL                                                         | Sí                                                              | No                     |
+| Plug-in carga en caliente                                            | Sí                                                              | No                     |
+| LB y ruta personalizados                                             | Sí                                                              | No                     |
+| REST API <--> transcodificación gRPC                                 | Sí                                                              | No                     |
+| Tengine                                                              | Sí                                                              | No                     |
+| MQTT                                                                 | Sí                                                              | No                     |
+| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                              | Recabando datos, 5 seg |
+| Tablero                                                              | Sí                                                              | No                     |
+| IdP                                                                  | Sí                                                              | No                     |
+| Centro de configuración HA                                           | Sí                                                              | No                     |
+| Límite de velocidad para una ventana específica de tiempo            | Sí                                                              | No                     |
+| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                              | No                     |
 
 Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
