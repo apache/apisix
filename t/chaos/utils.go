@@ -104,7 +104,6 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/get",
-		Headers:      map[string]string{"Host": "http://httpbin.default.svc.cluster.local"},
 		ExpectStatus: expectStatus,
 	})
 }
