@@ -67,14 +67,13 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	})
 	cliSet := initClientSet(g)
 
+	// check if everything works
+	setRoute(e, http.StatusCreated)
 	ret, err := exec.Command("bash", "-c", "curl -i -X GET \"http://127.0.0.1:9080/hello\"").CombinedOutput()
 	if err != nil {
 		panic("fail to execute commands")
 	}
 	fmt.Printf(string(ret))
-
-	// check if everything works
-	setRoute(e, http.StatusCreated)
 	getRoute(e, http.StatusOK)
 	testPrometheusEtcdMetric(e, 1)
 
