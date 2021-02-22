@@ -34,12 +34,13 @@ local function from_hex(str)
 end
 
 local function new_extractor()
-    return function(headers)
+    return function(ctx)
         local had_invalid_id = false
 
-        local trace_id = headers["x-b3-traceid"]
-        local parent_span_id = headers["x-b3-parentspanid"]
-        local request_span_id = headers["x-b3-spanid"]
+        local zipkin_ctx = ctx.zipkin
+        local trace_id = zipkin_ctx.trace_id
+        local parent_span_id = zipkin_ctx.parent_span_id
+        local request_span_id = zipkin_ctx.request_span_id
 
         -- Validate trace id
         if trace_id and
@@ -68,12 +69,17 @@ local function new_extractor()
 
         -- Process jaegar baggage header
         local baggage = {}
+        local headers = core.request.headers(ctx)
         for k, v in pairs(headers) do
             local baggage_key = k:match("^uberctx%-(.*)$")
             if baggage_key then
                 baggage[baggage_key] = ngx.unescape_uri(v)
             end
         end
+
+        core.log.info("new span context: trace id: ", trace_id,
+                      ", span id: ", request_span_id,
+                      ", parent span id: ", parent_span_id)
 
         trace_id = from_hex(trace_id)
         parent_span_id = from_hex(parent_span_id)
