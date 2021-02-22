@@ -127,7 +127,7 @@ plugin_attr:
     | code         | upstream 服务返回的 HTTP 状态码。 |
     | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
     | matched_uri  | 请求匹配的 route 的 `uri`，未匹配，则默认为空字符串。 |
-    | matched_host | 请求匹配的 route 的 `hsot`，未匹配，则默认为空字符串。 |
+    | matched_host | 请求匹配的 route 的 `host`，未匹配，则默认为空字符串。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。|

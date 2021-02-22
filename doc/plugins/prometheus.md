@@ -131,7 +131,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | code         | The HTTP status code returned by the upstream service. |
     | route        | The `route_id` of the matched route is requested. If it does not match, the default value is an empty string. |
     | matched_uri  | The `uri` of the route matching the request, if it does not match, the default value is an empty string. |
-    | matched_host | The `hsot` of the route that matches the request. If it does not match, the default value is an empty string. |
+    | matched_host | The `host` of the route that matches the request. If it does not match, the default value is an empty string. |
     | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
     | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
