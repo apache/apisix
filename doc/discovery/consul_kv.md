@@ -66,6 +66,7 @@ discovery:
 ```
 
 The `connect_type` has two optional values:
+
 - `long`, default and recommend value, use the long pull way to query consul servers
 - `short`, not recommend, if you use it, and then you can set the `fetch_interval` for fetch interval
 
