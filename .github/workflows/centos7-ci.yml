@@ -95,7 +95,7 @@ jobs:
       run: |
         rm -rf $(ls -1 --ignore=build-tools --ignore=t --ignore=utils)
         docker exec centos7Instance bash -c "pwd"
-        docker exec centos7Instance bash -c "rpm -iv --prefix=/apisix ./build-tools/outputs/*.rpm"
+        docker exec centos7Instance bash -c "rpm -iv --prefix=/apisix ./build-tools/outputs/apisix-2.3-0.x86_64.rpm"
 
     - name: run test cases
       run: |
