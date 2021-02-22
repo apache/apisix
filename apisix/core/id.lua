@@ -46,7 +46,7 @@ end
 
 
 local function write_file(path, data)
-    local file = open(path ,"w+")
+    local file = open(path, "w+")
     if not file then
         return nil, "failed to open file[" .. path .. "] for writing"
     end
