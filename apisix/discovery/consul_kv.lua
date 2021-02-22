@@ -24,13 +24,16 @@ local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
 local unpack             = unpack
-local string_gmatch      = string.gmatch
+local ngx_re_match      = ngx.re.match
 local tonumber           = tonumber
 local pairs              = pairs
 local ipairs             = ipairs
 local ngx_timer_at       = ngx.timer.at
+local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local ngx_decode_base64  = ngx.decode_base64
+local json_delay_encode  = core.json.delay_encode
+local cjson_null          = cjson.null
 
 local applications = core.table.new(0, 5)
 local default_service
@@ -52,25 +55,25 @@ local schema = {
                 type = "string",
             }
         },
-        delay = {type = "integer", minimum = 1, default = 3},
+        fetch_interval = {type = "integer", minimum = 1, default = 3},
         connect_type = {
             type = "string",
             enum = {"long", "short"},
             default = "long"
         },
         prefix = {type = "string", default = "upstreams"},
-        weight = {type = "integer", minimum = 0, default = 1},
+        weight = {type = "integer", minimum = 1, default = 1},
         timeout = {
             type = "object",
             properties = {
                 connect = {type = "integer", minimum = 1, default = 2000},
-                send = {type = "integer", minimum = 1, default = 2000},
-                read = {type = "integer", minimum = 1, default = 2000}
+                read = {type = "integer", minimum = 1, default = 2000},
+                wait = {type = "integer", minimum = 1, default = 60}
             },
             default = {
                 connect = 2000,
-                send = 2000,
-                read = 2000
+                read = 2000,
+                wait = 60,
             }
         },
         skip_keys = {
@@ -80,7 +83,7 @@ local schema = {
                 type = "string",
             }
         },
-        default_server = {
+        default_service = {
             type = "object",
             properties = {
                 host = {type = "string"},
@@ -91,12 +94,12 @@ local schema = {
                         fail_timeout = {type = "integer", default = 1},
                         weigth = {type = "integer", default = 1},
                         max_fails = {type = "integer", default = 1}
+                    },
+                    default = {
+                        fail_timeout = 1,
+                        weigth = 1,
+                        max_fails = 1
                     }
-                },
-                default = {
-                    connect = 1,
-                    send = 1,
-                    read = 1
                 }
             }
         }
@@ -137,55 +140,52 @@ function _M.nodes(service_name)
     end
 
     log.info("process id: ", ngx.worker.id(), ", applications[", service_name, "] = ",
-        core.json.delay_encode(resp_list, true))
+        json_delay_encode(resp_list, true))
 
     return resp_list
 end
 
 
 local function parse_instance(node, server_name_prefix)
-    local cj = cjson
     local key = node.Key
-    local pr = default_prefix_rule
 
-    if key == cj.null or not key or #key == 0 then
+    if key == cjson_null or not key or #key == 0 then
         log.error("consul_key_empty, server_name_prefix: ", server_name_prefix,
-            ", node: ", core.json.delay_encode(node, true))
+            ", node: ", json_delay_encode(node, true))
         return false
     end
 
-    local host, port, sn
-    for sn0, host0, port0 in string_gmatch(key, pr) do
-        sn  = sn0
-        host = host0
-        port = port0
+    local result = ngx_re_match(key, default_prefix_rule)
+    if not result then
+        log.error("server name parse error, server_name_prefix: ", server_name_prefix,
+            ", node: ", json_delay_encode(node, true))
+        return false
     end
+
+    local sn, host, port = result[1], result[2], result[3]
+
     -- if exist, skip special kesy
     if sn and skip_keys_map[sn] then
         return false
     end
-    if not sn or not host or not port then
-        log.error("server name error, server_name_prefix: ", server_name_prefix,
-            ", node: ", core.json.delay_encode(node, true))
-        return false
-    end
+
     -- base64 value   = "IHsid2VpZ2h0IjogMTIwLCAibWF4X2ZhaWxzIjogMiwgImZhaWxfdGltZW91dCI6IDJ9"
     -- ori    value   = "{"weight": 120, "max_fails": 2, "fail_timeout": 2}"
     local metadataBase64 = node.Value
-    if metadataBase64 == cj.null or not metadataBase64 or #metadataBase64 == 0 then
+    if metadataBase64 == cjson_null or not metadataBase64 or #metadataBase64 == 0 then
         log.error("error: consul_value_empty, server_name_prefix: ", server_name_prefix,
-            ", node: ", core.json.delay_encode(node, true))
+            ", node: ", json_delay_encode(node, true))
         return false
     end
 
     local metadata, err = core.json.decode(ngx_decode_base64(metadataBase64))
     if err then
         log.error("invalid upstream value, server_name_prefix: ", server_name_prefix,
-            ",err: ", err, ", node: ", core.json.delay_encode(node, true))
+            ",err: ", err, ", node: ", json_delay_encode(node, true))
         return false
     elseif metadata.check_status == false or metadata.check_status == "false" then
         log.error("server node unhealthy, server_name_prefix: ", server_name_prefix,
-            ", node: ", core.json.delay_encode(node, true))
+            ", node: ", json_delay_encode(node, true))
         return false
     end
 
@@ -244,7 +244,7 @@ function _M.connect(premature, consul_server)
         default_args = consul_server.default_args,
     })
 
-    log.info("consul_server: ", core.json.delay_encode(consul_server, true))
+    log.info("consul_server: ", json_delay_encode(consul_server, true))
     local result, err = consul_client:get(consul_server.consul_key)
     local error_info = (err ~= nil and err)
             or ((result ~= nil and result.status ~= 200)
@@ -252,7 +252,7 @@ function _M.connect(premature, consul_server)
     if error_info then
         log.error("connect consul: ", consul_server.server_name_key,
             " by key: ", consul_server.consul_key,
-            ", got result: ", core.json.delay_encode(result, true),
+            ", got result: ", json_delay_encode(result, true),
             ", with error: ", error_info)
 
         goto ERR
@@ -261,7 +261,7 @@ function _M.connect(premature, consul_server)
     log.info("connect consul: ", consul_server.server_name_key,
         ", result status: ", result.status,
         ", result.headers.index: ", result.headers['X-Consul-Index'],
-        ", result body: ", core.json.delay_encode(result.body))
+        ", result body: ", json_delay_encode(result.body))
 
     -- if current index different last index then update application
     if consul_server.index ~= result.headers['X-Consul-Index'] then
@@ -288,10 +288,13 @@ function _M.connect(premature, consul_server)
     end
 
     :: ERR ::
-    local ok, err = ngx_timer_at(consul_server.delay, _M.connect, consul_server)
-    if not ok then
-        log.error("create ngx_timer_at got error: ", err)
-        return
+    local conn_type = consul_server.connect_type
+    if conn_type == "long" then
+        local ok, err = ngx_timer_at(0, _M.connect, consul_server)
+        if not ok then
+            log.error("create ngx_timer_at got error: ", err)
+            return
+        end
     end
 end
 
@@ -299,12 +302,6 @@ end
 local function format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #consul_conf.servers)
     local args
-    local delay = 2
-
-    -- set default value or not
-    if consul_conf.delay then
-        delay = consul_conf.delay
-    end
 
     if consul_conf.connect_type == "short" then
         args = {
@@ -313,7 +310,7 @@ local function format_consul_params(consul_conf)
     elseif consul_conf.connect_type == "long" then
         args = {
             recurse = true,
-            wait = consul_conf.timeout.wait, --阻塞 wait!=0, 非阻塞 wait=0
+            wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
             index = 0,
         }
     end
@@ -337,8 +334,7 @@ local function format_consul_params(consul_conf)
             connect_type = consul_conf.connect_type,
             default_args = args,
             index = 0,
-            delay = delay, -- delay to next connect consul
-            default_delay = delay, -- delay to next connect consul
+            fetch_interval = consul_conf.fetch_interval -- fetch interval to next connect consul
         })
     end
 
@@ -366,20 +362,19 @@ function _M.init_worker()
         "discovery_consul_update_application",
         "updating"
     )
-    -- 对进程号不是0的进程，仅注册客户端，更新全局变量application
+
     if 0 ~= ngx.worker.id() then
-        -- 这里绑定source和updating事件
         events.register(discovery_consul_callback, events_list._source, events_list.updating)
         return
     end
 
     log.notice("consul_conf: ", core.json.encode(consul_conf))
     -- set default service, used when the server node cannot be found
-    if consul_conf.default_server then
-        default_service = consul_conf.default_server
+    if consul_conf.default_service then
+        default_service = consul_conf.default_service
     end
     default_weight = consul_conf.weight
-    default_prefix_rule = "(" .. consul_conf.prefix .. "/.*/)([a-zA-Z0-9.]+):(%d*)"
+    default_prefix_rule = "(" .. consul_conf.prefix .. "/.*/)([a-zA-Z0-9.]+):([0-9]+)"
     log.info("default params, default_weight: ", default_weight,
             ", default_prefix_rule: ", default_prefix_rule)
     if consul_conf.skip_keys then
@@ -391,7 +386,7 @@ function _M.init_worker()
 
     local consul_servers_list, err = format_consul_params(consul_conf)
     if err then
-        log.error("init consul_kv.lua got error: ", err)
+        error(err)
         return
     end
     log.info("consul_server_list: ", core.json.encode(consul_servers_list))
@@ -401,8 +396,12 @@ function _M.init_worker()
     for _, server in ipairs(consul_servers_list) do
         local ok, err = ngx_timer_at(0, _M.connect, server)
         if not ok then
-            error("create long link consul_kv got error: " .. err)
+            error("create consul_kv got error: " .. err)
             return
+        end
+
+        if server.connect_type == "short" then
+            ngx_timer_every(server.fetch_interval, _M.connect, server)
         end
     end
 end
@@ -414,3 +413,4 @@ end
 
 
 return _M
+

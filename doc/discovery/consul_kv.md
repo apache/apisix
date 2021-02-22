@@ -41,17 +41,17 @@ discovery:
     skip_keys:                    # if you need to skip special keys
       - "upstreams/unused_api/"
     timeout:
-      connect: 1000               # default 2000
-      read: 1000                  # default 2000
-      wait: 60                    # default 2000
+      connect: 1000               # default 2000 ms
+      read: 1000                  # default 2000 ms
+      wait: 60                    # default 60 sec
     weight: 1                     # default 1
-    delay: 5                      # default 3
+    fetch_interval: 5             # default 3 ms, only for connect_type: short  way
     connect_type: "long"          # default use the long pull way to query consul servers
     default_server:               # you can define default server when missing hit
       host: "127.0.0.1"
       port: 20999
       metadata:
-        fail_timeout: 1           # default 1
+        fail_timeout: 1           # default 1 ms
         weight: 1                 # default 1
         max_fails: 1              # default 1
 ```
@@ -64,6 +64,10 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
 ```
+
+The `connect_type` has two optional values:
+- `long`, default and recommend value, use the long pull way to query consul servers
+- `short`, not recommend, if you use it, and then you can set the `fetch_interval` for fetch interval
 
 ### Register Http API Services
 

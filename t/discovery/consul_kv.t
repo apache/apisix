@@ -97,9 +97,9 @@ discovery:
       read: 1000
       wait: 60
     weight: 1
-    delay: 5
+    fetch_interval: 5
     connect_type: "long"
-    default_server:
+    default_service:
       host: "127.0.0.1"
       port: 20999
       metadata:
@@ -265,7 +265,7 @@ discovery:
     prefix: "upstreams"
     skip_keys:
       - "upstreams/webpages/"
-    default_server:
+    default_service:
       host: "127.0.0.1"
       port: 20999
       metadata:
@@ -463,3 +463,74 @@ GET /thc
 --- response_body
 [{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}]
 {"healthy_nodes":[{"host":"127.0.0.1","port":30511,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}
+
+
+
+=== TEST 10: clean nodes
+--- config
+location /v1/kv {
+    proxy_pass http://127.0.0.1:8500;
+}
+--- request eval
+[
+    "DELETE /v1/kv/upstreams/webpages/?recurse=true"
+]
+--- response_body eval
+[
+    'true'
+]
+
+
+
+=== TEST 11: test consul_kv short connect type
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:8500"
+    fetch_interval: 3
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+#END
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      discovery_type: consul_kv
+      type: roundrobin
+#END
+--- config
+location /v1/kv {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "GET /hello",
+    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/missing consul_kv services\n/,
+    qr/true/,
+    qr/ok\n/,
+    qr/server 1\n/
+]
