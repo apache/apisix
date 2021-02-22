@@ -82,7 +82,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		}
 	}()
 
-	// wait 5 second to let first route access returns
+	// wait 3 seconds to let first route access returns
 	time.Sleep(3 * time.Second)
 	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
 	bpsBefore := bandwidthBefore / durationBefore
