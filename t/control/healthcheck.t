@@ -103,8 +103,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '(127.0.0.2:1988)'
 unhealthy TCP increment (2/2) for '(127.0.0.2:1988)'
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}
+[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
+{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
 
 
 
@@ -166,8 +166,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"routes"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"routes"}
+[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"routes"}]
+{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"routes"}
 
 
 
@@ -234,8 +234,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"services"}]
-{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"services"}
+[{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"services"}]
+{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"services"}
 
 
 

@@ -31,10 +31,7 @@ end
 
 function _M.new(up_nodes, upstream)
     local servers_heap = binaryHeap.minUnique(least_score)
-    local safe_limit = 0
     for server, weight in pairs(up_nodes) do
-        safe_limit = safe_limit + 1
-
         local score = 1 / weight
         -- Note: the argument order of insert is different from others
         servers_heap:insert({
@@ -50,8 +47,10 @@ function _M.new(up_nodes, upstream)
             local server, info, err
             if ctx.balancer_tried_servers then
                 local tried_server_list = {}
-                for i = 1, safe_limit do
+                while true do
                     server, info = servers_heap:peek()
+                    -- we need to let the retry > #nodes so this branch can be hit and
+                    -- the request will retry next priority of nodes
                     if server == nil then
                         err = "all upstream servers tried"
                         break
@@ -100,7 +99,13 @@ function _M.new(up_nodes, upstream)
             end
 
             ctx.balancer_tried_servers[server] = true
-        end
+        end,
+        before_retry_next_priority = function (ctx)
+            if ctx.balancer_tried_servers then
+                core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                ctx.balancer_tried_servers = nil
+            end
+        end,
     }
 end
 

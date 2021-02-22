@@ -305,6 +305,11 @@ local nodes_schema = {
                         type = "integer",
                         minimum = 0,
                     },
+                    priority = {
+                        description = "priority of node",
+                        type = "integer",
+                        default = 0,
+                    },
                     metadata = {
                         description = "metadata of node",
                         type = "object",

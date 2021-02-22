@@ -665,6 +665,41 @@ HTTP/1.1 200 OK
 
 ```
 
+节点可以配置自己的优先级。只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
+
+由于默认的优先级是 0，我们可以给一些节点配置负数的优先级来作为备份。
+
+举个例子，
+
+```json
+{
+    "uri": "/hello",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": [
+            {"host": "127.0.0.1", "port": 1980, "weight": 2000},
+            {"host": "127.0.0.2", "port": 1980, "weight": 1, "priority": -1}
+        ],
+        "checks": {
+            "active": {
+                "http_path": "/status",
+                "healthy": {
+                    "interval": 1,
+                    "successes": 1
+                },
+                "unhealthy": {
+                    "interval": 1,
+                    "http_failures": 1
+                }
+            }
+        }
+    }
+}
+```
+
+节点 `127.0.0.2` 只有在 `127.0.0.1` 不可用或者尝试过之后才会被访问。
+所以它是 `127.0.0.1` 的备份。
+
 > 应答参数
 
 目前是直接返回与 etcd 交互后的结果。
