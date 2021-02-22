@@ -98,7 +98,7 @@ discovery:
       wait: 60
     weight: 1
     fetch_interval: 5
-    connect_type: "long"
+    keepalive: true
     default_service:
       host: "127.0.0.1"
       port: 20999
@@ -493,6 +493,7 @@ discovery:
   consul_kv:
     servers:
       - "http://127.0.0.1:8500"
+    keepalive: false
     fetch_interval: 3
     default_service:
       host: "127.0.0.1"

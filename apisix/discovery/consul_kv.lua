@@ -56,10 +56,9 @@ local schema = {
             }
         },
         fetch_interval = {type = "integer", minimum = 1, default = 3},
-        connect_type = {
-            type = "string",
-            enum = {"long", "short"},
-            default = "long"
+        keepalive = {
+            type = "boolean",
+            default = true
         },
         prefix = {type = "string", default = "upstreams"},
         weight = {type = "integer", minimum = 1, default = 1},
@@ -267,7 +266,7 @@ function _M.connect(premature, consul_server)
     if consul_server.index ~= result.headers['X-Consul-Index'] then
         consul_server.index = result.headers['X-Consul-Index']
         -- only long connect type use index
-        if consul_server.connect_type == "long" then
+        if consul_server.keepalive then
             consul_server.default_args.index = result.headers['X-Consul-Index']
         end
 
@@ -288,8 +287,8 @@ function _M.connect(premature, consul_server)
     end
 
     :: ERR ::
-    local conn_type = consul_server.connect_type
-    if conn_type == "long" then
+    local keepalive = consul_server.keepalive
+    if keepalive then
         local ok, err = ngx_timer_at(0, _M.connect, consul_server)
         if not ok then
             log.error("create ngx_timer_at got error: ", err)
@@ -303,11 +302,11 @@ local function format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #consul_conf.servers)
     local args
 
-    if consul_conf.connect_type == "short" then
+    if consul_conf.keepalive == false then
         args = {
             recurse = true,
         }
-    elseif consul_conf.connect_type == "long" then
+    elseif consul_conf.keepalive then
         args = {
             recurse = true,
             wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
@@ -331,7 +330,7 @@ local function format_consul_params(consul_conf)
             consul_key = "/kv/" .. consul_conf.prefix,
             server_name_key = v .. "/v1/kv/",
             weight = consul_conf.weight,
-            connect_type = consul_conf.connect_type,
+            keepalive = consul_conf.keepalive,
             default_args = args,
             index = 0,
             fetch_interval = consul_conf.fetch_interval -- fetch interval to next connect consul
@@ -400,7 +399,7 @@ function _M.init_worker()
             return
         end
 
-        if server.connect_type == "short" then
+        if server.keepalive == false then
             ngx_timer_every(server.fetch_interval, _M.connect, server)
         end
     end
