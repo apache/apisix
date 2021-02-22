@@ -108,6 +108,17 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
+func getRouteList(e *httpexpect.Expect, expectStatus int) {
+	caseCheck(httpTestCase{
+		E:            e,
+		Method:       http.MethodGet,
+		Path:         "/apisix/admin/routes",
+		Headers:      map[string]string{"X-API-KEY": token},
+		ExpectStatus: expectStatus,
+		ExpectBody:   "httpbin.default.svc.cluster.local",
+	})
+}
+
 func deleteRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
