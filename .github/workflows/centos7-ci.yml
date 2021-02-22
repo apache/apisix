@@ -35,7 +35,7 @@ jobs:
         # WOULD CHANGE TO MASTER WHEN PR GETS MERGED
         git clone -b new-packaging-for-apisix https://github.com/idbeta/build-tools.git
         cd build-tools
-        make package type=rpm app=apisix version=2.3 branch=2.3
+        make package type=rpm app=apisix version=2.3 code_tag=2.3
 
     - name: Install Redis Cluster
       run: |
