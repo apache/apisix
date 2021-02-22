@@ -122,7 +122,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ### Available metrics
 
-* `Status`: HTTP status codes returned by upstream services. These are available per service and across all services.
+* `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
 
     Attributes：
 
