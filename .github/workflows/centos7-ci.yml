@@ -33,9 +33,8 @@ jobs:
       run: |
         sudo gem install --no-document fpm
         # WOULD CHANGE TO MASTER WHEN PR GETS MERGED
-        git clone https://github.com/idbeta/build-tools.git
+        git clone -b new-packaging-for-apisix https://github.com/idbeta/build-tools.git
         cd build-tools
-        git checkout new-method-to-package
         make package type=rpm app=apisix version=2.3 branch=2.3
 
     - name: Install Redis Cluster
