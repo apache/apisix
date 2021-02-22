@@ -303,3 +303,19 @@ APISIX 的高可用可分为两个部分：
 1、Apache APISIX 的数据平面是无状态的，可以进行随意的弹性伸缩，前面加一层 LB 即可。
 
 2、Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，不需要任何关系型数据库的依赖。
+
+## 为什么源码安装中执行 `make deps` 命令失败？
+
+当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少`openresty-openssl111-devel` 依赖导致，你需要先执行 `yum install -y  openresty-openssl111-devel` 安装它。
+
+```shell
+$ make deps
+......
+Error: Failed installing dependency: https://luarocks.org/luasec-0.9-1.src.rock - Could not find header file for OPENSSL
+  No file openssl/ssl.h in /usr/local/include
+You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSSL_INCDIR to the luarocks command.
+Example: luarocks install luasec OPENSSL_DIR=/usr/local
+make: *** [deps] Error 1
+```
+
+注意：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 `openresty-openssl-devel`，而不是 `openresty-openssl111-devel`。
