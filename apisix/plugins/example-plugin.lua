@@ -17,7 +17,6 @@
 local ngx = ngx
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
-local upstream = require("apisix.upstream")
 
 local schema = {
     type = "object",
@@ -82,27 +81,6 @@ end
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
-
-    if not conf.ip then
-        return
-    end
-
-    local up_conf = {
-        type = "roundrobin",
-        nodes = {
-            {host = conf.ip, port = conf.port, weight = 1}
-        }
-    }
-
-    local ok, err = upstream.check_schema(up_conf)
-    if not ok then
-        return 500, err
-    end
-
-    local matched_route = ctx.matched_route
-    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                 ctx.conf_version, up_conf)
-    return
 end
 
 
