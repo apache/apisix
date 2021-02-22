@@ -55,7 +55,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 
->注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 域中，如果存在只有 `weight` 的结构，表示 `route` 或 `service` 上的 upstream 流量权重值。例如：
+注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 域中，如果存在只有 `weight` 的结构，表示 `route` 或 `service` 上的 upstream 流量权重值。例如：
 
 ```json
 "weighted_upstreams": [

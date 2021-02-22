@@ -1672,7 +1672,6 @@ location /t {
         local t = require("lib.test_admin").test
         local bodys = {}
         local headers = {}
-        headers["x-api-appkey"] = "hello"
         for i = 1, 5 do
             local _, _, body = t('/server_port?x-api-name=jack', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
@@ -1745,8 +1744,6 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        local headers = {}
-        headers["x-api-appkey"] = "hello"
         for i = 1, 4 do
             local _, _, body = t('/server_port?x-api-name=jack', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
@@ -1909,9 +1906,8 @@ GET /t
 GET /t
 --- response_body
 passed
---- grep_error_log eval
-qr/^.*?\[error\](?!.*process exiting).*/
---- grep_error_log_out
+--- no_error_log
+[error]
 
 
 

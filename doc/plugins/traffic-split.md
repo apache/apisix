@@ -55,7 +55,7 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 
 The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plugin will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
 
->Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. In the weighted_upstreams field of the plugin, if there is a structure with only `weight`, it means the upstream traffic weight value on `route` or `service`. Such as:
+Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. In the weighted_upstreams field of the plugin, if there is a structure with only `weight`, it means the upstream traffic weight value on `route` or `service`. Such as:
 
 ```json
 "weighted_upstreams": [
