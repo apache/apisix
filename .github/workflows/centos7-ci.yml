@@ -94,6 +94,9 @@ jobs:
     - name: Install rpm package
       run: |
         rm -rf $(ls -1 --ignore=build-tools --ignore=t --ignore=utils)
+        docker exec centos7Instance bash -c "cd apisix && ls"
+        docker exec centos7Instance bash -c "cd apisix/build-tools && ls"
+        docker exec centos7Instance bash -c "cd apisix/build-tools/outputs && ls"
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./build-tools/outputs/apisix-2.3-0.x86_64.rpm"
 
     - name: run test cases
