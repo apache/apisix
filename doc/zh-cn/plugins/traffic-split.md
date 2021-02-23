@@ -226,7 +226,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 `match` 规则匹配通过，所有请求都命中插件配置的1981端口 upstream ：
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: new_release' -i
+$ curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -237,12 +237,12 @@ world 1981
 `match` 规则匹配失败，所有请求都命中 `route` 上配置的 1980端口 upstream ：
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: old_release' -i
+$ curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
 
-world 1981
+hello 1980
 ```
 
 ### 自定义发布
