@@ -57,11 +57,11 @@ install_dependencies() {
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make deps
-    make init
 }
 
 run_case() {
     export_or_prefix
+    make init
     ./utils/set-dns.sh
     # run test cases
     FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ -r t/
