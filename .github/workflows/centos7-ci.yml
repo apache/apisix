@@ -89,7 +89,7 @@ jobs:
     - name: install dependencies
       run: |
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
-        docker exec centos7Instance bash -c "cd apisix && rm -rf \$(ls -1 --ignore=build-tools --ignore=t --ignore=utils)"
+        docker exec centos7Instance bash -c "cd apisix && rm -rf \$(ls -1 --ignore=build-tools --ignore=t --ignore=utils --ignore=Makefile)"
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: Install rpm package
