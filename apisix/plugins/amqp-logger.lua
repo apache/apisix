@@ -108,7 +108,8 @@ local function send_amqp_data(conf, log_message)
         return false, "failed to connect to amqp broker" .. conn_err
     end
 
-    core.log.info("sending a batch logs to amqp broker listen on ", conf.amqp_host, ":", tostring(conf.amqp_port))
+    core.log.info("sending a batch logs to amqp broker listen on ", conf.amqp_host,
+            ":", tostring(conf.amqp_port))
 
     local setup, setup_err = ctx:setup()
     if not setup then
