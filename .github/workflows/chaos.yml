@@ -40,6 +40,8 @@ jobs:
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
           bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready apisix-gw "True" 30
+          kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
+          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready httpbin "True" 30
           nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
 
       - name: Deploy Chaos mesh

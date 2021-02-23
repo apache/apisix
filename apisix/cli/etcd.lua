@@ -251,7 +251,7 @@ function _M.init(env, args)
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                    "/plugins", "/consumers", "/node_status",
                                    "/ssl", "/global_rules", "/stream_routes",
-                                   "/proto", "/plugin_metadata"}) do
+                                   "/proto", "/plugin_metadata", "/plugin_configs"}) do
 
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
 
