@@ -306,7 +306,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少`openresty-openssl111-devel` 依赖导致，你需要先执行 `yum install -y  openresty-openssl111-devel` 安装它。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少`openresty-openssl111-devel` 依赖导致，你需要去先安装它。请参考 [install-dependencies.md](doc/zh-cn/install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps

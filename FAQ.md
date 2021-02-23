@@ -358,7 +358,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing dependency of `openresty-openssl111-devel`, you need to execute `yum install -y openresty-openssl111-devel` to install it first.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing dependency of `openresty-openssl111-devel`, You need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
