@@ -248,4 +248,4 @@ Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configurat
 ## Discovery modules
 
 - eureka
-- [consul key&value](discovery/consul_kv.md)
+- [Consul KV](discovery/consul_kv.md)

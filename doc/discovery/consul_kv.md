@@ -45,7 +45,7 @@ discovery:
       read: 1000                  # default 2000 ms
       wait: 60                    # default 60 sec
     weight: 1                     # default 1
-    fetch_interval: 5             # default 3 sec, only take effect for keepalive: short way
+    fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
     default_server:               # you can define default server when missing hit
       host: "127.0.0.1"
@@ -83,7 +83,7 @@ The register consul key use `upstreams` as prefix by default. The http api servi
 
 Now, register nodes into consul:
 
-```bash
+```shell
 curl \
     -X PUT \
     -d ' {"weight": 1, "max_fails": 2, "fail_timeout": 1}' \
@@ -132,8 +132,7 @@ The format response as below:
       "id": "1",
       "uri": "/*",
       "create_time": 1612755230,
-      "status": 1,
-      "saas_id": ""
+      "status": 1
     },
     "key": "/apisix/routes/1"
   },
@@ -141,7 +140,7 @@ The format response as below:
 }
 ```
 
-More usage you can find in `apisix/t/discovery/consul_kv.t` file.
+You could find more usage in the `apisix/t/discovery/consul_kv.t` file.
 
 ## Debugging API
 

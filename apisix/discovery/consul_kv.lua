@@ -154,7 +154,7 @@ local function parse_instance(node, server_name_prefix)
         return false
     end
 
-    local result = ngx_re_match(key, default_prefix_rule)
+    local result = ngx_re_match(key, default_prefix_rule, "jo")
     if not result then
         log.error("server name parse error, server_name_prefix: ", server_name_prefix,
             ", node: ", json_delay_encode(node, true))
@@ -410,6 +410,4 @@ function _M.dump_data()
     return {config = local_conf.discovery.consul_kv, services = applications}
 end
 
-
 return _M
-
