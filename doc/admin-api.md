@@ -35,6 +35,8 @@
 
 *Description*：Route matches requests based on preset rules, and loads the appropriate plugin according to the matching result, then forwarding requests to target Upstream.
 
+Note: When `Admin API` is enabled, Apache APISIX will occupy the API prefixed with `/apisix/admin`. Therefore, when you design an API, please try to avoid using it.
+
 > Request Methods：
 
 |Method      |Request URI|Request Body|Description        |
