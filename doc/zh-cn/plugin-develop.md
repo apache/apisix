@@ -27,7 +27,7 @@
 - [**编写执行逻辑**](#编写执行逻辑)
 - [**编写测试用例**](#编写测试用例)
 - [**注册公共接口**](#注册公共接口)
-- [**注册控制接口**](#注册控制接口)
+    - [**注册控制接口**](#注册控制接口)
 
 ## 检查外部依赖
 
@@ -234,7 +234,188 @@ end
 
 ## 编写执行逻辑
 
-在对应的阶段方法里编写功能的逻辑代码。
+在对应的阶段方法里编写功能的逻辑代码，在阶段方法中具有 `conf` 和 `ctx` 两个参数，以 `limit-conn` 插件配置为例。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+### conf 参数
+
+`conf` 参数缓存了插件的相关配置信息，通过 `core.log.warn(core.json.encode(conf))` 得到的 `conf` 数据如下所示。
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn("conf: ", core.json.encode(conf))
+    ......
+end
+```
+
+conf:
+
+```json
+{
+    "rejected_code":503,
+    "burst":0,
+    "default_conn_delay":0.1,
+    "conn":1,
+    "key":"remote_addr"
+}
+```
+
+### ctx 参数
+
+`ctx` 参数缓存了请求相关的数据信息，通过 `core.log.warn(core.json.encode(ctx, true))` 得到的 `ctx` 数据如下所示。
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn("ctx: ", core.json.encode(ctx, true))
+    ......
+end
+```
+
+ctx:
+
+```json
+{
+    "matched_upstream":{
+        "hash_on":"vars",
+        "nodes":[
+            {
+                "port":80,
+                "host":"39.97.63.215",
+                "weight":1
+            }
+        ],
+        "pass_host":"pass",
+        "parent":{
+            "key":"/apisix/routes/1",
+            "value":{
+                "create_time":1613722689,
+                "priority":0,
+                "status":1,
+                "update_time":1614096031,
+                "uri":"/index.html",
+                "id":"1",
+                "plugins":{
+                    "limit-conn":{
+                        "rejected_code":503,
+                        "burst":0,
+                        "default_conn_delay":0.1,
+                        "conn":1,
+                        "key":"remote_addr"
+                    }
+                },
+                "methods":[
+                    "GET"
+                ],
+                "upstream":"table: 0x7f364c27d680"
+            },
+            "modifiedIndex":5793,
+            "clean_handlers":{
+
+            },
+            "has_domain":false,
+            "createdIndex":2353,
+            "orig_modifiedIndex":5793,
+            "update_count":0
+        },
+        "scheme":"http",
+        "type":"roundrobin"
+    },
+    "conf_id":"1",
+    "pass_host":"pass",
+    "route_id":"1",
+    "matched_route":"table: 0x7f364bd29d30",
+    "curr_req_matched":{
+        "_method":"GET",
+        "_path":"/index.html"
+    },
+    "plugins":[
+        {
+            "schema":{
+                "properties":{
+                    "key":{
+                        "type":"string",
+                        "enum":[
+                            "remote_addr",
+                            "server_addr",
+                            "http_x_real_ip",
+                            "http_x_forwarded_for",
+                            "consumer_name"
+                        ]
+                    },
+                    "disable":{
+                        "type":"boolean"
+                    },
+                    "burst":{
+                        "type":"integer",
+                        "minimum":0
+                    },
+                    "default_conn_delay":{
+                        "type":"number",
+                        "exclusiveMinimum":0
+                    },
+                    "conn":{
+                        "type":"integer",
+                        "exclusiveMinimum":0
+                    },
+                    "rejected_code":{
+                        "type":"integer",
+                        "default":503,
+                        "maximum":599,
+                        "minimum":200
+                    }
+                },
+                "required":[
+                    "conn",
+                    "burst",
+                    "default_conn_delay",
+                    "key"
+                ],
+                "type":"object",
+                "$comment":"this is a mark for our injected plugin schema"
+            },
+            "check_schema":"function: 0x7f364bd2c750",
+            "priority":1003,
+            "name":"limit-conn",
+            "version":0.1,
+            "access":"function: 0x7f364bd2c940",
+            "log":"function: 0x7f364bd2ca38"
+        },
+        "table: 0x7f364c27d368"
+    ],
+    "conf_version":5793,
+    "var":{
+        "_request":"cdata<void *>: 0x01680de0",
+        "uri":"/index.html",
+        "host":"127.0.0.1",
+        "remote_addr":"127.0.0.1",
+        "request_method":"GET"
+    },
+    "conf_type":"route"
+}
+```
 
 ## 编写测试用例
 
