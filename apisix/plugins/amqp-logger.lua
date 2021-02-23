@@ -115,7 +115,7 @@ local function send_amqp_data(conf, log_message)
         return false, "failed to setup amqp broker channel " .. setup_err
     end
 
-    publish, publish_err = ctx:publish(log_message)
+    local publish, publish_err = ctx:publish(log_message)
     if not publish then
         res = false
         err_msg = "failed to publish data to amqp server: host[" .. conf.amqp_host
@@ -123,7 +123,7 @@ local function send_amqp_data(conf, log_message)
     end
 
     ctx:teardown()
-    close, close_err = ctx:close()
+    local close, close_err = ctx:close()
     if not close then
         core.log.error("failed to close the amqp broker connection, host[",
                 conf.amqp_host, "] port[", tostring(conf.amqp_port), "] ", close_err)
