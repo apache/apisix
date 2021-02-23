@@ -54,7 +54,7 @@ jobs:
     - name: run simpleroute test
       run: |
         python $PWD/t/fuzzing/simpleroute_test.py
-    
+
     - name: run serverless route test
       run: |
         python $PWD/t/fuzzing/serverless_route_test.py
