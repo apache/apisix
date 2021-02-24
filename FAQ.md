@@ -358,7 +358,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing dependency of `openresty-openssl111-devel`, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
@@ -369,5 +369,3 @@ You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSS
 Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
-
-Note: If you are using OpenResty which is older than `1.17.8`, please installing `openresty-openss-devel` instead of `openresty-openssl111-devel`.
