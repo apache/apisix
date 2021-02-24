@@ -24,11 +24,9 @@ jobs:
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
     steps:
-    # checkout v2.3 for test v2.3 package for now, need to revert to HEAD
     - name: Check out code
       uses: actions/checkout@v2
       with:
-        ref: v2.3
         submodules: recursive
 
     - name: Build rpm package
