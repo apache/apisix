@@ -31,6 +31,8 @@ jobs:
 
     - name: Build rpm package
       run: |
+        # checkout v2.3 for test v2.3 package for now
+        git checkout v2.3
         sudo gem install --no-document fpm
         # WOULD CHANGE TO MASTER WHEN PR GETS MERGED
         git clone -b new-packaging-for-apisix https://github.com/idbeta/build-tools.git
