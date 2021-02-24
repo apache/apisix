@@ -226,7 +226,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The rule of `match` is matched, and all requests hit the upstream port 1981 configured by the plugin:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: new_release' -i
+$ curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -237,12 +237,12 @@ world 1981
 The `match` rule fails to match, and all requests hit the 1980 port upstream configured on the `route`:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: old_release' -i
+$ curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
 
-world 1981
+hello 1980
 ```
 
 ### Custom Release
