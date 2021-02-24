@@ -88,16 +88,17 @@ jobs:
 
     - name: install dependencies
       run: |
-        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+        docker exec centos7Instance bash -c "mv /tmp/apisix ./"
         docker exec centos7Instance bash -c "cd apisix && rm -rf \$(ls -1 --ignore=build-tools --ignore=t --ignore=utils --ignore=Makefile --ignore=rockspec)"
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: Install rpm package
       run: |
-        docker exec centos7Instance bash -c "cd apisix && ls"
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./build-tools/output/apisix-2.3-0.x86_64.rpm"
+        docker exec centos7Instance bash -c "cd apisix && mv usr/bin ."
+        docker exec centos7Instance bash -c "cd apisix && mv usr/local/apisix/* ."
         docker exec centos7Instance bash -c "cd apisix && ls"
-        docker exec centos7Instance bash -c "cd apisix && yum install -y tree && tree ."
+        docker exec centos7Instance bash -c "cd apisix && yum install tree && tree ."
 
     - name: run test cases
       run: |
