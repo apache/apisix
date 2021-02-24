@@ -21,8 +21,15 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
-OR_EXEC ?= $(shell which openresty)
+OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
+OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
+	OPENSSL_PREFIX=$(addprefix $(OR_PREFIX), openssl111)
+endif
 
 SHELL := /bin/bash -o pipefail
 
@@ -33,8 +40,10 @@ RELEASE_SRC = apache-apisix-${VERSION}-src
 default:
 ifeq ($(OR_EXEC), )
 ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
-	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+	@echo "WARNING: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
 	exit 1
+else
+	OR_EXEC=/usr/local/openresty-debug/bin/openresty
 endif
 endif
 
@@ -52,8 +61,21 @@ help: default
 .PHONY: deps
 deps: default
 ifeq ($(LUAROCKS_VER),luarocks 3.)
-	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	mkdir -p ~/.luarocks
+ifeq ($(shell whoami),root)
+	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 else
+	luarocks config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	luarocks config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
+endif
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+else
+	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
+	@echo "variables = {"
+	@echo "    OPENSSL_LIBDIR=$(addprefix $(OPENSSL_PREFIX), /lib)"
+	@echo "    OPENSSL_INCDIR=$(addprefix $(OPENSSL_PREFIX), /include)"
+	@echo "}"
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
 
@@ -65,12 +87,17 @@ ifeq ("$(wildcard utils/lj-releng)", "")
 	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
+ifeq ("$(wildcard utils/reindex)", "")
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+	chmod a+x utils/reindex
+endif
 
 
-### lint:             Lint Lua source code
+### lint:             Lint source code
 .PHONY: lint
 lint: utils
 	./utils/check-lua-code-style.sh
+	./utils/check-test-code-style.sh
 
 
 ### init:             Initialize the runtime environment
@@ -83,18 +110,13 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-ifeq ("$(wildcard logs/nginx.pid)", "")
-	mkdir -p logs
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
-else
-	@echo "APISIX is running..."
-endif
+	./bin/apisix start
 
 
 ### stop:             Stop the apisix server
 .PHONY: stop
 stop: default
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
+	./bin/apisix stop
 
 
 ### verify:           Verify the configuration of apisix server
@@ -124,6 +146,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
@@ -133,6 +156,9 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
 	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
@@ -181,7 +207,7 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
-	
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
 	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
@@ -200,24 +226,7 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
-release-src:
-	tar -zcvf $(RELEASE_SRC).tgz \
-	--exclude .github \
-	--exclude .git \
-	--exclude .gitattributes \
-	--exclude .idea \
-	--exclude .travis \
-	--exclude .gitignore \
-	--exclude .DS_Store \
-	--exclude benchmark \
-	--exclude doc \
-	--exclude kubernetes \
-	--exclude logos \
-	--exclude deps \
-	--exclude logs \
-	--exclude t \
-	--exclude release \
-	.
+release-src: compress-tar
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
@@ -226,3 +235,15 @@ release-src:
 	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
 	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
 	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
+
+compress-tar:
+	tar -zcvf $(RELEASE_SRC).tgz \
+	./apisix \
+	./bin \
+	./conf \
+	./doc \
+	./rockspec \
+	LICENSE \
+	Makefile \
+	NOTICE \
+	*.md

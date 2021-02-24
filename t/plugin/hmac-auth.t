@@ -924,12 +924,12 @@ passed
                     "plugins": {
                         "hmac-auth": {
                             "access_key": "my-access-key4",
-                            "secret_key": "my-secret-key4"                           
+                            "secret_key": "my-secret-key4"
                         }
                     }
                 }]]
                 )
-            
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -997,7 +997,7 @@ location /t {
             nil,
             headers
         )
-        
+
         if code >= 300 then
             ngx.status = code
         end
@@ -1016,7 +1016,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1131,7 +1131,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1246,7 +1246,7 @@ GET /t
 uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
-host: 127.0.0.1
+host: 127.0.0.1:1984
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4

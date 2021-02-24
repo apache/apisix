@@ -18,12 +18,12 @@
 -->
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -33,11 +33,9 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
-
 
 ## How To Enable
 

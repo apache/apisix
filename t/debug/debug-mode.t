@@ -71,6 +71,8 @@ loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
 loaded plugin and sort by priority: 1001 name: limit-req
+loaded plugin and sort by priority: 990 name: server-info
+loaded plugin and sort by priority: 966 name: traffic-split
 loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode
@@ -191,5 +193,128 @@ GET /hello
 hello world
 --- response_headers
 Apisix-Plugins: limit-conn, limit-count
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: global rule, header sent
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "status_code": 200,
+                            "body": "yes\n"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit routes
+--- request
+GET /hello
+--- yaml_config eval: $::yaml_config
+--- response_headers
+Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite
+--- response_body
+yes
+--- error_log
+Apisix-Plugins: response-rewrite
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: clear global routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: set stream route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "server_port": 1985,
+                    "plugins": {
+                        "mqtt-proxy": {
+                            "protocol_name": "MQTT",
+                            "protocol_level": 4,
+                            "upstream": {
+                                "ip": "127.0.0.1",
+                                "port": 1995
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: hit route
+--- yaml_config eval: $::yaml_config
+--- stream_enable
+--- stream_request eval
+"\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
+--- stream_response
+hello world
+--- error_log
+Apisix-Plugins: mqtt-proxy
 --- no_error_log
 [error]

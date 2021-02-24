@@ -28,8 +28,9 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
-- [**Global Rule**](#Global-Rule)
-- [**Debug mode**](#Debug-mode)
+- [**Global Rule**](#global-rule)
+- [**Plugin Config**](#plugin-config)
+- [**Debug mode**](#debug-mode)
 
 ## APISIX
 
@@ -43,7 +44,9 @@
 
 ## APISIX Config
 
-For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config` flag when start APISIX like `apisix start -c <path string>`
+
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -51,7 +54,7 @@ apisix:
 ```
 
 Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
-and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -61,11 +64,11 @@ etcd:
   host: "http://foo:2379"       # etcd address
 ```
 
-Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `config.yaml` file.
 
 **Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Route
 
@@ -77,7 +80,7 @@ The following image shows an example of some Route rules. When some attribute va
 
 <img src="./images/routes-example.png" width="50%" height="50%">
 
-We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it adding a lot of complexity of management and maintenance.
+We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it's adding a lot of complexity of management and maintenance.
 
 The shortcomings mentioned above are independently abstracted in APISIX by the two concepts [Service](#service) and [Upstream](#upstream).
 
@@ -109,7 +112,7 @@ When we receive a successful response, it indicates that the route was successfu
 
 For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Service
 
@@ -178,7 +181,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 Note: When both Route and Service enable the same plugin, the Route parameter has a higher priority than Service.
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Plugin
 
@@ -223,9 +226,11 @@ The plugin configuration is submitted as part of Route or Service and placed und
 
 Not all plugins have specific configuration items. For example, there is no specific configuration item under `prometheus`. In this case, an empty object identifier can be used.
 
+If a request is rejected by a plugin, there will be warn level log like `ip-restriction exits with http status code 403`.
+
 [APISIX supported plugin list](README.md#plugins)
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Script
 
@@ -237,7 +242,7 @@ The `Script` configuration can be directly bound to the `Route`.
 
 In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
 
-`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
+`Script` also has the concept of execution phase, supporting `access`, `header_filter`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
 
 ```json
 {
@@ -258,40 +263,14 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 ### Configuration
 
-In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
+In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the link below.
 
-|Name    |Optional|Description|
-|-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required if `service_name` and `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
-|service_name    |required if `nodes` and `k8s_deployment_info` not configured |The name of the upstream service and used with the registry, refer to [Integration service discovery registry](discovery.md).|
-|k8s_deployment_info |required if `nodes` and `service_name` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
-|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
-|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
-|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
-|timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|desc     |optional|Identifies route names, usage scenarios, and more.|
-|labels   |optional|The key/value pairs to specify attributes. |
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
-|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
+https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
 
 Create an upstream object use case:
 
 ```json
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "type": "roundrobin",
-    "k8s_deployment_info": {
-        "namespace": "test-namespace",
-        "deploy_name": "test-deploy-name",
-        "service_name": "test-service-name",
-        "backend_type": "pod",
-        "port": 8080
-    }
-}'
-
-curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
@@ -308,7 +287,7 @@ After the upstream object is created, it can be referenced by specific `Route` o
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
-    "upstream_id": 2
+    "upstream_id": 1
 }'
 ```
 
@@ -471,7 +450,7 @@ The client requests with header `Content-Type`:
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Router
 
@@ -481,16 +460,17 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match`: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
+    * `radixtree_uri_with_parameter`: Like `radixtree_uri` but also support parameter match.
     * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and URL for the current request.
 
 * `apisix.router.ssl`: SSL loads the matching route.
     * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Consumer
 
@@ -500,10 +480,10 @@ For the API gateway, it is usually possible to identify a certain type of reques
 
 As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
-|Field|Required|Description|
-|---|----|----|
-|username|Yes|Consumer Name.|
-|plugins|No|The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section.|
+| Field    | Required | Description                                                                                                                                                                                      |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| username | Yes      | Consumer Name.                                                                                                                                                                                   |
+| plugins  | No       | The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section. |
 
 In APISIX, the process of identifying a Consumer is as follows:
 
@@ -598,12 +578,12 @@ HTTP/1.1 403
 
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
 
 ## Global Rule
 
-[Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
-We can register a global [Plugin](#Plugin) with `GlobalRule`:
+[Plugin](#plugin) just can be binded to [Service](#service) or [Route](#route), if we want a [Plugin](#plugin) work on all requests, how to do it?
+We can register a global [Plugin](#plugin) with `GlobalRule`:
 
 ```shell
 curl -X PUT \
@@ -631,7 +611,130 @@ we can list all `GlobalRule` via admin api as below:
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)
+
+## Plugin Config
+
+To reuse common plugin configurations, you can extract them into a plugin config and
+bind it with a route directly.
+
+For instance, you can do something like:
+
+```shell
+# create a plugin config
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "desc": "blah",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}'
+
+# bind it to route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+When we can't find the corresponding plugin config with the id, the requests hit the route will be terminated with HTTP status code 503.
+
+When a route already have `plugins` field configured, the `plugins` in the plugin config
+will be merged into it. The same plugin in the plugin config will override one in the `plugins`.
+
+For example,
+
+```
+{
+    "desc": "I am plugin_config 1",
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
+```
+
++
+
+```
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 20,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}
+```
+
+=
+
+```
+{
+    "uris": ["/index.html"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
+```
+
+[Back to top](#table-of-contents)
 
 ## Debug mode
 
@@ -655,19 +758,22 @@ Server: openresty
 hello world
 ```
 
+If the information can be delivered via HTTP response header, for example, the plugin is in stream
+subsystem, the information will be logged in the error log with `warn` level.
+
 ### Advanced Debug Mode
 
-Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will be a check every second, only the checker reads the `#END` flag, and the file would be considered as closed.
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
-|Key|Optional|Description|Default|
-|----|-----|---------|---|
-|hook_conf.enable|required|Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled.|false|
-|hook_conf.name|required|The module list name of hook which has enabled debug trace||
-|hook_conf.log_level|required|Logging levels for input arguments & returned value|warn|
-|hook_conf.is_print_input_args|required|Enable/Disable input arguments print|true|
-|hook_conf.is_print_return_value|required|Enable/Disable returned value print|true|
+| Key                             | Optional | Description                                                                                                                               | Default |
+| ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
+| hook_conf.name                  | required | The module list name of hook which has enabled debug trace.                                                                               |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned value.                                                                                      | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print.                                                                                                     | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable returned value print.                                                                                                      | true    |
 
 Example:
 
@@ -689,4 +795,4 @@ hook_phase:                     # Module Function List, Name: hook_phase
 #END
 ```
 
-[Back to top](#Table-of-contents)
+[Back to top](#table-of-contents)

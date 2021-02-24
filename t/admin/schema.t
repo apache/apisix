@@ -48,8 +48,8 @@ qr/"plugins":\{"type":"object"}/
                 ngx.say("found `anyOf`")
                 return
             end
-            
-            ngx.say("passed") 
+
+            ngx.say("passed")
         }
     }
 --- request
@@ -279,5 +279,15 @@ plugins:
 GET /apisix/admin/schema/plugins/node-status
 --- response_body eval
 qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: get global_rule schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/global_rule
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
 --- no_error_log
 [error]

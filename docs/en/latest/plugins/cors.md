@@ -19,9 +19,9 @@
 
 # Summary
 
-- [**Description**](#Description)
-- [**Attributes**](#Attributes)
-- [**How To Enable**](#how-to-Enable)
+- [**Description**](#description)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 

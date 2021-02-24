@@ -28,6 +28,7 @@ no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 
 sub read_file($) {
     my $infile = shift;
@@ -68,11 +69,15 @@ if ($enable_local_dns) {
     $dns_addrs_str = "8.8.8.8 114.114.114.114";
     $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
 }
+my $custom_dns_server = $ENV{"CUSTOM_DNS_SERVER"};
+if ($custom_dns_server) {
+    $dns_addrs_tbl_str = "{\"$custom_dns_server\"}";
+}
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -88,6 +93,7 @@ apisix:
     tcp:
       - 9100
   admin_key: null
+  enable_resolv_search_opt: false
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
@@ -131,9 +137,140 @@ if ($profile) {
 }
 
 
+my $dubbo_upstream = "";
+my $dubbo_location = "";
+my $version = eval { `$nginx_binary -V 2>&1` };
+if ($version =~ m/\/mod_dubbo/) {
+    $dubbo_upstream = <<_EOC_;
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi 1;
+        keepalive 320;
+    }
+
+_EOC_
+
+    $dubbo_location = <<_EOC_;
+        location \@dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass \$dubbo_service_name \$dubbo_service_version \$dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+_EOC_
+}
+
+my $grpc_location = <<_EOC_;
+        location \@grpc_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         \$upstream_scheme://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+_EOC_
+
+if ($version =~ m/\/1.15.8/) {
+    $grpc_location = <<_EOC_;
+        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
+        location \@1_15_grpc_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         grpc://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+        location \@1_15_grpcs_pass {
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         grpcs://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+_EOC_
+}
+
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
+
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+_EOC_
+    }
+
+    my $lua_deps_path = <<_EOC_;
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+_EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
@@ -150,9 +287,7 @@ _EOC_
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
-
+    $lua_deps_path
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
@@ -232,8 +367,7 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    $lua_deps_path
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -249,14 +383,20 @@ _EOC_
     lua_shared_dict balancer_ewma_last_touched_at  1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
+    lua_shared_dict access_tokens         1m;    # plugin authz-keycloak
+    lua_shared_dict discovery             1m;    # plugin authz-keycloak
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
+
+    proxy_ssl_name \$host;
+    proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;
     lua_socket_log_errors off;
+    client_body_buffer_size 8k;
 
     upstream apisix_backend {
         server 0.0.0.1;
@@ -266,6 +406,8 @@ _EOC_
 
         keepalive 32;
     }
+
+    $dubbo_upstream
 
     init_by_lua_block {
         $init_by_lua_block
@@ -303,6 +445,12 @@ _EOC_
             more_clear_headers Date;
         }
 
+        location = /v3/auth/authenticate {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "etcd auth failed!")
+            }
+        }
+
         location  = /.well-known/openid-configuration {
             content_by_lua_block {
                 ngx.say([[
@@ -319,6 +467,11 @@ _EOC_
         lua_ssl_trusted_certificate cert/apisix.crt;
 
         server_tokens off;
+
+        ssl_certificate_by_lua_block {
+            local ngx_ssl = require "ngx.ssl"
+            ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+        }
 
         location / {
             content_by_lua_block {
@@ -352,8 +505,12 @@ _EOC_
         }
 
         set \$upstream_scheme             'http';
-        set \$upstream_host               \$host;
+        set \$upstream_host               \$http_host;
         set \$upstream_uri                '';
+        set \$ctx_ref                     '';
+        set \$dubbo_service_name          '';
+        set \$dubbo_service_version       '';
+        set \$dubbo_method                '';
 
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -364,6 +521,12 @@ _EOC_
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
             }
         }
 
@@ -423,27 +586,8 @@ _EOC_
             }
         }
 
-        location \@grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
+        $grpc_location
+        $dubbo_location
 
         location = /proxy_mirror {
             internal;
@@ -502,6 +646,23 @@ _EOC_
     $block->set_value("user_files", $user_files);
 
     $block;
+});
+
+sub run_or_exit ($) {
+    my ($cmd) = @_;
+    my $output = `$cmd`;
+    if ($?) {
+        warn "$output";
+        exit 1;
+    }
+}
+
+add_cleanup_handler(sub {
+    if ($ENV{FLUSH_ETCD}) {
+        delete $ENV{APISIX_PROFILE};
+        run_or_exit "etcdctl del --prefix /apisix";
+        run_or_exit "./bin/apisix init_etcd";
+    }
 });
 
 1;

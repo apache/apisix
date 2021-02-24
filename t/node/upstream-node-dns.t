@@ -21,19 +21,6 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    admin_key: ~
-    dns_resolver_valid: 1
-_EOC_
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    $block->set_value("yaml_config", $yaml_config);
-});
-
 run_tests();
 
 __DATA__
@@ -79,12 +66,12 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         if domain == "test.com" then
             return {address = "127.0.0.2"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 --- request
 GET /hello
@@ -104,29 +91,20 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
     }
@@ -140,13 +118,6 @@ qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to 127
 call /hello
 dns resolver domain: test.com to 127.0.0.1
 proxy request to 127.0.0.1:1980
-call /hello
-dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.2:1980
-proxy request to 127.0.0.2:1980
-call /hello
-dns resolver domain: test.com to 127.0.0.3
-proxy request to 127.0.0.3:1980
 
 
 
@@ -192,12 +163,12 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.2"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 --- request
 GET /hello
@@ -217,32 +188,20 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        core.log.warn("code: ", code)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        core.log.warn("code: ", code)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        core.log.warn("code: ", code)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
         core.log.warn("code: ", code)
@@ -260,19 +219,6 @@ dns resolver domain: test2.com to 127.0.0.2|
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.2)
 proxy request to 127.0.0.[12]:1980
-call \/hello(
-dns resolver domain: test.com to 127.0.0.3
-dns resolver domain: test2.com to 127.0.0.4|
-dns resolver domain: test2.com to 127.0.0.3
-dns resolver domain: test.com to 127.0.0.4)
-proxy request to 127.0.0.[34]:1980
-proxy request to 127.0.0.[34]:1980
-call \/hello(
-dns resolver domain: test.com to 127.0.0.5
-dns resolver domain: test2.com to 127.0.0.6|
-dns resolver domain: test2.com to 127.0.0.5
-dns resolver domain: test.com to 127.0.0.6)
-proxy request to 127.0.0.[56]:1980
 /
 
 
@@ -345,29 +291,20 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
     }
@@ -381,13 +318,6 @@ qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to 127
 call /hello
 dns resolver domain: test.com to 127.0.0.1
 proxy request to 127.0.0.1:1980
-call /hello
-dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.2:1980
-proxy request to 127.0.0.2:1980
-call /hello
-dns resolver domain: test.com to 127.0.0.3
-proxy request to 127.0.0.3:1980
 
 
 
@@ -432,31 +362,20 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
     }
@@ -473,21 +392,6 @@ dns resolver domain: test2.com to 127.0.0.2|
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.2)
 proxy request to 127.0.0.[12]:1980
-call \/hello(
-dns resolver domain: test.com to 127.0.0.3
-dns resolver domain: test2.com to 127.0.0.4|
-dns resolver domain: test2.com to 127.0.0.3
-dns resolver domain: test.com to 127.0.0.4)
-proxy request to 127.0.0.[34]:1980
-proxy request to 127.0.0.[34]:1980
-proxy request to 127.0.0.[34]:1980
-proxy request to 127.0.0.[34]:1980
-call \/hello(
-dns resolver domain: test2.com to 127.0.0.5
-dns resolver domain: test.com to 127.0.0.6|
-dns resolver domain: test.com to 127.0.0.5
-dns resolver domain: test2.com to 127.0.0.6)
-proxy request to 127.0.0.[56]:1980
 /
 
 
@@ -501,29 +405,18 @@ proxy request to 127.0.0.[56]:1980
 
     local utils = require("apisix.core.utils")
     local count = 1
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.1"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
     }
@@ -535,21 +428,6 @@ GET /t
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out eval
 qr/call \/hello(
-dns resolver domain: test.com to 127.0.0.1
-dns resolver domain: test2.com to 127.0.0.1|
-dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.1)
-proxy request to 127.0.0.1:1980
-call \/hello(
-dns resolver domain: test.com to 127.0.0.1
-dns resolver domain: test2.com to 127.0.0.1|
-dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.1)
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-call \/hello(
 dns resolver domain: test.com to 127.0.0.1
 dns resolver domain: test2.com to 127.0.0.1|
 dns resolver domain: test2.com to 127.0.0.1
@@ -600,30 +478,19 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+    utils.dns_parse = function (domain)  -- mock: DNS parser
         count = count + 1
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
-        core.log.info("call /hello")
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-        local code, body = t('/hello', ngx.HTTP_GET)
-
-        ngx.sleep(1.1)  -- cache expired
         core.log.info("call /hello")
         local code, body = t('/hello', ngx.HTTP_GET)
     }
@@ -637,13 +504,4 @@ qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.
 qr/call \/hello
 dns resolver domain: test.com to 127.0.0.1
 proxy request to 127.0.0.(1:1980|5:1981)
-call \/hello
-dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.(2:1980|5:1981)
-proxy request to 127.0.0.(2:1980|5:1981)
-proxy request to 127.0.0.(2:1980|5:1981)
-proxy request to 127.0.0.(2:1980|5:1981)
-call \/hello
-dns resolver domain: test.com to 127.0.0.3
-proxy request to 127.0.0.(3:1980|5:1981)
 /

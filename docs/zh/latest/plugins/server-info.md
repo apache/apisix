@@ -49,7 +49,7 @@
 
 ## 插件接口
 
-无
+该插件在 [Control API](../../control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
 
 ## 启用插件
 
@@ -75,21 +75,34 @@ plugins:                          # plugin list
 | report_interval | integer | 60 | 上报服务信息至 etcd 的间隔（单位：秒，最大值：3600，最小值：60）|
 | report_ttl | integer | 7200 | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3600）|
 
-下面的例子将 `report_interval` 修改成了 10 秒，并将 `report_ttl` 修改成了 1
+下面的例子将 `report_interval` 修改成了 10 分钟，并将 `report_ttl` 修改成了 1
 小时：
 
 ```yaml
 plugin_attr:
   server-info:
-    report_interval: 10
+    report_interval: 600
     report_ttl: 3600
 ```
 
-
 ## 测试插件
 
-Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，在启用这个插件后，你可以通过 APISIX Dashboard 来查看这些数据。
+在启用该插件后，你可以通过插件的 Control API 来访问到这些数据：
 
+```shell
+$ curl http://127.0.0.1:9090/v1/server_info -s | jq .
+{
+  "etcd_version": "3.5.0",
+  "up_time": 9460,
+  "last_report_time": 1608531519,
+  "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
+  "hostname": "fedora32",
+  "version": "2.1",
+  "boot_time": 1608522102
+}
+```
+
+Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，因此你也可以通过 APISIX Dashboard 来查看这些数据。
 
 ## 禁用插件
 

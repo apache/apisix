@@ -28,18 +28,19 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.serverless-pre-function")
-            local ok, err = plugin.check_schema({functions = {"return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"}})
+            local schema =  {functions = {"return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"}}
+            local ok, err = plugin.check_schema(schema)
             if not ok then
                 ngx.say(err)
             end
 
-            ngx.say("done")
+            ngx.say(schema.phase)
         }
     }
 --- request
 GET /t
 --- response_body
-done
+access
 --- no_error_log
 [error]
 
@@ -105,7 +106,7 @@ done
 --- request
 GET /t
 --- response_body
-property "phase" validation failed: matches non of the enum values
+property "phase" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]

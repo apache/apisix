@@ -36,7 +36,7 @@ local function com_tab(pattern, data, deep)
             v = nil
         end
 
-        if type(v) == "table" then
+        if type(v) == "table" and data[k] then
             local ok, err = com_tab(v, data[k], deep + 1)
             if not ok then
                 return false, err
@@ -108,14 +108,15 @@ function _M.comp_tab(left_tab, right_tab)
     local err
     dir_names = {}
 
+    local _
     if type(left_tab) == "string" then
-        left_tab, err = json.decode(left_tab)
+        left_tab, _, err = json.decode(left_tab)
         if not left_tab then
             return false, "failed to decode expected data: " .. err
         end
     end
     if type(right_tab) == "string" then
-        right_tab, err  = json.decode(right_tab)
+        right_tab, _, err  = json.decode(right_tab)
         if not right_tab then
             return false, "failed to decode expected data: " .. err
         end
@@ -130,18 +131,27 @@ function _M.comp_tab(left_tab, right_tab)
 end
 
 
-function _M.set_config_yaml(data)
-    local fn
+local function set_yaml(fn, data)
     local profile = os.getenv("APISIX_PROFILE")
     if profile then
-        fn = "config-" .. profile .. ".yaml"
+        fn = fn .. "-" .. profile .. ".yaml"
     else
-        fn = "config.yaml"
+        fn = fn .. ".yaml"
     end
 
     local f = assert(io.open(os.getenv("TEST_NGINX_HTML_DIR") .. "/../conf/" .. fn, 'w'))
     assert(f:write(data))
     f:close()
+end
+
+
+function _M.set_config_yaml(data)
+    set_yaml("config", data)
+end
+
+
+function _M.set_apisix_yaml(data)
+    set_yaml("apisix", data)
 end
 
 

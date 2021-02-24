@@ -53,6 +53,9 @@ local metadata_schema = {
     },
     required = {"host", "port"}
 }
+local schema = {
+    type = "object",
+}
 
 
 local log_level = {
@@ -77,6 +80,7 @@ local _M = {
     version = 0.1,
     priority = 1091,
     name = plugin_name,
+    schema = schema,
     metadata_schema = metadata_schema,
 }
 
@@ -100,7 +104,7 @@ local function send_to_server(data)
         ok, err = sock:sslhandshake(false, config.tls_server_name, false)
         if not ok then
             sock:close()
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                 .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
         end
     end

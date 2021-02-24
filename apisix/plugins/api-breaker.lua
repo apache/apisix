@@ -224,7 +224,7 @@ function _M.log(conf, ctx)
     -- clear related status
     if healthy_count >= conf.healthy.successes then
         -- stat change to normal
-        core.log.info("chagne to normal, ", healthy_key, " ", healthy_count)
+        core.log.info("change to normal, ", healthy_key, " ", healthy_count)
         shared_buffer:delete(gen_lasttime_key(ctx))
         shared_buffer:delete(unhealthy_key)
         shared_buffer:delete(healthy_key)

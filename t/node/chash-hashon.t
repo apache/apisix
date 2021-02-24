@@ -625,3 +625,94 @@ chash_key: "chash_val_3"
 chash_key: "chash_val_4"
 chash_key: "chash_val_5"
 chash_key: "chash_val_6"
+
+
+
+=== TEST 13: set route(two upstream nodes, type chash), hash_on vars_combinations
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "key": "$http_custom_header-$http_custom_header_second",
+                        "type": "chash",
+                        "hash_on": "vars_combinations",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: hit routes, hash_on custom header combinations
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local request_headers = {}
+            request_headers["custom_header"] = "custom-one"
+            request_headers["custom_header_second"] = "custom-two"
+
+            local ports_count = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", headers = request_headers})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("toolkit.json").encode(ports_arr))
+            ngx.exit(200)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[{"count":4,"port":"1980"}]
+--- grep_error_log eval
+qr/hash_on: vars_combinations|chash_key: "custom-one-custom-two"/
+--- grep_error_log_out
+hash_on: vars_combinations
+chash_key: "custom-one-custom-two"
+hash_on: vars_combinations
+chash_key: "custom-one-custom-two"
+hash_on: vars_combinations
+chash_key: "custom-one-custom-two"
+hash_on: vars_combinations
+chash_key: "custom-one-custom-two"

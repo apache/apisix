@@ -16,11 +16,39 @@
 # limitations under the License.
 #
 
-wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
-tar -xf v2.4.4.tar.gz
-cd luarocks-2.4.4 || exit
-./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+# you might need sudo to run this script
+if [ -z ${OPENRESTY_PREFIX} ]; then
+    OPENRESTY_PREFIX="/usr/local/openresty"
+fi
+
+wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
+tar -xf v3.4.0.tar.gz
+cd luarocks-3.4.0 || exit
+
+OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
+OR_VER=$($OR_BIN -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
+if [[ -e $OR_BIN && "$OR_VER" == 1.19 ]]; then
+    WITH_LUA_OPT="--with-lua=${OPENRESTY_PREFIX}/luajit"
+else
+    # For old version OpenResty, we still need to install LuaRocks with Lua
+    WITH_LUA_OPT=
+fi
+
+./configure $WITH_LUA_OPT \
+    > build.log 2>&1 || (cat build.log && exit 1)
+
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
-rm -rf luarocks-2.4.4
+rm -rf luarocks-3.4.0
+
+mkdir ~/.luarocks || true
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl
+if [ -d ${OPENRESTY_PREFIX}/openssl111 ]; then
+    OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl111
+fi
+
+luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
+luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include

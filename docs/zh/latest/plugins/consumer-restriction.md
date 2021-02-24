@@ -18,6 +18,7 @@
 -->
 
 # 目录
+
   - [简介](#简介)
   - [属性](#属性)
   - [示例](#示例)
@@ -39,6 +40,7 @@
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
+
 * **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
 * **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
 
@@ -111,6 +113,7 @@ HTTP/1.1 403 Forbidden
 ```
 
 ### 如何限制 `service_id`
+
 `service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
 1、创建两个 service

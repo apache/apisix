@@ -255,7 +255,7 @@ Host: foo.com
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"status\\" validation failed: matches non of the enum values"\}/
+qr/\{"error_msg":"invalid configuration: property \\"status\\" validation failed: matches none of the enum values"\}/
 --- no_error_log
 [error]
 

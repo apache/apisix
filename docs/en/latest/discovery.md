@@ -19,7 +19,7 @@
 
 # Integration service discovery registry
 
-* [**Summary**](#Summary)
+* [**Summary**](#summary)
 * [**How extend the discovery client?**](#how-extend-the-discovery-client)
     * [**Basic steps**](#basic-steps)
     * [**the example of Eureka**](#the-example-of-eureka)
@@ -29,6 +29,7 @@
     * [**Initial service discovery**](#initial-service-discovery)
     * [**Configuration for Eureka**](#configuration-for-eureka)
 * [**Upstream setting**](#upstream-setting)
+* [**Discovery modules**](#discovery-modules)
 
 ## Summary
 
@@ -54,14 +55,13 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 3. Convert the registry data into data in APISIX;
 
-
 ### the example of Eureka
 
 #### Implementation of eureka.lua
 
 First, add [`eureka.lua`](../apisix/discovery/eureka.lua) in the `apisix/discovery/` directory;
 
-Then implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes in ` eureka.lua`:
+Then implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes in `eureka.lua`:
 
   ```lua
   local _M = {
@@ -170,8 +170,8 @@ Add following configuration in `conf/config.yaml` ：
 discovery:
   eureka:
     host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+      - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
+      - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
     fetch_interval: 30               # 30s
     weight: 100                      # default weight for node
@@ -180,7 +180,6 @@ discovery:
       send: 2000                     # 2000ms
       read: 5000                     # 5000ms
 ```
-
 
 ## Upstream setting
 
@@ -245,4 +244,7 @@ Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configurat
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
 
+## Discovery modules
 
+- eureka
+- [Consul KV](discovery/consul_kv.md)

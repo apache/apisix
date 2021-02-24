@@ -48,12 +48,12 @@ qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
         content_by_lua_block {
             local parse_addr = require("apisix.core.utils").parse_addr
             local cases = {
-                {addr = "127.0.0.1", host = "127.0.0.1", port = 80},
+                {addr = "127.0.0.1", host = "127.0.0.1"},
                 {addr = "127.0.0.1:90", host = "127.0.0.1", port = 90},
-                {addr = "www.test.com", host = "www.test.com", port = 80},
+                {addr = "www.test.com", host = "www.test.com"},
                 {addr = "www.test.com:90", host = "www.test.com", port = 90},
-                {addr = "[127.0.0.1:90", host = "[127.0.0.1:90", port = 80},
-                {addr = "[::1]", host = "[::1]", port = 80},
+                {addr = "[127.0.0.1:90", host = "[127.0.0.1:90"},
+                {addr = "[::1]", host = "[::1]"},
                 {addr = "[::1]:1234", host = "[::1]", port = 1234},
                 {addr = "[::1234:1234]:12345", host = "[::1234:1234]", port = 12345},
             }
@@ -78,7 +78,7 @@ GET /t
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -104,7 +104,7 @@ qr/"address":.+,"name":"github.com"/
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
-            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
+            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.get_resolver()))
         }
     }
 --- request
@@ -217,6 +217,9 @@ close: 1 nil}
                 "$you and $me",
                 "$eva and $me",
                 "$you and \\$me",
+                "${you}_${me}",
+                "${you}${me}",
+                "${you}$me",
             }
             local ctx = {
                 you = "John",
@@ -239,3 +242,78 @@ res:tell David to
 res:John and David
 res: and David
 res:John and \$me
+res:John_David
+res:JohnDavid
+res:JohnDavid
+
+
+
+=== TEST 7: resolve host from /etc/hosts
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("test.com")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body
+ip_info: {"address":"127.0.0.1","class":1,"name":"test.com","ttl":315360000,"type":1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: search host with '.org' suffix
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("apisix")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+.+"name":"apisix\.apache\.org".+
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: disable search option
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("apisix")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- error_log
+error: failed to query the DNS server

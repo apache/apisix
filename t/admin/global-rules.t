@@ -31,6 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -63,6 +64,12 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -164,6 +171,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/global_rules/1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local prev_update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -195,6 +210,13 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -211,6 +233,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/global_rules/1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local prev_update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/global_rules/1/plugins',
                 ngx.HTTP_PATCH,
                 [[{
@@ -241,6 +271,13 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/global_rules/1'))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -507,13 +544,18 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            local value = res.node.value
+            assert(value.create_time ~= nil)
+            value.create_time = nil
+            assert(value.update_time ~= nil)
+            value.update_time = nil
+            assert(res.count ~= nil)
+            res.count = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
 --- request
 GET /t
 --- no_error_log

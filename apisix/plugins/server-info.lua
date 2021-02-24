@@ -23,7 +23,7 @@ local ngx_timer_at = ngx.timer.at
 local ngx_worker_id = ngx.worker.id
 local type = type
 
-local boot_time = os.time()
+local load_time = os.time()
 local plugin_name = "server-info"
 local default_report_interval = 60
 local default_report_ttl = 7200
@@ -66,7 +66,28 @@ local _M = {
 }
 
 
+local function get_boot_time()
+    local time, err = internal_status:get("server_info:boot_time")
+    if err ~= nil then
+        core.log.error("failed to get boot_time from shdict: ", err)
+        return load_time
+    end
+
+    if time ~= nil then
+        return time
+    end
+
+    local _, err = internal_status:set("server_info:boot_time", load_time)
+    if err ~= nil then
+        core.log.error("failed to save boot_time to shdict: ", err)
+    end
+
+    return load_time
+end
+
+
 local function uninitialized_server_info()
+    local boot_time = get_boot_time()
     return {
         etcd_version     = "unknown",
         hostname         = core.utils.gethostname(),
@@ -99,6 +120,17 @@ local function get()
 end
 
 
+local function get_server_info()
+    local info, err = get()
+    if not info then
+        core.log.error("failed to get server_info: ", err)
+        return 500
+    end
+
+    return 200, info
+end
+
+
 local function report(premature, report_ttl)
     if premature then
         return
@@ -127,16 +159,16 @@ local function report(premature, report_ttl)
 
     server_info.last_report_time = ngx_time()
 
-    local data, err = core.json.encode(server_info)
-    if not data then
-        core.log.error("failed to encode server_info: ", err)
+    local key = "/data_plane/server_info/" .. server_info.id
+    local ok, err = core.etcd.set(key, server_info, report_ttl)
+    if not ok then
+        core.log.error("failed to report server info to etcd: ", err)
         return
     end
 
-    local key = "/data_plane/server_info/" .. server_info.id
-    local ok, err = core.etcd.set(key, data, report_ttl)
-    if not ok then
-        core.log.error("failed to report server info to etcd: ", err)
+    local data, err = core.json.encode(server_info)
+    if not data then
+        core.log.error("failed to encode server_info: ", err)
         return
     end
 
@@ -155,6 +187,17 @@ function _M.check_schema(conf)
     end
 
     return true
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris ={"/v1/server_info"},
+            handler = get_server_info,
+        }
+    }
 end
 
 

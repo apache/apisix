@@ -16,7 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
-local route = require("resty.radixtree")
+local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local ngx = ngx
 local get_method = ngx.req.get_method
@@ -29,7 +29,8 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local type = type
-
+local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
 
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
@@ -52,6 +53,7 @@ local resources = {
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
     plugin_metadata = require("apisix.admin.plugin_metadata"),
+    plugin_configs  = require("apisix.admin.plugin_config"),
 }
 
 
@@ -219,8 +221,8 @@ local function run_stream()
         core.response.exit(404)
     end
 
-    ngx.req.read_body()
-    local req_body = ngx.req.get_body_data()
+    req_read_body()
+    local req_body = req_get_body_data()
 
     if req_body then
         local data, err = core.json.decode(req_body)
@@ -280,7 +282,7 @@ local function post_reload_plugins()
         core.response.exit(500, err)
     end
 
-    core.response.exit(200, success)
+    core.response.exit(200, "done")
 end
 
 

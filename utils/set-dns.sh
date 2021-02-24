@@ -17,33 +17,24 @@
 # limitations under the License.
 #
 
-# This file is like apisix_cli_test.sh, but requires extra dependencies which
-# you don't need them in daily development.
-
 set -ex
 
-clean_up() {
-    git checkout conf/config.yaml
-}
+echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+cat /etc/hosts # check GitHub Action's configuration
 
-trap clean_up EXIT
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "search apache.org" | sudo tee -a /etc/resolv.conf
 
-unset APISIX_PROFILE
+mkdir -p build-cache
 
-# check error handling when connecting to old etcd
-git checkout conf/config.yaml
+if [ ! -f "build-cache/coredns_1_8_1" ]; then
+    wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
+    tar -xvf coredns_1.8.1_linux_amd64.tgz
+    mv coredns build-cache/
 
-echo '
-etcd:
-  host:
-    - "http://127.0.0.1:3379"
-  prefix: "/apisix"
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'etcd cluster version 3.3.0 is less than the required version 3.4.0'; then
-    echo "failed: properly handle the error when connecting to old etcd"
-    exit 1
+    touch build-cache/coredns_1_8_1
 fi
 
-echo "passed: properly handle the error when connecting to old etcd"
+pushd t/coredns || exit 1
+../../build-cache/coredns -dns.port=1053 &
+popd || exit 1

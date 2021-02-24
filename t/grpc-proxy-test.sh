@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +18,16 @@
 
 set -ex
 
+# ensure grpc server example is already started
+for (( i = 0; i <= 100; i++ )); do
+    if [[ "$i" -eq 100 ]]; then
+        echo "failed to start grpc_server_example in time"
+        exit 1
+    fi
+    nc -zv 127.0.0.1 50051 && break
+    sleep 1
+done
+
 #set ssl
 curl http://127.0.0.1:9080/apisix/admin/ssl/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -31,6 +41,26 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 {
     "methods": ["POST"],
     "uri": "/helloworld.Greeter/SayHello",
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+
+# test grpc proxy with plaintext
+./build-cache/grpcurl -plaintext -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHello | grep 'Hello apisix'
+
+# test grpc proxy with ssl
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
+
+# the old way
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHello",
     "service_protocol": "grpc",
     "upstream": {
         "type": "roundrobin",
@@ -40,10 +70,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 
-echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
-./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello
+#test grpcs proxy
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHello",
+    "upstream": {
+        "scheme": "grpcs",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50052": 1
+        }
+    }
+}'
 
+./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
 #delete test data
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE

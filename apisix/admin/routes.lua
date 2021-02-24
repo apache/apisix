@@ -51,10 +51,6 @@ local function check_conf(id, conf, need_id)
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.route))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
 
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
@@ -63,6 +59,11 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
+    end
+
+    local ok, err = core.schema.check(core.schema.route, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_conf = conf.upstream
@@ -103,6 +104,23 @@ local function check_conf(id, conf, need_id)
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch service info by "
                                      .. "service id [" .. service_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
+    local plugin_config_id = conf.plugin_config_id
+    if plugin_config_id then
+        local key = "/plugin_configs/" .. plugin_config_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "], "
                                      .. "response code: " .. res.status}
         end
     end

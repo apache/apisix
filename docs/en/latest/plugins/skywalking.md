@@ -19,12 +19,12 @@
 
 # Summary
 
-- [**Name**](#Name)
-- [**Attributes**](#Attributes)
-- [**How To Enable**](#How-To-Enable)
-- [**Test Plugin**](#Test-Plugin)
-  - [**Run Skywalking Example**](#Run-Skywalking-Example)
-- [**Disable Plugin**](#Disable-Plugin)
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+  - [**Run Skywalking Example**](#run-skywalking-example)
+- [**Disable Plugin**](#disable-plugin)
 - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
 ## Name
@@ -101,7 +101,7 @@ plugin_attr:
 
 ## Test Plugin
 
-### Run-Skywalking-Example
+### Run Skywalking Example
 
 #### e.g.
 
@@ -191,7 +191,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 
 The skywalking plugin has been disabled now. It works for other plugins.
 
-If you want to disable skywalking plugin totally, for example, stop the background repor timer,
+If you want to disable skywalking plugin totally, for example, stop the background report timer,
 you need to comment out in the `config.yaml`:
 
 ```yaml

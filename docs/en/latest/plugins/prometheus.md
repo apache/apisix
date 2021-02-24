@@ -64,6 +64,7 @@ Then add prometheus plugin:
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+
 ```
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
@@ -91,9 +92,9 @@ And we can check the status at prometheus console:
 
 We can change the default export uri in the `plugin_attr` section of `conf/config.yaml`.
 
-| Name         | Type   | Default  | Description                                                          |
-| ------------ | ------ | -------- | -------------------------------------------------------------------- |
-| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics                  |
+| Name       | Type   | Default                      | Description                       |
+| ---------- | ------ | ---------------------------- | --------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics |
 
 Here is an example:
 
@@ -123,11 +124,14 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 * `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
+* `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
+* `Latency`: The per service histogram of request time and the overhead added by APISIX (request time - upstream response time).
+* `Info`: the information of APISIX node.
 
 Here is the original metric data of apisix:
 
 ```
-$ curl http://127.0.0.2:9080/apisix/prometheus/metrics
+$ curl http://127.0.0.1:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
 apisix_bandwidth{type="egress",service="127.0.0.2"} 183
@@ -136,6 +140,27 @@ apisix_bandwidth{type="egress",service="foo.com"} 2379
 apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
 apisix_bandwidth{type="ingress",service="bar.com"} 76
 apisix_bandwidth{type="ingress",service="foo.com"} 988
+# HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
+# TYPE apisix_etcd_modify_indexes gauge
+apisix_etcd_modify_indexes{key="consumers"} 0
+apisix_etcd_modify_indexes{key="global_rules"} 0
+apisix_etcd_modify_indexes{key="max_modify_index"} 222
+apisix_etcd_modify_indexes{key="prev_index"} 35
+apisix_etcd_modify_indexes{key="protos"} 0
+apisix_etcd_modify_indexes{key="routes"} 222
+apisix_etcd_modify_indexes{key="services"} 0
+apisix_etcd_modify_indexes{key="ssls"} 0
+apisix_etcd_modify_indexes{key="stream_routes"} 0
+apisix_etcd_modify_indexes{key="upstreams"} 0
+apisix_etcd_modify_indexes{key="x_etcd_index"} 223
+# HELP apisix_batch_process_entries batch process remaining entries
+# TYPE apisix_batch_process_entries gauge
+apisix_batch_process_entries{name="http-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sls-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="tcp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="udp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sys-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.0.0.1"} 1
 # HELP apisix_etcd_reachable Config server etcd reachable from Apisix, 0 is unreachable
 # TYPE apisix_etcd_reachable gauge
 apisix_etcd_reachable 1
@@ -156,6 +181,19 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # HELP apisix_nginx_metric_errors_total Number of nginx-lua-prometheus errors
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
+# HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
+# TYPE apisix_http_latency histogram
+apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00001.0"} 1
+apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00002.0"} 1
+...
+# HELP apisix_http_overhead HTTP request overhead added by APISIX in milliseconds per service in APISIX
+# TYPE apisix_http_overhead histogram
+apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00001.0"} 1
+apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00002.0"} 1
+...
+# HELP apisix_node_info Info of APISIX node
+# TYPE apisix_node_info gauge
+apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
 ```
 
 ## Disable Plugin

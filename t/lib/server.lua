@@ -56,6 +56,12 @@ function _M.hello_()
 end
 
 
+-- Fake endpoint, needed for testing authz-keycloak plugin.
+function _M.course_foo()
+    ngx.say("course foo")
+end
+
+
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
@@ -80,8 +86,15 @@ end
 function _M.plugin_proxy_rewrite_args()
     ngx.say("uri: ", ngx.var.uri)
     local args = ngx.req.get_uri_args()
-    for k,v in pairs(args) do
-        ngx.say(k, ": ", v)
+
+    local keys = {}
+    for k, _ in pairs(args) do
+        table.insert(keys, k)
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        ngx.say(key, ": ", args[key])
     end
 end
 
@@ -154,32 +167,6 @@ function _M.with_header()
     ngx.say("hello")
     ngx.say("world")
     ngx.say("!")
-end
-
-
-function _M.mock_skywalking_v2_service_register()
-    ngx.say('[{"key":"APISIX","value":1}]')
-end
-
-
-function _M.mock_skywalking_v2_instance_register()
-    ngx.req.read_body()
-    local data = ngx.req.get_body_data()
-    data = json_decode(data)
-    local key = data['instances'][1]['instanceUUID']
-    local ret = {}
-    ret[1] = {key = key, value = 1}
-    ngx.say(json_encode(ret))
-end
-
-
-function _M.mock_skywalking_v2_instance_heartbeat()
-    ngx.say('skywalking heartbeat ok')
-end
-
-
-function _M.mock_skywalking_v2_segments()
-    ngx.say('skywalking segments ok')
 end
 
 
@@ -350,6 +337,16 @@ function _M.headers()
     end
 
     ngx.say("/headers")
+end
+
+
+function _M.echo()
+    ngx.req.read_body()
+    local hdrs = ngx.req.get_headers()
+    for k, v in pairs(hdrs) do
+        ngx.header[k] = v
+    end
+    ngx.say(ngx.req.get_body_data() or "")
 end
 
 

@@ -330,8 +330,22 @@ passed
 
 
 === TEST 10: hit prometheus route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1) -- wait for data synced
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/prometheus/metrics',
+                ngx.HTTP_GET)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
+GET /t
 --- error_code: 403
 
 
@@ -405,7 +419,7 @@ GET /apisix/prometheus/metrics
 --- request
 GET /t
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches non of the enum values"\}/
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches none of the enum values"\}/
 --- error_code: 400
 --- no_error_log
 [error]
@@ -529,13 +543,14 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            local value = res.node.value
+            assert(res.count ~= nil)
+            res.count = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+{"action":"get","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
 --- request
 GET /t
 --- no_error_log

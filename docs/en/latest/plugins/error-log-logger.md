@@ -22,7 +22,7 @@
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable And Disable**](#how-to-enable-and-disable)
-- [**How To Update**](#how-to-update)
+- [**How to set the TCP server address**](#how-to-set-the-tcp-server-address)
 
 ## Name
 
@@ -90,7 +90,7 @@ plugins:                          # plugin list
 Step: update the attributes of the plugin
 
 ```shell
-curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "host": "127.0.0.1",
   "port": 1999,

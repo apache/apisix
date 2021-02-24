@@ -18,12 +18,11 @@
 -->
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
+- [**Delete Plugin**](#delete-plugin)
 
 ## Name
 
@@ -36,11 +35,10 @@ And this plugin both support MQTT protocol [3.1.*](http://docs.oasis-open.org/mq
 
 | Name           | Type    | Requirement | Default | Valid | Description                                                                            |
 | -------------- | ------- | ----------- | ------- | ----- | -------------------------------------------------------------------------------------- |
-| protocol_name  | string  | required    |         |       | Name of protocol, shoulds be `MQTT` in normal.                                         |
+| protocol_name  | string  | required    |         |       | Name of protocol, should be `MQTT` in normal.                                          |
 | protocol_level | integer | required    |         |       | Level of protocol, it should be `4` for MQTT `3.1.*`. it should be `5` for MQTT `5.0`. |
 | upstream.ip    | string  | required    |         |       | IP address of upstream, will forward current request to.                               |
 | upstream.port  | number  | required    |         |       | Port of upstream, will forward current request to.                                     |
-
 
 ## How To Enable
 

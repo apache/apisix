@@ -77,6 +77,7 @@ GET /t
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
@@ -85,7 +86,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid ip address: 10.255.256.0\/24/
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -105,6 +106,7 @@ qr/invalid ip address: 10.255.256.0\/24/
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
@@ -113,7 +115,7 @@ qr/invalid ip address: 10.255.256.0\/24/
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid ip address: 10.255.254.0/38@
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -267,12 +269,14 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
+--- error_log
+ip-restriction exits with http status code 403
 --- no_error_log
 [error]
 
 
 
-=== TEST 11: hit route and IPv6 not not in the whitelist
+=== TEST 11: hit route and IPv6 not in the whitelist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -356,7 +360,7 @@ GET /hello
 
 
 
-=== TEST 15: hit route and ip not not in the blacklist
+=== TEST 15: hit route and ip not in the blacklist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -371,7 +375,7 @@ hello world
 
 
 
-=== TEST 16: hit route and IPv6 not not in the blacklist
+=== TEST 16: hit route and IPv6 not in the blacklist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;

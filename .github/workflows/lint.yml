@@ -1,0 +1,62 @@
+name: ❄️ Lint
+
+on: [pull_request]
+
+jobs:
+  markdown-link-check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+        node_version:
+          - 14
+        architecture:
+          - x64
+    name: Check Markdown links Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+          architecture: ${{ matrix.architecture }}
+      - name: Install
+        run: npm install -g markdown-link-check
+      - name: Run
+        run: git ls-files . -m | xargs markdown-link-check -q -v  # modified files only, quiet mode, verbose mode
+  markdownlint:
+    name: 🍇 Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🚀 Use Node.js
+        uses: actions/setup-node@v2.1.4
+        with:
+          node-version: '12.x'
+      - run: npm install -g markdownlint-cli@0.25.0
+      - run: markdownlint '**/*.md'
+  yamllint:
+    name: 🍺 YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'  # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64'  # optional x64 or x86. Defaults to x64 if not specified
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install yamllint
+      - name: 🧹 YAML Lint
+        run: |
+          # return non-zero exit code on warnings
+          yamllint --strict .
+  trailing-whitespace:
+    name: 🌌 Trailing whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🧹 Check for trailing whitespace
+        run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"

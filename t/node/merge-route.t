@@ -235,8 +235,8 @@ location /t {
 --- request
 GET /t
 --- error_log eval
-[qr/merge_service_route.*"time_window":60,/,
-qr/merge_service_route.*"time_window":60,/]
+[qr/merge_service_route.*"time_window":60/,
+qr/merge_service_route.*"time_window":60/]
 
 
 

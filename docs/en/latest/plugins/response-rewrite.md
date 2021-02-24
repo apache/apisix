@@ -24,16 +24,16 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-- [**Attention**](#Attention)
+- [**Attention**](#attention)
 
 ## Name
 
 response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
 
-**senario**:
+**scenario**:
 
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
+2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can also use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
 
@@ -80,6 +80,7 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
 It will output like below,no matter what kind of content from upstream.
+
 ```
 
 HTTP/1.1 200 OK

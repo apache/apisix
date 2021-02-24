@@ -79,7 +79,7 @@ local function send_tcp_data(conf, log_message)
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                           .. conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end
@@ -118,7 +118,7 @@ local function remove_stale_objects(premature)
 end
 
 
-function _M.log(conf)
+function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
 
     if not stale_timer_running then
@@ -156,6 +156,8 @@ function _M.log(conf)
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     local err

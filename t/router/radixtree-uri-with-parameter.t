@@ -22,6 +22,22 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    admin_key: null
+    router:
+        http: 'radixtree_uri_with_parameter'
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__

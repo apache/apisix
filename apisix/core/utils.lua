@@ -14,31 +14,35 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core_str = require("apisix.core.string")
-local table    = require("apisix.core.table")
-local log      = require("apisix.core.log")
-local string   = require("apisix.core.string")
-local ngx_re   = require("ngx.re")
-local resolver = require("resty.dns.resolver")
-local ipmatcher= require("resty.ipmatcher")
-local ffi      = require("ffi")
-local base     = require("resty.core.base")
-local open     = io.open
-local math     = math
-local sub_str  = string.sub
-local str_byte = string.byte
-local tonumber = tonumber
-local tostring = tostring
-local re_gsub  = ngx.re.gsub
-local type     = type
-local io_popen = io.popen
-local C        = ffi.C
-local ffi_string = ffi.string
+local config_local   = require("apisix.core.config_local")
+local core_str       = require("apisix.core.string")
+local table          = require("apisix.core.table")
+local json           = require("apisix.core.json")
+local log            = require("apisix.core.log")
+local string         = require("apisix.core.string")
+local ngx_re         = require("ngx.re")
+local dns_client     = require("resty.dns.client")
+local ipmatcher      = require("resty.ipmatcher")
+local ffi            = require("ffi")
+local base           = require("resty.core.base")
+local open           = io.open
+local math           = math
+local sub_str        = string.sub
+local str_byte       = string.byte
+local tonumber       = tonumber
+local tostring       = tostring
+local re_gsub        = ngx.re.gsub
+local type           = type
+local io_popen       = io.popen
+local C              = ffi.C
+local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
-local exiting = ngx.worker.exiting
-local ngx_sleep    = ngx.sleep
+local exiting        = ngx.worker.exiting
+local ngx_sleep      = ngx.sleep
 
 local hostname
+local dns_resolvers
+local current_inited_resolvers
 local max_sleep_interval = 1
 
 ffi.cdef[[
@@ -80,19 +84,36 @@ function _M.split_uri(uri)
 end
 
 
-local function dns_parse(domain, resolvers)
-    resolvers = resolvers or _M.resolvers
-    local r, err = resolver:new{
-        nameservers = table.clone(resolvers),
-        retrans = 5,  -- 5 retransmissions on receive timeout
-        timeout = 2000,  -- 2 sec
-    }
+local function dns_parse(domain)
+    if dns_resolvers ~= current_inited_resolvers then
+        local local_conf = config_local.local_conf()
+        local valid = table.try_read_attr(local_conf, "apisix", "dns_resolver_valid")
+        local enable_resolv_search_opt = table.try_read_attr(local_conf, "apisix",
+                                                             "enable_resolv_search_opt")
 
-    if not r then
-        return nil, "failed to instantiate the resolver: " .. err
+        local opts = {
+            ipv6 = true,
+            nameservers = table.clone(dns_resolvers),
+            retrans = 5,  -- 5 retransmissions on receive timeout
+            timeout = 2000,  -- 2 sec
+            order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV (we don't support it yet)
+            validTtl = valid,
+        }
+
+        if not enable_resolv_search_opt then
+            opts.search = {}
+        end
+
+        local ok, err = dns_client.init(opts)
+        if not ok then
+            return nil, "failed to init the dns client: " .. err
+        end
+
+        current_inited_resolvers = dns_resolvers
     end
 
-    local answers, err = r:query(domain, nil, {})
+    -- this function will dereference the CNAME records
+    local answers, err = dns_client.resolve(domain)
     if not answers then
         return nil, "failed to query the DNS server: " .. err
     end
@@ -104,21 +125,24 @@ local function dns_parse(domain, resolvers)
 
     local idx = math.random(1, #answers)
     local answer = answers[idx]
-    if answer.type == 1 then
-        return answer
+    local dns_type = answer.type
+    if dns_type == dns_client.TYPE_A or dns_type == dns_client.TYPE_AAAA then
+        log.info("dns resolve ", domain, ", result: ", json.delay_encode(answer))
+        return table.deepcopy(answer)
     end
 
-    if answer.type ~= 5 then
-        return nil, "unsupport DNS answer"
-    end
-
-    return dns_parse(answer.cname, resolvers)
+    return nil, "unsupport DNS answer"
 end
 _M.dns_parse = dns_parse
 
 
 function _M.set_resolver(resolvers)
-    _M.resolvers = resolvers
+    dns_resolvers = resolvers
+end
+
+
+function _M.get_resolver(resolvers)
+    return dns_resolvers
 end
 
 
@@ -134,23 +158,22 @@ end
 
 
 -- parse_addr parses 'addr' into the host and the port parts. If the 'addr'
--- doesn't have a port, 80 is used to return. For malformed 'addr', the entire
+-- doesn't have a port, nil is used to return. For malformed 'addr', the entire
 -- 'addr' is returned as the host part. For IPv6 literal host, like [::1],
 -- the square brackets will be kept.
 function _M.parse_addr(addr)
-    local default_port = 80
     if str_byte(addr, 1) == str_byte("[") then
         -- IPv6 format
         local right_bracket = str_byte("]")
         local len = #addr
         if str_byte(addr, len) == right_bracket then
             -- addr in [ip:v6] format
-            return addr, default_port
+            return addr, nil
         else
             local pos = rfind_char(addr, ":", #addr - 1)
             if not pos or str_byte(addr, pos - 1) ~= right_bracket then
                 -- malformed addr
-                return addr, default_port
+                return addr, nil
             end
 
             -- addr in [ip:v6]:port format
@@ -163,7 +186,7 @@ function _M.parse_addr(addr)
         -- IPv4 format
         local pos = rfind_char(addr, ":", #addr - 1)
         if not pos then
-            return addr, default_port
+            return addr, nil
         end
 
         local host = sub_str(addr, 1, pos - 1)
@@ -255,7 +278,7 @@ _M.sleep = sleep
 local resolve_var
 do
     local _ctx
-    local pat = [[(?<!\\)\$(\w+)]]
+    local pat = [[(?<!\\)\$\{?(\w+)\}?]]
 
     local function resolve(m)
         local v = _ctx[m[1]]

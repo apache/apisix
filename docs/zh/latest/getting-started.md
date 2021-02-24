@@ -42,7 +42,7 @@ $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 第一步: 安装 APISIX
 
-Apache APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build.md#installation-via-source-release) 显示了多个平台中的安装步骤。
+Apache APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build.md#通过源码包安装) 显示了多个平台中的安装步骤。
 为了快速入门，让我们基于 docker 容器的安装方式进行安装。启动 Apache APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/apisix-docker) 并切换到 example 文件夹下执行如下命令。
 
 如下命令会启动 Apache APISIX 服务并默认在 9080 端口（ https 请求是 9443 端口） 提供 admin API 接口服务
@@ -75,7 +75,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ## 第二步: 在 Apache APISIX 中创建 Route
 
-为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[ web控制台 ](https://github.com/apache/apisix-dashboard)。
+为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个 [web控制台](https://github.com/apache/apisix-dashboard)。
 本指南将会使用到 Admin API 接口。
 
 一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。

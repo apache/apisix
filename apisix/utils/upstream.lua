@@ -14,28 +14,42 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local fetch_local_conf = require("apisix.core.config_local").local_conf
--- local log = require("apisix.core.log")
--- local json = require("apisix.core.json")
-local http = require("resty.http")
+local core = require("apisix.core")
+local ipairs = ipairs
+local type = type
 
 
-local _M = {
-    version = 0.1,
-}
+local _M = {}
 
 
-function _M.request_self(uri, opts)
-    local local_conf = fetch_local_conf()
-    if not local_conf or not local_conf.apisix
-       or not local_conf.apisix.node_listen then
-        return nil, nil -- invalid local yaml config
+local function sort_by_key_host(a, b)
+    return a.host < b.host
+end
+
+
+function _M.compare_upstream_node(old_t, new_t)
+    if type(old_t) ~= "table" then
+        return false
     end
 
-    local httpc = http.new()
-    local full_uri = "http://127.0.0.1:" .. local_conf.apisix.node_listen
-                     .. uri
-    return httpc:request_uri(full_uri, opts)
+    if #new_t ~= #old_t then
+        return false
+    end
+
+    core.table.sort(old_t, sort_by_key_host)
+    core.table.sort(new_t, sort_by_key_host)
+
+    for i = 1, #new_t do
+        local new_node = new_t[i]
+        local old_node = old_t[i]
+        for _, name in ipairs({"host", "port", "weight"}) do
+            if new_node[name] ~= old_node[name] then
+                return false
+            end
+        end
+    end
+
+    return true
 end
 
 

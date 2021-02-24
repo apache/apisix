@@ -19,6 +19,8 @@
 . ./.travis/common.sh
 
 do_install() {
+    export_or_prefix
+
     ./utils/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./utils/linux-install-etcd-client.sh
@@ -27,7 +29,6 @@ do_install() {
 script() {
     export_or_prefix
     openresty -V
-    enable_ssl
 
     sudo rm -rf /usr/local/apisix
 
@@ -55,8 +56,9 @@ script() {
     cd ..
 
     # apisix cli test
-    sudo PATH=$PATH .travis/apisix_cli_test.sh
-    sudo PATH=$PATH .travis/apisix_cli_test_in_ci.sh
+    for f in ./.travis/apisix_cli_test/test_*.sh; do
+        sudo PATH="$PATH" "$f"
+    done
 }
 
 case_opt=$1

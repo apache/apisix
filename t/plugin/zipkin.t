@@ -46,30 +46,7 @@ done
 
 
 
-=== TEST 2: default value of sample_ratio
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.zipkin")
-            local ok, err = plugin.check_schema({endpoint = 'http://127.0.0.1'})
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
---- SKIP
-
-
-
-=== TEST 3: wrong value of ratio
+=== TEST 2: wrong value of ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -92,7 +69,7 @@ done
 
 
 
-=== TEST 4: wrong value of ratio
+=== TEST 3: wrong value of ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -115,7 +92,7 @@ done
 
 
 
-=== TEST 5: add plugin
+=== TEST 4: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -177,7 +154,7 @@ passed
 
 
 
-=== TEST 6: tiger zipkin
+=== TEST 5: tiger zipkin
 --- request
 GET /opentracing
 --- error_log
@@ -187,7 +164,7 @@ report zipkin span failed
 
 
 
-=== TEST 7: change sample ratio
+=== TEST 6: change sample ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -247,7 +224,7 @@ passed
 
 
 
-=== TEST 8: not tiger zipkin
+=== TEST 7: not tiger zipkin
 --- request
 GET /opentracing
 --- response_body
@@ -257,7 +234,7 @@ opentracing
 
 
 
-=== TEST 9: disabled
+=== TEST 8: disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +286,7 @@ passed
 
 
 
-=== TEST 10: not tiger zipkin
+=== TEST 9: not tiger zipkin
 --- request
 GET /opentracing
 --- response_body
@@ -319,7 +296,7 @@ opentracing
 
 
 
-=== TEST 11: set plugin with external ip address
+=== TEST 10: set plugin with external ip address
 --- config
     location /t {
         content_by_lua_block {
@@ -360,7 +337,7 @@ passed
 
 
 
-=== TEST 12: tiger zipkin
+=== TEST 11: tiger zipkin
 --- request
 GET /opentracing
 --- error_log
@@ -370,7 +347,7 @@ report zipkin span failed
 
 
 
-=== TEST 13: sanity server_addr
+=== TEST 12: sanity server_addr
 --- config
     location /t {
         content_by_lua_block {
@@ -396,7 +373,7 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 
 
 
-=== TEST 14: check not error with limit count
+=== TEST 13: check not error with limit count
 --- config
     location /t {
         content_by_lua_block {
@@ -438,3 +415,190 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 [200, 200, 200, 403]
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: check zipkin headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: set x-b3-sampled if sampled
+--- request
+GET /echo
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 16: don't sample if disabled
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: 0
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 17: don't sample if disabled (old way)
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: false
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 18: sample according to the header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 0.00001
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: don't sample by default
+--- request
+GET /echo
+--- response_headers
+x-b3-sampled: 0
+
+
+
+=== TEST 20: sample if needed
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: 1
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 21: sample if debug
+--- request
+GET /echo
+--- more_headers
+x-b3-flags: 1
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 22: sample if needed (old way)
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: true
+--- response_headers
+x-b3-sampled: 1
+
+
+
+=== TEST 23: don't cache the per-req sample ratio
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/echo"
+            -- force to trace
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ['x-b3-sampled'] = 1
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.headers['x-b3-sampled'])
+
+            -- force not to trace
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ['x-b3-sampled'] = 0
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.headers['x-b3-sampled'])
+        }
+    }
+--- request
+GET /t
+--- response_body
+1
+0
