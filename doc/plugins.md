@@ -21,7 +21,7 @@
 
 ## Hot reload
 
-APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, you don't need to restart the service.
+APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, and **update codes of plugins in disk**, you don't need to restart the service.
 
 If your APISIX node has the Admin API turned on, just send an HTTP request through admin API:
 

@@ -43,5 +43,12 @@ cd .. || exit
 rm -rf luarocks-3.4.0
 
 mkdir ~/.luarocks || true
-luarocks config variables.OPENSSL_LIBDIR ${OPENRESTY_PREFIX}/openssl/lib
-luarocks config variables.OPENSSL_INCDIR ${OPENRESTY_PREFIX}/openssl/include
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl
+if [ -d ${OPENRESTY_PREFIX}/openssl111 ]; then
+    OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl111
+fi
+
+luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
+luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include

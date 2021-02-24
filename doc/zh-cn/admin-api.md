@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Global Rule](#global-rule)
+* [Plugin Config](#plugin-config)
 * [Plugin Metadata](#plugin-metadata)
 * [Plugin](#plugin)
 
@@ -64,6 +65,7 @@
 |upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
 |upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
+|plugin_config_id|可选，无法跟 script 一起配置|Plugin|绑定的 Plugin config 配置，详见 [Plugin config](architecture-design.md#plugin-config)||
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
@@ -703,6 +705,8 @@ ssl 对象 json 配置内容：
 }
 ```
 
+[Back to TOC](#目录)
+
 ## Global Rule
 
 *地址*：/apisix/admin/global_rules/{id}
@@ -727,6 +731,36 @@ ssl 对象 json 配置内容：
 |plugins  |必需|Plugin|详见 [Plugin](architecture-design.md#plugin) ||
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+
+[Back to TOC](#目录)
+
+## Plugin Config
+
+*地址*：/apisix/admin/plugin_configs/{id}
+
+*说明*：配置一组可以在路由间复用的插件。
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_configs|无|获取资源列表|
+|GET      |/apisix/admin/plugin_configs/{id}|无|获取资源|
+|PUT      |/apisix/admin/plugin_configs/{id}|{...}|根据 id 创建资源|
+|DELETE   |/apisix/admin/plugin_configs/{id}|无|删除资源|
+|PATCH    |/apisix/admin/plugin_configs/{id}|{...}|标准 PATCH ，修改已有 Plugin Config 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/plugin_configs/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Plugin Config 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
+
+> body 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|plugins  |必需|Plugin|详见 [Plugin](architecture-design.md#plugin) ||
+|desc     |可选|辅助|标识描述、使用场景等|customer xxxx|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+
+[Back to TOC](#目录)
 
 ## Plugin Metadata
 

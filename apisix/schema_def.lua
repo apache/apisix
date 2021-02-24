@@ -471,6 +471,8 @@ _M.route = {
         script_id = id_schema,
 
         plugins = plugins_schema,
+        plugin_config_id = id_schema,
+
         upstream = upstream_schema,
 
         labels = {
@@ -548,7 +550,8 @@ _M.route = {
     },
     ["not"] = {
         anyOf = {
-            {required = {"script", "plugins"}}
+            {required = {"script", "plugins"}},
+            {required = {"script", "plugin_config_id"}},
         }
     },
     additionalProperties = false,
@@ -747,6 +750,20 @@ _M.plugins = {
         },
         required = {"name"}
     }
+}
+
+
+_M.plugin_config = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        desc = {type = "string", maxLength = 256},
+        plugins = plugins_schema,
+        create_time = timestamp_def,
+        update_time = timestamp_def
+    },
+    required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 

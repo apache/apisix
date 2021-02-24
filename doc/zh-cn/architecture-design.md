@@ -29,6 +29,7 @@
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
 - [**Global Rule**](#global-rule)
+- [**Plugin Config**](#plugin-config)
 - [**Debug mode**](#debug-mode)
 
 ## APISIX
@@ -620,6 +621,128 @@ curl -X PUT \
 
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
+
+[返回目录](#目录)
+
+## Plugin Config
+
+如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin config，并绑定到对应的路由上。
+
+举个例子，你可以这么做：
+
+```shell
+# 创建 Plugin config
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "desc": "吾乃插件配置1",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}'
+
+# 绑定到路由上
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+如果找不到对应的 Plugin config，该路由上的请求会报 503 错误。
+
+如果这个路由已经配置了 `plugins`，那么 Plugin config 里面的插件配置会合并进去。
+相同的插件会覆盖掉 `plugins` 原有的插件。
+
+举个例子：
+
+```
+{
+    "desc": "吾乃插件配置1",
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
+```
+
++
+
+```
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 20,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}
+```
+
+=
+
+```
+{
+    "uris": ["/index.html"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
 ```
 
 [返回目录](#目录)

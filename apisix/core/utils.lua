@@ -88,6 +88,8 @@ local function dns_parse(domain)
     if dns_resolvers ~= current_inited_resolvers then
         local local_conf = config_local.local_conf()
         local valid = table.try_read_attr(local_conf, "apisix", "dns_resolver_valid")
+        local enable_resolv_search_opt = table.try_read_attr(local_conf, "apisix",
+                                                             "enable_resolv_search_opt")
 
         local opts = {
             ipv6 = true,
@@ -97,6 +99,11 @@ local function dns_parse(domain)
             order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV (we don't support it yet)
             validTtl = valid,
         }
+
+        if not enable_resolv_search_opt then
+            opts.search = {}
+        end
+
         local ok, err = dns_client.init(opts)
         if not ok then
             return nil, "failed to init the dns client: " .. err
@@ -151,23 +158,22 @@ end
 
 
 -- parse_addr parses 'addr' into the host and the port parts. If the 'addr'
--- doesn't have a port, 80 is used to return. For malformed 'addr', the entire
+-- doesn't have a port, nil is used to return. For malformed 'addr', the entire
 -- 'addr' is returned as the host part. For IPv6 literal host, like [::1],
 -- the square brackets will be kept.
 function _M.parse_addr(addr)
-    local default_port = 80
     if str_byte(addr, 1) == str_byte("[") then
         -- IPv6 format
         local right_bracket = str_byte("]")
         local len = #addr
         if str_byte(addr, len) == right_bracket then
             -- addr in [ip:v6] format
-            return addr, default_port
+            return addr, nil
         else
             local pos = rfind_char(addr, ":", #addr - 1)
             if not pos or str_byte(addr, pos - 1) ~= right_bracket then
                 -- malformed addr
-                return addr, default_port
+                return addr, nil
             end
 
             -- addr in [ip:v6]:port format
@@ -180,7 +186,7 @@ function _M.parse_addr(addr)
         -- IPv4 format
         local pos = rfind_char(addr, ":", #addr - 1)
         if not pos then
-            return addr, default_port
+            return addr, nil
         end
 
         local host = sub_str(addr, 1, pos - 1)

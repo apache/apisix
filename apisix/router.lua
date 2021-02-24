@@ -28,6 +28,9 @@ local _M = {version = 0.3}
 
 
 local function filter(route)
+    route.orig_modifiedIndex = route.modifiedIndex
+    route.update_count = 0
+
     route.has_domain = false
     if not route.value then
         return

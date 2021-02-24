@@ -31,6 +31,7 @@
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
 - [**Global Rule**](#global-rule)
+- [**Plugin Config**](#plugin-config)
 - [**Debug mode**](#debug-mode)
 
 ## APISIX
@@ -610,6 +611,129 @@ we can list all `GlobalRule` via admin api as below:
 
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules
+```
+
+[Back to top](#table-of-contents)
+
+## Plugin Config
+
+To reuse common plugin configurations, you can extract them into a plugin config and
+bind it with a route directly.
+
+For instance, you can do something like:
+
+```shell
+# create a plugin config
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "desc": "blah",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}'
+
+# bind it to route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+When we can't find the corresponding plugin config with the id, the requests hit the route will be terminated with HTTP status code 503.
+
+When a route already have `plugins` field configured, the `plugins` in the plugin config
+will be merged into it. The same plugin in the plugin config will override one in the `plugins`.
+
+For example,
+
+```
+{
+    "desc": "I am plugin_config 1",
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
+```
+
++
+
+```
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 20,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}
+```
+
+=
+
+```
+{
+    "uris": ["/index.html"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.0/24",
+                "113.74.26.106"
+            ]
+        },
+        "proxy-rewrite": {
+            "uri": "/test/add",
+            "scheme": "https",
+            "host": "apisix.iresty.com"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    }
+}
 ```
 
 [Back to top](#table-of-contents)
