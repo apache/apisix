@@ -323,7 +323,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### conf parameter
 
-The `conf` parameter is the relevant configuration information of the plug-in, you can use `core.log.warn(core.json.encode(conf))` to output it to `error.log` for viewing, as shown below:
+The `conf` parameter is the relevant configuration information of the plugin, you can use `core.log.warn(core.json.encode(conf))` to output it to `error.log` for viewing, as shown below:
 
 ```lua
 function _M.access(conf, ctx)
