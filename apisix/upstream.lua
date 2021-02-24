@@ -144,12 +144,21 @@ do
         grpcs = 443,
     }
 
-    function fill_node_info(nodes, scheme)
+    function fill_node_info(up_conf, scheme)
+        local nodes = up_conf.nodes
         for _, n in ipairs(nodes) do
             if not n.port then
+                if up_conf.scheme ~= scheme then
+                    return nil, "Can't detect upstream's scheme. " ..
+                                "You should either specify a port in the node " ..
+                                "or specify the upstream.scheme explicitly"
+                end
+
                 n.port = scheme_to_node[scheme]
             end
         end
+
+        return true
     end
 end
 
@@ -213,7 +222,10 @@ function _M.set_by_route(route, api_ctx)
 
     set_upstream_scheme(api_ctx, up_conf)
 
-    fill_node_info(up_conf.nodes, api_ctx.upstream_scheme)
+    local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme)
+    if not ok then
+        return 503, err
+    end
 
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)

@@ -35,7 +35,7 @@ The `proxy-rewrite` is an upstream proxy information rewriting plugin, which sup
 
 | Name      | Type          | Requirement | Default | Valid             | Description                                                  |
 | --------- | ------------- | ----------- | ------- | ----------------- | ------------------------------------------------------------ |
-| scheme    | string        | optional    | "http"  | ["http", "https"] | Upstream new `schema` forwarding protocol.                   |
+| scheme    | string        | optional    | "http"  | ["http", "https"] | Upstream new `schema` forwarding protocol. This option is deprecated. It's recommended to set the proxy `scheme` in the Upstream object's `scheme` field instead.|
 | uri       | string        | optional    |         |                   | Upstream new `uri` forwarding address. Supports the use of [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). Variables must start with `$`, such as `$arg_name`. |
 | regex_uri | array[string] | optional    |         |                   | Upstream new `uri` forwarding address. Use regular expression to match URL from client, when the match is successful, the URL template will be forwarded upstream. If the match is not successful, the URL from the client will be forwarded to the upstream. When `uri` and `regex_uri` are both exist, `uri` is used first. For example: [" ^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3"], the first element represents the matching regular expression and the second element represents the URL template that is forwarded to the upstream. |
 | host      | string        | optional    |         |                   | Upstream new `host` forwarding address, example `iresty.com`. |
