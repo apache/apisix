@@ -95,8 +95,9 @@ jobs:
     - name: Install rpm package
       run: |
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./build-tools/output/apisix-2.3-0.x86_64.rpm"
-        docker exec centos7Instance bash -c "cd apisix && mv usr/bin ."
-        docker exec centos7Instance bash -c "cd apisix && mv usr/local/apisix/* ."
+        # Dependencies are attached with rpm, so revert `make deps`
+        docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
+        docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
         docker exec centos7Instance bash -c "cd apisix && ls"
         docker exec centos7Instance bash -c "cd apisix && yum install tree && tree ."
 
