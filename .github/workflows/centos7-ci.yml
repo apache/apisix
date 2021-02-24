@@ -94,8 +94,10 @@ jobs:
 
     - name: Install rpm package
       run: |
-        docker exec centos7Instance bash -c "openresty -V"
+        docker exec centos7Instance bash -c "cd apisix && ls"
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./build-tools/output/apisix-2.3-0.x86_64.rpm"
+        docker exec centos7Instance bash -c "cd apisix && ls"
+        docker exec centos7Instance bash -c "cd apisix && yum install -y tree && tree ."
 
     - name: run test cases
       run: |
