@@ -22,6 +22,9 @@ local str_gsub    = string.gsub
 local pairs = pairs
 
 
+local CONSISTENT_POINTS = 160   -- points per server, taken from `resty.chash`
+
+
 local _M = {}
 
 
@@ -62,27 +65,59 @@ end
 function _M.new(up_nodes, upstream)
     local str_null = str_char(0)
 
+    local nodes_count = 0
+    local safe_limit = 0
     local servers, nodes = {}, {}
     for serv, weight in pairs(up_nodes) do
         local id = str_gsub(serv, ":", str_null)
 
+        nodes_count = nodes_count + 1
+        safe_limit = safe_limit + weight
         servers[id] = serv
         nodes[id] = weight
     end
+    safe_limit = safe_limit * CONSISTENT_POINTS
 
     local picker = resty_chash:new(nodes)
     return {
         upstream = upstream,
         get = function (ctx)
             local id
-            if ctx.balancer_try_count > 1 and ctx.chash_last_server_index then
-                id, ctx.chash_last_server_index = picker:next(ctx.chash_last_server_index)
+            if ctx.balancer_tried_servers then
+                if ctx.balancer_tried_servers_count == nodes_count then
+                    return nil, "all upstream servers tried"
+                end
+
+                -- the 'safe_limit' is a best effort limit to prevent infinite loop caused by bug
+                for i = 1, safe_limit do
+                    id, ctx.chash_last_server_index = picker:next(ctx.chash_last_server_index)
+                    if not ctx.balancer_tried_servers[servers[id]] then
+                        break
+                    end
+                end
             else
                 local chash_key = fetch_chash_hash_key(ctx, upstream)
                 id, ctx.chash_last_server_index = picker:find(chash_key)
             end
             -- core.log.warn("chash id: ", id, " val: ", servers[id])
             return servers[id]
+        end,
+        after_balance = function (ctx, before_retry)
+            if not before_retry then
+                if ctx.balancer_tried_servers then
+                    core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                    ctx.balancer_tried_servers = nil
+                end
+
+                return nil
+            end
+
+            if not ctx.balancer_tried_servers then
+                ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
+            end
+
+            ctx.balancer_tried_servers[ctx.balancer_server] = true
+            ctx.balancer_tried_servers_count = (ctx.balancer_tried_servers_count or 0) + 1
         end
     }
 end
