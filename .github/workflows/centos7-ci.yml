@@ -99,7 +99,7 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
         docker exec centos7Instance bash -c "cd apisix && ls"
-        docker exec centos7Instance bash -c "cd apisix && yum install tree && tree ."
+        docker exec centos7Instance bash -c "cd apisix && yum install -y tree && tree ."
 
     - name: run test cases
       run: |
