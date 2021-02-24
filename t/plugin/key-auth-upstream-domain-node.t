@@ -98,7 +98,7 @@ passed
                     },
                     "upstream": {
                         "nodes": {
-                            "www.apple.com:80": 1
+                            "www.apiseven.com:80": 1
                         },
                         "pass_host": "node",
                         "type": "roundrobin"
@@ -148,7 +148,7 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 301
+return: 302
 return: 503
 return: 503
 --- no_error_log
@@ -166,7 +166,7 @@ return: 503
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "www.apple.com:80": 1
+                        "www.apiseven.com:80": 1
                     },
                     "pass_host": "node",
                     "type": "roundrobin"
@@ -250,7 +250,7 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 301
+return: 302
 return: 503
 return: 503
 --- no_error_log
