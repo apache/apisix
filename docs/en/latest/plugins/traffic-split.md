@@ -41,7 +41,7 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 | rules.match                    | array[object] | optional    |         |  | List of matching rules.                                                                    |
 | rules.match.vars               | array[array]  | optional    |     |  | A list consisting of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.weighted_upstreams       | array[object] | optional    |    |         | List of upstream configuration rules.                                                   |
-| weighted_upstreams.upstream_id | string/integer| optional    |         |         | The upstream id is bound to the corresponding upstream(not currently supported).            |
+| weighted_upstreams.upstream_id | string/integer| optional    |         |         | The upstream id is bound to the corresponding upstream.            |
 | weighted_upstreams.upstream    | object        | optional    |     |      | Upstream configuration information.                                                    |
 | upstream.type                  | enum          | optional    | roundrobin  | [roundrobin, chash] | roundrobin supports weighted load, chash consistent hashing, the two are alternatives.   |
 | upstream.nodes                 | object        | optional    |       |  | In the hash table, the key of the internal element is the list of upstream machine addresses, in the format of address + Port, where the address part can be an IP or a domain name, such as 192.168.1.100:80, foo.com:80, etc. value is the weight of the node. In particular, when the weight value is 0, it has special meaning, which usually means that the upstream node is invalid and never wants to be selected. |
@@ -53,7 +53,7 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 
 The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plugin will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
 
->Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. In the weighted_upstreams field of the plugin, if there is a structure with only `weight`, it means the upstream traffic weight value on `route` or `service`. Such as:
+Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. In the weighted_upstreams field of the plugin, if there is a structure with only `weight`, it means the upstream traffic weight value on `route` or `service`. Such as:
 
 ```json
 "weighted_upstreams": [
@@ -66,7 +66,9 @@ The traffic-split plugin is mainly composed of two parts: `match` and `weighted_
 
 ## How To Enable
 
-Create a route and enable the `traffic-split` plugin:
+Create a route and enable the `traffic-split` plugin. When configuring the upstream information of the plugin, there are two ways:
+
+1. Configure upstream information through the `upstream` attribute in the plugin.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -108,6 +110,40 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+2. Use the `upstream_id` attribute in the plugin to bind upstream.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream_id": 1,
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+>Note: **1.** Use the `upstream_id` to bind the defined upstream, it can reuse upstream health detection, retry and other functions. **2.** Support the two configuration methods of `upstream` and `upstream_id` to be used together.
 
 ## Example
 
