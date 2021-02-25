@@ -265,7 +265,7 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the link below.
 
-https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
+https://github.com/apache/apisix/blob/master/docs/en/latest/admin-api.md#upstream
 
 Create an upstream object use case:
 

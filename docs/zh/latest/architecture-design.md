@@ -276,7 +276,7 @@ Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑�
 
 APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面的链接。
 
-https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
+https://github.com/apache/apisix/blob/master/docs/zh/latest/admin-api.md#upstream
 
 创建上游对象用例：
 
