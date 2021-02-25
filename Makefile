@@ -143,7 +143,8 @@ install: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
-	$(INSTALL) conf/* /usr/local/apisix/conf/
+	$(INSTALL) conf/*.types /usr/local/apisix/conf/
+	$(INSTALL) conf/*.yaml /usr/local/apisix/conf/
 	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
