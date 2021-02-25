@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{CUSTOM_DNS_SERVER} = "127.0.0.1:1053";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -98,7 +102,7 @@ passed
                     },
                     "upstream": {
                         "nodes": {
-                            "www.apiseven.com:80": 1
+                            "ttl.test.local:1980": 1
                         },
                         "pass_host": "node",
                         "type": "roundrobin"
@@ -149,12 +153,11 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 302
+return: 404
 return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 8
 
 
 
@@ -167,7 +170,7 @@ return: 503
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "www.apiseven.com:80": 1
+                        "ttl.test.local:1980": 1
                     },
                     "pass_host": "node",
                     "type": "roundrobin"
@@ -251,9 +254,8 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 302
+return: 404
 return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 8
