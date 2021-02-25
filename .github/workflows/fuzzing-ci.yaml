@@ -61,7 +61,7 @@ jobs:
 
     - name: run vars route test
       run: |
-        python $PWD/t/fuzzing/vars_route_test.py.py
+        python $PWD/t/fuzzing/vars_route_test.py
 
     - name: echo test log
       # more than 150k lines, so only display the last log, actually, this step is not needed.
