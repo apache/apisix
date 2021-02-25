@@ -859,7 +859,7 @@ make stop
 
 echo "passed: access log with JSON format"
 
-# check uninitialized variable in access log
+# check uninitialized variable in access log when access admin
 git checkout conf/config.yaml
 
 rm logs/error.log
@@ -880,6 +880,24 @@ if grep -E 'using uninitialized ".+" variable while logging request' logs/error.
 fi
 
 echo "pass: uninitialized variable not found during writing access log"
+
+# don't log uninitialized access log variable when the HTTP request is malformed
+
+git checkout conf/config.yaml
+
+rm logs/error.log
+./bin/apisix start
+sleep 1 # wait for apisix starts
+
+curl -v -k -i -m 20 -o /dev/null -s https://127.0.0.1:9080 || true
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: log uninitialized access log variable when the HTTP request is malformed"
+    exit 1
+fi
+
+make stop
+
+echo "don't log uninitialized access log variable when the HTTP request is malformed"
 
 # port_admin set
 echo '

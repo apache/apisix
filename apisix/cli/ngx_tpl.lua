@@ -199,6 +199,7 @@ http {
     access_log off;
     {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
+    uninitialized_variable_warn off;
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
