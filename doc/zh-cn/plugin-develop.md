@@ -234,7 +234,65 @@ end
 
 ## 编写执行逻辑
 
-在对应的阶段方法里编写功能的逻辑代码。
+在对应的阶段方法里编写功能的逻辑代码，在阶段方法中具有 `conf` 和 `ctx` 两个参数，以 `limit-conn` 插件配置为例。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+### conf 参数
+
+`conf` 参数是插件的相关配置信息，您可以通过 `core.log.warn(core.json.encode(conf))` 将其输出到 `error.log` 中进行查看，如下所示：
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn(core.json.encode(conf))
+    ......
+end
+```
+
+conf:
+
+```json
+{
+    "rejected_code":503,
+    "burst":0,
+    "default_conn_delay":0.1,
+    "conn":1,
+    "key":"remote_addr"
+}
+```
+
+### ctx 参数
+
+`ctx` 参数缓存了请求相关的数据信息，您可以通过 `core.log.warn(core.json.encode(ctx, true))` 将其输出到 `error.log` 中进行查看，如下所示：
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn(core.json.encode(ctx, true))
+    ......
+end
+```
 
 ## 编写测试用例
 
