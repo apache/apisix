@@ -21,7 +21,8 @@
 # Integration service discovery registry
 
 * [**Summary**](#summary)
-* [**How extend the discovery client?**](#how-extend-the-discovery-client)
+* [**Supported discovery registries**](#supported-discovery-registries)
+* [**How to extend the discovery client?**](#how-to-extend-the-discovery-client)
     * [**Basic steps**](#basic-steps)
     * [**the example of Eureka**](#the-example-of-eureka)
         * [**Implementation of eureka.lua**](#implementation-of-eurekalua)
@@ -44,7 +45,15 @@ When system traffic changes, the number of servers of the upstream service also 
 
 Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
 
-## How extend the discovery client?
+## Supported discovery registries
+
+Currently we support Eureka and service discovery via DNS, like Consul.
+
+For service discovery via DNS, see [service discovery via DNS](dns.md#service-discovery-via-dns).
+
+For Eureka, see below.
+
+## How to extend the discovery client?
 
 ### Basic steps
 
