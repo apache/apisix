@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 -->
-<!--[Chinese](zh-cn/discovery.md)-->`
 
 ## Summary
 
