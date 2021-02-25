@@ -51,9 +51,13 @@ jobs:
       run: |
         pip install typing boofuzz
 
-    - name: run test
+    - name: run simpleroute test
       run: |
-        python $PWD/t/fuzzing/route_test.py
+        python $PWD/t/fuzzing/simpleroute_test.py
+
+    - name: run serverless route test
+      run: |
+        python $PWD/t/fuzzing/serverless_route_test.py
 
     - name: echo test log
       # more than 150k lines, so only display the last log, actually, this step is not needed.

@@ -29,7 +29,7 @@ def check_log(*logs):
     apisix_errorlog = logs[1]
     apisix_accesslog = logs[2]
 
-    cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
+    cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     for cmd in cmds:
         r = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         assert r.stdout.read().strip() == ""
