@@ -17,13 +17,7 @@
 #
 -->
 
-<<<<<<< HEAD:docs/zh/latest/plugins/proxy-rewrite.md
-# proxy-rewrite
-=======
-- [English](../../plugins/proxy-rewrite.md)
-
 # 目录
->>>>>>> master:doc/zh-cn/plugins/proxy-rewrite.md
 
 - [简介](#简介)
 - [属性](#属性)

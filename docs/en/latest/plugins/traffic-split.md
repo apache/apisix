@@ -17,8 +17,6 @@
 #
 -->
 
-- [中文](../zh-cn/plugins/traffic-split.md)
-
 # Summary
 
 - [**Name**](#name)

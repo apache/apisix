@@ -17,8 +17,6 @@
 #
 -->
 
-- [English](../../plugins/traffic-split.md)
-
 # 目录
 
 - [名字](#名字)

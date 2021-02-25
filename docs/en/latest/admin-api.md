@@ -35,6 +35,8 @@
 
 *Description*：Route matches requests based on preset rules, and loads the appropriate plugin according to the matching result, then forwarding requests to target Upstream.
 
+Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/apisix/admin`. Therefore, in order to avoid conflicts between your design API and `/apisix/admin`, it is recommended to use a different port for the Admin API. You can customize the Admin API port through `port_admin` in `conf/config.yaml`.
+
 > Request Methods：
 
 |Method      |Request URI|Request Body|Description        |

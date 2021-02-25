@@ -31,6 +31,7 @@
 * [Stream Proxy](stream-proxy.md)
 * [gRPC Proxy](grpc-proxy.md)
 * [Customize Nginx Configuration](./customize-nginx-configuration.md)
+* [DNS](./dns.md)
 * [Changelog](../CHANGELOG.md)
 * [Benchmark](benchmark.md)
 * [Code Style](../CODE_STYLE.md)
