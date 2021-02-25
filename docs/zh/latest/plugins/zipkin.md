@@ -98,9 +98,9 @@ HTTP/1.1 200 OK
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../images/plugin/zipkin-1.jpg)
+![](../../../assets/images/plugin/zipkin-1.jpg)
 
-![](../../images/plugin/zipkin-2.jpg)
+![](../../../assets/images/plugin/zipkin-2.jpg)
 
 ## 禁用插件
 
