@@ -134,7 +134,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 带宽的类型。 |
+    | type         | 带宽的类型(`ingress` 或 `egress`)。 |
     | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
@@ -147,7 +147,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 请求的类型。 |
+    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
@@ -156,7 +156,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 请求的类型。 |
+    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |

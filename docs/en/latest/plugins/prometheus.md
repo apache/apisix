@@ -155,7 +155,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
     | Name      | Description |
     | ----------| ------------- |
-    | type      | The type of request. |
+    | type      | Its value is fixed as `request`, which means HTTP request. |
     | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
     | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node      | The `ip` of the upstream node. |
@@ -165,7 +165,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     Attributes：
     | Name     | Description |
     | ---------| ------------- |
-    | type     | The type of request. |
+    | type     | Its value is fixed as `request`, which means HTTP request. |
     | service  | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
     | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node     | The `ip` of the upstream node. |
