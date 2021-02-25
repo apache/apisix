@@ -295,7 +295,65 @@ end
 
 ## implement the logic
 
-Write the logic of the plugin in the corresponding phase.
+Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+### conf parameter
+
+The `conf` parameter is the relevant configuration information of the plugin, you can use `core.log.warn(core.json.encode(conf))` to output it to `error.log` for viewing, as shown below:
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn(core.json.encode(conf))
+    ......
+end
+```
+
+conf:
+
+```json
+{
+    "rejected_code":503,
+    "burst":0,
+    "default_conn_delay":0.1,
+    "conn":1,
+    "key":"remote_addr"
+}
+```
+
+### ctx parameter
+
+The `ctx` parameter caches data information related to the request. You can use `core.log.warn(core.json.encode(ctx, true))` to output it to `error.log` for viewing, as shown below :
+
+```lua
+function _M.access(conf, ctx)
+    core.log.warn(core.json.encode(ctx, true))
+    ......
+end
+```
 
 ## write test case
 
