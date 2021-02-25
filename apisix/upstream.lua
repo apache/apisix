@@ -188,7 +188,12 @@ function _M.set_by_route(route, api_ctx)
         if not dis then
             return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
         end
-        local new_nodes = dis.nodes(up_conf.service_name)
+
+        local new_nodes, err = dis.nodes(up_conf.service_name)
+        if not new_nodes then
+            return http_code_upstream_unavailable, "no valid upstream node: " .. (err or "nil")
+        end
+
         local same = upstream_util.compare_upstream_node(up_conf.nodes, new_nodes)
         if not same then
             up_conf.nodes = new_nodes
