@@ -80,7 +80,7 @@ passed
 
 
 
-=== TEST 3: create route with plugin `limit-req`(upstream node contains domain)
+=== TEST 3: create route with plugin `limit-count`(upstream node contains domain)
 --- config
     location /t {
         content_by_lua_block {
@@ -89,9 +89,9 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "limit-req": {
-                            "rate": 1,
-                            "burst": 0,
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 5,
                             "rejected_code": 503,
                             "key": "remote_addr"
                         }
@@ -142,6 +142,7 @@ location /t {
                 headers
             )
             ngx.say("return: ", code)
+            ngx.sleep(1)
         end
     }
 }
@@ -153,7 +154,7 @@ return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 5
+--- timeout: 8
 
 
 
@@ -188,7 +189,7 @@ passed
 
 
 
-=== TEST 6: create route with plugin `limit-req`, and bind upstream via id
+=== TEST 6: create route with plugin `limit-count`, and bind upstream via id
 --- config
     location /t {
         content_by_lua_block {
@@ -197,9 +198,9 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "limit-req": {
-                            "rate": 1,
-                            "burst": 0,
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 5,
                             "rejected_code": 503,
                             "key": "remote_addr"
                         }
@@ -255,4 +256,4 @@ return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 5
+--- timeout: 8
