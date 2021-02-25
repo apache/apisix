@@ -520,12 +520,14 @@ make init
 ./bin/apisix start -c conf/customized_config.yaml
 
 if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
+    rm conf/config_original.yaml
     echo "failed: customized config.yaml copied failed"
     exit 1
 fi
 
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
+    rm conf/config_original.yaml conf/customized_config.yaml
     echo "failed: customized config.yaml not be used"
     exit 1
 fi
@@ -533,10 +535,12 @@ fi
 make stop
 
 if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
+    rm conf/config_original.yaml conf/customized_config.yaml
     echo "failed: customized config.yaml reverted failed"
     exit 1
 fi
 
+rm conf/config_original.yaml conf/customized_config.yaml
 echo "passed: customized config.yaml copied and reverted succeeded"
 
 # log format
@@ -855,7 +859,7 @@ make stop
 
 echo "passed: access log with JSON format"
 
-# check uninitialized variable in access log
+# check uninitialized variable in access log when access admin
 git checkout conf/config.yaml
 
 rm logs/error.log
@@ -876,6 +880,24 @@ if grep -E 'using uninitialized ".+" variable while logging request' logs/error.
 fi
 
 echo "pass: uninitialized variable not found during writing access log"
+
+# don't log uninitialized access log variable when the HTTP request is malformed
+
+git checkout conf/config.yaml
+
+rm logs/error.log
+./bin/apisix start
+sleep 1 # wait for apisix starts
+
+curl -v -k -i -m 20 -o /dev/null -s https://127.0.0.1:9080 || true
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: log uninitialized access log variable when the HTTP request is malformed"
+    exit 1
+fi
+
+make stop
+
+echo "don't log uninitialized access log variable when the HTTP request is malformed"
 
 # port_admin set
 echo '
@@ -1074,8 +1096,10 @@ echo "passed: detect invalid extra_lua_path"
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
 if echo "$out" | grep "APISIX is running"; then
+    rm logs/nginx.pid
     echo "failed: should ignore stale nginx.pid"
     exit 1
 fi
 
+rm logs/nginx.pid
 echo "pass: ignore stale nginx.pid"

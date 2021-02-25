@@ -352,6 +352,33 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
+    else
+        local plugins = plugin.filter(route)
+        api_ctx.plugins = plugins
+
+        plugin.run_plugin("rewrite", plugins, api_ctx)
+        if api_ctx.consumer then
+            local changed
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                api_ctx
+            )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
+            if changed then
+                core.table.clear(api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+            end
+        end
+        plugin.run_plugin("access", plugins, api_ctx)
+    end
+
     local up_id = route.value.upstream_id
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
@@ -417,33 +444,6 @@ function _M.http_access_phase()
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
         core.log.info("enabled websocket for route: ", route.value.id)
-    end
-
-    if route.value.script then
-        script.load(route, api_ctx)
-        script.run("access", api_ctx)
-    else
-        local plugins = plugin.filter(route)
-        api_ctx.plugins = plugins
-
-        plugin.run_plugin("rewrite", plugins, api_ctx)
-        if api_ctx.consumer then
-            local changed
-            route, changed = plugin.merge_consumer_route(
-                route,
-                api_ctx.consumer,
-                api_ctx
-            )
-
-            core.log.info("find consumer ", api_ctx.consumer.username,
-                          ", config changed: ", changed)
-
-            if changed then
-                core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
-            end
-        end
-        plugin.run_plugin("access", plugins, api_ctx)
     end
 
     if route.value.service_protocol == "grpc" then

@@ -17,16 +17,14 @@
 local config_local   = require("apisix.core.config_local")
 local core_str       = require("apisix.core.string")
 local table          = require("apisix.core.table")
-local json           = require("apisix.core.json")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
+local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
-local dns_client     = require("resty.dns.client")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
 local open           = io.open
-local math           = math
 local sub_str        = string.sub
 local str_byte       = string.byte
 local tonumber       = tonumber
@@ -43,6 +41,7 @@ local ngx_sleep      = ngx.sleep
 local hostname
 local dns_resolvers
 local current_inited_resolvers
+local current_dns_client
 local max_sleep_interval = 1
 
 ffi.cdef[[
@@ -84,54 +83,33 @@ function _M.split_uri(uri)
 end
 
 
-local function dns_parse(domain)
+local function dns_parse(domain, selector)
     if dns_resolvers ~= current_inited_resolvers then
         local local_conf = config_local.local_conf()
         local valid = table.try_read_attr(local_conf, "apisix", "dns_resolver_valid")
         local enable_resolv_search_opt = table.try_read_attr(local_conf, "apisix",
                                                              "enable_resolv_search_opt")
-
         local opts = {
-            ipv6 = true,
             nameservers = table.clone(dns_resolvers),
-            retrans = 5,  -- 5 retransmissions on receive timeout
-            timeout = 2000,  -- 2 sec
-            order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV (we don't support it yet)
-            validTtl = valid,
+            order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV
         }
+
+        opts.validTtl = valid
 
         if not enable_resolv_search_opt then
             opts.search = {}
         end
 
-        local ok, err = dns_client.init(opts)
-        if not ok then
+        local client, err = dns_client.new(opts)
+        if not client then
             return nil, "failed to init the dns client: " .. err
         end
 
+        current_dns_client = client
         current_inited_resolvers = dns_resolvers
     end
 
-    -- this function will dereference the CNAME records
-    local answers, err = dns_client.resolve(domain)
-    if not answers then
-        return nil, "failed to query the DNS server: " .. err
-    end
-
-    if answers.errcode then
-        return nil, "server returned error code: " .. answers.errcode
-                    .. ": " .. answers.errstr
-    end
-
-    local idx = math.random(1, #answers)
-    local answer = answers[idx]
-    local dns_type = answer.type
-    if dns_type == dns_client.TYPE_A or dns_type == dns_client.TYPE_AAAA then
-        log.info("dns resolve ", domain, ", result: ", json.delay_encode(answer))
-        return table.deepcopy(answer)
-    end
-
-    return nil, "unsupport DNS answer"
+    return current_dns_client:resolve(domain, selector)
 end
 _M.dns_parse = dns_parse
 

@@ -205,6 +205,9 @@ etcd:
                                   # the default value is true, e.g. the certificate will be verified strictly.
 
 # discovery:                      # service discovery center
+#   dns:
+#     resolver:
+#       - "127.0.0.1:8600"        # use the real address of your dns server
 #   eureka:
 #     host:                       # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
 #       - "http://127.0.0.1:8761"
