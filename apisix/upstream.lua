@@ -144,12 +144,21 @@ do
         grpcs = 443,
     }
 
-    function fill_node_info(nodes, scheme)
+    function fill_node_info(up_conf, scheme)
+        local nodes = up_conf.nodes
         for _, n in ipairs(nodes) do
             if not n.port then
+                if up_conf.scheme ~= scheme then
+                    return nil, "Can't detect upstream's scheme. " ..
+                                "You should either specify a port in the node " ..
+                                "or specify the upstream.scheme explicitly"
+                end
+
                 n.port = scheme_to_node[scheme]
             end
         end
+
+        return true
     end
 end
 
@@ -179,7 +188,12 @@ function _M.set_by_route(route, api_ctx)
         if not dis then
             return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
         end
-        local new_nodes = dis.nodes(up_conf.service_name)
+
+        local new_nodes, err = dis.nodes(up_conf.service_name)
+        if not new_nodes then
+            return http_code_upstream_unavailable, "no valid upstream node: " .. (err or "nil")
+        end
+
         local same = upstream_util.compare_upstream_node(up_conf.nodes, new_nodes)
         if not same then
             up_conf.nodes = new_nodes
@@ -213,7 +227,10 @@ function _M.set_by_route(route, api_ctx)
 
     set_upstream_scheme(api_ctx, up_conf)
 
-    fill_node_info(up_conf.nodes, api_ctx.upstream_scheme)
+    local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme)
+    if not ok then
+        return 503, err
+    end
 
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)

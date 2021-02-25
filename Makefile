@@ -163,6 +163,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/core/dns
+	$(INSTALL) apisix/core/dns/*.lua $(INST_LUADIR)/apisix/core/dns
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
 	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
 

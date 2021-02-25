@@ -366,7 +366,11 @@ local upstream_schema = {
         upstream_host = host_def,
         name = rule_name_def,
         desc = {type = "string", maxLength = 256},
-        service_name = rule_name_def,
+        service_name = {
+            type = "string",
+            maxLength = 256,
+            minLength = 1
+        },
         id = id_schema,
         -- deprecate fields, will be removed soon
         enable_websocket = {
