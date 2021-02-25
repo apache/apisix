@@ -59,11 +59,11 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
 
-![auth-1](../images/plugin/basic-auth-1.png)
+![auth-1](../../../assets/images/plugin/basic-auth-1.png)
 
 then add basic-auth plugin in the Consumer page:
 
-![auth-2](../images/plugin/basic-auth-2.png)
+![auth-2](../../../assets/images/plugin/basic-auth-2.png)
 
 ### 2. add a Route or add a Service, and enable the `basic-auth` plugin
 

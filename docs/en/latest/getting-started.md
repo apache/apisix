@@ -245,7 +245,7 @@ a web application to perform the similar. The dashboard is available in the foll
 [repository](https://github.com/apache/apisix). The dashboard is intuitive and you can orchestrate the
 same route configurations via the dashboard as well.
 
-![Dashboard](images/dashboard.png)
+![Dashboard](../../assets/images/dashboard.png)
 
 ### Troubleshooting
 

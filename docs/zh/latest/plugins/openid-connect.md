@@ -52,7 +52,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 前提条件是，您应该在身份服务器中创建受信任的客户端，并生成用于自省的有效令牌（JWT）。
 下图显示了通过网关进行令牌自省的示例（成功）流程。
 
-![token introspection](../../images/plugin/oauth-1.png)
+![token introspection](../../../assets/images/plugin/oauth-1.png)
 
 以下是 curl 命令，用于将插件启用到外部服务。
 通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get（echo 服务）。

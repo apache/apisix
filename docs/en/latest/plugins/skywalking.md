@@ -75,9 +75,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`，to complete the above operation through the web interface, first add a route:\
-![ ](../images/plugin/skywalking-1.png)\
+![ ](../../../assets/images/plugin/skywalking-1.png)\
 Then add skywalking plugin:\
-![ ](../images/plugin/skywalking-2.png)
+![ ](../../../assets/images/plugin/skywalking-2.png)
 
 ## How to set endpoint
 
@@ -141,7 +141,7 @@ plugin_attr:
 
     2. Open the webUI of  skywalking:
         You can open dashboard with a browser: http://10.110.149.175:8080. It will be a successful install as follow:
-        ![ ](../images/plugin/skywalking-3.png)
+        ![ ](../../../assets/images/plugin/skywalking-3.png)
 
 3. Test:
 
@@ -161,9 +161,9 @@ plugin_attr:
         ```
 
         You can see the topology of all service\
-        ![ ](../../doc/images/plugin/skywalking-4.png)\
+        ![ ](../../../assets/images/plugin/skywalking-4.png)\
         You can also see the tracer of all service\
-        ![ ](../../doc/images/plugin/skywalking-5.png)
+        ![ ](../../../assets/images/plugin/skywalking-5.png)
 
 ## Disable Plugin
 

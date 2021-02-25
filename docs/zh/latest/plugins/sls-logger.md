@@ -97,7 +97,7 @@ hello, world
 ```
 
 * 查看阿里云日志服务上传记录
-![](../../images/plugin/sls-logger-1.png "阿里云日志服务预览")
+![](../../../assets/images/plugin/sls-logger-1.png "阿里云日志服务预览")
 
 ## 禁用插件
 

@@ -85,7 +85,7 @@ Token introspection helps to validate a request by verifying the token against a
 As prerequisite, you should create a trusted client in the identity server and generate a valid token(JWT) for introspection.
 The following image shows an example(successful) flow of the token introspection via the gateway.
 
-![token introspection](../images/plugin/oauth-1.png)
+![token introspection](../../../assets/images/plugin/oauth-1.png)
 
 The following is the curl command to enable the plugin to an external service.
 This route will protect `https://httpbin.org/get`(echo service) by introspecting the token provided in the header of the request.

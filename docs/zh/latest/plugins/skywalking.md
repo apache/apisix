@@ -77,11 +77,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
 
-![plugin_skywalking](../../images/plugin/skywalking-1.png)
+![plugin_skywalking](../../../assets/images/plugin/skywalking-1.png)
 
 然后在 route 页面中添加 skywalking 插件：
 
-![plugin_skywalking](../../images/plugin/skywalking-2.png)
+![plugin_skywalking](../../../assets/images/plugin/skywalking-2.png)
 
 ## 如何设置 endpoint
 
@@ -145,7 +145,7 @@ plugin_attr:
     2. 打开管理页面
         在浏览器里面输入 http://10.110.149.175:8080，出现了如下界面，则表示安装成功
 
-        ![plugin_skywalking](../../images/plugin/skywalking-3.png)
+        ![plugin_skywalking](../../../assets/images/plugin/skywalking-3.png)
 
 3. 测试示例:
     - 通过访问apisix，访问上游服务
@@ -164,9 +164,9 @@ plugin_attr:
         ```
 
         可以看到访问拓扑图\
-        ![plugin_skywalking](../../images/plugin/skywalking-4.png)\
+        ![plugin_skywalking](../../../assets/images/plugin/skywalking-4.png)\
         可以看到服务追踪图\
-        ![plugin_skywalking](../../images/plugin/skywalking-5.png)
+        ![plugin_skywalking](../../../assets/images/plugin/skywalking-5.png)
 
 ## 禁用插件
 

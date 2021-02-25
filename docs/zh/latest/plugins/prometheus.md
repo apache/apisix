@@ -54,11 +54,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
 
-![](../../images/plugin/prometheus-1.png)
+![](../../../assets/images/plugin/prometheus-1.png)
 
 然后在 route 页面中添加 prometheus 插件：
 
-![](../../images/plugin/prometheus-2.png)
+![](../../../assets/images/plugin/prometheus-2.png)
 
 ## 如何提取指标数据
 
@@ -82,9 +82,9 @@ scrape_configs:
 
 我们也可以在 prometheus 控制台中去检查状态:
 
-![](../../images/plugin/prometheus01.png)
+![](../../../assets/images/plugin/prometheus01.png)
 
-![](../../images/plugin/prometheus02.png)
+![](../../../assets/images/plugin/prometheus02.png)
 
 ## 如何修改暴露指标的uri
 
@@ -110,11 +110,11 @@ plugin_attr:
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
-![](../../images/plugin/grafana_1.png)
+![](../../../assets/images/plugin/grafana_1.png)
 
-![](../../images/plugin/grafana_2.png)
+![](../../../assets/images/plugin/grafana_2.png)
 
-![](../../images/plugin/grafana_3.png)
+![](../../../assets/images/plugin/grafana_3.png)
 
 ### 可有的指标
 

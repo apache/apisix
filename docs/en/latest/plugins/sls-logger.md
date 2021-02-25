@@ -95,7 +95,7 @@ hello, world
 
 * check log in ali cloud log service
 
-![](../images/plugin/sls-logger-1.png "sls logger view")
+![](../../../assets/images/plugin/sls-logger-1.png "sls logger view")
 
 ## Disable Plugin
 

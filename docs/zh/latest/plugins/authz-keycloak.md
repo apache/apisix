@@ -115,7 +115,7 @@ docker run -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshni
 
 下面这张截图显示了如何在 Keycloak 服务器上配置访问策略：
 
-![Keycloak policy design](../../images/plugin/authz-keycloak.png)
+![Keycloak policy design](../../../assets/images/plugin/authz-keycloak.png)
 
 ## 后续开发
 

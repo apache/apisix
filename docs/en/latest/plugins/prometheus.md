@@ -55,11 +55,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
 
-![](../images/plugin/prometheus-1.png)
+![](../../../assets/images/plugin/prometheus-1.png)
 
 Then add prometheus plugin:
 
-![](../images/plugin/prometheus-2.png)
+![](../../../assets/images/plugin/prometheus-2.png)
 
 ## How to fetch the metric data
 
@@ -84,9 +84,9 @@ scrape_configs:
 
 And we can check the status at prometheus console:
 
-![](../../doc/images/plugin/prometheus01.png)
+![](../../../assets/images/plugin/prometheus01.png)
 
-![](../../doc/images/plugin/prometheus02.png)
+![](../../../assets/images/plugin/prometheus02.png)
 
 ## How to specify export uri
 
@@ -112,11 +112,11 @@ Downloads [Grafana dashboard meta](../json/apisix-grafana-dashboard.json) and im
 
 Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
 
-![](../../doc/images/plugin/grafana_1.png)
+![](../../../assets/images/plugin/grafana_1.png)
 
-![](../../doc/images/plugin/grafana_2.png)
+![](../../../assets/images/plugin/grafana_2.png)
 
-![](../../doc/images/plugin/grafana_3.png)
+![](../../../assets/images/plugin/grafana_3.png)
 
 ### Available metrics
 

@@ -34,7 +34,7 @@ También puede usarse como [k8s ingress controller (control de ingreso)](https:/
 
 La arquitectura técnica de Apache APISIX:
 
-![](doc/images/apisix.png)
+![](docs/assets/images/apisix.png)
 
 ## Communidad
 
@@ -295,7 +295,7 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 ### Contribuciones a través del tiempo
 
-![contributor-over-time](./doc/images/contributor-over-time.png)
+![contributor-over-time](docs/assets/images/contributor-over-time.png)
 
 ## Videos y Artículos
 
