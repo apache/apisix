@@ -92,7 +92,7 @@ passed
 
 
 
-=== TEST 3: hit route, execute the script but don't execute the plugin
+=== TEST 3: hit route, execute the scripts but don't execute the plugins
 --- request
 GET /hello
 --- response_body
