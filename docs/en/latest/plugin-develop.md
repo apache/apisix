@@ -103,7 +103,7 @@ local _M = {
 }
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin, you can view the priority of all plugins in the [t/debug/debug-mode.t](../../../t/debug/debug-mode.t) file. In addition, plugins with a high priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
+Note : The priority of the new plugin cannot be the same as the priority of any existing plugin, you can use the `/v1/schema` method of [control API](./control-api.md) to view the priority of all plugins. In addition, plugins with a high priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
 
 in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
