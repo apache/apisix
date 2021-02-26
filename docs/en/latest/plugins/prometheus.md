@@ -1,3 +1,7 @@
+---
+title: prometheus
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.
 

@@ -1,3 +1,7 @@
+---
+title: Stand-alone mode
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-## Stand-alone mode
 
 开启 Stand-alone 模式的 APISIX 节点，将不再使用默认的 etcd 作为配置中心。
 

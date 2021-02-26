@@ -1,3 +1,7 @@
+---
+title: Getting Started
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# Quick Start Guide
+## Quick Start Guide
 
 The goal of this guide is to get started with APISIX and to configure a secured public API with APISIX.
 By the end of this guide, you will have a working APISIX setup and a new service which will route to a public API, which is secured by an API key.

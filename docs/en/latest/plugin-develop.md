@@ -1,3 +1,7 @@
+---
+title: Plugin Develop
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# table of contents
+## table of contents
 
 - [**where to put your plugins**](#where-to-put-your-plugins)
 - [**check dependencies**](#check-dependencies)

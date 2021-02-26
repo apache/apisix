@@ -1,3 +1,7 @@
+---
+title: batch-requests
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# Summary
+## Summary
 
 - [**Description**](#description)
 - [**Attributes**](#attributes)

@@ -1,3 +1,7 @@
+---
+title: Build Apache APISIX
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Build Apache APISIX
 
 ## 1. Install dependencies
 
