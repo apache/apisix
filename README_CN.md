@@ -330,7 +330,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
 <br><br>
-APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
+APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
 ## Logo

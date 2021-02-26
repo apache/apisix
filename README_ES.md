@@ -326,7 +326,7 @@ Se alienta a los usuarios a sumarse a la página [Powered By](docs/en/latest/pow
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
 <br><br>
-APISIX enriquece el <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
+APISIX enriquece el <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
 
