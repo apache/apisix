@@ -34,7 +34,7 @@ jobs:
         sudo gem install --no-document fpm
         git clone https://github.com/api7/apisix-build-tools.git
         cd apisix-build-tools
-        make package type=rpm app=apisix version=master code_tag=master
+        make package type=rpm app=apisix version=master checkout=master
 
     - name: Install Redis Cluster
       run: |
