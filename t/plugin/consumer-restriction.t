@@ -207,6 +207,7 @@ passed
 [error]
 
 
+
 === TEST 6: verify unauthorized
 --- request
 GET /hello
@@ -240,6 +241,8 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 {"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
+
+
 
 === TEST 9: set blacklist
 --- config
@@ -470,6 +473,8 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- no_error_log
 [error]
 
+
+
 === TEST 21: set allowed_methods
 --- config
     location /t {
@@ -514,6 +519,7 @@ passed
 [error]
 
 
+
 === TEST 22: verify jack1
 --- request
 GET /hello
@@ -524,6 +530,8 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 {"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
+
+
 
 === TEST 23: set allowed_methods
 --- config
@@ -568,6 +576,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 24: verify jack1
 --- request
 GET /hello
@@ -577,6 +587,8 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 hello world
 --- no_error_log
 [error]
+
+
 
 === TEST 25: remove consumer-restriction
 --- config
@@ -1332,6 +1344,7 @@ passed
 [error]
 
 
+
 === TEST 41: set wrong scheme for allowed_methods and blacklist
 --- config
     location /t {
@@ -1373,6 +1386,8 @@ qr/\{"error_msg":"failed to check the configuration of plugin consumer-restricti
 --- no_error_log
 [error]
 
+
+
 === TEST 42: set wrong scheme only allowed_methods
 --- config
     location /t {
@@ -1410,6 +1425,7 @@ GET /t
 qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_methods set but no withelist provided"}/
 --- no_error_log
 [error]
+
 
 
 === TEST 43: delete: route (id: 1)

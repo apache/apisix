@@ -132,20 +132,19 @@ end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
-   if not ok then
+    if not ok then
         return false, err
-   end
-   if ((conf.allowed_methods and #conf.allowed_methods > 0) and not conf.whitelist ) then
-    return false, "allowed_methods set but no withelist provided"
-   end
-   return true
+    end
+    if ((conf.allowed_methods and #conf.allowed_methods > 0) and not conf.whitelist ) then
+        return false, "allowed_methods set but no withelist provided"
+    end
+    return true
 end
 
 
 function _M.access(conf, ctx)
     local value = fetch_val_funcs[conf.type](ctx)
     local method = ngx.req.get_method()
-
     if not value then
         return 401, { message = "Missing authentication or identity verification."}
     end
