@@ -16,7 +16,7 @@
 --
 local ipairs    = ipairs
 local core      = require("apisix.core")
-
+local ngx          = ngx
 local schema = {
     type = "object",
     oneOf = {
@@ -53,6 +53,38 @@ local schema = {
                 rejected_code = {type = "integer", minimum = 200, default = 403}
             },
             required = {"whitelist"},
+        },
+        {
+            title = "allowed_methods",
+            properties = {
+                type = {
+                    type = "string",
+                    enum = {"consumer_name", "service_id"},
+                    default = "consumer_name"
+                },
+                whitelist = {
+                    type = "array",
+                    items = {
+                        type = "object",
+                        properties = {
+                            user = {
+                                type = "string"
+                            },
+                            methods = {
+                                type = "array",
+                                minItems = 1,
+                                items = {
+                                    type = "string",
+                                    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                                            "OPTIONS", "CONNECT", "TRACE"},
+                                }
+                            }
+                        }
+                    }
+                },
+                rejected_code = {type = "integer", minimum = 200, default = 403}
+            },
+            required = {"allowed_methods"},
         }
     }
 }
@@ -84,20 +116,36 @@ local function is_include(value, tab)
     return false
 end
 
+local function is_method_allow(allowed_methods, method, user)
+    for key,value in ipairs(allowed_methods) do
+        if value.user == user then
+            for k,allowed_method in pairs(value.methods) do
+                if allowed_method == method then
+                    return true
+                end
+            end
+            return false
+        end
+    end
+    return true
+end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
+   if not ok then
         return false, err
-    end
-
-    return true
+   end
+   if ((conf.allowed_methods and #conf.allowed_methods > 0) and not conf.whitelist ) then
+    return false, "allowed_methods set but no withelist provided"
+   end
+   return true
 end
 
 
 function _M.access(conf, ctx)
     local value = fetch_val_funcs[conf.type](ctx)
+    local method = ngx.req.get_method()
+
     if not value then
         return 401, { message = "Missing authentication or identity verification."}
     end
@@ -113,6 +161,11 @@ function _M.access(conf, ctx)
     if conf.whitelist and #conf.whitelist > 0 then
         if not is_include(value, conf.whitelist) then
             block = true
+        end
+        if conf.allowed_methods and #conf.allowed_methods > 0 then
+            if not is_method_allow(conf.allowed_methods, method, value) then
+                block = true
+            end
         end
     end
 
