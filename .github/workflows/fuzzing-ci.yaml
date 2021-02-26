@@ -63,6 +63,3 @@ jobs:
       run: |
         python $PWD/t/fuzzing/vars_route_test.py
 
-    - name: check all test log
-      run: |
-        python $PWD/t/fuzzing/vars_route_test.py
