@@ -1,3 +1,7 @@
+---
+title: Stand-alone mode
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-## Stand-alone mode
 
 Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
 

@@ -1,3 +1,7 @@
+---
+title: Install Dependencies
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Install Dependencies
 
 - [Install Dependencies](#install-dependencies)
 - [Note](#note)

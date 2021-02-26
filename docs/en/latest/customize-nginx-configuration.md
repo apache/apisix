@@ -1,3 +1,7 @@
+---
+title: Customize Nginx configuration
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Customize Nginx configuration
 
 The Nginx configuration used by APISIX is generated via the template file `apisix/ngx_tpl.lua` and the options from `conf/config-default.yaml` / `conf/config.yaml`.
 

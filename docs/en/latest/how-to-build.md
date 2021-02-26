@@ -1,3 +1,7 @@
+---
+title: How to build
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more

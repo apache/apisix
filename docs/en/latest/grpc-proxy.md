@@ -1,3 +1,7 @@
+---
+title: grpc-proxy
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# grpc-proxy
 
 proxying gRPC traffic:
 gRPC client -> APISIX -> gRPC/gRPCS server
