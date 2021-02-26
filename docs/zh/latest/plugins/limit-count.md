@@ -1,5 +1,5 @@
 ---
-title: limit count
+title: limit-count
 ---
 
 <!--

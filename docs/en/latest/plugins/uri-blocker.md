@@ -1,5 +1,5 @@
 ---
-title: uri blocker
+title: uri-blocker
 ---
 
 <!--

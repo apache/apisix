@@ -1,5 +1,5 @@
 ---
-title: response rewrite
+title: response-rewrite
 ---
 
 <!--

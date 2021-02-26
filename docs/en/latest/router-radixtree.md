@@ -1,5 +1,5 @@
 ---
-title: Router Radixtree
+title: libradixtree
 ---
 
 <!--
@@ -20,8 +20,6 @@ title: Router Radixtree
 # limitations under the License.
 #
 -->
-
-# libradixtree
 
 ### what's libradixtree?
 
