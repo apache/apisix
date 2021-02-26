@@ -18,12 +18,19 @@
 local roundrobin  = require("resty.roundrobin")
 local core = require("apisix.core")
 local nkeys = core.table.nkeys
+local pairs = pairs
 
 
 local _M = {}
 
 
 function _M.new(up_nodes, upstream)
+    local safe_limit = 0
+    for _, weight in pairs(up_nodes) do
+        -- the weight can be zero
+        safe_limit = safe_limit + weight + 1
+    end
+
     local picker = roundrobin:new(up_nodes)
     local nodes_count = nkeys(up_nodes)
     return {
@@ -34,7 +41,7 @@ function _M.new(up_nodes, upstream)
             end
 
             local server, err
-            while true do
+            for i = 1, safe_limit do
                 server, err = picker:find()
                 if not server then
                     return nil, err
