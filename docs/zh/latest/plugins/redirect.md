@@ -1,3 +1,7 @@
+---
+title: redirect
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# redirect
 
 URI 重定向插件。
 

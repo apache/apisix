@@ -1,3 +1,7 @@
+---
+title: Batch Processor
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Batch Processor
 
 The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
 When the batch_max_size is set to zero the processor will execute each entry immediately. Setting the batch max size more

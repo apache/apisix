@@ -1,3 +1,7 @@
+---
+title: 插件开发
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [**检查外部依赖**](#检查外部依赖)
 - [**插件命名与配置**](#插件命名与配置)

@@ -1,3 +1,7 @@
+---
+title: Plugin interceptors
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-## Plugin interceptors
 
 Some plugins will register API to serve their purposes.
 

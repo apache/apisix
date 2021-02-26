@@ -1,3 +1,7 @@
+---
+title: response-rewrite
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [**response-rewrite**](#response-rewrite)
 - [**配置参数**](#配置参数)

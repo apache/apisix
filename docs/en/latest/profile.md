@@ -1,3 +1,7 @@
+---
+title: Configuration file switching based on environment variables
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Configuration file switching based on environment variables
 
 The reason the configuration is extracted from the code is to better adapt to changes. Usually our applications have different
 operating environments such as development environment and production environment. Certain configurations of these applications

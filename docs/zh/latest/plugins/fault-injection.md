@@ -1,3 +1,7 @@
+---
+title: fault-injection
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# fault-injection
 
 故障注入插件，该插件可以和其他插件一起使用，并且会在其他插件前被执行，配置 `abort` 参数将直接返回给客户端指定的响应码并且终止其他插件的执行，配置 `delay` 参数将延迟某个请求，并且还会执行配置的其他插件。
 

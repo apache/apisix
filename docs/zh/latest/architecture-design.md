@@ -1,3 +1,7 @@
+---
+title: 架构设计
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)

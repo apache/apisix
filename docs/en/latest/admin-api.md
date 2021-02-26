@@ -1,3 +1,7 @@
+---
+title: Admin API
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# Table of Contents
+## Table of Contents
 
 * [Route](#route)
 * [Service](#service)

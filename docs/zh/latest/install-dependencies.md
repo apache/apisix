@@ -1,3 +1,7 @@
+---
+title: 安装依赖
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# 安装依赖
-
 - [注意](#注意)
 - [CentOS 7](#centos-7)
 - [Fedora 31 & 32](#fedora-31--32)
@@ -26,7 +28,7 @@
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 
-# 注意
+## 注意
 
 - Apache APISIX 从 v2.0 开始不再支持 `v2` 版本的 etcd，并且 etcd 最低支持版本为 v3.4.0，因此请使用 etcd 3.4.0+。更重要的是，因为 etcd v3 使用 gPRC 作为消息传递协议，而 Apache APISIX 使用 HTTP(S) 与 etcd 集群通信，因此请确保启用 [etcd gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) 功能。
 
@@ -40,7 +42,7 @@
 
 - 警告：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 openresty-openssl-devel，而不是 openresty-openssl111-devel。
 
-# CentOS 7
+## CentOS 7
 
 ```shell
 # 安装 etcd
@@ -63,7 +65,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Fedora 31 & 32
+## Fedora 31 & 32
 
 ```shell
 # 添加 OpenResty 源
@@ -86,7 +88,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Ubuntu 16.04 & 18.04
+## Ubuntu 16.04 & 18.04
 
 ```shell
 # 添加 OpenResty 源
@@ -112,7 +114,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Debian 9 & 10
+## Debian 9 & 10
 
 ```shell
 # 可选
@@ -143,7 +145,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Mac OSX
+## Mac OSX
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具

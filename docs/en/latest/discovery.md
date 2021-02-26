@@ -1,3 +1,7 @@
+---
+title: Integration service discovery registry
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# Integration service discovery registry
 
 * [**Summary**](#summary)
 * [**Supported discovery registries**](#supported-discovery-registries)
