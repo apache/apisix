@@ -1,3 +1,7 @@
+---
+title: 快速入门指南
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 快速入门指南
 
 本指南的目的是介绍如何使用 APISIX 来配置出一个安全的可以对外提供服务的 API。当您读完本指南，你需要自己安装一下 APISIX 应用，并准备好一个可以对外提供服务的 API，该服务将由 API key 进行访问保护。
 

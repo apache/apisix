@@ -1,3 +1,7 @@
+---
+title: limit-conn
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# limit-conn
 
 限制并发请求（或并发连接）插件。
 

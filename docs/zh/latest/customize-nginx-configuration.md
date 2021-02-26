@@ -1,3 +1,7 @@
+---
+title: 自定义 Nginx 配置
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 自定义 Nginx 配置
 
 APISIX 会通过 `apisix/ngx_tpl.lua` 这个模板和 `conf/config-default.yaml` 加 `conf/config.yaml` 的配置生成 Nginx 配置文件。
 

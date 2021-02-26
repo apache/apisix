@@ -1,3 +1,7 @@
+---
+title: 基于环境变量进行配置文件切换
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 基于环境变量进行配置文件切换
 
 配置之所以从代码中提取出来，就是为了更好适应变化。通常我们的应用都有开发环境、生产环境等不同运行环境，这些环境下应用的一些配置肯定会有不同，比如：配置中心的地址等。
 

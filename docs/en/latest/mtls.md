@@ -1,3 +1,7 @@
+---
+title: Mutual TLS authentication
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-## Mutual TLS authentication
 
 ### Why use it
 
