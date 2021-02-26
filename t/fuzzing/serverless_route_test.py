@@ -18,7 +18,7 @@
 #
 
 import subprocess
-from public import *
+from public import initfuzz, check_log, check_process
 from boofuzz import *
 
 def create_route():
