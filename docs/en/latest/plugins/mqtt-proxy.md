@@ -21,7 +21,7 @@ title: mqtt-proxy
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

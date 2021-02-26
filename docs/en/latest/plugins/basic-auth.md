@@ -21,7 +21,7 @@ title: basic-auth
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

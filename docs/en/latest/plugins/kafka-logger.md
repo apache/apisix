@@ -21,7 +21,7 @@ title: kafka-logger
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

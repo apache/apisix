@@ -21,7 +21,7 @@ title: key-auth
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

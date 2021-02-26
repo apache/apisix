@@ -21,7 +21,7 @@ title: error-log-logger
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

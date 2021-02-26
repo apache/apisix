@@ -21,7 +21,7 @@ title: wolf-rbac
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

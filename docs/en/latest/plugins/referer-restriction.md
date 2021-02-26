@@ -21,7 +21,7 @@ title: referer-restriction
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

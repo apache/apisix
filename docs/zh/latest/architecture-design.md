@@ -21,7 +21,7 @@ title: 架构设计
 #
 -->
 
-# 目录
+## 目录
 
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)

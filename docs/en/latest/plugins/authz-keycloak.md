@@ -21,7 +21,7 @@ title: authz-keycloak
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

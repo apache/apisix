@@ -21,7 +21,7 @@ title: uri-blocker
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

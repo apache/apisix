@@ -21,7 +21,7 @@ title: ip-restriction
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

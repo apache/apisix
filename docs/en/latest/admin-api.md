@@ -21,7 +21,7 @@ title: Admin API
 #
 -->
 
-# Table of Contents
+## Table of Contents
 
 * [Route](#route)
 * [Service](#service)

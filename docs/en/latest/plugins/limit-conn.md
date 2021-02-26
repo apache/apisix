@@ -21,7 +21,7 @@ title: limit-conn
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

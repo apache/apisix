@@ -21,7 +21,7 @@ title: cors
 #
 -->
 
-# Summary
+## Summary
 
 - [**Description**](#description)
 - [**Attributes**](#attributes)

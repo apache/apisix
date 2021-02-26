@@ -21,7 +21,7 @@ title: hmac-auth
 #
 -->
 
-# Summary
+## Summary
 
   - [**Name**](#name)
   - [**Attributes**](#attributes)

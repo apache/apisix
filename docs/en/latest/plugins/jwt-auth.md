@@ -21,7 +21,7 @@ title: jwt-auth
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

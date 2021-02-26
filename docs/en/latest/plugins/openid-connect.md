@@ -21,7 +21,7 @@ title: openid-connect
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

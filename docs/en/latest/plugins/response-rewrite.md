@@ -21,7 +21,7 @@ title: response-rewrite
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

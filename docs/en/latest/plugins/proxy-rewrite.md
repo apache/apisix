@@ -21,7 +21,7 @@ title: proxy-rewrite
 #
 -->
 
-# Summary
+## Summary
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)

@@ -21,7 +21,7 @@ title: Plugin Develop
 #
 -->
 
-# table of contents
+## table of contents
 
 - [**where to put your plugins**](#where-to-put-your-plugins)
 - [**check dependencies**](#check-dependencies)

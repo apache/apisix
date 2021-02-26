@@ -73,7 +73,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 
 <img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
 
-# User Cases
+## User Cases
 
 ## NASA JPL
 
