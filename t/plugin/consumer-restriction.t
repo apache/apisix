@@ -1422,7 +1422,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin consumer-restricti
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_methods set but no withelist provided"}/
+qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_methods set but no whitelist provided"}/
 --- no_error_log
 [error]
 

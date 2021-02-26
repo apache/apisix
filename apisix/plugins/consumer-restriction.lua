@@ -119,7 +119,7 @@ end
 local function is_method_allow(allowed_methods, method, user)
     for key,value in ipairs(allowed_methods) do
         if value.user == user then
-            for k,allowed_method in pairs(value.methods) do
+            for k,allowed_method in ipairs(value.methods) do
                 if allowed_method == method then
                     return true
                 end
@@ -136,7 +136,7 @@ function _M.check_schema(conf)
         return false, err
     end
     if ((conf.allowed_methods and #conf.allowed_methods > 0) and not conf.whitelist ) then
-        return false, "allowed_methods set but no withelist provided"
+        return false, "allowed_methods set but no whitelist provided"
     end
     return true
 end
