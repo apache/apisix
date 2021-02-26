@@ -36,7 +36,7 @@
 
 ## 插件接口
 
-插件增加接口 `/apisix/status`，可通过 [interceptors](plugin-interceptors.md) 保护该接口。
+插件增加接口 `/apisix/status`，可通过 [interceptors](../plugin-interceptors.md) 保护该接口。
 
 ## 启用插件
 
