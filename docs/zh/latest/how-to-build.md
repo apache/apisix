@@ -1,3 +1,7 @@
+---
+title: 构建 Apache APISIX
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 构建 Apache APISIX
 
 ## 1. 安装依赖
 

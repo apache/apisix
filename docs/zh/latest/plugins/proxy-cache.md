@@ -1,3 +1,7 @@
+---
+title: proxy-cache
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# proxy-cache
 
 代理缓存插件，该插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘的缓存，未来也会支持基于内存的缓存。目前可以根据响应码、请求 Method 来指定需要缓存的数据，另外也可以通过 no_cache 和 cache_bypass 配置更复杂的缓存策略。
 

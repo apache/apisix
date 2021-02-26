@@ -1,5 +1,5 @@
 ---
-title: Aws
+title: Running APISIX in AWS with AWS CDK
 ---
 
 <!--
@@ -20,8 +20,6 @@ title: Aws
 # limitations under the License.
 #
 -->
-
-# Running APISIX in AWS with AWS CDK
 
 [APISIX](https://github.com/apache/apisix) is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 

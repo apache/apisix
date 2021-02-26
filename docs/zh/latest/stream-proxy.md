@@ -1,3 +1,7 @@
+---
+title: Stream 代理
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,10 +21,7 @@
 #
 -->
 
-# Stream 代理
-
- 众多的闻名的应用和服务，像 LDAP、 MYSQL 和 RTMP ，选择 TCP 作为通信协议。 但是像 DNS、 syslog 和 RADIUS 这类非事务性的应用，他们选择了
- UDP协议。
+众多的闻名的应用和服务，像 LDAP、 MYSQL 和 RTMP ，选择 TCP 作为通信协议。 但是像 DNS、 syslog 和 RADIUS 这类非事务性的应用，他们选择了UDP协议。
 
 APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 nginx 世界，称 TCP/UDP 代理为 stream 代理，在 APISIX 这里我们也遵循了这个声明.
 

@@ -1,5 +1,5 @@
 ---
-title: Discovery
+title: Integration service discovery registry
 ---
 
 <!--
@@ -20,8 +20,6 @@ title: Discovery
 # limitations under the License.
 #
 -->
-
-# Integration service discovery registry
 
 * [**Summary**](#summary)
 * [**Supported discovery registries**](#supported-discovery-registries)

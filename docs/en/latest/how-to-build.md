@@ -1,5 +1,5 @@
 ---
-title: How to build
+title: Build Apache APISIX
 ---
 
 <!--
@@ -20,8 +20,6 @@ title: How to build
 # limitations under the License.
 #
 -->
-
-# Build Apache APISIX
 
 ## 1. Install dependencies
 

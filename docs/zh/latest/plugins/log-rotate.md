@@ -1,3 +1,7 @@
+---
+title: log-rotate
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# log-rotate
 
 本插件可自动完成 logs 目录下的 access 和 error 日志的定期切分。
 通过配置参数可以设置每间隔多久切分一次日志，以及最近保留多少份日志（超过指定数量后，自动删除老文件）。

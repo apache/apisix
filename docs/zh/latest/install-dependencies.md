@@ -1,3 +1,7 @@
+---
+title: 安装依赖
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 安装依赖
 
 - [注意](#注意)
 - [CentOS 7](#centos-7)

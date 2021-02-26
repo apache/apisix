@@ -1,3 +1,7 @@
+---
+title: 插件拦截器
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-## Plugin interceptors
 
 有些插件为实现它的功能会注册额外的接口。
 

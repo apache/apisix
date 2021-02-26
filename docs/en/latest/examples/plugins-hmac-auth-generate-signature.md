@@ -1,5 +1,5 @@
 ---
-title: plugins-hmac Auth Generate Signature
+title: HMAC Generate Signature Examples
 ---
 
 <!--
@@ -20,8 +20,6 @@ title: plugins-hmac Auth Generate Signature
 # limitations under the License.
 #
 -->
-
-# HMAC Generate Signature Examples
 
 ## Python 3
 
