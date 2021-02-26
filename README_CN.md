@@ -117,7 +117,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
   - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
   - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
-  - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
+  - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/current/op-guide/clustering/)。
   - 高可用：支持配置同一个集群内的多个 etcd 地址。
   - [控制台](https://github.com/apache/apisix-dashboard): 操作 APISIX 集群。
   - 版本控制：支持操作的多次回滚。
@@ -330,7 +330,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
 <br><br>
-APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
+APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
 ## Logo

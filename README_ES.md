@@ -119,7 +119,7 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
   - OpenTracing (rastreo abierto): Soporta [Apache Skywalking](doc/plugins/skywalking.md) y [Zipkin](doc/plugins/zipkin.md)
   - Trabaja con descubrimiento de servicio externo：Aparte del etcd integrado (Equipo Terminal del Circuito de Datos), también soporta `Consul` y `Nacos` [DNS en modo descubrimiento](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), y [Eureka](doc/discovery.md)
   - Monitoreo y métrica (control de mediciones): [Prometheus](doc/plugins/prometheus.md)
-  - Agrupación (clustering): Nodos APISIX sin estados, crea agrupaciones del centro de configuración, por favor consultar [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
+  - Agrupación (clustering): Nodos APISIX sin estados, crea agrupaciones del centro de configuración, por favor consultar [etcd Clustering Guide](https://etcd.io/docs/current/op-guide/clustering/).
   - Alta disponibilidad: Soporta configurar múltiples direcciones etcd en el mismo grupo (cluster).
   - [Tablero](https://github.com/apache/apisix-dashboard)
   - Control de versión: Soporta retroceso o deshacer de operaciones.
@@ -326,7 +326,7 @@ Se alienta a los usuarios a sumarse a la página [Powered By](doc/powered-by.md)
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
 <br><br>
-APISIX enriquece el <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
+APISIX enriquece el <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
 

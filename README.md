@@ -119,7 +119,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
   - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
   - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
-  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
+  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/current/op-guide/clustering/).
   - High availability: support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
@@ -326,7 +326,7 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
 <br><br>
-APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
+APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
 
