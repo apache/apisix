@@ -56,3 +56,18 @@ def initfuzz():
         keep_web_open=False,
     )
     return session
+
+def main(create_route, run):
+    # before test
+    create_route()
+    r1 = check_process()
+    run()
+    # after test
+    boofuzz_log = cur_dir() + "/test.log"
+    apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
+    apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
+    check_log(boofuzz_log, apisix_errorlog, apisix_accesslog)
+    r2 = check_process()
+    if r2 != r1:
+        print("before test, nginx's process list:%s,\nafter test, nginx's process list:%s"%(r1,r2))
+        raise AssertionError

@@ -18,7 +18,7 @@
 #
 
 import subprocess
-from public import initfuzz, check_log, check_process
+from public import initfuzz
 from boofuzz import *
 
 def create_route():
@@ -39,7 +39,7 @@ def create_route():
     '''
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-def main():
+def run():
     session = initfuzz()
 
     s_initialize(name="Request")
@@ -72,14 +72,4 @@ def main():
     session.fuzz()
 
 if __name__ == "__main__":
-    # before test
-    create_route()
-    r1 = check_process()
-    # run test
-    main()
-    # after test
-    check_log()
-    r2 = check_process()
-    if r2 != r1:
-        print("before test, nginx's process list:%s,\nafter test, nginx's process list:%s"%(r1,r2))
-        raise AssertionError
+    main(create_route,run)
