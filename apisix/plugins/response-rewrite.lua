@@ -143,7 +143,7 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-    ctx.reponse_rewrite_matched =  vars_matched(conf, ctx)
+    ctx.reponse_rewrite_matched = vars_matched(conf, ctx)
     if not ctx.reponse_rewrite_matched then
         return
     end

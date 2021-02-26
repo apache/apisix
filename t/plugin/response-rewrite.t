@@ -539,7 +539,34 @@ done
 
 
 
-=== TEST 18: set route with http status code as expr
+=== TEST 18: add plugin with invalidate vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                vars = {
+                    {}
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "vars" validation failed: failed to validate item 1: expect array to have at least 2 items
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: set route with http status code as expr
 --- config
     location /t {
         content_by_lua_block {
@@ -581,7 +608,7 @@ passed
 
 
 
-=== TEST 19: check http code that matchs http_status
+=== TEST 20: check http code that matchs http_status
 --- request
 GET /server_error
 --- response_body
@@ -593,7 +620,7 @@ new body3
 
 
 
-=== TEST 20: check http code that not matchs http_status
+=== TEST 21: check http code that not matchs http_status
 --- request
 GET /hello
 --- response_body
