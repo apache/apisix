@@ -412,6 +412,10 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.has_domain = route_conf.has_domain
     end
 
+    if route_conf.value.script then
+        new_conf.value.script = route_conf.value.script
+    end
+
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
     return new_conf
 end
