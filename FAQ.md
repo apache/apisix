@@ -33,7 +33,7 @@ In addition, APISIX has dynamic routing and hot loading of plug-ins, which is es
 
 ## What's the performance of APISIX?
 
-One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/apisix/blob/master/doc/benchmark.md)
+One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/apisix/blob/master/docs/en/latest/benchmark.md)
 
 APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
@@ -45,7 +45,7 @@ Yes, in version 0.6 we have dashboard built in, you can operate APISIX through t
 
 Of course, APISIX provides flexible custom plugins for developers and businesses to write their own logic.
 
-[How to write plugin](doc/plugin-develop.md)
+[How to write plugin](docs/en/latest/plugin-develop.md)
 
 ## Why we choose etcd as the configuration center?
 
@@ -115,7 +115,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 
 2. Use `traffic-split` plugin to do it.
 
-Please refer to the [traffic-split.md](doc/plugins/traffic-split.md) plugin documentation for usage examples.
+Please refer to the [traffic-split.md](docs/en/latest/plugins/traffic-split.md) plugin documentation for usage examples.
 
 ## How to redirect http to https via APISIX?
 
@@ -271,7 +271,7 @@ Now you can trace the info level log in logs/error.log.
 ## How to reload your own plugin?
 
 The Apache APISIX plugin supports hot reloading.
-See the `Hot reload` section in [plugins](./doc/plugins.md) for how to do that.
+See the `Hot reload` section in [plugins](./docs/en/latest/plugins.md) for how to do that.
 
 ## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
 

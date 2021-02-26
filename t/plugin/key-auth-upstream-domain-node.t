@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{CUSTOM_DNS_SERVER} = "127.0.0.1:1053";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -80,7 +84,7 @@ passed
 
 
 
-=== TEST 3: create route with plugin `limit-req`(upstream node contains domain)
+=== TEST 3: create route with plugin `limit-count`(upstream node contains domain)
 --- config
     location /t {
         content_by_lua_block {
@@ -89,16 +93,16 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "limit-req": {
-                            "rate": 1,
-                            "burst": 0,
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 5,
                             "rejected_code": 503,
                             "key": "remote_addr"
                         }
                     },
                     "upstream": {
                         "nodes": {
-                            "www.apiseven.com:80": 1
+                            "ttl.test.local:1980": 1
                         },
                         "pass_host": "node",
                         "type": "roundrobin"
@@ -142,18 +146,18 @@ location /t {
                 headers
             )
             ngx.say("return: ", code)
+            ngx.sleep(1)
         end
     }
 }
 --- request
 GET /t
 --- response_body
-return: 302
+return: 404
 return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 5
 
 
 
@@ -166,7 +170,7 @@ return: 503
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "www.apiseven.com:80": 1
+                        "ttl.test.local:1980": 1
                     },
                     "pass_host": "node",
                     "type": "roundrobin"
@@ -188,7 +192,7 @@ passed
 
 
 
-=== TEST 6: create route with plugin `limit-req`, and bind upstream via id
+=== TEST 6: create route with plugin `limit-count`, and bind upstream via id
 --- config
     location /t {
         content_by_lua_block {
@@ -197,9 +201,9 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "limit-req": {
-                            "rate": 1,
-                            "burst": 0,
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 5,
                             "rejected_code": 503,
                             "key": "remote_addr"
                         }
@@ -250,9 +254,8 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 302
+return: 404
 return: 503
 return: 503
 --- no_error_log
 [error]
---- timeout: 5

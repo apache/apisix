@@ -199,6 +199,7 @@ http {
     access_log off;
     {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
+    uninitialized_variable_warn off;
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
@@ -339,25 +340,6 @@ http {
                 apisix.http_admin()
             }
         }
-
-        location /apisix/dashboard {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            alias dashboard/;
-
-            try_files $uri $uri/index.html /index.html =404;
-        }
-
-        location =/robots.txt {
-            return 200 'User-agent: *\nDisallow: /';
-        }
     }
     {% end %}
 
@@ -448,21 +430,6 @@ http {
             content_by_lua_block {
                 apisix.http_admin()
             }
-        }
-
-        location /apisix/dashboard {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            alias dashboard/;
-
-            try_files $uri $uri/index.html /index.html =404;
         }
         {% end %}
 
