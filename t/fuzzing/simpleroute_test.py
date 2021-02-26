@@ -37,7 +37,7 @@ def create_route():
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 def main():
-    fw = open(cur_dir() + "/test.log",'wb')
+    fw = open(cur_dir() + "/test.log",'ab')
     fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
     session = Session(
         target=Target(
@@ -78,10 +78,6 @@ if __name__ == "__main__":
     r1 = check_process()
     main()
     # after test
-    boofuzz_log = cur_dir() + "/test.log"
-    apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
-    apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
-    check_log(boofuzz_log, apisix_errorlog, apisix_accesslog)
     r2 = check_process()
     if r2 != r1:
         print("before test, nginx's process list:%s,\nafter test, nginx's process list:%s"%(r1,r2))
