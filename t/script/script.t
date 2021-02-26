@@ -25,7 +25,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add service and service has plugin
+=== TEST 1: add service which has plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -63,7 +63,7 @@ passed
 
 
 
-=== TEST 2: add route, route binding service and route has script
+=== TEST 2: add route which has scripts and binding service
 --- config
     location /t {
         content_by_lua_block {
