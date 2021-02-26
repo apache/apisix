@@ -62,3 +62,7 @@ jobs:
     - name: run vars route test
       run: |
         python $PWD/t/fuzzing/vars_route_test.py
+
+    - name: debug
+      run: |
+        tail -n 100 $PWD/t/fuzzing/test.log
