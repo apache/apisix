@@ -57,7 +57,7 @@ def initfuzz():
     )
     return session
 
-def runtest(create_route, run):
+def run_test(create_route, run):
     # before test
     create_route()
     r1 = check_process()

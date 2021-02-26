@@ -18,7 +18,7 @@
 #
 
 import subprocess
-from public import initfuzz, runtest
+from public import initfuzz, run_test
 from boofuzz import *
 
 def create_route():
@@ -72,4 +72,4 @@ def run():
     session.fuzz()
 
 if __name__ == "__main__":
-    runtest(create_route,run)
+    run_test(create_route,run)
