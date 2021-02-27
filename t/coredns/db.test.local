@@ -21,3 +21,24 @@ ipv6     IN AAAA  ::1
 
 ttl 300  IN A     127.0.0.1
 ttl.1s 1  IN A     127.0.0.1
+
+; SRV
+A          IN A     127.0.0.1
+B          IN A     127.0.0.2
+C          IN A     127.0.0.3
+C          IN A     127.0.0.4
+; RFC 2782 style
+_sip._tcp.srv   86400 IN    SRV 10       60     1980 A
+_sip._tcp.srv   86400 IN    SRV 10       20     1980 B
+; standard style
+srv   86400 IN    SRV 10       60     1980 A
+srv   86400 IN    SRV 10       20     1980 B
+
+port.srv   86400 IN    SRV 10       60     1980 A
+port.srv   86400 IN    SRV 10       20     1981 B
+
+zero-weight.srv   86400 IN    SRV 10       60     1980 A
+zero-weight.srv   86400 IN    SRV 10       0      1980 B
+
+split-weight.srv   86400 IN    SRV 10      100   1980 A
+split-weight.srv   86400 IN    SRV 10      0     1980 C

@@ -18,8 +18,10 @@ local require = require
 local log = require("apisix.core.log")
 local json = require("apisix.core.json")
 local table = require("apisix.core.table")
+local insert_tab = table.insert
 local math_random = math.random
 local package_loaded = package.loaded
+local ipairs = ipairs
 local setmetatable = setmetatable
 
 
@@ -27,6 +29,67 @@ local _M = {
     RETURN_RANDOM = 1,
     RETURN_ALL = 2,
 }
+
+
+local function gcd(a, b)
+    if b == 0 then
+        return a
+    end
+
+    return gcd(b, a % b)
+end
+
+
+local function resolve_srv(client, answers)
+    if #answers == 0 then
+        return nil, "empty SRV record"
+    end
+
+    local resolved_answers = {}
+    local answer_to_count = {}
+    for _, answer in ipairs(answers) do
+        if answer.type ~= client.TYPE_SRV then
+            return nil, "mess SRV with other record"
+        end
+
+        local resolved, err = client.resolve(answer.target)
+        if not resolved then
+            local msg = "failed to resolve SRV record " .. answer.target .. ": " .. err
+            return nil, msg
+        end
+
+        log.info("dns resolve SRV ", answer.target, ", result: ",
+                 json.delay_encode(resolved))
+
+        local weight = answer.weight
+        if weight == 0 then
+            weight = 1
+        end
+
+        local count = #resolved
+        answer_to_count[answer] = count
+        -- one target may have multiple resolved results
+        for _, res in ipairs(resolved) do
+            local copy = table.deepcopy(res)
+            copy.weight = weight / count
+            copy.port = answer.port
+            insert_tab(resolved_answers, copy)
+        end
+    end
+
+    -- find the least common multiple of the counts
+    local lcm = answer_to_count[answers[1]]
+    for i = 2, #answers do
+        local count = answer_to_count[answers[i]]
+        lcm = count * lcm / gcd(count, lcm)
+    end
+    -- fix the weight as the weight should be integer
+    for _, res in ipairs(resolved_answers) do
+        res.weight = res.weight * lcm
+    end
+
+    return resolved_answers
+end
 
 
 function _M.resolve(self, domain, selector)
@@ -45,6 +108,11 @@ function _M.resolve(self, domain, selector)
 
     if selector == _M.RETURN_ALL then
         log.info("dns resolve ", domain, ", result: ", json.delay_encode(answers))
+        for _, answer in ipairs(answers) do
+            if answer.type == client.TYPE_SRV then
+                return resolve_srv(client, answers)
+            end
+        end
         return table.deepcopy(answers)
     end
 
