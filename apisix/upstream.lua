@@ -26,8 +26,8 @@ local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
-local http_code_upstream_unavailable = ngx.HTTP_SERVICE_UNAVAILABLE
 
+local HTTP_CODE_UPSTREAM_UNAVAILABLE = 503
 local _M = {}
 
 
@@ -216,7 +216,7 @@ function _M.set_by_route(route, api_ctx)
 
         local new_nodes, err = dis.nodes(up_conf.service_name)
         if not new_nodes then
-            return http_code_upstream_unavailable, "no valid upstream node: " .. (err or "nil")
+            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
@@ -243,7 +243,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return http_code_upstream_unavailable, "no valid upstream node"
+        return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
     if not is_http then
