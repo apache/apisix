@@ -161,8 +161,12 @@ local function pick_server(route, ctx)
         version = version .. "#" .. checker.status_ver
     end
 
-    local server_picker = lrucache_server_picker(key, version,
-                            create_server_picker, up_conf, checker)
+    -- the same picker will be used in the whole request, especially during the retry
+    local server_picker = ctx.server_picker
+    if not server_picker then
+        server_picker = lrucache_server_picker(key, version,
+                                               create_server_picker, up_conf, checker)
+    end
     if not server_picker then
         return nil, "failed to fetch server picker"
     end
