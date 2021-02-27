@@ -3,7 +3,7 @@
   "sidebar": [
     {
       "type": "doc",
-      "id": "README_CN"
+      "id": "../../../README_CN"
     },
     {
       "type": "doc",
@@ -21,78 +21,78 @@
           "type": "category",
           "label": "General",
           "items": [
-            "batch-requests",
+            "plugins/batch-requests",
             "plugins",
             "https",
-            "serverless",
-            "redirect"
+            "plugins/serverless",
+            "plugins/redirect"
           ]
         },
         {
           "type": "category",
           "label": "Transformation",
           "items": [
-            "response-rewrite",
-            "proxy-rewrite",
-            "grpc-transcode",
-            "fault-injection"
+            "plugins/response-rewrite",
+            "plugins/proxy-rewrite",
+            "plugins/grpc-transcode",
+            "plugins/fault-injection"
           ]
         },
         {
           "type": "category",
           "label": "Authentication",
           "items": [
-            "key-auth",
-            "jwt-auth",
-            "basic-auth",
-            "authz-keycloak",
-            "wolf-rbac",
-            "openid-connect"
+            "plugins/authz-keycloak",
+            "plugins/wolf-rbac",
+            "plugins/key-auth",
+            "plugins/jwt-auth",
+            "plugins/basic-auth",
+            "plugins/openid-connect"
           ]
         },
         {
           "type": "category",
           "label": "Security",
           "items": [
-            "cors",
-            "uri-blocker",
-            "ip-restriction",
-            "referer-restriction"
+            "plugins/cors",
+            "plugins/uri-blocker",
+            "plugins/ip-restriction",
+            "plugins/referer-restriction"
           ]
         },
         {
           "type": "category",
           "label": "Traffic",
           "items": [
-            "limit-req",
-            "limit-conn",
-            "limit-count",
-            "proxy-cache",
-            "request-validation",
-            "proxy-mirror",
-            "api-breaker",
-            "traffic-split"
+            "plugins/limit-req",
+            "plugins/limit-conn",
+            "plugins/limit-count",
+            "plugins/proxy-cache",
+            "plugins/request-validation",
+            "plugins/proxy-mirror",
+            "plugins/api-breaker",
+            "plugins/traffic-split"
           ]
         },
         {
           "type": "category",
           "label": "Monitoring",
           "items": [
-            "prometheus",
-            "zipkin",
-            "skywalking"
+            "plugins/prometheus",
+            "plugins/zipkin",
+            "plugins/skywalking"
           ]
         },
         {
           "type": "category",
           "label": "Loggers",
           "items": [
-            "http-logger",
-            "tcp-logger",
-            "kafka-logger",
-            "udp-logger",
-            "syslog",
-            "log-rotate"
+            "plugins/http-logger",
+            "plugins/tcp-logger",
+            "plugins/kafka-logger",
+            "plugins/udp-logger",
+            "plugins/syslog",
+            "plugins/log-rotate"
           ]
         }
       ]
@@ -127,11 +127,11 @@
     },
     {
       "type": "doc",
-      "id": "customize-nginx-configuration"
+      "id": "./customize-nginx-configuration"
     },
     {
       "type": "doc",
-      "id": "CHANGELOG_CN"
+      "id": "../../../CHANGELOG_CN"
     },
     {
       "type": "doc",
@@ -139,15 +139,15 @@
     },
     {
       "type": "doc",
-      "id": "CODE_STYLE_CN"
+      "id": "../../../CODE_STYLE_CN"
     },
     {
       "type": "doc",
-      "id": "debug-function"
+      "id": "./debug-function"
     },
     {
       "type": "doc",
-      "id": "FAQ_CN"
+      "id": "../../../FAQ_CN"
     }
   ]
 }
