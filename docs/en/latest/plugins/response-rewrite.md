@@ -47,7 +47,7 @@ response rewrite plugin, rewrite the content returned by the upstream as well as
 | body        | string  | optional    |         |            | New `body` to client, and the content-length will be reset too.                                                                                                                                                               |
 | body_base64 | boolean | optional    | false   |            | Identify if `body` in configuration need base64 decoded before rewrite to client.                                                                                                                                             |
 | headers     | object  | optional    |         |            | Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
-| vars     | array[]  | optional    |         |            | A DSL to evaluate with the given ngx.var. See `vars` [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| vars     | array[]  | optional    |         |            | A DSL to evaluate with the given ngx.var. See `vars` [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). if the `vars` is empty, then all rewrite operations will be executed unconditionally |
 
 ## How To Enable
 
