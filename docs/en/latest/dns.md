@@ -53,10 +53,10 @@ and `test.consul.service` be resolved as `1.1.1.1` and `1.1.1.2`, this result wi
 {
     "id": 1,
     "type": "roundrobin",
-    "nodes": {
+    "nodes": [
         {"host": "1.1.1.1", "weight": 1},
         {"host": "1.1.1.2", "weight": 1}
-    }
+    ]
 }
 ```
 
@@ -109,11 +109,11 @@ is the same as:
 {
     "id": 1,
     "type": "roundrobin",
-    "nodes": {
+    "nodes": [
         {"host": "1.1.1.1", "port": 1980, "weight": 60},
         {"host": "1.1.1.2", "port": 1981, "weight": 10},
         {"host": "1.1.1.3", "port": 1981, "weight": 10}
-    }
+    ]
 }
 ```
 
