@@ -19,7 +19,7 @@
 
 ## Reference Documentation
 
-* [APISIX Readme](./README.md)
+* [APISIX Readme](../../../README.md)
 * [Architecture Design](architecture-design.md)
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
@@ -32,11 +32,11 @@
 * [gRPC Proxy](grpc-proxy.md)
 * [Customize Nginx Configuration](./customize-nginx-configuration.md)
 * [DNS](./dns.md)
-* [Changelog](../CHANGELOG.md)
+* [Changelog](../../../CHANGELOG.md)
 * [Benchmark](benchmark.md)
-* [Code Style](../CODE_STYLE.md)
+* [Code Style](../../../CODE_STYLE.md)
 * [Debug Function](./debug-function.md)
-* [FAQ](../FAQ.md)
+* [FAQ](../../../FAQ.md)
 
 ## Plugins
 
@@ -105,4 +105,4 @@ The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.c
 
 ### Kubernetes
 
-See [this guide](../kubernetes/README.md) and learn how to deploy apisix in Kubernetes.
+See [this guide](../../../kubernetes/README.md) and learn how to deploy apisix in Kubernetes.

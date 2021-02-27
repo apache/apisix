@@ -19,22 +19,22 @@
 
 ## 参考文档
 
-* [APISIX 说明](../../README_CN.md)
+* [APISIX 说明](../../../README_CN.md)
 * [架构设计](architecture-design.md)
 * [如何构建 Apache APISIX](how-to-build.md)
 * [管理 API](admin-api.md)
-* [控制 API](../control-api.md)
+* [控制 API](control-api.md)
 * [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
-* [路由 radixtree](../router-radixtree.md)
+* [路由 radixtree](router-radixtree.md)
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy.md)
 * [gRPC 代理](grpc-proxy.md)
 * [自定义 Nginx 配置](./customize-nginx-configuration.md)
-* [变更日志](../../CHANGELOG_CN.md)
+* [变更日志](../../../CHANGELOG_CN.md)
 * [压力测试](benchmark.md)
-* [代码风格](../../CODE_STYLE_CN.md)
+* [代码风格](../../../CODE_STYLE_CN.md)
 * [调试功能](./debug-function.md)
-* [常见问答](../../FAQ_CN.md)
+* [常见问答](../../../FAQ_CN.md)
 
 ## 插件
 
@@ -105,4 +105,4 @@
 
 ### Kubernetes
 
-请参阅[指南](../../kubernetes/README.md)并了解如何在 Kubernetes 中部署 APISIX。
+请参阅[指南](../../../kubernetes/README.md)并了解如何在 Kubernetes 中部署 APISIX。
