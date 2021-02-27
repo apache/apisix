@@ -1,5 +1,5 @@
 ---
-title: APISIX 说明
+title: Apache APISIX
 ---
 
 <!--

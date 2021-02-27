@@ -1,0 +1,9 @@
+{
+  "version": 2.3,
+  "sidebar": [
+    {
+      "type": "doc",
+      "id": "README_ES"
+    }
+  ]
+}

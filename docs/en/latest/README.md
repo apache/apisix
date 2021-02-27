@@ -19,7 +19,7 @@
 
 ## Reference Documentation
 
-* [APISIX Readme](../../../README.md)
+* [APISIX Readme](README_US.md)
 * [Architecture Design](architecture-design.md)
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
@@ -30,13 +30,13 @@
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
 * [gRPC Proxy](grpc-proxy.md)
-* [Customize Nginx Configuration](./customize-nginx-configuration.md)
-* [DNS](./dns.md)
-* [Changelog](../../../CHANGELOG.md)
+* [Customize Nginx Configuration](customize-nginx-configuration.md)
+* [DNS](dns.md)
+* [Changelog](CHANGELOG.md)
 * [Benchmark](benchmark.md)
-* [Code Style](../../../CODE_STYLE.md)
-* [Debug Function](./debug-function.md)
-* [FAQ](../../../FAQ.md)
+* [Code Style](CODE_STYLE.md)
+* [Debug Function](debug-function.md)
+* [FAQ](FAQ.md)
 
 ## Plugins
 

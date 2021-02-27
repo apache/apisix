@@ -3,7 +3,7 @@
   "sidebar": [
     {
       "type": "doc",
-      "id": "../../../README_CN"
+      "id": "README_CN"
     },
     {
       "type": "doc",
@@ -22,7 +22,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "plugins",
             "https",
             "plugins/serverless",
             "plugins/redirect"
@@ -127,11 +126,7 @@
     },
     {
       "type": "doc",
-      "id": "./customize-nginx-configuration"
-    },
-    {
-      "type": "doc",
-      "id": "../../../CHANGELOG_CN"
+      "id": "customize-nginx-configuration"
     },
     {
       "type": "doc",
@@ -139,15 +134,19 @@
     },
     {
       "type": "doc",
-      "id": "../../../CODE_STYLE_CN"
+      "id": "CODE_STYLE_CN"
     },
     {
       "type": "doc",
-      "id": "./debug-function"
+      "id": "debug-function"
     },
     {
       "type": "doc",
-      "id": "../../../FAQ_CN"
+      "id": "FAQ_CN"
+    },
+    {
+      "type": "doc",
+      "id": "CHANGELOG_CN"
     }
   ]
 }

@@ -1,5 +1,5 @@
 ---
-title: 管理 API
+title: Admin API
 ---
 
 <!--
