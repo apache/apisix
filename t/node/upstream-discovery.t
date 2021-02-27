@@ -203,3 +203,50 @@ qr/create_obj_fun\(\): upstream nodes:/
 --- grep_error_log_out
 create_obj_fun(): upstream nodes:
 create_obj_fun(): upstream nodes:
+
+
+
+=== TEST 4: don't create new server picker if nodes don't change (port missing)
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /hello
+    upstream_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", weight = 1},
+                        {host = "0.0.0.0", weight = 1},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say(res.status)
+
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "0.0.0.0", weight = 1},
+                        {host = "127.0.0.1", weight = 1},
+                    }
+                end
+            }
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+        }
+    }
+--- grep_error_log eval
+qr/create_obj_fun\(\): upstream nodes:/
+--- grep_error_log_out
+create_obj_fun(): upstream nodes:
+--- error_log
+connect() failed
