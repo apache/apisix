@@ -79,7 +79,7 @@ local function resolve_srv(client, answers)
 
     -- find the least common multiple of the counts
     local lcm = answer_to_count[answers[1]]
-    for i = 1, #answers do
+    for i = 2, #answers do
         local count = answer_to_count[answers[i]]
         lcm = count * lcm / gcd(count, lcm)
     end
