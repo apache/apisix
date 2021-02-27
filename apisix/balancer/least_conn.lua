@@ -31,7 +31,10 @@ end
 
 function _M.new(up_nodes, upstream)
     local servers_heap = binaryHeap.minUnique(least_score)
+    local safe_limit = 0
     for server, weight in pairs(up_nodes) do
+        safe_limit = safe_limit + 1
+
         local score = 1 / weight
         -- Note: the argument order of insert is different from others
         servers_heap:insert({
@@ -47,7 +50,7 @@ function _M.new(up_nodes, upstream)
             local server, info, err
             if ctx.balancer_tried_servers then
                 local tried_server_list = {}
-                while true do
+                for i = 1, safe_limit do
                     server, info = servers_heap:peek()
                     if server == nil then
                         err = "all upstream servers tried"

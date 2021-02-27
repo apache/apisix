@@ -1,3 +1,7 @@
+---
+title: 集成服务发现注册中心
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 集成服务发现注册中心
 
 * [**摘要**](#摘要)
 * [**当前支持的注册中心**](#当前支持的注册中心)

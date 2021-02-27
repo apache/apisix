@@ -1,3 +1,7 @@
+---
+title: 批处理机
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 批处理机
 
 批处理处理器可用于聚合条目（日志/任何数据）并进行批处理。
 当batch_max_size设置为零时，处理器将立即执行每个条目。将批处理的最大大小设置为大于1将开始聚合条目，直到达到最大大小或超时到期为止

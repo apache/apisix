@@ -1,3 +1,7 @@
+---
+title: Install Dependencies
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# Install Dependencies
-
 - [Install Dependencies](#install-dependencies)
 - [Note](#note)
 - [CentOS 7](#centos-7)
@@ -27,7 +29,7 @@
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 
-# Note
+## Note
 
 - Since v2.0 Apache APISIX would not support the v2 protocol storage to etcd anymore, and the minimum etcd version supported is v3.4.0. What's more, etcd v3 uses gRPC as the messaging protocol, while Apache APISIX uses HTTP(S) to communicate with etcd cluster, so be sure the [etcd gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) is enabled.
 
@@ -41,7 +43,7 @@
 
 - WARNING: If you are using OpenResty which is older than `1.17.8`, please installing openresty-openss-devel instead of openresty-openssl111-devel.
 
-# CentOS 7
+## CentOS 7
 
 ```shell
 # install etcd
@@ -64,7 +66,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Fedora 31 & 32
+## Fedora 31 & 32
 
 ```shell
 # add OpenResty source
@@ -87,7 +89,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Ubuntu 16.04 & 18.04
+## Ubuntu 16.04 & 18.04
 
 ```shell
 # add OpenResty source
@@ -113,7 +115,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Debian 9 & 10
+## Debian 9 & 10
 
 ```shell
 # optional
@@ -144,7 +146,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-
 nohup etcd &
 ```
 
-# Mac OSX
+## Mac OSX
 
 ```shell
 # install OpenResty, etcd and some compilation tools
