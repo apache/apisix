@@ -1,5 +1,5 @@
 ---
-title: Stand-alone mode
+title: 独立运行模型
 ---
 
 <!--

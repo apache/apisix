@@ -1,5 +1,5 @@
 ---
-title: grpc-proxy
+title: gRPC 代理
 ---
 
 <!--
