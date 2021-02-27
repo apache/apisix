@@ -1,5 +1,5 @@
 ---
-title: Stand-alone mode
+title: Stand Alone Model
 ---
 
 <!--

@@ -1,3 +1,7 @@
+---
+title: 常见问题
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# 常见问题
 
 ## 为什么要做 API 网关？不是已经有其他的开源网关了吗？
 

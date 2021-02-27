@@ -1,3 +1,7 @@
+---
+title: FAQ
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# FAQ
 
 ## Why a new API gateway?
 
