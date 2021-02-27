@@ -199,8 +199,7 @@ local function parse_domain_in_up(up)
         return nil, err
     end
 
-    local old_dns_value = up.dns_value and up.dns_value.nodes
-    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(up.dns_value, new_nodes)
     if ok then
         return up
     end
@@ -222,8 +221,8 @@ local function parse_domain_in_route(route)
         return nil, err
     end
 
-    local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
-    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
+    local up_conf = route.dns_value and route.dns_value.upstream
+    local ok = upstream_util.compare_upstream_node(up_conf, new_nodes)
     if ok then
         return route
     end
