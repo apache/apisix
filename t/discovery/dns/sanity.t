@@ -186,3 +186,83 @@ upstreams:
 --- error_log
 invalid dns discovery configuration
 --- error_code: 500
+
+
+
+=== TEST 8: SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":20|"127.0.0.2:1980":20,"127.0.0.1:1980":60)\}/
+--- response_body
+hello world
+
+
+
+=== TEST 9: SRV (RFC 2782 style)
+--- apisix_yaml
+upstreams:
+    - service_name: "_sip._tcp.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":20|"127.0.0.2:1980":20,"127.0.0.1:1980":60)\}/
+--- response_body
+hello world
+
+
+
+=== TEST 10: SRV (different port)
+--- apisix_yaml
+upstreams:
+    - service_name: "port.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1981":20|"127.0.0.2:1981":20,"127.0.0.1:1980":60)\}/
+--- response_body
+hello world
+
+
+
+=== TEST 11: SRV (zero weight)
+--- apisix_yaml
+upstreams:
+    - service_name: "zero-weight.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":1|"127.0.0.2:1980":1,"127.0.0.1:1980":60)\}/
+--- response_body
+hello world
+
+
+
+=== TEST 12: SRV (split weight)
+--- apisix_yaml
+upstreams:
+    - service_name: "split-weight.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{(,?"127.0.0.(1:1980":200|3:1980":1|4:1980":1)){3}\}/
+--- response_body
+hello world
