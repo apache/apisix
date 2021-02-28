@@ -19,7 +19,7 @@
 
 ## Reference Documentation
 
-* [APISIX Readme](README_US.md)
+* [APISIX Readme](../../../README.md)
 * [Architecture Design](architecture-design.md)
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
