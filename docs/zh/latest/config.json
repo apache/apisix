@@ -3,7 +3,7 @@
   "sidebar": [
     {
       "type": "doc",
-      "id": "README_CN"
+      "id": "README"
     },
     {
       "type": "doc",
@@ -134,7 +134,7 @@
     },
     {
       "type": "doc",
-      "id": "CODE_STYLE_CN"
+      "id": "CODE_STYLE"
     },
     {
       "type": "doc",
@@ -142,11 +142,11 @@
     },
     {
       "type": "doc",
-      "id": "FAQ_CN"
+      "id": "FAQ"
     },
     {
       "type": "doc",
-      "id": "CHANGELOG_CN"
+      "id": "CHANGELOG"
     }
   ]
 }
