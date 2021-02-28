@@ -44,7 +44,7 @@ Both plug-ins receive the same parameters.
 | phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"] |                                                                                                                                                     |
 | functions | array[string] | required    |            |                                                                          | A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially. |
 
-Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br>
+Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br />
 
 ```lua
 return function()
@@ -94,7 +94,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## Test Plugin
 
- Use curl to access:
+Use curl to access:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
@@ -106,8 +106,8 @@ which indicates that the specified function is in effect.
 ## Disable Plugin
 
 When you want to disable the serverless plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

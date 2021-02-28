@@ -148,6 +148,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 There are several ways to install the Apache Release version of APISIX:
 
 1. Source code compilation (applicable to all systems)
+
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](docs/en/latest/install-dependencies.md)
    - Download the latest source code release package:
 
@@ -186,6 +187,7 @@ There are several ways to install the Apache Release version of APISIX:
    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
+
    - Installation runtime dependencies: OpenResty, etcd and OpenSSL develop library, refer to [install dependencies documentation](docs/en/latest/install-dependencies.md#centos-7)
    - install APISIX：
 
@@ -325,7 +327,7 @@ Users are encouraged to add themselves to the [Powered By](docs/en/latest/powere
 
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br><br>
+<br /><br />
 APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>

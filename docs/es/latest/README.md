@@ -150,6 +150,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
 1. Compilación de código fuente (aplicable a todos los sistemas)
+
    - Instalación de dependencias en tiempo de ejecución: OpenResty y etcd, y dependencias de compilación: luarocks. Consultar [install dependencies documentation](install-dependencies.md)
    - Bajar el paquete de publicación más reciente de código fuente:
 
@@ -188,6 +189,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    La imagen del contenedor Docker no incluye `etcd`, usted puede consultar [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) para iniciar un grupo de ensayos.
 
 3. Paquete RPM（sólo para CentOS 7）
+
    - Instalación de dependencias en tiempo de ejecución: Librerías de desarrollo OpenResty, etcd y OpenSSL, consultar [install dependencies documentation](install-dependencies.md#centos-7)
    - Instalar APISIX：
 
@@ -258,40 +260,40 @@ Al usar el servidor de 8 núcleos de AWS, los QPS de APISIX alcanzan 140,000 con
 #### Ambos han sido cubiertos en cuanto a prestaciones del núcleo del portal (gateway) API
 
 | **Prestaciones**         | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **Upstream dinámico** | Sí               | Sí      |
-| **Router dinámico**   | Sí               | Sí      |
-| **Chequeo del sistema**     | Sí               | Sí      |
-| **SSL dinámico**      | Sí               | Sí      |
-| **Proxy L4 y L7**  | Sí               | Sí      |
-| **Rastreo abierto**      | Sí               | Sí      |
-| **Plugin personalizado**    | Sí               | Sí      |
-| **REST API**         | Sí               | Sí      |
-| **CLI**              | Sí               | Sí      |
+| :----------------------- | :---------------- | :------- |
+| **Upstream dinámico**    | Sí                | Sí       |
+| **Router dinámico**      | Sí                | Sí       |
+| **Chequeo del sistema**  | Sí                | Sí       |
+| **SSL dinámico**         | Sí                | Sí       |
+| **Proxy L4 y L7**        | Sí                | Sí       |
+| **Rastreo abierto**      | Sí                | Sí       |
+| **Plugin personalizado** | Sí                | Sí       |
+| **REST API**             | Sí                | Sí       |
+| **CLI**                  | Sí                | Sí       |
 
 #### Las ventajas de Apache APISIX
 
-| **Prestaciones**                                                    | **Apache APISIX**                                 | **Kong**                |
-| :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
-| Le pertenece a                                                      | Apache Software Foundation                        | Kong Inc.               |
-| Arquitectura de la tecnología                                               | Nginx + etcd                                      | Nginx + postgres        |
-| Canales de comunicación                                          | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
-| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                             | 1700                    |
-| Latencia                                                         | 0.2 ms                                            | 2 ms                    |
-| Dubbo                                                           | Sí                                               | No                      |
-| Retroceso-deshacer de configuration                                          | Sí                                               | No                      |
-| Ruta con TTL                                                  | Sí                                               | No                      |
-| Plug-in carga en caliente                                             | Sí                                               | No                      |
-| LB y ruta personalizados                                             | Sí                                               | No                      |
-| REST API <--> transcodificación gRPC                                  | Sí                                               | No                      |
-| Tengine                                                         | Sí                                               | No                      |
-| MQTT                                                            | Sí                                               | No                      |
-| Tiempo efectivo de Configuración                                    | Determinado por los eventos, < 1ms                               | Recabando datos, 5 seg      |
-| Tablero                                                       | Sí                                               | No                      |
-| IdP                                                             | Sí                                               | No                      |
-| Centro de configuración HA                                         | Sí                                               | No                      |
-| Límite de velocidad para una ventana específica de tiempo         | Sí                                               | No                      |
-| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                               | No                      |
+| **Prestaciones**                                                     | **Apache APISIX**                                        | **Kong**               |
+| :------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
+| Le pertenece a                                                       | Apache Software Foundation                               | Kong Inc.              |
+| Arquitectura de la tecnología                                        | Nginx + etcd                                             | Nginx + postgres       |
+| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
+| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                    | 1700                   |
+| Latencia                                                             | 0.2 ms                                                   | 2 ms                   |
+| Dubbo                                                                | Sí                                                       | No                     |
+| Retroceso-deshacer de configuration                                  | Sí                                                       | No                     |
+| Ruta con TTL                                                         | Sí                                                       | No                     |
+| Plug-in carga en caliente                                            | Sí                                                       | No                     |
+| LB y ruta personalizados                                             | Sí                                                       | No                     |
+| REST API <--> transcodificación gRPC                                 | Sí                                                       | No                     |
+| Tengine                                                              | Sí                                                       | No                     |
+| MQTT                                                                 | Sí                                                       | No                     |
+| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                       | Recabando datos, 5 seg |
+| Tablero                                                              | Sí                                                       | No                     |
+| IdP                                                                  | Sí                                                       | No                     |
+| Centro de configuración HA                                           | Sí                                                       | No                     |
+| Límite de velocidad para una ventana específica de tiempo            | Sí                                                       | No                     |
+| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                       | No                     |
 
 Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
@@ -327,7 +329,7 @@ Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
 
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br><br>
+<br /><br />
 APISIX enriquece el <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
