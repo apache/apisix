@@ -118,7 +118,7 @@ plugin_attr:
 
 ### 可有的指标
 
-* `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。具有的维度：
+* `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
 
     | 名称          |    描述             |
     | -------------| --------------------|
@@ -130,7 +130,7 @@ plugin_attr:
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。|
 
-* `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。具有的维度：
+* `Bandwidth`: 流经 apisix 的总带宽(可分出口带宽和入口带宽)，可以统计到每个服务或所有服务的带宽总和。具有的维度：
 
     | 名称          |    描述        |
     | -------------| ------------- |
@@ -140,7 +140,7 @@ plugin_attr:
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
 
-* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
+* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
 * `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。
 * `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
 * `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。具有的维度：
@@ -163,9 +163,9 @@ plugin_attr:
 
 * `Info`: 当前 APISIX 节点信息。
 
-这里是apisix的原始的指标数据集:
+这里是 apisix 的原始的指标数据集:
 
-```
+```shell
 $ curl http://127.0.0.2:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter

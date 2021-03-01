@@ -134,7 +134,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
-* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
+* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. The total bandwidth of each service or all services can be counted.
 
     Attributes：
 
@@ -146,7 +146,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
-* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
+* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not, where `1` is available, and `0` is unavailable.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
 * `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
 * `Latency`: The per service histogram of request time and the overhead added by APISIX (request time - upstream response time).
@@ -174,7 +174,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 Here is the original metric data of apisix:
 
-```
+```shell
 $ curl http://127.0.0.1:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
