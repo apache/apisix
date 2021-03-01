@@ -251,7 +251,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-[性能测试脚本](<[benchmark/run.sh](https://github.com/apache/apisix/blob/master/benchmark/run.sh)>)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
+[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
 
 ## Apache APISIX 和 Kong 的比较
 
