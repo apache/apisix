@@ -307,3 +307,126 @@ passed
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- error_code: 400
+
+
+
+=== TEST 7: PUT (with non-plugin fields)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "labels": {
+                        "你好": "世界"
+                    },
+                    "desc": "blah"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "count": 2,
+                                    "time_window": 60,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            },
+                            "labels": {
+                                "你好": "世界"
+                            },
+                            "desc": "blah"
+                        },
+                        "key": "/apisix/plugin_configs/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+
+            local res = assert(etcd.get('/plugin_configs/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: GET (with non-plugin fields)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_GET,
+                nil,
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "count": 2,
+                                    "time_window": 60,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            },
+                            "labels": {
+                                "你好": "世界"
+                            },
+                            "desc": "blah"
+                        },
+                        "key": "/apisix/plugin_configs/1"
+                    },
+                    "action": "get"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: invalid non-plugin fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "labels": "a",
+                    "plugins": {
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: wrong type: expected object, got string"}
+--- error_code: 400
