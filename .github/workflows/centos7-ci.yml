@@ -2,11 +2,9 @@ name: CI Centos7
 
 on:
   push:
-    branches:
-      - master
+    branches: [master, 'release/**']
   pull_request:
-    branches:
-      - master
+    branches: [master]
 
 jobs:
   test_apisix:
@@ -30,11 +28,13 @@ jobs:
         submodules: recursive
 
     - name: Build rpm package
+      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
       run: |
         sudo gem install --no-document fpm
         git clone https://github.com/api7/apisix-build-tools.git
         cd apisix-build-tools
         make package type=rpm app=apisix version=master checkout=master
+        rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=Makefile --ignore=rockspec)
 
     - name: Install Redis Cluster
       run: |
@@ -90,10 +90,10 @@ jobs:
     - name: install dependencies
       run: |
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
-        docker exec centos7Instance bash -c "cd apisix && rm -rf \$(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=Makefile --ignore=rockspec)"
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: Install rpm package
+      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
       run: |
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-master-0.x86_64.rpm"
         # Dependencies are attached with rpm, so revert `make deps`
@@ -107,6 +107,7 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh run_case"
 
     - name: Publish Artifact
+      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
       uses: actions/upload-artifact@v2.2.2
       with:
         name: "rpm"
