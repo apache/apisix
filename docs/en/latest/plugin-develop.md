@@ -85,8 +85,8 @@ The plugin itself provides the init method. It is convenient for plugins to perf
  the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __apisix.lua__, And you may need to add some processing on generated part of Nginx
-       configuration file in __bin/apisix__ file. but it is easy to have an impact on the overall situation according to the
+       method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
+       configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
        existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
 ## name and config
