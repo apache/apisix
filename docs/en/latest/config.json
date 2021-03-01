@@ -140,8 +140,9 @@
       "id": "benchmark"
     },
     {
-      "type": "doc",
-      "id": "CODE_STYLE"
+      "type": "link",
+      "label": "CODE_STYLE",
+      "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE"
     },
     {
       "type": "doc",
@@ -152,8 +153,9 @@
       "id": "FAQ"
     },
     {
-      "type": "doc",
-      "id": "CHANGELOG"
+      "type": "link",
+      "label": "CHANGELOG",
+      "href": "https://github.com/apache/apisix/blob/master/CHANGELOG"
     }
   ]
 }
