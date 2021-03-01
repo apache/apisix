@@ -18,7 +18,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "https",
             "plugins/serverless",
             "plugins/redirect"
           ]
@@ -123,6 +122,10 @@
     {
       "type": "doc",
       "id": "customize-nginx-configuration"
+    },
+    {
+      "type": "doc",
+      "id": "https"
     },
     {
       "type": "doc",

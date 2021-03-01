@@ -22,7 +22,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "https",
             "plugins/serverless",
             "plugins/redirect"
           ]
@@ -131,6 +130,10 @@
     {
       "type": "doc",
       "id": "dns"
+    },
+    {
+      "type": "doc",
+      "id": "https"
     },
     {
       "type": "doc",
