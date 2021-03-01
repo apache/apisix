@@ -1,3 +1,7 @@
+---
+title: Apache APISIX
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# Apache APISIX
-
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
 
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
@@ -34,7 +36,7 @@ También puede usarse como [k8s ingress controller (control de ingreso)](https:/
 
 La arquitectura técnica de Apache APISIX:
 
-![](docs/assets/images/apisix.png)
+![](../../assets/images/apisix.png)
 
 ## Communidad
 
@@ -65,75 +67,75 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
 
 - **Multi protocolos**
 
-  - [Proxy TCP/UDP](docs/en/latest/stream-proxy.md): Proxy TCP/UDP dinámico.
-  - [Proxy Dubbo](docs/en/latest/plugins/dubbo-proxy.md): Proxy dinámico HTTP a Dubbo.
-  - [Proxy MQTT Dinámico](docs/en/latest/plugins/mqtt-proxy.md): Soporte de balance de carga MQTT por `client_id`, soporta ambos MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
-  - [Proxy gRPC](docs/en/latest/grpc-proxy.md): Tráfico gRPC a través de Proxy.
-  - [Transcodificado gRPC](docs/en/latest/plugins/grpc-transcode.md): Soporta transcodificado de protocolo para que los clientes puedan acceder su gRPC API usando HTTP/JSON.
+  - [Proxy TCP/UDP](stream-proxy.md): Proxy TCP/UDP dinámico.
+  - [Proxy Dubbo](plugins/dubbo-proxy.md): Proxy dinámico HTTP a Dubbo.
+  - [Proxy MQTT Dinámico](plugins/mqtt-proxy.md): Soporte de balance de carga MQTT por `client_id`, soporta ambos MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+  - [Proxy gRPC](grpc-proxy.md): Tráfico gRPC a través de Proxy.
+  - [Transcodificado gRPC](plugins/grpc-transcode.md): Soporta transcodificado de protocolo para que los clientes puedan acceder su gRPC API usando HTTP/JSON.
   - Proxy de Websocket
   - Proxy de Protocolo
   - Proxy Dubbo: Proxy de Dubbo basado en Tengine.
   - Proxy de HTTP(S) hacia adelante
-  - [SSL](docs/en/latest/https.md): Carga dinámica de certificado SSL.
+  - [SSL](https.md): Carga dinámica de certificado SSL.
 
 - **Completamente Dinámico**
 
-  - [Las actualizaciones y los plugins más recientes](docs/en/latest/plugins.md): Actualiza sus configuraciones y plugins sin reinicios!
-  - [Reescritura de proxy](docs/en/latest/plugins/proxy-rewrite.md): Soporta la reescritura de `host`, `uri`, `schema`, `enable_websocket`, `headers` para el request antes de reenviarlo aguas arriba (upstream).
-  - [Reescritura de respuesta](docs/en/latest/plugins/response-rewrite.md): Establece el código de estatus de respuesta personalizado, así como el cuerpo y el encabezado para el cliente.
-  - [Sin servidor (serverless)](docs/en/latest/plugins/serverless.md): Invoque funciones en cada fase en APISIX.
+  - [Las actualizaciones y los plugins más recientes](plugins.md): Actualiza sus configuraciones y plugins sin reinicios!
+  - [Reescritura de proxy](plugins/proxy-rewrite.md): Soporta la reescritura de `host`, `uri`, `schema`, `enable_websocket`, `headers` para el request antes de reenviarlo aguas arriba (upstream).
+  - [Reescritura de respuesta](plugins/response-rewrite.md): Establece el código de estatus de respuesta personalizado, así como el cuerpo y el encabezado para el cliente.
+  - [Sin servidor (serverless)](plugins/serverless.md): Invoque funciones en cada fase en APISIX.
   - Balance dinámico de cargas: Balanceo de cargas Round-robin usando pesos.
   - Balance de cargas basado en Hash: Balanceo de cargas con sesiones de hashing consistentes.
-  - [Comprobaciones del sistema](docs/en/latest/health-check.md): Permite comprobaciones del sistema en el nodo aguas arriba, y automáticamente filtrará nodos problemáticos durante el balanceo de cargas para asegurar la estabilidad del sistema.
+  - [Comprobaciones del sistema](health-check.md): Permite comprobaciones del sistema en el nodo aguas arriba, y automáticamente filtrará nodos problemáticos durante el balanceo de cargas para asegurar la estabilidad del sistema.
   - Interruptor del circuito: Rastreo inteligente de servicios aguas arriba que tengan problemas.
-  - [Reflejo de proxy (mirror)](docs/en/latest/plugins/proxy-mirror.md): Proporciona la capacidad de reflejar (mirror) los request (solicitudes) del cliente.
-  - [Bifurcación de tráfico](docs/en/latest/plugins/traffic-split.md): Permite a los usuarios dirigir de manera creciente porciones del tráfico entre varias corrientes aguas arriba (upstreams).
+  - [Reflejo de proxy (mirror)](plugins/proxy-mirror.md): Proporciona la capacidad de reflejar (mirror) los request (solicitudes) del cliente.
+  - [Bifurcación de tráfico](plugins/traffic-split.md): Permite a los usuarios dirigir de manera creciente porciones del tráfico entre varias corrientes aguas arriba (upstreams).
 
 - **Enrutamiento con control fino (fine grain)**
 
-  - [Soporta correspondencia completa de la ruta y correspondencia del prefijo](docs/en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [Soporta todas las variables integradas en Nginx como condiciones para el enrutamiento](/docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), así que pueden usarse `cookie`, `args`, etc. como condiciones de enrutamiento para implementar ensayos de desplegado de canarios, ensayoss A/B, etc.
+  - [Soporta correspondencia completa de la ruta y correspondencia del prefijo](router-radixtree.md#how-to-use-libradixtree-in-apisix)
+  - [Soporta todas las variables integradas en Nginx como condiciones para el enrutamiento](/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), así que pueden usarse `cookie`, `args`, etc. como condiciones de enrutamiento para implementar ensayos de desplegado de canarios, ensayoss A/B, etc.
   - Soporta [varios operadores como condiciones de juicio para el enrutamiento](https://github.com/iresty/lua-resty-radixtree#operator-list), por ejemplo `{"arg_age", ">", 24}`
   - Soporta [función personalizada de correspondencia de ruta](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6: Usar IPv6 para hacer corresponder la ruta.
-  - Soporta [TTL](docs/en/latest/admin-api.md#route)
-  - [Soporta prioridades](docs/en/latest/router-radixtree.md#3-match-priority)
-  - [Soporta solicitudes Batch Http (por lotes)](docs/en/latest/plugins/batch-requests.md)
+  - Soporta [TTL](admin-api.md#route)
+  - [Soporta prioridades](router-radixtree.md#3-match-priority)
+  - [Soporta solicitudes Batch Http (por lotes)](plugins/batch-requests.md)
 
 - **Seguridad**
 
-  - Autenticaciones: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
-  - [IP Whitelist/Blacklist](docs/en/latest/plugins/ip-restriction.md)
-  - [Referente Whitelist/Blacklist (listas blancas y negras)](docs/en/latest/plugins/referer-restriction.md)
-  - [IdP](docs/en/latest/plugins/openid-connect.md): Soporta servicios externos de autenticación, tales como Auth0, okta, etc., los usuarios pueden usar esto para conectarse a OAuth 2.0 y otros métodos de autenticación.
-  - [Límite de procesamiento de solicitudes (Limit-req)](docs/en/latest/plugins/limit-req.md)
-  - [Límite de contador (Limit-count)](docs/en/latest/plugins/limit-count.md)
-  - [Límite de concurrencia (Limit-concurrency)](docs/en/latest/plugins/limit-conn.md)
+  - Autenticaciones: [key-auth](plugins/key-auth.md), [JWT](plugins/jwt-auth.md), [basic-auth](plugins/basic-auth.md), [wolf-rbac](plugins/wolf-rbac.md)
+  - [IP Whitelist/Blacklist](plugins/ip-restriction.md)
+  - [Referente Whitelist/Blacklist (listas blancas y negras)](plugins/referer-restriction.md)
+  - [IdP](plugins/openid-connect.md): Soporta servicios externos de autenticación, tales como Auth0, okta, etc., los usuarios pueden usar esto para conectarse a OAuth 2.0 y otros métodos de autenticación.
+  - [Límite de procesamiento de solicitudes (Limit-req)](plugins/limit-req.md)
+  - [Límite de contador (Limit-count)](plugins/limit-count.md)
+  - [Límite de concurrencia (Limit-concurrency)](plugins/limit-conn.md)
   - Anti-ReDoS (Negación regular del servicio): políticas integradas para Anti ReDoS sin configuración.
-  - [CORS](docs/en/latest/plugins/cors.md) Activa CORS (Compartir recursos de origen cruzado) para su API.
-  - [Bloqueador URI](docs/en/latest/plugins/uri-blocker.md): Bloquea solicitudes del cliente por URI.
-  - [Validador de solicitudes (Request Validator)](docs/en/latest/plugins/request-validation.md)
+  - [CORS](plugins/cors.md) Activa CORS (Compartir recursos de origen cruzado) para su API.
+  - [Bloqueador URI](plugins/uri-blocker.md): Bloquea solicitudes del cliente por URI.
+  - [Validador de solicitudes (Request Validator)](plugins/request-validation.md)
 
 - **OPS amigable**
 
-  - OpenTracing (rastreo abierto): Soporta [Apache Skywalking](docs/en/latest/plugins/skywalking.md) y [Zipkin](docs/en/latest/plugins/zipkin.md)
-  - Trabaja con descubrimiento de servicio externo：Aparte del etcd integrado (Equipo Terminal del Circuito de Datos), también soporta `Consul` y `Nacos` [DNS en modo descubrimiento](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), y [Eureka](docs/en/latest/discovery.md)
-  - Monitoreo y métrica (control de mediciones): [Prometheus](docs/en/latest/plugins/prometheus.md)
+  - OpenTracing (rastreo abierto): Soporta [Apache Skywalking](plugins/skywalking.md) y [Zipkin](plugins/zipkin.md)
+  - Trabaja con descubrimiento de servicio externo：Aparte del etcd integrado (Equipo Terminal del Circuito de Datos), también soporta `Consul` y `Nacos` [DNS en modo descubrimiento](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), y [Eureka](discovery.md)
+  - Monitoreo y métrica (control de mediciones): [Prometheus](plugins/prometheus.md)
   - Agrupación (clustering): Nodos APISIX sin estados, crea agrupaciones del centro de configuración, por favor consultar [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
   - Alta disponibilidad: Soporta configurar múltiples direcciones etcd en el mismo grupo (cluster).
   - [Tablero](https://github.com/apache/apisix-dashboard)
   - Control de versión: Soporta retroceso o deshacer de operaciones.
   - CLI: comenzar\detenerse\recargar APISIX usando la línea de comando.
-  - [Modo stand-alone (por su cuenta)](docs/en/latest/stand-alone.md): Soporta cargar reglas de ruta desde un archivo local yaml, siendo más amigable que kubernetes(k8s).
-  - [Regla global](docs/en/latest/architecture-design.md#global-rule): Permite ejecutar cualquier plugin para todas las solicitudes, como: limit rate, IP filter etc.
+  - [Modo stand-alone (por su cuenta)](stand-alone.md): Soporta cargar reglas de ruta desde un archivo local yaml, siendo más amigable que kubernetes(k8s).
+  - [Regla global](architecture-design.md#global-rule): Permite ejecutar cualquier plugin para todas las solicitudes, como: limit rate, IP filter etc.
   - Alto desempeño: El QPS de un sólo núcleo alcanza 18k con un retraso promedio de menos de 0.2 milisegundos.
-  - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
-  - [REST Admin API](docs/en/latest/admin-api.md): Al usar REST Admin API para controlar Apache APISIX, el cual solamente permite acceso 127.0.0.1 por defecto, usted puede modificar el campo `allow_admin` en `conf/config.yaml` para especificar una lista de IPs a los que se les permite llamar el Admin API. Nótese también que el Admin API utiliza autentificación de clave (key auth) para verificar la identidad de quien llama. **El campo `admin_key` en `conf/config.yaml` debe ser modificado antes del despliegue para asegurar la seguridad**.
-  - Loggers (accesos de registro) externos: Exporte accesos de registro para herramientas de control de acceso externo. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md))
+  - [Fault Injection](plugins/fault-injection.md)
+  - [REST Admin API](admin-api.md): Al usar REST Admin API para controlar Apache APISIX, el cual solamente permite acceso 127.0.0.1 por defecto, usted puede modificar el campo `allow_admin` en `conf/config.yaml` para especificar una lista de IPs a los que se les permite llamar el Admin API. Nótese también que el Admin API utiliza autentificación de clave (key auth) para verificar la identidad de quien llama. **El campo `admin_key` en `conf/config.yaml` debe ser modificado antes del despliegue para asegurar la seguridad**.
+  - Loggers (accesos de registro) externos: Exporte accesos de registro para herramientas de control de acceso externo. ([HTTP Logger](plugins/http-logger.md), [TCP Logger](plugins/tcp-logger.md), [Kafka Logger](plugins/kafka-logger.md), [UDP Logger](plugins/udp-logger.md))
   - [Cartas Helm](https://github.com/apache/apisix-helm-chart)
 
 - **Altamente escalable**
-  - [Plugins personalizados](docs/en/latest/plugin-develop.md): Permite engancharse en fases comunes, tales como `rewrite`, `access`, `header filer`, `body filter` y `log`, y también permite engancharse en la etapa `balancer`.
+  - [Plugins personalizados](plugin-develop.md): Permite engancharse en fases comunes, tales como `rewrite`, `access`, `header filer`, `body filter` y `log`, y también permite engancharse en la etapa `balancer`.
   - Carga personalizada de algoritmos de balanceo: Usted puede cargar los algoritmos de balanceo de manera personalizada durante la fase de `balancer`.
   - Routing personalizado: Soporta que los usuarios implementen algoritmos de enrutamiento por sí mismos.
 
@@ -148,7 +150,8 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
 1. Compilación de código fuente (aplicable a todos los sistemas)
-   - Instalación de dependencias en tiempo de ejecución: OpenResty y etcd, y dependencias de compilación: luarocks. Consultar [install dependencies documentation](docs/en/latest/install-dependencies.md)
+
+   - Instalación de dependencias en tiempo de ejecución: OpenResty y etcd, y dependencias de compilación: luarocks. Consultar [install dependencies documentation](install-dependencies.md)
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
@@ -186,7 +189,8 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    La imagen del contenedor Docker no incluye `etcd`, usted puede consultar [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) para iniciar un grupo de ensayos.
 
 3. Paquete RPM（sólo para CentOS 7）
-   - Instalación de dependencias en tiempo de ejecución: Librerías de desarrollo OpenResty, etcd y OpenSSL, consultar [install dependencies documentation](docs/en/latest/install-dependencies.md#centos-7)
+
+   - Instalación de dependencias en tiempo de ejecución: Librerías de desarrollo OpenResty, etcd y OpenSSL, consultar [install dependencies documentation](install-dependencies.md#centos-7)
    - Instalar APISIX：
 
    ```shell
@@ -229,21 +233,21 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
 2. Comenzando
 
-   La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](docs/en/latest/getting-started.md).
+   La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](getting-started.md).
 
-   Más aún, usted puede seguir la documentación para ensayar más [plugins](docs/en/latest/README.md#plugins).
+   Más aún, usted puede seguir la documentación para ensayar más [plugins](README.md#plugins).
 
 3. Admin API
 
-   Apache APISIX brinda [REST Admin API](docs/en/latest/admin-api.md) para controlar de forma dinámica el grupo (cluster) Apache APISIX.
+   Apache APISIX brinda [REST Admin API](admin-api.md) para controlar de forma dinámica el grupo (cluster) Apache APISIX.
 
 4. Desarrollo de Plugin
 
-   Usted puede consultar la guía [plugin development guide](docs/en/latest/plugin-develop.md), y la documentación e implementación de código [sample plugin `echo`](docs/en/latest/plugins/echo.md).
+   Usted puede consultar la guía [plugin development guide](plugin-develop.md), y la documentación e implementación de código [sample plugin `echo`](plugins/echo.md).
 
    Por favor note que los plugins de Apache APISIX added, updated, deleted, etc. no son cargados sin reiniciar el servicio.
 
-Para más documentación, por favor visitar [Apache APISIX Document Index](docs/en/latest/README.md)
+Para más documentación, por favor visitar [Apache APISIX Document Index](README.md)
 
 ## Evaluación comparativa (Benchmark)
 
@@ -256,40 +260,40 @@ Al usar el servidor de 8 núcleos de AWS, los QPS de APISIX alcanzan 140,000 con
 #### Ambos han sido cubiertos en cuanto a prestaciones del núcleo del portal (gateway) API
 
 | **Prestaciones**         | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **Upstream dinámico** | Sí               | Sí      |
-| **Router dinámico**   | Sí               | Sí      |
-| **Chequeo del sistema**     | Sí               | Sí      |
-| **SSL dinámico**      | Sí               | Sí      |
-| **Proxy L4 y L7**  | Sí               | Sí      |
-| **Rastreo abierto**      | Sí               | Sí      |
-| **Plugin personalizado**    | Sí               | Sí      |
-| **REST API**         | Sí               | Sí      |
-| **CLI**              | Sí               | Sí      |
+| :----------------------- | :---------------- | :------- |
+| **Upstream dinámico**    | Sí                | Sí       |
+| **Router dinámico**      | Sí                | Sí       |
+| **Chequeo del sistema**  | Sí                | Sí       |
+| **SSL dinámico**         | Sí                | Sí       |
+| **Proxy L4 y L7**        | Sí                | Sí       |
+| **Rastreo abierto**      | Sí                | Sí       |
+| **Plugin personalizado** | Sí                | Sí       |
+| **REST API**             | Sí                | Sí       |
+| **CLI**                  | Sí                | Sí       |
 
 #### Las ventajas de Apache APISIX
 
-| **Prestaciones**                                                    | **Apache APISIX**                                 | **Kong**                |
-| :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
-| Le pertenece a                                                      | Apache Software Foundation                        | Kong Inc.               |
-| Arquitectura de la tecnología                                               | Nginx + etcd                                      | Nginx + postgres        |
-| Canales de comunicación                                          | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
-| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                             | 1700                    |
-| Latencia                                                         | 0.2 ms                                            | 2 ms                    |
-| Dubbo                                                           | Sí                                               | No                      |
-| Retroceso-deshacer de configuration                                          | Sí                                               | No                      |
-| Ruta con TTL                                                  | Sí                                               | No                      |
-| Plug-in carga en caliente                                             | Sí                                               | No                      |
-| LB y ruta personalizados                                             | Sí                                               | No                      |
-| REST API <--> transcodificación gRPC                                  | Sí                                               | No                      |
-| Tengine                                                         | Sí                                               | No                      |
-| MQTT                                                            | Sí                                               | No                      |
-| Tiempo efectivo de Configuración                                    | Determinado por los eventos, < 1ms                               | Recabando datos, 5 seg      |
-| Tablero                                                       | Sí                                               | No                      |
-| IdP                                                             | Sí                                               | No                      |
-| Centro de configuración HA                                         | Sí                                               | No                      |
-| Límite de velocidad para una ventana específica de tiempo         | Sí                                               | No                      |
-| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                               | No                      |
+| **Prestaciones**                                                     | **Apache APISIX**                                        | **Kong**               |
+| :------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
+| Le pertenece a                                                       | Apache Software Foundation                               | Kong Inc.              |
+| Arquitectura de la tecnología                                        | Nginx + etcd                                             | Nginx + postgres       |
+| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
+| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                    | 1700                   |
+| Latencia                                                             | 0.2 ms                                                   | 2 ms                   |
+| Dubbo                                                                | Sí                                                       | No                     |
+| Retroceso-deshacer de configuration                                  | Sí                                                       | No                     |
+| Ruta con TTL                                                         | Sí                                                       | No                     |
+| Plug-in carga en caliente                                            | Sí                                                       | No                     |
+| LB y ruta personalizados                                             | Sí                                                       | No                     |
+| REST API <--> transcodificación gRPC                                 | Sí                                                       | No                     |
+| Tengine                                                              | Sí                                                       | No                     |
+| MQTT                                                                 | Sí                                                       | No                     |
+| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                       | Recabando datos, 5 seg |
+| Tablero                                                              | Sí                                                       | No                     |
+| IdP                                                                  | Sí                                                       | No                     |
+| Centro de configuración HA                                           | Sí                                                       | No                     |
+| Límite de velocidad para una ventana específica de tiempo            | Sí                                                       | No                     |
+| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                       | No                     |
 
 Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
@@ -317,15 +321,15 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 Una gran variedad de compañías y organizacioes usan APISIX para investigación, producción y productos comerciales, incluyendo:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
+<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
 
-Se alienta a los usuarios a sumarse a la página [Powered By](docs/en/latest/powered-by.md).
+Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
 
 ## Landscape (panorama)
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br><br>
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150" />&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<br /><br />
 APISIX enriquece el <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>

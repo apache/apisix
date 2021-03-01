@@ -1,3 +1,7 @@
+---
+title: APISIX Lua Coding Style Guide
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,10 +20,6 @@
 # limitations under the License.
 #
 -->
-
-[Chinese](CODE_STYLE_CN.md)
-
-# APISIX Lua Coding Style Guide
 
 ## indentation
 

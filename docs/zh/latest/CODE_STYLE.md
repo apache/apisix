@@ -1,3 +1,7 @@
+---
+title: APISIX Lua 编码风格指南
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,10 +20,6 @@
 # limitations under the License.
 #
 -->
-
-[English](CODE_STYLE.md)
-
-# APISIX Lua 编码风格指南
 
 ## 缩进
 
