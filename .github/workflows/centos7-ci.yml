@@ -70,8 +70,8 @@ jobs:
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
-        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+        # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test
       run: |
@@ -89,15 +89,17 @@ jobs:
         docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
         docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
 
+    - name: Install dependencies
+      run: |
+        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
+
     - name: Install rpm package
       # if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-master-0.x86_64.rpm"
+        # Dependencies are attached with rpm, so revert `make deps`
+        docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
-
-    - name: Install dependencies
-      run: |
-        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: Run test cases
       run: |
