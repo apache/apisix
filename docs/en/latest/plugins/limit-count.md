@@ -23,11 +23,11 @@ title: limit-connt
 
 ## Summary
 
-  - [Name](#name)
-  - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-  - [Disable Plugin](#disable-plugin)
+- [Name](#name)
+- [Attributes](#attributes)
+- [How To Enable](#how-to-enable)
+- [Test Plugin](#test-plugin)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -35,21 +35,21 @@ Limit request rate by a fixed number of requests in a given time window.
 
 ## Attributes
 
-| Name           | Type    | Requirement          | Default | Valid                                                                    | Description                                                                                                                                                                                                                                                                                                 |
-| -------------- | ------- | -------------------- | ------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count          | integer | required             |         | count > 0                                                                 | the specified number of requests threshold.                                                                                                                                                                                                                                                                 |
-| time_window    | integer | required             |         | time_window > 0                                                                  | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                               |
-| key            | string  | optional             | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                                                                                                                                                                                                                   |
-| rejected_code  | integer | optional             | 503     | [200,...,599]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                              |
-| policy         | string  | optional             | "local" | ["local", "redis", "redis-cluster"]                                                       | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit). |
-| redis_host     | string  | required for `redis` |         |                                                                          | When using the `redis` policy, this property specifies the address of the Redis server.                                                                                                                                                                                                                     |
-| redis_port     | integer | optional             | 6379    | [1,...]                                                                  | When using the `redis` policy, this property specifies the port of the Redis server.                                                                                                                                                                                                                        |
-| redis_password | string  | optional             |         |                                                                          | When using the `redis` policy, this property specifies the password of the Redis server.                                                                                                                                                                                                                    |
-| redis_database | integer | optional             | 0       | redis_database >= 0                                                      | When using the `redis` policy, this property specifies the datatabase you selected of the Redis server, and only for non Redis cluster mode (single instance mode or Redis public cloud service that provides single entry).                                                                                |
-| redis_timeout  | integer | optional             | 1000    | [1,...]                                                                  | When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server.                                                                                                                                                                            |
-| redis_cluster_nodes | array | optional |         |                                                              | When using `redis-cluster` policy，This property is a list of addresses of Redis cluster service nodes. |
+| Name                | Type    | Requirement          | Default       | Valid                                                                                                   | Description                                                                                                                                                                                                                                                                                                |
+| ------------------- | ------- | -------------------- | ------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| count               | integer | required             |               | count > 0                                                                                               | the specified number of requests threshold.                                                                                                                                                                                                                                                                |
+| time_window         | integer | required             |               | time_window > 0                                                                                         | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                              |
+| key                 | string  | optional             | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br /> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                   |
+| rejected_code       | integer | optional             | 503           | [200,...,599]                                                                                           | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                             |
+| policy              | string  | optional             | "local"       | ["local", "redis", "redis-cluster"]                                                                     | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit). |
+| redis_host          | string  | required for `redis` |               |                                                                                                         | When using the `redis` policy, this property specifies the address of the Redis server.                                                                                                                                                                                                                    |
+| redis_port          | integer | optional             | 6379          | [1,...]                                                                                                 | When using the `redis` policy, this property specifies the port of the Redis server.                                                                                                                                                                                                                       |
+| redis_password      | string  | optional             |               |                                                                                                         | When using the `redis` policy, this property specifies the password of the Redis server.                                                                                                                                                                                                                   |
+| redis_database      | integer | optional             | 0             | redis_database >= 0                                                                                     | When using the `redis` policy, this property specifies the datatabase you selected of the Redis server, and only for non Redis cluster mode (single instance mode or Redis public cloud service that provides single entry).                                                                               |
+| redis_timeout       | integer | optional             | 1000          | [1,...]                                                                                                 | When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server.                                                                                                                                                                           |
+| redis_cluster_nodes | array   | optional             |               |                                                                                                         | When using `redis-cluster` policy，This property is a list of addresses of Redis cluster service nodes.                                                                                                                                                                                                    |
 
-**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
+**Key can be customized by the user, only need to modify a line of code of the plug-in to complete. It is a security consideration that is not open in the plugin.**
 
 ## How To Enable
 
@@ -150,7 +150,7 @@ curl -i http://127.0.0.1:9080/index.html
 ```
 
 The response header contains `X-RateLimit-Limit` and `X-RateLimit-Remaining`,
- which mean the total number of requests and the remaining number of requests that can be sent:
+which mean the total number of requests and the remaining number of requests that can be sent:
 
 ```shell
 HTTP/1.1 200 OK
@@ -185,8 +185,8 @@ This means that the `limit count` plugin is in effect.
 ## Disable Plugin
 
 When you want to disable the `limit count` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
