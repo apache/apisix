@@ -59,7 +59,6 @@ jobs:
       run: |
         python $PWD/t/fuzzing/serverless_route_test.py
 
-    - name: echo test log
-      # more than 150k lines, so only display the last log, actually, this step is not needed.
+    - name: run vars route test
       run: |
-        tail -n 100 $PWD/t/fuzzing/test.log
+        python $PWD/t/fuzzing/vars_route_test.py
