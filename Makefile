@@ -32,11 +32,11 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(UNAME), Darwin)
-ifeq ($(shell test -d "/usr/local/opt/openresty-openssl" && echo -n yes), yes)
-	OPENSSL_PREFIX="/usr/local/opt/openresty-openssl"
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
 endif
-ifeq ($(shell test -d "/usr/local/opt/openresty-openssl111" && echo -n yes), yes)
-	OPENSSL_PREFIX="/usr/local/opt/openresty-openssl111"
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
 endif
 endif
 
@@ -69,16 +69,6 @@ help: default
 ### deps:             Installation dependencies
 .PHONY: deps
 deps: default
-
-ifeq ($(UNAME), Darwin)
-ifeq ($(shell test -d "/usr/local/opt/openresty-openssl" && echo -n yes), yes)
-	export OPENSSL_PREFIX="/usr/local/opt/openresty-openssl"
-endif
-ifeq ($(shell test -d "/usr/local/opt/openresty-openssl111" && echo -n yes), yes)
-	export OPENSSL_PREFIX="/usr/local/opt/openresty-openssl111"
-endif
-endif
-
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)

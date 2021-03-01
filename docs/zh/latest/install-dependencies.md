@@ -149,7 +149,7 @@ nohup etcd &
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具
-brew install openresty/brew/openresty etcd curl git
+brew install openresty/brew/openresty openresty-openssl111 etcd curl git
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
