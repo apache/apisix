@@ -325,14 +325,14 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 有很多公司和组织把 APISIX 用于学习、研究、生产环境和商业产品中，包括：
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
+<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
 
 欢迎用户把自己加入到 [Powered By](powered-by.md) 页面。
 
 ## 全景图
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150" />&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
 <br /><br />
 APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
