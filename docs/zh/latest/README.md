@@ -325,7 +325,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 有很多公司和组织把 APISIX 用于学习、研究、生产环境和商业产品中，包括：
 
-<img src="https://user-images.githubusercontent.com/40708551/109481085-59834d80-7aa2-11eb-9181-fe0298aedb65.png" width="725" height="1700" />
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
 欢迎用户把自己加入到 [Powered By](powered-by.md) 页面。
 
