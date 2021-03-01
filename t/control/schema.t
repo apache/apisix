@@ -51,6 +51,7 @@ __DATA__
                     "main": {
                         "consumer": {"type":"object"},
                         "global_rule": {"type":"object"},
+                        "plugin_config": {"type":"object"},
                         "plugins": {"type":"array"},
                         "proto": {"type":"object"},
                         "route": {"type":"object"},
