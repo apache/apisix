@@ -35,19 +35,19 @@ title: 压力测试
 
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
 
-<img src="../../assets/images/benchmark-1.jpg" width="70%" height="70%">
+<img src="../../assets/images/benchmark-1.jpg" width="70%" height="70%" />
 
 #### 延时
 
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
 
-<img src="../../assets/images/latency-1.jpg" width="70%" height="70%">
+<img src="../../assets/images/latency-1.jpg" width="70%" height="70%" />
 
 #### 火焰图
 
 火焰图的采样结果:
 
-<img src="../../assets/images/flamegraph-1.jpg">
+<img src="../../assets/images/flamegraph-1.jpg" />
 
 ### 测试反向代理，开启 2 个插件
 
@@ -57,13 +57,13 @@ title: 压力测试
 
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
 
-<img src="../../assets/images/benchmark-2.jpg" width="70%" height="70%">
+<img src="../../assets/images/benchmark-2.jpg" width="70%" height="70%" />
 
 #### Latency
 
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
 
-<img src="../../assets/images/latency-2.jpg" width="70%" height="70%">
+<img src="../../assets/images/latency-2.jpg" width="70%" height="70%" />
 
 #### 火焰图
 
