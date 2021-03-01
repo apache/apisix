@@ -3,10 +3,6 @@
   "sidebar": [
     {
       "type": "doc",
-      "id": "README"
-    },
-    {
-      "type": "doc",
       "id": "architecture-design"
     },
     {
