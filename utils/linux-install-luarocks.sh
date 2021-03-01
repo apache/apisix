@@ -16,12 +16,18 @@
 # limitations under the License.
 #
 
+KERNEL=$(uname -s)
+
 # you might need sudo to run this script
 if [ -z ${OPENRESTY_PREFIX} ]; then
-    OPENRESTY_PREFIX="/usr/local/openresty"
+    if [[ $KERNEL == "Darwin" ]]; then
+        OPENRESTY_PREFIX="/usr/local/opt/openresty"
+        else
+        OPENRESTY_PREFIX="/usr/local/openresty"
+    fi
 fi
 
-wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
+#wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
 tar -xf v3.4.0.tar.gz
 cd luarocks-3.4.0 || exit
 
@@ -48,6 +54,13 @@ mkdir ~/.luarocks || true
 OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl
 if [ -d ${OPENRESTY_PREFIX}/openssl111 ]; then
     OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl111
+fi
+
+if [[ ! -d ${OPENSSL_PREFIX} && $KERNEL == "Darwin" ]]; then
+    OPENSSL_PREFIX="/usr/local/opt/openresty-openssl"
+    if [ -d ${OPENSSL_PREFIX} ]; then
+        OPENSSL_PREFIX="/usr/local/opt/openresty-openssl111"
+    fi
 fi
 
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
