@@ -28,12 +28,13 @@ jobs:
         submodules: recursive
 
     - name: Build rpm package
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+      # if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
         sudo gem install --no-document fpm
         git clone https://github.com/api7/apisix-build-tools.git
         cd apisix-build-tools
         make package type=rpm app=apisix version=master checkout=master
+        cd ..
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=Makefile --ignore=rockspec)
 
     - name: Install Redis Cluster
@@ -93,21 +94,19 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
 
     - name: Install rpm package
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+      # if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-master-0.x86_64.rpm"
         # Dependencies are attached with rpm, so revert `make deps`
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
-        docker exec centos7Instance bash -c "cd apisix && ls"
-        docker exec centos7Instance bash -c "cd apisix && yum install -y tree && tree ."
 
     - name: run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh run_case"
 
     - name: Publish Artifact
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+      # if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       uses: actions/upload-artifact@v2.2.2
       with:
         name: "rpm"
