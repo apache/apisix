@@ -158,3 +158,24 @@ conf_version: \d+#2
 --- request
 GET /t
 --- error_code: 403
+
+
+
+=== TEST 3: validated plugins configuration via incremental sync (malformed data)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require("apisix.core")
+
+            assert(core.etcd.set("/plugin_configs/1",
+                {id = 1, plugins = { ["uri-blocker"] = { block_rules =  1 }}}
+            ))
+            -- wait for sync
+            ngx.sleep(0.6)
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "block_rules" validation failed
