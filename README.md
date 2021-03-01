@@ -334,7 +334,7 @@ CNCF API Gateway Landscape.</a>
 
 ## Logos
 
-- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo(PNG)](https://github.com/apache/apisix/tree/master/logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
 
 ## Acknowledgments
@@ -343,4 +343,4 @@ Inspired by Kong and Orange.
 
 ## License
 
-[Apache 2.0 License](LICENSE)
+[Apache 2.0 License](https://github.com/apache/apisix/tree/master/LICENSE)

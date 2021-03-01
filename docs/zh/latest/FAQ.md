@@ -34,7 +34,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/benchmark.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/docs/en/latest/benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.3.12/learning/why/)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -78,8 +78,8 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 比如，`foo.com/product/index.html?id=204&page=2`, 根据 URL 中 query string 中的 `id` 作为条件来灰度发布：
 
-1. A组：id <= 1000
-2. B组：id > 1000
+1. A 组：id <= 1000
+2. B 组：id > 1000
 
 有两种不同的方法来实现：
 
@@ -114,7 +114,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 ```
 
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
-https://github.com/iresty/lua-resty-radixtree#operator-list
+https://github.com/api7/lua-resty-radixtree#operator-list
 
 2、通过 traffic-split 插件来实现
 
@@ -207,15 +207,15 @@ Server: APISIX web server
 
 ## 如何修改日志等级
 
-默认的APISIX日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
+默认的 APISIX 日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
 
 具体步骤：
 
-1、修改conf/config.yaml中的nginx log配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
+1、修改 conf/config.yaml 中的 nginx log 配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
 
 2、重启抑或 reload APISIX
 
-之后便可以在logs/error.log中查看到info的日志了。
+之后便可以在 logs/error.log 中查看到 info 的日志了。
 
 ## 如何加载自己编写的插件
 
@@ -229,24 +229,24 @@ Apache APISIX 的插件支持热加载。
 
 1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
 
-    ```
-    apisix:
-      node_listen:
-        - 9080
-        - 9081
-        - 9082
-    ```
+   ```
+   apisix:
+     node_listen:
+       - 9080
+       - 9081
+       - 9082
+   ```
 
-    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，示例：
+   处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数`ssl.listen_port`，示例：
 
-    ```
-    apisix:
-      ssl:
-        listen_port:
-          - 9443
-          - 9444
-          - 9445
-    ```
+   ```
+   apisix:
+     ssl:
+       listen_port:
+         - 9443
+         - 9444
+         - 9445
+   ```
 
 2.重启抑或 reload APISIX
 
@@ -256,8 +256,8 @@ etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（
 
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
-* 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
-* 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
+- 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
+- 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
 

@@ -23,9 +23,12 @@ title: openid-connect
 
 ## 目录
 
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**令牌自省**](#令牌自省)
+- [目录](#目录)
+- [定义](#定义)
+- [属性列表](#属性列表)
+  - [令牌自省](#令牌自省)
+    - [公钥自省](#公钥自省)
+- [故障排除](#故障排除)
 
 ## 定义
 
@@ -59,7 +62,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 ![token introspection](../../../assets/images/plugin/oauth-1.png)
 
 以下是 curl 命令，用于将插件启用到外部服务。
-通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get（echo 服务）。
+通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get (echo 服务）。
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -131,4 +134,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 故障排除
 
-如果 APISIX 无法解析/连接到身份提供者，请检查/修改DNS设置（`conf / config.yaml`）。
+如果 APISIX 无法解析/连接到身份提供者，请检查/修改 DNS 设置（`conf / config.yaml`）。

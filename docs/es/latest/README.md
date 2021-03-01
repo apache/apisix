@@ -323,7 +323,7 @@ Una gran variedad de compañías y organizacioes usan APISIX para investigación
 
 <img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
 
-Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
+Se alienta a los usuarios a sumarse a la página [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md).
 
 ## Landscape (panorama)
 

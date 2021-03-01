@@ -39,19 +39,19 @@ title: jwt-auth
 
 ## 属性
 
-| 名称           | 类型    | 必选项 | 默认值    | 有效值                       | 描述                                                                                           |
-|:--------------|:--------|:------|:--------|:----------------------------|:-----------------------------------------------------------------------------------------------|
+| 名称          | 类型    | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
+| :------------ | :------ | :----- | :------ | :-------------------------- | :------------------------------------------------------------------------------------------------------------ |
 | key           | string  | 必须   |         |                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
-| secret        | string  | 可选   |         |                             | 加密秘钥。如果您未指定，后台将会自动帮您生成。                                                         |
-| public_key    | string  | 可选   |         |                             | RSA公钥， `algorithm` 属性选择 `RS256` 算法时必填                                                     |
-| private_key   | string  | 可选   |         |                             | RSA私钥， `algorithm` 属性选择 `RS256` 算法时必填                                                     |
-| algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                        |
-| exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                |
-| base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                           |
+| secret        | string  | 可选   |         |                             | 加密秘钥。如果您未指定，后台将会自动帮您生成。                                                                |
+| public_key    | string  | 可选   |         |                             | RSA 公钥， `algorithm` 属性选择 `RS256` 算法时必填                                                            |
+| private_key   | string  | 可选   |         |                             | RSA 私钥， `algorithm` 属性选择 `RS256` 算法时必填                                                            |
+| algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                                      |
+| exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                              |
+| base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                                        |
 
 ## 接口
 
-插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
+插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
 来保护它。
 
 ## 如何启用
@@ -131,7 +131,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDg
 
 #### 使用获取到的 token 进行请求尝试
 
-* 缺少 token
+- 缺少 token
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i
@@ -140,7 +140,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing JWT token in request"}
 ```
 
-* token 放到请求头中：
+- token 放到请求头中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
@@ -155,7 +155,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* token 放到请求参数中：
+- token 放到请求参数中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
@@ -170,7 +170,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* token 放到 cookie 中：
+- token 放到 cookie 中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i

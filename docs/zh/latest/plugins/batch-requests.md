@@ -23,18 +23,24 @@ title: batch-requests
 
 ## 目录
 
-- [**简介**](#简介)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**如何配置**](#如何配置)
-- [**元数据**](#元数据)
-- [**批量接口请求/响应**](#批量接口请求/响应)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+- [目录](#目录)
+- [简介](#简介)
+- [属性](#属性)
+- [接口](#接口)
+- [如何启用](#如何启用)
+- [如何配置](#如何配置)
+- [元数据](#元数据)
+- [批量接口请求/响应](#批量接口请求响应)
+  - [接口请求参数:](#接口请求参数)
+    - [HttpRequest](#httprequest)
+  - [接口响应参数：](#接口响应参数)
+    - [HttpResponse](#httpresponse)
+- [测试插件](#测试插件)
+- [禁用插件](#禁用插件)
 
 ## 简介
 
-`batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个http请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
+`batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 http 请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
 
 > **提示**
 >
@@ -46,7 +52,7 @@ title: batch-requests
 
 ## 接口
 
-插件会增加 `/apisix/batch-requests` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
+插件会增加 `/apisix/batch-requests` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
 来保护它。
 
 ## 如何启用
@@ -66,9 +72,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 ## 元数据
 
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| max_body_size       | integer  | 必选   |  1048576  |    > 0  | 请求体的最大大小，单位为字节。|
+| 名称          | 类型    | 必选项 | 默认值  | 有效值 | 描述                           |
+| ------------- | ------- | ------ | ------- | ------ | ------------------------------ |
+| max_body_size | integer | 必选   | 1048576 | > 0    | 请求体的最大大小，单位为字节。 |
 
 ## 批量接口请求/响应
 
@@ -140,30 +146,30 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 
 ```json
 [
-    {
-        "status": 200,
-        "reason": "OK",
-        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-        "headers": {
-            "Connection": "keep-alive",
-            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-            "Content-Type": "application/json",
-            "Content-Length": "81",
-            "Server": "APISIX web server"
-        }
-    },
-    {
-        "status": 200,
-        "reason": "OK",
-        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-        "headers": {
-            "Connection": "keep-alive",
-            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-            "Content-Type": "application/json",
-            "Content-Length": "81",
-            "Server": "APISIX web server"
-        }
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
     }
+  },
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  }
 ]
 ```
 
