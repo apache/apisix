@@ -319,7 +319,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
+<img src="https://user-images.githubusercontent.com/40708551/109481085-59834d80-7aa2-11eb-9181-fe0298aedb65.png" width="725" height="1700" />
 
 Users are encouraged to add themselves to the [Powered By](docs/en/latest/powered-by.md) page.
 
