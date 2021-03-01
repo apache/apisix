@@ -68,11 +68,12 @@ jobs:
         -v /home/runner/work/apisix/apisix/t/certs:/certs \
         bitnami/etcd:3.4.0
 
-    - name: run centos7 docker and mapping apisix into container
+    - name: Run centos7 docker and mapping apisix into container
       run: |
         docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
-    - name: run other docker containers for test
+    - name: Run other docker containers for test
       run: |
         docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
         docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
@@ -88,20 +89,17 @@ jobs:
         docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
         docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
 
-    - name: install dependencies
-      run: |
-        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
-        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
-
     - name: Install rpm package
       # if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
         docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-master-0.x86_64.rpm"
-        # Dependencies are attached with rpm, so revert `make deps`
-        docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: run test cases
+    - name: Install dependencies
+      run: |
+        docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh install_dependencies"
+
+    - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./utils/centos7-ci.sh run_case"
 
@@ -110,4 +108,4 @@ jobs:
       uses: actions/upload-artifact@v2.2.2
       with:
         name: "rpm"
-        path: "rpm"
+        path: "./apisix-build-tools/output/apisix-master-0.x86_64.rpm"
