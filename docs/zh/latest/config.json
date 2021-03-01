@@ -1,4 +1,151 @@
 {
   "version": 2.3,
-  "sidebar": {}
+  "sidebar": [
+    {
+      "type": "doc",
+      "id": "architecture-design"
+    },
+    {
+      "type": "doc",
+      "id": "how-to-build"
+    },
+    {
+      "type": "category",
+      "label": "Plugins",
+      "items": [
+        {
+          "type": "category",
+          "label": "General",
+          "items": [
+            "plugins/batch-requests",
+            "plugins/serverless",
+            "plugins/redirect"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Transformation",
+          "items": [
+            "plugins/response-rewrite",
+            "plugins/proxy-rewrite",
+            "plugins/grpc-transcode",
+            "plugins/fault-injection"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Authentication",
+          "items": [
+            "plugins/authz-keycloak",
+            "plugins/wolf-rbac",
+            "plugins/key-auth",
+            "plugins/jwt-auth",
+            "plugins/basic-auth",
+            "plugins/openid-connect"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Security",
+          "items": [
+            "plugins/cors",
+            "plugins/uri-blocker",
+            "plugins/ip-restriction",
+            "plugins/referer-restriction"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Traffic",
+          "items": [
+            "plugins/limit-req",
+            "plugins/limit-conn",
+            "plugins/limit-count",
+            "plugins/proxy-cache",
+            "plugins/request-validation",
+            "plugins/proxy-mirror",
+            "plugins/api-breaker",
+            "plugins/traffic-split"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Monitoring",
+          "items": [
+            "plugins/prometheus",
+            "plugins/zipkin",
+            "plugins/skywalking"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Loggers",
+          "items": [
+            "plugins/http-logger",
+            "plugins/tcp-logger",
+            "plugins/kafka-logger",
+            "plugins/udp-logger",
+            "plugins/syslog",
+            "plugins/log-rotate"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "admin-api"
+    },
+    {
+      "type": "doc",
+      "id": "control-api"
+    },
+    {
+      "type": "doc",
+      "id": "health-check"
+    },
+    {
+      "type": "doc",
+      "id": "router-radixtree"
+    },
+    {
+      "type": "doc",
+      "id": "stand-alone"
+    },
+    {
+      "type": "doc",
+      "id": "stream-proxy"
+    },
+    {
+      "type": "doc",
+      "id": "grpc-proxy"
+    },
+    {
+      "type": "doc",
+      "id": "customize-nginx-configuration"
+    },
+    {
+      "type": "doc",
+      "id": "https"
+    },
+    {
+      "type": "doc",
+      "id": "benchmark"
+    },
+    {
+      "type": "doc",
+      "id": "CODE_STYLE"
+    },
+    {
+      "type": "doc",
+      "id": "debug-function"
+    },
+    {
+      "type": "doc",
+      "id": "FAQ"
+    },
+    {
+      "type": "doc",
+      "id": "CHANGELOG"
+    }
+  ]
 }

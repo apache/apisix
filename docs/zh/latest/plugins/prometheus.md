@@ -108,7 +108,7 @@ plugin_attr:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-下载 [Grafana dashboard 元数据](../../json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+下载 [Grafana dashboard 元数据](../../../assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 

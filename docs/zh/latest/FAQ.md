@@ -1,3 +1,7 @@
+---
+title: 常见问题
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# 常见问题
-
 ## 为什么要做 API 网关？不是已经有其他的开源网关了吗？
 
 微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
@@ -32,7 +34,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/docs/zh/latest/benchmark.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -44,7 +46,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
-[如何开发插件](docs/zh/latest/plugin-develop.md)
+[如何开发插件](plugin-develop.md)
 
 ## 我们为什么选择 etcd 作为配置中心？
 
@@ -116,7 +118,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 
 2、通过 traffic-split 插件来实现
 
-详细使用示例请参考 [traffic-split.md](docs/zh/latest/plugins/traffic-split.md) 插件文档。
+详细使用示例请参考 [traffic-split.md](plugins/traffic-split.md) 插件文档。
 
 ## 如何支持 http 自动跳转到 https？
 
@@ -219,7 +221,7 @@ Server: APISIX web server
 
 Apache APISIX 的插件支持热加载。
 
-具体怎么做参考 [插件](./docs/zh/latest/plugins.md) 中关于“热加载”的部分。
+具体怎么做参考 [插件](./plugins.md) 中关于“热加载”的部分。
 
 ## 如何让 APISIX 在处理 HTTP 或 HTTPS 请求时监听多个端口
 
