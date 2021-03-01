@@ -763,6 +763,7 @@ ssl 对象 json 配置内容：
 |---------|---------|----|-----------|----|
 |plugins  |必需|Plugin|详见 [Plugin](architecture-design.md#plugin) ||
 |desc     |可选|辅助|标识描述、使用场景等|customer xxxx|
+|labels   |可选|辅助|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
