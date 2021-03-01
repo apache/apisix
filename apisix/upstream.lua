@@ -26,8 +26,8 @@ local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
-local http_code_upstream_unavailable = ngx.HTTP_SERVICE_UNAVAILABLE
 
+local HTTP_CODE_UPSTREAM_UNAVAILABLE = 503
 local _M = {}
 
 
@@ -137,19 +137,53 @@ end
 
 local fill_node_info
 do
-    local scheme_to_node = {
+    local scheme_to_port = {
         http = 80,
         https = 443,
         grpc = 80,
         grpcs = 443,
     }
 
-    function fill_node_info(nodes, scheme)
+    function fill_node_info(up_conf, scheme)
+        local nodes = up_conf.nodes
+        if up_conf.nodes_ref == nodes then
+            -- filled
+            return true
+        end
+
+        local need_filled = false
         for _, n in ipairs(nodes) do
             if not n.port then
-                n.port = scheme_to_node[scheme]
+                if up_conf.scheme ~= scheme then
+                    return nil, "Can't detect upstream's scheme. " ..
+                                "You should either specify a port in the node " ..
+                                "or specify the upstream.scheme explicitly"
+                end
+
+                need_filled = true
             end
         end
+
+        up_conf.original_nodes = nodes
+
+        if not need_filled then
+            up_conf.nodes_ref = nodes
+            return true
+        end
+
+        local filled_nodes = core.table.new(#nodes, 0)
+        for i, n in ipairs(nodes) do
+            if not n.port then
+                filled_nodes[i] = core.table.clone(n)
+                filled_nodes[i].port = scheme_to_port[scheme]
+            else
+                filled_nodes[i] = n
+            end
+        end
+
+        up_conf.nodes_ref = filled_nodes
+        up_conf.nodes = filled_nodes
+        return true
     end
 end
 
@@ -179,8 +213,13 @@ function _M.set_by_route(route, api_ctx)
         if not dis then
             return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
         end
-        local new_nodes = dis.nodes(up_conf.service_name)
-        local same = upstream_util.compare_upstream_node(up_conf.nodes, new_nodes)
+
+        local new_nodes, err = dis.nodes(up_conf.service_name)
+        if not new_nodes then
+            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
+        end
+
+        local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
             up_conf.nodes = new_nodes
             local new_up_conf = core.table.clone(up_conf)
@@ -204,7 +243,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return http_code_upstream_unavailable, "no valid upstream node"
+        return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
     if not is_http then
@@ -213,7 +252,10 @@ function _M.set_by_route(route, api_ctx)
 
     set_upstream_scheme(api_ctx, up_conf)
 
-    fill_node_info(up_conf.nodes, api_ctx.upstream_scheme)
+    local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme)
+    if not ok then
+        return 503, err
+    end
 
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)

@@ -146,6 +146,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
@@ -162,6 +163,9 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/core/dns
+	$(INSTALL) apisix/core/dns/*.lua $(INST_LUADIR)/apisix/core/dns
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
 	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
@@ -241,7 +245,6 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./doc \
 	./rockspec \
 	LICENSE \
 	Makefile \
