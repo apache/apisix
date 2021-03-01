@@ -297,7 +297,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 ### 贡献者变化
 
-![contributor-over-time](docs/assets/images/contributor-over-time.png)
+![contributor-over-time](../../assets/images/contributor-over-time.png)
 
 ## 视频和文章
 
