@@ -18,7 +18,7 @@
 #
 
 import subprocess
-from public import *
+from public import initfuzz, run_test
 from boofuzz import *
 
 def create_route():
@@ -41,16 +41,8 @@ def create_route():
     '''
     subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-def main():
-    fw = open(cur_dir() + "/test.log",'wb')
-    fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
-    session = Session(
-        target=Target(
-            connection=TCPSocketConnection("127.0.0.1", 9080, send_timeout=5.0, recv_timeout=5.0, server=False)
-        ),
-        fuzz_loggers=fuzz_loggers,
-        keep_web_open=False,
-    )
+def run():
+    session = initfuzz()
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
@@ -97,16 +89,4 @@ def main():
     session.fuzz()
 
 if __name__ == "__main__":
-    # before test
-    create_route()
-    r1 = check_process()
-    main()
-    # after test
-    boofuzz_log = cur_dir() + "/test.log"
-    apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
-    apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
-    check_log(boofuzz_log, apisix_errorlog, apisix_accesslog)
-    r2 = check_process()
-    if r2 != r1:
-        print("before test, nginx's process list:%s,\nafter test, nginx's process list:%s"%(r1,r2))
-        raise AssertionError
+    run_test(create_route,run)
