@@ -299,7 +299,7 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 ### Contribuciones a través del tiempo
 
-![contributor-over-time](docs/assets/images/contributor-over-time.png)
+![contributor-over-time](../../assets/images/contributor-over-time.png)
 
 ## Videos y Artículos
 
