@@ -37,13 +37,13 @@ and the response size was 1KB.
 
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="../../assets/images/benchmark-1.jpg" width="70%" height="70%">
+<img src="../../assets/images/benchmark-1.jpg" width="70%" height="70%" />
 
 #### Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="../../assets/images/latency-1.jpg" width="70%" height="70%">
+<img src="../../assets/images/latency-1.jpg" width="70%" height="70%" />
 
 #### Flame Graph
 
@@ -82,13 +82,13 @@ and the response size was 1KB.
 
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="../../assets/images/benchmark-2.jpg" width="70%" height="70%">
+<img src="../../assets/images/benchmark-2.jpg" width="70%" height="70%" />
 
 #### Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="../../assets/images/latency-2.jpg" width="70%" height="70%">
+<img src="../../assets/images/latency-2.jpg" width="70%" height="70%" />
 
 #### Flame Graph
 

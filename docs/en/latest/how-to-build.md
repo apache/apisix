@@ -1,5 +1,5 @@
 ---
-title: Build Apache APISIX
+title: How to build Apache APISIX
 ---
 
 <!--
