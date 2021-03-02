@@ -31,7 +31,7 @@ title: request-id
 
 ## 名称
 
-`request-id` 插件通过 APISIX 为每一个请求代理添加唯一 ID（UUID），以用于追踪 API 请求。该插件在 `header_name` 已经在请求中存在时不会为请求添加新的 ID
+`request-id` 插件通过 APISIX 为每一个请求代理添加唯一 ID（UUID），以用于追踪 API 请求。该插件在 `header_name` 已经在请求中存在时不会为请求添加新的 ID。
 
 ## 属性
 
@@ -47,7 +47,7 @@ title: request-id
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/get",
+    "uri": "/hello",
     "plugins": {
         "request-id": {
             "include_in_response": true
@@ -67,6 +67,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
+X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
+......
 ```
 
 ## 禁用插件
