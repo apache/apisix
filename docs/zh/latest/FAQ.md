@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.3.12/learning/why/)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.4.0/learning/why/)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -256,8 +256,8 @@ etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（
 
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
-- 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
-- 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
+* 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
+* 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
 

@@ -47,9 +47,9 @@ rbac 功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更
 
 插件会增加这些接口：
 
-- /apisix/plugin/wolf-rbac/login
-- /apisix/plugin/wolf-rbac/change_pwd
-- /apisix/plugin/wolf-rbac/user_info
+* /apisix/plugin/wolf-rbac/login
+* /apisix/plugin/wolf-rbac/change_pwd
+* /apisix/plugin/wolf-rbac/user_info
 
 你可能需要通过 [interceptors](../plugin-interceptors.md) 来保护它们。
 
@@ -114,7 +114,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 下面的 `appid`, `username`, `password` 必须为 wolf 系统中真实存在的.
 
-- 以 POST application/json 方式登陆.
+* 以 POST application/json 方式登陆.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
@@ -130,7 +130,7 @@ Server: APISIX web server
 {"rbac_token":"V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts","user_info":{"nickname":"test","username":"test","id":"749"}}
 ```
 
-- 以 POST x-www-form-urlencoded 方式登陆
+* 以 POST x-www-form-urlencoded 方式登陆
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
@@ -140,7 +140,7 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 
 #### 使用获取到的 token 进行请求尝试
 
-- 缺少 token
+* 缺少 token
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" -i
@@ -150,7 +150,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing rbac token in request"}
 ```
 
-- token 放到请求头(Authorization)中：
+* token 放到请求头(Authorization)中：
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
@@ -161,7 +161,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-- token 放到请求头(x-rbac-token)中：
+* token 放到请求头(x-rbac-token)中：
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
@@ -173,7 +173,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-- token 放到请求参数中：
+* token 放到请求参数中：
 
 ```shell
 curl 'http://127.0.0.1:9080?rbac_token=V1%23restful%23eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -H"Host: www.baidu.com" -i
@@ -184,7 +184,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-- token 放到 cookie 中：
+* token 放到 cookie 中：
 
 ```shell
 curl http://127.0.0.1:9080 -H"Host: www.baidu.com" \

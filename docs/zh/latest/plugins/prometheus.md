@@ -120,13 +120,13 @@ plugin_attr:
 
 ### 可有的指标
 
-- `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
-- `Bandwidth`: 流经 apisix 的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
-- `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1 来表示。
-- `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
-- `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
-- `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。
-- `Info`: 当前 APISIX 节点信息。
+* `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
+* `Bandwidth`: 流经 apisix 的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
+* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1 来表示。
+* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
+* `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
+* `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。
+* `Info`: 当前 APISIX 节点信息。
 
 这里是 apisix 的原始的指标数据集:
 

@@ -105,24 +105,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 > canonical_query_string 编码步骤如下：
 
-- 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
-- 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
-- 根据 uri 参数是否编码，有下面两种情况：
-- `encode_uri_param` 为 true 时：
-  - 对拆开后的每一项进行编码处理，分以下两种情况:
-  - 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
-  - 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
-  - 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
-- `encode_uri_param` 为 false 时:
-  - 对拆开后的每一项进行编码处理，分以下两种情况:
-  - 当该项只有 key 时，转换公式为 key + "=" 的形式。
-  - 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
-  - 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
+* 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
+* 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
+* 根据 uri 参数是否编码，有下面两种情况：
+* `encode_uri_param` 为 true 时：
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
+  * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
+  * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
+  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
+* `encode_uri_param` 为 false 时:
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
+  * 当该项只有 key 时，转换公式为 key + "=" 的形式。
+  * 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
+  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
 
 > signed_headers_string 生成步骤如下：
 
-- 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
-- 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用`name:value`方式拼接起来，拼接完后就生成了 `signed_headers_string` 。
+* 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
+* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用`name:value`方式拼接起来，拼接完后就生成了 `signed_headers_string` 。
 
 ```plain
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
@@ -209,7 +209,7 @@ Server: APISIX/2.2
 
 **下面是签名信息的两种组装形式**
 
-- 签名信息拼一起放到请求头 `Authorization` 字段中：
+* 签名信息拼一起放到请求头 `Authorization` 字段中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i

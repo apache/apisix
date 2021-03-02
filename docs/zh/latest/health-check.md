@@ -82,37 +82,37 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 监控检查的配置内容在`checks`中，`checks`包含两个类型：`active` 和 `passive`，详情如下
 
-- `active`: 要启动探活健康检查，需要在 upstream 配置中的 `checks.active` 添加如下配置项。
+* `active`: 要启动探活健康检查，需要在 upstream 配置中的 `checks.active` 添加如下配置项。
 
-  - `active.timeout`: 主动健康检查 socket 超时时间（秒为单位），支持小数点。比如 `1.01` 代表 `1010` 毫秒，`2` 代表 `2000` 毫秒。
+  * `active.timeout`: 主动健康检查 socket 超时时间（秒为单位），支持小数点。比如 `1.01` 代表 `1010` 毫秒，`2` 代表 `2000` 毫秒。
 
-  - `active.http_path`: 用于发现 upstream 节点健康可用的 HTTP GET 请求路径。
-  - `active.host`: 用于发现 upstream 节点健康可用的 HTTP 请求主机名。
-  - `active.port`: 用于发现 upstream 节点健康可用的自定义主机端口（可选），配置此项会覆盖 `upstream` 节点中的端口。
-
-  `healthy`的阀值字段：
-
-  - `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为 1。
-  - `active.healthy.successes`: 确定目标是否健康的成功次数，最小值为 1。
-
-  `unhealthy`的阀值字段：
-
-  - `active.unhealthy.interval`: 针对不健康目标节点的健康检查之间的间隔（以秒为单位），最小值为 1。
-  - `active.unhealthy.http_failures`: 确定目标节点不健康的 http 请求失败次数，最小值为 1。
-  - `active.req_headers`: 其他请求标头。数组格式，可以填写多个标题。
-
-- `passive`: 要启用被动健康检查，需要在 upstream 配置中的 `checks.passive` 添加如下配置项。
+  * `active.http_path`: 用于发现 upstream 节点健康可用的 HTTP GET 请求路径。
+  * `active.host`: 用于发现 upstream 节点健康可用的 HTTP 请求主机名。
+  * `active.port`: 用于发现 upstream 节点健康可用的自定义主机端口（可选），配置此项会覆盖 `upstream` 节点中的端口。
 
   `healthy`的阀值字段：
 
-  - `passive.healthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `healthy` 状态。否则，请忽略此请求。
-  - `passive.healthy.successes`: 如果 upstream 节点被检测成功（由 `passive.healthy.http_statuses` 定义）的次数超过 `successes` 次，则将该节点设置为 `healthy` 状态。
+  * `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为 1。
+  * `active.healthy.successes`: 确定目标是否健康的成功次数，最小值为 1。
 
   `unhealthy`的阀值字段：
 
-  - `passive.unhealthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `unhealthy` 状态。否则，请忽略此请求。
-  - `passive.unhealthy.tcp_failures`: 如果 TCP 通讯失败次数超过 `tcp_failures` 次，则将 upstream 节点设置为 `unhealthy` 状态。
-  - `passive.unhealthy.timeouts`: 如果被动健康检查超时次数超过 `timeouts` 次，则将 upstream 节点设置为 `unhealthy` 状态。
-  - `passive.unhealthy.http_failures`: 如果被动健康检查的 HTTP 请求失败（由 `passive.unhealthy.http_statuses` 定义）的次数超过 `http_failures`次，则将 upstream 节点设置为 `unhealthy` 状态。
+  * `active.unhealthy.interval`: 针对不健康目标节点的健康检查之间的间隔（以秒为单位），最小值为 1。
+  * `active.unhealthy.http_failures`: 确定目标节点不健康的 http 请求失败次数，最小值为 1。
+  * `active.req_headers`: 其他请求标头。数组格式，可以填写多个标题。
+
+* `passive`: 要启用被动健康检查，需要在 upstream 配置中的 `checks.passive` 添加如下配置项。
+
+  `healthy`的阀值字段：
+
+  * `passive.healthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `healthy` 状态。否则，请忽略此请求。
+  * `passive.healthy.successes`: 如果 upstream 节点被检测成功（由 `passive.healthy.http_statuses` 定义）的次数超过 `successes` 次，则将该节点设置为 `healthy` 状态。
+
+  `unhealthy`的阀值字段：
+
+  * `passive.unhealthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `unhealthy` 状态。否则，请忽略此请求。
+  * `passive.unhealthy.tcp_failures`: 如果 TCP 通讯失败次数超过 `tcp_failures` 次，则将 upstream 节点设置为 `unhealthy` 状态。
+  * `passive.unhealthy.timeouts`: 如果被动健康检查超时次数超过 `timeouts` 次，则将 upstream 节点设置为 `unhealthy` 状态。
+  * `passive.unhealthy.http_failures`: 如果被动健康检查的 HTTP 请求失败（由 `passive.unhealthy.http_statuses` 定义）的次数超过 `http_failures`次，则将 upstream 节点设置为 `unhealthy` 状态。
 
 健康检查信息可以通过 [控制接口](../../en/latest/control-api.md) 中的 `GET /v1/healthcheck` 接口得到。

@@ -131,7 +131,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDg
 
 #### 使用获取到的 token 进行请求尝试
 
-- 缺少 token
+* 缺少 token
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i
@@ -140,7 +140,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing JWT token in request"}
 ```
 
-- token 放到请求头中：
+* token 放到请求头中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
@@ -155,7 +155,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-- token 放到请求参数中：
+* token 放到请求参数中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
@@ -170,7 +170,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-- token 放到 cookie 中：
+* token 放到 cookie 中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i

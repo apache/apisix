@@ -105,24 +105,24 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 
 > The coding steps of canonical_query_string are as follows:
 
-- Extract the `query` item in the URL, that is, the string "key1 = valve1 & key2 = valve2" after the "?" in the URL.
-- Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
-- According to whether the uri parameter is encoded, there are two situations:
-- When `encode_uri_params` is true:
-  - Encoding each item after disassembly is divided into the following two situations.
-  - When the item has only key, the conversion formula is uri_encode(key) + "=".
-  - When the item is in the form of key=value, the conversion formula is in the form of uri_encode(key) + "=" + uri_encode(value). Here value can be an empty string.
-  - After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
-- When `encode_uri_params` is false:
-  - Encoding each item after disassembly is divided into the following two situations.
-  - When the item has only key, the conversion formula is key + "=".
-  - When the item is in the form of key=value, the conversion formula is in the form of key + "=" + value. Here value can be an empty string.
-  - After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
+* Extract the `query` item in the URL, that is, the string "key1 = valve1 & key2 = valve2" after the "?" in the URL.
+* Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
+* According to whether the uri parameter is encoded, there are two situations:
+* When `encode_uri_params` is true:
+  * Encoding each item after disassembly is divided into the following two situations.
+  * When the item has only key, the conversion formula is uri_encode(key) + "=".
+  * When the item is in the form of key=value, the conversion formula is in the form of uri_encode(key) + "=" + uri_encode(value). Here value can be an empty string.
+  * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
+* When `encode_uri_params` is false:
+  * Encoding each item after disassembly is divided into the following two situations.
+  * When the item has only key, the conversion formula is key + "=".
+  * When the item is in the form of key=value, the conversion formula is in the form of key + "=" + value. Here value can be an empty string.
+  * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
 
 > The signed_headers_string generation steps are as follows:
 
-- Obtain the headers specified to be added to the calculation from the request header. For details, please refer to the placement of `SIGNED_HEADERS` in the next section `Use the generated signature to make a request attempt`.
-- Take out the headers specified by `SIGNED_HEADERS` in order from the request header, and splice them together in order of `name:value`. After splicing, a `signed_headers_string` is generated.
+* Obtain the headers specified to be added to the calculation from the request header. For details, please refer to the placement of `SIGNED_HEADERS` in the next section `Use the generated signature to make a request attempt`.
+* Take out the headers specified by `SIGNED_HEADERS` in order from the request header, and splice them together in order of `name:value`. After splicing, a `signed_headers_string` is generated.
 
 ```plain
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
@@ -209,7 +209,7 @@ Server: APISIX/2.2
 
 **Below are two assembly forms of signature information**
 
-- The signature information is put together in the request header `Authorization` field:
+* The signature information is put together in the request header `Authorization` field:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
@@ -224,7 +224,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-- The signature information is separately placed in the request header:
+* The signature information is separately placed in the request header:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'Date: DATE' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
