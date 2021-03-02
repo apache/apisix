@@ -245,7 +245,7 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec \
+	./rockspec/apisix-$(VERSION)-*.rockspec \
 	LICENSE \
 	Makefile \
 	NOTICE \
