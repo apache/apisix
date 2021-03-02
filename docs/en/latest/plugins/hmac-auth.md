@@ -23,12 +23,16 @@ title: hmac-auth
 
 ## Summary
 
-  - [**Name**](#name)
-  - [**Attributes**](#attributes)
-  - [**How To Enable**](#how-to-enable)
-  - [**Test Plugin**](#test-plugin)
-  - [**Disable Plugin**](#disable-plugin)
-  - [**Generate Signature Examples**](#generate-signature-examples)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+- [How To Enable](#how-to-enable)
+- [Test Plugin](#test-plugin)
+  - [generate signature:](#generate-signature)
+  - [Use the generated signature to try the request](#use-the-generated-signature-to-try-the-request)
+- [Custom header key](#custom-header-key)
+- [Disable Plugin](#disable-plugin)
+- [Generate Signature Examples](#generate-signature-examples)
 
 ## Name
 
@@ -38,15 +42,15 @@ The `consumer` then adds its key to request header to verify its request.
 
 ## Attributes
 
-| Name           | Type          | Requirement | Default       | Valid                                       | Description                                                                                                                                                                                                                                                                   |
-| -------------- | ------------- | ----------- | ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| access_key     | string        | required    |               |                                             | Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur.                                                                                                |
-| secret_key     | string        | required    |               |                                             | Use as a pair with `access_key`.                                                                                                                                                                                                                                              |
-| algorithm      | string        | optional    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm.                                                                                                                                                                                                                                                         |
-| clock_skew     | integer       | optional    | 0           |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking `Date`                                                                                    |
-| signed_headers | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
-| keep_headers | boolean | optional    |     false       |           [ true, false ]                  | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header. |
-| encode_uri_params | boolean | optional    |     true       |           [ true, false ]                  | Whether to encode the uri parameter in the signature, for example: `params1=hello%2Cworld` is encoded, `params2=hello,world` is not encoded. true: means to encode the uri parameter in the signature, false: not to encode the uri parameter in the signature. |
+| Name              | Type          | Requirement | Default       | Valid                                       | Description                                                                                                                                                                                                                                                                   |
+| ----------------- | ------------- | ----------- | ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| access_key        | string        | required    |               |                                             | Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur.                                                                                                |
+| secret_key        | string        | required    |               |                                             | Use as a pair with `access_key`.                                                                                                                                                                                                                                              |
+| algorithm         | string        | optional    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm.                                                                                                                                                                                                                                                         |
+| clock_skew        | integer       | optional    | 0             |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking `Date`                                                                                       |
+| signed_headers    | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
+| keep_headers      | boolean       | optional    | false         | [ true, false ]                             | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header.   |
+| encode_uri_params | boolean       | optional    | true          | [ true, false ]                             | Whether to encode the uri parameter in the signature, for example: `params1=hello%2Cworld` is encoded, `params2=hello,world` is not encoded. true: means to encode the uri parameter in the signature, false: not to encode the uri parameter in the signature.               |
 
 ## How To Enable
 
@@ -105,15 +109,15 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 * Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
 * According to whether the uri parameter is encoded, there are two situations:
 * When `encode_uri_params` is true:
-    * Encoding each item after disassembly is divided into the following two situations.
-    * When the item has only key, the conversion formula is uri_encode(key) + "=".
-    * When the item is in the form of key=value, the conversion formula is in the form of uri_encode(key) + "=" + uri_encode(value). Here value can be an empty string.
-    * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
+  * Encoding each item after disassembly is divided into the following two situations.
+  * When the item has only key, the conversion formula is uri_encode(key) + "=".
+  * When the item is in the form of key=value, the conversion formula is in the form of uri_encode(key) + "=" + uri_encode(value). Here value can be an empty string.
+  * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
 * When `encode_uri_params` is false:
-    * Encoding each item after disassembly is divided into the following two situations.
-    * When the item has only key, the conversion formula is key + "=".
-    * When the item is in the form of key=value, the conversion formula is in the form of key + "=" + value. Here value can be an empty string.
-    * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
+  * Encoding each item after disassembly is divided into the following two situations.
+  * When the item has only key, the conversion formula is key + "=".
+  * When the item is in the form of key=value, the conversion formula is in the form of key + "=" + value. Here value can be an empty string.
+  * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
 
 > The signed_headers_string generation steps are as follows:
 
@@ -178,9 +182,9 @@ hash = hmac.new(secret, message, hashlib.sha256)
 print(base64.b64encode(hash.digest()))
 ```
 
-Type      |                Hash                          |
-----------|----------------------------------------------|
-SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
+| Type      | Hash                                         |
+| --------- | -------------------------------------------- |
+| SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
 ### Use the generated signature to try the request
 
@@ -295,16 +299,16 @@ Need to pay attention to the handling of newline characters in signature strings
 
 Example inputs:
 
-Variable | Value
----|---
-secret | this is secret key
-message | this is signature string
+| Variable | Value                    |
+| -------- | ------------------------ |
+| secret   | this is secret key       |
+| message  | this is signature string |
 
 Example outputs:
 
-Type | Hash
----|---
-hexit | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345
-base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=
+| Type   | Hash                                                             |
+| ------ | ---------------------------------------------------------------- |
+| hexit  | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345 |
+| base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=                     |
 
 Please refer to [**HMAC Generate Signature Examples**](../examples/plugins-hmac-auth-generate-signature.md)

@@ -323,7 +323,7 @@ Una gran variedad de compañías y organizacioes usan APISIX para investigación
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
+Se alienta a los usuarios a sumarse a la página [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md).
 
 ## Landscape (panorama)
 

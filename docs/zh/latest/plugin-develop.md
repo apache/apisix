@@ -23,14 +23,18 @@ title: 插件开发
 
 ## 目录
 
-- [**检查外部依赖**](#检查外部依赖)
-- [**插件命名与配置**](#插件命名与配置)
-- [**配置描述与校验**](#配置描述与校验)
-- [**确定执行阶段**](#确定执行阶段)
-- [**编写执行逻辑**](#编写执行逻辑)
-- [**编写测试用例**](#编写测试用例)
-- [**注册公共接口**](#注册公共接口)
-- [**注册控制接口**](#注册控制接口)
+- [目录](#目录)
+- [检查外部依赖](#检查外部依赖)
+- [插件命名与配置](#插件命名与配置)
+- [配置描述与校验](#配置描述与校验)
+- [确定执行阶段](#确定执行阶段)
+- [编写执行逻辑](#编写执行逻辑)
+  - [conf 参数](#conf-参数)
+  - [ctx 参数](#ctx-参数)
+- [编写测试用例](#编写测试用例)
+  - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
+  - [注册公共接口](#注册公共接口)
+  - [注册控制接口](#注册控制接口)
 
 ## 检查外部依赖
 
@@ -54,8 +58,8 @@ title: 插件开发
 插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
 注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
-    可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
-    插件机制，我们不建议这样做，除非你已经对代码完全掌握。
+可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
+插件机制，我们不建议这样做，除非你已经对代码完全掌握。
 
 ## 插件命名与配置
 
@@ -114,11 +118,11 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 ```json
 {
-    "example-plugin" : {
-        "i": 1,
-        "s": "s",
-        "t": [1]
-    }
+  "example-plugin": {
+    "i": 1,
+    "s": "s",
+    "t": [1]
+  }
 }
 ```
 
@@ -177,7 +181,7 @@ local _M = {
 你可能之前见过 key-auth 这个插件在它的模块定义时设置了 `type = 'auth'`。
 当一个插件设置 `type = 'auth'`，说明它是个认证插件。
 
-认证插件需要在执行后选择对应的consumer。举个例子，在 key-auth 插件中，它通过 `apikey` 请求头获取对应的 consumer，然后通过 `consumer.attach_consumer` 设置它。
+认证插件需要在执行后选择对应的 consumer。举个例子，在 key-auth 插件中，它通过 `apikey` 请求头获取对应的 consumer，然后通过 `consumer.attach_consumer` 设置它。
 
 为了跟 `consumer` 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `consumer` 资源的 `plugins` 属性里面的配置。
 
@@ -185,18 +189,18 @@ local _M = {
 
 ```json
 {
-    "username": "Joe",
-    "plugins": {
-        "key-auth": {
-            "key": "Joe's key"
-        }
+  "username": "Joe",
+  "plugins": {
+    "key-auth": {
+      "key": "Joe's key"
     }
+  }
 }
 ```
 
 你在创建 [Consumer](https://github.com/apache/apisix/blob/master/docs/zh/latest/admin-api.md#consumer) 时会用到它。
 
-为了检验这个配置，这个插件使用了如下的schema:
+为了检验这个配置，这个插件使用了如下的 schema:
 
 ```lua
 local consumer_schema = {
@@ -278,11 +282,11 @@ conf:
 
 ```json
 {
-    "rejected_code":503,
-    "burst":0,
-    "default_conn_delay":0.1,
-    "conn":1,
-    "key":"remote_addr"
+  "rejected_code": 503,
+  "burst": 0,
+  "default_conn_delay": 0.1,
+  "conn": 1,
+  "key": "remote_addr"
 }
 ```
 
@@ -300,7 +304,7 @@ end
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
-项目测试框架采用的 [****test-nginx****](https://github.com/openresty/test-nginx)  。
+项目测试框架采用的 [****test-nginx****](https://github.com/openresty/test-nginx) 。
 一个测试用例 __.t__ 文件，通常用 \__DATA\__ 分割成 序言部分 和 数据部分。这里我们简单介绍下数据部分，
 也就是真正测试用例的部分，仍然以 key-auth 插件为例：
 
@@ -328,7 +332,7 @@ done
 
 一个测试用例主要有三部分内容：
 
-- 程序代码： Nginx  location 的配置内容
+- 程序代码： Nginx location 的配置内容
 - 输入： http 的 request 信息
 - 输出检查： status ，header ，body ，error_log 检查
 
@@ -336,7 +340,7 @@ done
 用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
 必须没有 ERROR 级别的记录。
 
-### 附上test-nginx 执行流程
+### 附上 test-nginx 执行流程
 
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
@@ -367,7 +371,7 @@ end
 
 ### 注册控制接口
 
-如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](../control-api.md) 来暴露它。
+如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](../../en/latest/control-api.md) 来暴露它。
 
 Take a look at example-plugin plugin:
 

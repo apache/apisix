@@ -23,15 +23,19 @@ title: Plugin Develop
 
 ## table of contents
 
-- [**where to put your plugins**](#where-to-put-your-plugins)
-- [**check dependencies**](#check-dependencies)
-- [**name and config**](#name-and-config)
-- [**schema and check**](#schema-and-check)
-- [**choose phase to run**](#choose-phase-to-run)
-- [**implement the logic**](#implement-the-logic)
-- [**write test case**](#write-test-case)
-- [**register public API**](#register-public-api)
-- [**register control API**](#register-control-api)
+- [table of contents](#table-of-contents)
+- [where to put your plugins](#where-to-put-your-plugins)
+- [check dependencies](#check-dependencies)
+- [name and config](#name-and-config)
+- [schema and check](#schema-and-check)
+- [choose phase to run](#choose-phase-to-run)
+- [implement the logic](#implement-the-logic)
+  - [conf parameter](#conf-parameter)
+  - [ctx parameter](#ctx-parameter)
+- [write test case](#write-test-case)
+  - [Attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
+  - [Register public API](#register-public-api)
+  - [Register control API](#register-control-api)
 
 ## where to put your plugins
 
@@ -65,7 +69,7 @@ Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like 
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
- needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
+needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
 
 ```nginx
     lua_shared_dict plugin-limit-req     10m;
@@ -82,18 +86,18 @@ if you have dependencies on external libraries, check the dependent items. if yo
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
- the plugin is loaded.
+the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
-       configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
-       existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
+method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
+configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
+existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
 ## name and config
 
 Determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the example-plugin plugin,
- you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
- duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
+you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
+duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
 
 ```lua
 local plugin_name = "example-plugin"
@@ -159,15 +163,15 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 ## schema and check
 
 Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
- configuration data :
+configuration data:
 
 ```json
 {
-    "example-plugin" : {
-        "i": 1,
-        "s": "s",
-        "t": [1]
-    }
+  "example-plugin": {
+    "i": 1,
+    "s": "s",
+    "t": [1]
+  }
 }
 ```
 
@@ -235,12 +239,12 @@ Here is the consumer configuration for key-auth plugin:
 
 ```json
 {
-    "username": "Joe",
-    "plugins": {
-        "key-auth": {
-            "key": "Joe's key"
-        }
+  "username": "Joe",
+  "plugins": {
+    "key-auth": {
+      "key": "Joe's key"
     }
+  }
 }
 ```
 
@@ -339,11 +343,11 @@ conf:
 
 ```json
 {
-    "rejected_code":503,
-    "burst":0,
-    "default_conn_delay":0.1,
-    "conn":1,
-    "key":"remote_addr"
+  "rejected_code": 503,
+  "burst": 0,
+  "default_conn_delay": 0.1,
+  "conn": 1,
+  "key": "remote_addr"
 }
 ```
 
@@ -395,7 +399,7 @@ A test case consists of three parts :
 - __Output check__ : status, header, body, error log check
 
 When we request __/t__, which config in the configuration file, the Nginx will call "__content_by_lua_block__" instruction to
- complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
+complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
 "__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
 are located in the following folder: 't/servroot/logs'.
 

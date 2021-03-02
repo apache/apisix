@@ -376,7 +376,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-更多细节可以参考[健康检查的文档](../health-check.md)。
+更多细节可以参考[健康检查的文档](./health-check.md)。
 
 下面是几个使用不同`hash_on`类型的配置示例：
 
@@ -484,7 +484,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 - `apisix.router.http`: HTTP 请求路由。
 
-  - `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](../router-radixtree.md)。
+  - `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](../../en/latest/router-radixtree.md)。
     - `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
     - `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
     - `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
@@ -515,14 +515,14 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 <img src="../../assets/images/consumer-internal.png" width="50%" height="50%" />
 
-1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
+1. 授权认证：比如有 [key-auth](plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
 2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
 比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
 
-此外，大家也可以参考 [key-auth](../plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+此外，大家也可以参考 [key-auth](plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
 
 如何对某个 Consumer 开启指定插件，可以看下面例子：
 
