@@ -31,6 +31,7 @@ function _M.init_worker()
     local err
     plugin_configs, err = core.config.new("/plugin_configs", {
         automatic = true,
+        item_schema = core.schema.plugin_config,
         checker = plugin_checker,
     })
     if not plugin_configs then

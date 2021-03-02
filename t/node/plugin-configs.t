@@ -123,3 +123,59 @@ qr/conf_version: \d+#\d/
 qr/conf_version: \d+#1
 conf_version: \d+#2
 /
+
+
+
+=== TEST 2: validated plugins configuration via incremental sync
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require("apisix.core")
+
+            assert(core.etcd.set("/plugin_configs/1",
+                {id = 1, plugins = { ["uri-blocker"] = { block_rules =  {"root.exe","root.m+"} }}}
+            ))
+            -- wait for sync
+            ngx.sleep(0.6)
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello?x=root.exe"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.status = res.status
+            ngx.say(uri)
+            ngx.say(res.body)
+
+        }
+    }
+--- request
+GET /t
+--- error_code: 403
+
+
+
+=== TEST 3: validated plugins configuration via incremental sync (malformed data)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require("apisix.core")
+
+            assert(core.etcd.set("/plugin_configs/1",
+                {id = 1, plugins = { ["uri-blocker"] = { block_rules =  1 }}}
+            ))
+            -- wait for sync
+            ngx.sleep(0.6)
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "block_rules" validation failed
