@@ -40,12 +40,12 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
 - QQ Group - 578997126
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-lcbw4olf-_5s17RLU0Cx8xTvj2bNbjg) - join `#apisix` on our Slack to meet the team and ask questions
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -319,7 +319,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
 Users are encouraged to add themselves to the [Powered By](docs/en/latest/powered-by.md) page.
 
