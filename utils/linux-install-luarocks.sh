@@ -22,7 +22,7 @@ KERNEL=$(uname -s)
 if [ -z ${OPENRESTY_PREFIX} ]; then
     if [[ $KERNEL == "Darwin" ]]; then
         OPENRESTY_PREFIX="/usr/local/opt/openresty"
-        else
+    else
         OPENRESTY_PREFIX="/usr/local/openresty"
     fi
 fi
@@ -58,7 +58,7 @@ fi
 
 if [[ ! -d ${OPENSSL_PREFIX} && $KERNEL == "Darwin" ]]; then
     OPENSSL_PREFIX="/usr/local/opt/openresty-openssl"
-    if [ -d ${OPENSSL_PREFIX} ]; then
+    if [ -d "/usr/local/opt/openresty-openssl111" ]; then
         OPENSSL_PREFIX="/usr/local/opt/openresty-openssl111"
     fi
 fi
