@@ -21,17 +21,17 @@ title: 集成服务发现注册中心
 #
 -->
 
-* [**摘要**](#摘要)
-* [**当前支持的注册中心**](#当前支持的注册中心)
-* [**如何扩展注册中心**](#如何扩展注册中心)
-    * [**基本步骤**](#基本步骤)
-    * [**以 Eureka 举例**](#以-Eureka-举例)
-        * [**实现 eureka.lua**](#实现-eurekalua)
-        * [**Eureka 与 APISIX 之间数据转换逻辑**](#Eureka-与-APISIX-之间数据转换逻辑)
-* [**注册中心配置**](#注册中心配置)
-    * [**初始化服务发现**](#初始化服务发现)
-    * [**Eureka 的配置**](#Eureka-的配置)
-* [**upstream 配置**](#upstream-配置)
+* [摘要](#摘要)
+* [当前支持的注册中心](#当前支持的注册中心)
+* [如何扩展注册中心？](#如何扩展注册中心)
+  * [基本步骤](#基本步骤)
+  * [以 Eureka 举例](#以-eureka-举例)
+    * [实现 eureka.lua](#实现-eurekalua)
+    * [Eureka 与 APISIX 之间数据转换逻辑](#eureka-与-apisix-之间数据转换逻辑)
+* [注册中心配置](#注册中心配置)
+  * [初始化服务发现](#初始化服务发现)
+  * [Eureka 的配置](#eureka-的配置)
+* [upstream 配置](#upstream-配置)
 
 ## 摘要
 
@@ -43,13 +43,13 @@ title: 集成服务发现注册中心
 2. 网关会准实时地从注册中心获取服务实例信息；
 3. 当用户通过网关请求服务时，网关从注册中心获取的实例列表中选择一个进行代理；
 
-常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper等
+常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper 等
 
 ## 当前支持的注册中心
 
 目前支持 Eureka 和基于 DNS 的服务注册发现，如 Consul 等。
 
-基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](../dns.md#service-discovery-via-dns)。
+基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](../../en/latest/dns.md#service-discovery-via-dns)。
 
 Eureka 的支持方式见下文。
 
@@ -67,32 +67,32 @@ APISIX 要扩展注册中心其实是件非常容易的事情，其基本步骤�
 
 #### 实现 eureka.lua
 
-首先在 `apisix/discovery/` 目录中添加 [`eureka.lua`](../../apisix/discovery/eureka.lua);
+首先在 `apisix/discovery/` 目录中添加 [`eureka.lua`](../../../apisix/discovery/eureka.lua);
 
 然后在 `eureka.lua` 实现用于初始化的 `init_worker` 函数以及用于获取服务实例节点列表的 `nodes` 函数即可：
 
-  ```lua
-  local _M = {
-      version = 0.1,
-  }
+```lua
+local _M = {
+    version = 0.1,
+}
 
 
-  function _M.nodes(service_name)
-      ... ...
-  end
+function _M.nodes(service_name)
+    ... ...
+end
 
 
-  function _M.init_worker()
-      ... ...
-  end
+function _M.init_worker()
+    ... ...
+end
 
 
-  return _M
-  ```
+return _M
+```
 
 #### Eureka 与 APISIX 之间数据转换逻辑
 
-APISIX是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？ 假如从 Eureka 获取如下数据：
+APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？ 假如从 Eureka 获取如下数据：
 
 ```json
 {
@@ -144,11 +144,11 @@ APISIX是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 ```json
 [
   {
-    "host" : "192.168.1.100",
-    "port" : 8761,
-    "weight" : 100,
-    "metadata" : {
-      "management.port": "8761",
+    "host": "192.168.1.100",
+    "port": 8761,
+    "weight": 100,
+    "metadata": {
+      "management.port": "8761"
     }
   }
 ]
@@ -162,8 +162,7 @@ APISIX是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 
 ```yaml
 discovery:
-  eureka:
-      ...
+  eureka: ...
 ```
 
 此名称要与 `apisix/discovery/` 目录中实现对应注册中心的文件名保持一致。
@@ -177,16 +176,16 @@ discovery:
 ```yaml
 discovery:
   eureka:
-    host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+    host: # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
       - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
       - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
-    fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
-    weight: 100                      # default weight for node
+    fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认30秒
+    weight: 100 # default weight for node
     timeout:
-      connect: 2000                  # 连接 eureka 的超时时间，默认2000ms
-      send: 2000                     # 向 eureka 发送数据的超时时间，默认2000ms
-      read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
+      connect: 2000 # 连接 eureka 的超时时间，默认2000ms
+      send: 2000 # 向 eureka 发送数据的超时时间，默认2000ms
+      read: 5000 # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
 通过 `discovery.eureka.host` 配置 eureka 的服务器地址。
@@ -203,7 +202,7 @@ discovery:
 
 ## upstream 配置
 
-APISIX是通过 `upstream.discovery_type`选择使用的服务发现， `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
+APISIX 是通过 `upstream.discovery_type`选择使用的服务发现， `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
