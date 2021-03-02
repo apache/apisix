@@ -475,7 +475,7 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 
 
 
-=== TEST 21: set allowed_methods
+=== TEST 21: set allowed_by_methods
 --- config
     location /t {
         content_by_lua_block {
@@ -496,7 +496,7 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
                                  "whitelist": [
                                      "jack1"
                                  ],
-                                 "allowed_methods":[{
+                                 "allowed_by_methods":[{
                                     "user":"jack1",
                                     "methods":["POST"]
                                  }]
@@ -533,7 +533,7 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 
 
 
-=== TEST 23: set allowed_methods
+=== TEST 23: set allowed_by_methods
 --- config
     location /t {
         content_by_lua_block {
@@ -554,7 +554,7 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
                                  "whitelist": [
                                      "jack1"
                                  ],
-                                 "allowed_methods":[{
+                                 "allowed_by_methods":[{
                                     "user":"jack1",
                                     "methods":["POST","GET"]
                                 }]
@@ -1345,7 +1345,7 @@ passed
 
 
 
-=== TEST 41: set wrong scheme for allowed_methods and blacklist
+=== TEST 41: set wrong scheme for allowed_by_methods and blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -1366,7 +1366,7 @@ passed
                                  "blacklist": [
                                      "jack1"
                                  ],
-                                 "allowed_methods":[{
+                                 "allowed_by_methods":[{
                                     "user":"jack1",
                                     "methods":["POST","GET"]
                                 }]
@@ -1388,7 +1388,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin consumer-restricti
 
 
 
-=== TEST 42: set wrong scheme only allowed_methods
+=== TEST 42: set wrong scheme only allowed_by_methods
 --- config
     location /t {
         content_by_lua_block {
@@ -1406,7 +1406,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin consumer-restricti
                         "plugins": {
                             "basic-auth": {},
                             "consumer-restriction": {
-                                 "allowed_methods":[{
+                                 "allowed_by_methods":[{
                                     "user":"jack1",
                                     "methods":["POST","GET"]
                                 }]
@@ -1422,7 +1422,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin consumer-restricti
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_methods set but no whitelist provided"}/
+qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_by_methods set but no whitelist provided"}/
 --- no_error_log
 [error]
 

@@ -42,7 +42,7 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 | whitelist | array[string] | required   |               |                                 | Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
 | blacklist | array[string] | required   |               |                                 | Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
 | rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
-| allowed_methods | array[object] | optional     |            |                        | Set a list of allowed_methods for users declared in the whitelist section                                                                         |
+| allowed_by_methods | array[object] | optional     |            |                        | Set a list of allowed HTTP methods for users declared in the whitelist section can be `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",                               "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
 
@@ -117,7 +117,7 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-### How to restrict `allowed_methods`
+### How to restrict `allowed_by_methods`
 
 This example restrict the user `jack1` to only `POST` on the resource
 
@@ -137,7 +137,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "whitelist": [
                 "jack1"
             ],
-            "allowed_methods":[{
+            "allowed_by_methods":[{
                 "user": "jack1",
                 "methods": ["POST"]
             }]
@@ -175,7 +175,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "whitelist": [
                 "jack1"
             ],
-            "allowed_methods":[{
+            "allowed_by_methods":[{
                 "user": "jack1",
                 "methods": ["POST","GET"]
             }]
