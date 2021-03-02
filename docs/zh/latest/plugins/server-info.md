@@ -23,6 +23,7 @@ title: server-info
 
 ## 目录
 
+- [目录](#目录)
 - [插件简介](#插件简介)
 - [插件属性](#插件属性)
 - [插件接口](#插件接口)
@@ -37,15 +38,15 @@ title: server-info
 
 服务信息中每一项的含义如下：
 
-| 名称    | 类型 | 描述 |
-|---------|------|-------------|
-| up_time | integer | APISIX 服务实例当前的运行时间（单位：秒）, 如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。 |
-| boot_time | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APIISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。|
-| last_report_time | integer | 最近一次服务信息上报的时间 （UNIX 时间戳）。|
-| id | string | APISIX 服务实例 id 。|
-| etcd_version | string | etcd 集群的版本信息，如果 APISIX 和 etcd 集群之间存在网络分区，该值将设置为 `"unknown"`。|
-| version | string | APISIX 版本信息。 |
-| hostname | string | APISIX 所部署的机器或 pod 的主机名信息。|
+| 名称             | 类型    | 描述                                                                                                                    |
+| ---------------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| up_time          | integer | APISIX 服务实例当前的运行时间（单位：秒）, 如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。 |
+| boot_time        | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APIISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。 |
+| last_report_time | integer | 最近一次服务信息上报的时间 （UNIX 时间戳）。                                                                            |
+| id               | string  | APISIX 服务实例 id 。                                                                                                   |
+| etcd_version     | string  | etcd 集群的版本信息，如果 APISIX 和 etcd 集群之间存在网络分区，该值将设置为 `"unknown"`。                               |
+| version          | string  | APISIX 版本信息。                                                                                                       |
+| hostname         | string  | APISIX 所部署的机器或 pod 的主机名信息。                                                                                |
 
 ## 插件属性
 
@@ -53,7 +54,7 @@ title: server-info
 
 ## 插件接口
 
-该插件在 [Control API](../../control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
+该插件在 [Control API](../../../en/latest/control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
 
 ## 启用插件
 
@@ -74,10 +75,10 @@ plugins:                          # plugin list
 
 我们可以在 `conf/config.yaml` 文件的 `plugin_attr` 一节中修改上报配置。
 
-| 名称         | 类型   | 默认值  | 描述                                                          |
-| ------------ | ------ | -------- | -------------------------------------------------------------------- |
-| report_interval | integer | 60 | 上报服务信息至 etcd 的间隔（单位：秒，最大值：3600，最小值：60）|
-| report_ttl | integer | 7200 | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3600）|
+| 名称            | 类型    | 默认值 | 描述                                                               |
+| --------------- | ------- | ------ | ------------------------------------------------------------------ |
+| report_interval | integer | 60     | 上报服务信息至 etcd 的间隔（单位：秒，最大值：3600，最小值：60）   |
+| report_ttl      | integer | 7200   | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3600） |
 
 下面的例子将 `report_interval` 修改成了 10 分钟，并将 `report_ttl` 修改成了 1
 小时：

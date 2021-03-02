@@ -66,7 +66,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **多协议**
 
   - [TCP/UDP 代理](stream-proxy.md): 动态 TCP/UDP 代理。
-  - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
+  - [Dubbo 代理](../../en/latest/plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
@@ -91,13 +91,13 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **精细化路由**
 
-  - [支持全路径匹配和前缀匹配](router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [支持使用 Nginx 所有内置变量做为路由的条件](/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
+  - [支持全路径匹配和前缀匹配](../../en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
+  - [支持使用 Nginx 所有内置变量做为路由的条件](../../en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
   - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
   - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6：支持使用 IPv6 格式匹配路由
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
-  - [支持路由的优先级](router-radixtree.md#3-match-priority)
+  - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
   - [支持批量 Http 请求](plugins/batch-requests.md)
 
 - **安全防护**
@@ -119,7 +119,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - OpenTracing 可观测性: 支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
   - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](discovery.md)。
   - 监控和指标: [Prometheus](plugins/prometheus.md)
-  - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
+  - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/)。
   - 高可用：支持配置同一个集群内的多个 etcd 地址。
   - [控制台](https://github.com/apache/apisix-dashboard): 操作 APISIX 集群。
   - 版本控制：支持操作的多次回滚。
@@ -251,7 +251,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-[性能测试脚本](benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
+[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
 
 ## Apache APISIX 和 Kong 的比较
 
@@ -327,7 +327,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-欢迎用户把自己加入到 [Powered By](powered-by.md) 页面。
+欢迎用户把自己加入到 [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md) 页面。
 
 ## 全景图
 
