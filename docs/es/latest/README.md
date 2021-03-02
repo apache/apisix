@@ -321,7 +321,7 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 Una gran variedad de compañías y organizacioes usan APISIX para investigación, producción y productos comerciales, incluyendo:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
 Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
 
