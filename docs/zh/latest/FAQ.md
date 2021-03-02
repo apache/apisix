@@ -227,7 +227,7 @@ Apache APISIX 的插件支持热加载。
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
 
-1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
+1. 修改 `conf/config.yaml` 中 HTTP 端口监听的参数`node_listen`，示例：
 
    ```
    apisix:
