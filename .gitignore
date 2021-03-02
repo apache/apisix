@@ -74,3 +74,4 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 /build-cache/
 # release tar package
 *.tgz
+release/*
