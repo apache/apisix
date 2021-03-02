@@ -27,7 +27,7 @@ if [ -z ${OPENRESTY_PREFIX} ]; then
     fi
 fi
 
-#wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
+wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
 tar -xf v3.4.0.tar.gz
 cd luarocks-3.4.0 || exit
 
