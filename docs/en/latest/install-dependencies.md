@@ -150,7 +150,7 @@ nohup etcd &
 
 ```shell
 # install OpenResty, etcd and some compilation tools
-brew install openresty/brew/openresty openresty-openssl111 etcd curl git
+brew install openresty/brew/openresty etcd curl git
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
