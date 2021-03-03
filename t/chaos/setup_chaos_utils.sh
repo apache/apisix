@@ -36,6 +36,7 @@ modify_config() {
 etcd:
   host:
     - \"http://etcd-cluster-client.default.svc.cluster.local:2379\" " > ./conf/config.yaml
+    sed -i -e 's/apisix:latest/apisix:alpine-local/g' kubernetes/deployment.yaml
 }
 
 ensure_pods_ready() {
