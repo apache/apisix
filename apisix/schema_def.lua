@@ -105,6 +105,12 @@ local rule_name_def = {
 }
 
 
+local desc_def = {
+    type = "string",
+    maxLength = 256,
+}
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -368,7 +374,7 @@ local upstream_schema = {
         },
         upstream_host = host_def,
         name = rule_name_def,
-        desc = {type = "string", maxLength = 256},
+        desc = desc_def,
         service_name = {
             type = "string",
             maxLength = 256,
@@ -427,7 +433,7 @@ _M.route = {
             uniqueItems = true,
         },
         name = rule_name_def,
-        desc = {type = "string", maxLength = 256},
+        desc = desc_def,
         priority = {type = "integer", default = 0},
 
         methods = {
@@ -562,7 +568,7 @@ _M.service = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         name = rule_name_def,
-        desc = {type = "string", maxLength = 256},
+        desc = desc_def,
         labels = labels_def,
         script = {type = "string", minLength = 10, maxLength = 102400},
         create_time = timestamp_def,
@@ -588,7 +594,7 @@ _M.consumer = {
         labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
-        desc = {type = "string", maxLength = 256},
+        desc = desc_def,
         -- deprecate fields, will be removed soon
         id = id_schema,
     },
@@ -732,7 +738,7 @@ _M.plugin_config = {
     type = "object",
     properties = {
         id = id_schema,
-        desc = {type = "string", maxLength = 256},
+        desc = desc_def,
         plugins = plugins_schema,
         labels = labels_def,
         create_time = timestamp_def,
