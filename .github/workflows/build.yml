@@ -54,6 +54,7 @@ jobs:
           submodules: recursive
 
       - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         id: branch_env
         shell: bash
         run: |
