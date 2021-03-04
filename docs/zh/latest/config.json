@@ -99,7 +99,7 @@
         },
         {
           "type": "category",
-          "label": "Other Protocols",
+          "label": "其它",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy"
