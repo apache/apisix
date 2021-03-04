@@ -265,7 +265,7 @@ Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configurat
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
 
-## Embedded control api for debugging 
+## Embedded control api for debugging
 
 Sometimes we need the discovery client to export online data snapshot in memory when running for debugging, and if you implement the `_M. dump_data()` function:
 
@@ -281,7 +281,7 @@ Then you can call its control api as below:
 GET /v1/discovery/{discovery_type}/dump
 ```
 
-eg: 
+eg:
 
 ```shell
 curl http://127.0.0.1:9090/v1/discovery/eureka/dump
@@ -291,4 +291,3 @@ curl http://127.0.0.1:9090/v1/discovery/eureka/dump
 
 - eureka
 - [Consul KV](discovery/consul_kv.md)
-

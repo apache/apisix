@@ -22,6 +22,7 @@ local core = require("apisix.core")
 
 local str_sub = string.sub
 local ipairs = ipairs
+local pairs = pairs
 local type = type
 local ngx = ngx
 local get_method = ngx.req.get_method
