@@ -19,74 +19,49 @@ local core      = require("apisix.core")
 local ngx       = ngx
 local schema = {
     type = "object",
-    oneOf = {
-        {
-            title = "blacklist",
-            properties = {
-                type = {
-                    type = "string",
-                    enum = {"consumer_name", "service_id"},
-                    default = "consumer_name"
-                },
-                blacklist = {
-                    type = "array",
-                    minItems = 1,
-                    items = {type = "string"}
-                },
-                rejected_code = {type = "integer", minimum = 200, default = 403}
-            },
-            required = {"blacklist"},
+    properties = {
+        type = {
+            type = "string",
+            enum = {"consumer_name", "service_id"},
+            default = "consumer_name"
         },
-        {
-            title = "whitelist",
-            properties = {
-                type = {
-                    type = "string",
-                    enum = {"consumer_name", "service_id"},
-                    default = "consumer_name"
-                },
-                whitelist = {
-                    type = "array",
-                    minItems = 1,
-                    items = {type = "string"}
-                },
-                rejected_code = {type = "integer", minimum = 200, default = 403}
-            },
-            required = {"whitelist"},
+        blacklist = {
+            type = "array",
+            minItems = 1,
+            items = {type = "string"}
         },
-        {
-            title = "allowed_by_methods",
-            properties = {
-                type = {
-                    type = "string",
-                    enum = {"consumer_name", "service_id"},
-                    default = "consumer_name"
-                },
-                whitelist = {
-                    type = "array",
-                    items = {
-                        type = "object",
-                        properties = {
-                            user = {
-                                type = "string"
-                            },
-                            methods = {
-                                type = "array",
-                                minItems = 1,
-                                items = {
-                                    type = "string",
-                                    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                                            "OPTIONS", "CONNECT", "TRACE"},
-                                }
-                            }
+        whitelist = {
+            type = "array",
+            minItems = 1,
+            items = {type = "string"}
+        },
+        allowed_by_methods = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    user = {
+                        type = "string"
+                    },
+                    methods = {
+                        type = "array",
+                        minItems = 1,
+                        items = {
+                            type = "string",
+                            enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                                    "OPTIONS", "CONNECT", "TRACE"},
                         }
                     }
-                },
-                rejected_code = {type = "integer", minimum = 200, default = 403}
-            },
-            required = {"allowed_by_methods"},
-        }
-    }
+                }
+            }
+        },
+        rejected_code = {type = "integer", minimum = 200, default = 403}
+    },
+    anyOf = {
+        {required = {"blacklist"}},
+        {required = {"whitelist"}},
+        {required = {"allowed_by_methods"}}
+    },
 }
 
 local plugin_name = "consumer-restriction"
@@ -130,13 +105,14 @@ local function is_method_allowed(allowed_methods, method, user)
     return true
 end
 
+local function reject(conf)
+    return conf.rejected_code, { message = "The " .. conf.type .. " is forbidden." }
+end
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
    if not ok then
         return false, err
-   end
-   if ((conf.allowed_by_methods and #conf.allowed_by_methods > 0) and not conf.whitelist ) then
-    return false, "allowed_by_methods set but no whitelist provided"
    end
    return true
 end
@@ -151,25 +127,29 @@ function _M.access(conf, ctx)
     core.log.info("value: ", value)
 
     local block = false
+    local whitelisted = false
+
     if conf.blacklist and #conf.blacklist > 0 then
         if is_include(value, conf.blacklist) then
-            block = true
+            return reject(conf)
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(value, conf.whitelist) then
+        whitelisted = is_include(value, conf.whitelist)
+        if not whitelisted then
             block = true
         end
-        if conf.allowed_by_methods and #conf.allowed_by_methods > 0 then
-            if not is_method_allowed(conf.allowed_by_methods, method, value) then
-                block = true
-            end
+    end
+
+    if conf.allowed_by_methods and #conf.allowed_by_methods > 0 and not whitelisted then
+        if not is_method_allowed(conf.allowed_by_methods, method, value) then
+            block = true
         end
     end
 
     if block then
-        return conf.rejected_code, { message = "The " .. conf.type .. " is forbidden." }
+        return reject(conf)
     end
 end
 

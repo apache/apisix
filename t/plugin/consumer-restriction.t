@@ -54,12 +54,12 @@ GET /t
 
 
 
-=== TEST 2: whitelist and blacklist mutual exclusive
+=== TEST 2: blacklist > whitelist > allowed_by_methods
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
-            local ok, err = plugin.check_schema({whitelist={"jack1"}, blacklist={"jack2"}})
+            local ok, err = plugin.check_schema({whitelist={"jack1"}, blacklist={"jack2"}, allowed_by_methods={}})
             if not ok then
                 ngx.say(err)
             end
@@ -70,7 +70,6 @@ GET /t
 --- request
 GET /t
 --- response_body
-value should match only one schema, but matches both schemas 1 and 2
 done
 --- no_error_log
 [error]
@@ -493,9 +492,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
                         "plugins": {
                             "basic-auth": {},
                             "consumer-restriction": {
-                                 "whitelist": [
-                                     "jack1"
-                                 ],
                                  "allowed_by_methods":[{
                                     "user":"jack1",
                                     "methods":["POST"]
@@ -551,12 +547,9 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
                         "plugins": {
                             "basic-auth": {},
                             "consumer-restriction": {
-                                 "whitelist": [
-                                     "jack1"
-                                 ],
                                  "allowed_by_methods":[{
-                                    "user":"jack1",
-                                    "methods":["POST","GET"]
+                                    "user": "jack1",
+                                    "methods": ["POST","GET"]
                                 }]
                             }
                         }
@@ -590,7 +583,145 @@ hello world
 
 
 
-=== TEST 25: remove consumer-restriction
+=== TEST 25: test blacklist priority
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "basic-auth": {},
+                            "consumer-restriction": {
+                                 "blacklist": [
+                                     "jack1"
+                                 ],
+                                 "allowed_by_methods":[{
+                                    "user": "jack1",
+                                    "methods": ["POST","GET"]
+                                }]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- error_code: 403
+--- response_body
+{"message":"The consumer_name is forbidden."}
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: test blacklist priority
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "basic-auth": {},
+                            "consumer-restriction": {
+                                 "whitelist": ["jack1"],
+                                 "allowed_by_methods":[{
+                                    "user":"jack1",
+                                    "methods":["POST"]
+                                }]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 403
+--- response_body
+{"message":"The consumer_name is forbidden."}
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: remove consumer-restriction
 --- config
     location /t {
         content_by_lua_block {
@@ -625,7 +756,7 @@ passed
 
 
 
-=== TEST 26: verify jack1
+=== TEST 32: verify jack1
 --- request
 GET /hello
 --- more_headers
@@ -637,7 +768,7 @@ hello world
 
 
 
-=== TEST 27: verify jack2
+=== TEST 33: verify jack2
 --- request
 GET /hello
 --- more_headers
@@ -649,7 +780,7 @@ hello world
 
 
 
-=== TEST 28: verify unauthorized
+=== TEST 34: verify unauthorized
 --- request
 GET /hello
 --- response_body
@@ -659,7 +790,7 @@ hello world
 
 
 
-=== TEST 29: create service (id:1)
+=== TEST 35: create service (id:1)
 --- config
     location /t {
         content_by_lua_block {
@@ -705,7 +836,7 @@ passed
 
 
 
-=== TEST 30: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
+=== TEST 36: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
 --- config
     location /t {
         content_by_lua_block {
@@ -762,7 +893,7 @@ passed
 
 
 
-=== TEST 31: Route binding `hmac-auth` plug-in and whitelist `service_id`
+=== TEST 37: Route binding `hmac-auth` plug-in and whitelist `service_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -821,7 +952,7 @@ passed
 
 
 
-=== TEST 32: verify: valid whitelist `service_id`
+=== TEST 38: verify: valid whitelist `service_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -881,7 +1012,7 @@ passed
 
 
 
-=== TEST 33: create service (id:2)
+=== TEST 39: create service (id:2)
 --- config
     location /t {
         content_by_lua_block {
@@ -927,7 +1058,7 @@ passed
 
 
 
-=== TEST 34: Route binding `hmac-auth` plug-in and invalid whitelist `service_id`
+=== TEST 40: Route binding `hmac-auth` plug-in and invalid whitelist `service_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -986,7 +1117,7 @@ passed
 
 
 
-=== TEST 35: verify: invalid whitelist `service_id`
+=== TEST 41: verify: invalid whitelist `service_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -1049,7 +1180,7 @@ qr/\{"message":"The service_id is forbidden."\}/
 
 
 
-=== TEST 36: add consumer with plugin hmac-auth and consumer-restriction, and set blacklist
+=== TEST 42: add consumer with plugin hmac-auth and consumer-restriction, and set blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -1106,7 +1237,7 @@ passed
 
 
 
-=== TEST 37: Route binding `hmac-auth` plug-in and blacklist `service_id`
+=== TEST 43: Route binding `hmac-auth` plug-in and blacklist `service_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -1165,7 +1296,7 @@ passed
 
 
 
-=== TEST 38: verify: valid blacklist `service_id`
+=== TEST 44: verify: valid blacklist `service_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -1226,7 +1357,7 @@ qr/\{"message":"The service_id is forbidden."\}/
 
 
 
-=== TEST 39: Route binding `hmac-auth` plug-in and invalid blacklist `service_id`
+=== TEST 45: Route binding `hmac-auth` plug-in and invalid blacklist `service_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -1285,7 +1416,7 @@ passed
 
 
 
-=== TEST 40: verify: invalid blacklist `service_id`
+=== TEST 46: verify: invalid blacklist `service_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -1345,90 +1476,7 @@ passed
 
 
 
-=== TEST 41: set wrong scheme for allowed_by_methods and blacklist
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "basic-auth": {},
-                            "consumer-restriction": {
-                                 "blacklist": [
-                                     "jack1"
-                                 ],
-                                 "allowed_by_methods":[{
-                                    "user":"jack1",
-                                    "methods":["POST","GET"]
-                                }]
-                            }
-                        }
-                }]]
-                )
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: value should match only one schema, but matches both schemas 1 and 3"}/
---- no_error_log
-[error]
-
-
-
-=== TEST 42: set wrong scheme only allowed_by_methods
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "basic-auth": {},
-                            "consumer-restriction": {
-                                 "allowed_by_methods":[{
-                                    "user":"jack1",
-                                    "methods":["POST","GET"]
-                                }]
-                            }
-                        }
-                }]]
-                )
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin consumer-restriction err: allowed_by_methods set but no whitelist provided"}/
---- no_error_log
-[error]
-
-
-
-=== TEST 43: delete: route (id: 1)
+=== TEST 47: delete: route (id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1448,7 +1496,7 @@ passed
 
 
 
-=== TEST 44: delete: `service_id` is 1
+=== TEST 48: delete: `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -1468,7 +1516,7 @@ passed
 
 
 
-=== TEST 45: delete: `service_id` is 2
+=== TEST 49: delete: `service_id` is 2
 --- config
     location /t {
         content_by_lua_block {
