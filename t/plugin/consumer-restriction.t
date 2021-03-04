@@ -653,7 +653,7 @@ hello world
 
 
 
-=== TEST 28: test blacklist priority
+=== TEST 28: whitelist blacklist priority
 --- config
     location /t {
         content_by_lua_block {
