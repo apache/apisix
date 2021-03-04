@@ -173,6 +173,8 @@ GET /t
             ))
             -- wait for sync
             ngx.sleep(0.6)
+
+            assert(core.etcd.delete("/plugin_configs/1"))
         }
     }
 --- request
