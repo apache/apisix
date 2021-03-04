@@ -129,10 +129,6 @@
     },
     {
       "type": "doc",
-      "id": "dns"
-    },
-    {
-      "type": "doc",
       "id": "https"
     },
     {
@@ -142,7 +138,7 @@
     {
       "type": "link",
       "label": "CODE_STYLE",
-      "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE"
+      "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
     },
     {
       "type": "doc",
@@ -155,7 +151,7 @@
     {
       "type": "link",
       "label": "CHANGELOG",
-      "href": "https://github.com/apache/apisix/blob/master/CHANGELOG"
+      "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
     }
   ]
 }

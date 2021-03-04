@@ -49,9 +49,11 @@ Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
 
 ## Supported discovery registries
 
-Currently we support Eureka and service discovery via DNS, like Consul.
+Currently we support Eureka/Consul and service discovery via DNS.
 
-For service discovery via DNS, see [service discovery via DNS](dns.md#service-discovery-via-dns).
+For service discovery via DNS, see [service discovery via DNS](discovery/dns.md).
+
+For Consul, see [service discovery via Consul](discovery/consul_kv.md)
 
 For Eureka, see below.
 
@@ -289,3 +291,4 @@ curl http://127.0.0.1:9090/v1/discovery/eureka/dump
 
 - eureka
 - [Consul KV](discovery/consul_kv.md)
+
