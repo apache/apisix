@@ -11,7 +11,7 @@ on:
 jobs:
   test_apisix:
     name: run fuzzing
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     services:
       etcd:
