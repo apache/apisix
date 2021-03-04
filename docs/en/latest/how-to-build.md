@@ -44,7 +44,7 @@ $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apache-apisix-2.4
+cd apisix-2.4
 make deps
 ```
 

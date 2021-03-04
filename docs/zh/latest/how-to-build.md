@@ -44,7 +44,7 @@ $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
 安装运行时依赖的 Lua 库：
 
 ```
-cd apache-apisix-2.4
+cd apisix-2.4
 make deps
 ```
 
