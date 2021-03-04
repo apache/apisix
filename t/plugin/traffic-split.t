@@ -1615,7 +1615,66 @@ passed
 
 
 
-=== TEST 46: the upstream_id is used in the plugin
+=== TEST 46: set route(id: 1, upstream_id: 1, plugin's upstream_id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/hello*",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["uri", "==", "/hello"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 2}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream_id":"1"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 47: when `match` rule passed, use the plugin's `upstream_id`, and when it failed, use the route's original `upstream_id`
+--- pipelined_requests eval
+["GET /hello", "GET /hello1", "GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
+--- response_body eval
+["hello world\n", "hello1 world\n", "hello world\n", "hello1 world\n", "hello world\n", "hello1 world\n"]
+--- grep_error_log_out eval
+[
+"match_flag: true",
+"upstream_id: 2",
+"match_flag: false",
+"original_uid: 1"
+]
+
+
+
+=== TEST 48: the upstream_id is used in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1665,7 +1724,7 @@ passed
 
 
 
-=== TEST 47: `match` rule passed(upstream_id)
+=== TEST 49: `match` rule passed(upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1689,7 +1748,7 @@ GET /t
 
 
 
-=== TEST 48: only use upstream_id in the plugin
+=== TEST 50: only use upstream_id in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1738,7 +1797,7 @@ passed
 
 
 
-=== TEST 49: `match` rule passed(only use upstream_id)
+=== TEST 51: `match` rule passed(only use upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1761,7 +1820,7 @@ GET /t
 
 
 
-=== TEST 50: use upstream and upstream_id in the plugin
+=== TEST 52: use upstream and upstream_id in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1811,7 +1870,7 @@ passed
 
 
 
-=== TEST 51: `match` rule passed(upstream + upstream_id)
+=== TEST 53: `match` rule passed(upstream + upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1836,7 +1895,7 @@ GET /t
 
 
 
-=== TEST 52: set route + upstream (two upstream node: one healthy + one unhealthy)
+=== TEST 54: set route + upstream (two upstream node: one healthy + one unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -1911,7 +1970,7 @@ passed
 
 
 
-=== TEST 53: hit routes, ensure the checker is bound to the upstream
+=== TEST 55: hit routes, ensure the checker is bound to the upstream
 --- config
 location /t {
     content_by_lua_block {
@@ -1965,7 +2024,7 @@ qr/\([^)]+\) unhealthy .* for '.*'/
 
 
 
-=== TEST 54: set upstream(id: 1), by default retries count = number of nodes
+=== TEST 56: set upstream(id: 1), by default retries count = number of nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -1997,7 +2056,7 @@ passed
 
 
 
-=== TEST 55: set route(id: 1, upstream_id: 1)
+=== TEST 57: set route(id: 1, upstream_id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -2041,7 +2100,7 @@ passed
 
 
 
-=== TEST 56: hit routes
+=== TEST 58: hit routes
 --- request
 GET /hello
 --- error_code: 502

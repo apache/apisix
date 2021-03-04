@@ -306,6 +306,10 @@ function _M.access(conf, ctx)
     core.log.info("match_flag: ", match_flag)
 
     if not match_flag then
+        if ctx.matched_route.value["original_uid"] then
+            ctx.matched_route.value.upstream_id = ctx.matched_route.value["original_uid"]
+            core.log.info("original_uid: ", ctx.matched_route.value.upstream_id)
+        end
         return
     end
 
@@ -320,6 +324,7 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
+        ctx.matched_route.value["original_uid"] = ctx.matched_route.value.upstream_id
         ctx.matched_route.value.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
