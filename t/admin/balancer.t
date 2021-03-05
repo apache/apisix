@@ -52,6 +52,8 @@ add_block_preprocessor(sub {
         for _, key in ipairs(keys) do
             ngx.say("host: ", key, " count: ", res[key])
         end
+
+        ctx.server_picker = nil
     end
 _EOC_
     $block->set_value("init_by_lua_block", $init_by_lua_block);

@@ -1,3 +1,7 @@
+---
+title: prometheus
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,9 +21,7 @@
 #
 -->
 
-# prometheus
-
-此插件是提供符合prometheus数据格式的监控指标数据。
+此插件是提供符合 prometheus 数据格式的监控指标数据。
 
 ## 属性
 
@@ -27,7 +29,7 @@
 
 ## 接口
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
+插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
 来保护它。
 
 ## 如何开启插件
@@ -68,16 +70,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-把该uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把该 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
 例子如下:
 
 ```yaml
 scrape_configs:
-  - job_name: 'apisix'
-    metrics_path: '/apisix/prometheus/metrics'
+  - job_name: "apisix"
+    metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-    - targets: ['127.0.0.1:9080']
+      - targets: ["127.0.0.1:9080"]
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:
@@ -86,13 +88,13 @@ scrape_configs:
 
 ![](../../../assets/images/plugin/prometheus02.png)
 
-## 如何修改暴露指标的uri
+## 如何修改暴露指标的 uri
 
-我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的uri
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的 uri
 
-| 名称       | 类型   | 默认值                       | 描述          |
-| ---------- | ------ | ---------------------------- | ------------- |
-| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的uri |
+| 名称       | 类型   | 默认值                       | 描述           |
+| ---------- | ------ | ---------------------------- | -------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的 uri |
 
 配置示例:
 
@@ -106,7 +108,7 @@ plugin_attr:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-下载 [Grafana dashboard 元数据](../../json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+下载 [Grafana dashboard 元数据](../../../assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 

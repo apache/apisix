@@ -40,12 +40,12 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
 - QQ Group - 578997126
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-mrougyeu-2aG7BnFaV0VnAT9_JIUVaA) - join `#apisix` on our Slack to meet the team and ask questions
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -92,7 +92,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Fine-grained routing**
 
   - [Supports full path matching and prefix matching](docs/en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [Support all Nginx built-in variables as conditions for routing](/docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`, `args`, etc. as routing conditions to implement canary release, A/B testing, etc.
+  - [Support all Nginx built-in variables as conditions for routing](docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`, `args`, etc. as routing conditions to implement canary release, A/B testing, etc.
   - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
   - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6: Use IPv6 to match route.
@@ -119,12 +119,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - OpenTracing: support [Apache Skywalking](docs/en/latest/plugins/skywalking.md) and [Zipkin](docs/en/latest/plugins/zipkin.md)
   - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
-  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
+  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
   - High availability: support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
-  - [Stand-alone mode](docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
+  - [Stand-docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
   - [Global Rule](docs/en/latest/architecture-design.md#global-rule): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
@@ -148,13 +148,14 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 There are several ways to install the Apache Release version of APISIX:
 
 1. Source code compilation (applicable to all systems)
+
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](docs/en/latest/install-dependencies.md)
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.3
-     $ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
-     $ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
+     $ mkdir apisix-2.4
+     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
+     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
      ```
 
    - Install the dependencies：
@@ -186,11 +187,12 @@ There are several ways to install the Apache Release version of APISIX:
    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
+
    - Installation runtime dependencies: OpenResty, etcd and OpenSSL develop library, refer to [install dependencies documentation](docs/en/latest/install-dependencies.md#centos-7)
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
    ```
 
    - check version of APISIX:
@@ -231,7 +233,7 @@ There are several ways to install the Apache Release version of APISIX:
 
    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/README.md#plugins).
+   Further, you can follow the documentation to try more [plugins](README.md#plugins).
 
 3. Admin API
 
@@ -243,7 +245,7 @@ There are several ways to install the Apache Release version of APISIX:
 
    Please note that Apache APISIX plugins' added, updated, deleted, etc. are hot loaded, without restarting the service.
 
-For more documents, please refer to [Apache APISIX Document Index](docs/en/latest/README.md)
+For more documents, please refer to [Apache APISIX Document Index](README.md)
 
 ## Benchmark
 
@@ -317,22 +319,22 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
 Users are encouraged to add themselves to the [Powered By](docs/en/latest/powered-by.md) page.
 
 ## Landscape
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br><br>
-APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<br /><br />
+APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
 
 ## Logos
 
-- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo(PNG)](https://github.com/apache/apisix/tree/master/logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
 
 ## Acknowledgments
@@ -341,4 +343,4 @@ Inspired by Kong and Orange.
 
 ## License
 
-[Apache 2.0 License](LICENSE)
+[Apache 2.0 License](https://github.com/apache/apisix/tree/master/LICENSE)

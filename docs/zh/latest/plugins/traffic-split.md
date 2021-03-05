@@ -1,3 +1,7 @@
+---
+title: traffic-split
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [名字](#名字)
 - [属性](#属性)
@@ -41,7 +45,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | rules.match                    | array[object] | 可选  |        |        | 匹配规则列表  |
 | rules.match.vars               | array[array]  | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
+| weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
 | weighted_upstreams.upstream    | object | 可选   |        |        | 上游配置信息。 |
 | upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
 | upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
@@ -53,7 +57,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 
->注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 域中，如果存在只有 `weight` 的结构，表示 `route` 或 `service` 上的 upstream 流量权重值。例如：
+注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 域中，如果存在只有 `weight` 的结构，表示 `route` 或 `service` 上的 upstream 流量权重值。例如：
 
 ```json
 "weighted_upstreams": [
@@ -66,7 +70,9 @@ traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成�
 
 ## 如何启用
 
-创建一个路由并启用 `traffic-split` 插件：
+创建一个路由并启用 `traffic-split` 插件，在配置插件上游信息时，有以下两种方式：
+
+1、通过插件中的 `upstream` 属性配置上游信息。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -108,6 +114,40 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+2、通过插件中的 `upstream_id` 属性绑定上游服务。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream_id": 1,
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+>注：1、通过 `upstream_id` 方式来绑定已定义的上游，它可以复用上游具有的健康检测、重试等功能。2、支持 `upstream` 和 `upstream_id` 的两种配置方式一起使用。
 
 ## 示例
 

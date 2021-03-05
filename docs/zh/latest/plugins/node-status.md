@@ -1,3 +1,7 @@
+---
+title: node-status
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [**插件简介**](#插件简介)
 - [**插件属性**](#插件属性)
@@ -36,7 +40,7 @@
 
 ## 插件接口
 
-插件增加接口 `/apisix/status`，可通过 [interceptors](plugin-interceptors.md) 保护该接口。
+插件增加接口 `/apisix/status`，可通过 [interceptors](../plugin-interceptors.md) 保护该接口。
 
 ## 启用插件
 

@@ -32,7 +32,7 @@ else
 fi
 
 # find the openresty
-OR_BIN=$(which openresty)
+OR_BIN=$(which openresty || exit 1)
 OR_EXEC=${OR_BIN:-'/usr/local/openresty-debug/bin/openresty'}
 OR_VER=$(openresty -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
 LUA_VERSION=$(lua -v 2>&1| grep -E -o  "Lua [0-9]+.[0-9]+")
