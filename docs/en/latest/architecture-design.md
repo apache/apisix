@@ -53,7 +53,7 @@ title: Architecture Design
 
 ### Plugin Hierarchy Structure
 
-<img src="../../assets/images/flow-plugin-internal.png" width="50%" height="50%" />
+![flow-plugin-internal](../../assets/images/flow-plugin-internal.png)
 
 ## APISIX Config
 
@@ -91,7 +91,7 @@ The route mainly consists of three parts: matching rules (e.g uri, host, remote_
 
 The following image shows an example of some Route rules. When some attribute values are the same, the figure is identified by the same color.
 
-<img src="../../assets/images/routes-example.png" width="50%" height="50%" />
+![routes-example](../../assets/images/routes-example.png)
 
 We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it's adding a lot of complexity of management and maintenance.
 
@@ -131,7 +131,7 @@ For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
 A `Service` is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to the upstream service abstraction. Between `Route` and `Service`, usually the relationship of N:1, please see the following image.
 
-<img src="../../assets/images/service-example.png" width="50%" height="50%" />
+![service-example](../../assets/images/service-example.png)
 
 Different Route rules are bound to a Service at the same time. These Routes will have the same upstream and plugin configuration, reducing redundant configuration.
 
@@ -268,7 +268,7 @@ In theory, you can write arbitrary Lua code in `Script`, or you can directly cal
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules. Upstream address information can be directly configured to `Route` (or `Service`). When Upstream has duplicates, you need to use "reference" to avoid duplication.
 
-<img src="../../assets/images/upstream-example.png" width="50%" height="50%" />
+![upstream-example](../../assets/images/upstream-example.png)
 
 As shown in the image above, by creating an Upstream object and referencing it by ID in `Route`, you can ensure that only the value of an object is maintained.
 
@@ -490,7 +490,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 For the API gateway, it is usually possible to identify a certain type of requester by using a domain name such as a request domain name, a client IP address, etc., and then perform plugin filtering and forward the request to the specified upstream, but sometimes the depth is insufficient.
 
-<img src="../../assets/images/consumer-who.png" width="50%" height="50%" />
+![consumer-who](../../assets/images/consumer-who.png)
 
 As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
@@ -501,7 +501,7 @@ As shown in the image above, as an API gateway, you should know who the API Cons
 
 In APISIX, the process of identifying a Consumer is as follows:
 
-<img src="../../assets/images/consumer-internal.png" width="50%" height="50%" />
+![consumer-internal](../../assets/images/consumer-internal.png)
 
 1. Authorization certification: e.g [key-auth](./plugins/key-auth.md), [JWT](./plugins/jwt-auth.md), etc.
 2. Get consumer_name: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
