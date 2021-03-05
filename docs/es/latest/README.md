@@ -155,9 +155,9 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
-     $ mkdir apisix-2.3
-     $ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
-     $ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
+     $ mkdir apisix-2.4
+     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
+     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
      ```
 
    - Instalar las dependencias：
@@ -194,7 +194,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Instalar APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
    ```
 
    - Chequear versión de APISIX:

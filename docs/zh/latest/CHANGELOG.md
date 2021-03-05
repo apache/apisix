@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.4.0](#240)
 - [2.3.0](#230)
 - [2.2.0](#220)
 - [2.1.0](#210)
@@ -38,6 +39,36 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.4.0
+
+### Change
+
+- 插件暴露的公共 API 将默认不再执行全局插件 [#3396](https://github.com/apache/apisix/pull/3396)
+- DNS 记录缓存时间默认按 TTL 设置 [#3530](https://github.com/apache/apisix/pull/3530)
+
+### Core
+
+- :sunrise: 支持 DNS SRV 记录 [#3686](https://github.com/apache/apisix/pull/3686)
+- :sunrise: 新的 DNS 服务发现模块 [#3629](https://github.com/apache/apisix/pull/3629)
+- :sunrise: 支持 Consul HTTP 接口服务发现模块 [#3615](https://github.com/apache/apisix/pull/3615)
+- :sunrise: 支持插件复用 [#3567](https://github.com/apache/apisix/pull/3567)
+- :sunrise: 支持 plaintext HTTP2 [#3547](https://github.com/apache/apisix/pull/3547)
+- :sunrise: 支持 DNS AAAA 记录 [#3484](https://github.com/apache/apisix/pull/3484)
+
+### Plugin
+
+- :sunrise: traffic-split 插件支持 upstream_id [#3512](https://github.com/apache/apisix/pull/3512)
+- :sunrise: zipkin 插件 b3 请求头 [#3551](https://github.com/apache/apisix/pull/3551)
+
+### Bugfix
+
+- 一致性 hash 负载均衡确保重试所有节点 [#3651](https://github.com/apache/apisix/pull/3651)
+- 当 route 绑定 service 后仍能执行 script [#3678](https://github.com/apache/apisix/pull/3678)
+- 应当依赖 openssl111 [#3603](https://github.com/apache/apisix/pull/3603)
+- zipkin 避免缓存请求特定的数据 [#3522](https://github.com/apache/apisix/pull/3522)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/13)
 
 ## 2.3.0
 
