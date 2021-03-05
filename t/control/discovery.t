@@ -57,21 +57,47 @@ __DATA__
 
 === TEST 1: test consul_kv dump_data api
 --- yaml_config eval: $::yaml_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, body, res = t.test('/v1/discovery/consul_kv/dump',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+            ngx.say(json.encode(entity.config))
+        }
+    }
 --- request
-GET /v1/discovery/consul_kv/dump
+GET /t
 --- error_code: 200
---- response_body_unlike
-^{}$
+--- response_body
+{}
+{"fetch_interval":3,"keepalive":true,"prefix":"upstreams","servers":["http://127.0.0.1:8500","http://127.0.0.1:8600"],"timeout":{"connect":2000,"read":2000,"wait":60},"weight":1}
 
 
 
 === TEST 2: test eureka dump_data api
 --- yaml_config eval: $::yaml_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, body, res = t.test('/v1/discovery/eureka/dump',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity))
+        }
+    }
 --- request
-GET /v1/discovery/eureka/dump
+GET /t
 --- error_code: 200
---- response_body_unlike
-^{}$
+--- response_body
+{"config":{"fetch_interval":10,"host":["http://127.0.0.1:8761"],"prefix":"/eureka/","timeout":{"connect":1500,"read":1500,"send":1500},"weight":80},"services":{}}
 
 
 
@@ -83,14 +109,13 @@ GET /v1/discovery/dns/dump
 
 
 
-=== TEST 4: test unconfiged consul_kv dump_data api
+=== TEST 4: test unconfiged eureka dump_data api
 --- yaml_config
 apisix:
   enable_control: true
   node_listen: 1984
   config_center: yaml
   enable_admin: false
-
 discovery:
   consul_kv:
     servers:
@@ -100,3 +125,72 @@ discovery:
 --- request
 GET /v1/discovery/eureka/dump
 --- error_code: 404
+
+
+
+=== TEST 5: prepare consul kv register nodes
+--- config
+location /consul1 {
+    rewrite  ^/consul1/(.*) /v1/kv/$1 break;
+    proxy_pass http://127.0.0.1:8500;
+}
+
+location /consul2 {
+    rewrite  ^/consul2/(.*) /v1/kv/$1 break;
+    proxy_pass http://127.0.0.1:8600;
+}
+--- pipelined_requests eval
+[
+    "DELETE /consul1/upstreams/?recurse=true",
+    "DELETE /consul2/upstreams/webpages/?recurse=true",
+    "PUT /consul1/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /consul1/upstreams/webpages/127.0.0.1:30512\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /consul2/upstreams/webpages/127.0.0.1:30513\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /consul2/upstreams/webpages/127.0.0.1:30514\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+]
+--- response_body eval
+["true", "true", "true", "true", "true", "true"]
+
+
+
+=== TEST 6: dump consul_kv services
+--- yaml_config eval: $::yaml_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul_kv/dump',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+{"http://127.0.0.1:8500/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1}],"http://127.0.0.1:8600/v1/kv/upstreams/1614480/webpages/":[{"host":"172.19.5.12","port":8000,"weight":120},{"host":"172.19.5.13","port":8000,"weight":120}],"http://127.0.0.1:8600/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30513,"weight":1},{"host":"127.0.0.1","port":30514,"weight":1}]}
+
+
+
+=== TEST 7: clean consul kv register nodes
+--- config
+location /consul1 {
+    rewrite  ^/consul1/(.*) /v1/kv/$1 break;
+    proxy_pass http://127.0.0.1:8500;
+}
+
+location /consul2 {
+    rewrite  ^/consul2/(.*) /v1/kv/$1 break;
+    proxy_pass http://127.0.0.1:8600;
+}
+--- pipelined_requests eval
+[
+    "DELETE /consul1/upstreams/?recurse=true",
+    "DELETE /consul2/upstreams/webpages/?recurse=true"
+]
+--- response_body eval
+["true", "true"]

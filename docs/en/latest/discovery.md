@@ -65,9 +65,9 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 1. Add the implementation of registry client in the 'apisix/discovery/' directory;
 
-2. Implement the `_M. init_worker()` function for initialization and the `_M. nodes(service_name)` function for obtaining the list of service instance nodes;
+2. Implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes;
 
-3. If you need the discovery module to export the debugging information online,  implement the `_M. dump_data()` function;
+3. If you need the discovery module to export the debugging information online, implement the `_M.dump_data()` function;
 
 4. Convert the registry data into data in APISIX;
 
@@ -96,7 +96,7 @@ Then implement the `_M.init_worker()` function for initialization and the `_M.no
 
 
   function _M.dump_data()
-      ... ...
+      return {config = your_config, services = your_services, other = ... }
   end
 
 

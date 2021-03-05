@@ -253,7 +253,7 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.eureka, services = applications}
+    return {config = local_conf.discovery.eureka, services = applications or {}}
 end
 
 
