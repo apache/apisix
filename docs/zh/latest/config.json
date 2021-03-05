@@ -19,7 +19,9 @@
           "items": [
             "plugins/batch-requests",
             "plugins/serverless",
-            "plugins/redirect"
+            "plugins/redirect",
+            "plugins/echo",
+            "plugins/server-info"
           ]
         },
         {
@@ -41,7 +43,8 @@
             "plugins/key-auth",
             "plugins/jwt-auth",
             "plugins/basic-auth",
-            "plugins/openid-connect"
+            "plugins/openid-connect",
+            "plugins/hmac-auth"
           ]
         },
         {
@@ -51,7 +54,8 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
-            "plugins/referer-restriction"
+            "plugins/referer-restriction",
+            "plugins/consumer-restriction"
           ]
         },
         {
@@ -65,7 +69,8 @@
             "plugins/request-validation",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
-            "plugins/traffic-split"
+            "plugins/traffic-split",
+            "plugins/request-id"
           ]
         },
         {
@@ -74,7 +79,8 @@
           "items": [
             "plugins/prometheus",
             "plugins/zipkin",
-            "plugins/skywalking"
+            "plugins/skywalking",
+            "plugins/node-status"
           ]
         },
         {
@@ -86,7 +92,17 @@
             "plugins/kafka-logger",
             "plugins/udp-logger",
             "plugins/syslog",
-            "plugins/log-rotate"
+            "plugins/log-rotate",
+            "plugins/error-log-logger",
+            "plugins/sls-logger"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "其它",
+          "items": [
+            "plugins/dubbo-proxy",
+            "plugins/mqtt-proxy"
           ]
         }
       ]
