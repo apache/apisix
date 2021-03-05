@@ -142,7 +142,7 @@ location /consul2 {
 --- pipelined_requests eval
 [
     "DELETE /consul1/upstreams/?recurse=true",
-    "DELETE /consul2/upstreams/webpages/?recurse=true",
+    "DELETE /consul2/upstreams/?recurse=true",
     "PUT /consul1/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
     "PUT /consul1/upstreams/webpages/127.0.0.1:30512\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
     "PUT /consul2/upstreams/webpages/127.0.0.1:30513\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
@@ -172,7 +172,7 @@ location /consul2 {
 GET /t
 --- error_code: 200
 --- response_body
-{"http://127.0.0.1:8500/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1}],"http://127.0.0.1:8600/v1/kv/upstreams/1614480/webpages/":[{"host":"172.19.5.12","port":8000,"weight":120},{"host":"172.19.5.13","port":8000,"weight":120}],"http://127.0.0.1:8600/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30513,"weight":1},{"host":"127.0.0.1","port":30514,"weight":1}]}
+{"http://127.0.0.1:8500/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1}],"http://127.0.0.1:8600/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30513,"weight":1},{"host":"127.0.0.1","port":30514,"weight":1}]}
 
 
 
@@ -190,7 +190,7 @@ location /consul2 {
 --- pipelined_requests eval
 [
     "DELETE /consul1/upstreams/?recurse=true",
-    "DELETE /consul2/upstreams/webpages/?recurse=true"
+    "DELETE /consul2/upstreams/?recurse=true"
 ]
 --- response_body eval
 ["true", "true"]
