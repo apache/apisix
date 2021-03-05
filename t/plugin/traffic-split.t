@@ -1724,9 +1724,8 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        local headers = {}
         for i = 1, 6 do
-            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers)
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
             bodys[i] = body
         end
         table.sort(bodys)
