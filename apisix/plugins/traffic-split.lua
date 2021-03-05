@@ -314,8 +314,9 @@ function _M.access(conf, ctx)
         return
     end
 
+    local route_upstream_id = ctx.matched_route.value.upstream_id
     local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams,
-                                ctx.matched_route.value.upstream_id)
+                                route_upstream_id)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
