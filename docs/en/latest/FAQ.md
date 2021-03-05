@@ -71,6 +71,10 @@ There are two possibilities when encountering slow luarocks:
 For the first problem, you can use https_proxy or use the `--server` option to specify a luarocks server that you can access or access faster.
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
 
+```shell
+luarocks install apisix --server https://luarocks.cn
+```
+
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
 
 ## How to support gray release via APISIX?
