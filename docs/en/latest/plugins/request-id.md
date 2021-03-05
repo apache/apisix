@@ -48,7 +48,7 @@ Create a route and enable the request-id plugin on the route:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/get",
+    "uri": "/hello",
     "plugins": {
         "request-id": {
             "include_in_response": true
@@ -68,6 +68,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
+X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
+......
 ```
 
 ## Disable Plugin

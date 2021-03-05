@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -33,7 +31,9 @@ def check_log():
     cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     for cmd in cmds:
         r = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        assert r.stdout.read().strip() == ""
+        err = r.stdout.read().strip()
+        print("Error in log: ", err)
+        assert err == b""
 
 def check_process():
     cmd = "ps -ef | grep apisix/conf/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
@@ -46,7 +46,7 @@ def check_process():
     return process
 
 def initfuzz():
-    fw = open(cur_dir() + "/test.log",'wb')
+    fw = open(cur_dir() + "/test.log",'w')
     fuzz_loggers = [FuzzLoggerText(file_handle=fw)]
     session = Session(
         target=Target(

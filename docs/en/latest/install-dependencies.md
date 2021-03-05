@@ -21,7 +21,6 @@ title: Install Dependencies
 #
 -->
 
-- [Install Dependencies](#install-dependencies)
 - [Note](#note)
 - [CentOS 7](#centos-7)
 - [Fedora 31 & 32](#fedora-31--32)
@@ -35,11 +34,11 @@ title: Install Dependencies
 
 - Now by default Apache APISIX uses HTTP protocol to talk with etcd cluster, which is insecure. Please configure certificate and corresponding private key for your etcd cluster, and use "https" scheme explicitly in the etcd endpoints list in your Apache APISIX configuration, if you want to keep the data secure and integral. See the etcd section in `conf/config-default.yaml` for more details.
 
-- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).
+- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/.travis/linux_tengine_runner.sh).
 
 - If it is OpenResty 1.19, APISIX will use OpenResty's built-in LuaJIT to run `bin/apisix`; otherwise it will use Lua 5.1. If you encounter `luajit: lj_asm_x86.h:2819: asm_loop_ fixup: Assertion '((intptr_t)target & 15) == 0' failed`, this is a problem with the low version of OpenResty's built-in LuaJIT under certain compilation conditions.
 
-- On some platforms, installing LuaRocks via the package manager will cause Lua to be upgraded to Lua 5.3, so we recommend installing LuaRocks via source code. if you install OpenResty and its OpenSSL develop library (openresty-openssl111-devel for rpm and openresty-openssl111-dev for deb) via the official repository, then [we provide a script for automatic installation](../utils/linux-install-luarocks.sh). If you compile OpenResty yourself, you can refer to the above script and change the path in it. If you don't specify the OpenSSL library path when you compile, you don't need to configure the OpenSSL variables in LuaRocks, because the system's OpenSSL is used by default. If the OpenSSL library is specified at compile time, then you need to ensure that LuaRocks' OpenSSL configuration is consistent with OpenResty's.
+- On some platforms, installing LuaRocks via the package manager will cause Lua to be upgraded to Lua 5.3, so we recommend installing LuaRocks via source code. if you install OpenResty and its OpenSSL develop library (openresty-openssl111-devel for rpm and openresty-openssl111-dev for deb) via the official repository, then [we provide a script for automatic installation](https://github.com/apache/apisix/blob/master/utils/linux-install-luarocks.sh). If you compile OpenResty yourself, you can refer to the above script and change the path in it. If you don't specify the OpenSSL library path when you compile, you don't need to configure the OpenSSL variables in LuaRocks, because the system's OpenSSL is used by default. If the OpenSSL library is specified at compile time, then you need to ensure that LuaRocks' OpenSSL configuration is consistent with OpenResty's.
 
 - WARNING: If you are using OpenResty which is older than `1.17.8`, please installing openresty-openss-devel instead of openresty-openssl111-devel.
 
