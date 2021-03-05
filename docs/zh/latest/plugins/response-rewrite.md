@@ -46,6 +46,7 @@ title: response-rewrite
 | body        | string  | 可选   |        |            | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉                                              |
 | body_base64 | boolean | 可选   | false  |            | 描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景                                                |
 | headers     | object  | 可选   |        |            | 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可 |
+| vars        | array[] | 可选   |        |            | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。 |
 
 ## 示例
 
@@ -64,7 +65,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "headers": {
                 "X-Server-id": 3,
                 "X-Server-status": "on"
-            }
+            },
+            "vars":[
+                [ "status","==","200" ]
+            ]
         }
     },
     "upstream": {
@@ -84,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
-如果看到返回的头部信息和内容都被修改了，即表示 `response rewrite` 插件生效了。
+如果看到返回的头部信息和内容都被修改了，即表示 `response rewrite` 插件生效了,`vars` 将确保仅覆盖状态为 200 的响应。
 
 ```shell
 HTTP/1.1 200 OK

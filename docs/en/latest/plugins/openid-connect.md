@@ -25,7 +25,10 @@ title: openid-connect
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)
-- [**Token Introspection**](#token-introspection)
+- [**Modes of operation**](#modes-of-operation)
+    - [**Token Introspection**](#token-introspection)
+    - [**Introspecting with public key**](#introspecting-with-public-key)
+- [**Troubleshooting**](#troubleshooting)
 
 ## Name
 
@@ -54,7 +57,7 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 | set_id_token_header                  | boolean | optional    | true                  |         | Whether to ensure the ID token, if available, is set in the `X-ID-Token` request header.                                        |
 | set_userinfo_header                  | boolean | optional    | true                  |         | Whether to ensure the UserInfo object, if available, is set in the `X-Userinfo` request header.                                 |
 
-### Modes of operation
+## Modes of operation
 
 The plugin supports different modes of operation.
 
@@ -129,7 +132,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 
 In this case, the plugin can enforce that the access token and the UserInfo object get set in respective configured request headers.
 
-#### Introspecting with public key
+### Introspecting with public key
 
 You can also provide the public key of the JWT token to verify the token. In case if you have provided a public key and
 a token introspection endpoint, the public key workflow will be executed instead of verifying with the identity server.

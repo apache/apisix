@@ -25,9 +25,9 @@ install_dependencies() {
     yum install -y wget tar gcc automake autoconf libtool make unzip \
         curl git which sudo
 
-    # install openresty
+    # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-debug openresty-openssl111-debug-devel
+    yum install -y openresty openresty-debug openresty-openssl111-debug-devel
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -57,11 +57,11 @@ install_dependencies() {
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make deps
-    make init
 }
 
 run_case() {
     export_or_prefix
+    make init
     ./utils/set-dns.sh
     # run test cases
     FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ -r t/

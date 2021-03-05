@@ -17,6 +17,7 @@
 use t::APISIX 'no_plan';
 
 log_level('debug');
+worker_connections(1024);
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -161,36 +162,48 @@ request header present
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
-            local res1, err1 = httpc:request_uri(uri,
-                {
-                    method = "GET",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                    }
-                }
-            )
-            local res2, err2 = httpc:request_uri(uri,
-                {
-                    method = "GET",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                    }
-                }
-            )
+            local t = {}
+            local ids = {}
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function()
+                    local httpc = http.new()
+                    local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+                    local res, err = httpc:request_uri(uri,
+                        {
+                            method = "GET",
+                            headers = {
+                                ["Content-Type"] = "application/json",
+                            }
+                        }
+                    )
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
 
-            -- ngx.say("res1: ", res1.headers["X-Request-Id"])
-            -- ngx.say("res2: ", res2.headers["X-Request-Id"])
-            if res1.headers["X-Request-Id"] == res2.headers["X-Request-Id"] then
-                ngx.say("ids not unique")
-            else
-                ngx.say("true")
+                    local id = res.headers["X-Request-Id"]
+                    if not id then
+                        return -- ignore if the data is not synced yet.
+                    end
+
+                    if ids[id] == true then
+                        ngx.say("ids not unique")
+                        return
+                    end
+                    ids[id] = true
+                end, i))
+                table.insert(t, th)
             end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
+            end
+
+            ngx.say("true")
         }
     }
 --- request
 GET /t
+--- wait: 5
 --- response_body
 true
 --- no_error_log

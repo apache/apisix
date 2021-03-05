@@ -48,9 +48,11 @@ Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
 
 ## Supported discovery registries
 
-Currently we support Eureka and service discovery via DNS, like Consul.
+Currently we support Eureka/Consul and service discovery via DNS.
 
-For service discovery via DNS, see [service discovery via DNS](dns.md#service-discovery-via-dns).
+For service discovery via DNS, see [service discovery via DNS](discovery/dns.md).
+
+For Consul, see [service discovery via Consul](discovery/consul_kv.md)
 
 For Eureka, see below.
 
@@ -254,8 +256,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configuration allows access to A-SERVICE's `/test` API through `/a/test` and B-SERVICE's `/test` API through `/b/test`.
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
-
-## Discovery modules
-
-- eureka
-- [Consul KV](discovery/consul_kv.md)

@@ -23,12 +23,16 @@ title: hmac-auth
 
 ## 目录
 
-  - [**名字**](#名字)
-  - [**属性**](#属性)
-  - [**如何启用**](#如何启用)
-  - [**测试插件**](#测试插件)
-  - [**禁用插件**](#禁用插件)
-  - [**签名生成示例**](#签名生成示例)
+- [目录](#目录)
+- [名字](#名字)
+- [属性](#属性)
+- [如何启用](#如何启用)
+- [测试插件](#测试插件)
+  - [签名生成公式](#签名生成公式)
+  - [使用生成好的签名进行请求尝试](#使用生成好的签名进行请求尝试)
+- [自定义 header 名称](#自定义-header-名称)
+- [禁用插件](#禁用插件)
+- [签名生成示例](#签名生成示例)
 
 ## 名字
 
@@ -38,15 +42,15 @@ title: hmac-auth
 
 ## 属性
 
-| 名称           | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                    |
-| -------------- | ------------- | ------ | ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| access_key     | string        | 必须   |               |                                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。                                                                    |
-| secret_key     | string        | 必须   |               |                                             | 与 `access_key` 配对使用。                                                                                                                                                              |
-| algorithm      | string        | 可选   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 加密算法。                                                                                                                                                                              |
-| clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
-| signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
-| keep_headers | boolean | 可选   |      false        |           [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。 |
-| encode_uri_param | boolean | 可选   |      true        |           [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
+| 名称             | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                    |
+| ---------------- | ------------- | ------ | ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| access_key       | string        | 必须   |               |                                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。                                                                    |
+| secret_key       | string        | 必须   |               |                                             | 与 `access_key` 配对使用。                                                                                                                                                              |
+| algorithm        | string        | 可选   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 加密算法。                                                                                                                                                                              |
+| clock_skew       | integer       | 可选   | 0             |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                             |
+| signed_headers   | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
+| keep_headers     | boolean       | 可选   | false         | [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。              |
+| encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 
 ## 如何启用
 
@@ -178,9 +182,9 @@ hash = hmac.new(secret, message, hashlib.sha256)
 print(base64.b64encode(hash.digest()))
 ```
 
-Type      |                        Hash                  |
-----------|----------------------------------------------|
-SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
+| Type      | Hash                                         |
+| --------- | -------------------------------------------- |
+| SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
 ### 使用生成好的签名进行请求尝试
 
@@ -220,7 +224,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* 签名信息分开分别放到请求头：
+- 签名信息分开分别放到请求头：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'Date: DATE' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
@@ -292,16 +296,16 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 示例入参说明:
 
-Variable | Value
----|---
-secret | this is secret key
-message | this is signature string
+| Variable | Value                    |
+| -------- | ------------------------ |
+| secret   | this is secret key       |
+| message  | this is signature string |
 
 示例出参说明：
 
-Type | Hash
----|---
-hexit | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345
-base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=
+| Type   | Hash                                                             |
+| ------ | ---------------------------------------------------------------- |
+| hexit  | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345 |
+| base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=                     |
 
-具体代码请参考：[**HMAC Generate Signature Examples**](../../examples/plugins-hmac-auth-generate-signature.md)
+具体代码请参考：[**HMAC Generate Signature Examples**](../examples/plugins-hmac-auth-generate-signature.md)

@@ -91,7 +91,7 @@ The route mainly consists of three parts: matching rules (e.g uri, host, remote_
 
 The following image shows an example of some Route rules. When some attribute values are the same, the figure is identified by the same color.
 
-<img src="../../assets//images/routes-example.png" width="50%" height="50%" />
+<img src="../../assets/images/routes-example.png" width="50%" height="50%" />
 
 We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it's adding a lot of complexity of management and maintenance.
 
