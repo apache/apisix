@@ -321,7 +321,7 @@ A wide variety of companies and organizations use APISIX for research, productio
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-Users are encouraged to add themselves to the [Powered By](docs/en/latest/powered-by.md) page.
+Users are encouraged to add themselves to the [Powered By](powered-by.md) page.
 
 ## Landscape
 
