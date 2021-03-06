@@ -327,7 +327,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-欢迎用户把自己加入到 [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md) 页面。
+欢迎用户把自己加入到 [Powered By](./powered-by.md) 页面。
 
 ## 全景图
 
