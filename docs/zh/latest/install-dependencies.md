@@ -34,11 +34,11 @@ title: 安装依赖
 
 - 目前 Apache APISIX 默认使用 HTTP 协议与 etcd 集群通信，这并不安全，如果希望保障数据的安全性和完整性。 请为您的 etcd 集群配置证书及对应私钥，并在您的 Apache APISIX etcd endpoints 配置列表中明确使用 `https` 协议前缀。请查阅 `conf/config-default.yaml` 中 etcd 一节相关的配置来了解更多细节。
 
-- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
+- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/.travis/linux_tengine_runner.sh)。
 
 - 如果是 OpenResty 1.19，APISIX 会使用 OpenResty 内置的 LuaJIT 来运行 `bin/apisix`；否则会使用 Lua 5.1。如果运行过程中遇到 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，这是低版本 OpenResty 内置的 LuaJIT 在特定编译条件下的问题。
 
-- 在某些平台上，通过包管理器安装 LuaRocks 会导致 Lua 被升级为 Lua 5.3，所以我们建议通过源代码的方式安装 LuaRocks。如果你通过官方仓库安装 OpenResty 和 OpenResty 的 OpenSSL 开发库（rpm 版本：openresty-openssl111-devel，deb 版本：openresty-openssl111-dev），那么 [我们提供了自动安装的脚本](../../utils/linux-install-luarocks.sh)。如果你是自己编译的 OpenResty，可以参考上述脚本并修改里面的路径。如果编译时没有指定 OpenSSL 库的路径，那么无需配置 LuaRocks 内跟 OpenSSL 相关的变量，因为默认都是用的系统自带的 OpenSSL。如果编译时指定了 OpenSSL 库，那么需要保证 LuaRocks 的 OpenSSL 配置跟 OpenResty 的相一致。
+- 在某些平台上，通过包管理器安装 LuaRocks 会导致 Lua 被升级为 Lua 5.3，所以我们建议通过源代码的方式安装 LuaRocks。如果你通过官方仓库安装 OpenResty 和 OpenResty 的 OpenSSL 开发库（rpm 版本：openresty-openssl111-devel，deb 版本：openresty-openssl111-dev），那么 [我们提供了自动安装的脚本](https://github.com/apache/apisix/tree/master/utils/linux-install-luarocks.sh)。如果你是自己编译的 OpenResty，可以参考上述脚本并修改里面的路径。如果编译时没有指定 OpenSSL 库的路径，那么无需配置 LuaRocks 内跟 OpenSSL 相关的变量，因为默认都是用的系统自带的 OpenSSL。如果编译时指定了 OpenSSL 库，那么需要保证 LuaRocks 的 OpenSSL 配置跟 OpenResty 的相一致。
 
 - 警告：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 openresty-openssl-devel，而不是 openresty-openssl111-devel。
 

@@ -40,12 +40,12 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
 - QQ Group - 578997126
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-mrougyeu-2aG7BnFaV0VnAT9_JIUVaA) - join `#apisix` on our Slack to meet the team and ask questions
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -153,9 +153,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.3
-     $ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
-     $ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
+     $ mkdir apisix-2.4
+     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
+     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
      ```
 
    - Install the dependencies：
@@ -192,7 +192,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
    ```
 
    - check version of APISIX:
@@ -319,9 +319,9 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-Users are encouraged to add themselves to the [Powered By](docs/en/latest/powered-by.md) page.
+Users are encouraged to add themselves to the [Powered By](powered-by.md) page.
 
 ## Landscape
 
@@ -334,7 +334,7 @@ CNCF API Gateway Landscape.</a>
 
 ## Logos
 
-- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo(PNG)](https://github.com/apache/apisix/tree/master/logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
 
 ## Acknowledgments
@@ -343,4 +343,4 @@ Inspired by Kong and Orange.
 
 ## License
 
-[Apache 2.0 License](LICENSE)
+[Apache 2.0 License](https://github.com/apache/apisix/tree/master/LICENSE)

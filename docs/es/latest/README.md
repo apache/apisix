@@ -155,9 +155,9 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
-     $ mkdir apisix-2.3
-     $ wget https://downloads.apache.org/apisix/2.3/apache-apisix-2.3-src.tgz
-     $ tar zxvf apache-apisix-2.3-src.tgz -C apisix-2.3
+     $ mkdir apisix-2.4
+     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
+     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
      ```
 
    - Instalar las dependencias：
@@ -194,7 +194,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Instalar APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.3/apisix-2.3-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
    ```
 
    - Chequear versión de APISIX:
@@ -321,9 +321,9 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 Una gran variedad de compañías y organizacioes usan APISIX para investigación, producción y productos comerciales, incluyendo:
 
-<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500" />
+<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-Se alienta a los usuarios a sumarse a la página [Powered By](powered-by.md).
+Se alienta a los usuarios a sumarse a la página [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md).
 
 ## Landscape (panorama)
 

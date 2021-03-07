@@ -53,7 +53,7 @@ title: 架构设计
 
 ### 插件内部结构
 
-<img src="../../assets/images/flow-plugin-internal.png" width="50%" height="50%" />
+![插件内部结构](../../assets/images/flow-plugin-internal.png)
 
 ## APISIX Config
 
@@ -93,7 +93,7 @@ Route 字面意思就是路由，通过定义一些规则来匹配客户端的�
 Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
 请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
-<img src="../../assets/images/routes-example.png" width="50%" height="50%" />
+![路由示例](../../assets/images/routes-example.png)
 
 我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
 
@@ -134,7 +134,7 @@ Server: APISIX web server
 `Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
 与 `Service` 之间，通常是 N:1 的关系，参看下图。
 
-<img src="../../assets/images/service-example.png" width="50%" height="50%" />
+![服务示例](../../assets/images/service-example.png)
 
 不同 Route 规则同时绑定到一个 Service 上，这些 Route 将具有相同的上游和插件配置，减少冗余配置。
 
@@ -278,7 +278,7 @@ local _M = {
 
 Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
 
-<img src="../../assets/images/upstream-example.png" width="50%" height="50%" />
+![Upstream 示例](../../assets/images/upstream-example.png)
 
 如上图所示，通过创建 Upstream 对象，在 `Route` 用 ID 方式引用，就可以确保只维护一个对象的值了。
 
@@ -376,7 +376,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-更多细节可以参考[健康检查的文档](../health-check.md)。
+更多细节可以参考[健康检查的文档](./health-check.md)。
 
 下面是几个使用不同`hash_on`类型的配置示例：
 
@@ -484,7 +484,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 - `apisix.router.http`: HTTP 请求路由。
 
-  - `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](../router-radixtree.md)。
+  - `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](../../en/latest/router-radixtree.md)。
     - `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
     - `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
     - `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
@@ -502,7 +502,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 对于 API 网关通常可以用请求域名、客户端 IP 地址等字段识别到某类请求方，
 然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
 
-<img src="../../assets/images/consumer-who.png" width="50%" height="50%" />
+![Consumer](../../assets/images/consumer-who.png)
 
 如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
 
@@ -513,16 +513,16 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 在 APISIX 中，识别 Consumer 的过程如下图：
 
-<img src="../../assets/images/consumer-internal.png" width="50%" height="50%" />
+![Consumer Internal](../../assets/images/consumer-internal.png)
 
-1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
+1. 授权认证：比如有 [key-auth](plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
 2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
 比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
 
-此外，大家也可以参考 [key-auth](../plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+此外，大家也可以参考 [key-auth](plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
 
 如何对某个 Consumer 开启指定插件，可以看下面例子：
 

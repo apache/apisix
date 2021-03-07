@@ -194,7 +194,7 @@ local function generate_cache_filename(cache_path, cache_levels, cache_key)
     local levels = ngx_re.split(cache_levels, ":")
     local filename = ""
 
-    local index = string.len(md5sum)
+    local index = #md5sum
     for k, v in pairs(levels) do
         local length = tonumber(v)
         index = index - length
