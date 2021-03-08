@@ -357,3 +357,17 @@ The high availability of APISIX can be divided into two parts:
 1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
 
 2. The control plane of Apache APISIX relies on the highly available implementation of `etcd cluster` and does not require any relational database dependency.
+
+## Why does the `make deps` command fail in source installation?
+
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
+
+```shell
+$ make deps
+......
+Error: Failed installing dependency: https://luarocks.org/luasec-0.9-1.src.rock - Could not find header file for OPENSSL
+  No file openssl/ssl.h in /usr/local/include
+You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSSL_INCDIR to the luarocks command.
+Example: luarocks install luasec OPENSSL_DIR=/usr/local
+make: *** [deps] Error 1
+```
