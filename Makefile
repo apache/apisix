@@ -22,6 +22,7 @@ INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty || which nginx)
+LUAROCKS ?= luarocks
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
@@ -29,6 +30,16 @@ OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
 # OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
 ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
 	OPENSSL_PREFIX=$(addprefix $(OR_PREFIX), openssl111)
+endif
+
+ifeq ($(UNAME), Darwin)
+LUAROCKS=luarocks --lua-dir=/usr/local/opt/lua@5.1
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
+endif
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
+endif
 endif
 
 SHELL := /bin/bash -o pipefail
@@ -63,13 +74,13 @@ deps: default
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)
-	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
-	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
+	$(LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(LUAROCKS) config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 else
-	luarocks config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
-	luarocks config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
+	$(LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 endif
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
