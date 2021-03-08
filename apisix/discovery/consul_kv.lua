@@ -410,4 +410,5 @@ function _M.dump_data()
     return {config = local_conf.discovery.consul_kv, services = applications}
 end
 
+
 return _M
