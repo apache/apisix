@@ -19,8 +19,10 @@ local router = require("apisix.utils.router")
 local builtin_v1_routes = require("apisix.control.v1")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")
+
 local str_sub = string.sub
 local ipairs = ipairs
+local pairs = pairs
 local type = type
 local ngx = ngx
 local get_method = ngx.req.get_method
@@ -63,6 +65,38 @@ function fetch_control_api_router()
         if api_fun then
             local api_route = api_fun()
             register_api_routes(routes, api_route)
+        end
+    end
+
+    local discovery_type = require("apisix.core.config_local").local_conf().discovery
+    if discovery_type then
+        local discovery = require("apisix.discovery.init").discovery
+        local dump_apis = {}
+        for key, _ in pairs(discovery_type) do
+            local dis_mod = discovery[key]
+            -- if discovery module has control_api method, support it
+            local api_fun = dis_mod.control_api
+            if api_fun then
+                local api_route = api_fun()
+                register_api_routes(routes, api_route)
+            end
+
+            local dump_data = dis_mod.dump_data
+            if dump_data then
+                local item = {
+                    methods = {"GET"},
+                    uris = {"/v1/discovery/" .. key .. "/dump"},
+                    handler = function()
+                        return 200, dump_data()
+                    end
+                }
+                core.table.insert(dump_apis, item)
+            end
+        end
+
+        if #dump_apis > 0 then
+            core.log.notice("dump_apis: ", core.json.encode(dump_apis, true))
+            register_api_routes(routes, dump_apis)
         end
     end
 
