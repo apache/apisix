@@ -3,51 +3,51 @@
   "sidebar": [
     {
       "type": "category",
-      "label": "architecture design",
+      "label": "Architecture Design",
       "items": [
         {
           "type": "doc",
-          "id": "apisix"
+          "id": "architecture-design/apisix"
         },
         {
           "type": "doc",
-          "id": "route"
+          "id": "architecture-design/route"
         },
         {
           "type": "doc",
-          "id": "plugin"
+          "id": "architecture-design/plugin"
         },
         {
           "type": "doc",
-          "id": "script"
+          "id": "architecture-design/script"
         },
         {
           "type": "doc",
-          "id": "service"
+          "id": "architecture-design/service"
         },
         {
           "type": "doc",
-          "id": "consumer"
+          "id": "architecture-design/consumer"
         },
         {
           "type": "doc",
-          "id": "upstream"
+          "id": "architecture-design/upstream"
         },
         {
           "type": "doc",
-          "id": "global-rule"
+          "id": "architecture-design/global-rule"
         },
         {
           "type": "doc",
-          "id": "plugin-config"
+          "id": "architecture-design/plugin-config"
         },
         {
           "type": "doc",
-          "id": "router"
+          "id": "architecture-design/router"
         },
         {
           "type": "doc",
-          "id": "debug-mode"
+          "id": "architecture-design/debug-mode"
         }
       ]
     },
