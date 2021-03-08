@@ -2,8 +2,21 @@
   "version": 2.4,
   "sidebar": [
     {
-      "type": "doc",
-      "id": "architecture-design"
+      "type": "category",
+      "label": "Architecture Design",
+      "items": [
+        "architecture-design/apisix",
+        "architecture-design/route",
+        "architecture-design/plugin",
+        "architecture-design/script",
+        "architecture-design/service",
+        "architecture-design/consumer",
+        "architecture-design/upstream",
+        "architecture-design/global-rule",
+        "architecture-design/plugin-config",
+        "architecture-design/router",
+        "architecture-design/debug-mode"
+      ]
     },
     {
       "type": "doc",
