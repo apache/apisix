@@ -149,10 +149,10 @@ nohup etcd &
 
 ```shell
 # install OpenResty, etcd and some compilation tools
-brew install openresty/brew/openresty etcd luarocks curl git
+brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git
 
 # start etcd server
-etcd &
+brew services start etcd
 
 # enable TLS for etcd server
 etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
