@@ -2,8 +2,54 @@
   "version": 2.4,
   "sidebar": [
     {
-      "type": "doc",
-      "id": "architecture-design"
+      "type": "category",
+      "label": "architecture design",
+      "items": [
+        {
+          "type": "doc",
+          "id": "apisix"
+        },
+        {
+          "type": "doc",
+          "id": "route"
+        },
+        {
+          "type": "doc",
+          "id": "plugin"
+        },
+        {
+          "type": "doc",
+          "id": "script"
+        },
+        {
+          "type": "doc",
+          "id": "service"
+        },
+        {
+          "type": "doc",
+          "id": "consumer"
+        },
+        {
+          "type": "doc",
+          "id": "upstream"
+        },
+        {
+          "type": "doc",
+          "id": "global-rule"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-config"
+        },
+        {
+          "type": "doc",
+          "id": "router"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
+        }
+      ]
     },
     {
       "type": "doc",
