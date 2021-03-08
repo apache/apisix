@@ -358,9 +358,13 @@ function _M.fetch_created_obj(key)
 end
 
 
+function _M.init()
+    read_apisix_yaml()
+end
+
+
 function _M.init_worker()
     -- sync data in each non-master process
-    read_apisix_yaml()
     ngx.timer.every(1, read_apisix_yaml)
 end
 
