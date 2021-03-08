@@ -147,4 +147,77 @@ You could find more usage in the `apisix/t/discovery/consul_kv.t` file.
 
 ## Debugging API
 
-TODO
+It also offers control api for debugging:
+
+```shell
+GET /v1/discovery/consul_kv/dump
+```
+
+For example:
+
+```shell
+# curl http://127.0.0.1:9090/v1/discovery/consul_kv/dump | jq
+{
+  "config": {
+    "fetch_interval": 3,
+    "timeout": {
+      "wait": 60,
+      "connect": 6000,
+      "read": 6000
+    },
+    "prefix": "upstreams",
+    "weight": 1,
+    "servers": [
+      "http://172.19.5.30:8500",
+      "http://172.19.5.31:8500"
+    ],
+    "keepalive": true,
+    "default_service": {
+      "host": "172.19.5.11",
+      "port": 8899,
+      "metadata": {
+        "fail_timeout": 1,
+        "weigth": 1,
+        "weight": 1,
+        "max_fails": 1
+      }
+    },
+    "skip_keys": [
+      "upstreams/myapi/gateway/apisix/"
+    ]
+  },
+  "services": {
+    "http://172.19.5.31:8500/v1/kv/upstreams/webpages/": [
+      {
+        "host": "127.0.0.1",
+        "port": 30513,
+        "weight": 1
+      },
+      {
+        "host": "127.0.0.1",
+        "port": 30514,
+        "weight": 1
+      }
+    ],
+    "http://172.19.5.30:8500/v1/kv/upstreams/1614480/grpc/": [
+      {
+        "host": "172.19.5.51",
+        "port": 50051,
+        "weight": 1
+      }
+    ],
+    "http://172.19.5.30:8500/v1/kv/upstreams/webpages/": [
+      {
+        "host": "127.0.0.1",
+        "port": 30511,
+        "weight": 1
+      },
+      {
+        "host": "127.0.0.1",
+        "port": 30512,
+        "weight": 1
+      }
+    ]
+  }
+}
+```

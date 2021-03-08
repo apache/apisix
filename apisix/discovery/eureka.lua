@@ -252,4 +252,9 @@ function _M.init_worker()
 end
 
 
+function _M.dump_data()
+    return {config = local_conf.discovery.eureka, services = applications or {}}
+end
+
+
 return _M
