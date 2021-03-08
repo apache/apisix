@@ -5,50 +5,17 @@
       "type": "category",
       "label": "Architecture Design",
       "items": [
-        {
-          "type": "doc",
-          "id": "architecture-design/apisix"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/route"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/plugin"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/script"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/service"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/consumer"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/upstream"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/global-rule"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/plugin-config"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/router"
-        },
-        {
-          "type": "doc",
-          "id": "architecture-design/debug-mode"
-        }
+        "architecture-design/apisix",
+        "architecture-design/route",
+        "architecture-design/plugin",
+        "architecture-design/script",
+        "architecture-design/service",
+        "architecture-design/consumer",
+        "architecture-design/upstream",
+        "architecture-design/global-rule",
+        "architecture-design/plugin-config",
+        "architecture-design/router",
+        "architecture-design/debug-mode"
       ]
     },
     {
