@@ -125,57 +125,69 @@
       ]
     },
     {
-      "type": "doc",
-      "id": "admin-api"
-    },
-    {
-      "type": "doc",
-      "id": "control-api"
-    },
-    {
-      "type": "doc",
-      "id": "health-check"
-    },
-    {
-      "type": "doc",
-      "id": "router-radixtree"
-    },
-    {
-      "type": "doc",
-      "id": "stand-alone"
-    },
-    {
-      "type": "doc",
-      "id": "stream-proxy"
-    },
-    {
-      "type": "doc",
-      "id": "grpc-proxy"
-    },
-    {
-      "type": "doc",
-      "id": "customize-nginx-configuration"
-    },
-    {
-      "type": "doc",
-      "id": "https"
-    },
-    {
-      "type": "doc",
-      "id": "benchmark"
-    },
-    {
-      "type": "link",
-      "label": "CODE_STYLE",
-      "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
-    },
-    {
-      "type": "doc",
-      "id": "debug-function"
+      "type": "category",
+      "label": "API",
+      "items": [
+        {
+          "type": "doc",
+          "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
+        }
+      ]
     },
     {
       "type": "doc",
       "id": "FAQ"
+    },
+    {
+      "type": "category",
+      "label": "Others",
+      "items": [
+        {
+          "type": "doc",
+          "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
+        },
+        {
+          "type": "doc",
+          "id": "stand-alone"
+        },
+        {
+          "type": "doc",
+          "id": "stream-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "grpc-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "customize-nginx-configuration"
+        },
+        {
+          "type": "doc",
+          "id": "https"
+        },
+        {
+          "type": "doc",
+          "id": "benchmark"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "doc",
+          "id": "debug-function"
+        }
+      ]
     },
     {
       "type": "link",
