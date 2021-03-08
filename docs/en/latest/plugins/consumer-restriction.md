@@ -39,9 +39,10 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 |Name       |   Type      | Requirement  | Default       | Valid                           | Description                                                                                                                         |
 |-----------|-------------|--------------|---------------|---------------------------------|--------------------------------------------------------------------------------------------------------------------                 |
 | type      | string      | optional     | consumer_name | ["consumer_name", "service_id"] | According to different objects, corresponding restrictions, support `consumer_name`, `service_id`.                 |
-| whitelist | array[string] | required   |               |                                 | Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
-| blacklist | array[string] | required   |               |                                 | Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
+| whitelist | array[string] | required   |               |                                 | Grant full access to all users specified in the provided list , **has the priority over `allowed_by_methods`** |
+| blacklist | array[string] | required   |               |                                 | Reject connection to all users specified in the provided list , **has the priority over `whitelist`** |
 | rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
+| allowed_by_methods | array[object] | optional     |            |                        | Set a list of allowed HTTP methods for the selected user , HTTP methods can be `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
 
@@ -114,6 +115,74 @@ curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
 HTTP/1.1 403 Forbidden
 ...
 {"message":"The consumer_name is forbidden."}
+```
+
+### How to restrict `allowed_by_methods`
+
+This example restrict the user `jack1` to only `POST` on the resource
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST"]
+            }]
+        }
+    }
+}'
+```
+
+**Test Plugin**
+
+Requests from jack1:
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 403 Forbidden
+...
+{"message":"The consumer_name is forbidden."}
+```
+
+Add the capability for `jack1` to get the resource
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST","GET"]
+            }]
+        }
+    }
+}'
+```
+
+Requests from jack1:
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 200 OK
 ```
 
 ## How to restrict `service_id`
