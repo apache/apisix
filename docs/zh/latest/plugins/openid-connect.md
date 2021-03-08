@@ -1,3 +1,7 @@
+---
+title: openid-connect
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,11 +21,14 @@
 #
 -->
 
-# 目录
+## 目录
 
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**令牌自省**](#令牌自省)
+- [目录](#目录)
+- [定义](#定义)
+- [属性列表](#属性列表)
+  - [令牌自省](#令牌自省)
+  - [公钥自省](#公钥自省)
+- [故障排除](#故障排除)
 
 ## 定义
 
@@ -90,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorization: Bearer {replace_jwt_token}"
 ```
 
-#### 公钥自省
+### 公钥自省
 
 您还可以提供 JWT 令牌的公钥来验证令牌。 如果您提供了公共密钥和令牌自省端点，则将执行公共密钥工作流，而不是通过身份服务器进行验证。如果要减少额外的网络呼叫并加快过程，可以使用此方法。
 
@@ -127,4 +134,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 故障排除
 
-如果 APISIX 无法解析/连接到身份提供者，请检查/修改DNS设置（`conf / config.yaml`）。
+如果 APISIX 无法解析/连接到身份提供者，请检查/修改 DNS 设置（`conf / config.yaml`）。

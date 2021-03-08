@@ -113,7 +113,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: clean consul kv register nodes
+=== TEST 1: prepare consul kv register nodes
 --- config
 location /consul1 {
     rewrite  ^/consul1/(.*) /v1/kv/$1 break;
@@ -289,7 +289,7 @@ GET /hello
 
 
 
-=== TEST 7: test register&register nodes
+=== TEST 7: test register and unregister nodes
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:

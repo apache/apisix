@@ -15,6 +15,10 @@ jobs:
       - name: Creating minikube cluster
         run: |
           bash ./t/chaos/setup_chaos_utils.sh start_minikube
+          wget https://raw.githubusercontent.com/apache/apisix-docker/master/alpine-local/Dockerfile
+          mkdir logs
+          docker build -t apache/apisix:alpine-local --build-arg APISIX_PATH=. -f Dockerfile .
+          minikube cache add apache/apisix:alpine-local -v 7 --alsologtostderr
 
       - name: Print cluster information
         run: |

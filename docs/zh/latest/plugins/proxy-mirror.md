@@ -1,3 +1,7 @@
+---
+title: proxy-mirror
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# proxy-mirror
 
 代理镜像插件，该插件提供了镜像客户端请求的能力。
 

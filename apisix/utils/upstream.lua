@@ -27,7 +27,12 @@ local function sort_by_key_host(a, b)
 end
 
 
-function _M.compare_upstream_node(old_t, new_t)
+function _M.compare_upstream_node(up_conf, new_t)
+    if up_conf == nil then
+        return false
+    end
+
+    local old_t = up_conf.original_nodes or up_conf.nodes
     if type(old_t) ~= "table" then
         return false
     end

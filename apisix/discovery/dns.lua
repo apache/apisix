@@ -52,7 +52,7 @@ function _M.nodes(service_name)
     local nodes = core.table.new(#records, 0)
     for i, r in ipairs(records) do
         if r.address then
-            nodes[i] = {host = r.address, weight = 1, port = port}
+            nodes[i] = {host = r.address, weight = r.weight or 1, port = r.port or port}
         end
     end
 
@@ -74,7 +74,7 @@ function _M.init_worker()
         hosts = {},
         resolvConf = {},
         nameservers = servers,
-        order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV (we don't support it yet)
+        order = {"last", "A", "AAAA", "SRV", "CNAME"},
     }
 
     local client, err = core.dns_client.new(opts)

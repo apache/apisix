@@ -1,3 +1,7 @@
+---
+title: Health Check
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# Health Checks for Upstream
+## Health Checks for Upstream
 
 Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck),
 you can use it for upstream.

@@ -1,3 +1,7 @@
+---
+title: Integration service discovery registry
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# Integration service discovery registry
-
 * [**Summary**](#summary)
 * [**Supported discovery registries**](#supported-discovery-registries)
 * [**How to extend the discovery client?**](#how-to-extend-the-discovery-client)
@@ -30,6 +32,7 @@
     * [**Initial service discovery**](#initial-service-discovery)
     * [**Configuration for Eureka**](#configuration-for-eureka)
 * [**Upstream setting**](#upstream-setting)
+* [**Embedded control api for debugging**](#embedded-control-api-for-debugging)
 * [**Discovery modules**](#discovery-modules)
 
 ## Summary
@@ -46,9 +49,11 @@ Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
 
 ## Supported discovery registries
 
-Currently we support Eureka and service discovery via DNS, like Consul.
+Currently we support Eureka/Consul and service discovery via DNS.
 
-For service discovery via DNS, see [service discovery via DNS](dns.md#service-discovery-via-dns).
+For service discovery via DNS, see [service discovery via DNS](discovery/dns.md).
+
+For Consul, see [service discovery via Consul](discovery/consul_kv.md)
 
 For Eureka, see below.
 
@@ -60,9 +65,11 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 1. Add the implementation of registry client in the 'apisix/discovery/' directory;
 
-2. Implement the `_M. init_worker()` function for initialization and the `_M. nodes(service_name)` function for obtaining the list of service instance nodes;
+2. Implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes;
 
-3. Convert the registry data into data in APISIX;
+3. If you need the discovery module to export the debugging information online, implement the `_M.dump_data()` function;
+
+4. Convert the registry data into data in APISIX;
 
 ### the example of Eureka
 
@@ -85,6 +92,11 @@ Then implement the `_M.init_worker()` function for initialization and the `_M.no
 
   function _M.init_worker()
       ... ...
+  end
+
+
+  function _M.dump_data()
+      return {config = your_config, services = your_services, other = ... }
   end
 
 
@@ -252,6 +264,28 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configuration allows access to A-SERVICE's `/test` API through `/a/test` and B-SERVICE's `/test` API through `/b/test`.
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
+
+## Embedded control api for debugging
+
+Sometimes we need the discovery client to export online data snapshot in memory when running for debugging, and if you implement the `_M. dump_data()` function:
+
+```lua
+function _M.dump_data()
+    return {config = local_conf.discovery.eureka, services = applications}
+end
+```
+
+Then you can call its control api as below:
+
+```shell
+GET /v1/discovery/{discovery_type}/dump
+```
+
+eg:
+
+```shell
+curl http://127.0.0.1:9090/v1/discovery/eureka/dump
+```
 
 ## Discovery modules
 

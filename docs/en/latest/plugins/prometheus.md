@@ -1,3 +1,7 @@
+---
+title: prometheus
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +20,6 @@
 # limitations under the License.
 #
 -->
-
-# prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.
 
@@ -108,7 +110,7 @@ plugin_attr:
 
 Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
-Downloads [Grafana dashboard meta](../json/apisix-grafana-dashboard.json) and imports it to Grafana。
+Downloads [Grafana dashboard meta](../../../assets/other/json/apisix-grafana-dashboard.json) and imports it to Grafana。
 
 Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
 

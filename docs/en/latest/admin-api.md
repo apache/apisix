@@ -1,3 +1,7 @@
+---
+title: Admin API
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# Table of Contents
+## Table of Contents
 
 * [Route](#route)
 * [Service](#service)
@@ -748,6 +752,7 @@ Config Example:
 |---------|---------|-----------|----|
 |plugins    |True |See [Plugin](architecture-design.md#plugin)||
 |desc       |False|description, usage scenarios, and more.|customer xxxx|
+|labels     |False|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 

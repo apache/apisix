@@ -1,3 +1,7 @@
+---
+title: Plugin Develop
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,17 +21,21 @@
 #
 -->
 
-# table of contents
+## table of contents
 
-- [**where to put your plugins**](#where-to-put-your-plugins)
-- [**check dependencies**](#check-dependencies)
-- [**name and config**](#name-and-config)
-- [**schema and check**](#schema-and-check)
-- [**choose phase to run**](#choose-phase-to-run)
-- [**implement the logic**](#implement-the-logic)
-- [**write test case**](#write-test-case)
-- [**register public API**](#register-public-api)
-- [**register control API**](#register-control-api)
+- [table of contents](#table-of-contents)
+- [where to put your plugins](#where-to-put-your-plugins)
+- [check dependencies](#check-dependencies)
+- [name and config](#name-and-config)
+- [schema and check](#schema-and-check)
+- [choose phase to run](#choose-phase-to-run)
+- [implement the logic](#implement-the-logic)
+  - [conf parameter](#conf-parameter)
+  - [ctx parameter](#ctx-parameter)
+- [write test case](#write-test-case)
+  - [Attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
+  - [Register public API](#register-public-api)
+  - [Register control API](#register-control-api)
 
 ## where to put your plugins
 
@@ -61,7 +69,7 @@ Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like 
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
- needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
+needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
 
 ```nginx
     lua_shared_dict plugin-limit-req     10m;
@@ -78,18 +86,18 @@ if you have dependencies on external libraries, check the dependent items. if yo
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
- the plugin is loaded.
+the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __apisix.lua__, And you may need to add some processing on generated part of Nginx
-       configuration file in __bin/apisix__ file. but it is easy to have an impact on the overall situation according to the
-       existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
+method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
+configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
+existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
 ## name and config
 
 Determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the example-plugin plugin,
- you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
- duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
+you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
+duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
 
 ```lua
 local plugin_name = "example-plugin"
@@ -103,7 +111,7 @@ local _M = {
 }
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
+Note : The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
 
 in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
@@ -155,15 +163,15 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 ## schema and check
 
 Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
- configuration data :
+configuration data:
 
 ```json
 {
-    "example-plugin" : {
-        "i": 1,
-        "s": "s",
-        "t": [1]
-    }
+  "example-plugin": {
+    "i": 1,
+    "s": "s",
+    "t": [1]
+  }
 }
 ```
 
@@ -231,12 +239,12 @@ Here is the consumer configuration for key-auth plugin:
 
 ```json
 {
-    "username": "Joe",
-    "plugins": {
-        "key-auth": {
-            "key": "Joe's key"
-        }
+  "username": "Joe",
+  "plugins": {
+    "key-auth": {
+      "key": "Joe's key"
     }
+  }
 }
 ```
 
@@ -335,11 +343,11 @@ conf:
 
 ```json
 {
-    "rejected_code":503,
-    "burst":0,
-    "default_conn_delay":0.1,
-    "conn":1,
-    "key":"remote_addr"
+  "rejected_code": 503,
+  "burst": 0,
+  "default_conn_delay": 0.1,
+  "conn": 1,
+  "key": "remote_addr"
 }
 ```
 
@@ -391,7 +399,7 @@ A test case consists of three parts :
 - __Output check__ : status, header, body, error log check
 
 When we request __/t__, which config in the configuration file, the Nginx will call "__content_by_lua_block__" instruction to
- complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
+complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
 "__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
 are located in the following folder: 't/servroot/logs'.
 
@@ -399,7 +407,7 @@ The above test case represents a simple scenario. Most scenarios will require mu
 
 Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
 
-Refer the following [document](how-to-build.md#test) to setup the testing framework.
+Refer the following [document](how-to-build.md#4-test) to setup the testing framework.
 
 ### Attach the test-nginx execution process:
 

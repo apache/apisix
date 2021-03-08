@@ -33,6 +33,7 @@ function _M.schema()
         main = {
             consumer = core.schema.consumer,
             global_rule = core.schema.global_rule,
+            plugin_config = core.schema.plugin_config,
             plugins = core.schema.plugins,
             proto = core.schema.proto,
             route = core.schema.route,

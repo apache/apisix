@@ -1,3 +1,7 @@
+---
+title: Stream Proxy
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +21,6 @@
 #
 -->
 
-# Stream Proxy
-
 TCP is the protocol for many popular applications and services, such as LDAP, MySQL, and RTMP. UDP (User Datagram Protocol) is the protocol for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
 
 APISIX can dynamic load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
@@ -30,11 +32,11 @@ By default, no any stream proxy is enabled.
 
 ```yaml
 apisix:
-  stream_proxy:                 # TCP/UDP proxy
-    tcp:                        # TCP proxy address list
+  stream_proxy: # TCP/UDP proxy
+    tcp: # TCP proxy address list
       - 9100
       - "127.0.0.1:9101"
-    udp:                        # UDP proxy address list
+    udp: # UDP proxy address list
       - 9200
       - "127.0.0.1:9211"
 ```
@@ -58,7 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 It means APISIX will proxy the request to `127.0.0.1:1995` which the client remote address is `127.0.0.1`.
 
-For more use cases, please take a look at [test case](../t/stream-node/sanity.t).
+For more use cases, please take a look at [test case](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
 
 ## More Limit Options
 

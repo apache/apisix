@@ -1,3 +1,7 @@
+---
+title: cors
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,7 +21,7 @@
 #
 -->
 
-# 目录
+## 目录
 
 - [**简介**](#简介)
 - [**属性**](#属性)
