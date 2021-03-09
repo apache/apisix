@@ -955,7 +955,6 @@ etcdctl --endpoints=127.0.0.1:2379 user delete root
 init_kv=(
 "/apisix/consumers/ init_dir"
 "/apisix/global_rules/ init_dir"
-"/apisix/node_status/ init_dir"
 "/apisix/plugin_metadata/ init_dir"
 "/apisix/plugins/ init_dir"
 "/apisix/proto/ init_dir"
