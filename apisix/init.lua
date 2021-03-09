@@ -79,6 +79,10 @@ function _M.http_init(args)
     if not ok then
         core.log.error("failed to enable privileged_agent: ", err)
     end
+
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init()
+    end
 end
 
 
@@ -694,6 +698,10 @@ end
 
 function _M.stream_init()
     core.log.info("enter stream_init")
+
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init()
+    end
 end
 
 
