@@ -266,13 +266,20 @@ function _M.header_filter(conf, ctx)
         end
     end
 
+    local upstream_hdr_cache_control
+    local upstream_hdr_expires
+
     if conf.hide_cache_headers == true then
-        ctx.var.upstream_hdr_cache_control = ""
-        ctx.var.upstream_hdr_expires = ""
+        upstream_hdr_cache_control = ""
+        upstream_hdr_expires = ""
     else
-        ctx.var.upstream_hdr_cache_control = ctx.var.upstream_http_cache_control
-        ctx.var.upstream_hdr_expires = ctx.var.upstream_http_expires
+        upstream_hdr_cache_control = ctx.var.upstream_http_cache_control
+        upstream_hdr_expires = ctx.var.upstream_http_expires
     end
+
+    core.response.set_header("Cache-Control", upstream_hdr_cache_control,
+                             "Expires", upstream_hdr_expires,
+                             "Apisix-Cache-Status", ctx.var.upstream_cache_status)
 
     ctx.var.upstream_no_cache = no_cache
     core.log.info("proxy-cache no cache:", no_cache)
