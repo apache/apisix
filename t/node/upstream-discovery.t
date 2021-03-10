@@ -230,7 +230,6 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.say(res.status)
-
             discovery.mock = {
                 nodes = function()
                     return {
@@ -250,3 +249,86 @@ qr/create_obj_fun\(\): upstream nodes:/
 create_obj_fun(): upstream nodes:
 --- error_log
 connect() failed
+
+
+
+=== TEST 5: create new server picker when priority change
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /hello
+    upstream_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1980, weight = 1},
+                        {host = "0.0.0.0", port = 1980, weight = 1},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say(res.status)
+
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1980, weight = 1},
+                        {host = "0.0.0.0", port = 1980, weight = 1, priority = 1},
+                    }
+                end
+            }
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+        }
+    }
+--- grep_error_log eval
+qr/create_obj_fun\(\): upstream nodes:/
+--- grep_error_log_out
+create_obj_fun(): upstream nodes:
+create_obj_fun(): upstream nodes:
+
+
+
+=== TEST 6: default priority of discovered node is 0
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /hello
+    upstream_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1979, weight = 1, priority = 1},
+                        {host = "0.0.0.0", port = 1980, weight = 1},
+                        {host = "127.0.0.2", port = 1979, weight = 1, priority = -1},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say(res.status)
+        }
+    }
+--- error_log
+connect() failed
+--- grep_error_log eval
+qr/proxy request to \S+/
+--- grep_error_log_out
+proxy request to 127.0.0.1:1979
+proxy request to 0.0.0.0:1980
