@@ -539,8 +539,6 @@ _EOC_
             set \$upstream_cache_key             '';
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
-            set \$upstream_hdr_expires           '';
-            set \$upstream_hdr_cache_control     '';
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
@@ -551,12 +549,6 @@ _EOC_
             proxy_cache_key                     \$upstream_cache_key;
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
-
-            proxy_hide_header                   Cache-Control;
-            proxy_hide_header                   Expires;
-            add_header      Cache-Control       \$upstream_hdr_cache_control;
-            add_header      Expires             \$upstream_hdr_expires;
-            add_header      Apisix-Cache-Status \$upstream_cache_status always;
 
             access_by_lua_block {
                 -- wait for etcd sync
