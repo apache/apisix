@@ -162,6 +162,10 @@ do
 
                 need_filled = true
             end
+
+            if not n.priority then
+                need_filled = true
+            end
         end
 
         up_conf.original_nodes = nodes
@@ -173,9 +177,17 @@ do
 
         local filled_nodes = core.table.new(#nodes, 0)
         for i, n in ipairs(nodes) do
-            if not n.port then
+            if not n.port or not n.priority then
                 filled_nodes[i] = core.table.clone(n)
-                filled_nodes[i].port = scheme_to_port[scheme]
+
+                if not n.port then
+                    filled_nodes[i].port = scheme_to_port[scheme]
+                end
+
+                -- fix priority for non-array nodes and nodes from service discovery
+                if not n.priority then
+                    filled_nodes[i].priority = 0
+                end
             else
                 filled_nodes[i] = n
             end

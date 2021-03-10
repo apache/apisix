@@ -73,7 +73,15 @@ function _M.new(up_nodes, upstream)
 
             ctx.balancer_tried_servers[ctx.balancer_server] = true
             ctx.balancer_tried_servers_count = (ctx.balancer_tried_servers_count or 0) + 1
-        end
+        end,
+        before_retry_next_priority = function (ctx)
+            if ctx.balancer_tried_servers then
+                core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                ctx.balancer_tried_servers = nil
+            end
+
+            ctx.balancer_tried_servers_count = 0
+        end,
     }
 end
 

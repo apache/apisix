@@ -657,6 +657,42 @@ After the execution is successful, nodes will not retain the original data, and 
 
 ```
 
+Each node can be configured with a priority. A node with low priority will only be
+used when all the nodes with higher priority are unavailable or tried.
+
+As the default priority is 0, we can configure nodes with negative priority as the backup.
+
+For example,
+
+```json
+{
+    "uri": "/hello",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": [
+            {"host": "127.0.0.1", "port": 1980, "weight": 2000},
+            {"host": "127.0.0.2", "port": 1980, "weight": 1, "priority": -1}
+        ],
+        "checks": {
+            "active": {
+                "http_path": "/status",
+                "healthy": {
+                    "interval": 1,
+                    "successes": 1
+                },
+                "unhealthy": {
+                    "interval": 1,
+                    "http_failures": 1
+                }
+            }
+        }
+    }
+}
+```
+
+Node `127.0.0.2` will be used only after `127.0.0.1` is unavaibled or tried.
+Therefore it is the backup of `127.0.0.1`.
+
 > Response Parameters
 
 Return response from etcd currently.

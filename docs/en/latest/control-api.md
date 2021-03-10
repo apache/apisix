@@ -97,6 +97,7 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -105,11 +106,13 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             },
             {
                 "host": "127.0.0.2",
                 "port": 1988,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -121,6 +124,7 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -129,11 +133,13 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             },
             {
                 "host": "127.0.0.1",
                 "port": 1988,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -162,6 +168,7 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
         {
             "host": "127.0.0.1",
             "port": 1980,
+            "priority": 0,
             "weight": 1
         }
     ],
@@ -170,11 +177,13 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
         {
             "host": "127.0.0.1",
             "port": 1980,
+            "priority": 0,
             "weight": 1
         },
         {
             "host": "127.0.0.2",
             "port": 1988,
+            "priority": 0,
             "weight": 1
         }
     ],
