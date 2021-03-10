@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require     = require
-local balancer    = require("ngx.balancer")
-local core        = require("apisix.core")
-local ipairs      = ipairs
+local require           = require
+local balancer          = require("ngx.balancer")
+local core              = require("apisix.core")
+local priority_balancer = require("apisix.balancer.priority")
+local ipairs            = ipairs
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -40,12 +41,27 @@ local _M = {
 }
 
 
+local function transform_node(new_nodes, node)
+    if not new_nodes._priority_index then
+        new_nodes._priority_index = {}
+    end
+
+    if not new_nodes[node.priority] then
+        new_nodes[node.priority] = {}
+        core.table.insert(new_nodes._priority_index, node.priority)
+    end
+
+    new_nodes[node.priority][node.host .. ":" .. node.port] = node.weight
+    return new_nodes
+end
+
+
 local function fetch_health_nodes(upstream, checker)
     local nodes = upstream.nodes
     if not checker then
         local new_nodes = core.table.new(0, #nodes)
         for _, node in ipairs(nodes) do
-            new_nodes[node.host .. ":" .. node.port] = node.weight
+            new_nodes = transform_node(new_nodes, node)
         end
         return new_nodes
     end
@@ -56,7 +72,7 @@ local function fetch_health_nodes(upstream, checker)
     for _, node in ipairs(nodes) do
         local ok, err = checker:get_target_status(node.host, port or node.port, host)
         if ok then
-            up_nodes[node.host .. ":" .. node.port] = node.weight
+            up_nodes = transform_node(up_nodes, node)
         elseif err then
             core.log.error("failed to get health check target status, addr: ",
                 node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
@@ -66,7 +82,7 @@ local function fetch_health_nodes(upstream, checker)
     if core.table.nkeys(up_nodes) == 0 then
         core.log.warn("all upstream nodes is unhealthy, use default")
         for _, node in ipairs(nodes) do
-            up_nodes[node.host .. ":" .. node.port] = node.weight
+            up_nodes = transform_node(up_nodes, node)
         end
     end
 
@@ -83,9 +99,15 @@ local function create_server_picker(upstream, checker)
 
     if picker then
         local up_nodes = fetch_health_nodes(upstream, checker)
-        core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
 
-        return picker.new(up_nodes, upstream)
+        if #up_nodes._priority_index > 1 then
+            core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
+            return priority_balancer.new(up_nodes, upstream, picker)
+        end
+
+        core.log.info("upstream nodes: ",
+                      core.json.delay_encode(up_nodes[up_nodes._priority_index[1]]))
+        return picker.new(up_nodes[up_nodes._priority_index[1]], upstream)
     end
 
     return nil, "invalid balancer type: " .. upstream.type, 0
