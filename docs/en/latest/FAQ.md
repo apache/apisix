@@ -41,7 +41,7 @@ APISIX is the highest performance API gateway with a single-core QPS of 23,000, 
 
 ## Does APISIX have a console interface?
 
-Yes, in version 0.6 we have dashboard built in, you can operate APISIX through the web interface.
+Yes, APISIX has a powerful Dashboard. APISIX and [APISIX Dashboard](https://github.com/apache/apisix-dashboard) are independent projects, you can deploy [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to operate APISIX through the web interface.
 
 ## Can I write my own plugin?
 

@@ -40,7 +40,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 ## APISIX 是否有控制台界面？
 
-是的，在 0.6 版本中我们内置了 dashboard，你可以通过 web 界面来操作 APISIX 了。
+是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是相互独立的项目，你可以部署 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来操作 APISIX。
 
 ## 我可以自己写插件吗？
 
