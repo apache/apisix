@@ -360,6 +360,7 @@ end
 
 function _M.init()
     read_apisix_yaml()
+    return true
 end
 
 
