@@ -49,9 +49,9 @@ title: 集成服务发现注册中心
 
 目前支持 Eureka / Consul 和基于 DNS 的服务注册发现。
 
-基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](../../en/latest/discovery/dns.md)。
+基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery/dns.md)。
 
-Consul 的支持见 [基于 Consul 的服务支持发现](../../en/latest/discovery/consul_kv.md)
+Consul 的支持见 [基于 Consul 的服务支持发现](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery/consul_kv.md)
 
 Eureka 的支持方式见下文。
 
