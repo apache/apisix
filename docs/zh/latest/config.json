@@ -2,8 +2,21 @@
   "version": 2.4,
   "sidebar": [
     {
-      "type": "doc",
-      "id": "architecture-design"
+      "type": "category",
+      "label": "Architecture Design",
+      "items": [
+        "architecture-design/apisix",
+        "architecture-design/route",
+        "architecture-design/plugin",
+        "architecture-design/script",
+        "architecture-design/service",
+        "architecture-design/consumer",
+        "architecture-design/upstream",
+        "architecture-design/global-rule",
+        "architecture-design/plugin-config",
+        "architecture-design/router",
+        "architecture-design/debug-mode"
+      ]
     },
     {
       "type": "doc",
@@ -108,56 +121,68 @@
       ]
     },
     {
-      "type": "doc",
-      "id": "admin-api"
-    },
-    {
-      "type": "doc",
-      "id": "control-api"
-    },
-    {
-      "type": "doc",
-      "id": "health-check"
-    },
-    {
-      "type": "doc",
-      "id": "router-radixtree"
-    },
-    {
-      "type": "doc",
-      "id": "stand-alone"
-    },
-    {
-      "type": "doc",
-      "id": "stream-proxy"
-    },
-    {
-      "type": "doc",
-      "id": "grpc-proxy"
-    },
-    {
-      "type": "doc",
-      "id": "customize-nginx-configuration"
-    },
-    {
-      "type": "doc",
-      "id": "https"
-    },
-    {
-      "type": "doc",
-      "id": "benchmark"
-    },
-    {
-      "type": "doc",
-      "id": "CODE_STYLE"
-    },
-    {
-      "type": "doc",
-      "id": "debug-function"
+      "type": "category",
+      "label": "API",
+      "items": [
+        {
+          "type": "doc",
+          "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
+        }
+      ]
     },
     {
       "type": "doc",
       "id": "FAQ"
+    },
+    {
+      "type": "category",
+      "label": "Others",
+      "items": [
+        {
+          "type": "doc",
+          "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
+        },
+        {
+          "type": "doc",
+          "id": "stand-alone"
+        },
+        {
+          "type": "doc",
+          "id": "stream-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "grpc-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "customize-nginx-configuration"
+        },
+        {
+          "type": "doc",
+          "id": "https"
+        },
+        {
+          "type": "doc",
+          "id": "benchmark"
+        },
+        {
+          "type": "doc",
+          "id": "CODE_STYLE"
+        },
+        {
+          "type": "doc",
+          "id": "debug-function"
+        }
+      ]
     },
     {
       "type": "doc",
