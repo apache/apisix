@@ -20,7 +20,7 @@
 # This file is like other test_*.sh, but requires extra dependencies which
 # you don't need in daily development.
 
-. ./.travis/apisix_cli_test/common.sh
+. ./t/cli/common.sh
 
 # check error handling when connecting to old etcd
 git checkout conf/config.yaml
