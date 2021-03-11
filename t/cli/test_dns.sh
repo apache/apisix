@@ -21,7 +21,7 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-. ./.travis/apisix_cli_test/common.sh
+. ./t/cli/common.sh
 
 # dns_resolver_valid
 echo '
