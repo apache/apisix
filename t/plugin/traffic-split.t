@@ -172,7 +172,7 @@ done
 --- request
 GET /t
 --- response_body eval
-qr/property "rules" validation failed:.* failed to validate item 2: wrong type: expected string, got number/
+qr/failed to validate the 'vars' expression: invalid operator '123'/
 --- no_error_log
 [error]
 
