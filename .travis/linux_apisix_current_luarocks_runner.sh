@@ -56,7 +56,7 @@ script() {
     cd ..
 
     # apisix cli test
-    for f in ./.travis/apisix_cli_test/test_*.sh; do
+    for f in ./t/cli/test_*.sh; do
         sudo PATH="$PATH" "$f"
     done
 }
