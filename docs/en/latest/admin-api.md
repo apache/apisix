@@ -530,7 +530,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |name     |optional|Identifies upstream names|
 |desc     |optional|upstream usage scenarios, and more.|
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`. Default to `pass`.|
+|pass_host |optional|Can be one of [`pass`, `node`, `rewrite`]. `pass`: passes the client host; `node`: uses the host configured in nodes of upstream; `rewrite`: rewrites the host with the value configured by the `upstream_host`. Default to `pass`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 |scheme|optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
 |labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
