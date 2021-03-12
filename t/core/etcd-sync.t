@@ -186,6 +186,22 @@ property "uri" validation failed
 --- config
     location /t {
         content_by_lua_block {
+        }
+    }
+--- request
+GET /t
+--- error_log
+use loaded configuration /global_rules
+property "uri" validation failed
+
+
+
+=== TEST 6: bad plugin configuration (validated without sync during start)
+--- extra_yaml_config
+  disable_sync_configuration_during_start: true
+--- config
+    location /t {
+        content_by_lua_block {
             local core = require("apisix.core")
             -- wait for full sync finish
             ngx.sleep(0.6)
@@ -196,5 +212,6 @@ property "uri" validation failed
 --- request
 GET /t
 --- error_log
-use loaded configuration /global_rules
 property "uri" validation failed
+--- no_error_log
+use loaded configuration /global_rules
