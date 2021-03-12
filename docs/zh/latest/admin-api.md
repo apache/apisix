@@ -23,7 +23,7 @@ title: Admin API
 
 ## 目录
 
-- [目录](#%e7%9b%ae%e5%bd%95)
+- [目录](#目录)
 - [Route](#route)
 - [Service](#service)
 - [Consumer](#consumer)

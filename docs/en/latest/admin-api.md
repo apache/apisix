@@ -547,11 +547,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 `hash_on` can be set to different types:
 
 1. when it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
-2. when it is `header`, the `key` is required. It is equal to "http_`key`".
-3. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
-4. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
-5. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
-6. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
+1. when it is `header`, the `key` is required. It is equal to "http_`key`".
+1. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
+1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
+1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
+1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
 Config Example:
 
