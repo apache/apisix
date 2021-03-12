@@ -171,3 +171,9 @@ Content-Type: text/html
 ... ...
 {"node":{...},"action":"get"}
 ```
+
+## 6. Build OpenResty for APISIX
+
+Some features require you to build OpenResty with extra Nginx modules.
+If you need those features, you can build OpenResty with
+[this build script](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh).

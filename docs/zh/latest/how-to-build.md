@@ -166,3 +166,9 @@ Content-Type: text/html
 ... ...
 {"node":{...},"action":"get"}
 ```
+
+## 6. 为 APISIX 构建 OpenResty
+
+有些功能需要你引入额外的 Nginx 模块到 OpenResty 当中。
+如果你需要这些功能，你可以用[这个脚本](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh)
+构建 OpenResty。
