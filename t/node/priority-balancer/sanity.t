@@ -199,6 +199,8 @@ upstreams:
             for i = 1, 3 do
                 local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
+                    -- the retry can be happened before starting the new request
+                    -- so we exclude all the first tries from the expected log
                     local res, err = httpc:request_uri(uri..i, {method = "GET"})
                     if not res then
                         ngx.log(ngx.ERR, err)
@@ -217,11 +219,8 @@ GET /t
 --- error_log
 connect() failed
 --- grep_error_log eval
-qr/proxy request to \S+ while connecting to upstream/
+qr/proxy request to \S+:1980 while connecting to upstream/
 --- grep_error_log_out
-proxy request to 127.0.0.1:1979 while connecting to upstream
-proxy request to 127.0.0.1:1979 while connecting to upstream
-proxy request to 127.0.0.1:1979 while connecting to upstream
 proxy request to 127.0.0.1:1980 while connecting to upstream
 proxy request to 0.0.0.0:1980 while connecting to upstream
 proxy request to 127.0.0.1:1980 while connecting to upstream
