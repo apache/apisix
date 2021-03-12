@@ -23,15 +23,15 @@ title: Admin API
 
 ## Table of Contents
 
-* [Route](#route)
-* [Service](#service)
-* [Consumer](#consumer)
-* [Upstream](#upstream)
-* [SSL](#ssl)
-* [Global Rule](#global-rule)
-* [Plugin Config](#plugin-config)
-* [Plugin Metadata](#plugin-metadata)
-* [Plugin](#plugin)
+- [Route](#route)
+- [Service](#service)
+- [Consumer](#consumer)
+- [Upstream](#upstream)
+- [SSL](#ssl)
+- [Global Rule](#global-rule)
+- [Plugin config](#plugin-config)
+- [Plugin Metadata](#plugin-metadata)
+- [Plugin](#plugin)
 
 ## Route
 
@@ -530,7 +530,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |timeout         |optional| Set the timeout for connection, sending and receiving messages. |
 |name            |optional|Identifies upstream names|
 |desc            |optional|upstream usage scenarios, and more.|
-|pass_host       |optional|Specify the source of the upstream request host, can be one of [`pass`, `node`, `rewrite`]. `pass`: use the host requested by the client as the host of the upstream request, `node`: use the host configured in the node of `upstream` as the upstream request host, `rewrite`: use the value configured by `upstream_host` to rewrite the upstream request host. The default is the `pass` method.|
+|pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.|
 |upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.|
 |scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
 |labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
@@ -547,11 +547,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 `hash_on` can be set to different types:
 
 1. when it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
-1. when it is `header`, the `key` is required. It is equal to "http_`key`".
-1. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
-1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
-1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
-1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
+2. when it is `header`, the `key` is required. It is equal to "http_`key`".
+3. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
+4. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
+5. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
+6. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
 Config Example:
 
