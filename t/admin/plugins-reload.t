@@ -78,15 +78,12 @@ location /t {
         plugins_conf, err = core.config.new("/plugins", {
             automatic = true,
             single_item = true,
-            filter = function()
-                -- called twice, one for readir, another for waitdir
+            filter = function(item)
+                -- called twice before reload,
+                -- one for worker start, another for sync data from admin
                 ngx.log(ngx.WARN, "reload plugins on node ",
                         before_reload and "before reload" or "after reload")
-                local plugins = {}
-                for _, conf_value in config_util.iterate_values(plugins_conf.values) do
-                    core.table.insert_tail(plugins, unpack(conf_value.value))
-                end
-                ngx.log(ngx.WARN, require("toolkit.json").encode(plugins))
+                ngx.log(ngx.WARN, require("toolkit.json").encode(item.value))
             end,
         })
         if not plugins_conf then
@@ -123,6 +120,7 @@ done
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out
+reload plugins on node before reload
 reload plugins on node before reload
 reload plugins on node after reload
 --- error_log

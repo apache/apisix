@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require       = require
+require("apisix.patch").patch()
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
 local plugin_config = require("apisix.plugin_config")
@@ -80,8 +81,11 @@ function _M.http_init(args)
         core.log.error("failed to enable privileged_agent: ", err)
     end
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init()
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
     end
 end
 
@@ -111,9 +115,9 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
-    plugin.init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
@@ -699,8 +703,11 @@ end
 function _M.stream_init()
     core.log.info("enter stream_init")
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init()
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
     end
 end
 

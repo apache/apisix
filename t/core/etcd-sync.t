@@ -196,4 +196,5 @@ property "uri" validation failed
 --- request
 GET /t
 --- error_log
+use loaded configuration /global_rules
 property "uri" validation failed

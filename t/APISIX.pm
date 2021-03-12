@@ -350,6 +350,7 @@ _EOC_
         $block->set_value("stream_server_config", $stream_server_config);
     }
 
+    my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
@@ -363,6 +364,7 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+    $extra_init_by_lua
 _EOC_
 
     my $http_config = $block->http_config // '';
