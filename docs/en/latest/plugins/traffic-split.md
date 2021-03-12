@@ -23,14 +23,14 @@ title: traffic-split
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Example**](#example)
-  - [**Grayscale Release**](#grayscale-release)
-  - [**Blue-green Release**](#blue-green-release)
-  - [**Custom Release**](#custom-release)
-- [**Disable Plugin**](#disable-plugin)
+- [Name](#name)
+- [Attributes](#attributes)
+- [How To Enable](#how-to-enable)
+- [Example](#example)
+  - [Grayscale Release](#grayscale-release)
+  - [Blue-green Release](#blue-green-release)
+  - [Custom Release](#custom-release)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -50,8 +50,8 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 | upstream.type                  | enum          | optional    | roundrobin  | [roundrobin, chash] | roundrobin supports weighted load, chash consistent hashing, the two are alternatives.   |
 | upstream.nodes                 | object        | optional    |       |  | In the hash table, the key of the internal element is the list of upstream machine addresses, in the format of address + Port, where the address part can be an IP or a domain name, such as 192.168.1.100:80, foo.com:80, etc. value is the weight of the node. In particular, when the weight value is 0, it has special meaning, which usually means that the upstream node is invalid and never wants to be selected. |
 | upstream.timeout               | object        | optional    |  15     |   | Set the timeout period for connecting, sending and receiving messages (time unit: second, all default to 15 seconds).  |
-| upstream.pass_host             | enum          | optional    | "pass"  | ["pass", "node", "rewrite"]  | pass: pass the host requested by the client, node: pass the host requested by the client; use the host configured with the upstream node, rewrite: rewrite the host with the value configured by the upstream_host. |
-| `upstream.name`                | string        | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
+| upstream.pass_host             | enum          | optional    | "pass"  | ["pass", "node", "rewrite"]  | `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`. |
+| upstream.name                | string        | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
 | upstream.upstream_host         | string        | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
 | weighted_upstreams.weight      | integer       | optional    | weight = 1   |  | The traffic is divided according to the `weight` value, and the roundrobin algorithm is used to divide multiple `weight`. |
 
