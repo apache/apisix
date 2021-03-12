@@ -742,14 +742,18 @@ end
 
 
 function _M.init()
-    local etcd_cli, err = get_etcd()
-    if not etcd_cli then
-        return nil, "failed to start a etcd instance: " .. err
-    end
-
     local local_conf, err = config_local.local_conf()
     if not local_conf then
         return nil, err
+    end
+
+    if table.try_read_attr(local_conf, "apisix", "disable_sync_configuration_during_start") then
+        return true
+    end
+
+    local etcd_cli, err = get_etcd()
+    if not etcd_cli then
+        return nil, "failed to start a etcd instance: " .. err
     end
 
     local etcd_conf = local_conf.etcd
