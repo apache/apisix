@@ -17,6 +17,7 @@
 
 local base64_encode = require("base64").encode
 local dkjson = require("dkjson")
+local constants = require("apisix.constants")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local http = require("socket.http")
@@ -25,6 +26,7 @@ local ltn12 = require("ltn12")
 
 local type = type
 local ipairs = ipairs
+local pairs = pairs
 local print = print
 local tonumber = tonumber
 local str_format = string.format
@@ -248,11 +250,15 @@ function _M.init(env, args)
         end
 
 
-        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                                   "/plugins", "/consumers", "/ssl",
-                                   "/global_rules", "/stream_routes", "/proto",
-                                   "/plugin_metadata", "/plugin_configs"}) do
+        local dirs = {}
+        for name in pairs(constants.HTTP_ETCD_DIRECTORY) do
+            dirs[name] = true
+        end
+        for name in pairs(constants.STREAM_ETCD_DIRECTORY) do
+            dirs[name] = true
+        end
 
+        for dir_name in pairs(dirs) do
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
 
             local put_url = host .. "/v3/kv/put"
