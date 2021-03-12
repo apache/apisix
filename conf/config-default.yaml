@@ -129,6 +129,7 @@ apisix:
   # control:
   #   ip: "127.0.0.1"
   #   port: 9090
+  disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
 
 nginx_config:                     # config for render the template to generate nginx.conf
   error_log: "logs/error.log"
