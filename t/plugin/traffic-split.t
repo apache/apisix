@@ -1664,13 +1664,8 @@ passed
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- response_body eval
 ["hello world\n", "hello1 world\n", "hello world\n", "hello1 world\n", "hello world\n", "hello1 world\n"]
---- grep_error_log_out eval
-[
-"match_flag: true",
-"upstream_id: 2",
-"match_flag: false",
-"original_uid: 1"
-]
+--- no_error_log
+[error]
 
 
 
