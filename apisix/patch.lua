@@ -15,12 +15,15 @@
 -- limitations under the License.
 --
 local socket = require("socket")
+local unix_socket = require("socket.unix")
 local ssl = require("ssl")
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
 local concat_tab = table.concat
 local new_tab = require("table.new")
+local log = ngx.log
+local WARN = ngx.WARN
 local ipairs = ipairs
 local select = select
 local setmetatable = setmetatable
@@ -49,6 +52,21 @@ end
 
 
 local luasocket_wrapper = {
+    connect = function (self, host, port)
+        if not port then
+            -- unix socket
+            self.sock = unix_socket()
+            if self.timeout then
+                self.sock:settimeout(self.timeout)
+            end
+
+            local path = host:sub(#("unix:") + 1)
+            return self.sock:connect(path)
+        end
+
+        return self.sock:connect(host, port)
+    end,
+
     send = function(self, ...)
         if select('#', ...) == 1 and type(select(1, ...)) == "string" then
             -- fast path
@@ -62,14 +80,18 @@ local luasocket_wrapper = {
     getreusedtimes = function ()
         return 0
     end,
-    setkeepalive = function ()
-        return true
+    setkeepalive = function (self)
+        self.sock:close()
+        return 1
     end,
 
     settimeout = function (self, time)
         if time then
             time = time / 1000
         end
+
+        self.timeout = time
+
         return self.sock:settimeout(time)
     end,
     settimeouts = function (self, connect_time, read_time, write_time)
@@ -91,20 +113,24 @@ local luasocket_wrapper = {
         else
             time = nil
         end
+
+        self.timeout = time
+
         return self.sock:settimeout(time)
     end,
 
-    sslhandshake = function (self, verify, opts)
-        if opts == nil then
-            opts = {}
+    sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+        if reused_session then
+            log(WARN, "reused_session is not supported yet")
+        end
+
+        if send_status_req then
+            log(WARN, "send_status_req is not supported yet")
         end
 
         local params = {
             mode = "client",
-            protocol = opts.ssl_version or "any",
-            key = opts.key,
-            certificate = opts.cert,
-            cafile = opts.cafile,
+            protocol = "any",
             verify = verify and "peer" or "none",
             options = {
                 "all",
@@ -117,6 +143,10 @@ local luasocket_wrapper = {
         local sec_sock, err = ssl.wrap(self.sock, params)
         if not sec_sock then
             return false, err
+        end
+
+        if server_name then
+            sec_sock:sni(server_name)
         end
 
         local success
