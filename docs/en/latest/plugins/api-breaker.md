@@ -39,7 +39,7 @@ the code logic automatically **triggers the unhealthy state** incrementation of 
 
 Whenever the upstream service returns a status code from the `unhealthy.http_statuses` configuration (e.g., 500), up to `unhealthy.failures` (e.g., three times) and considers the upstream service to be in an unhealthy state.
 
-The first time unhealthy status is triggered, **breaken for 2 seconds**.
+The first time unhealthy status is triggered, **broken for 2 seconds**.
 
 Then, the request is forwarded to the upstream service again after 2 seconds, and if the `unhealthy.http_statuses` status code is returned, and the count reaches `unhealthy.failures` again, **broken for 4 seconds**.
 

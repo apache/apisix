@@ -81,7 +81,7 @@ Return the jsonschema used by this APISIX instance in the format below:
 ```
 
 For `plugins` part, only enabled plugins will be returned. Some plugins may lack
-of fields like `consumer_schema` or `type`, it is dependended by the plugin's
+of fields like `consumer_schema` or `type`, it is depended on by the plugin's
 definition.
 
 ### GET /v1/healthcheck

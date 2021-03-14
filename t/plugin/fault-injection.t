@@ -227,7 +227,7 @@ qr/wrong type: expected number, got string/
 
 
 
-=== TEST 6: set route(invalid duration with duoble dot in the delay property)
+=== TEST 6: set route(invalid duration with double dot in the delay property)
 --- config
        location /t {
            content_by_lua_block {

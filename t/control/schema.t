@@ -90,7 +90,7 @@ __DATA__
                     }
                 }]]
                 )
-            ngx.satus = code
+            ngx.status = code
             ngx.say(body)
         }
     }

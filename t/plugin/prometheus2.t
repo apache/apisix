@@ -584,7 +584,7 @@ passed
 
 
 
-=== TEST 29:  tigger metircs batch-process-metrics
+=== TEST 29:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
