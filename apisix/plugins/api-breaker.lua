@@ -100,7 +100,7 @@ end
 
 
 local function gen_lasttime_key(ctx)
-    return "unhealthy-lastime" .. core.request.get_host(ctx) .. ctx.var.uri
+    return "unhealthy-lasttime" .. core.request.get_host(ctx) .. ctx.var.uri
 end
 
 

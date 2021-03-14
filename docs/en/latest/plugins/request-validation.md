@@ -114,7 +114,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         "type": "object",
         "required": ["required_payload"],
         "properties": {
-                "emum_payload": {
+                "enum_payload": {
                 "type": "string",
                 "enum": ["enum_string_1", "enum_string_2"],
                 "default": "enum_string_1"

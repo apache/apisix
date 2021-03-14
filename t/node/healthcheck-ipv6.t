@@ -29,7 +29,7 @@ use t::APISIX;
 my $travis_os_name = $ENV{TRAVIS_OS_NAME};
 if ((defined $travis_os_name) && $travis_os_name eq "linux") {
     plan(skip_all =>
-      "skip under Travis CI inux environment which doesn't work well with IPv6");
+      "skip under Travis CI Linux environment which doesn't work well with IPv6");
 } else {
     plan 'no_plan';
 }
