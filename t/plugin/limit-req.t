@@ -290,7 +290,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be sctrictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be strictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -757,6 +757,6 @@ passed
 --- request
 GET /t
 --- response_body eval
-qr/property \"rate\" validation failed: expected 0 to be sctrictly greater than 0/
+qr/property \"rate\" validation failed: expected 0 to be strictly greater than 0/
 --- no_error_log
 [error]

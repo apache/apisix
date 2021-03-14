@@ -2016,7 +2016,7 @@ GET /t
 
 
 
-=== TEST 54: Verify Response Content-Type=applciation/json
+=== TEST 54: Verify Response Content-Type=application/json
 --- config
     location /t {
         content_by_lua_block {
