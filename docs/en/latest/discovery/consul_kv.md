@@ -177,7 +177,6 @@ For example:
       "port": 8899,
       "metadata": {
         "fail_timeout": 1,
-        "weigth": 1,
         "weight": 1,
         "max_fails": 1
       }

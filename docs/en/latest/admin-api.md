@@ -690,7 +690,7 @@ For example,
 }
 ```
 
-Node `127.0.0.2` will be used only after `127.0.0.1` is unavaibled or tried.
+Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
 Therefore it is the backup of `127.0.0.1`.
 
 > Response Parameters

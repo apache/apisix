@@ -608,7 +608,7 @@ passed
 
 
 
-=== TEST 20: check http code that matchs http_status
+=== TEST 20: check http code that matches http_status
 --- request
 GET /server_error
 --- response_body
@@ -620,7 +620,7 @@ new body3
 
 
 
-=== TEST 21: check http code that not matchs http_status
+=== TEST 21: check http code that not matches http_status
 --- request
 GET /hello
 --- response_body

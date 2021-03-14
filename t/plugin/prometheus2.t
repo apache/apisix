@@ -91,7 +91,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d
 
 
 
-=== TEST 4: set consumer for metics data collection
+=== TEST 4: set consumer for metrics data collection
 --- config
     location /t {
         content_by_lua_block {
@@ -647,7 +647,7 @@ passed
 
 
 
-=== TEST 32:  tigger metircs batch-process-metrics
+=== TEST 32:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
@@ -715,7 +715,7 @@ passed
 
 
 
-=== TEST 35:  tigger metircs batch-process-metrics
+=== TEST 35:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
