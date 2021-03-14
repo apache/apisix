@@ -60,6 +60,7 @@ help: default
 ### deps:             Installation dependencies
 .PHONY: deps
 deps: default
+luarocks install apisix --server https://luarocks.cn
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)
