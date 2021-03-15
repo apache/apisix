@@ -174,7 +174,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    -- unhealth process
+    -- unhealthy process
     if core.table.array_find(conf.unhealthy.http_statuses,
                              upstream_status)
     then

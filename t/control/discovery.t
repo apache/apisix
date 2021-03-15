@@ -109,7 +109,7 @@ GET /v1/discovery/dns/dump
 
 
 
-=== TEST 4: test unconfiged eureka dump_data api
+=== TEST 4: test unconfigured eureka dump_data api
 --- yaml_config
 apisix:
   enable_control: true

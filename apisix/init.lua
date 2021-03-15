@@ -548,7 +548,7 @@ function _M.http_body_filter_phase()
 end
 
 
-local function healcheck_passive(api_ctx)
+local function healthcheck_passive(api_ctx)
     local checker = api_ctx.up_checker
     if not checker then
         return
@@ -605,7 +605,7 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
-    healcheck_passive(api_ctx)
+    healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
         api_ctx.server_picker.after_balance(api_ctx, false)
