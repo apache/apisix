@@ -560,7 +560,7 @@ done
 --- request
 GET /t
 --- response_body
-property "vars" validation failed: failed to validate item 1: expect array to have at least 2 items
+failed to validate the 'vars' expression: rule too short
 --- no_error_log
 [error]
 

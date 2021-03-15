@@ -47,12 +47,6 @@ local schema = {
         },
         vars = {
             type = "array",
-            items = {
-                description = "Nginx builtin variable name and value",
-                type = "array",
-                maxItems = 4,
-                minItems = 2,
-            },
         },
     },
     minProperties = 1,
