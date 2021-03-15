@@ -88,16 +88,33 @@ GET /t
             local t = require("lib.test_admin")
 
             local code, body, res = t.test('/v1/discovery/eureka/dump',
-                ngx.HTTP_GET)
-            local entity = json.decode(res)
-            ngx.say(json.encode(entity))
+                ngx.HTTP_GET, nil,
+                [[{
+                    "config": {
+                        "fetch_interval": 10,
+                        "host": [
+                            "http://127.0.0.1:8761"
+                        ],
+                        "prefix": "/eureka/",
+                        "timeout": {
+                            "connect": 1500,
+                            "read": 1500,
+                            "send": 1500
+                        },
+                        "weight": 80
+                    },
+                    "services": {}
+                }]]
+                )
+            ngx.satus = code
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- error_code: 200
 --- response_body
-{"config":{"fetch_interval":10,"host":["http://127.0.0.1:8761"],"prefix":"/eureka/","timeout":{"connect":1500,"read":1500,"send":1500},"weight":80},"services":{}}
+passed
 
 
 
