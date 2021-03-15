@@ -39,7 +39,7 @@ discovery:
        - "127.0.0.1:8600"          # use the real address of your dns server
 ```
 
-Unlike configurating domain in the Upstream's `nodes` field, service discovery via
+Unlike configuring the domain in the Upstream's `nodes` field, service discovery via
 DNS will return all records. For example, with upstream configuration:
 
 ```json
