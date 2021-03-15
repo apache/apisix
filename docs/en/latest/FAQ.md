@@ -376,17 +376,17 @@ make: *** [deps] Error 1
 
 1. Keep APISIX and Admin API using different ports (or disable Admin API), for example, do the following configuration in `conf/config.yaml`.
 
-The Admin API uses a separate port 9180:
+The Admin API use a separate port 9180:
 
 ```yaml
 apisix:
   port_admin: 9180            # use a separate port
 ```
 
-1. Add proxy route of APISIX Dashboard:
+2. Add proxy route of APISIX Dashboard:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"apisix_proxy_dashboard",
