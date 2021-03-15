@@ -17,37 +17,19 @@
 # limitations under the License.
 #
 
-. ./.travis/apisix_cli_test/common.sh
+# validate the config.yaml
 
-# enable dubbo
+. ./t/cli/common.sh
+
 echo '
-plugins:
-    - dubbo-proxy
+apisix:
+  dns_resolver_valid: "/apisix"
 ' > conf/config.yaml
 
-make init
-
-if ! grep "location @dubbo_pass " conf/nginx.conf > /dev/null; then
-    echo "failed: dubbo location not found in nginx.conf"
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'dns_resolver_valid should be a number'; then
+    echo "failed: dns_resolver_valid should be a number"
     exit 1
 fi
 
-echo "passed: found dubbo location in nginx.conf"
-
-# dubbo multiplex configuration
-echo '
-plugins:
-    - dubbo-proxy
-plugin_attr:
-    dubbo-proxy:
-        upstream_multiplex_count: 16
-' > conf/config.yaml
-
-make init
-
-if ! grep "multi 16;" conf/nginx.conf > /dev/null; then
-    echo "failed: dubbo multiplex configuration not found in nginx.conf"
-    exit 1
-fi
-
-echo "passed: found dubbo multiplex configuration in nginx.conf"
+echo "passed: dns_resolver_valid should be a number"

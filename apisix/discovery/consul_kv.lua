@@ -319,7 +319,7 @@ local function format_consul_params(consul_conf)
         if scheme ~= "http" then
             return nil, "only support consul http schema address, eg: http://address:port"
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
-            return nil, "invald consul server address, the valid format: http://address:port"
+            return nil, "invalid consul server address, the valid format: http://address:port"
         end
 
         core.table.insert(consul_server_list, {
@@ -409,5 +409,6 @@ end
 function _M.dump_data()
     return {config = local_conf.discovery.consul_kv, services = applications}
 end
+
 
 return _M

@@ -492,8 +492,6 @@ http {
             set $upstream_cache_key             '';
             set $upstream_cache_bypass          '';
             set $upstream_no_cache              '';
-            set $upstream_hdr_expires           '';
-            set $upstream_hdr_cache_control     '';
 
             proxy_cache                         $upstream_cache_zone;
             proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
@@ -505,11 +503,6 @@ http {
             proxy_no_cache                      $upstream_no_cache;
             proxy_cache_bypass                  $upstream_cache_bypass;
 
-            proxy_hide_header                   Cache-Control;
-            proxy_hide_header                   Expires;
-            add_header      Cache-Control       $upstream_hdr_cache_control;
-            add_header      Expires             $upstream_hdr_expires;
-            add_header      Apisix-Cache-Status $upstream_cache_status always;
             {% end %}
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;

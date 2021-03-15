@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require       = require
+require("apisix.patch").patch()
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
 local plugin_config = require("apisix.plugin_config")
@@ -79,6 +80,13 @@ function _M.http_init(args)
     if not ok then
         core.log.error("failed to enable privileged_agent: ", err)
     end
+
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
+    end
 end
 
 
@@ -107,9 +115,9 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
-    plugin.init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
@@ -540,7 +548,7 @@ function _M.http_body_filter_phase()
 end
 
 
-local function healcheck_passive(api_ctx)
+local function healthcheck_passive(api_ctx)
     local checker = api_ctx.up_checker
     if not checker then
         return
@@ -597,7 +605,7 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
-    healcheck_passive(api_ctx)
+    healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
         api_ctx.server_picker.after_balance(api_ctx, false)
@@ -694,6 +702,13 @@ end
 
 function _M.stream_init()
     core.log.info("enter stream_init")
+
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
+    end
 end
 
 

@@ -113,7 +113,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: clean consul kv register nodes
+=== TEST 1: prepare consul kv register nodes
 --- config
 location /consul1 {
     rewrite  ^/consul1/(.*) /v1/kv/$1 break;
@@ -289,7 +289,7 @@ GET /hello
 
 
 
-=== TEST 7: test register&register nodes
+=== TEST 7: test register and unregister nodes
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -461,8 +461,8 @@ upstreams:
 --- request
 GET /thc
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}
+[{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
+{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
 
 
 

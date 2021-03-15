@@ -131,7 +131,7 @@ start xxxxxx
                     end)
 
                     if counter ~= 1 then
-                        ngx.say("not a single rotater run at the same time: ", file_name)
+                        ngx.say("not a single rotator run at the same time: ", file_name)
                     end
                 end
             end

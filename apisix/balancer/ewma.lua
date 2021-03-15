@@ -147,7 +147,7 @@ local function _ewma_find(ctx, up_nodes)
         return nil, "all upstream servers tried"
     end
 
-    peers = lrucache_trans_format(ctx.upstream_key, ctx.upstream_version, _trans_format, up_nodes)
+    peers = lrucache_trans_format(up_nodes, ctx.upstream_version, _trans_format, up_nodes)
     if not peers then
         return nil, 'up_nodes trans error'
     end
@@ -228,7 +228,15 @@ function _M.new(up_nodes, upstream)
         get = function(ctx)
             return _ewma_find(ctx, up_nodes)
         end,
-        after_balance = _ewma_after_balance
+        after_balance = _ewma_after_balance,
+        before_retry_next_priority = function (ctx)
+            if ctx.balancer_tried_servers then
+                core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                ctx.balancer_tried_servers = nil
+            end
+
+            ctx.balancer_tried_servers_count = 0
+        end,
     }
 end
 

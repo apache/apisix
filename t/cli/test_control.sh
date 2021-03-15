@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-. ./.travis/apisix_cli_test/common.sh
+. ./t/cli/common.sh
 
 # control server
 echo '

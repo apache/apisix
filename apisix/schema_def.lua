@@ -305,6 +305,11 @@ local nodes_schema = {
                         type = "integer",
                         minimum = 0,
                     },
+                    priority = {
+                        description = "priority of node",
+                        type = "integer",
+                        default = 0,
+                    },
                     metadata = {
                         description = "metadata of node",
                         type = "object",
@@ -462,12 +467,6 @@ _M.route = {
         },
         vars = {
             type = "array",
-            items = {
-                description = "Nginx builtin variable name and value",
-                type = "array",
-                maxItems = 4,
-                minItems = 2,
-            },
         },
         filter_func = {
             type = "string",

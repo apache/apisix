@@ -40,7 +40,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 ## APISIX 是否有控制台界面？
 
-是的，在 0.6 版本中我们内置了 dashboard，你可以通过 web 界面来操作 APISIX 了。
+是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是相互独立的项目，你可以部署 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来操作 APISIX。
 
 ## 我可以自己写插件吗？
 
@@ -305,3 +305,17 @@ APISIX 的高可用可分为两个部分：
 1、Apache APISIX 的数据平面是无状态的，可以进行随意的弹性伸缩，前面加一层 LB 即可。
 
 2、Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，不需要任何关系型数据库的依赖。
+
+## 为什么源码安装中执行 `make deps` 命令失败？
+
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](doc/zh-cn/install-dependencies.md) 文档进行安装。
+
+```shell
+$ make deps
+......
+Error: Failed installing dependency: https://luarocks.org/luasec-0.9-1.src.rock - Could not find header file for OPENSSL
+  No file openssl/ssl.h in /usr/local/include
+You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSSL_INCDIR to the luarocks command.
+Example: luarocks install luasec OPENSSL_DIR=/usr/local
+make: *** [deps] Error 1
+```

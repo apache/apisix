@@ -81,7 +81,7 @@ Return the jsonschema used by this APISIX instance in the format below:
 ```
 
 For `plugins` part, only enabled plugins will be returned. Some plugins may lack
-of fields like `consumer_schema` or `type`, it is dependended by the plugin's
+of fields like `consumer_schema` or `type`, it is depended on by the plugin's
 definition.
 
 ### GET /v1/healthcheck
@@ -97,6 +97,7 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -105,11 +106,13 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             },
             {
                 "host": "127.0.0.2",
                 "port": 1988,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -121,6 +124,7 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -129,11 +133,13 @@ Return current [health check](health-check.md) status in the format below:
             {
                 "host": "127.0.0.1",
                 "port": 1980,
+                "priority": 0,
                 "weight": 1
             },
             {
                 "host": "127.0.0.1",
                 "port": 1988,
+                "priority": 0,
                 "weight": 1
             }
         ],
@@ -162,6 +168,7 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
         {
             "host": "127.0.0.1",
             "port": 1980,
+            "priority": 0,
             "weight": 1
         }
     ],
@@ -170,11 +177,13 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
         {
             "host": "127.0.0.1",
             "port": 1980,
+            "priority": 0,
             "weight": 1
         },
         {
             "host": "127.0.0.2",
             "port": 1988,
+            "priority": 0,
             "weight": 1
         }
     ],

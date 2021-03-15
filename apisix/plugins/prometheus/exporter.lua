@@ -164,7 +164,7 @@ function _M.log(conf, ctx)
 end
 
 
-    local ngx_statu_items = {"active", "accepted", "handled", "total",
+    local ngx_status_items = {"active", "accepted", "handled", "total",
                              "reading", "writing", "waiting"}
     local label_values = {}
 local function nginx_status()
@@ -185,7 +185,7 @@ local function nginx_status()
         return
     end
 
-    for _, name in ipairs(ngx_statu_items) do
+    for _, name in ipairs(ngx_status_items) do
         local val = iterator()
         if not val then
             break

@@ -23,15 +23,15 @@ title: Admin API
 
 ## Table of Contents
 
-* [Route](#route)
-* [Service](#service)
-* [Consumer](#consumer)
-* [Upstream](#upstream)
-* [SSL](#ssl)
-* [Global Rule](#global-rule)
-* [Plugin Config](#plugin-config)
-* [Plugin Metadata](#plugin-metadata)
-* [Plugin](#plugin)
+- [Route](#route)
+- [Service](#service)
+- [Consumer](#consumer)
+- [Upstream](#upstream)
+- [SSL](#ssl)
+- [Global Rule](#global-rule)
+- [Plugin config](#plugin-config)
+- [Plugin Metadata](#plugin-metadata)
+- [Plugin](#plugin)
 
 ## Route
 
@@ -517,25 +517,25 @@ Return response from etcd currently.
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|Name    |Optional|Description|
-|-------         |-----|------|
+|Name            |Optional|Description|
+|----------------|--------|-----------|
 |type            |required|the balancer algorithm|
 |nodes           |required, can't be used with `service_name` |Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|
-|discovery_type |required, if `service_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
+|discovery_type  |required, if `service_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
 |key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of available backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.|
-|timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|name     |optional|Identifies upstream names|
-|desc     |optional|upstream usage scenarios, and more.|
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`. Default to `pass`.|
-|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
-|scheme|optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
-|labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
-|create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
-|update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
+|timeout         |optional| Set the timeout for connection, sending and receiving messages. |
+|name            |optional|Identifies upstream names|
+|desc            |optional|upstream usage scenarios, and more.|
+|pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.|
+|upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.|
+|scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
+|labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
+|update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 
 `type` can be one of:
 
@@ -656,6 +656,42 @@ After the execution is successful, nodes will not retain the original data, and 
 }
 
 ```
+
+Each node can be configured with a priority. A node with low priority will only be
+used when all the nodes with higher priority are unavailable or tried.
+
+As the default priority is 0, we can configure nodes with negative priority as the backup.
+
+For example,
+
+```json
+{
+    "uri": "/hello",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": [
+            {"host": "127.0.0.1", "port": 1980, "weight": 2000},
+            {"host": "127.0.0.2", "port": 1980, "weight": 1, "priority": -1}
+        ],
+        "checks": {
+            "active": {
+                "http_path": "/status",
+                "healthy": {
+                    "interval": 1,
+                    "successes": 1
+                },
+                "unhealthy": {
+                    "interval": 1,
+                    "http_failures": 1
+                }
+            }
+        }
+    }
+}
+```
+
+Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
+Therefore it is the backup of `127.0.0.1`.
 
 > Response Parameters
 

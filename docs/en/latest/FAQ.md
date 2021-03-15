@@ -41,7 +41,7 @@ APISIX is the highest performance API gateway with a single-core QPS of 23,000, 
 
 ## Does APISIX have a console interface?
 
-Yes, in version 0.6 we have dashboard built in, you can operate APISIX through the web interface.
+Yes, APISIX has a powerful Dashboard. APISIX and [APISIX Dashboard](https://github.com/apache/apisix-dashboard) are independent projects, you can deploy [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to operate APISIX through the web interface.
 
 ## Can I write my own plugin?
 
@@ -357,3 +357,17 @@ The high availability of APISIX can be divided into two parts:
 1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
 
 2. The control plane of Apache APISIX relies on the highly available implementation of `etcd cluster` and does not require any relational database dependency.
+
+## Why does the `make deps` command fail in source installation?
+
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
+
+```shell
+$ make deps
+......
+Error: Failed installing dependency: https://luarocks.org/luasec-0.9-1.src.rock - Could not find header file for OPENSSL
+  No file openssl/ssl.h in /usr/local/include
+You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSSL_INCDIR to the luarocks command.
+Example: luarocks install luasec OPENSSL_DIR=/usr/local
+make: *** [deps] Error 1
+```
