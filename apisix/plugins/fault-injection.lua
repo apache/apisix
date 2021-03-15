@@ -35,7 +35,10 @@ local schema = {
                 percentage = {type = "integer", minimum = 0, maximum = 100},
                 vars = {
                     type = "array",
-                    maxItems = 20
+                    maxItems = 20,
+                    item = {
+                        type = "array",
+                    },
                 }
             },
             required = {"http_status"},
@@ -47,7 +50,10 @@ local schema = {
                 percentage = {type = "integer", minimum = 0, maximum = 100},
                 vars = {
                     type = "array",
-                    maxItems = 20
+                    maxItems = 20,
+                    item = {
+                        type = "array",
+                    },
                 }
             },
             required = {"duration"},

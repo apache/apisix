@@ -33,48 +33,6 @@ local lrucache = core.lrucache.new({
 
 local vars_schema = {
     type = "array",
-    items = {
-        type = "array",
-        items = {
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 100
-            },
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 2
-            }
-        },
-        additionalItems = {
-            anyOf = {
-                {type = "string"},
-                {type = "number"},
-                {type = "boolean"},
-                {
-                    type = "array",
-                    items = {
-                        anyOf = {
-                            {
-                                type = "string",
-                                minLength = 1, maxLength = 100
-                            },
-                            {
-                                type = "number"
-                            },
-                            {
-                                type = "boolean"
-                            }
-                        }
-                    },
-                    uniqueItems = true
-                }
-            }
-        },
-        minItems = 0,
-        maxItems = 10
-    }
 }
 
 
@@ -152,6 +110,19 @@ function _M.check_schema(conf)
 
     if not ok then
         return false, err
+    end
+
+    if conf.rules then
+        for _, rule in ipairs(conf.rules) do
+            if rule.match then
+                for _, m in ipairs(rule.match) do
+                    local ok, err = expr.new(m.vars)
+                    if not ok then
+                        return false, "failed to validate the 'vars' expression: " .. err
+                    end
+                end
+            end
+        end
     end
 
     return true
