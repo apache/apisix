@@ -912,7 +912,7 @@ qr/request log: \{"route_id":"1"\}/
 
 
 
-=== TEST 34: add plugin metadata "route_name" and "service_name"
+=== TEST 34: add metadata, service and route, and the service is bound to the route
 --- config
     location /t {
         content_by_lua_block {
@@ -938,27 +938,14 @@ qr/request log: \{"route_id":"1"\}/
                 }]]
                 )
 
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
 
-
-
-=== TEST 35: add service and route, the service is bound to the route
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "name": "my_service",
                     "plugins": {
                         "http-logger": {
@@ -1008,7 +995,7 @@ passed
 
 
 
-=== TEST 36: hit route and route_name and service_name are different
+=== TEST 35: hit route and route_name and service_name are different
 --- request
 GET /hello
 --- response_body
