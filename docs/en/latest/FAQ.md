@@ -374,7 +374,7 @@ make: *** [deps] Error 1
 
 ## How to access APISIX Dashboard through APISIX proxy
 
-1. Keep APISIX and Admin API using different ports (or disable Admin API), for example, do the following configuration in `conf/config.yaml`.
+1. Keep the APISIX proxy port and Admin API port different(or disable Admin API). For example, do the following configuration in `conf/config.yaml`.
 
 The Admin API use a separate port 9180:
 
@@ -384,6 +384,8 @@ apisix:
 ```
 
 2. Add proxy route of APISIX Dashboard:
+
+Note: The APISIX Dashboard service here is listening on `127.0.0.1:9000`.
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

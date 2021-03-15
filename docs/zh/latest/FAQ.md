@@ -322,7 +322,7 @@ make: *** [deps] Error 1
 
 ## 如何通过 APISIX 代理访问 APISIX Dashboard
 
-1、保持 APISIX 与 Admin API 使用不同的端口（或禁用 Admin API），例如，在 `conf/config.yaml` 中做如下配置。
+1、保持 APISIX 代理端口和 Admin API 端口不同（或禁用 Admin API）。例如，在 `conf/config.yaml` 中做如下配置。
 
 Admin API 使用独立端口 9180：
 
@@ -332,6 +332,8 @@ apisix:
 ```
 
 2、添加 APISIX Dashboard 的代理路由：
+
+注意：这里的 APISIX Dashboard 服务正在监听 `127.0.0.1:9000`。
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
