@@ -255,7 +255,7 @@ local function set_upstream(upstream_info, ctx)
 end
 
 
-local function new_rr_obj(weighted_upstreams)
+local function new_rr_obj(weighted_upstreams, route_upstream_id)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
         if upstream_obj.upstream_id then
@@ -268,8 +268,13 @@ local function new_rr_obj(weighted_upstreams)
             -- If the upstream object has only the weight value, it means
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
-            upstream_obj.upstream = "plugin#upstream#is#empty"
-            server_list[upstream_obj.upstream] = upstream_obj.weight
+            if route_upstream_id then
+                server_list[route_upstream_id] = upstream_obj.weight
+            else
+                upstream_obj.upstream = "plugin#upstream#is#empty"
+                server_list[upstream_obj.upstream] = upstream_obj.weight
+            end
+
         end
     end
 
@@ -309,7 +314,9 @@ function _M.access(conf, ctx)
         return
     end
 
-    local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
+    local route_upstream_id = ctx.matched_route.value.upstream_id
+    local rr_up, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_rr_obj,
+                                                weighted_upstreams,route_upstream_id)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
