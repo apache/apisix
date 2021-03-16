@@ -19,6 +19,7 @@ local ngx         = ngx
 local plugin_name = "cors"
 local str_find    = core.string.find
 local re_gmatch   = ngx.re.gmatch
+local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
 
 
@@ -74,7 +75,19 @@ local schema = {
                 "if you set this option to 'true', you can not use '*' for other options.",
             type = "boolean",
             default = false
-        }
+        },
+        allow_origins_by_regex = {
+            type = "array",
+            description =
+                "you can use regex to allow specific origins when no credentials," ..
+                "for example use [.*.test.com] to allow a.test.com and b.test.com",
+            items = {
+                type = "string",
+                minLength = 1,
+                maxLength = 4096,
+            },
+            uniqueItems = true,
+        },
     }
 }
 
@@ -122,6 +135,14 @@ function _M.check_schema(conf)
             return false, "you can not set '*' for other option when 'allow_credential' is true"
         end
     end
+    if conf.allow_origins_by_regex then
+        for i, re_rule in ipairs(conf.allow_origins_by_regex) do
+            local ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
+        end
+    end
 
     return true
 end
@@ -134,7 +155,7 @@ local function set_cors_headers(conf, ctx)
     end
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
-    if ctx.cors_allow_origins ~= "*" then
+    if ctx.cors_allow_origins ~= "*" or next(conf.allow_origins_by_regex) ~= nil then
         core.response.add_header("Vary", "Origin")
     end
 
@@ -152,14 +173,43 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function get_match_domain(allow_origins, req_origin)
-    if allow_origins == req_origin or allow_origins == '*' then
-        return allow_origins
-    else
-        local matched = re_find(req_origin, allow_origins, "jo")
-        if matched then
-            return req_origin
+local function process_with_allow_origins(conf, ctx)
+    local allow_origins = conf.allow_origins
+    local req_origin = core.request.header(ctx, "Origin")
+    if allow_origins == "**" then
+        allow_origins = req_origin or '*'
+    end
+    local multiple_origin, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                create_multiple_origin_cache, conf)
+    if err then
+        return 500, {message = "get multiple origin cache failed: " .. err}
+    end
+
+    if multiple_origin then
+        if multiple_origin[req_origin] then
+            allow_origins = req_origin
+        else
+            return
         end
+    end
+
+    return allow_origins
+end
+
+local function process_with_allow_origins_by_regex(conf, ctx)
+    local req_origin = core.request.header(ctx, "Origin")
+
+    if not conf.allow_origins_by_regex_rules_concat then
+        local allow_origins_by_regex_rules = {}
+        for i, re_rule in ipairs(conf.allow_origins_by_regex) do
+            allow_origins_by_regex_rules[i] = re_rule
+        end
+        conf.allow_origins_by_regex_rules_concat = core.table.concat(allow_origins_by_regex_rules, "|")
+    end
+
+    local matched = re_find(req_origin, conf.allow_origins_by_regex_rules_concat, "jo")
+    if matched then
+        return req_origin
     end
 end
 
@@ -172,32 +222,14 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    local allow_origins = conf.allow_origins
-    local req_origin = core.request.header(ctx, "Origin")
-    if allow_origins == "**" then
-        allow_origins = req_origin or '*'
-    end
-    local multiple_origin, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                                create_multiple_origin_cache, conf)
-    if err then
-        return 500, {message = "get multiple origin cache failed: " .. err}
-    end
-
-    local match_domain
-
-    if multiple_origin then
-        for origin,i in pairs(multiple_origin) do
-            match_domain = get_match_domain(origin, req_origin)
-            if match_domain then
-                break
-            end
-        end
+    local allow_origins
+    if next(conf.allow_origins_by_regex) ~= nil then
+        allow_origins = process_with_allow_origins_by_regex(conf, ctx)
     else
-        match_domain = get_match_domain(allow_origins, req_origin)
+        allow_origins = process_with_allow_origins(conf, ctx)
     end
-
-    if match_domain then
-        ctx.cors_allow_origins = match_domain
+    if allow_origins then
+        ctx.cors_allow_origins = allow_origins
         set_cors_headers(conf, ctx)
     end
 end
