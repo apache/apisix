@@ -44,11 +44,11 @@ if [[ -e $OR_EXEC && "$OR_VER" =~ "1.19" ]]; then
 
     # use the luajit of openresty
     echo "$LUAJIT_BIN $APISIX_LUA $*"
-    $LUAJIT_BIN $APISIX_LUA $*
+    exec $LUAJIT_BIN $APISIX_LUA $*
 elif [[ "$LUA_VERSION" =~ "Lua 5.1" ]]; then
     # OpenResty version is not 1.19, use Lua 5.1 by default
     echo "lua $APISIX_LUA $*"
-    lua $APISIX_LUA $*
+    exec lua $APISIX_LUA $*
 else
     echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19 and Lua 5.1 are recommended before install Apache APISIX."
 fi
