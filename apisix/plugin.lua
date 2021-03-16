@@ -416,6 +416,10 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.value.script = route_conf.value.script
     end
 
+    if route_conf.value.name then
+        new_conf.value.name = route_conf.value.name
+    end
+
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
     return new_conf
 end
