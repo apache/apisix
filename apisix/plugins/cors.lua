@@ -154,10 +154,10 @@ end
 
 local function get_match_domain(allow_origins, req_origin)
     if allow_origins == req_origin or allow_origins == '*' then
-        return req_origin
+        return allow_origins
     else
         local matched = re_find(req_origin, allow_origins, "jo")
-        if matched then 
+        if matched then
             return req_origin
         end
     end
@@ -188,7 +188,7 @@ function _M.header_filter(conf, ctx)
     if multiple_origin then
         for origin,i in pairs(multiple_origin) do
             match_domain = get_match_domain(origin, req_origin)
-            if match_domain then 
+            if match_domain then
                 break
             end
         end
@@ -196,8 +196,10 @@ function _M.header_filter(conf, ctx)
         match_domain = get_match_domain(allow_origins, req_origin)
     end
 
-    ctx.cors_allow_origins = match_domain
-    set_cors_headers(conf, ctx)
+    if match_domain then
+        ctx.cors_allow_origins = match_domain
+        set_cors_headers(conf, ctx)
+    end
 end
 
 return _M
