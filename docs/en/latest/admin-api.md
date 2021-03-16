@@ -65,7 +65,7 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 |---------|---------|----|-----------|----|
 |name     |False |Auxiliary   |Identifies route names.|customer-xxxx|
 |desc     |False |Auxiliary   |route description, usage scenarios, and more.|customer xxxx|
-|uri      |True, can't be used with `uris` |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
+|uri      |True, can't be used with `uris` |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design/router.md) allows more advanced matching, see [Router](architecture-design/router.md) for more.|"/hello"|
 |uris     |True, can't be used with `uri`|Match Rules|The `uri` in the form of a non-empty list means that multiple different uris are allowed, and match any one of them.|["/hello", "/word"]|
 |host     |False, can't be used with `hosts` |Match Rules|Currently requesting a domain name, such as `foo.com`; PAN domain names such as `*.foo.com` are also supported.|"foo.com"|
 |hosts    |False, can't be used with `host` |Match Rules|The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
@@ -75,12 +75,12 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 |priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute `priority`. Larger value means higher priority. The default value is 0.|priority = 10|
 |vars       |False  |Match Rules |A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
-|plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
-|script  |False |Script|See [Script](architecture-design.md#script) for more ||
-|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
-|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
-|service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
-|plugin_config_id|False, can't be used with `script` |Plugin|Binded plugin config object, see [Plugin Config](architecture-design.md#plugin-config) for more ||
+|plugins  |False |Plugin|See [Plugin](architecture-design/plugin.md) for more ||
+|script  |False |Script|See [Script](architecture-design/script.md) for more ||
+|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more||
+|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more ||
+|service_id|False |Service|Binded Service configuration, see [Service](architecture-design/service.md) for more ||
+|plugin_config_id|False, can't be used with `script` |Plugin|Binded plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more ||
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
@@ -297,9 +297,9 @@ Return response from etcd currently.
 
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
-|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
-|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
+|plugins  |False |Plugin|See [Plugin](architecture-design/plugin.md) for more ||
+|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more||
+|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more ||
 |name     |False |Auxiliary   |Identifies service names.|customer-xxxx|
 |desc     |False |Auxiliary   |service usage scenarios, and more.|customer xxxx|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
@@ -444,7 +444,7 @@ Return response from etcd currently.
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
 |username|True|Name|Consumer name||
-|plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
+|plugins  |False |Plugin|See [Plugin](architecture-design/plugin.md) for more ||
 |desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
@@ -761,7 +761,7 @@ Config Example:
 
 |Parameter|Required|Description|Example|
 |---------|---------|-----------|----|
-|plugins     |True |See [Plugin](architecture-design.md#plugin)||
+|plugins     |True |See [Plugin](architecture-design/plugin.md)||
 |create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
@@ -786,7 +786,7 @@ Config Example:
 
 |Parameter|Required|Description|Example|
 |---------|---------|-----------|----|
-|plugins    |True |See [Plugin](architecture-design.md#plugin)||
+|plugins    |True |See [Plugin](architecture-design/plugin.md)||
 |desc       |False|description, usage scenarios, and more.|customer xxxx|
 |labels     |False|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
