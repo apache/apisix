@@ -40,4 +40,11 @@ public interface DemoService {;
      * @return Map<String, Object></> pass to response http
      **/
     Map<String, Object> timeout(Map<String, Object> context);
+
+    /**
+     * test for non-string status code
+     * @param context pass http infos
+     * @return Map<String, Object></> pass to response http
+     **/
+    Map<String, Object> badStatus(Map<String, Object> context);
 }
