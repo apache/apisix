@@ -125,7 +125,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
   - [Stand-docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
-  - [Global Rule](docs/en/latest/architecture-design.md#global-rule): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
+  - [Global Rule](docs/en/latest/architecture-design/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
   - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
