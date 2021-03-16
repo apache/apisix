@@ -65,6 +65,7 @@ dependencies = {
     "luasocket = 3.0rc1-2",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
+    "penlight = 1.9.2-1",
 }
 
 build = {

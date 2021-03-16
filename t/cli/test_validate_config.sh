@@ -33,3 +33,17 @@ if ! echo "$out" | grep 'dns_resolver_valid should be a number'; then
 fi
 
 echo "passed: dns_resolver_valid should be a number"
+
+echo '
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+' > conf/config.yaml
+
+out=$(make run 2>&1)
+if echo "$out" | grep 'no such file'; then
+    echo "failed: find the certificate correctly"
+    exit 1
+fi
+
+echo "passed: find the certificate correctly"
