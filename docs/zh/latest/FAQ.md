@@ -319,3 +319,36 @@ You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSS
 Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
+
+## 如何通过 APISIX 代理访问 APISIX Dashboard
+
+1、保持 APISIX 代理端口和 Admin API 端口不同（或禁用 Admin API）。例如，在 `conf/config.yaml` 中做如下配置。
+
+Admin API 使用独立端口 9180：
+
+```yaml
+apisix:
+  port_admin: 9180            # use a separate port
+```
+
+2、添加 APISIX Dashboard 的代理路由：
+
+注意：这里的 APISIX Dashboard 服务正在监听 `127.0.0.1:9000`。
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"apisix_proxy_dashboard",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":9000,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+```
