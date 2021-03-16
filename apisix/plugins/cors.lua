@@ -19,6 +19,7 @@ local ngx         = ngx
 local plugin_name = "cors"
 local str_find    = core.string.find
 local re_gmatch   = ngx.re.gmatch
+local re_find = ngx.re.find
 
 
 local lrucache = core.lrucache.new({
@@ -151,6 +152,17 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
+local function get_match_domain(allow_origins, req_origin)
+    if allow_origins == req_origin or allow_origins == '*' then
+        return req_origin
+    else
+        local matched = re_find(req_origin, allow_origins, "jo")
+        if matched then 
+            return req_origin
+        end
+    end
+end
+
 
 function _M.rewrite(conf, ctx)
     if ctx.var.request_method == "OPTIONS" then
@@ -171,15 +183,20 @@ function _M.header_filter(conf, ctx)
         return 500, {message = "get multiple origin cache failed: " .. err}
     end
 
+    local match_domain
+
     if multiple_origin then
-        if multiple_origin[req_origin] then
-            allow_origins = req_origin
-        else
-            return
+        for origin,i in pairs(multiple_origin) do
+            match_domain = get_match_domain(origin, req_origin)
+            if match_domain then 
+                break
+            end
         end
+    else
+        match_domain = get_match_domain(allow_origins, req_origin)
     end
 
-    ctx.cors_allow_origins = allow_origins
+    ctx.cors_allow_origins = match_domain
     set_cors_headers(conf, ctx)
 end
 
