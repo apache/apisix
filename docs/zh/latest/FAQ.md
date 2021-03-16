@@ -308,7 +308,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](doc/zh-cn/install-dependencies.md) 文档进行安装。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps
