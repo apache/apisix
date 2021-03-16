@@ -127,7 +127,7 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
   - Control de versión: Soporta retroceso o deshacer de operaciones.
   - CLI: comenzar\detenerse\recargar APISIX usando la línea de comando.
   - [Modo stand-alone (por su cuenta)](stand-alone.md): Soporta cargar reglas de ruta desde un archivo local yaml, siendo más amigable que kubernetes(k8s).
-  - [Regla global](architecture-design.md#global-rule): Permite ejecutar cualquier plugin para todas las solicitudes, como: limit rate, IP filter etc.
+  - [Regla global](architecture-design/global-rule.md): Permite ejecutar cualquier plugin para todas las solicitudes, como: limit rate, IP filter etc.
   - Alto desempeño: El QPS de un sólo núcleo alcanza 18k con un retraso promedio de menos de 0.2 milisegundos.
   - [Fault Injection](plugins/fault-injection.md)
   - [REST Admin API](admin-api.md): Al usar REST Admin API para controlar Apache APISIX, el cual solamente permite acceso 127.0.0.1 por defecto, usted puede modificar el campo `allow_admin` en `conf/config.yaml` para especificar una lista de IPs a los que se les permite llamar el Admin API. Nótese también que el Admin API utiliza autentificación de clave (key auth) para verificar la identidad de quien llama. **El campo `admin_key` en `conf/config.yaml` debe ser modificado antes del despliegue para asegurar la seguridad**.
