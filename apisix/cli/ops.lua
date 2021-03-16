@@ -22,6 +22,7 @@ local ngx_tpl = require("apisix.cli.ngx_tpl")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
+local pl_path = require("pl.path")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -260,10 +261,18 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
-        local ok, err = util.is_file_exist(yaml_conf.apisix.ssl.ssl_trusted_certificate)
+        local cert_path = yaml_conf.apisix.ssl.ssl_trusted_certificate
+        -- During validation, the path is relative to PWD
+        -- When Nginx starts, the path is relative to conf
+        -- Therefore we need to check the absolute version instead
+        cert_path = pl_path.abspath(cert_path)
+
+        local ok, err = util.is_file_exist(cert_path)
         if not ok then
             util.die(err, "\n")
         end
+
+        yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
     end
 
     local admin_api_mtls = yaml_conf.apisix.admin_api_mtls
