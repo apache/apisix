@@ -202,6 +202,9 @@ etcd:
   # user: root                    # root username for etcd
   # password: 5tHkHhYkjr6cQY      # root password for etcd
   tls:
+    # cert: /path/to/cert         # path of certificate used by the etcd client
+    # key: /path/to/key           # path of key used by the etcd client
+
     verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
 

@@ -121,6 +121,22 @@ jobs:
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
+      - name: Running etcd server with mTLS
+        run: |
+            sudo docker run -d --rm --name etcd_mtls \
+            -p 22379:22379 -p 22380:22380 \
+            -e ALLOW_NONE_AUTHENTICATION=yes \
+            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_CERT_FILE=/certs/mtls_server.crt \
+            -e ETCD_KEY_FILE=/certs/mtls_server.key \
+            -e ETCD_CLIENT_CERT_AUTH=true \
+            -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
+            -e GITHUB_ACTIONS=true \
+            -e CI=true \
+            -v ${{ github.workspace }}/t/certs:/certs \
+            bitnami/etcd:3.4.0
+
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \

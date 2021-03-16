@@ -110,8 +110,20 @@ local function request(url, yaml_conf)
 
     if str_sub(url.url, 1, 8) == "https://" then
         local verify = "peer"
-        if yaml_conf.etcd.tls and yaml_conf.etcd.tls.verify == false then
-            verify = "none"
+        if yaml_conf.etcd.tls then
+            local cfg = yaml_conf.etcd.tls
+
+            if cfg.verify == false then
+                verify = "none"
+            end
+
+            url.certificate = cfg.cert
+            url.key = cfg.key
+
+            local apisix_ssl = yaml_conf.apisix.ssl
+            if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+                url.cafile = apisix_ssl.ssl_trusted_certificate
+            end
         end
 
         url.verify = verify
