@@ -135,3 +135,25 @@ upstreams:
 --- error_log
 upstream timed out
 --- error_code: 504
+
+
+
+=== TEST 4: upstream return non-string status code
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    plugins:
+        dubbo-proxy:
+            service_name: org.apache.dubbo.backend.DemoService
+            service_version: 0.0.0
+            method: badStatus
+    upstream_id: 1
+upstreams:
+  - nodes:
+        "127.0.0.1:20880": 1
+    type: roundrobin
+    id: 1
+#END
+--- response_body
+ok
