@@ -20,11 +20,12 @@ local core               = require("apisix.core")
 local resty_consul       = require('resty.consul')
 local cjson              = require('cjson')
 local http               = require('resty.http')
+local util               = require("apisix.cli.util")
 local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
 local unpack             = unpack
-local ngx_re_match      = ngx.re.match
+local ngx_re_match       = ngx.re.match
 local tonumber           = tonumber
 local pairs              = pairs
 local ipairs             = ipairs
@@ -33,13 +34,14 @@ local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local ngx_decode_base64  = ngx.decode_base64
 local json_delay_encode  = core.json.delay_encode
-local cjson_null          = cjson.null
+local cjson_null         = cjson.null
 
 local applications = core.table.new(0, 5)
 local default_service
 local default_weight
 local default_prefix_rule
 local skip_keys_map = core.table.new(0, 1)
+local dump_params
 
 local events
 local events_list
@@ -80,6 +82,14 @@ local schema = {
             minItems = 1,
             items = {
                 type = "string",
+            }
+        },
+        dump = {
+            type = "object",
+            properties = {
+                path = {type = "string"},
+                load_on_init = {type = "boolean", default = true},
+                expire = {type = "integer", default = 0},
             }
         },
         default_service = {
@@ -230,6 +240,70 @@ local function update_application(server_name_prefix, data)
 end
 
 
+local function read_dump_srvs()
+    local data, err = util.read_file(dump_params.path)
+    if not data then
+        log.warn("read dump file get error: ", err)
+        return
+    end
+
+    core.log.info("read dump file: ", data)
+    data = util.trim(data)
+    if #data == 0 then
+        core.log.error("dump file is empty")
+        return
+    end
+
+    local entity, err  = core.json.decode(data)
+    if err then
+        core.log.error("decoded dump data got error: ", err, ", file content: ", data)
+        return
+    end
+
+    if not entity.services or not entity.last_update then
+        core.log.error("decoded dump data miss fields, file content: ", data)
+        return
+    end
+
+    if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < ngx.time() then
+       core.log.warn("dump file: ", dump_params.path,
+         " had expired, ignored it")
+        return
+    end
+
+    applications = entity.services
+    core.log.info("load dump file into memory success")
+end
+
+
+local function write_dump_srvs()
+    local entity = {
+        services = applications,
+        last_update = ngx.time(),
+        expire = dump_params.expire, -- later need handle it
+    }
+    local data = core.json.encode(entity)
+    local succ, err =  util.write_file(dump_params.path, data)
+    if not succ then
+        core.log.error("write dump into file got error: ", err)
+    end
+end
+
+
+local function show_dump_file()
+    if not dump_params then
+        return 200, "dump params is nil"
+    end
+
+    local data, err = util.read_file(dump_params.path)
+    if not data then
+        return 200, err
+    end
+
+    return 200, data
+end
+
+
 function _M.connect(premature, consul_server)
     if premature then
         return
@@ -283,6 +357,10 @@ function _M.connect(premature, consul_server)
                 log.error("post_event failure with ", events_list._source,
                     ", update application error: ", err)
             end
+
+            if dump_params then
+                ngx_timer_at(0, write_dump_srvs)
+            end
         end
     end
 
@@ -319,7 +397,7 @@ local function format_consul_params(consul_conf)
         if scheme ~= "http" then
             return nil, "only support consul http schema address, eg: http://address:port"
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
-            return nil, "invalid consul server address, the valid format: http://address:port"
+            return nil, "invald consul server address, the valid format: http://address:port"
         end
 
         core.table.insert(consul_server_list, {
@@ -354,6 +432,20 @@ function _M.init_worker()
     if not ok then
         error("invalid consul_kv configuration: " .. err)
         return
+    end
+
+    if consul_conf.dump then
+      local dump = consul_conf.dump
+      if not dump.path or #dump.path == 0 then
+          error("invalid consul_kv dump path")
+          return
+      end
+
+      dump_params = consul_conf.dump
+
+      if dump.load_on_init then
+          read_dump_srvs()
+      end
     end
 
     events = require("resty.worker.events")
@@ -408,6 +500,17 @@ end
 
 function _M.dump_data()
     return {config = local_conf.discovery.consul_kv, services = applications}
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/show_dump_file"},
+            handler = show_dump_file,
+        }
+    }
 end
 
 
