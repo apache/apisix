@@ -21,6 +21,8 @@ local str_find    = core.string.find
 local re_gmatch   = ngx.re.gmatch
 local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
+local ipairs = ipairs
+local next = next
 
 
 local lrucache = core.lrucache.new({
@@ -150,12 +152,13 @@ end
 
 local function set_cors_headers(conf, ctx)
     local allow_methods = conf.allow_methods
+    local allow_origins_by_regex = conf.allow_origins_by_regex or {}
     if allow_methods == "**" then
         allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
     end
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
-    if ctx.cors_allow_origins ~= "*" or next(conf.allow_origins_by_regex) ~= nil then
+    if ctx.cors_allow_origins ~= "*" or next(allow_origins_by_regex) ~= nil then
         core.response.add_header("Vary", "Origin")
     end
 
@@ -197,7 +200,8 @@ local function process_with_allow_origins(conf, ctx)
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx)
-    if conf.allow_origins_by_regex == nil  or next(conf.allow_origins_by_regex) == nil then
+    local allow_origins_by_regex = conf.allow_origins_by_regex or {}
+    if next(allow_origins_by_regex) == nil then
         return
     end
     local req_origin = core.request.header(ctx, "Origin")
