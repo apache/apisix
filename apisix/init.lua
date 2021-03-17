@@ -391,7 +391,6 @@ function _M.http_access_phase()
     -- used for the traffic-split plugin
     if api_ctx.upstream_id then
         up_id = api_ctx.upstream_id
-        api_ctx.upstream_id = nil
     end
 
     if up_id then
