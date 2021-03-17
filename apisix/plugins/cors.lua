@@ -197,6 +197,9 @@ local function process_with_allow_origins(conf, ctx)
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx)
+    if conf.allow_origins_by_regex == nil  or next(conf.allow_origins_by_regex) == nil then
+        return
+    end
     local req_origin = core.request.header(ctx, "Origin")
 
     if not conf.allow_origins_by_regex_rules_concat then
@@ -204,7 +207,8 @@ local function process_with_allow_origins_by_regex(conf, ctx)
         for i, re_rule in ipairs(conf.allow_origins_by_regex) do
             allow_origins_by_regex_rules[i] = re_rule
         end
-        conf.allow_origins_by_regex_rules_concat = core.table.concat(allow_origins_by_regex_rules, "|")
+        conf.allow_origins_by_regex_rules_concat = core.table.concat(
+            allow_origins_by_regex_rules, "|")
     end
 
     local matched = re_find(req_origin, conf.allow_origins_by_regex_rules_concat, "jo")
@@ -222,11 +226,11 @@ end
 
 
 function _M.header_filter(conf, ctx)
+    -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
     local allow_origins
-    if next(conf.allow_origins_by_regex) ~= nil then
+    allow_origins = process_with_allow_origins(conf, ctx)
+    if not allow_origins then
         allow_origins = process_with_allow_origins_by_regex(conf, ctx)
-    else
-        allow_origins = process_with_allow_origins(conf, ctx)
     end
     if allow_origins then
         ctx.cors_allow_origins = allow_origins
