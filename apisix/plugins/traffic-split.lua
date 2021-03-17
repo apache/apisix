@@ -226,7 +226,7 @@ local function set_upstream(upstream_info, ctx)
 end
 
 
-local function new_rr_obj(weighted_upstreams, route_upstream_id)
+local function new_rr_obj(weighted_upstreams)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
         if upstream_obj.upstream_id then
@@ -239,12 +239,8 @@ local function new_rr_obj(weighted_upstreams, route_upstream_id)
             -- If the upstream object has only the weight value, it means
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
-            if route_upstream_id then
-                server_list[route_upstream_id] = upstream_obj.weight
-            else
-                upstream_obj.upstream = "plugin#upstream#is#empty"
-                server_list[upstream_obj.upstream] = upstream_obj.weight
-            end
+            upstream_obj.upstream = "plugin#upstream#is#empty"
+            server_list[upstream_obj.upstream] = upstream_obj.weight
 
         end
     end
@@ -285,9 +281,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    local route_upstream_id = ctx.matched_route.value.upstream_id
     local rr_up, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_rr_obj,
-                                                weighted_upstreams,route_upstream_id)
+                                                weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
@@ -298,13 +293,13 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
-        ctx.matched_route.value.upstream_id = upstream
+        ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
     end
 
+    ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
-    ctx.matched_route.value.upstream_id = nil
     return
 end
 

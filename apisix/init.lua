@@ -387,6 +387,12 @@ function _M.http_access_phase()
     end
 
     local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
