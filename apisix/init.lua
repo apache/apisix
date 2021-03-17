@@ -389,9 +389,9 @@ function _M.http_access_phase()
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
-    if route.value.upstream_id_tmp then
-        up_id = route.value.upstream_id_tmp
-        route.value.upstream_id_tmp = nil
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+        api_ctx.upstream_id = nil
     end
 
     if up_id then

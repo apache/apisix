@@ -293,12 +293,12 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
-        ctx.matched_route.value.upstream_id_tmp = upstream
+        ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
     end
 
-    ctx.matched_route.value.upstream_id_tmp = nil
+    ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
     return
 end
