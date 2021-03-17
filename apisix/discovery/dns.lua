@@ -53,6 +53,10 @@ function _M.nodes(service_name)
     for i, r in ipairs(records) do
         if r.address then
             nodes[i] = {host = r.address, weight = r.weight or 1, port = r.port or port}
+            if r.priority then
+                -- for SRV record, nodes with lower priority are chosen first
+                nodes[i].priority = -r.priority
+            end
         end
     end
 
