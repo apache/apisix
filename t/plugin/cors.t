@@ -759,6 +759,7 @@ qr/failed to check the configuration of plugin cors err: you can not/
 --- no_error_log
 
 
+
 === TEST 28: set route (regex specified)
 --- config
     location /t {
@@ -823,6 +824,7 @@ Access-Control-Allow-Credentials: true
 [error]
 
 
+
 === TEST 30: set route (regex specified not match)
 --- config
     location /t {
@@ -884,5 +886,3 @@ Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
-
-
