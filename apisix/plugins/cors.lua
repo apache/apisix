@@ -82,7 +82,7 @@ local schema = {
             type = "array",
             description =
                 "you can use regex to allow specific origins when no credentials," ..
-                "for example use [.*.test.com] to allow a.test.com and b.test.com",
+                "for example use [.*\\.test.com] to allow a.test.com and b.test.com",
             items = {
                 type = "string",
                 minLength = 1,
@@ -200,7 +200,7 @@ local function process_with_allow_origins(conf, ctx)
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx)
-    local allow_origins_by_regex = conf.allow_origins_by_regex
+    local allow_origins_by_regex = conf.allow_origins_by_regex or {}
     if next(allow_origins_by_regex) == nil then
         return
     end
@@ -215,6 +215,7 @@ local function process_with_allow_origins_by_regex(conf, ctx)
             allow_origins_by_regex_rules, "|")
     end
 
+    -- core.log.warn("regex: ", conf.allow_origins_by_regex_rules_concat, "\n ")
     local matched = re_find(req_origin, conf.allow_origins_by_regex_rules_concat, "jo")
     if matched then
         return req_origin
