@@ -177,7 +177,7 @@ local function set_cors_headers(conf, ctx)
 end
 
 local function process_with_allow_origins(conf, ctx)
-    local allow_origins = conf.allow_origins
+    local allow_origins = conf.allow_origins or {}
     local req_origin = core.request.header(ctx, "Origin")
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
@@ -200,7 +200,7 @@ local function process_with_allow_origins(conf, ctx)
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx)
-    local allow_origins_by_regex = conf.allow_origins_by_regex or {}
+    local allow_origins_by_regex = conf.allow_origins_by_regex
     if next(allow_origins_by_regex) == nil then
         return
     end
@@ -222,6 +222,11 @@ local function process_with_allow_origins_by_regex(conf, ctx)
 end
 
 
+local function match_origins(ctx, allow_origins)
+    return core.request.header(ctx, "Origin") == allow_origins or allow_origins == '*'
+end
+
+
 function _M.rewrite(conf, ctx)
     if ctx.var.request_method == "OPTIONS" then
         return 200
@@ -233,7 +238,7 @@ function _M.header_filter(conf, ctx)
     -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
     local allow_origins
     allow_origins = process_with_allow_origins(conf, ctx)
-    if not allow_origins then
+    if not match_origins(ctx,allow_origins) then
         allow_origins = process_with_allow_origins_by_regex(conf, ctx)
     end
     if allow_origins then
