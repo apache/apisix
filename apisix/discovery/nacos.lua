@@ -18,7 +18,6 @@
 local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
-local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
@@ -171,16 +170,18 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = core.table.new(0, 0)
-    local data = get_url(base_uri,nil,service_list_path)
+    local data = get_url(base_uri,basic_auth,service_list_path)
     if tostring(data.count) == "0" then
         applications = up_apps
         return
     end
 
     for _, service_name in ipairs(data.doms) do
-        data = get_url(base_uri,nil,instance_list_path .. service_name)
+        data = get_url(base_uri,basic_auth,instance_list_path .. service_name)
         for _, host in ipairs(data.hosts) do
-            if tostring(host.valid) == 'true' and tostring(host.healthy) == 'true' and tostring(host.enabled) == 'true' then
+            if tostring(host.valid) == 'true' and
+                    tostring(host.healthy) == 'true' and
+                    tostring(host.enabled) == 'true' then
                 local nodes = up_apps[service_name]
                 if not nodes then
                     nodes = core.table.new(0, 0)
@@ -224,8 +225,10 @@ function _M.init_worker()
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.nacos.fetch_interval or 30
     log.info("fetch_interval:", fetch_interval, ".")
-    service_list_path = local_conf.discovery.nacos.service_list_path or 'ns/service/list?pageNo=1&pageSize=20'
-    instance_list_path = local_conf.discovery.nacos.instance_list_path or 'ns/instance/list?serviceName='
+    service_list_path = local_conf.discovery.nacos.service_list_path or
+            'ns/service/list?pageNo=1&pageSize=20'
+    instance_list_path = local_conf.discovery.nacos.instance_list_path or
+            'ns/instance/list?serviceName='
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
