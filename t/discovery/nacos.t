@@ -29,7 +29,7 @@ apisix:
 discovery:
   nacos:
       host:
-        - "http://192.168.33.1:8848"
+        - "http://127.0.0.1:8848"
       prefix: "/nacos/v1/"
       fetch_interval: 30
       weight: 100
@@ -44,7 +44,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: get APISIX-NACOS info from NACOS--no data
+=== TEST 1: get APISIX-NACOS info from NACOS
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -57,41 +57,37 @@ routes:
 
 #END
 --- request
-GET /nacos/v1/ns/service/list?pageNo=1&pageSize=20
+GET /nacos/apps/APISIX-NACOS
 --- response_body_like
-{"doms":[],"count":0}
---- request
-GET /nacos/v1/ns/instance/list?serviceName=APISIX-NACOS
---- response_body_like
-{"name":"DEFAULT_GROUP@@APISIX-NACOS","clusters":"","cacheMillis":3000,"hosts":[]}
+.*<name>APISIX-NACOS</name>.*
 --- error_log
+use config_center: yaml
+default_weight:80.
+fetch_interval:10.
+nacos uri:http://127.0.0.1:8848/nacos/v1/.
+connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 --- no_error_log
 [error]
 
 
-=== TEST 2: get APISIX-NACOS info from NACOS--has data
+
+=== TEST 2: error service_name name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
     uri: /nacos/*
     upstream:
-      service_name: APISIX-NACOS
+      service_name: APISIX-NACOS-DEMO
       discovery_type: nacos
       type: roundrobin
 
 #END
 --- request
-GET /nacos/v1/ns/service/list?pageNo=1&pageSize=20
---- response_body_like
-{"doms":["APISIX-NACOS"],"count":1}
---- request
-GET /nacos/v1/ns/instance/list?serviceName=APISIX-NACOS
---- response_body_like
-{"hosts":[{"ip":"192.168.136.1","port":9001,"valid":true,"healthy":true,"marked":false,"instanceId":"192.168.136.1#9001#DEFAULT#DEFAULT_GROUP@@APISIX-NACOS","metadata":{"preserved.register.source":"SPRING_CLOUD"},"enabled":true,"weight":1.0,"clusterName":"DEFAULT","serviceName":"APISIX-NACOS","ephemeral":true}],"dom":"APISIX-NACOS","name":"DEFAULT_GROUP@@APISIX-NACOS","cacheMillis":3000,"lastRefTime":1615798166616,"checksum":"9db71c472ce368e374ebafb33aa829ef","useSpecifiedURL":false,"clusters":"","env":"","metadata":{}}
---- error_log
---- no_error_log
-[error]
+GET /nacos/apps/APISIX-NACOS
+--- error_code: 503
+--- error_log eval
+qr/.* no valid upstream node.*/
 
 
 
