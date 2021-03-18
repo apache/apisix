@@ -296,7 +296,7 @@ end
 
 local function show_dump_file()
     if not dump_params then
-        return 500, "dump params is nil"
+        return 503, "dump params is nil"
     end
 
     local data, err = util.read_file(dump_params.path)

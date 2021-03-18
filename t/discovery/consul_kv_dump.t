@@ -364,4 +364,4 @@ discovery:
 #END
 --- request
 GET /v1/discovery/consul_kv/show_dump_file
---- error_code: 500
+--- error_code: 503
