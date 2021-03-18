@@ -440,12 +440,7 @@ function _M.init_worker()
 
     if consul_conf.dump then
       local dump = consul_conf.dump
-      if not dump.path or #dump.path == 0 then
-          error("invalid consul_kv dump path")
-          return
-      end
-
-      dump_params = consul_conf.dump
+      dump_params = dump
 
       if dump.load_on_init then
           read_dump_srvs()
