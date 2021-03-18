@@ -266,7 +266,10 @@ local function read_dump_srvs()
         return
     end
 
-    if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < ngx.time() then
+    local now_time = ngx.time()
+    core.log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
+        dump_params.expire, ", now_time: ", now_time)
+    if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < now_time then
        core.log.warn("dump file: ", dump_params.path,
          " had expired, ignored it")
         return

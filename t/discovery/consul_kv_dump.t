@@ -312,7 +312,7 @@ discovery:
     dump:
       path: "/tmp/consul_kv.dump"
       load_on_init: true
-      expire: 2
+      expire: 1
 #END
 --- apisix_yaml
 routes:
@@ -344,3 +344,24 @@ dump file: /tmp/consul_kv.dump had expired, ignored it
 GET /t
 --- response_body
 success
+
+
+
+=== TEST 12: test 500 show_dump_file
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+  enable_control: true
+
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:38500"
+    dump:
+      path: "/tmp/consul_kv.dump"
+#END
+--- request
+GET /v1/discovery/consul_kv/show_dump_file
+--- error_code: 500
