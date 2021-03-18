@@ -1,5 +1,5 @@
 ---
-title: 双向认证
+title: Admin API TLS 双向认证
 ---
 
 <!--
@@ -35,11 +35,10 @@ title: 双向认证
   port_admin: 9180
   https_admin: true
 
-  mtls:
-    enable: true               # Enable or disable mTLS. Enable depends on `port_admin` and `https_admin`.
-    ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed CA cert.
-    server_key: "/data/certs/mtls_server.key"          # Path of your self-signed server side cert.
-    server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.
+  admin_api_mtls:
+    admin_ssl_ca_cert: "/data/certs/mtls_ca.crt"              # Path of your self-signed ca cert.
+    admin_ssl_cert: "/data/certs/mtls_server.crt"             # Path of your self-signed server side cert.
+    admin_ssl_cert_key: "/data/certs/mtls_server.key"         # Path of your self-signed server side key.
 ```
 
 3. 执行命令:
