@@ -38,28 +38,23 @@ title: 插件开发
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 __apisix/cli/ngx_tpl.lua__ 文
-件里面进行申明，例如：
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在[自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
 
-```nginx
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict upstream-healthcheck 10m;
-    lua_shared_dict worker-events        10m;
-
-    # for openid-connect plugin
-    lua_shared_dict discovery             1m; # cache for discovery metadata documents
-    lua_shared_dict jwks                  1m; # cache for JWKs
-    lua_shared_dict introspection        10m; # cache for JWT verification results
+```yaml
+# put this in config.yaml:
+nginx_config:
+    http_configuration_snippet: |
+        # for openid-connect plugin
+        lua_shared_dict discovery             1m; # cache for discovery metadata documents
+        lua_shared_dict jwks                  1m; # cache for JWKs
+        lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
 插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
 注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
 可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
-插件机制，我们不建议这样做，除非你已经对代码完全掌握。
+插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 
 ## 插件命名与配置
 
