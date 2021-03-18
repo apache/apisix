@@ -301,7 +301,7 @@ local function show_dump_file()
 
     local data, err = util.read_file(dump_params.path)
     if not data then
-        return 500, err
+        return 503, err
     end
 
     return 200, data
