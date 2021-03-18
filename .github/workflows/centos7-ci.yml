@@ -96,6 +96,11 @@ jobs:
         docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server:8.3.0-es6
         docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
         docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
+        rm -rf nacos-docker
+        git clone --depth 1 https://github.com/benx203/nacos-docker.git
+        cd nacos-docker
+        docker-compose -f example/standalone-test.yaml up
+        nohup java -jar example/nacos-gateway-provider-example-2.2.6-SNAPSHOT.jar --spring.application.name=APISIX-NACOS  > /dev/null 2>&1 &
 
     - name: Install dependencies
       run: |

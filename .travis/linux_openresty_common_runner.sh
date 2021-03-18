@@ -42,6 +42,12 @@ before_install() {
     # start consul servers
     docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
     docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
+    # start nacos server
+    rm -rf nacos-docker
+    git clone --depth 1 https://github.com/benx203/nacos-docker.git
+    cd nacos-docker
+    docker-compose -f example/standalone-test.yaml up
+    nohup java -jar example/nacos-gateway-provider-example-2.2.6-SNAPSHOT.jar --spring.application.name=APISIX-NACOS  > /dev/null 2>&1 &
 }
 
 do_install() {

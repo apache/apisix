@@ -46,8 +46,10 @@ local schema = {
             },
         },
         fetch_interval = {type = "integer", minimum = 1, default = 30},
-        prefix = {type = "string"},
-        weight = {type = "integer", minimum = 0},
+        prefix = {type = "string", default = "/nacos/v1/"},
+        service_list_path = {type = "string", default = "ns/service/list?pageNo=1&pageSize=20"},
+        instance_list_path = {type = "string", default = "ns/instance/list?serviceName="},
+        weight = {type = "integer", minimum = 1, default = 100},
         timeout = {
             type = "object",
             properties = {
@@ -100,7 +102,7 @@ end
 local function request(request_uri, basic_auth, method, path, query, body)
     log.info("nacos uri:", request_uri, ".")
     local url = request_uri .. path
-    local headers = core.table.new(0, 5)
+    local headers = core.table.new(0, 0)
     headers['Connection'] = 'Keep-Alive'
     headers['Accept'] = 'application/json'
 
@@ -140,20 +142,17 @@ end
 local function get_url(request_url,basic_auth,path)
     local res, err = request(request_url, basic_auth, "GET", path)
     if not res then
-        log.error("failed to fetch registry", err)
-        return
+        return nil, err
     end
 
     if not res.body or res.status ~= 200 then
-        log.error("failed to fetch registry, status = ", res.status)
-        return
+        return nil, "status = " .. res.status
     end
 
     local json_str = res.body
     local data, err = core.json.decode(json_str)
     if not data then
-        log.error("invalid response body: ", json_str, " err: ", err)
-        return
+        return nil, err
     end
     return data
 end
@@ -170,14 +169,24 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = core.table.new(0, 0)
-    local data = get_url(base_uri,basic_auth,service_list_path)
+    local data, err = get_url(base_uri,basic_auth, service_list_path)
+    if err then
+        log.error("get_url:" .. service_list_path .. " err:" .. err)
+        return
+    end
+
     if tostring(data.count) == "0" then
         applications = up_apps
         return
     end
 
     for _, service_name in ipairs(data.doms) do
-        data = get_url(base_uri,basic_auth,instance_list_path .. service_name)
+        data, err = get_url(base_uri, basic_auth, instance_list_path .. service_name)
+        if err then
+            log.error("get_url:" .. instance_list_path .. " err:" .. err)
+            return
+        end
+
         for _, host in ipairs(data.hosts) do
             if tostring(host.valid) == 'true' and
                     tostring(host.healthy) == 'true' and
@@ -221,17 +230,18 @@ function _M.init_worker()
         error("invalid nacos configuration: " .. err)
         return
     end
-    default_weight = local_conf.discovery.nacos.weight or 100
+    default_weight = local_conf.discovery.nacos.weight
     log.info("default_weight:", default_weight, ".")
-    local fetch_interval = local_conf.discovery.nacos.fetch_interval or 30
+    local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info("fetch_interval:", fetch_interval, ".")
-    service_list_path = local_conf.discovery.nacos.service_list_path or
-            'ns/service/list?pageNo=1&pageSize=20'
-    instance_list_path = local_conf.discovery.nacos.instance_list_path or
-            'ns/instance/list?serviceName='
+    service_list_path = local_conf.discovery.nacos.service_list_path
+    instance_list_path = local_conf.discovery.nacos.instance_list_path
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 
+function _M.dump_data()
+    return {config = local_conf.discovery.nacos, services = applications}
+end
 
 return _M

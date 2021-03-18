@@ -49,7 +49,7 @@ __DATA__
 --- apisix_yaml
 routes:
   -
-    uri: /nacos/*
+    uri: /echo/*
     upstream:
       service_name: APISIX-NACOS
       discovery_type: nacos
@@ -57,18 +57,9 @@ routes:
 
 #END
 --- request
-GET /nacos/apps/APISIX-NACOS
+GET /echo/APISIX-NACOS
 --- response_body_like
-.*<name>APISIX-NACOS</name>.*
---- error_log
-use config_center: yaml
-default_weight:80.
-fetch_interval:10.
-nacos uri:http://127.0.0.1:8848/nacos/v1/.
-connect_timeout:1500, send_timeout:1500, read_timeout:1500.
---- no_error_log
-[error]
-
+.*APISIX-NACOS.*
 
 
 === TEST 2: error service_name name
@@ -76,7 +67,7 @@ connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 --- apisix_yaml
 routes:
   -
-    uri: /nacos/*
+    uri: /echo/*
     upstream:
       service_name: APISIX-NACOS-DEMO
       discovery_type: nacos
@@ -84,7 +75,7 @@ routes:
 
 #END
 --- request
-GET /nacos/apps/APISIX-NACOS
+GET /echo/APISIX-NACOS
 --- error_code: 503
 --- error_log eval
 qr/.* no valid upstream node.*/
