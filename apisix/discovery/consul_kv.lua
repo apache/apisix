@@ -87,10 +87,11 @@ local schema = {
         dump = {
             type = "object",
             properties = {
-                path = {type = "string"},
+                path = {type = "string", minLength = 1},
                 load_on_init = {type = "boolean", default = true},
                 expire = {type = "integer", default = 0},
-            }
+            },
+            required = {"path"},
         },
         default_service = {
             type = "object",
@@ -292,12 +293,12 @@ end
 
 local function show_dump_file()
     if not dump_params then
-        return 200, "dump params is nil"
+        return 500, "dump params is nil"
     end
 
     local data, err = util.read_file(dump_params.path)
     if not data then
-        return 200, err
+        return 500, err
     end
 
     return 200, data
@@ -397,7 +398,7 @@ local function format_consul_params(consul_conf)
         if scheme ~= "http" then
             return nil, "only support consul http schema address, eg: http://address:port"
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
-            return nil, "invald consul server address, the valid format: http://address:port"
+            return nil, "invalid consul server address, the valid format: http://address:port"
         end
 
         core.table.insert(consul_server_list, {

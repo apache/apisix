@@ -46,7 +46,7 @@ local function format_dismod_uri(mod_name, uri)
 end
 
 -- we do not hardcode the discovery module's control api uri
-local function format_dismod_controlapi_uris(mod_name, api_route)
+local function format_dismod_control_api_uris(mod_name, api_route)
     if not api_route or #api_route == 0 then
         return api_route
     end
@@ -113,7 +113,7 @@ function fetch_control_api_router()
             local api_fun = dis_mod.control_api
             if api_fun then
                 local api_route = api_fun()
-                local format_route = format_dismod_controlapi_uris(key, api_route)
+                local format_route = format_dismod_control_api_uris(key, api_route)
                 register_api_routes(routes, format_route)
             end
 

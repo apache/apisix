@@ -94,11 +94,12 @@ The `dump` has three optional values now:
     - make sure the dump file's parent path exist
     - make sure the `apisix` has the dump file's read-write access permission,eg: `chown  www:root conf/upstream.d/`
 - `load_on_init`, default value is `true`
-    - if `true`, load the data from dump file before load data from consul
+    - if `true`, will try load the data from dump file before load data from consul
     - if `false`, ignore load data
+    - and anyhow, we don't need to prepare a dump file for apisix at anytime
 - `expire`, unit sec, avoiding load expired dump data when load
     - default `0`, it is unexpired forever
-    - recommend 2592000, which is 30 days(3600 * 24 * 30)
+    - recommend 2592000, which is 30 days(equals 3600 \* 24 \* 30)
 
 ### Register Http API Services
 

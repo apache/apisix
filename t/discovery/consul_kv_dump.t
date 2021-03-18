@@ -97,7 +97,7 @@ location /v1/kv {
             ngx.say(json.encode(entity.services))
         }
     }
---- timeout: 12
+--- timeout: 3
 --- request
 GET /t
 --- response_body
