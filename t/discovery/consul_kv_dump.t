@@ -364,4 +364,23 @@ discovery:
 #END
 --- request
 GET /v1/discovery/consul_kv/show_dump_file
+--- error_code: 500
+
+
+
+=== TEST 13: test 503 show_dump_file
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+  enable_control: true
+
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:38500"
+#END
+--- request
+GET /v1/discovery/consul_kv/show_dump_file
 --- error_code: 503
