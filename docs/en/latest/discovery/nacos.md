@@ -31,7 +31,7 @@ discovery:
     host:
       - "http://192.168.33.1:8848"
     prefix: "/nacos/v1/"
-    service_list_path: "ns/service/list?pageNo=1&pageSize=20" 
+    service_list_path: "ns/service/list?pageNo=1&pageSize=20"
     instance_list_path: "ns/instance/list?serviceName="
     fetch_interval: 30    # default 30 sec
     weight: 100           # default 100
