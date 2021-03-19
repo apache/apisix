@@ -81,7 +81,7 @@ You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`
 
 ## Then add limit-count plugin:
 
-The <strong>Key type</strong> in limit-count plugin can be the following:
+The **Key type** in limit-count plugin can be the following:
 
 * `remote_addr`
 * `server_addr`
