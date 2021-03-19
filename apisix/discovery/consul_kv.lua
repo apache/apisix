@@ -244,7 +244,7 @@ end
 local function read_dump_srvs()
     local data, err = util.read_file(dump_params.path)
     if not data then
-        log.warn("read dump file get error: ", err)
+        log.notice("read dump file get error: ", err)
         return
     end
 
