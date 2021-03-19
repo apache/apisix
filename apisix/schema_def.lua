@@ -386,11 +386,6 @@ local upstream_schema = {
             minLength = 1
         },
         id = id_schema,
-        -- deprecate fields, will be removed soon
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean",
-        },
     },
     oneOf = {
         {required = {"type", "nodes"}},
