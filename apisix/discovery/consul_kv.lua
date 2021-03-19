@@ -248,35 +248,35 @@ local function read_dump_srvs()
         return
     end
 
-    core.log.info("read dump file: ", data)
+    log.info("read dump file: ", data)
     data = util.trim(data)
     if #data == 0 then
-        core.log.error("dump file is empty")
+        log.error("dump file is empty")
         return
     end
 
     local entity, err  = core.json.decode(data)
     if err then
-        core.log.error("decoded dump data got error: ", err, ", file content: ", data)
+        log.error("decoded dump data got error: ", err, ", file content: ", data)
         return
     end
 
     if not entity.services or not entity.last_update then
-        core.log.error("decoded dump data miss fields, file content: ", data)
+        log.error("decoded dump data miss fields, file content: ", data)
         return
     end
 
     local now_time = ngx.time()
-    core.log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
+    log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
         dump_params.expire, ", now_time: ", now_time)
     if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < now_time then
-       core.log.warn("dump file: ", dump_params.path,
+       log.warn("dump file: ", dump_params.path,
          " had expired, ignored it")
         return
     end
 
     applications = entity.services
-    core.log.info("load dump file into memory success")
+    log.info("load dump file into memory success")
 end
 
 
@@ -289,7 +289,7 @@ local function write_dump_srvs()
     local data = core.json.encode(entity)
     local succ, err =  util.write_file(dump_params.path, data)
     if not succ then
-        core.log.error("write dump into file got error: ", err)
+        log.error("write dump into file got error: ", err)
     end
 end
 
