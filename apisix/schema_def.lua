@@ -589,8 +589,6 @@ _M.consumer = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         desc = desc_def,
-        -- deprecate fields, will be removed soon
-        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,
