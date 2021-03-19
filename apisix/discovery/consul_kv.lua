@@ -262,7 +262,7 @@ local function read_dump_srvs()
     end
 
     if not entity.services or not entity.last_update then
-        log.error("decoded dump data miss fields, file content: ", data)
+        log.warn("decoded dump data miss fields, file content: ", data)
         return
     end
 
@@ -270,9 +270,8 @@ local function read_dump_srvs()
     log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
         dump_params.expire, ", now_time: ", now_time)
     if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < now_time then
-       log.warn("dump file: ", dump_params.path,
-         " had expired, ignored it")
-        return
+       log.warn("dump file: ", dump_params.path, " had expired, ignored it")
+       return
     end
 
     applications = entity.services
