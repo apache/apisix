@@ -22,7 +22,6 @@ local re_gmatch   = ngx.re.gmatch
 local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
 local ipairs = ipairs
-local next = next
 
 
 local lrucache = core.lrucache.new({
