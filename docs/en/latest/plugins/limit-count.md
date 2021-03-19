@@ -79,7 +79,17 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
 ![Add a router.](../../../assets/images/plugin/limit-count-1.png)
 
-Then add limit-count plugin:
+#### Then add limit-count plugin:
+
+The **Key type** in limit-count plugin can be the following:
+
+* `remote_addr`
+* `server_addr`
+* `http_x_real_ip`
+* `http_x_forwarded_for`
+* `consumer_name`
+* `service_id`
+
 ![Add limit-count plugin.](../../../assets/images/plugin/limit-count-2.png)
 
 If you need a cluster-level precision traffic limit, then we can do it with the redis server. The rate limit of the traffic will be shared between different APISIX nodes to limit the rate of cluster traffic.
