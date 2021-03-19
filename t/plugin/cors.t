@@ -825,7 +825,27 @@ Access-Control-Allow-Credentials: true
 
 
 
-=== TEST 30: set route (regex specified not match)
+=== TEST 30: regex specified not match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://a.test2.com
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: set route (multiple regex specified )
 --- config
     location /t {
         content_by_lua_block {
@@ -841,7 +861,7 @@ Access-Control-Allow-Credentials: true
                             "expose_headers": "ex-headr1,ex-headr2",
                             "max_age": 50,
                             "allow_credential": true,
-                            "allow_origins_by_regex":[".*\\.test.com"]
+                            "allow_origins_by_regex":[".*\\.test.com",".*\\.example.org"]
                         }
                     },
                     "upstream": {
@@ -869,11 +889,32 @@ passed
 
 
 
-=== TEST 31: regex specified not match
+=== TEST 32: multiple regex specified match
 --- request
 GET /hello HTTP/1.1
 --- more_headers
-Origin: http://a.test2.com
+Origin: http://foo.example.org
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin: http://foo.example.org
+Vary: Via, Origin
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: headr1,headr2
+Access-Control-Expose-Headers: ex-headr1,ex-headr2
+Access-Control-Max-Age: 50
+Access-Control-Allow-Credentials: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: multiple regex specified not match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://foo.example.com
 resp-vary: Via
 --- response_body
 hello world
