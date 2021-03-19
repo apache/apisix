@@ -197,7 +197,8 @@ local function fetch_full_registry(premature)
 
     local token_param = ""
     if username and password then
-        local data, err = post_url(base_uri, auth_path .. "?username=" .. username .. "&password=" .. password, nil)
+        local data, err = post_url(base_uri, auth_path .. "?username=" .. username
+                .. "&password=" .. password, nil)
         if err then
             log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
             return
