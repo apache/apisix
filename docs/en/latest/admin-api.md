@@ -578,7 +578,7 @@ Config Example:
 Example：
 
 ```shell
-# Create an upstream
+# Create upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
@@ -602,7 +602,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034
 HTTP/1.1 200 OK
 ...
 
-# After successful execution, nodes will be updated to:
+After successful execution, nodes will be updated to:
 {
     "39.97.63.215:80": 1,
     "39.97.63.216:80": 1
@@ -619,7 +619,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034
 HTTP/1.1 200 OK
 ...
 
-# After successful execution, nodes will be updated to:
+After successful execution, nodes will be updated to:
 {
     "39.97.63.215:80": 1,
     "39.97.63.216:80": 10
@@ -636,7 +636,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034
 HTTP/1.1 200 OK
 ...
 
-# After successful execution, nodes will be updated to:
+After successful execution, nodes will be updated to:
 {
     "39.97.63.216:80": 10
 }
@@ -650,12 +650,12 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1
 HTTP/1.1 200 OK
 ...
 
-# After the execution is successful, nodes will not retain the original data, and the entire update is:
+After the execution is successful, nodes will not retain the original data, and the entire update is:
 {
     "39.97.63.200:80": 1
 }
 
-# Create an Upstream and configure the scheme as `https`
+# Create upstream and configure the scheme as `https`
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type": "roundrobin",

@@ -587,7 +587,7 @@ upstream 对象 json 配置内容：
 具体示例：
 
 ```shell
-# 创建一个upstream
+# 创建一个 upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
@@ -611,7 +611,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f03
 HTTP/1.1 200 OK
 ...
 
-# 执行成功后，nodes 将更新为：
+执行成功后，nodes 将更新为：
 {
     "39.97.63.215:80": 1,
     "39.97.63.216:80": 1
@@ -628,7 +628,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f03
 HTTP/1.1 200 OK
 ...
 
-# 执行成功后，nodes 将更新为：
+执行成功后，nodes 将更新为：
 {
     "39.97.63.215:80": 1,
     "39.97.63.216:80": 10
@@ -645,7 +645,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f03
 HTTP/1.1 200 OK
 ...
 
-# 执行成功后，nodes 将更新为：
+执行成功后，nodes 将更新为：
 {
     "39.97.63.216:80": 10
 }
@@ -659,7 +659,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd
 HTTP/1.1 200 OK
 ...
 
-# 执行成功后，nodes 将不保留原来的数据，整个更新为：
+执行成功后，nodes 将不保留原来的数据，整个更新为：
 {
     "39.97.63.200:80": 1
 }
