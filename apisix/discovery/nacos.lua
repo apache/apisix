@@ -281,8 +281,10 @@ function _M.init_worker()
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 
+
 function _M.dump_data()
     return {config = local_conf.discovery.nacos, services = applications}
 end
+
 
 return _M
