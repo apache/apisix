@@ -553,7 +553,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
-Config Example:
+**Config Example:**
 
 ```shell
 {
@@ -575,7 +575,9 @@ Config Example:
 }
 ```
 
-Example：
+**Example:**
+
+Example 1: Create an upstream and modify the corresponding data.
 
 ```shell
 # Create upstream
@@ -655,6 +657,11 @@ After the execution is successful, nodes will not retain the original data, and 
     "39.97.63.200:80": 1
 }
 
+```
+
+Example 2: Create upstream and configure the scheme as `https`.
+
+```shell
 # Create upstream and configure the scheme as `https`
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
@@ -666,15 +673,18 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 }'
 HTTP/1.1 201 Created
 ...
-
 ```
+
+After the execution is successful, the scheme when requesting to communicate with the upstream will be `https`.
+
+**Note:**
 
 Each node can be configured with a priority. A node with low priority will only be
 used when all the nodes with higher priority are unavailable or tried.
 
 As the default priority is 0, we can configure nodes with negative priority as the backup.
 
-For example,
+For example:
 
 ```json
 {

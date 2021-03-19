@@ -562,7 +562,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
-upstream 对象 json 配置内容：
+**upstream 对象 json 配置内容：**
 
 ```shell
 {
@@ -584,7 +584,9 @@ upstream 对象 json 配置内容：
 }
 ```
 
-具体示例：
+**具体示例：**
+
+示例一：创建一个 upstream 并对相应数据做修改。
 
 ```shell
 # 创建一个 upstream
@@ -664,7 +666,11 @@ HTTP/1.1 200 OK
     "39.97.63.200:80": 1
 }
 
-# 创建一个 Upstream 并配置 scheme 为 `https`
+```
+
+示例二：创建 upstream 并配置 scheme 为 `https`。
+
+```shell
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type": "roundrobin",
@@ -675,14 +681,16 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 }'
 HTTP/1.1 201 Created
 ...
-
 ```
+
+执行成功后，请求与上游通信时的 scheme 将为 `https`。
+
+**注意：**
 
 节点可以配置自己的优先级。只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
 
 由于默认的优先级是 0，我们可以给一些节点配置负数的优先级来作为备份。
-
-举个例子，
+举个例子:
 
 ```json
 {
