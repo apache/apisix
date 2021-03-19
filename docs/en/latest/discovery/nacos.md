@@ -29,8 +29,9 @@ Add following configuration in `conf/config.yaml` :
 discovery:
   nacos:
     host:
-      - "http://192.168.33.1:8848"
+      - "http://${username}:${password}@${host1}:${port1}"
     prefix: "/nacos/v1/"
+    auth_path: "auth/login"
     service_list_path: "ns/service/list?pageNo=1&pageSize=20"
     instance_list_path: "ns/instance/list?serviceName="
     fetch_interval: 30    # default 30 sec
