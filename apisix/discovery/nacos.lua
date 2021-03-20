@@ -282,9 +282,4 @@ function _M.init_worker()
 end
 
 
-function _M.dump_data()
-    return {config = local_conf.discovery.nacos, services = applications}
-end
-
-
 return _M
