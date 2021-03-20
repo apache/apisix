@@ -80,11 +80,3 @@ GET /echo/APISIX-NACOS
 --- error_code: 503
 --- error_log eval
 qr/.* no valid upstream node.*/
-
-
-
-
-
-
-
-
