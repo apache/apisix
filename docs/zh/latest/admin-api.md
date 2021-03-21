@@ -580,7 +580,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
     "key": "",
     "name": "upstream-xxx",     # upstream 名称
     "desc": "hello world",      # upstream 描述
-    "scheme":"http"             # 跟上游通信时使用的 scheme，默认是 `http`
+    "scheme": "http"            # 跟上游通信时使用的 scheme，默认是 `http`
 }
 ```
 
@@ -668,22 +668,35 @@ HTTP/1.1 200 OK
 
 ```
 
-示例二：创建 upstream 并配置 scheme 为 `https`。
+示例二：如何代理上游 https。
+
+1、创建 route 并 配置 upstream 的 scheme 为 `https`。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "type": "roundrobin",
-    "scheme": "https",
-    "nodes": {
-        "39.97.63.215:80": 1
+    "uri": "/get",
+    "upstream": {
+        "type": "roundrobin",
+        "scheme": "https",
+        "nodes": {
+            "httpbin.org:443": 1
+        }
     }
 }'
-HTTP/1.1 201 Created
-...
 ```
 
 执行成功后，请求与上游通信时的 scheme 将为 `https`。
+
+2、 发送请求进行测试。
+
+```shell
+$ curl http://127.0.0.1:9080/get -i
+HTTP/1.1 200 OK
+...
+```
+
+请求成功，表示代理上游 `https` 生效了。
 
 **注意：**
 

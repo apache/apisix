@@ -571,7 +571,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
     "key": "",
     "name": "upstream-for-test",
     "desc": "hello world",
-    "scheme":"http",            # The scheme used when communicating with upstream, the default is `http`
+    "scheme": "http",           # The scheme used when communicating with upstream, the default is `http`
 }
 ```
 
@@ -659,23 +659,35 @@ After the execution is successful, nodes will not retain the original data, and 
 
 ```
 
-Example 2: Create upstream and configure the scheme as `https`.
+Example 2: How to proxy upstream https.
+
+1. Create a route and configure the upstream scheme as `https`.
 
 ```shell
-# Create upstream and configure the scheme as `https`
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "type": "roundrobin",
-    "scheme": "https",
-    "nodes": {
-        "39.97.63.215:80": 1
+    "uri": "/get",
+    "upstream": {
+        "type": "roundrobin",
+        "scheme": "https",
+        "nodes": {
+            "httpbin.org:443": 1
+        }
     }
 }'
-HTTP/1.1 201 Created
-...
 ```
 
 After the execution is successful, the scheme when requesting to communicate with the upstream will be `https`.
+
+2. Send a request for testing.
+
+```shell
+$ curl http://127.0.0.1:9080/get -i
+HTTP/1.1 200 OK
+...
+```
+
+The request is successful, which means that the proxy upstream `https` is valid.
 
 **Note:**
 
