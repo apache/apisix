@@ -99,7 +99,8 @@ jobs:
         rm -rf nacos-docker
         git clone --depth 1 https://github.com/benx203/nacos-docker.git
         cd nacos-docker
-        docker-compose -f example/standalone-test.yaml up
+        docker-compose -f example/standalone-test.yaml down
+        docker-compose -f example/standalone-test.yaml up -d
         ps aux|grep nacos-gateway-provider-example-2.2.6-SNAPSHOT |grep -v grep|awk '{print $2}'|xargs kill -9
         nohup java -jar example/nacos-gateway-provider-example-2.2.6-SNAPSHOT.jar --spring.application.name=APISIX-NACOS  > /dev/null 2>&1 &
 
