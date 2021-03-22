@@ -659,7 +659,7 @@ After the execution is successful, nodes will not retain the original data, and 
 
 ```
 
-Example 2: How to proxy upstream https.
+Example 2: How to proxy requests to upstream with HTTPS scheme.
 
 1. Create a route and configure the upstream scheme as `https`.
 
@@ -682,9 +682,19 @@ After the execution is successful, the scheme when requesting to communicate wit
 2. Send a request for testing.
 
 ```shell
-$ curl http://127.0.0.1:9080/get -i
-HTTP/1.1 200 OK
-...
+$ curl http://127.0.0.1:9080/get
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6058324a-0e898a7f04a5e95b526bb183",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1",
+  "url": "https://127.0.0.1/get"
+}
 ```
 
 The request is successful, which means that the proxy upstream `https` is valid.

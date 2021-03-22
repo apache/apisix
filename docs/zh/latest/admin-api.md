@@ -668,9 +668,9 @@ HTTP/1.1 200 OK
 
 ```
 
-示例二：如何代理上游 https。
+示例二：如何使用 HTTPS 的 scheme 将请求代理到上游。
 
-1、创建 route 并 配置 upstream 的 scheme 为 `https`。
+1、创建 route 并配置 upstream 的 scheme 为 `https`。
 
 ```shell
 $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -691,9 +691,19 @@ $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f0343
 2、 发送请求进行测试。
 
 ```shell
-$ curl http://127.0.0.1:9080/get -i
-HTTP/1.1 200 OK
-...
+$ curl http://127.0.0.1:9080/get
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6058324a-0e898a7f04a5e95b526bb183",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1",
+  "url": "https://127.0.0.1/get"
+}
 ```
 
 请求成功，表示代理上游 `https` 生效了。
