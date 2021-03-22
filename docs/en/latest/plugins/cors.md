@@ -43,6 +43,7 @@ title: cors
 | expose_headers   | string  | optional    | "*"     |       | Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. |
 | max_age          | integer | optional    | 5       |       | Maximum number of seconds the results can be cached.. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details. |
 | allow_credential | boolean | optional    | false   |       | Enable request include credential (such as Cookie etc.). According to CORS specification, if you set this option to `true`, you can not use '*' for other options. |
+| allow_origins_by_regex | array | optional    | nil   |       | Use regex expressions to match which origin is allowed to enable CORS, for example, [".*\.test.com"] can use to match all subdomain of test.com  |
 
 > **Tips**
 >

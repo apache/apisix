@@ -757,4 +757,173 @@ GET /t
 --- response_body eval
 qr/failed to check the configuration of plugin cors err: you can not/
 --- no_error_log
+
+
+
+=== TEST 28: set route (regex specified)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "http://sub.domain.com,http://sub2.domain.com",
+                            "allow_methods": "GET,POST",
+                            "allow_headers": "headr1,headr2",
+                            "expose_headers": "ex-headr1,ex-headr2",
+                            "max_age": 50,
+                            "allow_credential": true,
+                            "allow_origins_by_regex":[".*\\.test.com"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: regex specified
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://a.test.com
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin: http://a.test.com
+Vary: Via, Origin
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: headr1,headr2
+Access-Control-Expose-Headers: ex-headr1,ex-headr2
+Access-Control-Max-Age: 50
+Access-Control-Allow-Credentials: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: regex specified not match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://a.test2.com
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: set route (multiple regex specified )
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "http://sub.domain.com,http://sub2.domain.com",
+                            "allow_methods": "GET,POST",
+                            "allow_headers": "headr1,headr2",
+                            "expose_headers": "ex-headr1,ex-headr2",
+                            "max_age": 50,
+                            "allow_credential": true,
+                            "allow_origins_by_regex":[".*\\.test.com",".*\\.example.org"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: multiple regex specified match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://foo.example.org
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin: http://foo.example.org
+Vary: Via, Origin
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: headr1,headr2
+Access-Control-Expose-Headers: ex-headr1,ex-headr2
+Access-Control-Max-Age: 50
+Access-Control-Allow-Credentials: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: multiple regex specified not match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://foo.example.com
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+--- no_error_log
 [error]
