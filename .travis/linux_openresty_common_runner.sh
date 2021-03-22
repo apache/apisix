@@ -48,7 +48,7 @@ before_install() {
     cd nacos-docker
     docker-compose -f example/standalone-test.yaml down
     docker-compose -f example/standalone-test.yaml up -d
-    sudo kill -9 `ps aux | grep nacos-gateway-provider-example-2.2.6-SNAPSHOT | awk '{print $2}'`
+    nohup sudo kill -9 `ps aux | grep nacos-gateway-provider-example-2.2.6-SNAPSHOT | awk '{print $2}'` > /dev/null 2>&1 &
     nohup java -jar example/nacos-gateway-provider-example-2.2.6-SNAPSHOT.jar --spring.application.name=APISIX-NACOS  > /dev/null 2>&1 &
 }
 
