@@ -25,6 +25,8 @@ local pairs = pairs
 local tonumber = tonumber
 
 local plugin_name = "zipkin"
+local ZIPKIN_SPAN_VER_1 = 1
+local ZIPKIN_SPAN_VER_2 = 2
 
 
 local lrucache = core.lrucache.new({
@@ -47,8 +49,8 @@ local schema = {
             pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
         },
         span_version = {
-            enum = {1, 2},
-            default = 2,
+            enum = {ZIPKIN_SPAN_VER_1, ZIPKIN_SPAN_VER_2},
+            default = ZIPKIN_SPAN_VER_2,
         },
     },
     required = {"endpoint", "sample_ratio"}
@@ -189,7 +191,7 @@ function _M.rewrite(plugin_conf, ctx)
     }
 
     local request_span = ctx.opentracing.request_span
-    if conf.span_version == 1 then
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
         ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
                                                                      start_timestamp)
 
@@ -209,7 +211,7 @@ function _M.access(conf, ctx)
     local opentracing = ctx.opentracing
     local tracer = opentracing.tracer
 
-    if conf.span_version == 1 then
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
         opentracing.access_span = opentracing.request_span:start_child_span(
             "apisix.access", ctx.REWRITE_END_TIME)
 
@@ -237,7 +239,7 @@ function _M.header_filter(conf, ctx)
     local opentracing = ctx.opentracing
     local end_time = opentracing.tracer:time()
 
-    if conf.span_version == 1 then
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
         ctx.HEADER_FILTER_END_TIME = end_time
         if  opentracing.proxy_span then
             opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
@@ -260,7 +262,7 @@ function _M.log(conf, ctx)
 
     local log_end_time = opentracing.tracer:time()
 
-    if conf.span_version == 1 then
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
         if opentracing.body_filter_span then
             opentracing.body_filter_span:finish(log_end_time)
         end
