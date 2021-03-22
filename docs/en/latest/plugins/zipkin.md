@@ -43,6 +43,29 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 | sample_ratio | number | required    |          | [0.00001, 1] | the ratio of sample                                                             |
 | service_name | string | optional    | "APISIX" |              | service name for zipkin reporter                                                |
 | server_addr  | string | optional    |          |              | IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can specify your external ip address. |
+| span_version | integer| optional    | 2        | [1, 2]       | the version of span type |
+
+Currently each traced request will create spans below:
+
+```
+request
+├── proxy: from the beginning of the request to the beginning of header filter
+└── response: from the beginning of header filter to the beginning of log
+```
+
+Previously we created spans below:
+
+```
+request
+├── rewrite
+├── access
+└── proxy
+    └── body_filter
+```
+
+Note: the name of span doesn't represent the corresponding Nginx's phase.
+
+If you need to be compatible with old style, we can set `span_version` to 1.
 
 ## How To Enable
 
