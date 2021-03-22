@@ -80,6 +80,7 @@ hello world
 [error]
 --- error_log eval
 qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+--- timeout: 10
 
 
 
@@ -125,6 +126,7 @@ GET /uri
 qr/host: httpbin.org/
 --- no_error_log
 [error]
+--- timeout: 10
 
 
 
@@ -170,3 +172,4 @@ GET /get
 qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]
+--- timeout: 10
