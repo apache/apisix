@@ -414,7 +414,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 {
     "uri": "/*",
     "vars": [
-        ["uri", "~~", "/[a-z]+"]
+        ["uri", "~~", "^/[a-z]+$"]
     ],
     "upstream": {
             "type": "roundrobin",
