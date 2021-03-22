@@ -101,6 +101,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2599,
+    type = 'auth',
     name = plugin_name,
     schema = schema,
 }
