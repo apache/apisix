@@ -47,6 +47,7 @@ before_install() {
     git clone --depth 1 https://github.com/benx203/nacos-docker.git
     cd nacos-docker
     nohup sudo kill -9 `ps aux | grep nacos-gateway-provider-example-2.2.6-SNAPSHOT | awk '{print $2}'` > /dev/null 2>&1 &
+    sleep 1
     nohup java -jar example/nacos-gateway-provider-example-2.2.6-SNAPSHOT.jar --spring.application.name=APISIX-NACOS  > /dev/null 2>&1 &
 }
 
