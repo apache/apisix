@@ -352,3 +352,39 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     }
 }'
 ```
+
+## route 的 `uri` 如何进行正则匹配
+
+这里通过 route 的 `vars` 字段来实现 uri 的正则匹配。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", "^/[a-z]+$"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+# uri 匹配成功
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+...
+
+# uri 匹配失败
+curl http://127.0.0.1:9080/12ab -i
+HTTP/1.1 404 Not Found
+...
+```
+
+在 route 中，我们可以通过 `uri` 结合 `vars` 字段来实现更多的条件匹配，`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
