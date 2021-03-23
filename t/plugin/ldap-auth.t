@@ -127,7 +127,7 @@ passed
                             "basedn": "dc=example,dc=org",
                             "ldapuri": "172.19.0.1",
                             "uid": "cn",
-                            "auto_create_consummer": true
+                            "auto_create_consumer": true
                         }
                     },
                     "upstream": {
@@ -206,7 +206,7 @@ find consumer cn=user01,dc=example,dc=org
                             "basedn": "dc=example,dc=org",
                             "ldapuri": "172.19.0.1", // TO Update with openldap from Github action (bitnami/openldap:2)
                             "uid": "cn",
-                            "auto_create_consummer": false
+                            "auto_create_consumer": false
                         }
                     },
                     "upstream": {

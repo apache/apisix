@@ -47,7 +47,7 @@ This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plu
 | ldapuri | string | required    |         |       | the uri of the ldap server  |
 | usetls | boolean | optional    |    `true`     |       | Boolean flag indicating if Transport Layer Security (TLS) should be used. |
 | uid | string | optional    |     `cn`      |     | the user's password |
-| uiauto_create_consummer | boolean | optional    |    `false`     |       | enable this to automatically create consumer for each authentication , the consumer name will be the full `dn` of the user |
+| auto_create_consumer | boolean | optional    |    `false`     |       | enable this to automatically create consumer for each authentication , the consumer name will be the full `dn` of the user |
 
 ## How To Enable
 

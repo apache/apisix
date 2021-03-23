@@ -36,7 +36,7 @@ local schema = {
         ldapuri = { type = "string" },
         usetls = { type = "boolean" },
         uid = { type = "string" },
-        auto_create_consummer = {type ="boolean"}
+        auto_create_consumer = {type ="boolean"}
     },
     required = {"basedn","ldapuri"},
     additionalProperties = false,
@@ -141,13 +141,13 @@ function _M.rewrite(conf, ctx)
         uid = conf.uid
     end
     local userdn =  uid .. "=" .. user.username .. "," .. conf.basedn
-    local ld = lualdap.open_simple (conf.ldapuri, userdn, user.password)
+    local ld = lualdap.open_simple (conf.ldapuri, userdn, user.password, conf.usetls)
     if not ld then
         return 401, { message = "Invalid user authorization" }
     end
     
     -- 3. Retreive consumer for authorization plugin
-    if conf.auto_create_consummer then 
+    if conf.auto_create_consumer then 
         local tmpCustomer = {consumer_name = userdn, auth_conf = {username = userdn}}
         local tmpCustomerConf = {conf_version = "1", consumer_name="ldapauth"}
         consumer_mod.attach_consumer(ctx, tmpCustomer, tmpCustomerConf)
