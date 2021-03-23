@@ -266,3 +266,22 @@ qr/upstream nodes: \{[^}]+\}/
 qr/upstream nodes: \{(,?"127.0.0.(1:1980":200|3:1980":1|4:1980":1)){3}\}/
 --- response_body
 hello world
+
+
+
+=== TEST 13: SRV (priority)
+--- apisix_yaml
+upstreams:
+    - service_name: "priority.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- response_body
+hello world
+--- error_log
+connect() failed
+--- grep_error_log eval
+qr/proxy request to \S+/
+--- grep_error_log_out
+proxy request to 127.0.0.1:1979
+proxy request to 127.0.0.2:1980

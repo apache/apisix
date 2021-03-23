@@ -92,8 +92,10 @@ Assumed you have the SRV record like this:
 A       300 IN      A     1.1.1.1
 B       300 IN      A     1.1.1.2
 B       300 IN      A     1.1.1.3
-srv   86400 IN    SRV 10       60     1980 A
-srv   86400 IN    SRV 10       20     1981 B
+
+; name  TTL         type    priority    weight  port
+srv     86400 IN    SRV     10          60      1980 A
+srv     86400 IN    SRV     20          20      1981 B
 ```
 
 Upstream configuration like:
@@ -114,14 +116,15 @@ is the same as:
     "id": 1,
     "type": "roundrobin",
     "nodes": [
-        {"host": "1.1.1.1", "port": 1980, "weight": 60},
-        {"host": "1.1.1.2", "port": 1981, "weight": 10},
-        {"host": "1.1.1.3", "port": 1981, "weight": 10}
+        {"host": "1.1.1.1", "port": 1980, "weight": 60, "priority": -10},
+        {"host": "1.1.1.2", "port": 1981, "weight": 10, "priority": -20},
+        {"host": "1.1.1.3", "port": 1981, "weight": 10, "priority": -20}
     ]
 }
 ```
 
 Note that two records of domain B split the weight evenly.
+For SRV record, nodes with lower priority are chosen first, so the final priority is negative.
 
 As for 0 weight SRV record, the [RFC 2782](https://www.ietf.org/rfc/rfc2782.txt) says:
 
@@ -133,5 +136,3 @@ being selected.
 
 We treat weight 0 record has a weight of 1 so the node "have a very small chance of
 being selected", which is also the common way to treat this type of record.
-
-TODO: support priority.
