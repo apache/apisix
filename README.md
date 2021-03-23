@@ -124,7 +124,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
-  - [Stand-docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
+  - [Stand-Alone](docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
   - [Global Rule](docs/en/latest/architecture-design/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
