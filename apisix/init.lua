@@ -24,6 +24,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
+local error_handler = require("apisix.error_handler")
 local set_upstream  = require("apisix.upstream").set_by_route
 local upstream_util = require("apisix.utils.upstream")
 local ctxdump       = require("resty.ctxdump")
@@ -794,6 +795,11 @@ function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
     -- core.ctx.release_vars(api_ctx)
     plugin.run_plugin("log")
+end
+
+
+function _M.error_handler()
+    error_handler()
 end
 
 

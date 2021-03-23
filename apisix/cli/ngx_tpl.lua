@@ -233,6 +233,9 @@ http {
     {% end %}
     {% end %}
 
+    # error_page
+    error_page 500 502 503 504 @apisix_error_handler;
+
     # http configuration snippet starts
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
@@ -280,6 +283,14 @@ http {
         listen {* control_server_addr *};
 
         access_log off;
+
+        location @apisix_error_handler{
+            internal;
+
+            content_by_lua_block {
+                apisix.error_handler()
+            }
+        }
 
         location / {
             content_by_lua_block {
@@ -338,6 +349,14 @@ http {
 
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location @apisix_error_handler {
+            internal;
+
+            content_by_lua_block {
+                apisix.error_handler()
             }
         }
     }
@@ -631,6 +650,14 @@ http {
             proxy_pass $upstream_mirror_host$request_uri;
         }
         {% end %}
+
+        location @apisix_error_handler {
+            internal;
+
+            content_by_lua_block {
+                apisix.error_handler()
+            }
+        }
     }
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}
