@@ -18,7 +18,8 @@ local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local ipairs = ipairs
-local consumer = require("apisix.consumer")
+local consumer_mod = require("apisix.consumer")
+local lualdap = require "lualdap"
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -35,6 +36,7 @@ local schema = {
         ldapuri = { type = "string" },
         usetls = { type = "boolean" },
         uid = { type = "string" },
+        auto_create_consummer = {type ="boolean"}
     },
     required = {"basedn","ldapuri"},
     additionalProperties = false,
@@ -76,10 +78,27 @@ function _M.check_schema(conf, schema_type)
     return true
 end
 
+local create_consume_cache
+do
+    local consumer_names = {}
+
+    function create_consume_cache(consumers)
+        core.table.clear(consumer_names)
+
+        for _, consumer in ipairs(consumers.nodes) do
+            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            consumer_names[consumer.auth_conf.userdn] = consumer
+        end
+
+        return consumer_names
+    end
+
+end -- do
+
 local function extract_auth_header(authorization)
     local obj = { username = "", password = "" }
 
-    local m, err = ngx.re.match(auth, "Basic\\s(.+)", "jo")
+    local m, err = ngx.re.match(authorization, "Basic\\s(.+)", "jo")
     if err then
         -- error authorization
         return nil, err
@@ -95,7 +114,7 @@ local function extract_auth_header(authorization)
 
     obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
     obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
-    core.log.info("plugin access phase, authorization: ",
+    core.log.error("plugin access phase, authorization: ",
                   obj.username, ": ", obj.password)
 
     return obj, nil
@@ -111,34 +130,42 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Missing authorization in request" }
     end
 
-    local username, password, err = extract_auth_header(auth_header)
+    local user, err = extract_auth_header(auth_header)
     if err then
         return 401, { message = err }
     end
 
     -- 2. try authenticate the user against the ldap server
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        return 401, { message = "Missing related consumer" }
-    end
     local uid = "cn"
     if conf.uid then 
         uid = conf.uid
     end
-    local ld = assert (lualdap.open_simple (conf.ldapuri,
-                uid+"="+username+","+conf.basedn,
-                password))
-
+    local userdn =  uid .. "=" .. user.username .. "," .. conf.basedn
+    local ld = lualdap.open_simple (conf.ldapuri, userdn, user.password)
     if not ld then
         return 401, { message = "Invalid user authorization" }
     end
+    
+    -- 3. Retreive consumer for authorization plugin
+    if conf.auto_create_consummer then 
+        local tmpCustomer = {consumer_name = userdn, auth_conf = {username = userdn}}
+        local tmpCustomerConf = {conf_version = "1", consumer_name="ldapauth"}
+        consumer_mod.attach_consumer(ctx, tmpCustomer, tmpCustomerConf)
+    else
+        local consumer_conf = consumer_mod.plugin(plugin_name)
+        if not consumer_conf then
+            return 401, {message = "Missing related consumer"}
+        end
+        core.log.error(consumer_conf.conf_version)
+        local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+            create_consume_cache, consumer_conf)
 
-    -- 3. Create temporary consumer for authorization plugin
-    local consumer = {consumer_name = "", auth_conf = {username = ""}}
-    consumer.consumer_name = username
-    consumer.auth_conf.username = username
-
-    consumer.attach_consumer(ctx, consumer, consumer_conf)
+        local consumer = consumers[userdn]
+        if not consumer then
+            return 401, {message = "Invalid API key in request"}
+        end
+        consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
+    end
 
     core.log.info("hit basic-auth access")
 end
