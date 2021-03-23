@@ -14,6 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
+
+
 local html_5xx = [[
 <!DOCTYPE html>
 <html>
