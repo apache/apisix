@@ -100,6 +100,31 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 You can follow the [Quick Start](https://github.com/alibaba/tengine/tree/master/modules/mod_dubbo#quick-start) example in Tengine and use the configuration above to test it.
 They should provide the same result.
 
+The returned data from upstream dubbo service must be a `Map<String, String>`.
+
+If the returned data is
+
+```json
+{
+    "status": "200",
+    "header1": "value1",
+    "header2": "valu2",
+    "body": "blahblah"
+}
+```
+
+the converted HTTP response will be
+
+```
+HTTP/1.1 200 OK # "status" will be the status code
+...
+header1: value1
+header2: value2
+...
+
+blahblah # "body" will be the body
+```
+
 ## Disable Plugin
 
 When you want to disable the dubbo-proxy plugin on a route/service, it is very simple,
