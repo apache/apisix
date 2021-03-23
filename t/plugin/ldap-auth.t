@@ -52,7 +52,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({basedn = 123})
+            local ok, err = plugin.check_schema({basedn = 123, ldapuri = "127.0.0.1"})
             if not ok then
                 ngx.say(err)
             end
@@ -79,20 +79,20 @@ done
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "foo",
+                    "username": "user01",
                     "plugins": {
                         "ldap-auth": {
-                            "userdn": "cn=foo,dc=example,dc=org"
+                            "userdn": "cn=user01,ou=users,dc=example,dc=org"
                         }
                     }
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "username": "user1",
+                            "username": "user01",
                             "plugins": {
                                 "ldap-auth": {
-                                    "userdn": "cn=user01,dc=example,dc=org"
+                                    "userdn": "cn=user01,ou=users,dc=example,dc=org"
                                 }
                             }
                         }
@@ -124,7 +124,7 @@ passed
                 [[{
                     "plugins": {
                         "ldap-auth": {
-                            "basedn": "dc=example,dc=org",
+                            "basedn": "ou=users,dc=example,dc=org",
                             "ldapuri": "172.19.0.1",
                             "uid": "cn",
                             "auto_create_consumer": true
@@ -189,7 +189,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log
-find consumer cn=user01,dc=example,dc=org
+find consumer cn=user01,ou=users,dc=example,dc=org
 
 
 
@@ -203,8 +203,8 @@ find consumer cn=user01,dc=example,dc=org
                 [[{
                     "plugins": {
                         "ldap-auth": {
-                            "basedn": "dc=example,dc=org",
-                            "ldapuri": "172.19.0.1", // TO Update with openldap from Github action (bitnami/openldap:2)
+                            "basedn": "ou=users,dc=example,dc=org",
+                            "ldapuri": "172.19.0.1",
                             "uid": "cn",
                             "auto_create_consumer": false
                         }

@@ -43,7 +43,7 @@ This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plu
 
 | Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
 | -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| basedn | string | required    |         |       | the base dn of the `ldap` server (example : `dc=example,dc=org`)   |
+| basedn | string | required    |         |       | the base dn of the `ldap` server (example : `ou=users,dc=example,dc=org`)   |
 | ldapuri | string | required    |         |       | the uri of the ldap server  |
 | usetls | boolean | optional    |    `true`     |       | Boolean flag indicating if Transport Layer Security (TLS) should be used. |
 | uid | string | optional    |     `cn`      |     | the user's password |
@@ -59,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     "username": "foo",
     "plugins": {
         "ldap-auth": {
-            "userdn": "cn=user01,dc=example,dc=org"
+            "userdn": "cn=user01,ou=users,dc=example,dc=org"
         }
     }
 }'
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/hello",
     "plugins": {
         "ldap-auth": {
-            "basedn": "dc=example,dc=org",
+            "basedn": "ou=users,dc=example,dc=org",
             "ldapuri": "172.19.0.1",
             "uid": "cn"
         },

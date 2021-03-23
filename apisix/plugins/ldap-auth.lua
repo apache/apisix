@@ -39,7 +39,7 @@ local schema = {
         auto_create_consumer = {type ="boolean"}
     },
     required = {"basedn","ldapuri"},
-    additionalProperties = false,
+    additionalProperties = true,
 }
 
 local consumer_schema = {
@@ -114,8 +114,6 @@ local function extract_auth_header(authorization)
 
     obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
     obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
-    core.log.error("plugin access phase, authorization: ",
-                  obj.username, ": ", obj.password)
 
     return obj, nil
 end
