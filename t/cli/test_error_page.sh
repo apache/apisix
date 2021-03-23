@@ -39,7 +39,7 @@ code=$(curl -XPUT -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9
         }
     }
 }')
-if [ ! $code -eq 200 ]; then
+if [ ! $code -eq 201 ]; then
     echo "failed: add route failed"
     exit 1
 fi
