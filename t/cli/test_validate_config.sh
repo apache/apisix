@@ -27,7 +27,7 @@ apisix:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'dns_resolver_valid should be a number'; then
+if ! echo "$out" | grep 'property "dns_resolver_valid" validation failed: wrong type: expected integer, got string'; then
     echo "failed: dns_resolver_valid should be a number"
     exit 1
 fi
