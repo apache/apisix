@@ -31,6 +31,41 @@ local get_method = ngx.req.get_method
 local _M = {}
 
 
+local function format_dismod_uri(mod_name, uri)
+    if core.string.has_prefix(uri, "/v1/") then
+        return uri
+    end
+
+    local tmp = {"/v1/discovery/", mod_name}
+    if not core.string.has_prefix(uri, "/") then
+        core.table.insert(tmp, "/")
+    end
+    core.table.insert(tmp, uri)
+
+    return core.table.concat(tmp, "")
+end
+
+-- we do not hardcode the discovery module's control api uri
+local function format_dismod_control_api_uris(mod_name, api_route)
+    if not api_route or #api_route == 0 then
+        return api_route
+    end
+
+    local clone_route = core.table.clone(api_route)
+    for _, v in ipairs(clone_route) do
+        local uris = v.uris
+        local target_uris = core.table.new(#uris, 0)
+        for _, uri in ipairs(uris) do
+            local target_uri = format_dismod_uri(mod_name, uri)
+            core.table.insert(target_uris, target_uri)
+        end
+        v.uris = target_uris
+    end
+
+    return clone_route
+end
+
+
 local fetch_control_api_router
 do
     local function register_api_routes(routes, api_routes)
@@ -78,14 +113,16 @@ function fetch_control_api_router()
             local api_fun = dis_mod.control_api
             if api_fun then
                 local api_route = api_fun()
-                register_api_routes(routes, api_route)
+                local format_route = format_dismod_control_api_uris(key, api_route)
+                register_api_routes(routes, format_route)
             end
 
             local dump_data = dis_mod.dump_data
             if dump_data then
+                local target_uri = format_dismod_uri(key, "/dump")
                 local item = {
                     methods = {"GET"},
-                    uris = {"/v1/discovery/" .. key .. "/dump"},
+                    uris = {target_uri},
                     handler = function()
                         return 200, dump_data()
                     end
