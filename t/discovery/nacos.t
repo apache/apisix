@@ -58,8 +58,7 @@ routes:
 #END
 --- request
 GET /echo/APISIX-NACOS
---- response_body_like
-.*APISIX-NACOS.*
+--- error_code: 200
 
 
 
@@ -78,5 +77,3 @@ routes:
 --- request
 GET /echo/APISIX-NACOS
 --- error_code: 503
---- error_log eval
-qr/.* no valid upstream node.*/
