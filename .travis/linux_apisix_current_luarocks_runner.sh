@@ -56,6 +56,8 @@ script() {
     cd ..
 
     # apisix cli test
+    ./utils/set-dns.sh
+
     for f in ./t/cli/test_*.sh; do
         sudo PATH="$PATH" "$f"
     done

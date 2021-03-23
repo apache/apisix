@@ -202,6 +202,11 @@ etcd:
   # user: root                    # root username for etcd
   # password: 5tHkHhYkjr6cQY      # root password for etcd
   tls:
+    # To enable etcd client certificate you need to build APISIX-Openresty, see
+    # http://apisix.apache.org/docs/apisix/how-to-build#6-build-openresty-for-apisix
+    # cert: /path/to/cert         # path of certificate used by the etcd client
+    # key: /path/to/key           # path of key used by the etcd client
+
     verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
 
