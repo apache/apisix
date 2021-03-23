@@ -33,7 +33,6 @@ title: Integration service discovery registry
     * [**Configuration for Eureka**](#configuration-for-eureka)
 * [**Upstream setting**](#upstream-setting)
 * [**Embedded control api for debugging**](#embedded-control-api-for-debugging)
-* [**Discovery modules**](#discovery-modules)
 
 ## Summary
 
@@ -286,8 +285,3 @@ eg:
 ```shell
 curl http://127.0.0.1:9090/v1/discovery/eureka/dump
 ```
-
-## Discovery modules
-
-- eureka
-- [Consul KV](discovery/consul_kv.md)
