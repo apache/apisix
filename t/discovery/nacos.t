@@ -21,6 +21,34 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $http_config = $block->http_config // <<_EOC_;
+
+    server {
+        listen 18001;
+
+        location /hello {
+            content_by_lua_block {
+                ngx.say("server 1")
+            }
+        }
+    }
+    server {
+        listen 18002;
+
+        location /hello {
+            content_by_lua_block {
+                ngx.say("server 2")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+});
+
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -44,12 +72,30 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: get APISIX-NACOS info from NACOS
+=== TEST 1: prepare nacos register nodes
+--- config
+location /nacos {
+    proxy_pass http://127.0.0.1:8848;
+}
+
+--- pipelined_requests eval
+[
+    "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
+    "DELETE /nacos/v1/ns/service?serviceName=APISIX-NACOS",
+    "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
+    "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
+]
+--- response_body eval
+["ok", "ok", "ok", "ok"]
+
+
+
+=== TEST 2: get APISIX-NACOS info from NACOS
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
-    uri: /echo/*
+    uri: /hello
     upstream:
       service_name: APISIX-NACOS
       discovery_type: nacos
@@ -57,17 +103,17 @@ routes:
 
 #END
 --- request
-GET /echo/APISIX-NACOS
+GET /hello
 --- error_code: 200
 
 
 
-=== TEST 2: error service_name name
+=== TEST 3: error service_name name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
-    uri: /echo/*
+    uri: /hello
     upstream:
       service_name: APISIX-NACOS-DEMO
       discovery_type: nacos
@@ -75,5 +121,5 @@ routes:
 
 #END
 --- request
-GET /echo/APISIX-NACOS
+GET /hello
 --- error_code: 503
