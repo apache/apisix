@@ -43,6 +43,29 @@ title: zipkin
 | sample_ratio | number | 必须   |          | [0.00001, 1] | 监听的比例                                                           |
 | service_name | string | 可选   | "APISIX" |              | 标记当前服务的名称                                                   |
 | server_addr  | string | 可选   |          |              | 标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr` |
+| span_version | integer| 可选    | 2        | [1, 2]       | span 类型版本 |
+
+目前每个被跟踪的请求会创建下面的 span：
+
+```
+request
+├── proxy: from the beginning of the request to the beginning of header filter
+└── response: from the beginning of header filter to the beginning of log
+```
+
+之前我们创建的 span 是这样：
+
+```
+request
+├── rewrite
+├── access
+└── proxy
+    └── body_filter
+```
+
+注意上述的 span 的名称跟同名的 Nginx phase 没有关系。
+
+如果你需要兼容过去的 span 类型，可以把 `span_version` 设置成 1。
 
 ## 如何启用
 
