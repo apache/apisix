@@ -34,7 +34,8 @@ local html_5xx = [[
 <p>Sorry, the page you are looking for is currently unavailable.<br/>
 Please try again later.</p>
 <p>If you are the system administrator of this resource then you should check
-the <a href="https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L135">error log</a> for details.</p>
+the <a href="https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L135">error log
+</a> for details.</p>
 <p>If you need any help, click <a href="https://apisix.apache.org/">need help</a>.</em></p>
 <p><em>Faithfully yours, <a href="https://apisix.apache.org/">APISIX</a>.</em></p>
 </body>
