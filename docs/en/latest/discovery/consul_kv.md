@@ -57,6 +57,9 @@ discovery:
         fail_timeout: 1           # default 1 ms
         weight: 1                 # default 1
         max_fails: 1              # default 1
+    dump:                         # if you need, when registered nodes updated can dump into file
+       path: "logs/consul_kv.dump"
+       expire: 2592000      # unit sec, here is 30 day
 ```
 
 And you can config it in short by default value:
@@ -72,6 +75,31 @@ The `keepalive` has two optional values:
 
 - `true`, default and recommend value, use the long pull way to query consul servers
 - `false`, not recommend, it would use the short pull way to query consul servers, then you can set the `fetch_interval` for fetch interval
+
+#### Dump Data
+
+When we need reload `apisix` online, as the `consul_kv` module maybe loads data from CONSUL slower than load routes from ETCD, and would get the log at the moment before load successfully from consul:
+
+```
+ http_access_phase(): failed to set upstream: no valid upstream node
+```
+
+So, we import the `dump` function for `consul_kv` module. When reload, would load the dump file before from consul; when the registered nodes in consul been updated, would dump the upstream nodes into file automatically.
+
+The `dump` has three optional values now:
+
+- `path`, the dump file save path
+    - support relative path, eg: `logs/consul_kv.dump`
+    - support absolute path, eg: `/tmp/consul_kv.bin`
+    - make sure the dump file's parent path exist
+    - make sure the `apisix` has the dump file's read-write access permission,eg: `chown  www:root conf/upstream.d/`
+- `load_on_init`, default value is `true`
+    - if `true`, just try to load the data from the dump file before loading data from  consul when starting, does not care the dump file exists or not
+    - if `false`, ignore loading data from the dump file
+    - Whether `true` or `false`, we don't need to prepare a dump file for apisix at anytime
+- `expire`, unit sec, avoiding load expired dump data when load
+    - default `0`, it is unexpired forever
+    - recommend 2592000, which is 30 days(equals 3600 \* 24 \* 30)
 
 ### Register Http API Services
 
@@ -147,7 +175,9 @@ You could find more usage in the `apisix/t/discovery/consul_kv.t` file.
 
 ## Debugging API
 
-It also offers control api for debugging:
+It also offers control api for debugging.
+
+### Memory Dump API
 
 ```shell
 GET /v1/discovery/consul_kv/dump
@@ -218,5 +248,37 @@ For example:
       }
     ]
   }
+}
+```
+
+### Show Dump File API
+
+It offers another control api for dump file view now. Maybe would add more api for debugging in future.
+
+```shell
+GET /v1/discovery/consul_kv/show_dump_file
+```
+
+For example:
+
+```shell
+curl http://127.0.0.1:9090/v1/discovery/consul_kv/show_dump_file | jq
+{
+  "services": {
+    "http://172.19.5.31:8500/v1/kv/upstreams/1614480/webpages/": [
+      {
+        "host": "172.19.5.12",
+        "port": 8000,
+        "weight": 120
+      },
+      {
+        "host": "172.19.5.13",
+        "port": 8000,
+        "weight": 120
+      }
+    ]
+  },
+  "expire": 0,
+  "last_update": 1615877468
 }
 ```
