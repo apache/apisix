@@ -404,3 +404,39 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     }
 }'
 ```
+
+## How to use route `uri` for regular matching
+
+The regular matching of uri is achieved through the `vars` field of route.
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", "^/[a-z]+$"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+Test request:
+
+```shell
+# The uri matched successfully
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+...
+
+# The uri match failed
+curl http://127.0.0.1:9080/12ab -i
+HTTP/1.1 404 Not Found
+...
+```
+
+In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
