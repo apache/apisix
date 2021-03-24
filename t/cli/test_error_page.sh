@@ -44,6 +44,7 @@ if [ ! $code -eq 201 ]; then
     exit 1
 fi
 
+sleep 0.1
 # test 5xx html
 for status in 500 502 503 504;
 do
