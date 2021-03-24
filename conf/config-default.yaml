@@ -101,10 +101,10 @@ apisix:
   # stream_proxy:                 # TCP/UDP proxy
   #   tcp:                        # TCP proxy port list
   #     - 9100
-  #     - 9101
+  #     - "127.0.0.1:9101"
   #   udp:                        # UDP proxy port list
   #     - 9200
-  #     - 9211
+  #     - "127.0.0.1:9201"
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8

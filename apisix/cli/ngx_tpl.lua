@@ -92,11 +92,11 @@ stream {
     }
 
     server {
-        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, addr in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*addr*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
-        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
+        listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
