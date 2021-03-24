@@ -24,9 +24,9 @@ title: HMAC Generate Signature Examples
 ## Python 3
 
 ```python
+import base64
 import hashlib
 import hmac
-import base64
 
 secret = bytes('the shared secret key here', 'utf-8')
 message = bytes('this is signature string', 'utf-8')
@@ -46,8 +46,8 @@ base64.b64encode(hash.digest())
 ```java
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import javax.xml.bind.DatatypeConverter;
 
 class Main {
@@ -103,8 +103,8 @@ func main() {
 ## Ruby
 
 ```ruby
-require 'openssl'
 require 'base64'
+require 'openssl'
 
 secret = 'the shared secret key here'
 message = 'this is signature string'
