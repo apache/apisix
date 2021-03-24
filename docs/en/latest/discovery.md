@@ -21,19 +21,6 @@ title: Integration service discovery registry
 #
 -->
 
-* [**Summary**](#summary)
-* [**Supported discovery registries**](#supported-discovery-registries)
-* [**How to extend the discovery client?**](#how-to-extend-the-discovery-client)
-    * [**Basic steps**](#basic-steps)
-    * [**the example of Eureka**](#the-example-of-eureka)
-        * [**Implementation of eureka.lua**](#implementation-of-eurekalua)
-        * [**How convert Eureka's instance data to APISIX's node?**](#how-convert-eurekas-instance-data-to-apisixs-node)
-* [**Configuration for discovery client**](#configuration-for-discovery-client)
-    * [**Initial service discovery**](#initial-service-discovery)
-    * [**Configuration for Eureka**](#configuration-for-eureka)
-* [**Upstream setting**](#upstream-setting)
-* [**Embedded control api for debugging**](#embedded-control-api-for-debugging)
-
 ## Summary
 
 When system traffic changes, the number of servers of the upstream service also increases or decreases, or the server needs to be replaced due to its hardware failure. If the gateway maintains upstream service information through configuration, the maintenance costs in the microservices architecture pattern are unpredictable. Furthermore, due to the untimely update of these information, will also bring a certain impact for the business, and the impact of human error operation can not be ignored. So it is very necessary for the gateway to automatically get the latest list of service instances through the service registry。As shown in the figure below：
