@@ -73,6 +73,7 @@ local function resolve_srv(client, answers)
             local copy = table.deepcopy(res)
             copy.weight = weight / count
             copy.port = answer.port
+            copy.priority = answer.priority
             insert_tab(resolved_answers, copy)
         end
     end
