@@ -119,7 +119,12 @@ local luasocket_wrapper = {
         return self.sock:settimeout(time)
     end,
 
-    sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+    tlshandshake = function (self, options)
+        local reused_session = options.reused_session
+        local server_name = options.server_name
+        local verify = options.verify
+        local send_status_req = options.ocsp_status_req
+
         if reused_session then
             log(WARN, "reused_session is not supported yet")
         end
@@ -132,6 +137,8 @@ local luasocket_wrapper = {
             mode = "client",
             protocol = "any",
             verify = verify and "peer" or "none",
+            certificate = options.client_cert_path,
+            key = options.client_priv_key_path,
             options = {
                 "all",
                 "no_sslv2",
@@ -157,6 +164,15 @@ local luasocket_wrapper = {
 
         self.sock = sec_sock
         return true
+    end,
+
+    sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+        return self:tlshandshake({
+            reused_session = reused_session,
+            server_name = server_name,
+            verify = verify,
+            ocsp_status_req = send_status_req,
+        })
     end
 }
 
