@@ -148,7 +148,7 @@
       "items": [
         {
           "type": "category",
-          "label": "discovery",
+          "label": "Discovery",
           "items": [
             "discovery",
             "discovery/dns",
