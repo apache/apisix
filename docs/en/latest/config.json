@@ -147,6 +147,15 @@
       "label": "Others",
       "items": [
         {
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery",
+            "discovery/dns",
+            "discovery/consul_kv"
+          ]
+        },
+        {
           "type": "doc",
           "id": "health-check"
         },
