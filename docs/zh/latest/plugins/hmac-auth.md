@@ -162,9 +162,9 @@ x-custom-a:test
 使用 Python 来生成签名 `SIGNATURE`：
 
 ```python
+import base64
 import hashlib
 import hmac
-import base64
 
 secret = bytes('my-secret-key', 'utf-8')
 message = bytes("""GET
