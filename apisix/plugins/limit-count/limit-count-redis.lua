@@ -39,7 +39,7 @@ function _M.new(plugin_name, limit, window, conf)
         limit = limit, 
         window = window, 
         conf = conf,
-        plugin_name = plugin_name
+        plugin_name = plugin_name,
     }
     return setmetatable(self, mt)
 end

@@ -48,7 +48,7 @@ local function new_redis_cluster(conf)
 
         config.serv_list[i] = {
             ip = host, 
-            port = port
+            port = port,
         }
     end
 
@@ -72,7 +72,7 @@ function _M.new(plugin_name, limit, window, conf)
         window = window, 
         conf = conf,
         plugin_name = plugin_name, 
-        red_cli =red_cli
+        red_cli =red_cli,
     }
 
     return setmetatable(self, mt)
