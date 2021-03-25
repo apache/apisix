@@ -345,30 +345,32 @@ http {
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen {* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}
-        listen {* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen {* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
-        listen {* proxy_protocol.listen_http_port *} proxy_protocol;
+        listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
 
         {% if enable_ipv6 then %}
         {% for _, item in ipairs(node_listen) do %}
-        listen [::]:{* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen [::]:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}
-        listen [::]:{* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen [::]:{* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
+
+        server_name _;
 
         {% if ssl.ssl_trusted_certificate ~= nil then %}
         lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
