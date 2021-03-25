@@ -104,7 +104,7 @@ local function send_to_server(data)
         ok, err = sock:sslhandshake(false, config.tls_server_name, false)
         if not ok then
             sock:close()
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                 .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
         end
     end
@@ -202,7 +202,7 @@ function _M.init()
 end
 
 
-function _M.destory()
+function _M.destroy()
     timers.unregister_timer("plugin#error-log-logger", true)
 end
 

@@ -93,6 +93,7 @@ apisix:
     tcp:
       - 9100
   admin_key: null
+  enable_resolv_search_opt: false
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
@@ -257,6 +258,15 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+_EOC_
+    }
+
     my $lua_deps_path = <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
     lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
@@ -340,6 +350,7 @@ _EOC_
         $block->set_value("stream_server_config", $stream_server_config);
     }
 
+    my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
@@ -353,7 +364,10 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+    $extra_init_by_lua
 _EOC_
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
@@ -405,6 +419,7 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
+        $extra_init_worker_by_lua
     }
 
     log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
@@ -529,8 +544,6 @@ _EOC_
             set \$upstream_cache_key             '';
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
-            set \$upstream_hdr_expires           '';
-            set \$upstream_hdr_cache_control     '';
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
@@ -541,12 +554,6 @@ _EOC_
             proxy_cache_key                     \$upstream_cache_key;
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
-
-            proxy_hide_header                   Cache-Control;
-            proxy_hide_header                   Expires;
-            add_header      Cache-Control       \$upstream_hdr_cache_control;
-            add_header      Expires             \$upstream_hdr_expires;
-            add_header      Apisix-Cache-Status \$upstream_cache_status always;
 
             access_by_lua_block {
                 -- wait for etcd sync

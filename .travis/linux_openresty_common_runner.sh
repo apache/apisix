@@ -38,7 +38,10 @@ before_install() {
     docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 3 --topic test3
 
     # start skywalking
-    docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
+    docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server:8.3.0-es6
+    # start consul servers
+    docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
+    docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
 }
 
 do_install() {
@@ -106,12 +109,22 @@ script() {
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key \
         &
 
+    # listen 9081 for http2 with plaintext
+    echo '
+apisix:
+    node_listen:
+        - port: 9080
+          enable_http2: false
+        - port: 9081
+          enable_http2: true
+    ' > conf/config.yaml
+
     ./bin/apisix help
     ./bin/apisix init
     ./bin/apisix init_etcd
     ./bin/apisix start
 
-    #start again  --> fial
+    #start again  --> fail
     res=`./bin/apisix start`
     if ! echo "$res" | grep "APISIX is running"; then
         echo "failed: APISIX runs repeatedly"

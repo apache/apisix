@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "github.com:80": 0
+                                "www.apiseven.com:80": 0
                             },
                             "type": "roundrobin"
                         },
@@ -79,7 +79,8 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: github.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+--- timeout: 10
 
 
 
@@ -125,6 +126,7 @@ GET /uri
 qr/host: httpbin.org/
 --- no_error_log
 [error]
+--- timeout: 10
 
 
 
@@ -170,3 +172,4 @@ GET /get
 qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]
+--- timeout: 10

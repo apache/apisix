@@ -320,3 +320,66 @@ User-Agent: ios
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: vars rule with logical operator (set)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "vars": [
+                            "!OR",
+                            ["http_user_agent", "==", "ios"],
+                            ["http_demo", "==", "test"]
+                        ]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: vars rule with logical operator (hit)
+--- request
+GET /hello
+--- more_headers
+User-Agent: android
+demo: prod
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: vars rule with logical operator (miss)
+--- request
+GET /hello
+--- more_headers
+User-Agent: ios
+demo: prod
+--- error_code: 404
+--- no_error_log
+[error]

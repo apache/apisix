@@ -124,7 +124,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -155,7 +155,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
@@ -165,7 +165,7 @@ received: Server: APISIX/\d\.\d+(\.\d+)?
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "www.test.com"
+server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
@@ -278,7 +278,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -309,7 +309,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
@@ -319,7 +319,7 @@ received: Server: APISIX/\d\.\d+(\.\d+)?
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "www.test.com"
+server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
@@ -392,7 +392,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -423,7 +423,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
@@ -433,7 +433,7 @@ received: Server: APISIX/\d\.\d+(\.\d+)?
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "test.com"
+server name: "test.com"
 --- no_error_log
 [error]
 [alert]
@@ -506,7 +506,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -517,7 +517,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
-lua ssl server name: "www.test2.com"
+server name: "www.test2.com"
 --- no_error_log
 [error]
 [alert]
@@ -552,7 +552,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -563,7 +563,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-lua ssl server name: "aa.bb.test2.com"
+server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.com
 --- no_error_log
 [alert]
@@ -634,7 +634,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -645,7 +645,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-lua ssl server name: "www.test2.com"
+server name: "www.test2.com"
 --- no_error_log
 [alert]
 
@@ -715,7 +715,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -726,7 +726,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
-lua ssl server name: "www.test2.com"
+server name: "www.test2.com"
 --- no_error_log
 [error]
 [alert]
@@ -799,7 +799,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -810,7 +810,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
-lua ssl server name: "test2.com"
+server name: "test2.com"
 --- no_error_log
 [error]
 [alert]
@@ -845,7 +845,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -856,7 +856,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-lua ssl server name: "aa.bb.test2.com"
+server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.test2.com","test2.com"]
 --- no_error_log
 [alert]

@@ -22,8 +22,30 @@ INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty || which nginx)
+LUAROCKS ?= luarocks
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
+	OPENSSL_PREFIX=$(addprefix $(OR_PREFIX), openssl111)
+endif
+
+ifeq ($(UNAME), Darwin)
+LUAROCKS=luarocks --lua-dir=/usr/local/opt/lua@5.1
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
+endif
+ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
+endif
+endif
+
+LUAROCKS_SERVER_OPT =
+ifneq ($(LUAROCKS_SERVER), )
+	LUAROCKS_SERVER_OPT = --server ${LUAROCKS_SERVER}
+endif
 
 SHELL := /bin/bash -o pipefail
 
@@ -57,20 +79,20 @@ deps: default
 ifeq ($(LUAROCKS_VER),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)
-	luarocks config variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
-	luarocks config variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
+	$(LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(LUAROCKS) config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 else
-	luarocks config --local variables.OPENSSL_LIBDIR $(addprefix $(OR_PREFIX), openssl/lib)
-	luarocks config --local variables.OPENSSL_INCDIR $(addprefix $(OR_PREFIX), openssl/include)
+	$(LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 endif
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
-	@echo "    OPENSSL_LIBDIR=$(addprefix $(OR_PREFIX), openssl/lib)"
-	@echo "    OPENSSL_INCDIR=$(addprefix $(OR_PREFIX), openssl/include)"
+	@echo "    OPENSSL_LIBDIR=$(addprefix $(OPENSSL_PREFIX), /lib)"
+	@echo "    OPENSSL_INCDIR=$(addprefix $(OPENSSL_PREFIX), /include)"
 	@echo "}"
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 endif
 
 
@@ -140,6 +162,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
@@ -156,6 +179,9 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/core/dns
+	$(INSTALL) apisix/core/dns/*.lua $(INST_LUADIR)/apisix/core/dns
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
 	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
@@ -201,7 +227,7 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
-	
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
 	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
@@ -220,17 +246,7 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
-release-src:
-	tar -zcvf $(RELEASE_SRC).tgz \
-	./apisix \
-	./bin \
-	./conf \
-	./doc \
-	./rockspec \
-	LICENSE \
-	Makefile \
-	NOTICE \
-	*.md
+release-src: compress-tar
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
@@ -239,3 +255,15 @@ release-src:
 	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
 	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
 	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
+
+compress-tar:
+	tar -zcvf $(RELEASE_SRC).tgz \
+	./apisix \
+	./bin \
+	./conf \
+	./rockspec/apisix-$(VERSION)-*.rockspec \
+	./rockspec/apisix-master-0.rockspec \
+	LICENSE \
+	Makefile \
+	NOTICE \
+	*.md

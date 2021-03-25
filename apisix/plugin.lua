@@ -71,8 +71,8 @@ local function unload_plugin(name, is_stream_plugin)
     end
 
     local old_plugin = pkg_loaded[pkg_name]
-    if old_plugin and type(old_plugin.destory) == "function" then
-        old_plugin.destory()
+    if old_plugin and type(old_plugin.destroy) == "function" then
+        old_plugin.destroy()
     end
 
     pkg_loaded[pkg_name] = nil
@@ -412,6 +412,14 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.has_domain = route_conf.has_domain
     end
 
+    if route_conf.value.script then
+        new_conf.value.script = route_conf.value.script
+    end
+
+    if route_conf.value.name then
+        new_conf.value.name = route_conf.value.name
+    end
+
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
     return new_conf
 end
@@ -688,6 +696,10 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
+
+        if phase_name == "access" then
+            api_ctx.global_rules = global_rules
+        end
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = global_rules.values

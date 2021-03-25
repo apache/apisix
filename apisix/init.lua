@@ -15,8 +15,10 @@
 -- limitations under the License.
 --
 local require       = require
+require("apisix.patch").patch()
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
+local plugin_config = require("apisix.plugin_config")
 local script        = require("apisix.script")
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
@@ -78,6 +80,13 @@ function _M.http_init(args)
     if not ok then
         core.log.error("failed to enable privileged_agent: ", err)
     end
+
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
+    end
 end
 
 
@@ -106,9 +115,10 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
-    plugin.init_worker()
+    plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
@@ -197,8 +207,7 @@ local function parse_domain_in_up(up)
         return nil, err
     end
 
-    local old_dns_value = up.dns_value and up.dns_value.nodes
-    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(up.dns_value, new_nodes)
     if ok then
         return up
     end
@@ -220,8 +229,8 @@ local function parse_domain_in_route(route)
         return nil, err
     end
 
-    local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
-    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
+    local up_conf = route.dns_value and route.dns_value.upstream
+    local ok = upstream_util.compare_upstream_node(up_conf, new_nodes)
     if ok then
         return route
     end
@@ -298,7 +307,6 @@ function _M.http_access_phase()
 
     -- run global rule
     plugin.run_global_rules(api_ctx, router.global_rules, "access")
-    api_ctx.global_rules = router.global_rules
 
     local route = api_ctx.matched_route
     if not route then
@@ -311,6 +319,18 @@ function _M.http_access_phase()
                   core.json.delay_encode(api_ctx.matched_route, true))
 
     local enable_websocket = route.value.enable_websocket
+
+    if route.value.plugin_config_id then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
+            core.log.error("failed to fetch plugin config by ",
+                            "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
+
+        route = plugin_config.merge(route, conf)
+    end
+
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
@@ -339,7 +359,40 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
+    else
+        local plugins = plugin.filter(route)
+        api_ctx.plugins = plugins
+
+        plugin.run_plugin("rewrite", plugins, api_ctx)
+        if api_ctx.consumer then
+            local changed
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                api_ctx
+            )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
+            if changed then
+                core.table.clear(api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+            end
+        end
+        plugin.run_plugin("access", plugins, api_ctx)
+    end
+
     local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
@@ -356,12 +409,6 @@ function _M.http_access_phase()
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
-            end
-
-            if upstream.value.enable_websocket then
-                core.log.warn("DEPRECATE: enable websocket in upstream will be removed soon. ",
-                              "Please enable it in route/service level.")
-                enable_websocket = true
             end
 
             if upstream.value.pass_host then
@@ -404,33 +451,6 @@ function _M.http_access_phase()
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
         core.log.info("enabled websocket for route: ", route.value.id)
-    end
-
-    if route.value.script then
-        script.load(route, api_ctx)
-        script.run("access", api_ctx)
-    else
-        local plugins = plugin.filter(route)
-        api_ctx.plugins = plugins
-
-        plugin.run_plugin("rewrite", plugins, api_ctx)
-        if api_ctx.consumer then
-            local changed
-            route, changed = plugin.merge_consumer_route(
-                route,
-                api_ctx.consumer,
-                api_ctx
-            )
-
-            core.log.info("find consumer ", api_ctx.consumer.username,
-                          ", config changed: ", changed)
-
-            if changed then
-                core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
-            end
-        end
-        plugin.run_plugin("access", plugins, api_ctx)
     end
 
     if route.value.service_protocol == "grpc" then
@@ -528,7 +548,7 @@ function _M.http_body_filter_phase()
 end
 
 
-local function healcheck_passive(api_ctx)
+local function healthcheck_passive(api_ctx)
     local checker = api_ctx.up_checker
     if not checker then
         return
@@ -585,7 +605,7 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
-    healcheck_passive(api_ctx)
+    healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
         api_ctx.server_picker.after_balance(api_ctx, false)
@@ -682,6 +702,13 @@ end
 
 function _M.stream_init()
     core.log.info("enter stream_init")
+
+    if core.config.init then
+        local ok, err = core.config.init()
+        if not ok then
+            core.log.error("failed to load the configuration: ", err)
+        end
+    end
 end
 
 

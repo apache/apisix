@@ -49,6 +49,8 @@ function _M.new(up_nodes, upstream)
                 local tried_server_list = {}
                 while true do
                     server, info = servers_heap:peek()
+                    -- we need to let the retry > #nodes so this branch can be hit and
+                    -- the request will retry next priority of nodes
                     if server == nil then
                         err = "all upstream servers tried"
                         break
@@ -97,7 +99,13 @@ function _M.new(up_nodes, upstream)
             end
 
             ctx.balancer_tried_servers[server] = true
-        end
+        end,
+        before_retry_next_priority = function (ctx)
+            if ctx.balancer_tried_servers then
+                core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                ctx.balancer_tried_servers = nil
+            end
+        end,
     }
 end
 
