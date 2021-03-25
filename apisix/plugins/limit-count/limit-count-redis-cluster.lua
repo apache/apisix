@@ -32,7 +32,7 @@ local mt = {
 
 local function new_redis_cluster(conf)
     local config = {
-        name = "apisix-redis-cluster",
+        name = "apisix-redis-cluster-" .. conf.name,
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password,

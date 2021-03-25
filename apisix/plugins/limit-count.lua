@@ -154,6 +154,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
+    conf.name = ctx.route_id
     local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
