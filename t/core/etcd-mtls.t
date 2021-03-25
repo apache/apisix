@@ -237,3 +237,37 @@ prev_index updated
 [error]
 --- error_log
 waitdir key
+
+
+
+=== TEST 5: ssl_trusted_certificate
+--- yaml_config
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://127.0.0.1:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+--- init_by_lua_block
+    local apisix = require("apisix")
+    apisix.http_init()
+    local etcd = require("apisix.core.etcd")
+    assert(etcd.set("/a", "ab"))
+    local res, err = etcd.get("/a")
+    if not res then
+        ngx.log(ngx.ERR, err)
+        return
+    end
+    ngx.log(ngx.WARN, res.body.node.value)
+--- config
+    location /t {
+        return 200;
+    }
+--- request
+GET /t
+--- error_log
+init_by_lua:11: ab

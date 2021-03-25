@@ -30,7 +30,17 @@ local setmetatable = setmetatable
 local type = type
 
 
+local config_local
 local _M = {}
+
+
+local function get_local_conf()
+    if not config_local then
+        config_local = require("apisix.core.config_local")
+    end
+
+    return config_local.local_conf()
+end
 
 
 local function flatten(args)
@@ -146,6 +156,16 @@ local luasocket_wrapper = {
                 "no_tlsv1"
             }
         }
+
+        local local_conf, err = get_local_conf()
+        if not local_conf then
+            return nil, err
+        end
+
+        local apisix_ssl = local_conf.apisix.ssl
+        if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+            params.cafile = apisix_ssl.ssl_trusted_certificate
+        end
 
         local sec_sock, err = ssl.wrap(self.sock, params)
         if not sec_sock then
