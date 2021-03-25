@@ -183,15 +183,31 @@ local config_schema = {
                             type = "array",
                             minItems = 1,
                             items = {
-                                type = "integer",
-                            }
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
                         },
                         udp = {
                             type = "array",
                             minItems = 1,
                             items = {
-                                type = "integer",
-                            }
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
                         },
                     }
                 },
