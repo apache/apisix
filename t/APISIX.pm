@@ -298,8 +298,9 @@ _EOC_
             apisix.stream_balancer_phase()
         }
     }
+_EOC_
 
-    init_by_lua_block {
+    my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
             jit.off()
@@ -309,8 +310,12 @@ _EOC_
 
         apisix = require("apisix")
         apisix.stream_init()
-    }
+_EOC_
 
+    $stream_config .= <<_EOC_;
+    init_by_lua_block {
+        $stream_init_by_lua_block
+    }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
