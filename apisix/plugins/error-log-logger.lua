@@ -73,7 +73,7 @@ local log_level = {
 
 
 local config = {}
-local buffers = {}
+local log_buffer
 
 
 local _M = {
@@ -149,7 +149,6 @@ local function process()
 
     end
 
-    local id = ngx.worker.id() or -1
     local entries = {}
     local logs = errlog.get_logs(9)
     while ( logs and #logs>0 ) do
@@ -164,7 +163,6 @@ local function process()
         return
     end
 
-    local log_buffer = buffers[id]
     if log_buffer then
         for _, v in ipairs(entries) do
             log_buffer:push(v)
@@ -189,7 +187,6 @@ local function process()
         return
     end
 
-    buffers[id] = log_buffer
     for _, v in ipairs(entries) do
         log_buffer:push(v)
     end
