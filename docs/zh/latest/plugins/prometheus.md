@@ -112,11 +112,11 @@ plugin_attr:
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
-![](../../../assets/images/plugin/grafana_1.png)
+![](../../../assets/images/plugin/grafana-1.png)
 
-![](../../../assets/images/plugin/grafana_2.png)
+![](../../../assets/images/plugin/grafana-2.png)
 
-![](../../../assets/images/plugin/grafana_3.png)
+![](../../../assets/images/plugin/grafana-3.png)
 
 ### 可有的指标
 
@@ -183,13 +183,13 @@ apisix_nginx_http_current_connections{state="writing"} 1
 apisix_nginx_metric_errors_total 0
 # HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
 # TYPE apisix_http_latency histogram
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00001.0"} 1
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00002.0"} 1
+apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_http_overhead HTTP request overhead added by APISIX in milliseconds per service in APISIX
 # TYPE apisix_http_overhead histogram
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00001.0"} 1
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="00002.0"} 1
+apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
