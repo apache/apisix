@@ -70,3 +70,37 @@ upstreams:
 --- error_code: 503
 --- error_log
 Can't detect upstream's scheme
+
+
+
+=== TEST 2: access $upstream_uri before proxy-rewrite
+--- apisix_yaml
+global_rules:
+  -
+    id: 1
+    plugins:
+      serverless-pre-function:
+        phase: rewrite
+        functions:
+            - "return function() ngx.log(ngx.WARN, 'serverless [', ngx.var.upstream_uri, ']') end"
+routes:
+  -
+    id: 1
+    uri: /hello
+    plugins:
+        proxy-rewrite:
+            uri: "/plugin_proxy_rewrite"
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- error_log
+serverless []
+--- response_body
+uri: /plugin_proxy_rewrite
+host: localhost
+scheme: http
