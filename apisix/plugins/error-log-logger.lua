@@ -149,7 +149,7 @@ local function process()
 
     end
 
-    local id = ngx.worker.id()
+    local id = ngx.worker.id() or -1
     local entries = {}
     local logs = errlog.get_logs(9)
     while ( logs and #logs>0 ) do
@@ -198,12 +198,12 @@ end
 
 
 function _M.init()
-    timers.register_timer("plugin#error-log-logger", process, true)
+    timers.register_timer("plugin#error-log-logger", process)
 end
 
 
 function _M.destroy()
-    timers.unregister_timer("plugin#error-log-logger", true)
+    timers.unregister_timer("plugin#error-log-logger")
 end
 
 
