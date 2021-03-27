@@ -19,6 +19,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+master_on();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
