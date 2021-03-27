@@ -133,7 +133,6 @@ http {
     lua_shared_dict upstream-healthcheck 10m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict skywalking-tracing-buffer    100m;
     lua_shared_dict balancer_ewma        10m;
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
