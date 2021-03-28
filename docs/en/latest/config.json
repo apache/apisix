@@ -3,7 +3,7 @@
   "sidebar": [
     {
       "type": "link",
-      "label": "Apache Apisix",
+      "label": "Apache APISIX",
       "href" : "https://apisix.apache.org/docs/apisix/getting-started"
     },
     {
