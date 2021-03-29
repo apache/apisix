@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-. ./.travis/common.sh
+. ./ci/common.sh
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
@@ -242,8 +242,8 @@ do_install() {
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
 
-    git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
-    cp .travis/ASF* .travis/openwhisk-utilities/scancode/
+    git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
+    cp ci/ASF* ci/openwhisk-utilities/scancode/
 
     ls -l ./
 }

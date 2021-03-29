@@ -240,11 +240,11 @@ test:
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
 license-check:
-ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
-	git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
-	cp .travis/ASF* .travis/openwhisk-utilities/scancode/
+ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
+	git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
+	cp ci/ASF* ci/openwhisk-utilities/scancode/
 endif
-	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
+	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
 
 release-src: compress-tar
 
