@@ -158,6 +158,7 @@ local function set_pass_host(ctx, upstream_info, host)
         return
     end
 
+    -- only support single node for `node` mode currently
     ctx.var.upstream_host = host
     return
 end
