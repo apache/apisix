@@ -103,3 +103,212 @@ GET /server_port?name=jack&age=17
 GET /server_port?name=jack&age=18
 --- response_body chomp
 1980
+
+
+
+=== TEST 4: the upstream node is IP and pass_host is `pass`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/uri",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "jack"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream": {
+                                                "type": "roundrobin",
+                                                "pass_host": "pass",
+                                                "nodes": {
+                                                    "127.0.0.1:1981":1
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: upstream_host is `127.0.0.1`
+--- request
+GET /uri?name=jack
+--- more_headers
+host: 127.0.0.1
+--- response_body
+uri: /uri
+host: 127.0.0.1
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: the upstream node is IP and pass_host is `rewrite`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [=[{
+                    "uri": "/uri",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "jack"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream": {
+                                                "type": "roundrobin",
+                                                "pass_host": "rewrite",
+                                                "upstream_host": "test.com",
+                                                "nodes": {
+                                                    "127.0.0.1:1981":1
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: upstream_host is test.com
+--- request
+GET /uri?name=jack
+--- response_body
+uri: /uri
+host: test.com
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: the upstream node is IP and pass_host is `node`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [=[{
+                    "uri": "/uri",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "jack"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream": {
+                                                "type": "roundrobin",
+                                                "pass_host": "node",
+                                                "nodes": {
+                                                    "localhost:1981":1
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: upstream_host is localhost
+--- request
+GET /uri?name=jack
+--- more_headers
+host: 127.0.0.1
+--- response_body
+uri: /uri
+host: localhost
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
