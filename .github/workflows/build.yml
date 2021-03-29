@@ -70,14 +70,14 @@ jobs:
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
-          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
 
       - name: Linux Before install
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty'
@@ -140,10 +140,10 @@ jobs:
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
-            ./.travis/${{ matrix.os_name }}_runner.sh do_install
+            ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}

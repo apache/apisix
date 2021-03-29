@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-. ./.travis/common.sh
+. ./ci/common.sh
 
 install_dependencies() {
     export_or_prefix
