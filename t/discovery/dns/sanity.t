@@ -16,7 +16,6 @@
 #
 use t::APISIX 'no_plan';
 
-master_on();
 repeat_each(1);
 no_root_location();
 no_shuffle();
