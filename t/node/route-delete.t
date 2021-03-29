@@ -134,8 +134,13 @@ done
 qr/\w+ (data by key: 103)/
 --- grep_error_log_out
 insert data by key: 103
+insert data by key: 103
+update data by key: 103
 update data by key: 103
 delete data by key: 103
+delete data by key: 103
 insert data by key: 103
+insert data by key: 103
+delete data by key: 103
 delete data by key: 103
 --- timeout: 30
