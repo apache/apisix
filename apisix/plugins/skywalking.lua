@@ -102,7 +102,7 @@ end
 
 
 function _M.init()
-    if process.type() ~= "worker" and process.type() ~= "single" then
+    if process.type() ~= "worker" then
         return
     end
 

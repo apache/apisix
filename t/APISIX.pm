@@ -26,6 +26,7 @@ no_long_string();
 no_shuffle();
 no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
+master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';

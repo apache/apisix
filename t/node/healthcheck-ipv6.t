@@ -34,7 +34,6 @@ if ((defined $travis_os_name) && $travis_os_name eq "linux") {
     plan 'no_plan';
 }
 
-master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
