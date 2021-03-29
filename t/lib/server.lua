@@ -104,6 +104,14 @@ function _M.status()
 end
 
 
+function _M.specific_status()
+    local status = ngx.var.http_x_test_upstream_status
+    if status ~= nil then
+        ngx.exit(status)
+    end
+end
+
+
 function _M.sleep1()
     ngx.sleep(1)
     ngx.say("ok")

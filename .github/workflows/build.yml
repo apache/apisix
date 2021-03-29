@@ -47,6 +47,11 @@ jobs:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
+      httpbin:
+        image: kennethreitz/httpbin:latest
+        ports:
+          - 8080:8080
+
     steps:
       - name: Check out code
         uses: actions/checkout@v2
