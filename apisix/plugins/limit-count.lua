@@ -103,6 +103,9 @@ local schema = {
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
                         },
+                        redis_cluster_name = {
+                            type = "string", default = "apisix-redis-cluster",
+                        },
                     },
                     required = {"redis_cluster_nodes"},
                 }
@@ -154,7 +157,6 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    conf.name = ctx.route_id
     local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
