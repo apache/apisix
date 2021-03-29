@@ -29,7 +29,6 @@ local ngx_re             = require("ngx.re")
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string             = string
-local table              = table
 local string_sub         = string.sub
 local str_byte           = string.byte
 local str_find           = core.string.find
