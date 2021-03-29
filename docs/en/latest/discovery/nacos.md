@@ -29,17 +29,15 @@ Add following configuration in `conf/config.yaml` :
 discovery:
   nacos:
     host:
-      - "http://${username}:${password}@${host1}:${port1}"
+      - "http://${username}:${password}#${host1}:${port1}"
     prefix: "/nacos/v1/"
-    auth_path: "auth/login"
-    service_list_path: "ns/service/list?pageNo=1&pageSize=20"
-    instance_list_path: "ns/instance/list?serviceName="
+    page_size: 50 # default 100
     fetch_interval: 30    # default 30 sec
     weight: 100           # default 100
     timeout:
-      connect: 2000       # default 2000
-      send: 2000          # default 2000
-      read: 5000          # default 5000
+      connect: 2000       # default 2000 ms
+      send: 2000          # default 2000 ms
+      read: 5000          # default 5000 ms
 ```
 
 And you can config it in short by default value:
@@ -53,12 +51,12 @@ discovery:
 
 ### Upstream setting
 
-Here is an example of routing a request with a URL of "/nacos/**" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry :
+Here is an example of routing a request with a URL of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry :
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "uri": "/nacos/**",
+    "uri": "/nacos/*",
     "upstream": {
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
@@ -87,7 +85,7 @@ The format response as below:
         "discovery_type": "nacos"
       },
       "priority": 0,
-      "uri": "\/nacos\/**"
+      "uri": "\/nacos\/*"
     }
   },
   "action": "set"

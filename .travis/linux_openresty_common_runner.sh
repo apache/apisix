@@ -42,8 +42,19 @@ before_install() {
     # start consul servers
     docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
     docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
+
     # start nacos server
-    docker run --rm --name nacos_1 -d --env PREFER_HOST_MODE=hostname --env MODE=standalone --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8848:8848 nacos/nacos-server:latest
+    nohup docker network rm nacos_net > /dev/null 2>&1 &
+    nohup docker network create nacos_net > /dev/null 2>&1 &
+    # nacos no auth server - for test no auth
+    docker run --rm -d --name nacos_no_auth --network nacos_net --hostname nacos2 --env NACOS_SERVERS="nacos1:8848 nacos2:8848" --env PREFER_HOST_MODE=hostname --env MODE=cluster --env EMBEDDED_STORAGE=embedded  --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8858:8848 nacos/nacos-server:latest
+    # nacos auth server - for test auth
+    docker run --rm -d --name nacos_auth --network nacos_net --hostname nacos1 --env NACOS_AUTH_ENABLE=true --env NACOS_SERVERS="nacos1:8848 nacos2:8848" --env PREFER_HOST_MODE=hostname --env MODE=cluster --env EMBEDDED_STORAGE=embedded  --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8848:8848 nacos/nacos-server:latest
+    url="127.0.0.1:8858/nacos/v1/ns/service/list?pageNo=1&pageSize=2"
+    until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do
+      echo 'wait nacos server...'
+      sleep 1;
+    done
 }
 
 do_install() {

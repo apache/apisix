@@ -21,9 +21,11 @@ local core               = require("apisix.core")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
+local math               = math
 local math_random        = math.random
 local error              = error
 local ngx                = ngx
+local ngx_re             = require("ngx.re")
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string             = string
@@ -31,12 +33,14 @@ local table              = table
 local string_sub         = string.sub
 local str_byte           = string.byte
 local str_find           = core.string.find
+local str_format         = string.format
 local log                = core.log
 
 local default_weight
 local applications
 local auth_path
 local service_list_path
+local page_size
 local instance_list_path
 
 local schema = {
@@ -51,9 +55,7 @@ local schema = {
         },
         fetch_interval = {type = "integer", minimum = 1, default = 30},
         prefix = {type = "string", default = "/nacos/v1/"},
-        auth_path = {type = "string", default = "auth/login"},
-        service_list_path = {type = "string", default = "ns/service/list?pageNo=1&pageSize=20"},
-        instance_list_path = {type = "string", default = "ns/instance/list?serviceName="},
+        page_size = {type = "integer", minimum = 1, default = 100},
         weight = {type = "integer", minimum = 1, default = 100},
         timeout = {
             type = "object",
@@ -78,18 +80,6 @@ local _M = {
 }
 
 
-local function str_split (inputstr, sep)
-    if sep == nil then
-        sep = "%s"
-    end
-    local t = {}
-    for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
-        table.insert(t, str)
-    end
-    return t
-end
-
-
 local function service_info()
     local host = local_conf.discovery and
             local_conf.discovery.nacos and local_conf.discovery.nacos.host
@@ -101,12 +91,12 @@ local function service_info()
     local username, password
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local auth_idx = str_find(url, "@")
+    local auth_idx = str_find(url, "#")
     if auth_idx then
         local protocol_idx = str_find(url, "://")
         local protocol = string_sub(url, 1, protocol_idx + 2)
         local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local arr = str_split(user_and_password,":")
+        local arr = ngx_re.split(user_and_password, ":")
         if #arr == 2 then
             username = arr[1]
             password = arr[2]
@@ -126,8 +116,8 @@ end
 
 
 local function request(request_uri, path, body, method, basic_auth)
-    log.info("nacos uri:", request_uri, ".")
     local url = request_uri .. path
+    log.info("request url:", url)
     local headers = core.table.new(0, 0)
     headers['Connection'] = 'Keep-Alive'
     headers['Accept'] = 'application/json'
@@ -187,13 +177,57 @@ local function post_url(request_uri, path, body)
 end
 
 
+
+local function get_page_service(infos, base_uri, token_param, page_num)
+    local path = str_format(service_list_path, page_num, page_size) .. token_param
+    local data, err = get_url(base_uri, path)
+    if err then
+        return data, err, path
+    end
+
+    for _, service_name in ipairs(data.doms) do
+        core.table.insert(infos, service_name)
+    end
+    return data, err, path
+end
+
+
+local function iter_and_add_service_info(infos, base_uri, token_param)
+    local data, err, path = get_page_service(infos, base_uri, token_param, 1)
+    if err then
+        log.error("get_url:" .. path .. " err:" .. err)
+        return
+    end
+
+    local maxPage = math.ceil(data.count / page_size)
+    if maxPage == 0 then
+        return
+    end
+
+    if maxPage > 1 then
+        for i = 2, maxPage do
+            get_page_service(infos, base_uri, token_param, i)
+        end
+    end
+end
+
+
+local function get_services(base_uri, token_param)
+    local infos = core.table.new(0, 0)
+    iter_and_add_service_info(infos, base_uri, token_param)
+    return infos
+end
+
+
 local function fetch_full_registry(premature)
     if premature then
         return
     end
 
+    local up_apps = core.table.new(0, 0)
     local base_uri, username, password = service_info()
     if not base_uri then
+        applications = up_apps
         return
     end
 
@@ -203,27 +237,25 @@ local function fetch_full_registry(premature)
                 .. "&password=" .. password, nil)
         if err then
             log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
+            applications = up_apps
             return
         end
         token_param = "&accessToken=" .. data.accessToken
     end
 
-    local up_apps = core.table.new(0, 0)
-    local data, err = get_url(base_uri, service_list_path .. token_param)
-    if err then
-        log.error("get_url:" .. service_list_path .. " err:" .. err)
-        return
-    end
 
-    if tostring(data.count) == "0" then
+    local infos = get_services(base_uri, token_param)
+    if #infos == 0 then
         applications = up_apps
         return
     end
 
-    for _, service_name in ipairs(data.doms) do
+    local data, err
+    for _, service_name in ipairs(infos) do
         data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
         if err then
             log.error("get_url:" .. instance_list_path .. " err:" .. err)
+            applications = up_apps
             return
         end
 
@@ -249,9 +281,10 @@ end
 
 
 function _M.nodes(service_name)
-    if not applications then
-        log.error("failed to fetch nodes for : ", service_name)
-        return
+    while( not applications )
+    do
+        log.info('wait init')
+        ngx.sleep(0.1)
     end
 
     return applications[service_name]
@@ -274,11 +307,17 @@ function _M.init_worker()
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info("fetch_interval:", fetch_interval, ".")
-    auth_path = local_conf.discovery.nacos.auth_path
-    service_list_path = local_conf.discovery.nacos.service_list_path
-    instance_list_path = local_conf.discovery.nacos.instance_list_path
+    page_size = local_conf.discovery.nacos.page_size
+    auth_path = "auth/login"
+    service_list_path = "ns/service/list?pageNo=%s&pageSize=%s"
+    instance_list_path = "ns/instance/list?healthyOnly=true&serviceName="
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
+end
+
+
+function _M.dump_data()
+    return {config = local_conf.discovery.nacos, services = applications or {}}
 end
 
 
