@@ -29,7 +29,6 @@ BEGIN {
 use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
 use t::APISIX 'no_plan';
 
-master_on();
 repeat_each(1);
 no_long_string();
 no_root_location();

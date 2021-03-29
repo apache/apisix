@@ -17,7 +17,6 @@
 
 use t::APISIX 'no_plan';
 
-master_on();
 workers(4);
 repeat_each(1);
 no_long_string();
