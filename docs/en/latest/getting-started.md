@@ -219,7 +219,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: supe
 ## Add a prefix to the route
 
 Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not want to use the `host` header then you can use
-the proxy rewrite plugin to do it.
+the proxy-rewrite plugin to do it.
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
