@@ -63,7 +63,7 @@ $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
 ```
 
 
-Let's deconstruct the above URL.
+Let's deconstruct the above Request URL.
 
 - Protocol: HTTPS
 - Port: 443
