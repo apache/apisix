@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-. ./.travis/common.sh
+. ./ci/common.sh
 
 do_install() {
     export_or_prefix
@@ -56,6 +56,8 @@ script() {
     cd ..
 
     # apisix cli test
+    ./utils/set-dns.sh
+
     for f in ./t/cli/test_*.sh; do
         sudo PATH="$PATH" "$f"
     done

@@ -42,6 +42,11 @@ ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
 endif
 endif
 
+LUAROCKS_SERVER_OPT =
+ifneq ($(LUAROCKS_SERVER), )
+	LUAROCKS_SERVER_OPT = --server ${LUAROCKS_SERVER}
+endif
+
 SHELL := /bin/bash -o pipefail
 
 VERSION ?= latest
@@ -80,14 +85,14 @@ else
 	$(LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
 	$(LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 endif
-	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
 	@echo "    OPENSSL_LIBDIR=$(addprefix $(OPENSSL_PREFIX), /lib)"
 	@echo "    OPENSSL_INCDIR=$(addprefix $(OPENSSL_PREFIX), /include)"
 	@echo "}"
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 endif
 
 
@@ -235,11 +240,11 @@ test:
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
 license-check:
-ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
-	git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
-	cp .travis/ASF* .travis/openwhisk-utilities/scancode/
+ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
+	git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
+	cp ci/ASF* ci/openwhisk-utilities/scancode/
 endif
-	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
+	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
 
 release-src: compress-tar
 

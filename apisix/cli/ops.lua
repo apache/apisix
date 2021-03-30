@@ -23,6 +23,7 @@ local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
+local jsonschema = require("jsonschema")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -144,6 +145,141 @@ local function get_lua_path(conf)
 end
 
 
+local config_schema = {
+    type = "object",
+    properties = {
+        apisix = {
+            properties = {
+                config_center = {
+                    enum = {"etcd", "yaml"},
+                },
+                proxy_protocol = {
+                    type = "object",
+                    properties = {
+                        listen_http_port = {
+                            type = "integer",
+                        },
+                        listen_https_port = {
+                            type = "integer",
+                        },
+                        enable_tcp_pp = {
+                            type = "boolean",
+                        },
+                        enable_tcp_pp_to_upstream = {
+                            type = "boolean",
+                        },
+                    }
+                },
+                port_admin = {
+                    type = "integer",
+                },
+                https_admin = {
+                    type = "boolean",
+                },
+                stream_proxy = {
+                    type = "object",
+                    properties = {
+                        tcp = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
+                        },
+                        udp = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
+                        },
+                    }
+                },
+                dns_resolver = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                    }
+                },
+                dns_resolver_valid = {
+                    type = "integer",
+                },
+                ssl = {
+                    type = "object",
+                    properties = {
+                        ssl_trusted_certificate = {
+                            type = "string",
+                        }
+                    }
+                },
+            }
+        },
+        nginx_config = {
+            type = "object",
+            properties = {
+                envs = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                    }
+                }
+            },
+        },
+        http = {
+            type = "object",
+            properties = {
+                lua_shared_dicts = {
+                    type = "object",
+                }
+            }
+        },
+        etcd = {
+            type = "object",
+            properties = {
+                resync_delay = {
+                    type = "integer",
+                },
+                user = {
+                    type = "string",
+                },
+                password = {
+                    type = "string",
+                },
+                tls = {
+                    type = "object",
+                    properties = {
+                        cert = {
+                            type = "string",
+                        },
+                        key = {
+                            type = "string",
+                        },
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -156,6 +292,12 @@ local function init(env)
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
         util.die("failed to read local yaml config of apisix: ", err, "\n")
+    end
+
+    local validator = jsonschema.generate_validator(config_schema)
+    local ok, err = validator(yaml_conf)
+    if not ok then
+        util.die("failed to validate config: ", err, "\n")
     end
 
     -- check the Admin API token

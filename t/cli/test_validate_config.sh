@@ -27,7 +27,7 @@ apisix:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'dns_resolver_valid should be a number'; then
+if ! echo "$out" | grep 'property "dns_resolver_valid" validation failed: wrong type: expected integer, got string'; then
     echo "failed: dns_resolver_valid should be a number"
     exit 1
 fi
@@ -45,5 +45,27 @@ if echo "$out" | grep 'no such file'; then
     echo "failed: find the certificate correctly"
     exit 1
 fi
+make stop
 
 echo "passed: find the certificate correctly"
+
+echo '
+apisix:
+    node_listen: 9080
+    enable_admin: true
+    port_admin: 9180
+    stream_proxy:
+        tcp:
+            - "localhost:9100"
+        udp:
+            - "127.0.0.1:9101"
+' > conf/config.yaml
+
+out=$(make run 2>&1 || echo "ouch")
+if echo "$out" | grep 'ouch'; then
+    echo "failed: allow configurating address in stream_proxy"
+    exit 1
+fi
+make stop
+
+echo "passed: allow configurating address in stream_proxy"

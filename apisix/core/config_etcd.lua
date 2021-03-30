@@ -506,8 +506,15 @@ do
 
         -- default to verify etcd cluster certificate
         etcd_conf.ssl_verify = true
-        if etcd_conf.tls and etcd_conf.tls.verify == false then
-            etcd_conf.ssl_verify = false
+        if etcd_conf.tls then
+            if etcd_conf.tls.verify == false then
+                etcd_conf.ssl_verify = false
+            end
+
+            if etcd_conf.tls.cert then
+                etcd_conf.ssl_cert_path = etcd_conf.tls.cert
+                etcd_conf.ssl_key_path = etcd_conf.tls.key
+            end
         end
 
         local err

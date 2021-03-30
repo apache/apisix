@@ -317,3 +317,4 @@ apisix:
 GET /t
 --- error_log
 error: failed to query the DNS server
+--- timeout: 10

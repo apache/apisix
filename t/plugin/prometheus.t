@@ -614,7 +614,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
+qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"500.*/
 --- no_error_log
 [error]
 
