@@ -30,7 +30,7 @@ Also, we will take the following `echo` endpoint as an example, it will return p
 **Request**
 
 ```bash
-$ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
+$ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 ```
 
 **Response**
@@ -58,14 +58,14 @@ $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
     "X-Amzn-Trace-Id": "Root=1-606276ab-2b451d4b36057c186d666351"
   },
   "origin": "58.152.81.42",
-  "url": "https://httpbin.org/get?foo1=bar1&foo2=bar2"
+  "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
 
 Let's deconstruct the above Request URL.
 
-- Protocol: HTTPS
+- Protocol: HTTP
 - Port: 443
 - Host: `httpbin.org`
 - URI/Path: `/get`
@@ -81,8 +81,6 @@ Let's deconstruct the above Request URL.
 I know you're waiting for this moment for a while, let's go! 
 
 ## Step 1: Install Apache APISIX
-
-<!-- We could follow [Install with Source Release Guide](how-to-build.md#installation-via-source-release) to install the Apache APISIX in multiple operating environments. -->
 
 Thanks to Docker, we could launch the Apache APISIX and enable the [Admin API](./admin-api.md) by executing the following commands:
 
@@ -151,7 +149,7 @@ After this Route is created, we could use Apache APISIX's address to access our 
 $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
-This will be forward to `https://httpbin.org:443/getAll?limit=10` by Apache APISIX.
+This will be forward to `http://httpbin.org:443/getAll?limit=10` by Apache APISIX.
 
 ### Create an Upstream
 
@@ -169,27 +167,23 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 
 We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:443` as our Upstream target(backend server), and its ID is `50`. For more fields, please refer to [Admin API](./admin-api.md).
 
-**NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests, but let's assume we need to set at least one `Upstream` in this guide.
+**NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests then response direcly, but let's assume we need to set at least one `Upstream` in this guide.
 
-### Add a Route to access the Upstream
+### Bind Route with Upstream
 
-By default Apache APISIX proxies the request via the HTTP protocol, as our backend server is hosted in the HTTPS environment, let's use the [proxy-rewrite](./plugins/proxy-rewrite.md) plugin to change `HTTP` to `HTTPS`.
+We just created an Upstream(Reference to our backend services), let's bind one Route with it!
 
 ```bash
 $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
-  "plugins": {
-    "proxy-rewrite": {
-      "scheme": "https"
-    }
-  },
-  "upstream_id": 50
+  "plugins": {},
+  "upstream_id": "50"
 }'
 ```
 
-That's it! In this section, we use [Plugin](./architecture-design/plugin.md) to rewrite `HTTP` scheme to `HTTPS` scheme, we have more than 45+ plugins under the [/apisix/plugins](./plugins) directory.
+That's it!
 
 ### Verification
 
@@ -229,9 +223,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
   "uri": "/get",
   "host": "httpbin.org",
   "plugins": {
-    "proxy-rewrite": {
-      "scheme": "https"
-    },
     "key-auth": {}
   },
   "upstream_id": 50
@@ -257,7 +248,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
   "uri": "/samplePrefix/get",
   "plugins": {
     "proxy-rewrite": {
-      "scheme": "https",
       "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
     },
     "key-auth": {}
