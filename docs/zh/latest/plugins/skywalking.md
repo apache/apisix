@@ -95,7 +95,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 | ------------ | ------ | -------- | ----------------------------------------------------- |
 | service_name | string |  "APISIX" | skywalking 上报的 service 名称                                 |
 |service_instance_name|string| "APISIX Instance Name" | skywalking 上报的 service 实例名 |
-| endpoint     | string | "http://127.0.0.1:12800" | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800 |
+| endpoint_addr| string | "http://127.0.0.1:12800" | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800 |
+| report_interval| integer | 使用 skywalking 客户端内置的值 | 上报时间间隔，单位是秒|
 
 配置示例:
 
