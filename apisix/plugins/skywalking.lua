@@ -39,6 +39,9 @@ local metadata_schema = {
             type = "string",
             default = "http://127.0.0.1:12800",
         },
+        report_interval = {
+            type = "integer",
+        },
     },
     additionalProperties = false,
 }
@@ -127,7 +130,21 @@ function _M.init()
     metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
 
     local sk_cli = require("skywalking.client")
+    if local_plugin_info.report_interval then
+        sk_cli.backendTimerDelay = local_plugin_info.report_interval
+    end
+
     sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
+end
+
+
+function _M.destroy()
+    if process.type() ~= "worker" then
+        return
+    end
+
+    local sk_cli = require("skywalking.client")
+    sk_cli:destroyBackendTimer()
 end
 
 
