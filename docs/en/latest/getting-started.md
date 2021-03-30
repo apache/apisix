@@ -21,29 +21,62 @@ title: Getting Started
 #
 -->
 
-## Quick Start Guide
+## Quick Start
 
-The goal of this guide is to get started with APISIX and to configure a secured public API with APISIX.
-By the end of this guide, you will have a working APISIX setup and a new service which will route to a public API, which is secured by an API key.
+This guide aims to get started with Apache APISIX, we will configure the service that will route to a public API, secured by an API key.
 
-The following GET endpoint will be used for the purpose of this tutorial. This will act as an echo endpoint and will return the parameters which are sent to the API.
+Also, we will take the following `echo` endpoint as an example, it will return parameters we passed.
+
+**Request**
 
 ```bash
 $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
 ```
 
+**Response**
+
+```json
+{
+  "args": {
+    "foo1": "bar1", 
+    "foo2": "bar2"
+  },
+  "headers": {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", 
+    "Accept-Encoding": "gzip, deflate, br", 
+    "Accept-Language": "en,zh-CN;q=0.9,zh;q=0.8", 
+    "Cache-Control": "max-age=0", 
+    "Host": "httpbin.org", 
+    "Sec-Ch-Ua": "\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\"", 
+    "Sec-Ch-Ua-Mobile": "?0", 
+    "Sec-Fetch-Dest": "document", 
+    "Sec-Fetch-Mode": "navigate", 
+    "Sec-Fetch-Site": "none", 
+    "Sec-Fetch-User": "?1", 
+    "Upgrade-Insecure-Requests": "1", 
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36", 
+    "X-Amzn-Trace-Id": "Root=1-606276ab-2b451d4b36057c186d666351"
+  },
+  "origin": "58.152.81.42",
+  "url": "https://httpbin.org/get?foo1=bar1&foo2=bar2"
+}
+```
+
+
 Let's deconstruct the above URL.
 
-- Scheme: HTTPS
-- Host/Address: httpbin.org
+- Protocol: HTTPS
 - Port: 443
-- URI: /get
+- Host: httpbin.org
+- URI/Path: /get
 - Query Parameters: foo1, foo2
 
 ## Prerequisites
 
-- This guide uses docker and docker-compose to setup APISIX. But if you have already installed APISIX in other ways, you can just skip to [step 2](getting-started.md#step-2-create-a-route-in-apisix).
-- Curl: The guide uses curl command for API testing, but you can also use any other tool of your choice (Eg- Postman).
+> If you have installed Apache APISIX, just skip to [Step 2](getting-started.md#step-2-create-a-route-in-apisix) please.
+
+- This guide uses [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to setup Apache APISIX.
+- `curl`: The guide uses curl command for API testing, but you can also use any other tools, e.g `Postman`.
 
 ## Step 1: Install APISIX
 
@@ -256,12 +289,12 @@ same route configurations via the dashboard as well.
 - Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379).
 The following is the command to kill a process which is listening to a specific port (in unix based systems).
 
-    ```bash
-    sudo fuser -k 9443/tcp
-    ```
+```bash
+$ sudo fuser -k 9443/tcp
+```
 
 - If the docker container is continuously restarting/failing, login to the container and observe the logs to diagnose the issue.
 
-    ```bash
-    docker logs -f --tail container_id
-    ```
+```bash
+$ docker logs -f --tail container_id
+```
