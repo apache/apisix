@@ -586,7 +586,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 **具体示例：**
 
-示例一：创建一个 upstream 并对相应数据做修改。
+示例一：创建一个 upstream 并对 `nodes` 的数据做修改
 
 ```shell
 # 创建一个 upstream
@@ -668,7 +668,7 @@ HTTP/1.1 200 OK
 
 ```
 
-示例二：如何使用 HTTPS 的 scheme 将请求代理到上游。
+示例二：将客户端请求代理到上游 `https` 服务
 
 1、创建 route 并配置 upstream 的 scheme 为 `https`。
 

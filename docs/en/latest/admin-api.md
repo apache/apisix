@@ -577,7 +577,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 **Example:**
 
-Example 1: Create an upstream and modify the corresponding data.
+Example 1: Create an upstream and modify the data of `nodes`
 
 ```shell
 # Create upstream
@@ -659,7 +659,7 @@ After the execution is successful, nodes will not retain the original data, and 
 
 ```
 
-Example 2: How to proxy requests to upstream with HTTPS scheme.
+Example 2: How to proxy client request to `https` upstream service
 
 1. Create a route and configure the upstream scheme as `https`.
 
