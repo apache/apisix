@@ -22,7 +22,6 @@ no_root_location();
 no_shuffle();
 log_level("info");
 workers(2);
-master_on();
 
 add_block_preprocessor(sub {
     my ($block) = @_;

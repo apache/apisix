@@ -34,7 +34,7 @@ title: Install Dependencies
 
 - Now by default Apache APISIX uses HTTP protocol to talk with etcd cluster, which is insecure. Please configure certificate and corresponding private key for your etcd cluster, and use "https" scheme explicitly in the etcd endpoints list in your Apache APISIX configuration, if you want to keep the data secure and integral. See the etcd section in `conf/config-default.yaml` for more details.
 
-- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/.travis/linux_tengine_runner.sh).
+- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/ci/linux_tengine_runner.sh).
 
 - If it is OpenResty 1.19, APISIX will use OpenResty's built-in LuaJIT to run `bin/apisix`; otherwise it will use Lua 5.1. If you encounter `luajit: lj_asm_x86.h:2819: asm_loop_ fixup: Assertion '((intptr_t)target & 15) == 0' failed`, this is a problem with the low version of OpenResty's built-in LuaJIT under certain compilation conditions.
 

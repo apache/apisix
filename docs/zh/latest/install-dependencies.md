@@ -34,7 +34,7 @@ title: 安装依赖
 
 - 目前 Apache APISIX 默认使用 HTTP 协议与 etcd 集群通信，这并不安全，如果希望保障数据的安全性和完整性。 请为您的 etcd 集群配置证书及对应私钥，并在您的 Apache APISIX etcd endpoints 配置列表中明确使用 `https` 协议前缀。请查阅 `conf/config-default.yaml` 中 etcd 一节相关的配置来了解更多细节。
 
-- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/.travis/linux_tengine_runner.sh)。
+- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](https://github.com/apache/apisix/blob/master/ci/linux_tengine_runner.sh)。
 
 - 如果是 OpenResty 1.19，APISIX 会使用 OpenResty 内置的 LuaJIT 来运行 `bin/apisix`；否则会使用 Lua 5.1。如果运行过程中遇到 `luajit: lj_asm_x86.h:2819: asm_loop_fixup: Assertion '((intptr_t)target & 15) == 0' failed`，这是低版本 OpenResty 内置的 LuaJIT 在特定编译条件下的问题。
 

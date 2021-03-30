@@ -148,27 +148,18 @@ end
 
 
 local function set_pass_host(ctx, upstream_info, host)
-    -- Currently only supports a single upstream of the domain name.
-    -- When the upstream is `IP`, do not do any `pass_host` operation.
-    if not core.utils.parse_ipv4(host)
-       and not core.utils.parse_ipv6(host)
-    then
-        local pass_host = upstream_info.pass_host or "pass"
-        if pass_host == "pass" then
-            ctx.var.upstream_host = ctx.var.host
-            return
-        end
-
-        if pass_host == "rewrite" then
-            ctx.var.upstream_host = upstream_info.upstream_host
-            return
-        end
-
-        ctx.var.upstream_host = host
+    local pass_host = upstream_info.pass_host or "pass"
+    if pass_host == "pass" then
         return
     end
 
-    return
+    if pass_host == "rewrite" then
+        ctx.var.upstream_host = upstream_info.upstream_host
+        return
+    end
+
+    -- only support single node for `node` mode currently
+    ctx.var.upstream_host = host
 end
 
 
