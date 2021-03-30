@@ -139,7 +139,7 @@ end
 
 
 function _M.destroy()
-    if process.type() ~= "worker" and process.type() ~= "single" then
+    if process.type() ~= "worker" then
         return
     end
 
