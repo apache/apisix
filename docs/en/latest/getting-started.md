@@ -178,7 +178,6 @@ $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f03433
 {
   "uri": "/get",
   "host": "httpbin.org",
-  "plugins": {},
   "upstream_id": "50"
 }'
 ```
