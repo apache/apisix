@@ -73,7 +73,7 @@ Let's deconstruct the above Request URL.
 
 ## Prerequisites
 
-> If you have installed the Apache APISIX, feel free and skip to [Step 2](getting-started.md#step-2-create-a-route-in-apisix) please.
+> If you have installed the Apache APISIX, feel free and skip to [Step 2](#step-2-create-a-route) please.
 
 - This guide uses [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) to setup Apache APISIX.
 - `curl`: This guide uses the [curl](https://curl.se/docs/manpage.html) command for API testing, but you can also use any other tools, e.g [Postman](https://www.postman.com/).
