@@ -136,7 +136,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
-* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. The total bandwidth of each service or all services can be counted.
+* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through APISIX. The total bandwidth of per service can be counted.
 
     Attributes：
 
@@ -148,7 +148,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node         | The `ip` of the upstream node. |
 
-* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not, where `1` is available, and `0` is unavailable.
+* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a APISIX or not, where `1` is available, and `0` is unavailable.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
 * `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
 * `Latency`: The per service histogram of request time and the overhead added by APISIX (request time - upstream response time).
@@ -174,7 +174,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 * `Info`: the information of APISIX node.
 
-Here is the original metric data of apisix:
+Here is the original metric data of APISIX:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/prometheus/metrics
