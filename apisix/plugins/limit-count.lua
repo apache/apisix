@@ -107,7 +107,7 @@ local schema = {
                             type = "string",
                         },
                     },
-                    required = {"redis_cluster_nodes"},
+                    required = {"redis_cluster_nodes","redis_cluster_name"},
                 }
             }
         }
