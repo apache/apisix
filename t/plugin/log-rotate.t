@@ -90,8 +90,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            ngx.log(ngx.WARN, "start xxxxxx")
             ngx.sleep(0.1)
+            ngx.log(ngx.WARN, "start xxxxxx")
             ngx.say("done")
         }
     }
