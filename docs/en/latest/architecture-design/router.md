@@ -27,7 +27,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 - `apisix.router.http`: HTTP Request Route。
 
-  - `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
+  - `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](../router-radixtree.md).
     - `Absolute match`: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
     - `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
     - `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.

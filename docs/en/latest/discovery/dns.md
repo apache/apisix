@@ -22,7 +22,7 @@ title: DNS
 -->
 
 * [service discovery via DNS](#service-discovery-via-dns)
-    * [SRV record](#src-record)
+    * [SRV record](#srv-record)
 
 ## service discovery via DNS
 
