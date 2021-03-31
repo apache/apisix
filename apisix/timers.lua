@@ -53,7 +53,7 @@ end
 
 
 local function is_privileged()
-    return process.type() == "privileged agent" or process.type() == "single"
+    return process.type() == "privileged agent"
 end
 
 

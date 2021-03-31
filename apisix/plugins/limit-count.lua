@@ -76,6 +76,9 @@ local schema = {
                         redis_password = {
                             type = "string", minLength = 0,
                         },
+                        redis_database = {
+                            type = "integer", minimum = 0, default = 0,
+                        },
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
                         },

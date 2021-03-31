@@ -101,7 +101,7 @@ GET /apisix/plugin/jwt/sign?key=user-key
 
 
 
-=== TEST 4: consummer restriction
+=== TEST 4: consumer restriction
 --- apisix_yaml
 consumers:
   - username: jack

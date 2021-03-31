@@ -102,7 +102,7 @@ done
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "endpoint": "http://127.0.0.1:1980/mock_zipkin?server_addr=127.0.0.1",
                                 "sample_ratio": 1,
                                 "service_name": "APISIX"
                             }
@@ -120,7 +120,7 @@ done
                         "value": {
                             "plugins": {
                                 "zipkin": {
-                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                    "endpoint": "http://127.0.0.1:1980/mock_zipkin?server_addr=127.0.0.1",
                                     "sample_ratio": 1,
                                     "service_name":"APISIX"
                                 }
@@ -157,8 +157,7 @@ passed
 === TEST 5: tiger zipkin
 --- request
 GET /opentracing
---- error_log
-report zipkin span failed
+--- no_error_log
 [error]
 --- wait: 10
 
@@ -306,7 +305,7 @@ opentracing
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "endpoint": "http://127.0.0.1:1980/mock_zipkin?server_addr=1.2.3.4",
                                 "sample_ratio": 1,
                                 "service_name": "apisix",
                                 "server_addr": "1.2.3.4"
@@ -340,8 +339,7 @@ passed
 === TEST 11: tiger zipkin
 --- request
 GET /opentracing
---- error_log
-report zipkin span failed
+--- no_error_log
 [error]
 --- wait: 10
 

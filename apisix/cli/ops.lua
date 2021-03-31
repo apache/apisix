@@ -22,6 +22,8 @@ local ngx_tpl = require("apisix.cli.ngx_tpl")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
+local pl_path = require("pl.path")
+local jsonschema = require("jsonschema")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -143,6 +145,141 @@ local function get_lua_path(conf)
 end
 
 
+local config_schema = {
+    type = "object",
+    properties = {
+        apisix = {
+            properties = {
+                config_center = {
+                    enum = {"etcd", "yaml"},
+                },
+                proxy_protocol = {
+                    type = "object",
+                    properties = {
+                        listen_http_port = {
+                            type = "integer",
+                        },
+                        listen_https_port = {
+                            type = "integer",
+                        },
+                        enable_tcp_pp = {
+                            type = "boolean",
+                        },
+                        enable_tcp_pp_to_upstream = {
+                            type = "boolean",
+                        },
+                    }
+                },
+                port_admin = {
+                    type = "integer",
+                },
+                https_admin = {
+                    type = "boolean",
+                },
+                stream_proxy = {
+                    type = "object",
+                    properties = {
+                        tcp = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
+                        },
+                        udp = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                anyOf = {
+                                    {
+                                        type = "integer",
+                                    },
+                                    {
+                                        type = "string",
+                                    },
+                                },
+                            },
+                            uniqueItems = true,
+                        },
+                    }
+                },
+                dns_resolver = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                    }
+                },
+                dns_resolver_valid = {
+                    type = "integer",
+                },
+                ssl = {
+                    type = "object",
+                    properties = {
+                        ssl_trusted_certificate = {
+                            type = "string",
+                        }
+                    }
+                },
+            }
+        },
+        nginx_config = {
+            type = "object",
+            properties = {
+                envs = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                    }
+                }
+            },
+        },
+        http = {
+            type = "object",
+            properties = {
+                lua_shared_dicts = {
+                    type = "object",
+                }
+            }
+        },
+        etcd = {
+            type = "object",
+            properties = {
+                resync_delay = {
+                    type = "integer",
+                },
+                user = {
+                    type = "string",
+                },
+                password = {
+                    type = "string",
+                },
+                tls = {
+                    type = "object",
+                    properties = {
+                        cert = {
+                            type = "string",
+                        },
+                        key = {
+                            type = "string",
+                        },
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -155,6 +292,12 @@ local function init(env)
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
         util.die("failed to read local yaml config of apisix: ", err, "\n")
+    end
+
+    local validator = jsonschema.generate_validator(config_schema)
+    local ok, err = validator(yaml_conf)
+    if not ok then
+        util.die("failed to validate config: ", err, "\n")
     end
 
     -- check the Admin API token
@@ -238,9 +381,19 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
-    --support multiple ports listen, compatible with the original style
+    -- support multiple ports listen, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        local node_listen = {yaml_conf.apisix.node_listen}
+        local node_listen = {{port = yaml_conf.apisix.node_listen}}
+        yaml_conf.apisix.node_listen = node_listen
+    elseif type(yaml_conf.apisix.node_listen) == "table" then
+        local node_listen = {}
+        for index, value in ipairs(yaml_conf.apisix.node_listen) do
+            if type(value) == "number" then
+                table_insert(node_listen, index, {port = value})
+            elseif type(value) == "table" then
+                table_insert(node_listen, index, value)
+            end
+        end
         yaml_conf.apisix.node_listen = node_listen
     end
 
@@ -250,10 +403,18 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
-        local ok, err = util.is_file_exist(yaml_conf.apisix.ssl.ssl_trusted_certificate)
+        local cert_path = yaml_conf.apisix.ssl.ssl_trusted_certificate
+        -- During validation, the path is relative to PWD
+        -- When Nginx starts, the path is relative to conf
+        -- Therefore we need to check the absolute version instead
+        cert_path = pl_path.abspath(cert_path)
+
+        local ok, err = util.is_file_exist(cert_path)
         if not ok then
             util.die(err, "\n")
         end
+
+        yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
     end
 
     local admin_api_mtls = yaml_conf.apisix.admin_api_mtls
@@ -276,6 +437,12 @@ Please modify "admin_key" in conf/config.yaml .
         local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
         if tonumber(dubbo_conf.upstream_multiplex_count) >= 1 then
             dubbo_upstream_multiplex_count = dubbo_conf.upstream_multiplex_count
+        end
+    end
+
+    if yaml_conf.apisix.dns_resolver_valid then
+        if tonumber(yaml_conf.apisix.dns_resolver_valid) == nil then
+            util.die("apisix->dns_resolver_valid should be a number")
         end
     end
 

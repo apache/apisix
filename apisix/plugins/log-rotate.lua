@@ -61,7 +61,7 @@ local function get_last_index(str, key)
     local _, idx = str_find(rev, key)
     local n
     if idx then
-        n = string.len(rev) - idx + 1
+        n = #rev - idx + 1
     end
 
     return n
@@ -210,7 +210,7 @@ function _M.init()
 end
 
 
-function _M.destory()
+function _M.destroy()
     timers.unregister_timer("plugin#log-rotate", true)
 end
 
