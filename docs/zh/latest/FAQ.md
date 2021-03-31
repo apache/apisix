@@ -217,7 +217,12 @@ Server: APISIX web server
 
 具体步骤：
 
-1、修改 conf/config.yaml 中的 nginx log 配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
+1、修改 conf/config.yaml 中的 `nginx_config` 配置参数`error_log_level: "warn"` 为 `error_log_level: "info"`。
+
+```yaml
+nginx_config:
+  error_log_level: "info"
+```
 
 2、重启抑或 reload APISIX
 
