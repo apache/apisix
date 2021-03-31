@@ -38,7 +38,7 @@ The technical architecture of Apache APISIX:
 
 ## Community
 
-- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 578997126
 - [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-mrougyeu-2aG7BnFaV0VnAT9_JIUVaA) - join `#apisix` on our Slack to meet the team and ask questions
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
@@ -76,7 +76,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - HTTP(S) Forward Proxy
   - [SSL](docs/en/latest/https.md): Dynamically load an SSL certificate.
 
-- **Full dynamic**
+- **Full Dynamic**
 
   - [Hot Updates And Hot Plugins](docs/en/latest/plugins.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
@@ -84,7 +84,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Serverless](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
-  - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+  - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](docs/en/latest/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
   - [Traffic Split](docs/en/latest/plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
@@ -95,7 +95,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Support all Nginx built-in variables as conditions for routing](docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`, `args`, etc. as routing conditions to implement canary release, A/B testing, etc.
   - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
   - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
-  - IPv6: Use IPv6 to match route.
+  - IPv6: Use IPv6 to match the route.
   - Support [TTL](docs/en/latest/admin-api.md#route)
   - [Support priority](docs/en/latest/router-radixtree.md#3-match-priority)
   - [Support Batch Http Requests](docs/en/latest/plugins/batch-requests.md)
@@ -120,15 +120,15 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
-  - High availability: support to configure multiple etcd addresses in the same cluster.
+  - High availability: Support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
-  - [Stand-Alone](docs/en/latest/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
+  - [Stand-Alone](docs/en/latest/stand-alone.md): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
   - [Global Rule](docs/en/latest/architecture-design/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
-  - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
+  - High performance: The single-core QPS reaches 18k with an average delay of fewer than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
-  - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
+  - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also, note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
   - External Loggers: Export access logs to external log management tools. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md))
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
@@ -184,7 +184,7 @@ There are several ways to install the Apache Release version of APISIX:
    $ docker pull apache/apisix
    ```
 
-   The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
+   The Docker image does not include `etcd`; you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
 
@@ -195,7 +195,7 @@ There are several ways to install the Apache Release version of APISIX:
    $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
    ```
 
-   - check version of APISIX:
+   - check the version of APISIX:
 
      ```shell
      $ apisix version
@@ -231,7 +231,7 @@ There are several ways to install the Apache Release version of APISIX:
 
 2. Getting started
 
-   The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
+   The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
 
    Further, you can follow the documentation to try more [plugins](README.md#plugins).
 
@@ -243,17 +243,17 @@ There are several ways to install the Apache Release version of APISIX:
 
    You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and [sample plugin `echo`](docs/en/latest/plugins/echo.md) documentation and code implementation.
 
-   Please note that Apache APISIX plugins' added, updated, deleted, etc. are hot loaded, without restarting the service.
+   Please note that Apache APISIX plugins' added, updated, deleted, etc., are hot-loaded without restarting the service.
 
 For more documents, please refer to [Apache APISIX Document Index](README.md)
 
 ## Benchmark
 
-Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
+Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of only 0.2 ms.
 
 [Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
-## Apache APISIX vs Kong
+## Apache APISIX vs. Kong
 
 #### Both of them have been covered core features of API gateway
 
@@ -274,9 +274,9 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | **Features**                                                    | **Apache APISIX**                                 | **Kong**                |
 | :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
 | Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
-| Tech Architecture                                               | Nginx + etcd                                      | Nginx + postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, GitHub, meetup | GitHub, freenode, forum |
-| Single-core CPU, QPS(enable limit-count and prometheus plugins) | 18000                                             | 1700                    |
+| Tech Architecture                                               | Nginx + etcd                                      | Nginx + Postgres        |
+| Communication channels                                          | Mail list, Wechat group, QQ group, GitHub, meetup | GitHub, Freenode, forum |
+| Single-core CPU, QPS(enable limit-count and Prometheus plugins) | 18000                                             | 1700                    |
 | Latency                                                         | 0.2 ms                                            | 2 ms                    |
 | Dubbo                                                           | Yes                                               | No                      |
 | Configuration rollback                                          | Yes                                               | No                      |
@@ -286,7 +286,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | REST API <--> gRPC transcoding                                  | Yes                                               | No                      |
 | Tengine                                                         | Yes                                               | No                      |
 | MQTT                                                            | Yes                                               | No                      |
-| Configuration effective time                                    | Event driven, < 1ms                               | polling, 5 seconds      |
+| Configuration effective time                                    | Event-driven, < 1ms                               | polling, 5 seconds      |
 | Dashboard                                                       | Yes                                               | No                      |
 | IdP                                                             | Yes                                               | No                      |
 | Configuration Center HA                                         | Yes                                               | No                      |
@@ -314,8 +314,8 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
-- [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller?(Chinese)](https://www.upyun.com/opentalk/448.html)
-- [aispeech: Why we create a new k8s ingress controller?(Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+- [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller? (Chinese)](https://www.upyun.com/opentalk/448.html)
+- [aispeech: Why we create a new k8s ingress controller? (Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
 
 ## Who Uses APISIX?
 
