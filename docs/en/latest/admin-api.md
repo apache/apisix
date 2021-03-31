@@ -520,7 +520,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |Name            |Optional|Description|
 |----------------|--------|-----------|
 |type            |required|the balancer algorithm|
-|nodes           |required, can't be used with `service_name` |Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
+|nodes           |required, can't be used with `service_name` |Hash table or array. If it is a hash table, the key of the internal element is the upstream machine address list, the format is `Address + (optional) Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. The value is the weight of node. If it is an array, each item is a hash table with key `host`/`weight` and optional `port`/`priority`. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|
 |discovery_type  |required, if `service_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
@@ -565,6 +565,7 @@ Config Example:
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
+    # is the same as "nodes": { {"host": "host", "port": 80, "weight": 100} },
     "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
