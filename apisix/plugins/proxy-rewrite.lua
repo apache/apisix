@@ -185,7 +185,7 @@ function _M.rewrite(conf, ctx)
 
     -- enum    = {"GET", "POST","PUT",""PATCH,"DELETE"}
     -- change HTTP method
-    if conf.method ~=nil then
+    if conf.method ~= nil then
 
       if conf.method == "GET" then
         ngx.req.set_method(ngx.HTTP_GET)
