@@ -122,26 +122,70 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ### Available metrics
 
-* `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
-* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
-* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
+* `Status codes`: HTTP status code returned from upstream services. These status code available per service and across all services.
+
+    Attributes：
+
+    | Name         | Description         |
+    | -------------| --------------------|
+    | code         | The HTTP status code returned by the upstream service. |
+    | route        | The `route_id` of the matched route is request. If it does not match, the default value is an empty string. |
+    | matched_uri  | The `uri` of the route matching the request, if it does not match, the default value is an empty string. |
+    | matched_host | The `host` of the route that matches the request. If it does not match, the default value is an empty string. |
+    | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
+    | node         | The `ip` of the upstream node. |
+
+* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through APISIX. The total bandwidth of per service can be counted.
+
+    Attributes：
+
+    | Name         | Description |
+    | -------------| ------------- |
+    | type         | The type of bandwidth(egress/ingress). |
+    | route        | The `route_id` of the matched route is request. If it does not match, the default value is an empty string.. |
+    | service      | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer     | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
+    | node         | The `ip` of the upstream node. |
+
+* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a APISIX or not, where `1` is available, and `0` is unavailable.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
 * `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
 * `Latency`: The per service histogram of request time and the overhead added by APISIX (request time - upstream response time).
+
+    Attributes：
+
+    | Name      | Description |
+    | ----------| ------------- |
+    | type      | Its value is fixed as `request`, which means HTTP request. |
+    | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
+    | node      | The `ip` of the upstream node. |
+
+* `Overhead`: HTTP request overhead (in milliseconds) added per service in APISIX.
+
+    Attributes：
+    | Name     | Description |
+    | ---------| ------------- |
+    | type     | Its value is fixed as `request`, which means HTTP request. |
+    | service  | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
+    | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
+    | node     | The `ip` of the upstream node. |
+
 * `Info`: the information of APISIX node.
 
-Here is the original metric data of apisix:
+Here is the original metric data of APISIX:
 
-```
+```shell
 $ curl http://127.0.0.1:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",service="127.0.0.2"} 183
-apisix_bandwidth{type="egress",service="bar.com"} 183
-apisix_bandwidth{type="egress",service="foo.com"} 2379
-apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
-apisix_bandwidth{type="ingress",service="bar.com"} 76
-apisix_bandwidth{type="ingress",service="foo.com"} 988
+apisix_bandwidth{type="egress",route="",service="127.0.0.1",consumer="",node=""} 8417
+apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
+apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
+apisix_bandwidth{type="ingress",route="",service="127.0.0.1",consumer="",node=""} 189
+apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
+apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
 # TYPE apisix_etcd_modify_indexes gauge
 apisix_etcd_modify_indexes{key="consumers"} 0
@@ -168,9 +212,9 @@ apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.
 apisix_etcd_reachable 1
 # HELP apisix_http_status HTTP status codes per service in Apisix
 # TYPE apisix_http_status counter
-apisix_http_status{code="200",service="127.0.0.2"} 1
-apisix_http_status{code="200",service="bar.com"} 1
-apisix_http_status{code="200",service="foo.com"} 13
+apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="127.0.0.2",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="bar.com",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="127.0.0.1",consumer="",node=""} 1
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
