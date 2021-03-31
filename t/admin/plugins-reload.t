@@ -26,7 +26,9 @@ workers(2);
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    $block->set_value("no_error_log", "[error]");
+    if (!defined $block->no_error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
 
     $block;
 });
@@ -249,3 +251,53 @@ GET /t
 404
 done
 200
+
+
+
+=== TEST 5: reload plugins to disable skywalking
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - skywalking
+plugin_attr:
+  skywalking:
+    service_name: APISIX
+    service_instance_name: "APISIX Instance Name"
+    endpoint_addr: http://127.0.0.1:12801
+    report_interval: 1
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        ngx.sleep(1.2)
+        local t = require("lib.test_admin").test
+
+        local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - prometheus
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+
+        ngx.say(org_body)
+
+        ngx.sleep(2)
+    }
+}
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[alert]
+--- grep_error_log eval
+qr/Instance report fails/
+--- grep_error_log_out
+Instance report fails
