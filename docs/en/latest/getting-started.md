@@ -121,7 +121,7 @@ Do you know? Apache APISIX provides the powerful [Admin API](./admin-api.md) and
 
 We could create one [Route](./architecture-design/route.md) and target it to our backend services (We call them [Upstream](./architecture-design/upstream.md) usually), when one `Request` reaches Apache APISIX, Apache APISIX will see where this Request should go.
 
-Then how does Apache APISIX know this? that's because we have a list of rules configured with Route. Here is an sample Route data:
+Then how does Apache APISIX know this? That's because we have a list of rules configured with Route. Here is a sample Route data:
 
 ```json
 {
