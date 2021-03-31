@@ -26,6 +26,7 @@ no_long_string();
 no_shuffle();
 no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
+master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
@@ -298,8 +299,9 @@ _EOC_
             apisix.stream_balancer_phase()
         }
     }
+_EOC_
 
-    init_by_lua_block {
+    my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
             jit.off()
@@ -309,8 +311,12 @@ _EOC_
 
         apisix = require("apisix")
         apisix.stream_init()
-    }
+_EOC_
 
+    $stream_config .= <<_EOC_;
+    init_by_lua_block {
+        $stream_init_by_lua_block
+    }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
@@ -381,7 +387,6 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict skywalking-tracing-buffer    100m;
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;

@@ -271,7 +271,12 @@ The default log level for APISIX is `warn`. However You can change the log level
 
 Steps:
 
-1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
+1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml.
+
+```yaml
+nginx_config:
+  error_log_level: "info"
+```
 
 2. Reload or restart APISIX
 

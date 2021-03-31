@@ -16,7 +16,6 @@
 #
 use t::APISIX 'no_plan';
 
-master_on();
 workers(4);
 log_level('info');
 repeat_each(1);
