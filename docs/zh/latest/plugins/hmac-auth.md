@@ -308,4 +308,4 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 | hexit  | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345 |
 | base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=                     |
 
-具体代码请参考：[**HMAC Generate Signature Examples**](../examples/plugins-hmac-auth-generate-signature.md)
+具体代码请参考：[**HMAC Generate Signature Examples**](../../../en/latest/examples/plugins-hmac-auth-generate-signature.md)
