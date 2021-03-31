@@ -120,26 +120,63 @@ plugin_attr:
 
 ### 可有的指标
 
-* `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
-* `Bandwidth`: 流经 apisix 的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
-* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1 来表示。
-* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
+* `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
+
+    | 名称          |    描述             |
+    | -------------| --------------------|
+    | code         | upstream 服务返回的 HTTP 状态码。 |
+    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
+    | matched_uri  | 请求匹配的 route 的 `uri`，未匹配，则默认为空字符串。 |
+    | matched_host | 请求匹配的 route 的 `host`，未匹配，则默认为空字符串。 |
+    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
+    | node         | 命中的 upstream 节点 `ip`。|
+
+* `Bandwidth`: 流经 APISIX 的总带宽(可分出口带宽和入口带宽)，可以统计到每个服务的带宽总和。具有的维度：
+
+    | 名称          |    描述        |
+    | -------------| ------------- |
+    | type         | 带宽的类型(`ingress` 或 `egress`)。 |
+    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
+    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
+    | node         | 命中的 upstream 节点 `ip`。 |
+
+* `etcd reachability`: APISIX 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
+* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。
 * `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
-* `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。
+* `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。具有的维度：
+
+    | 名称          |    描述        |
+    | -------------| ------------- |
+    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
+    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
+    | node         | 命中的 upstream 节点 `ip`。 |
+
+* `Overhead`: 每个服务在 APISIX 中的请求开销（以毫秒为单位）。具有的维度：
+
+    | 名称          |    描述        |
+    | -------------| ------------- |
+    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
+    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
+    | node         | 命中的 upstream 节点 `ip`。 |
+
 * `Info`: 当前 APISIX 节点信息。
 
-这里是 apisix 的原始的指标数据集:
+这里是 APISIX 的原始的指标数据集:
 
-```
+```shell
 $ curl http://127.0.0.2:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",service="127.0.0.2"} 183
-apisix_bandwidth{type="egress",service="bar.com"} 183
-apisix_bandwidth{type="egress",service="foo.com"} 2379
-apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
-apisix_bandwidth{type="ingress",service="bar.com"} 76
-apisix_bandwidth{type="ingress",service="foo.com"} 988
+apisix_bandwidth{type="egress",route="",service="127.0.0.1",consumer="",node=""} 8417
+apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
+apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
+apisix_bandwidth{type="ingress",route="",service="127.0.0.1",consumer="",node=""} 189
+apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
+apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
 # TYPE apisix_etcd_modify_indexes gauge
 apisix_etcd_modify_indexes{key="consumers"} 0
@@ -166,9 +203,9 @@ apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.
 apisix_etcd_reachable 1
 # HELP apisix_http_status HTTP status codes per service in Apisix
 # TYPE apisix_http_status counter
-apisix_http_status{code="200",service="127.0.0.2"} 1
-apisix_http_status{code="200",service="bar.com"} 1
-apisix_http_status{code="200",service="foo.com"} 13
+apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="127.0.0.2",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="bar.com",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="127.0.0.1",consumer="",node=""} 1
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
