@@ -200,6 +200,11 @@ local function set_upstream(upstream_info, ctx)
         }
     }
 
+    if upstream_info.type == "chash" then
+        up_conf.hash_on = upstream_info.hash_on
+        up_conf.key = upstream_info.key
+    end
+
     local ok, err = upstream.check_schema(up_conf)
     if not ok then
         core.log.error("failed to validate generated upstream: ", err)

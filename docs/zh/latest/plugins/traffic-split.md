@@ -47,7 +47,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
 | weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
 | weighted_upstreams.upstream    | object | 可选   |        |        | 上游配置信息。 |
-| upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
+| upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一。 |
 | upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
 | upstream.timeout               | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
 | upstream.pass_host             | enum   | 可选   | "pass"   | ["pass", "node", "rewrite"]  | `pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream`  node 中配置的 host； `rewrite`: 使用配置项 `upstream_host` 的值 |
