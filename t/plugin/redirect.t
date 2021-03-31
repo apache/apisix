@@ -635,7 +635,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -666,7 +666,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain

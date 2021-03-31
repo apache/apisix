@@ -73,7 +73,7 @@ local log_level = {
 
 
 local config = {}
-local buffers = {}
+local log_buffer
 
 
 local _M = {
@@ -104,7 +104,7 @@ local function send_to_server(data)
         ok, err = sock:sslhandshake(false, config.tls_server_name, false)
         if not ok then
             sock:close()
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                 .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
         end
     end
@@ -149,7 +149,6 @@ local function process()
 
     end
 
-    local id = ngx.worker.id()
     local entries = {}
     local logs = errlog.get_logs(9)
     while ( logs and #logs>0 ) do
@@ -164,7 +163,6 @@ local function process()
         return
     end
 
-    local log_buffer = buffers[id]
     if log_buffer then
         for _, v in ipairs(entries) do
             log_buffer:push(v)
@@ -189,7 +187,6 @@ local function process()
         return
     end
 
-    buffers[id] = log_buffer
     for _, v in ipairs(entries) do
         log_buffer:push(v)
     end
@@ -198,12 +195,12 @@ end
 
 
 function _M.init()
-    timers.register_timer("plugin#error-log-logger", process, true)
+    timers.register_timer("plugin#error-log-logger", process)
 end
 
 
-function _M.destory()
-    timers.unregister_timer("plugin#error-log-logger", true)
+function _M.destroy()
+    timers.unregister_timer("plugin#error-log-logger")
 end
 
 

@@ -36,10 +36,7 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 
 
 -- Default set of latency buckets, 1ms to 60s:
-local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
-    80, 90, 100, 200, 300, 400, 500, 1000,
-    2000, 5000, 10000, 30000, 60000
-}
+local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
 local metrics = {}
 
@@ -164,7 +161,7 @@ function _M.log(conf, ctx)
 end
 
 
-    local ngx_statu_items = {"active", "accepted", "handled", "total",
+    local ngx_status_items = {"active", "accepted", "handled", "total",
                              "reading", "writing", "waiting"}
     local label_values = {}
 local function nginx_status()
@@ -185,7 +182,7 @@ local function nginx_status()
         return
     end
 
-    for _, name in ipairs(ngx_statu_items) do
+    for _, name in ipairs(ngx_status_items) do
         local val = iterator()
         if not val then
             break

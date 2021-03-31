@@ -66,14 +66,16 @@ function _M.init()
 end
 
 
-function _M.destory()
+function _M.destroy()
     -- call this function when plugin is unloaded
 end
 
 
 function _M.rewrite(conf, ctx)
     core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
-    -- core.log.warn(" ctx: ", core.json.encode(ctx, true))
+    core.log.warn("conf_type: ", ctx.conf_type)
+    core.log.warn("conf_id: ", ctx.conf_id)
+    core.log.warn("conf_version: ", ctx.conf_version)
 end
 
 

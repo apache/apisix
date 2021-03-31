@@ -46,7 +46,7 @@ end
 -- Add a clean handler to a runtime configuration item.
 -- The clean handler will be called when the item is deleted from configuration
 -- or cancelled. Note that Nginx worker exit doesn't trigger the clean handler.
--- Retuen an index so that we can cancel it later.
+-- Return an index so that we can cancel it later.
 function _M.add_clean_handler(item, func)
     local idx = #item.clean_handlers + 1
     item.clean_handlers[idx] = func

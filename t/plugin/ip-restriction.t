@@ -276,7 +276,7 @@ ip-restriction exits with http status code 403
 
 
 
-=== TEST 11: hit route and IPv6 not not in the whitelist
+=== TEST 11: hit route and IPv6 not in the whitelist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -360,7 +360,7 @@ GET /hello
 
 
 
-=== TEST 15: hit route and ip not not in the blacklist
+=== TEST 15: hit route and ip not in the blacklist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -375,7 +375,7 @@ hello world
 
 
 
-=== TEST 16: hit route and IPv6 not not in the blacklist
+=== TEST 16: hit route and IPv6 not in the blacklist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;

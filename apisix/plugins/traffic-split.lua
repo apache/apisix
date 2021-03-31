@@ -33,48 +33,6 @@ local lrucache = core.lrucache.new({
 
 local vars_schema = {
     type = "array",
-    items = {
-        type = "array",
-        items = {
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 100
-            },
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 2
-            }
-        },
-        additionalItems = {
-            anyOf = {
-                {type = "string"},
-                {type = "number"},
-                {type = "boolean"},
-                {
-                    type = "array",
-                    items = {
-                        anyOf = {
-                            {
-                                type = "string",
-                                minLength = 1, maxLength = 100
-                            },
-                            {
-                                type = "number"
-                            },
-                            {
-                                type = "boolean"
-                            }
-                        }
-                    },
-                    uniqueItems = true
-                }
-            }
-        },
-        minItems = 0,
-        maxItems = 10
-    }
 }
 
 
@@ -97,7 +55,7 @@ local upstreams_schema = {
     items = {
         type = "object",
         properties = {
-            upstream_id = schema_def.id_schema,    -- todo: support upstream_id method
+            upstream_id = schema_def.id_schema,
             upstream = schema_def.upstream,
             weight = {
                 description = "used to split traffic between different" ..
@@ -154,6 +112,19 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.rules then
+        for _, rule in ipairs(conf.rules) do
+            if rule.match then
+                for _, m in ipairs(rule.match) do
+                    local ok, err = expr.new(m.vars)
+                    if not ok then
+                        return false, "failed to validate the 'vars' expression: " .. err
+                    end
+                end
+            end
+        end
+    end
+
     return true
 end
 
@@ -177,27 +148,18 @@ end
 
 
 local function set_pass_host(ctx, upstream_info, host)
-    -- Currently only supports a single upstream of the domain name.
-    -- When the upstream is `IP`, do not do any `pass_host` operation.
-    if not core.utils.parse_ipv4(host)
-       and not core.utils.parse_ipv6(host)
-    then
-        local pass_host = upstream_info.pass_host or "pass"
-        if pass_host == "pass" then
-            ctx.var.upstream_host = ctx.var.host
-            return
-        end
-
-        if pass_host == "rewrite" then
-            ctx.var.upstream_host = upstream_info.upstream_host
-            return
-        end
-
-        ctx.var.upstream_host = host
+    local pass_host = upstream_info.pass_host or "pass"
+    if pass_host == "pass" then
         return
     end
 
-    return
+    if pass_host == "rewrite" then
+        ctx.var.upstream_host = upstream_info.upstream_host
+        return
+    end
+
+    -- only support single node for `node` mode currently
+    ctx.var.upstream_host = host
 end
 
 
@@ -258,18 +220,20 @@ end
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
-        if not upstream_obj.upstream then
-            -- If the `upstream` object has only the `weight` value, it means
-            -- that the `upstream` weight value on the default `route` has been reached.
-            -- Need to set an identifier to mark the empty upstream.
-            upstream_obj.upstream = "empty_upstream"
-        end
-
-        if type(upstream_obj.upstream) == "table" then
-            -- Add a virtual id field to uniquely identify the upstream `key`.
+        if upstream_obj.upstream_id then
+            server_list[upstream_obj.upstream_id] = upstream_obj.weight
+        elseif upstream_obj.upstream then
+            -- Add a virtual id field to uniquely identify the upstream key.
             upstream_obj.upstream.vid = i
+            server_list[upstream_obj.upstream] = upstream_obj.weight
+        else
+            -- If the upstream object has only the weight value, it means
+            -- that the upstream weight value on the default route has been reached.
+            -- Mark empty upstream services in the plugin.
+            upstream_obj.upstream = "plugin#upstream#is#empty"
+            server_list[upstream_obj.upstream] = upstream_obj.weight
+
         end
-        server_list[upstream_obj.upstream] = upstream_obj.weight
     end
 
     return roundrobin:new(server_list)
@@ -308,18 +272,25 @@ function _M.access(conf, ctx)
         return
     end
 
-    local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
+    local rr_up, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_rr_obj,
+                                                weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
     end
 
     local upstream = rr_up:find()
-    if upstream and upstream ~= "empty_upstream" then
+    if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
+    elseif upstream and upstream ~= "plugin#upstream#is#empty" then
+        ctx.upstream_id = upstream
+        core.log.info("upstream_id: ", upstream)
+        return
     end
 
+    ctx.upstream_id = nil
+    core.log.info("route_up: ", upstream)
     return
 end
 

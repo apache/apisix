@@ -227,7 +227,7 @@ qr/wrong type: expected number, got string/
 
 
 
-=== TEST 6: set route(invalid duration with duoble dot in the delay property)
+=== TEST 6: set route(invalid duration with double dot in the delay property)
 --- config
        location /t {
            content_by_lua_block {
@@ -802,7 +802,7 @@ done
                     http_status = 403,
                     body = "Fault Injection!\n",
                     vars = {
-                        {"arg_name","==","jack"}
+                        {"arg_name","!=","jack"}
                     }
                 },
                 delay = {
@@ -828,7 +828,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid expression
+invalid operator '!='
 done
 --- error_log eval
 qr/failed to create vars expression:.*/

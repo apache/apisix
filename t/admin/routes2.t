@@ -616,3 +616,37 @@ GET /t
 qr/invalid configuration: property \\"labels\\" validation failed/
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: route with plugin_config_id (not found)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugin_config_id": "not_found",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch plugin config info by plugin config id [not_found], response code: 404"}
+--- no_error_log
+[error]

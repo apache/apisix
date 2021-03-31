@@ -3,13 +3,35 @@ name: ❄️ Lint
 on: [pull_request]
 
 jobs:
+  markdown-link-check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+        node_version:
+          - 14
+        architecture:
+          - x64
+    name: Check Markdown links Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+          architecture: ${{ matrix.architecture }}
+      - name: Install
+        run: npm install -g markdown-link-check
+      - name: Run
+        run: git ls-files . -m | xargs markdown-link-check -q -v  # modified files only, quiet mode, verbose mode
   markdownlint:
     name: 🍇 Markdown
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2.1.4
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
@@ -31,3 +53,10 @@ jobs:
         run: |
           # return non-zero exit code on warnings
           yamllint --strict .
+  trailing-whitespace:
+    name: 🌌 Trailing whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🧹 Check for trailing whitespace
+        run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"
