@@ -66,7 +66,7 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 Let's deconstruct the above Request URL.
 
 - Protocol: HTTP
-- Port: 443
+- Port: 80
 - Host: `httpbin.org`
 - URI/Path: `/get`
 - Query Parameters: foo1, foo2
@@ -131,13 +131,13 @@ Then how does Apache APISIX know this? That's because we have a list of rules co
   "upstream": {
     "type": "roundrobin",
     "nodes": {
-      "httpbin.org:443": 1
+      "httpbin.org:80": 1
     } 
   }
 }
 ```
 
-This Route means all inbound requests will be forwarded to the `httpbin.org:443` Upstream when they meets **ALL** these rules(matched requests):
+This Route means all inbound requests will be forwarded to the `httpbin.org:80` Upstream when they meets **ALL** these rules(matched requests):
 
 - Request's HTTP method is `GET`;
 - Request has `Host` Header, and its value is `example.com`;
@@ -149,7 +149,7 @@ After this Route is created, we could use Apache APISIX's address to access our 
 $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
-This will be forward to `http://httpbin.org:443/getAll?limit=10` by Apache APISIX.
+This will be forward to `http://httpbin.org:80/getAll?limit=10` by Apache APISIX.
 
 ### Create an Upstream
 
@@ -160,12 +160,12 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 {
   "type": "roundrobin",
   "nodes": {
-    "httpbin.org:443": 1
+    "httpbin.org:80": 1
   }
 }'
 ```
 
-We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:443` as our Upstream target(backend server), and its ID is `50`. For more fields, please refer to [Admin API](./admin-api.md).
+We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:80` as our Upstream target(backend server), and its ID is `50`. For more fields, please refer to [Admin API](./admin-api.md).
 
 **NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests then response direcly, but let's assume we need to set at least one `Upstream` in this guide.
 
