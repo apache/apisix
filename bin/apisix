@@ -50,5 +50,5 @@ elif [[ "$LUA_VERSION" =~ "Lua 5.1" ]]; then
     echo "lua $APISIX_LUA $*"
     exec lua $APISIX_LUA $*
 else
-    echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19 and Lua 5.1 are recommended before install Apache APISIX."
+    echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19 + LuaJIT or OpenResty before 1.19 + Lua 5.1 is required for Apache APISIX."
 fi
