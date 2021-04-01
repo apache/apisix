@@ -188,15 +188,16 @@ GET /t
                 return
             end
 
-            local ret = assert(etcd.get('/stream_routes/1'))
+            ngx.say("[push] code: ", code, " message: ", message)
+
+            local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
+
+            local ret = assert(etcd.get('/stream_routes/' .. id))
             local create_time = ret.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = ret.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
 
-            ngx.say("[push] code: ", code, " message: ", message)
-
-            local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
             code, message = t('/apisix/admin/stream_routes/' .. id,
                 ngx.HTTP_DELETE,
                 nil,
@@ -214,7 +215,7 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
-
+--- ONLY
 
 
 === TEST 5: set route with plugin
