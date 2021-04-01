@@ -316,6 +316,12 @@ function _M.websocket_handshake()
         ngx.log(ngx.ERR, "failed to new websocket: ", err)
         return ngx.exit(400)
     end
+
+    local bytes, err = wb:send_text("hello")
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send text: ", err)
+        return ngx.exit(444)
+    end
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
