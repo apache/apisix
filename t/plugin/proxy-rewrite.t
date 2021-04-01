@@ -1416,44 +1416,44 @@ passed
 --- request
 GET /hello
 --- response_body
-+hello world
-+--- error_log eval
-+qr/changed HTTP method from GET to POST/
-+
-+
-+
-+=== TEST 49: set route(rewrite HTTP method)
-+--- config
-+    location /t {
-+        content_by_lua_block {
-+            local t = require("lib.test_admin").test
-+            local code, body = t('/apisix/admin/routes/1',
-+                 ngx.HTTP_PATCH,
-+                 [[{
-+                        "plugins": {
-+                            "proxy-rewrite": {
-+                                "method": "PUT"
-+                            }
-+                        },
-+                        "upstream": {
-+                            "nodes": {
-+                                "127.0.0.1:1980": 1
-+                            },
-+                            "type": "roundrobin"
-+                        },
-+                        "uri": "/hello"
-+                }]]
-+                )
-+
-+            if code >= 300 then
-+                ngx.status = code
-+            end
-+            ngx.say(body)
-+        }
-+    }
-+--- request
-+GET /t
-+--- response_body
+hello world
+--- error_log eval
+qr/changed HTTP method from GET to POST/
+
+
+
+=== TEST 49: set route(rewrite HTTP method)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PATCH,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "method": "PUT"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
 passed
 --- no_error_log
 [error]
