@@ -375,37 +375,36 @@ location /t {
         local bodys = {}
         local headers = {}
         local headers2 = {}
-        headers["custom_header"] = "custom-one"
-        headers2["custom_header"] = "customtow"
+        headers["custom_header"] = "hello"
+        headers2["custom_header"] = "world"
         for i = 1, 8, 2 do
-            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers)
-            local _, _, body2 = t('/server_port', ngx.HTTP_GET, "", nil, headers2)
+            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers2)
+            local _, _, body2 = t('/server_port', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
             bodys[i+1] = body2
         end
 
-        table.sort(bodys)
         ngx.say(table.concat(bodys, ", "))
     }
 }
 --- response_body eval
-qr/1981, 1981, 1981, 1981, 1982, 1982, 1982, 1982/
+qr/1981, 1982, 1981, 1982, 1981, 1982, 1981, 1982/
 --- grep_error_log eval
-qr/hash_on: header|chash_key: "custom-one"|chash_key: "customtow"/
+qr/hash_on: header|chash_key: "hello"|chash_key: "world"/
 --- grep_error_log_out
 hash_on: header
-chash_key: "custom-one"
+chash_key: "world"
 hash_on: header
-chash_key: "customtow"
+chash_key: "hello"
 hash_on: header
-chash_key: "custom-one"
+chash_key: "world"
 hash_on: header
-chash_key: "customtow"
+chash_key: "hello"
 hash_on: header
-chash_key: "custom-one"
+chash_key: "world"
 hash_on: header
-chash_key: "customtow"
+chash_key: "hello"
 hash_on: header
-chash_key: "custom-one"
+chash_key: "world"
 hash_on: header
-chash_key: "customtow"
+chash_key: "hello"
