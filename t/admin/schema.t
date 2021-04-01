@@ -291,3 +291,23 @@ GET /apisix/admin/schema/global_rule
 qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: get proto schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/proto
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: get stream_route schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/stream_route
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
+--- no_error_log
+[error]
