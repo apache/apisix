@@ -397,7 +397,7 @@ _EOC_
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
-    proxy_ssl_name \$host;
+    proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
@@ -514,10 +514,6 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
-        set \$upstream_scheme             'http';
-        set \$upstream_host               \$http_host;
-        set \$upstream_uri                '';
-        set \$ctx_ref                     '';
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
         set \$dubbo_method                '';
@@ -529,6 +525,10 @@ _EOC_
         }
 
         location /apisix/admin {
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -544,6 +544,11 @@ _EOC_
             set \$upstream_mirror_host        '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
+
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+            set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';

@@ -112,7 +112,7 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
   - [Límite de contador (Limit-count)](../../en/latest/plugins/limit-count.md)
   - [Límite de concurrencia (Limit-concurrency)](../../en/latest/plugins/limit-conn.md)
   - Anti-ReDoS (Negación regular del servicio): políticas integradas para Anti ReDoS sin configuración.
-  - [CORS](plugins/cors.md) Activa CORS (Compartir recursos de origen cruzado) para su API.
+  - [CORS](../../en/latest/plugins/cors.md) Activa CORS (Compartir recursos de origen cruzado) para su API.
   - [Bloqueador URI](../../en/latest/plugins/uri-blocker.md): Bloquea solicitudes del cliente por URI.
   - [Validador de solicitudes (Request Validator)](../../en/latest/plugins/request-validation.md)
 
@@ -235,7 +235,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
    La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](../../en/latest/getting-started.md).
 
-   Más aún, usted puede seguir la documentación para ensayar más [plugins](README.md#plugins).
+   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins.md).
 
 3. Admin API
 
@@ -345,4 +345,4 @@ Inspirado por Kong y Orange.
 
 ## Licencia
 
-[Licencia Apache 2.0](LICENSE)
+[Licencia Apache 2.0](../../../LICENSE)
