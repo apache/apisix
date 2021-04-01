@@ -26,6 +26,7 @@ no_long_string();
 no_shuffle();
 no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
+master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
@@ -298,8 +299,9 @@ _EOC_
             apisix.stream_balancer_phase()
         }
     }
+_EOC_
 
-    init_by_lua_block {
+    my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
             jit.off()
@@ -309,8 +311,12 @@ _EOC_
 
         apisix = require("apisix")
         apisix.stream_init()
-    }
+_EOC_
 
+    $stream_config .= <<_EOC_;
+    init_by_lua_block {
+        $stream_init_by_lua_block
+    }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
@@ -367,6 +373,8 @@ _EOC_
     $extra_init_by_lua
 _EOC_
 
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
     $lua_deps_path
@@ -379,7 +387,6 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict skywalking-tracing-buffer    100m;
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
@@ -390,7 +397,7 @@ _EOC_
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
-    proxy_ssl_name \$host;
+    proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
@@ -417,6 +424,7 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
+        $extra_init_worker_by_lua
     }
 
     log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
@@ -506,10 +514,6 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
-        set \$upstream_scheme             'http';
-        set \$upstream_host               \$http_host;
-        set \$upstream_uri                '';
-        set \$ctx_ref                     '';
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
         set \$dubbo_method                '';
@@ -521,6 +525,10 @@ _EOC_
         }
 
         location /apisix/admin {
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -536,6 +544,11 @@ _EOC_
             set \$upstream_mirror_host        '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
+
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+            set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';

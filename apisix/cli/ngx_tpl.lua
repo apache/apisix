@@ -92,11 +92,11 @@ stream {
     }
 
     server {
-        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, addr in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*addr*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
-        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
+        listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
@@ -133,7 +133,6 @@ http {
     lua_shared_dict upstream-healthcheck 10m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict skywalking-tracing-buffer    100m;
     lua_shared_dict balancer_ewma        10m;
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
@@ -345,30 +344,32 @@ http {
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen {* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}
-        listen {* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen {* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
-        listen {* proxy_protocol.listen_http_port *} proxy_protocol;
+        listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
 
         {% if enable_ipv6 then %}
         {% for _, item in ipairs(node_listen) do %}
-        listen [::]:{* item.port *} {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen [::]:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, port in ipairs(ssl.listen_port) do %}
-        listen [::]:{* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen [::]:{* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
+
+        server_name _;
 
         {% if ssl.ssl_trusted_certificate ~= nil then %}
         lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
@@ -396,17 +397,6 @@ http {
         {% end %}
         # http server configuration snippet ends
 
-        set $upstream_scheme             'http';
-        set $upstream_host               $http_host;
-        set $upstream_uri                '';
-        set $ctx_ref                     '';
-
-        {% if enabled_plugins["dubbo-proxy"] then %}
-        set $dubbo_service_name          '';
-        set $dubbo_service_version       '';
-        set $dubbo_method                '';
-        {% end %}
-
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -418,6 +408,10 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
+            set $upstream_scheme             'http';
+            set $upstream_host               $http_host;
+            set $upstream_uri                '';
+
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
@@ -439,10 +433,26 @@ http {
         }
         {% end %}
 
+        {% if http.proxy_ssl_server_name then %}
+        proxy_ssl_name $upstream_host;
+        proxy_ssl_server_name on;
+        {% end %}
+
         location / {
             set $upstream_mirror_host        '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
+
+            set $upstream_scheme             'http';
+            set $upstream_host               $http_host;
+            set $upstream_uri                '';
+            set $ctx_ref                     '';
+
+            {% if enabled_plugins["dubbo-proxy"] then %}
+            set $dubbo_service_name          '';
+            set $dubbo_service_version       '';
+            set $dubbo_method                '';
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()
@@ -454,11 +464,6 @@ http {
             proxy_set_header   Connection        $upstream_connection;
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
-
-            {% if http.proxy_ssl_server_name then %}
-            proxy_ssl_name $host;
-            proxy_ssl_server_name on;
-            {% end %}
 
             ### the following x-forwarded-* headers is to send to upstream server
 

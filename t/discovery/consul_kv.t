@@ -97,7 +97,7 @@ discovery:
       read: 1000
       wait: 60
     weight: 1
-    fetch_interval: 5
+    fetch_interval: 1
     keepalive: true
     default_service:
       host: "127.0.0.1"
@@ -438,7 +438,7 @@ upstreams:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             httpc:request_uri(uri, {method = "GET"})
-            ngx.sleep(9)
+            ngx.sleep(3)
 
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
@@ -457,7 +457,6 @@ upstreams:
             ngx.say(json.encode(res))
         }
     }
---- timeout: 12
 --- request
 GET /thc
 --- response_body

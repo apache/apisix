@@ -173,34 +173,56 @@ end
 function _M.mock_zipkin()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
+    ngx.log(ngx.NOTICE, data)
+
     local spans = json_decode(data)
-    if #spans < 5 then
-        ngx.exit(400)
+    local ver = ngx.req.get_uri_args()['span_version']
+    if ver == "1" then
+        if #spans ~= 5 then
+            ngx.log(ngx.ERR, "wrong number of spans: ", #spans)
+            ngx.exit(400)
+        end
+    else
+        if #spans ~= 3 then
+            -- request/proxy/response
+            ngx.log(ngx.ERR, "wrong number of spans: ", #spans)
+            ngx.exit(400)
+        end
     end
 
     for _, span in pairs(spans) do
-        if string.sub(span.name, 1, 6) ~= 'apisix' then
+        local prefix = string.sub(span.name, 1, 6)
+        if prefix ~= 'apisix' then
+            ngx.log(ngx.ERR, "wrong prefix of name", prefix)
             ngx.exit(400)
         end
         if not span.traceId then
+            ngx.log(ngx.ERR, "missing trace id")
             ngx.exit(400)
         end
 
         if not span.localEndpoint then
+            ngx.log(ngx.ERR, "missing local endpoint")
             ngx.exit(400)
         end
 
         if span.localEndpoint.serviceName ~= 'APISIX'
           and span.localEndpoint.serviceName ~= 'apisix' then
+            ngx.log(ngx.ERR, "wrong serviceName: ", span.localEndpoint.serviceName)
             ngx.exit(400)
         end
 
         if span.localEndpoint.port ~= 1984 then
+            ngx.log(ngx.ERR, "wrong port: ", span.localEndpoint.port)
             ngx.exit(400)
         end
 
-        if span.localEndpoint.ipv4 ~= ngx.req.get_uri_args()['server_addr'] then
-            ngx.exit(400)
+        local server_addr = ngx.req.get_uri_args()['server_addr']
+        if server_addr then
+            if span.localEndpoint.ipv4 ~= server_addr then
+                ngx.log(ngx.ERR, "server_addr mismatched")
+                ngx.exit(400)
+            end
         end
 
     end

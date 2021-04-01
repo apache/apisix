@@ -58,4 +58,12 @@ public class DemoServiceImpl implements DemoService {
         ret.put("status", "503");
         return ret;
     }
+
+    @Override
+    public Map<String, Object> badStatus(Map<String, Object> context) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        ret.put("body", "ok\n");
+        ret.put("status", 200);
+        return ret;
+    }
 }

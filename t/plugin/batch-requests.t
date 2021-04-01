@@ -100,7 +100,7 @@ __DATA__
                 ]]=],
                 {
                     ConflictHeader = "outer_header",
-                    OuterConflict = "outer_confliect"
+                    OuterConflict = "outer_conflict"
                 })
 
             ngx.status = code
@@ -151,7 +151,7 @@ passed
 
 
 
-=== TEST 2: missing pipeling
+=== TEST 2: missing pipeline
 --- config
     location = /aggregate {
         content_by_lua_block {
@@ -463,7 +463,7 @@ GET /aggregate
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
-                "invaild json string"
+                "invalid json string"
                 )
 
             ngx.status = code
@@ -474,7 +474,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid request body: invaild json string, err: Expected value but found invalid token at character 1"}
+{"error_msg":"invalid request body: invalid json string, err: Expected value but found invalid token at character 1"}
 --- no_error_log
 [error]
 
@@ -693,7 +693,7 @@ passed
 
 
 
-=== TEST 15: copy all header to every request except Contenct-
+=== TEST 15: copy all header to every request except content
 --- config
     client_body_in_file_only on;
     location = /aggregate {
@@ -988,7 +988,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation failed: expected 0 to be sctrictly greater than 0"\}/
+qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation failed: expected 0 to be strictly greater than 0"\}/
 --- no_error_log
 [error]
 

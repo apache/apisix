@@ -140,3 +140,49 @@ b3: 80f198ee56343ba864fe8b2a57d3eff7-e457b5a2e4d86bd1
 x-b3-sampled: 1
 --- error_log
 new span context: trace id: 80f198ee56343ba864fe8b2a57d3eff7, span id: e457b5a2e4d86bd1, parent span id: nil
+
+
+
+=== TEST 9: set plugin with span version 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:1980/mock_zipkin?span_version=1",
+                                "sample_ratio": 1,
+                                "service_name": "apisix",
+                                "span_version": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: tiger zipkin
+--- request
+GET /opentracing
+--- wait: 10

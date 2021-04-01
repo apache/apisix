@@ -77,6 +77,8 @@ qr/load\(\): new plugins/
 --- grep_error_log_out
 load(): new plugins
 load(): new plugins
+load(): new plugins
+load(): new plugins
 
 
 

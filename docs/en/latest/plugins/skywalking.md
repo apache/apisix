@@ -91,7 +91,8 @@ We can set the endpoint by specified the configuration in `conf/config.yaml`.
 | ------------ | ------ | -------- | -------------------------------------------------------------------- |
 | service_name | string | "APISIX" | service name for skywalking reporter                                 |
 |service_instance_name|string|"APISIX Instance Name" | service instance name for skywalking reporter |
-| endpoint     | string | "http://127.0.0.1:12800" | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+| endpoint_addr| string | "http://127.0.0.1:12800" | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+| report_interval| integer | use the value in the skywalking client library | the report interval, in seconds |
 
 Here is an example:
 

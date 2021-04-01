@@ -172,7 +172,7 @@ done
 --- request
 GET /t
 --- response_body eval
-qr/property "rules" validation failed:.* failed to validate item 2: wrong type: expected string, got number/
+qr/failed to validate the 'vars' expression: invalid operator '123'/
 --- no_error_log
 [error]
 
@@ -1615,7 +1615,227 @@ passed
 
 
 
-=== TEST 46: the upstream_id is used in the plugin
+=== TEST 46: set route(id: 1, upstream_id: 1, upstream_id in plugin: 2), and `weighted_upstreams` does not have a structure with only `weight`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "James"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 2}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream_id":"1"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 47: when `match` rule passed, use the `upstream_id` in plugin, and when it failed, use the `upstream_id` in route
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+
+        for i = 1, 5, 2 do
+            -- match rule passed
+            local _, _, body = t('/server_port?name=James', ngx.HTTP_GET)
+            bodys[i] = body
+
+             -- match rule failed
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i+1] = body
+        end
+
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1981, 1981, 1981, 1982, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: set route(use upstream for route and upstream_id for plugin), and `weighted_upstreams` does not have a structure with only `weight`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "James"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: when `match` rule passed, use the `upstream_id` in plugin, and when it failed, use the `upstream` in route
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+
+        for i = 1, 5, 2 do
+            -- match rule passed
+            local _, _, body = t('/server_port?name=James', ngx.HTTP_GET)
+            bodys[i] = body
+
+             -- match rule failed
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i+1] = body
+        end
+
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1980, 1980, 1981, 1981, 1981
+--- no_error_log
+[error]
+
+
+
+=== TEST 50: set route(id: 1, upstream_id: 1, upstream_id in plugin: 2), and `weighted_upstreams` has a structure with only `weight`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["uri", "==", "/server_port"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream_id": 2, "weight": 1},
+                                        {"weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream_id":"1"
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: all requests `match` rule passed, proxy requests to the upstream of route based on the structure with only `weight` in `weighted_upstreams`
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        for i = 1, 6 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1981, 1981, 1981, 1982, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 52: the upstream_id is used in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1665,7 +1885,7 @@ passed
 
 
 
-=== TEST 47: `match` rule passed(upstream_id)
+=== TEST 53: `match` rule passed(upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1689,7 +1909,7 @@ GET /t
 
 
 
-=== TEST 48: only use upstream_id in the plugin
+=== TEST 54: only use upstream_id in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1738,7 +1958,7 @@ passed
 
 
 
-=== TEST 49: `match` rule passed(only use upstream_id)
+=== TEST 55: `match` rule passed(only use upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1761,7 +1981,7 @@ GET /t
 
 
 
-=== TEST 50: use upstream and upstream_id in the plugin
+=== TEST 56: use upstream and upstream_id in the plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -1811,7 +2031,7 @@ passed
 
 
 
-=== TEST 51: `match` rule passed(upstream + upstream_id)
+=== TEST 57: `match` rule passed(upstream + upstream_id)
 --- config
 location /t {
     content_by_lua_block {
@@ -1836,7 +2056,7 @@ GET /t
 
 
 
-=== TEST 52: set route + upstream (two upstream node: one healthy + one unhealthy)
+=== TEST 58: set route + upstream (two upstream node: one healthy + one unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -1911,7 +2131,7 @@ passed
 
 
 
-=== TEST 53: hit routes, ensure the checker is bound to the upstream
+=== TEST 59: hit routes, ensure the checker is bound to the upstream
 --- config
 location /t {
     content_by_lua_block {
@@ -1965,7 +2185,7 @@ qr/\([^)]+\) unhealthy .* for '.*'/
 
 
 
-=== TEST 54: set upstream(id: 1), by default retries count = number of nodes
+=== TEST 60: set upstream(id: 1), by default retries count = number of nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -1997,7 +2217,7 @@ passed
 
 
 
-=== TEST 55: set route(id: 1, upstream_id: 1)
+=== TEST 61: set route(id: 1, upstream_id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -2041,7 +2261,7 @@ passed
 
 
 
-=== TEST 56: hit routes
+=== TEST 62: hit routes
 --- request
 GET /hello
 --- error_code: 502

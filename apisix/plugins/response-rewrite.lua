@@ -47,12 +47,6 @@ local schema = {
         },
         vars = {
             type = "array",
-            items = {
-                description = "Nginx builtin variable name and value",
-                type = "array",
-                maxItems = 4,
-                minItems = 2,
-            },
         },
     },
     minProperties = 1,
@@ -126,7 +120,7 @@ end
 do
 
 function _M.body_filter(conf, ctx)
-    if not ctx.reponse_rewrite_matched then
+    if not ctx.response_rewrite_matched then
         return
     end
 
@@ -143,8 +137,8 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-    ctx.reponse_rewrite_matched = vars_matched(conf, ctx)
-    if not ctx.reponse_rewrite_matched then
+    ctx.response_rewrite_matched = vars_matched(conf, ctx)
+    if not ctx.response_rewrite_matched then
         return
     end
 

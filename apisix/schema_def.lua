@@ -386,11 +386,6 @@ local upstream_schema = {
             minLength = 1
         },
         id = id_schema,
-        -- deprecate fields, will be removed soon
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean",
-        },
     },
     oneOf = {
         {required = {"type", "nodes"}},
@@ -467,12 +462,6 @@ _M.route = {
         },
         vars = {
             type = "array",
-            items = {
-                description = "Nginx builtin variable name and value",
-                type = "array",
-                maxItems = 4,
-                minItems = 2,
-            },
         },
         filter_func = {
             type = "string",
@@ -600,8 +589,6 @@ _M.consumer = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         desc = desc_def,
-        -- deprecate fields, will be removed soon
-        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,

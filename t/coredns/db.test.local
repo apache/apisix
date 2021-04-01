@@ -42,3 +42,6 @@ zero-weight.srv   86400 IN    SRV 10       0      1980 B
 
 split-weight.srv   86400 IN    SRV 10      100   1980 A
 split-weight.srv   86400 IN    SRV 10      0     1980 C
+
+priority.srv   86400 IN    SRV 10       60     1979 A
+priority.srv   86400 IN    SRV 20       60     1980 B

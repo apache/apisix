@@ -21,6 +21,8 @@ no_long_string();
 no_root_location();
 log_level("info");
 
+$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -28,7 +30,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->no_error_log) {
+    if (!defined $block->error_log && !defined $block->no_error_log) {
         $block->set_value("no_error_log", "[error]");
     }
 });
@@ -55,3 +57,72 @@ qr/send\(\): \S+/
 --- grep_error_log_out
 send(): 1a1btrue
 send(): 1a1bfalse
+
+
+
+=== TEST 2: sslhandshake options
+--- extra_init_by_lua
+local sock = ngx.socket.tcp()
+sock:settimeout(1)
+local ok, err = sock:connect("0.0.0.0", 12379)
+if not ok then
+    ngx.log(ngx.ERR, "failed to connect: ", err)
+    return
+end
+
+local sess, err = sock:sslhandshake(true, "test.com", true, true)
+if not sess then
+    ngx.log(ngx.ERR, "failed to do SSL handshake: ", err)
+end
+
+local sock = ngx.socket.tcp()
+local ok, err = sock:connect("0.0.0.0", 12379)
+if not ok then
+    ngx.log(ngx.ERR, "failed to connect: ", err)
+    return
+end
+local sess, err = sock:sslhandshake(true, "test.com", nil, true)
+if not sess then
+    ngx.log(ngx.ERR, "failed to do SSL handshake: ", err)
+end
+
+sock:setkeepalive()
+--- config
+    location /t {
+        return 200;
+    }
+--- grep_error_log eval
+qr/failed to do SSL handshake/
+--- grep_error_log_out
+failed to do SSL handshake
+--- error_log
+reused_session is not supported yet
+send_status_req is not supported yet
+
+
+
+=== TEST 3: unix socket
+--- http_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+    }
+--- extra_init_worker_by_lua
+local sock = ngx.socket.tcp()
+sock:settimeout(1)
+local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+if not ok then
+    ngx.log(ngx.ERR, "failed to connect: ", err)
+    return
+end
+
+local ok, err = sock:receive()
+if not ok then
+    ngx.log(ngx.ERR, "failed to read: ", err)
+    return
+end
+--- config
+    location /t {
+        return 200;
+    }
+--- error_log
+failed to read: timeout

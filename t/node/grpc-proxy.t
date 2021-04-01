@@ -67,11 +67,10 @@ proxy request to 127.0.0.1:9088
 
 
 
-=== TEST 2: with consummer
+=== TEST 2: with consumer
 --- apisix_yaml
 consumers:
   - username: jack
-    id: jack
     plugins:
         key-auth:
             key: user-key
@@ -119,11 +118,10 @@ proxy request to 127.0.0.1:9088
 
 
 
-=== TEST 4: with consummer (old way)
+=== TEST 4: with consumer (old way)
 --- apisix_yaml
 consumers:
   - username: jack
-    id: jack
     plugins:
         key-auth:
             key: user-key

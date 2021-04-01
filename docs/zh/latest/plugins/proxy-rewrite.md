@@ -45,7 +45,7 @@ proxy-rewrite 是上游代理信息重写插件，支持对 `scheme`、`uri`、`
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `proxy rewrite` 插件:
+下面是一个示例，在指定的 route 上开启了 `proxy-rewrite` 插件:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -87,11 +87,11 @@ curl -X GET http://127.0.0.1:9080/test/index.html
 127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
 ```
 
-即表示 `proxy rewrite` 插件生效了。
+即表示 `proxy-rewrite` 插件生效了。
 
 ## 禁用插件
 
-当你想去掉 `proxy rewrite` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 `proxy-rewrite` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -108,4 +108,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-现在就已经移除了 `proxy rewrite` 插件了。其他插件的开启和移除也是同样的方法。
+现在就已经移除了 `proxy-rewrite` 插件了。其他插件的开启和移除也是同样的方法。

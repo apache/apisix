@@ -70,6 +70,13 @@ There are two possibilities when encountering slow luarocks:
 
 For the first problem, you can use https_proxy or use the `--server` option to specify a luarocks server that you can access or access faster.
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
+For China mainland users, you can use the `luarocks.cn` as the luarocks server.
+
+We already provide a wrapper in the Makefile to simplify your job:
+
+```bash
+LUAROCKS_SERVER=https://luarocks.cn make deps
+```
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
 
@@ -264,7 +271,12 @@ The default log level for APISIX is `warn`. However You can change the log level
 
 Steps:
 
-1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
+1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml.
+
+```yaml
+nginx_config:
+  error_log_level: "info"
+```
 
 2. Reload or restart APISIX
 
@@ -360,7 +372,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
@@ -371,3 +383,72 @@ You may have to install OPENSSL in your system and/or pass OPENSSL_DIR or OPENSS
 Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
+
+## How to access APISIX Dashboard through APISIX proxy
+
+1. Keep the APISIX proxy port and Admin API port different(or disable Admin API). For example, do the following configuration in `conf/config.yaml`.
+
+The Admin API use a separate port 9180:
+
+```yaml
+apisix:
+  port_admin: 9180            # use a separate port
+```
+
+2. Add proxy route of APISIX Dashboard:
+
+Note: The APISIX Dashboard service here is listening on `127.0.0.1:9000`.
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"apisix_proxy_dashboard",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":9000,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+```
+
+## How to use route `uri` for regular matching
+
+The regular matching of uri is achieved through the `vars` field of route.
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", "^/[a-z]+$"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+Test request:
+
+```shell
+# The uri matched successfully
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+...
+
+# The uri match failed
+curl http://127.0.0.1:9080/12ab -i
+HTTP/1.1 404 Not Found
+...
+```
+
+In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).

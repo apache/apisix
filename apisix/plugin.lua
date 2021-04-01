@@ -71,8 +71,8 @@ local function unload_plugin(name, is_stream_plugin)
     end
 
     local old_plugin = pkg_loaded[pkg_name]
-    if old_plugin and type(old_plugin.destory) == "function" then
-        old_plugin.destory()
+    if old_plugin and type(old_plugin.destroy) == "function" then
+        old_plugin.destroy()
     end
 
     pkg_loaded[pkg_name] = nil
@@ -414,6 +414,10 @@ local function merge_service_route(service_conf, route_conf)
 
     if route_conf.value.script then
         new_conf.value.script = route_conf.value.script
+    end
+
+    if route_conf.value.name then
+        new_conf.value.name = route_conf.value.name
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))

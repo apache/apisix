@@ -210,7 +210,7 @@ function _M.init()
 end
 
 
-function _M.destory()
+function _M.destroy()
     timers.unregister_timer("plugin#log-rotate", true)
 end
 

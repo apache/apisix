@@ -144,7 +144,7 @@ do
         grpcs = 443,
     }
 
-    function fill_node_info(up_conf, scheme)
+    function fill_node_info(up_conf, scheme, is_stream)
         local nodes = up_conf.nodes
         if up_conf.nodes_ref == nodes then
             -- filled
@@ -153,7 +153,7 @@ do
 
         local need_filled = false
         for _, n in ipairs(nodes) do
-            if not n.port then
+            if not is_stream and not n.port then
                 if up_conf.scheme ~= scheme then
                     return nil, "Can't detect upstream's scheme. " ..
                                 "You should either specify a port in the node " ..
@@ -180,7 +180,7 @@ do
             if not n.port or not n.priority then
                 filled_nodes[i] = core.table.clone(n)
 
-                if not n.port then
+                if not is_stream and not n.port then
                     filled_nodes[i].port = scheme_to_port[scheme]
                 end
 
@@ -259,12 +259,17 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if not is_http then
+        local ok, err = fill_node_info(up_conf, nil, true)
+        if not ok then
+            return 503, err
+        end
+
         return
     end
 
     set_upstream_scheme(api_ctx, up_conf)
 
-    local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme)
+    local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme, false)
     if not ok then
         return 503, err
     end

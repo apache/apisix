@@ -387,6 +387,12 @@ function _M.http_access_phase()
     end
 
     local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
@@ -403,12 +409,6 @@ function _M.http_access_phase()
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
-            end
-
-            if upstream.value.enable_websocket then
-                core.log.warn("DEPRECATE: enable websocket in upstream will be removed soon. ",
-                              "Please enable it in route/service level.")
-                enable_websocket = true
             end
 
             if upstream.value.pass_host then
@@ -548,7 +548,7 @@ function _M.http_body_filter_phase()
 end
 
 
-local function healcheck_passive(api_ctx)
+local function healthcheck_passive(api_ctx)
     local checker = api_ctx.up_checker
     if not checker then
         return
@@ -605,7 +605,7 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
-    healcheck_passive(api_ctx)
+    healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
         api_ctx.server_picker.after_balance(api_ctx, false)

@@ -66,7 +66,7 @@ function _M.init()
 end
 
 
-function _M.destory()
+function _M.destroy()
     -- call this function when plugin is unloaded
 end
 

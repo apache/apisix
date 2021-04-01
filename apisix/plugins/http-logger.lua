@@ -249,10 +249,10 @@ function _M.log(conf, ctx)
                 data, err = core.json.encode(entries[1]) -- encode as single {}
             else
                 local t = core.table.new(#entries, 0)
-                for i, entrie in ipairs(entries) do
-                    t[i], err = core.json.encode(entrie)
+                for i, entry in ipairs(entries) do
+                    t[i], err = core.json.encode(entry)
                     if err then
-                        core.log.warn("failed to encode http log: ", err, ", log data: ", entrie)
+                        core.log.warn("failed to encode http log: ", err, ", log data: ", entry)
                         break
                     end
                 end

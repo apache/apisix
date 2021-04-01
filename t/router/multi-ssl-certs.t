@@ -124,7 +124,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -155,7 +155,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
@@ -165,7 +165,7 @@ received: Server: APISIX/\d\.\d+(\.\d+)?
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "www.test.com"
+server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
@@ -238,7 +238,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -249,7 +249,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
-lua ssl server name: "www.test2.com"
+server name: "www.test2.com"
 we have more than 1 ssl certs now
 --- no_error_log
 [error]
@@ -323,7 +323,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -334,7 +334,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
-lua ssl server name: "apisix.dev"
+server name: "apisix.dev"
 we have more than 1 ssl certs now
 --- no_error_log
 [error]

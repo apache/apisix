@@ -31,7 +31,7 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 ### Configuration
 
-In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see [this link](../admin-api.md#upstram).
+In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see [this link](../admin-api.md#upstream).
 
 Create an upstream object use case:
 
