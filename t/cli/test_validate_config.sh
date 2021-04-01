@@ -63,9 +63,9 @@ apisix:
 
 out=$(make run 2>&1 || echo "ouch")
 if echo "$out" | grep 'ouch'; then
-    echo "failed: allow configurating address in stream_proxy"
+    echo "failed: allow configuring address in stream_proxy"
     exit 1
 fi
 make stop
 
-echo "passed: allow configurating address in stream_proxy"
+echo "passed: allow configuring address in stream_proxy"

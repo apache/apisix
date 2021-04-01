@@ -106,7 +106,7 @@ GET /t
                     "services": {}
                 }]]
                 )
-            ngx.satus = code
+            ngx.status = code
             ngx.say(body)
         }
     }
