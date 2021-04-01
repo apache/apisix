@@ -37,10 +37,6 @@ local log                = core.log
 
 local default_weight
 local applications
-local base_uri
-local token_param
-local page_size
-local token_ttl = 18000
 local auth_path = "auth/login"
 local service_list_path = "ns/service/list?pageNo=%s&pageSize=%s"
 local instance_list_path = "ns/instance/list?healthyOnly=true&serviceName="
@@ -57,7 +53,6 @@ local schema = {
         },
         fetch_interval = {type = "integer", minimum = 1, default = 30},
         prefix = {type = "string", default = "/nacos/v1/"},
-        page_size = {type = "integer", minimum = 1, default = 100},
         weight = {type = "integer", minimum = 1, default = 100},
         timeout = {
             type = "object",
@@ -114,7 +109,7 @@ local function request(request_uri, path, body, method, basic_auth)
         method = method,
         headers = headers,
         body = body,
-        ssl_verify = false,
+        ssl_verify = true,
     })
     if not res then
         return nil, err
@@ -143,33 +138,26 @@ local function post_url(request_uri, path, body)
 end
 
 
-local function refresh_token_param(username, password)
+local function get_token_param(base_uri, username, password)
     if username and password then
         local data, err = post_url(base_uri, auth_path .. "?username=" .. username
-                .. "&password=" .. password, nil)
+                                   .. "&password=" .. password, nil)
         if err then
             log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
-            return
+            return nil, err
         end
-        token_param = "&accessToken=" .. data.accessToken
-    else
-        token_param = ""
+        return "&accessToken=" .. data.accessToken
     end
+    return ""
 end
 
 
-local function service_info()
-    local host = local_conf.discovery and local_conf.discovery.nacos
-                 and local_conf.discovery.nacos.host
-    if not host then
-        log.error("do not set nacos.host")
-        return
-    end
-
-    local username, password
+local function get_base_uri()
+    local host = local_conf.discovery.nacos.host
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
     local auth_idx = str_find(url, "@")
+    local username, password
     if auth_idx then
         local protocol_idx = str_find(url, "://")
         local protocol = string_sub(url, 1, protocol_idx + 2)
@@ -191,13 +179,12 @@ local function service_info()
         url = url .. "/"
     end
 
-    base_uri = url
-    refresh_token_param(username, password)
+    return url, username, password
 end
 
 
 local function get_page_service(infos, base_uri, token_param, page_num)
-    local path = str_format(service_list_path, page_num, page_size) .. token_param
+    local path = str_format(service_list_path, page_num, 100) .. token_param
     local data, err = get_url(base_uri, path)
     if err then
         return data, err, path
@@ -217,7 +204,7 @@ local function iter_and_add_service_info(infos, base_uri, token_param)
         return
     end
 
-    local maxPage = math.ceil(data.count / page_size)
+    local maxPage = math.ceil(data.count / 100)
     if maxPage == 0 then
         return
     end
@@ -243,9 +230,12 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = core.table.new(0, 0)
-    service_info()
-    if not base_uri then
-        applications = up_apps
+    local base_uri, username, password = get_base_uri()
+    local token_param, err = get_token_param(base_uri, username, password)
+    if err then
+        if not applications then
+            applications = up_apps
+        end
         return
     end
 
@@ -260,7 +250,9 @@ local function fetch_full_registry(premature)
         data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
         if err then
             log.error("get_url:" .. instance_list_path .. " err:" .. err)
-            applications = up_apps
+            if not applications then
+                applications = up_apps
+            end
             return
         end
 
@@ -311,9 +303,7 @@ function _M.init_worker()
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info("fetch_interval:", fetch_interval, ".")
-    page_size = local_conf.discovery.nacos.page_size
     ngx_timer_at(0, fetch_full_registry)
-    ngx_timer_every(token_ttl, service_info)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 

@@ -31,7 +31,6 @@ discovery:
     host:
       - "http://${username}:${password}@${host1}:${port1}"
     prefix: "/nacos/v1/"
-    page_size: 50 # default 100
     fetch_interval: 30    # default 30 sec
     weight: 100           # default 100
     timeout:

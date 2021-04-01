@@ -77,7 +77,6 @@ discovery:
       host:
         - "http://127.0.0.1:8858"
       prefix: "/nacos/v1/"
-      page_size: 1
       fetch_interval: 30
       weight: 100
       timeout:
@@ -97,7 +96,6 @@ discovery:
       host:
         - "http://nacos:nacos\@127.0.0.1:8848"
       prefix: "/nacos/v1/"
-      page_size: 1
       fetch_interval: 30
       weight: 100
       timeout:
@@ -121,8 +119,6 @@ location /nacos {
 [
     "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
     "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
-    "POST /nacos/v1/ns/instance?port=18003&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS2&encoding=GBK&enabled=true",
-    "POST /nacos/v1/ns/instance?port=18004&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS3&encoding=GBK&enabled=true",
 ]
 --- response_body eval
 ["ok", "ok", "ok", "ok"]
@@ -156,43 +152,7 @@ routes:
 
 
 
-=== TEST 3: test page:APISIX-NACOS2 - no auth
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello2
-    upstream:
-      service_name: APISIX-NACOS2
-      discovery_type: nacos
-      type: roundrobin
-
-#END
---- request
-GET /hello2
---- error_code: 200
-
-
-
-=== TEST 4: test page:APISIX-NACOS3 - no auth
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello3
-    upstream:
-      service_name: APISIX-NACOS3
-      discovery_type: nacos
-      type: roundrobin
-
-#END
---- request
-GET /hello3
---- error_code: 200
-
-
-
-=== TEST 5: error service_name name - no auth
+=== TEST 3: error service_name name - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -210,7 +170,7 @@ GET /hello
 
 
 
-=== TEST 6: get APISIX-NACOS info from NACOS - auth
+=== TEST 4: get APISIX-NACOS info from NACOS - auth
 --- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
@@ -237,43 +197,7 @@ routes:
 
 
 
-=== TEST 7: test page:APISIX-NACOS2 - auth
---- yaml_config eval: $::yaml_auth_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello2
-    upstream:
-      service_name: APISIX-NACOS2
-      discovery_type: nacos
-      type: roundrobin
-
-#END
---- request
-GET /hello2
---- error_code: 200
-
-
-
-=== TEST 8: test page:APISIX-NACOS3 - auth
---- yaml_config eval: $::yaml_auth_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello3
-    upstream:
-      service_name: APISIX-NACOS3
-      discovery_type: nacos
-      type: roundrobin
-
-#END
---- request
-GET /hello3
---- error_code: 200
-
-
-
-=== TEST 9: error service_name name - auth
+=== TEST 5: error service_name name - auth
 --- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
