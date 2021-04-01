@@ -72,7 +72,7 @@ For the first problem, you can use https_proxy or use the `--server` option to s
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
 For China mainland users, you can use the `luarocks.cn` as the luarocks server.
 
-We already provide a wrapper in the Makefile to simpify your job:
+We already provide a wrapper in the Makefile to simplify your job:
 
 ```bash
 LUAROCKS_SERVER=https://luarocks.cn make deps
