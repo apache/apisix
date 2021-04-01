@@ -64,7 +64,7 @@ __DATA__
             end
             ngx.say(body)
 
-            local res = assert(etcd.get('/stream_routes/1'))
+            local res = assert(etcd.get('/proto/1'))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
