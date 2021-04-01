@@ -192,6 +192,8 @@ local function set_upstream(upstream_info, ctx)
     local up_conf = {
         name = upstream_info.name,
         type = upstream_info.type,
+        hash_on = upstream_info.hash_on,
+        key = upstream_info.key,
         nodes = new_nodes,
         timeout = {
             send = upstream_info.timeout and upstream_info.timeout.send or 15,
@@ -199,11 +201,6 @@ local function set_upstream(upstream_info, ctx)
             connect = upstream_info.timeout and upstream_info.timeout.connect or 15
         }
     }
-
-    if upstream_info.type == "chash" then
-        up_conf.hash_on = upstream_info.hash_on
-        up_conf.key = upstream_info.key
-    end
 
     local ok, err = upstream.check_schema(up_conf)
     if not ok then

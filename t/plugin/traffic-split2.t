@@ -360,8 +360,6 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -376,28 +374,38 @@ location /t {
         local t = require("lib.test_admin").test
         local bodys = {}
         local headers = {}
+        local headers2 = {}
         headers["custom_header"] = "custom-one"
-        for i = 1, 4 do
+        headers2["custom_header"] = "customtow"
+        for i = 1, 8, 2 do
             local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers)
+            local _, _, body2 = t('/server_port', ngx.HTTP_GET, "", nil, headers2)
             bodys[i] = body
+            bodys[i+1] = body2
         end
 
         table.sort(bodys)
         ngx.say(table.concat(bodys, ", "))
     }
 }
---- request
-GET /t
 --- response_body eval
-qr/1981, 1981, 1981, 1981|1982, 1982, 1982, 1982/
+qr/1981, 1981, 1981, 1981, 1982, 1982, 1982, 1982/
 --- grep_error_log eval
-qr/hash_on: header|chash_key: "custom-one"/
+qr/hash_on: header|chash_key: "custom-one"|chash_key: "customtow"/
 --- grep_error_log_out
 hash_on: header
 chash_key: "custom-one"
 hash_on: header
-chash_key: "custom-one"
+chash_key: "customtow"
 hash_on: header
 chash_key: "custom-one"
 hash_on: header
+chash_key: "customtow"
+hash_on: header
 chash_key: "custom-one"
+hash_on: header
+chash_key: "customtow"
+hash_on: header
+chash_key: "custom-one"
+hash_on: header
+chash_key: "customtow"
