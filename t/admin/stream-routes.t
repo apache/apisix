@@ -515,7 +515,11 @@ GET /t
 
             res = json.decode(res)
             assert(res.count ~= nil)
+            assert(res.node.value.create_time ~= nil)
+            assert(res.node.value.update_time ~= nil)
             res.count = nil
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
