@@ -121,7 +121,7 @@ location /nacos {
     "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
 ]
 --- response_body eval
-["ok", "ok", "ok", "ok"]
+["ok", "ok"]
 
 
 
