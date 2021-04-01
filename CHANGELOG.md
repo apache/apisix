@@ -57,7 +57,7 @@ title: Changelog
 
 ### Plugin
 
-- :sunrise: feat(skywalking):  allow destory and configure report interval for reporter [#3925](https://github.com/apache/apisix/pull/3925)
+- :sunrise: feat(skywalking):  allow destroy and configure report interval for reporter [#3925](https://github.com/apache/apisix/pull/3925)
 - :sunrise: feat(traffic-split): the upstream pass_host needs to support IP mode [#3870](https://github.com/apache/apisix/pull/3870)
 - :sunrise: feat: Add filter on HTTP methods for consumer-restriction plugin [#3691](https://github.com/apache/apisix/pull/3691)
 - :sunrise: feat: add allow_origins_by_regex to cors plugin [#3839](https://github.com/apache/apisix/pull/3839)
