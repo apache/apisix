@@ -198,7 +198,7 @@ Wow! It will return data from our `Upstream`(`httpbin.org` actually), it works a
 
 ### Authentication
 
-Let's do some interesting things, due to **anyyone** could access our public `Route` created in the Step2, we would like only `John` could access it. Let's use [Consumer](./architecture-design/consumer.md) and [Plugin](./architecture-design/plugin.md) to implement this protection.
+Let's do some interesting things, due to **anyone** could access our public `Route` created in the Step2, we would like only `John` could access it. Let's use [Consumer](./architecture-design/consumer.md) and [Plugin](./architecture-design/plugin.md) to implement this protection.
 
 First, let's create the [consumer](./architecture-design/consumer.md) `John` with [key-auth](./plugins/key-auth.md) plugin, we need to provide a specified secret key:
 
