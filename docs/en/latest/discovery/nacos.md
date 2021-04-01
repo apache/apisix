@@ -29,7 +29,7 @@ Add following configuration in `conf/config.yaml` :
 discovery:
   nacos:
     host:
-      - "http://${username}:${password}#${host1}:${port1}"
+      - "http://${username}:${password}@${host1}:${port1}"
     prefix: "/nacos/v1/"
     page_size: 50 # default 100
     fetch_interval: 30    # default 30 sec

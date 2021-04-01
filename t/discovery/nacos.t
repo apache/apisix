@@ -95,7 +95,7 @@ apisix:
 discovery:
   nacos:
       host:
-        - "http://nacos:nacos#127.0.0.1:8848"
+        - "http://nacos:nacos\@127.0.0.1:8848"
       prefix: "/nacos/v1/"
       page_size: 1
       fetch_interval: 30

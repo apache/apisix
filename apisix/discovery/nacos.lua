@@ -37,10 +37,13 @@ local log                = core.log
 
 local default_weight
 local applications
-local auth_path
-local service_list_path
+local base_uri
+local token_param
 local page_size
-local instance_list_path
+local token_ttl = 18000
+local auth_path = "auth/login"
+local service_list_path = "ns/service/list?pageNo=%s&pageSize=%s"
+local instance_list_path = "ns/instance/list?healthyOnly=true&serviceName="
 
 local schema = {
     type = "object",
@@ -79,46 +82,10 @@ local _M = {
 }
 
 
-local function service_info()
-    local host = local_conf.discovery and
-            local_conf.discovery.nacos and local_conf.discovery.nacos.host
-    if not host then
-        log.error("do not set nacos.host")
-        return
-    end
-
-    local username, password
-    -- TODO Add health check to get healthy nodes.
-    local url = host[math_random(#host)]
-    local auth_idx = str_find(url, "#")
-    if auth_idx then
-        local protocol_idx = str_find(url, "://")
-        local protocol = string_sub(url, 1, protocol_idx + 2)
-        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local arr = ngx_re.split(user_and_password, ":")
-        if #arr == 2 then
-            username = arr[1]
-            password = arr[2]
-        end
-        local other = string_sub(url, auth_idx + 1)
-        url = protocol .. other
-    end
-    if local_conf.discovery.nacos.prefix then
-        url = url .. local_conf.discovery.nacos.prefix
-    end
-    if str_byte(url, #url) ~= str_byte("/") then
-        url = url .. "/"
-    end
-
-    return url, username, password
-end
-
-
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
     log.info("request url:", url)
     local headers = core.table.new(0, 0)
-    headers['Connection'] = 'Keep-Alive'
     headers['Accept'] = 'application/json'
 
     if basic_auth then
@@ -141,7 +108,7 @@ local function request(request_uri, path, body, method, basic_auth)
     local send_timeout = timeout.send
     local read_timeout = timeout.read
     log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout,
-        ", read_timeout:", read_timeout, ".")
+             ", read_timeout:", read_timeout, ".")
     httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     local res, err = httpc:request_uri(url, {
         method = method,
@@ -175,6 +142,58 @@ local function post_url(request_uri, path, body)
     return request(request_uri, path, body, "POST", nil)
 end
 
+
+local function refresh_token_param(username, password)
+    if username and password then
+        local data, err = post_url(base_uri, auth_path .. "?username=" .. username
+                .. "&password=" .. password, nil)
+        if err then
+            log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
+            return
+        end
+        token_param = "&accessToken=" .. data.accessToken
+    else
+        token_param = ""
+    end
+end
+
+
+local function service_info()
+    local host = local_conf.discovery and local_conf.discovery.nacos
+                 and local_conf.discovery.nacos.host
+    if not host then
+        log.error("do not set nacos.host")
+        return
+    end
+
+    local username, password
+    -- TODO Add health check to get healthy nodes.
+    local url = host[math_random(#host)]
+    local auth_idx = str_find(url, "@")
+    if auth_idx then
+        local protocol_idx = str_find(url, "://")
+        local protocol = string_sub(url, 1, protocol_idx + 2)
+        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+        local arr = ngx_re.split(user_and_password, ":")
+        if #arr == 2 then
+            username = arr[1]
+            password = arr[2]
+        end
+        local other = string_sub(url, auth_idx + 1)
+        url = protocol .. other
+    end
+
+    if local_conf.discovery.nacos.prefix then
+        url = url .. local_conf.discovery.nacos.prefix
+    end
+
+    if str_byte(url, #url) ~= str_byte("/") then
+        url = url .. "/"
+    end
+
+    base_uri = url
+    refresh_token_param(username, password)
+end
 
 
 local function get_page_service(infos, base_uri, token_param, page_num)
@@ -224,24 +243,11 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = core.table.new(0, 0)
-    local base_uri, username, password = service_info()
+    service_info()
     if not base_uri then
         applications = up_apps
         return
     end
-
-    local token_param = ""
-    if username and password then
-        local data, err = post_url(base_uri, auth_path .. "?username=" .. username
-                .. "&password=" .. password, nil)
-        if err then
-            log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
-            applications = up_apps
-            return
-        end
-        token_param = "&accessToken=" .. data.accessToken
-    end
-
 
     local infos = get_services(base_uri, token_param)
     if #infos == 0 then
@@ -285,7 +291,6 @@ function _M.nodes(service_name)
         log.info('wait init')
         ngx.sleep(0.1)
     end
-
     return applications[service_name]
 end
 
@@ -307,10 +312,8 @@ function _M.init_worker()
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info("fetch_interval:", fetch_interval, ".")
     page_size = local_conf.discovery.nacos.page_size
-    auth_path = "auth/login"
-    service_list_path = "ns/service/list?pageNo=%s&pageSize=%s"
-    instance_list_path = "ns/instance/list?healthyOnly=true&serviceName="
     ngx_timer_at(0, fetch_full_registry)
+    ngx_timer_every(token_ttl, service_info)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 
