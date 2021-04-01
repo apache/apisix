@@ -167,7 +167,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 
 We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:80` as our Upstream target(backend server), and its ID is `50`. For more fields, please refer to [Admin API](./admin-api.md).
 
-**NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests then response direcly, but let's assume we need to set at least one `Upstream` in this guide.
+**NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests then response directly, but let's assume we need to set at least one `Upstream` in this guide.
 
 ### Bind Route with Upstream
 
@@ -186,7 +186,7 @@ That's it!
 
 ### Verification
 
-Congratulations once more! We have created one `Route` and `Upstream`, also we bind them together. Now lets call Apache APISIX to test the `created route`.
+Congratulations once more! We have created one `Route` and `Upstream`, also we bind them together. Now let's call Apache APISIX to test the `created route`.
 
 ```bash
 $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
