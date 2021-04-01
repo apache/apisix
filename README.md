@@ -233,7 +233,7 @@ There are several ways to install the Apache Release version of APISIX:
 
    The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](README.md#plugins).
+   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins.md).
 
 3. Admin API
 
