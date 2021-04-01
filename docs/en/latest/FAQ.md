@@ -211,60 +211,6 @@ Server: APISIX web server
 </html>
 ```
 
-## How to fix OpenResty Installation Failure on MacOS 10.15
-
-When you install the OpenResty on MacOs 10.15, you may face this error
-
-```shell
-> brew install openresty
-Updating Homebrew...
-==> Auto-updated Homebrew!
-Updated 1 tap (homebrew/cask).
-No changes to formulae.
-
-==> Installing openresty from openresty/brew
-Warning: A newer Command Line Tools release is available.
-Update them from Software Update in System Preferences or
-https://developer.apple.com/download/more/.
-
-==> Downloading https://openresty.org/download/openresty-1.15.8.2.tar.gz
-Already downloaded: /Users/wusheng/Library/Caches/Homebrew/downloads/4395089f0fd423261d4f1124b7beb0f69e1121e59d399e89eaa6e25b641333bc--openresty-1.15.8.2.tar.gz
-==> ./configure -j8 --prefix=/usr/local/Cellar/openresty/1.15.8.2 --pid-path=/usr/local/var/run/openresty.pid --lock-path=/usr/
-Last 15 lines from /Users/wusheng/Library/Logs/Homebrew/openresty/01.configure:
-DYNASM    host/buildvm_arch.h
-HOSTCC    host/buildvm.o
-HOSTLINK  host/buildvm
-BUILDVM   lj_vm.S
-BUILDVM   lj_ffdef.h
-BUILDVM   lj_bcdef.h
-BUILDVM   lj_folddef.h
-BUILDVM   lj_recdef.h
-BUILDVM   lj_libdef.h
-BUILDVM   jit/vmdef.lua
-make[1]: *** [lj_folddef.h] Segmentation fault: 11
-make[1]: *** Deleting file `lj_folddef.h'
-make[1]: *** Waiting for unfinished jobs....
-make: *** [default] Error 2
-ERROR: failed to run command: gmake -j8 TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-msse4.2 -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/Cellar/openresty/1.15.8.2/luajit
-
-If reporting this issue please do so at (not Homebrew/brew or Homebrew/core):
-  https://github.com/openresty/homebrew-brew/issues
-
-These open issues may also help:
-Can't install openresty on macOS 10.15 https://github.com/openresty/homebrew-brew/issues/10
-The openresty-debug package should use openresty-openssl-debug instead https://github.com/openresty/homebrew-brew/issues/3
-Fails to install OpenResty https://github.com/openresty/homebrew-brew/issues/5
-
-Error: A newer Command Line Tools release is available.
-Update them from Software Update in System Preferences or
-https://developer.apple.com/download/more/.
-```
-
-This is an OS incompatible issue, you could fix by these two steps
-
-1. `brew edit openresty/brew/openresty`
-1. add `\ -fno-stack-check` in with-luajit-xcflags line.
-
 ## How to change the log level?
 
 The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
