@@ -215,7 +215,7 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
---- ONLY
+
 
 
 === TEST 5: set route with plugin
