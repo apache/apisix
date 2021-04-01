@@ -192,6 +192,8 @@ local function set_upstream(upstream_info, ctx)
     local up_conf = {
         name = upstream_info.name,
         type = upstream_info.type,
+        hash_on = upstream_info.hash_on,
+        key = upstream_info.key,
         nodes = new_nodes,
         timeout = {
             send = upstream_info.timeout and upstream_info.timeout.send or 15,
