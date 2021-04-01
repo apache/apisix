@@ -183,3 +183,44 @@ fi
 make stop
 
 echo "don't log uninitialized access log variable when the HTTP request is malformed"
+
+# TLS upstream
+
+echo "
+apisix:
+    admin_api_mtls:
+        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+    port_admin: 9180
+    https_admin: true
+nginx_config:
+  http:
+    access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
+" > conf/config.yaml
+
+make run
+sleep 2
+
+curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
+    '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
+
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1
+sleep 4
+tail -n 2 logs/access.log > output.log
+
+# APISIX
+if ! grep '"https://localhost" -' output.log; then
+    echo "failed: should find upstream scheme"
+    cat output.log
+    exit 1
+fi
+
+# admin
+if ! grep '"http://localhost" localhost' output.log; then
+    echo "failed: should find upstream scheme"
+    cat output.log
+    exit 1
+fi
+
+make stop
+echo "passed: should find upstream scheme"
