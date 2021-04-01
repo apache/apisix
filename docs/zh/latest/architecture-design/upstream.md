@@ -32,7 +32,7 @@ Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑�
 
 ### 配置参数
 
-APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看这个[链接](../admin-api.md#upstram)。
+APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看这个[链接](../admin-api.md#upstream)。
 
 创建上游对象用例：
 
