@@ -153,9 +153,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.4
-     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
-     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
+     $ mkdir apisix-2.5
+     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
+     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
      ```
 
    - Install the dependencies：
@@ -192,7 +192,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
    ```
 
    - check the version of APISIX:
