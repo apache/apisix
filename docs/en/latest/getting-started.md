@@ -62,7 +62,6 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
-
 Let's deconstruct the above Request URL.
 
 - Protocol: HTTP
