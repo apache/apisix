@@ -58,7 +58,7 @@ local schema = {
         method = {
           description = "new method",
           type    = "string",
-          enum    = {"GET", "POST","PUT","PATCH","DELETE"}
+          enum    = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD","OPTIONS", "CONNECT", "TRACE"}
         },
         headers = {
             description = "new headers for request",
@@ -183,7 +183,7 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri
     end
 
-    -- enum    = {"GET", "POST","PUT",""PATCH,"DELETE"}
+    -- enum    = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD","OPTIONS", "CONNECT", "TRACE"}
     -- change HTTP method
     if conf.method ~= nil then
 
