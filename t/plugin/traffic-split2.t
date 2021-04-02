@@ -311,3 +311,100 @@ host: localhost
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: the upstream.type is `chash` and `key` is header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream": {
+                                                "name": "chash_test",
+                                                "type": "chash",
+                                                "hash_on": "header",
+                                                "key": "custom_header",
+                                                "nodes": {
+                                                    "127.0.0.1:1981":1,
+                                                    "127.0.0.1:1982":1
+                                                }
+                                            },
+                                            "weight": 1
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit routes, hash_on custom header
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        local headers2 = {}
+        headers["custom_header"] = "hello"
+        headers2["custom_header"] = "world"
+        for i = 1, 8, 2 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers2)
+            local _, _, body2 = t('/server_port', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+            bodys[i+1] = body2
+        end
+
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- response_body eval
+qr/1981, 1982, 1981, 1982, 1981, 1982, 1981, 1982/
+--- grep_error_log eval
+qr/hash_on: header|chash_key: "hello"|chash_key: "world"/
+--- grep_error_log_out
+hash_on: header
+chash_key: "world"
+hash_on: header
+chash_key: "hello"
+hash_on: header
+chash_key: "world"
+hash_on: header
+chash_key: "hello"
+hash_on: header
+chash_key: "world"
+hash_on: header
+chash_key: "hello"
+hash_on: header
+chash_key: "world"
+hash_on: header
+chash_key: "hello"

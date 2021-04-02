@@ -339,7 +339,7 @@ APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gatew
 
 ## Logo
 
-- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo(PNG)](../../../logos/apache-apisix.png)
 - [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 贡献
@@ -354,4 +354,4 @@ APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gatew
 
 ## 协议
 
-[Apache 2.0 License](LICENSE)
+[Apache 2.0 License](../../../LICENSE)

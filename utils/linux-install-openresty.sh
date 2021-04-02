@@ -40,10 +40,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
-
-if [ "$OPENRESTY_VERSION" == "1.15.8.2" ]; then
-    sudo apt-get install openresty-openssl-debug-dev
-else
-    sudo apt-get install openresty-openssl111-debug-dev
-fi
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev

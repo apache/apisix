@@ -205,56 +205,6 @@ my $grpc_location = <<_EOC_;
         }
 _EOC_
 
-if ($version =~ m/\/1.15.8/) {
-    $grpc_location = <<_EOC_;
-        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
-        location \@1_15_grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
-        location \@1_15_grpcs_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpcs://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-_EOC_
-}
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
@@ -397,7 +347,7 @@ _EOC_
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
-    proxy_ssl_name \$host;
+    proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
@@ -514,10 +464,6 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
-        set \$upstream_scheme             'http';
-        set \$upstream_host               \$http_host;
-        set \$upstream_uri                '';
-        set \$ctx_ref                     '';
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
         set \$dubbo_method                '';
@@ -529,6 +475,10 @@ _EOC_
         }
 
         location /apisix/admin {
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -544,6 +494,11 @@ _EOC_
             set \$upstream_mirror_host        '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
+
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+            set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';

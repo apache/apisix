@@ -397,17 +397,6 @@ http {
         {% end %}
         # http server configuration snippet ends
 
-        set $upstream_scheme             'http';
-        set $upstream_host               $http_host;
-        set $upstream_uri                '';
-        set $ctx_ref                     '';
-
-        {% if enabled_plugins["dubbo-proxy"] then %}
-        set $dubbo_service_name          '';
-        set $dubbo_service_version       '';
-        set $dubbo_method                '';
-        {% end %}
-
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -419,6 +408,10 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
+            set $upstream_scheme             'http';
+            set $upstream_host               $http_host;
+            set $upstream_uri                '';
+
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
@@ -440,10 +433,26 @@ http {
         }
         {% end %}
 
+        {% if http.proxy_ssl_server_name then %}
+        proxy_ssl_name $upstream_host;
+        proxy_ssl_server_name on;
+        {% end %}
+
         location / {
             set $upstream_mirror_host        '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
+
+            set $upstream_scheme             'http';
+            set $upstream_host               $http_host;
+            set $upstream_uri                '';
+            set $ctx_ref                     '';
+
+            {% if enabled_plugins["dubbo-proxy"] then %}
+            set $dubbo_service_name          '';
+            set $dubbo_service_version       '';
+            set $dubbo_method                '';
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()
@@ -455,11 +464,6 @@ http {
             proxy_set_header   Connection        $upstream_connection;
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
-
-            {% if http.proxy_ssl_server_name then %}
-            proxy_ssl_name $host;
-            proxy_ssl_server_name on;
-            {% end %}
 
             ### the following x-forwarded-* headers is to send to upstream server
 
@@ -525,52 +529,6 @@ http {
             }
         }
 
-        {% if use_or_1_15 then %}
-        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
-        location @1_15_grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
-        location @1_15_grpcs_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpcs://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-        {% else %}
         location @grpc_pass {
 
             access_by_lua_block {
@@ -593,7 +551,6 @@ http {
                 apisix.http_log_phase()
             }
         }
-        {% end %}
 
         {% if enabled_plugins["dubbo-proxy"] then %}
         location @dubbo_pass {
