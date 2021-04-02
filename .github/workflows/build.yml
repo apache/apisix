@@ -16,7 +16,6 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_openresty_1_15
           - linux_tengine
           - linux_apisix_master_luarocks
           - linux_apisix_current_luarocks

@@ -664,6 +664,10 @@ _M.ssl = {
 _M.proto = {
     type = "object",
     properties = {
+        id = id_schema,
+        desc = desc_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -690,6 +694,9 @@ _M.stream_route = {
     type = "object",
     properties = {
         id = id_schema,
+        desc = desc_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",

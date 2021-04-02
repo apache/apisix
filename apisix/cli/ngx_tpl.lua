@@ -529,52 +529,6 @@ http {
             }
         }
 
-        {% if use_or_1_15 then %}
-        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
-        location @1_15_grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
-        location @1_15_grpcs_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpcs://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-        {% else %}
         location @grpc_pass {
 
             access_by_lua_block {
@@ -597,7 +551,6 @@ http {
                 apisix.http_log_phase()
             }
         }
-        {% end %}
 
         {% if enabled_plugins["dubbo-proxy"] then %}
         location @dubbo_pass {
