@@ -628,3 +628,51 @@ Host: foo.com
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
+
+
+
+=== TEST 21: access conf & ctx in serverless
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'default phase: ', conf.phase); ctx.var.upstream_uri = '/server_port' end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: check plugin
+--- request
+GET /hello
+--- response_body chomp
+1980
+--- error_log
+default phase: access

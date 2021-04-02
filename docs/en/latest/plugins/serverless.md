@@ -69,6 +69,8 @@ local count = 1
 ngx.say(count)
 ```
 
+Since `v2.6`, we pass the `conf` and `ctx` as the first two arguments to the servelss function, like a regular plugin.
+
 ## How To Enable
 
 Here's an example, enable the serverless plugin on the specified route:
@@ -80,7 +82,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "plugins": {
         "serverless-pre-function": {
             "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
+            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"serverless pre function\"); end"]
         }
     },
     "upstream": {

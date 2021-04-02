@@ -58,6 +58,8 @@ local count = 1
 ngx.say(count)
 ```
 
+从 `v2.6` 版本开始，我们会把 `conf` 和 `ctx` 作为头两个参数传递给 serverless 函数，就跟一般的插件一样。
+
 ## 示例
 
 ### 启动插件
@@ -71,7 +73,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "plugins": {
         "serverless-pre-function": {
             "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
+            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"serverless pre function\"); end"]
         }
     },
     "upstream": {
