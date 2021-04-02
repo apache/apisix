@@ -157,7 +157,8 @@
           "items": [
             "discovery",
             "discovery/dns",
-            "discovery/consul_kv"
+            "discovery/consul_kv",
+            "discovery/eureka"
           ]
         },
         {
