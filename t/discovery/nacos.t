@@ -108,6 +108,7 @@ location /nacos {
 
 
 === TEST 2: get APISIX-NACOS info from NACOS - no auth
+--- wait: 2
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
