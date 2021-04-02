@@ -279,8 +279,7 @@ end
 
 function _M.nodes(service_name)
     local logged = false
-    while(not applications)
-    do
+    while not applications do
         if not logged then
             log.warn('wait init')
             logged = true
