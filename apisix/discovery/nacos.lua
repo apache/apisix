@@ -278,12 +278,12 @@ end
 
 
 function _M.nodes(service_name)
-    local loged = false
+    local logged = false
     while(not applications)
     do
-        if not loged then
+        if not logged then
             log.warn('wait init')
-            loged = true
+            logged = true
         end
         ngx.sleep(0.1)
     end
