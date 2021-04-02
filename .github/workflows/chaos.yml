@@ -1,6 +1,11 @@
 name: Chaos Test
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   chaos-test:
