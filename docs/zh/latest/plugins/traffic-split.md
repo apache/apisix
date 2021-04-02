@@ -47,13 +47,18 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
 | weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
 | weighted_upstreams.upstream    | object | 可选   |        |        | 上游配置信息。 |
-| upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
+| upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一。 |
+| upstream.hash_on               | enum   | 可选   | vars | | `hash_on` 支持的类型有 `vars`（Nginx 内置变量），`header`（自定义 header），`cookie`，`consumer`，`vars_combinations`，默认值为 `vars`。更多详细信息请参考 [upstream](../admin-api.md#upstream) 用法。|
+| upstream.key                   | string | 可选   |      |    |  该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id。更多详细信息请参考 [upstream](../admin-api.md#upstream) 用法。 |
 | upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
 | upstream.timeout               | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
 | upstream.pass_host             | enum   | 可选   | "pass"   | ["pass", "node", "rewrite"]  | `pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream`  node 中配置的 host； `rewrite`: 使用配置项 `upstream_host` 的值 |
 | upstream.name                  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
 | upstream.upstream_host         | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
 | weighted_upstreams.weight      | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
+
+目前在 `weighted_upstreams.upstream` 的配置中，不支持的字段有：
+service_name、discovery_type、checks、retries、desc、scheme、labels、create_time 和 update_time。但是你可以通过 `weighted_upstreams.upstream_id` 绑定 `upstream` 对象来实现他们。
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 

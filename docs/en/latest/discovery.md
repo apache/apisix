@@ -61,7 +61,7 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 #### Implementation of eureka.lua
 
-First, add [`eureka.lua`](../apisix/discovery/eureka.lua) in the `apisix/discovery/` directory;
+First, add [`eureka.lua`](../../../apisix/discovery/eureka.lua) in the `apisix/discovery/` directory;
 
 Then implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes in `eureka.lua`:
 

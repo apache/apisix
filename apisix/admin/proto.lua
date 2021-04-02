@@ -17,6 +17,7 @@
 local type = type
 local ipairs = ipairs
 local core = require("apisix.core")
+local utils = require("apisix.admin.utils")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local tostring = tostring
@@ -63,6 +64,12 @@ function _M.put(id, conf)
     end
 
     local key = "/proto/" .. id
+
+    local ok, err = utils.inject_conf_with_prev_conf("proto", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put proto[", key, "]: ", err)
@@ -96,6 +103,9 @@ function _M.post(id, conf)
     end
 
     local key = "/proto"
+
+    utils.inject_timestamp(conf)
+
     -- core.log.info("key: ", key)
     local res, err = core.etcd.push("/proto", conf)
     if not res then
