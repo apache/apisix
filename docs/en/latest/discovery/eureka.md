@@ -21,5 +21,5 @@ title: eureka
 #
 -->
 
-APISIX supports service discovery via Eureka. For the details, please start your
+Apache APISIX supports service discovery via Eureka. For the details, please start your
 reading from [Supported discovery registries](../discovery.md#supported-discovery-registries).
