@@ -641,7 +641,9 @@ Location: https://foo.com/hello
                  [[{
                     "plugins": {
                         "serverless-post-function": {
-                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'default phase: ', conf.phase); ctx.var.upstream_uri = '/server_port' end"]
+                        "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'default phase: ', conf.phase);
+                                       ngx.log(ngx.WARN, 'match uri ', ctx.curr_req_matched and ctx.curr_req_matched._path);
+                                       ctx.var.upstream_uri = '/server_port' end"]
                         }
                     },
                     "upstream": {
@@ -676,3 +678,4 @@ GET /hello
 1980
 --- error_log
 default phase: access
+match uri /hello
