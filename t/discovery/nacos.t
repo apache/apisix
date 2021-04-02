@@ -44,24 +44,6 @@ add_block_preprocessor(sub {
             }
         }
     }
-    server {
-        listen 18003;
-
-        location /hello2 {
-            content_by_lua_block {
-                ngx.say("hello2")
-            }
-        }
-    }
-    server {
-        listen 18004;
-
-        location /hello3 {
-            content_by_lua_block {
-                ngx.say("hello3")
-            }
-        }
-    }
 _EOC_
 
     $block->set_value("http_config", $http_config);
