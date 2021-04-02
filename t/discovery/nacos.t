@@ -104,11 +104,11 @@ location /nacos {
 ]
 --- response_body eval
 ["ok", "ok"]
+--- wait: 1
 
 
 
 === TEST 2: get APISIX-NACOS info from NACOS - no auth
---- wait: 2
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
