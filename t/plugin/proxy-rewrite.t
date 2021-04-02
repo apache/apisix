@@ -250,6 +250,7 @@ GET /hello HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: apisix.iresty.com
 scheme: http
+method: GET
 --- no_error_log
 [error]
 
@@ -303,6 +304,7 @@ GET /hello HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: test.com
 scheme: https
+method: GET
 --- no_error_log
 [error]
 
@@ -675,6 +677,7 @@ GET /test/plugin/proxy/rewrite HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: localhost
 scheme: http
+method: GET
 --- no_error_log
 [error]
 
@@ -1384,6 +1387,7 @@ x-real-ip: 127.0.0.1
                         "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite",
                                 "method": "POST"
                             }
                         },
@@ -1416,7 +1420,10 @@ passed
 --- request
 GET /hello
 --- response_body
-hello world
+uri: /plugin_proxy_rewrite
+host: localhost
+scheme: http
+method: POST
 --- error_log eval
 qr/changed HTTP method from GET to POST/
 
@@ -1432,6 +1439,7 @@ qr/changed HTTP method from GET to POST/
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite",
                                 "method": "PUT"
                             }
                         },
@@ -1464,6 +1472,9 @@ passed
 --- request
 GET /hello
 --- response_body
-hello world
+uri: /plugin_proxy_rewrite
+host: localhost
+scheme: http
+method: PUT
 --- error_log eval
 qr/changed HTTP method from GET to PUT/
