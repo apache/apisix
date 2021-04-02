@@ -196,11 +196,24 @@ function _M.rewrite(conf, ctx)
       elseif conf.method == "PUT" then
         ngx.req.set_method(ngx.HTTP_PUT)
 
+      elseif conf.method == "DELETE" then
+        ngx.req.set_method(ngx.HTTP_DELETE)
+
       elseif conf.method == "PATCH" then
         ngx.req.set_method(ngx.HTTP_PATCH)
 
-      elseif conf.method == "DELETE" then
-        ngx.req.set_method(ngx.HTTP_DELETE)
+      elseif conf.method == "HEAD" then
+        ngx.req.set_method(ngx.HTTP_HEAD)
+        
+      elseif conf.method == "OPTIONS" then
+        ngx.req.set_method(ngx.HTTP_OPTIONS)
+        
+      elseif conf.method == "CONNECT" then
+        ngx.req.set_method(ngx.HTTP_CONNECT)
+        
+      elseif conf.method == "TRACE" then
+        ngx.req.set_method(ngx.HTTP_TRACE)
+        
       else
         core.log.warn("Invalid HTTP method: ", conf.method)
       end
