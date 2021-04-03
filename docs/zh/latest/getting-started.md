@@ -110,7 +110,6 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 恭喜！您现在已经拥有一个运行中的 Apache APISIX 实例了！接下来我们创建一个 Route。
 
-
 ### 在我们继续之前
 
 您知道吗？Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和一个 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用，但在本指南中我们使用 Admin API 来做演示。出发!
