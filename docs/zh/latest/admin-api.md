@@ -562,7 +562,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
-upstream 对象 json 配置内容：
+**upstream 对象 json 配置内容：**
 
 ```shell
 {
@@ -579,15 +579,18 @@ upstream 对象 json 配置内容：
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
     "key": "",
-    "name": "upstream-xxx",      # upstream 名称
+    "name": "upstream-xxx",     # upstream 名称
     "desc": "hello world",      # upstream 描述
+    "scheme": "http"            # 跟上游通信时使用的 scheme，默认是 `http`
 }
 ```
 
-具体示例：
+**具体示例：**
+
+示例一：创建一个 upstream 并对 `nodes` 的数据做修改
 
 ```shell
-# 创建一个upstream
+# 创建一个 upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
@@ -666,11 +669,52 @@ HTTP/1.1 200 OK
 
 ```
 
+示例二：将客户端请求代理到上游 `https` 服务
+
+1、创建 route 并配置 upstream 的 scheme 为 `https`。
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/get",
+    "upstream": {
+        "type": "roundrobin",
+        "scheme": "https",
+        "nodes": {
+            "httpbin.org:443": 1
+        }
+    }
+}'
+```
+
+执行成功后，请求与上游通信时的 scheme 将为 `https`。
+
+2、 发送请求进行测试。
+
+```shell
+$ curl http://127.0.0.1:9080/get
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6058324a-0e898a7f04a5e95b526bb183",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1",
+  "url": "https://127.0.0.1/get"
+}
+```
+
+请求成功，表示代理上游 `https` 生效了。
+
+**注意：**
+
 节点可以配置自己的优先级。只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
 
 由于默认的优先级是 0，我们可以给一些节点配置负数的优先级来作为备份。
-
-举个例子，
+举个例子:
 
 ```json
 {
