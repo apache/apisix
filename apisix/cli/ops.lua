@@ -51,14 +51,15 @@ local function help()
     print([[
 Usage: apisix [action] <argument>
 
-help:       show this message, then exit
-init:       initialize the local nginx.conf
-init_etcd:  initialize the data of etcd
-start:      start the apisix server
-stop:       stop the apisix server
-restart:    restart the apisix server
-reload:     reload the apisix server
-version:    print the version of apisix
+help:         show this message, then exit
+init_config:  initialize the local nginx.conf
+init_etcd:    initialize the data of etcd
+init:         initialize the apisix server
+start:        start the apisix server
+stop:         stop the apisix server
+restart:      restart the apisix server
+reload:       reload the apisix server
+version:      print the version of apisix
 ]])
 end
 
@@ -280,7 +281,7 @@ local config_schema = {
 }
 
 
-local function init(env)
+local function init_config(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
               .. 'development environments and it is dangerous to do so. '
@@ -576,6 +577,29 @@ local function init_etcd(env, args)
 end
 
 
+local function init(env)
+    local parser = argparse()
+    parser:argument("_", "Placeholder")
+    parser:option("-c --config", "location of customized config.yaml")
+    -- TODO: more logs for APISIX cli could be added using this feature
+    parser:flag("--verbose", "show init_etcd debug information")
+    local args = parser:parse()
+
+    local customized_yaml = args["config"]
+    if customized_yaml then
+        profile.apisix_home = env.apisix_home .. "/"
+        local local_conf_path = profile:yaml_path("config")
+        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
+        print("Use customized yaml: ", customized_yaml)
+    end
+
+    -- init nginx.conf
+    init_config(env)
+    init_etcd(env, args)
+end
+
+
 local function start(env, ...)
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to
@@ -609,24 +633,7 @@ local function start(env, ...)
               ", the file will be overwritten")
     end
 
-    local parser = argparse()
-    parser:argument("_", "Placeholder")
-    parser:option("-c --config", "location of customized config.yaml")
-    -- TODO: more logs for APISIX cli could be added using this feature
-    parser:flag("--verbose", "show init_etcd debug information")
-    local args = parser:parse()
-
-    local customized_yaml = args["config"]
-    if customized_yaml then
-        profile.apisix_home = env.apisix_home .. "/"
-        local local_conf_path = profile:yaml_path("config")
-        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
-        print("Use customized yaml: ", customized_yaml)
-    end
-
     init(env)
-    init_etcd(env, args)
 
     util.execute_cmd(env.openresty_args)
 end
@@ -652,7 +659,7 @@ end
 
 local function reload(env)
     -- reinit nginx.conf
-    init(env)
+    init_config(env)
 
     local test_cmd = env.openresty_args .. [[ -t -q ]]
     -- When success,
@@ -673,6 +680,7 @@ end
 local action = {
     help = help,
     version = version,
+    init_config = init_config,
     init = init,
     init_etcd = etcd.init,
     start = start,
