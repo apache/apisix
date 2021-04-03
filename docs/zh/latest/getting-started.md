@@ -69,6 +69,7 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 - Query Parameters: foo1, foo2
 
 ## 前提
+
 > 如果您已经安装了 Apache APISIX，请随意，可以直接跳到 [第二步](#step-2-create-a-route)
 
 - 本指南使用 [Docker](https://www.docker.com/) 和 [Docker Compose](https://docs.docker.com/compose/) 来安装 Apache APISIX。
@@ -190,6 +191,7 @@ $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpb
 哇哦! 它将从我们的 `Upstream` （实际是 `httpbin.org`）返回数据，它的运行符合预期!
 
 ## 进阶
+
 ### 身份验证
 
 让我们来做一些有趣的事情，由于我们在第二步中创建的 `Route` 是公共的，**任何人** 都可以访问，现在我们希望只有 `John` 可以访问它。让我们使用 [Consumer](./architecture-design/consumer.md) 和 [Plugin](./architecture-design/plugin.md) 来实现这个保护措施。
