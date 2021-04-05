@@ -226,7 +226,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-OK，现在当我们访问第二步创建的 `Route` 时，将会产生一个 **Unauthorized Error**（未经授权错误）。让我看看如何正确访问那个 `Route`：
+OK，现在当我们访问第二步创建的路由时，将会产生一个 **Unauthorized Error**（未经授权错误）。让我看看如何正确访问那个路由：
 
 ```bash
 $ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
