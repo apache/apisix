@@ -209,7 +209,7 @@ $ curl  http://127.0.0.1:9080/apisix/admin/consumers  -H  'X-API-KEY: edd1c9f034
 }'
 ```
 
-接下来，让我们绑定 `Consumer(John)` 到 `Route` 上，我们仅仅需要为 `Route` **启用** [key-auth](./plugins/key-auth.md) 插件即可。
+接下来，让我们绑定 `消费者（John）` 到路由上：我们仅仅需要为路由 **启用** [key-auth](./plugins/key-auth.md) 插件即可。
 
 ```bash
 $ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
