@@ -232,7 +232,7 @@ OK，现在当我们访问第二步创建的路由时，将会产生一个 **Una
 $ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
 ```
 
-是的，仅仅添加了一个带有正确密钥的名为 `apikey` 的 `Header` ！这样就可以保护任何的 `Route` 了，so easy，不是吗？
+是的，仅仅添加了一个带有正确密钥的名为 `apikey` 的 `Header`！这样就可以保护任何的路由了。
 
 ### 为 Route 添加前缀
 
