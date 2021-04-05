@@ -187,7 +187,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f03433
 $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-哇哦! 它将从我们的 `Upstream` （实际是 `httpbin.org`）返回数据，它的运行符合预期!
+哇哦! 它将从我们的上游服务（实际是 `httpbin.org`）返回预期数据！
 
 ## 进阶
 
