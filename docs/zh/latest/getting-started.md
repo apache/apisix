@@ -118,7 +118,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
  Apache APISIX 是如何知道的呢？那是因为我们为 Route 对象配置了匹配规则。
 
-下面是一个 Route 数据示例：
+下面是一个 Route 配置示例：
 
 ```json
 {
