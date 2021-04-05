@@ -166,7 +166,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 
 我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游目标（后端服务），其 ID 为 `50`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
 
-**注意：** 实际上，创建 Upstream 并不是必需的，因为我们可以使用 [Plugin](./architecture-design/plugin.md) 拦截器请求，然后直接响应，但是假设我们在本指南中需要至少设置一个 `Upstream`。
+**注意：** 实际上，创建上游对象并不是必需的，因为我们可以使用 [插件机制](./architecture-design/plugin.md) 拦截请求、直接响应数据。但在本指南中，我们选择设置一个上游对象。
 
 ```bash
 $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
