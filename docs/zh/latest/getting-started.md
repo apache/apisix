@@ -112,7 +112,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ### 在我们继续之前
 
-您知道吗？Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和一个 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用，但在本指南中我们使用 Admin API 来做演示。出发!
+您知道吗？Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用，但在本指南中我们使用 Admin API 来做演示。
 
 我们可以创建一个 [Route](./architecture-design/route.md)  并将其定位到我们的后端服务（通常称其为  [Upstream](./architecture-design/upstream.md) ），当一个 `Request` 到达 Apache APISIX 时，Apache APISIX 就会明白这个 Request 应该去哪里。
 
