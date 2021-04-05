@@ -195,7 +195,7 @@ $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpb
 
 让我们来做一些有趣的事情。由于我们在第二步中创建的路由是公共的，**任何人** 都可以访问，现在我们希望只有 `John` 可以访问它。让我们使用 [消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现这个保护措施。
 
-首先，我们使用 [key-auth](./plugins/key-auth.md) 插件创建 [consumer](./architecture-design/consumer.md) `John`，我们需要提供一个指定的秘钥:
+首先，我们创建一条 [消费者（Consumer）](./architecture-design/consumer.md) 并绑定一个[key-auth](./plugins/key-auth.md) 插件，这需要提供一个指定的秘钥:
 
 ```bash
 $ curl  http://127.0.0.1:9080/apisix/admin/consumers  -H  'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
