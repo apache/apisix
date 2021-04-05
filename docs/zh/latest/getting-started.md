@@ -70,7 +70,7 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 前提
 
-> 如果您已经安装了 Apache APISIX，请随意，可以直接跳到 [第二步](#step-2-create-a-route)
+> 如果您已经安装了 Apache APISIX，请直接阅读[第二步](#step-2-create-a-route)
 
 - 本指南使用 [Docker](https://www.docker.com/) 和 [Docker Compose](https://docs.docker.com/compose/) 来安装 Apache APISIX。
 - `curl`：本指南使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试，但是您也可以使用任何其他工具（例如 [Postman](https://www.postman.com/) ）。
