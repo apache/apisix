@@ -152,7 +152,7 @@ $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "H
 
 ### 创建一个上游对象（Upstream）
 
-读完上一节，我们知道了必须要为 `Route` 设置 `Upstream` 。可以执行下面的命令来创建一个 `Upstream`。
+读完上一节，我们知道需要为路由绑定一个上游对象。可以执行下面的命令来创建一个上游：
 
 ```bash
 $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
