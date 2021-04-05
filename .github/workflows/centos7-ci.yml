@@ -47,7 +47,7 @@ jobs:
         cd apisix-build-tools
         make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION}
         cd ..
-        rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=Makefile --ignore=rockspec)
+        rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
     - name: Install Redis Cluster
       run: |

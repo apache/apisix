@@ -36,22 +36,22 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-$ mkdir apisix-2.4
-$ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
-$ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
+$ mkdir apisix-2.5
+$ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
+$ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apisix-2.4
+cd apisix-2.5
 make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
@@ -67,11 +67,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 2.4
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.4
+# Install version 2.5
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.5
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 2.4
+sudo luarocks install apisix 2.5
 ```
 
 ## 3. Manage (start/stop) APISIX Server
