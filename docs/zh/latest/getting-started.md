@@ -164,7 +164,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 }'
 ```
 
-我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的 Upstream 目标（后端服务），其 ID 为 `50`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
+我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游目标（后端服务），其 ID 为 `50`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
 
 **注意：** 实际上，创建 Upstream 并不是必需的，因为我们可以使用 [Plugin](./architecture-design/plugin.md) 拦截器请求，然后直接响应，但是假设我们在本指南中需要至少设置一个 `Upstream`。
 
