@@ -179,7 +179,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f03433
 
 如此而已。
 
-### 验证
+### 验证配置是否正确
 
 再次恭喜！我们创建了 `Route` 和 `Upstream`，并且为它们做了绑定。现在让我们访问 Apache APISIX 来测试已经创建的 `Route`。
 
