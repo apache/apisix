@@ -134,9 +134,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 }
 ```
 
-这条 Route 配置是指：当入站请求满足下述规则时，请求将被转发到 `httpbin.org:80` 上游：
-
-此路由表示所有入站请求在满足**所有**以下规则(匹配请求)时，将被转发到`httpbin.org：80`上游：
+这条路由配置是指：当入站请求满足下述规则时，请求将被转发到 `httpbin.org:80` 上游：
 
 - 请求方法为 `GET`;
 - 请求头包含 `Host` 字段，且它的值为 `example.com`;
