@@ -92,7 +92,7 @@ $ docker-compose -p docker-apisix up -d
 $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
-我们希望返回以下数据：
+我们期望返回以下数据：
 
 ```json
 {
