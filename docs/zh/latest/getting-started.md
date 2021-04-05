@@ -236,7 +236,7 @@ $ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: su
 
 ### 为路由添加前缀
 
-现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用proxy-rewrite 插件来完成。
+现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用 `proxy-rewrite` 插件来完成。
 
 ```bash
 $ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
