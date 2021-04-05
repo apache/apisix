@@ -64,7 +64,7 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 - Scheme: HTTP
 - Port: 80
-- Host: ``httpbin.org``
+- Host: `httpbin.org`
 - URI/Path: ``/get``
 - Query Parameters: foo1, foo2
 
