@@ -148,7 +148,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
-这会被  Apache APISIX 转发到 `http://httpbin.org:80/getAll?limit=10`。
+这会被 Apache APISIX 转发到 `http://httpbin.org:80/getAll?limit=10`。
 
 ### 创建一个 Upstream
 
