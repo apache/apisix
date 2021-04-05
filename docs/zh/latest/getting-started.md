@@ -85,7 +85,7 @@ $ cd apisix-docker/example
 $ docker-compose -p docker-apisix up -d
 ```
 
-下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。下载完成后，我们就可以 `curl` 我们的 Admin API 来判断 Apache APISIX 是否成功启动。
+下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。下载完成后，我们可以使用 `curl` 工具访问 Admin API，借此判断 Apache APISIX 是否成功启动。
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
