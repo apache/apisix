@@ -150,7 +150,7 @@ $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "H
 
 这会被 Apache APISIX 转发到 `http://httpbin.org:80/getAll?limit=10`。
 
-### 创建一个 Upstream
+### 创建一个上游对象（Upstream）
 
 读完上一节，我们知道了必须要为 `Route` 设置 `Upstream` 。可以执行下面的命令来创建一个 `Upstream`。
 
