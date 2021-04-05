@@ -140,7 +140,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 - 请求方法为 `GET`;
 - 请求头包含 `Host` 字段，且它的值为 `example.com`;
-- Request's path matches `/services/users/*`, `*` means all subpaths, like `/services/users/getAll?limit=10`.
+- 请求路径匹配 `/services/users/*`，`*` 意味着任意的子路径。例如：`/services/users/getAll?limit=10`。
 
 当这条 Route 创建后，我们就可以使用 Apache APISIX 的地址去访问我们的后端服务（实际上是 Upstream）：
 
