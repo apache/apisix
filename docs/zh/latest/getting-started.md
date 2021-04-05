@@ -234,7 +234,7 @@ $ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: su
 
 是的，仅仅添加了一个带有正确密钥的名为 `apikey` 的 `Header`！这样就可以保护任何的路由了。
 
-### 为 Route 添加前缀
+### 为路由添加前缀
 
 现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用proxy-rewrite 插件来完成。
 
