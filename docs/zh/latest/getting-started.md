@@ -181,7 +181,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f03433
 
 ### 验证配置是否正确
 
-再次恭喜！我们创建了 `Route` 和 `Upstream`，并且为它们做了绑定。现在让我们访问 Apache APISIX 来测试已经创建的 `Route`。
+再次恭喜！我们分别创建了上游与路由对象，并将它们进行绑定。现在让我们访问 Apache APISIX 来测试已经创建的路由：
 
 ```bash
 $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
