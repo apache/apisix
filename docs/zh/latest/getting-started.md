@@ -193,7 +193,7 @@ $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpb
 
 ### 身份验证
 
-让我们来做一些有趣的事情，由于我们在第二步中创建的 `Route` 是公共的，**任何人** 都可以访问，现在我们希望只有 `John` 可以访问它。让我们使用 [Consumer](./architecture-design/consumer.md) 和 [Plugin](./architecture-design/plugin.md) 来实现这个保护措施。
+让我们来做一些有趣的事情。由于我们在第二步中创建的路由是公共的，**任何人** 都可以访问，现在我们希望只有 `John` 可以访问它。让我们使用 [消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现这个保护措施。
 
 首先，我们使用 [key-auth](./plugins/key-auth.md) 插件创建 [consumer](./architecture-design/consumer.md) `John`，我们需要提供一个指定的秘钥:
 
