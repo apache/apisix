@@ -60,7 +60,7 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
-让我们来分析一下上面的请求 URL ：
+让我们来分析一下上面的请求 URL：
 
 - Scheme: HTTP
 - Port: 80
