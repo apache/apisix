@@ -116,7 +116,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 我们可以创建一个 [Route](./architecture-design/route.md) 并与后端服务（通常称为上游： [Upstream](./architecture-design/upstream.md)）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
- Apache APISIX 是如何知道的呢？那是因为我们有一个用 Route 配置的规则列表。
+ Apache APISIX 是如何知道的呢？那是因为我们为 Route 对象配置了匹配规则。
 
 下面是一个 Route 数据示例：
 
