@@ -1,4 +1,8 @@
-#!/usr/bin/env bash
+---
+title: eureka
+---
+
+<!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +19,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+-->
 
-
-export OPENRESTY_VERSION=1.15.8.2
-. ./.travis/linux_openresty_common_runner.sh
+Apache APISIX supports service discovery via Eureka. For the details, please start your
+reading from [Supported discovery registries](../discovery.md#supported-discovery-registries).

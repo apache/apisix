@@ -17,5 +17,5 @@
 #
 
 
-export OPENRESTY_VERSION=1.17.8.2
-. ./.travis/linux_openresty_common_runner.sh
+export OPENRESTY_VERSION=source
+. ./ci/linux_openresty_common_runner.sh

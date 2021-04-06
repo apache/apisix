@@ -207,3 +207,56 @@ GET /hello
 --- error_code: 502
 --- error_log
 upstream: "http://127.0.0.1:80/hello"
+
+
+
+=== TEST 9: rewrite SNI
+--- log_level: debug
+--- apisix_yaml
+routes:
+  -
+    uri: /uri
+    upstream:
+        scheme: https
+        nodes:
+            "127.0.0.1:1983": 1
+        type: roundrobin
+        pass_host: "rewrite",
+        upstream_host: "www.test.com",
+#END
+--- request
+GET /uri
+--- more_headers
+host: www.sni.com
+--- error_log
+Receive SNI: www.test.com
+--- response_body
+uri: /uri
+host: www.test.com
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 10: node's SNI
+--- log_level: debug
+--- apisix_yaml
+routes:
+  -
+    uri: /uri
+    upstream:
+        scheme: https
+        nodes:
+            "localhost:1983": 1
+        type: roundrobin
+        pass_host: "node",
+#END
+--- request
+GET /uri
+--- more_headers
+host: www.sni.com
+--- error_log
+Receive SNI: localhost
+--- response_body
+uri: /uri
+host: localhost
+x-real-ip: 127.0.0.1

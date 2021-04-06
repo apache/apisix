@@ -25,6 +25,8 @@ local pairs = pairs
 local tonumber = tonumber
 
 local plugin_name = "zipkin"
+local ZIPKIN_SPAN_VER_1 = 1
+local ZIPKIN_SPAN_VER_2 = 2
 
 
 local lrucache = core.lrucache.new({
@@ -45,6 +47,10 @@ local schema = {
             type = "string",
             description = "default is $server_addr, you can specify your external ip address",
             pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
+        },
+        span_version = {
+            enum = {ZIPKIN_SPAN_VER_1, ZIPKIN_SPAN_VER_2},
+            default = ZIPKIN_SPAN_VER_2,
         },
     },
     required = {"endpoint", "sample_ratio"}
@@ -182,17 +188,19 @@ function _M.rewrite(plugin_conf, ctx)
         tracer = tracer,
         wire_context = wire_context,
         request_span = request_span,
-        rewrite_span = nil,
-        access_span = nil,
-        proxy_span = nil,
     }
 
     local request_span = ctx.opentracing.request_span
-    ctx.opentracing.rewrite_span = request_span:start_child_span(
-                                            "apisix.rewrite", start_timestamp)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
+                                                                     start_timestamp)
 
-    ctx.REWRITE_END_TIME = tracer:time()
-    ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
+        ctx.REWRITE_END_TIME = tracer:time()
+        ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
+    else
+        ctx.opentracing.proxy_span = request_span:start_child_span("apisix.proxy",
+                                                                   start_timestamp)
+    end
 end
 
 function _M.access(conf, ctx)
@@ -201,17 +209,18 @@ function _M.access(conf, ctx)
     end
 
     local opentracing = ctx.opentracing
-
-    opentracing.access_span = opentracing.request_span:start_child_span(
-            "apisix.access", ctx.REWRITE_END_TIME)
-
     local tracer = opentracing.tracer
 
-    ctx.ACCESS_END_TIME = tracer:time()
-    opentracing.access_span:finish(ctx.ACCESS_END_TIME)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        opentracing.access_span = opentracing.request_span:start_child_span(
+            "apisix.access", ctx.REWRITE_END_TIME)
 
-    opentracing.proxy_span = opentracing.request_span:start_child_span(
-            "apisix.proxy", ctx.ACCESS_END_TIME)
+        ctx.ACCESS_END_TIME = tracer:time()
+        opentracing.access_span:finish(ctx.ACCESS_END_TIME)
+
+        opentracing.proxy_span = opentracing.request_span:start_child_span(
+                "apisix.proxy", ctx.ACCESS_END_TIME)
+    end
 
     -- send headers to upstream
     local outgoing_headers = {}
@@ -228,11 +237,18 @@ function _M.header_filter(conf, ctx)
     end
 
     local opentracing = ctx.opentracing
+    local end_time = opentracing.tracer:time()
 
-    ctx.HEADER_FILTER_END_TIME = opentracing.tracer:time()
-    if  opentracing.proxy_span then
-        opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
-            "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        ctx.HEADER_FILTER_END_TIME = end_time
+        if  opentracing.proxy_span then
+            opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
+                "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+        end
+    else
+        opentracing.proxy_span:finish(end_time)
+        opentracing.response_span = opentracing.request_span:start_child_span(
+            "apisix.response_span", ctx.HEADER_FILTER_END_TIME)
     end
 end
 
@@ -245,15 +261,21 @@ function _M.log(conf, ctx)
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
-    if opentracing.body_filter_span then
-        opentracing.body_filter_span:finish(log_end_time)
+
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        if opentracing.body_filter_span then
+            opentracing.body_filter_span:finish(log_end_time)
+        end
+        if opentracing.proxy_span then
+            opentracing.proxy_span:finish(log_end_time)
+        end
+
+    else
+        opentracing.response_span:finish(log_end_time)
     end
 
     local upstream_status = core.response.get_upstream_status(ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
-    if opentracing.proxy_span then
-        opentracing.proxy_span:finish(log_end_time)
-    end
 
     opentracing.request_span:finish(log_end_time)
 

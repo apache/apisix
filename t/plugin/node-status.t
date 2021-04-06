@@ -29,7 +29,6 @@ _EOC_
     $block;
 });
 
-master_on();
 repeat_each(1);
 no_long_string();
 no_root_location();

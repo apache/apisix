@@ -161,3 +161,4 @@ GET /server_port
 --- error_code: 503
 --- error_log
 failed to parse domain: xxxx.invalid
+--- timeout: 10

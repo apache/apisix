@@ -148,27 +148,18 @@ end
 
 
 local function set_pass_host(ctx, upstream_info, host)
-    -- Currently only supports a single upstream of the domain name.
-    -- When the upstream is `IP`, do not do any `pass_host` operation.
-    if not core.utils.parse_ipv4(host)
-       and not core.utils.parse_ipv6(host)
-    then
-        local pass_host = upstream_info.pass_host or "pass"
-        if pass_host == "pass" then
-            ctx.var.upstream_host = ctx.var.host
-            return
-        end
-
-        if pass_host == "rewrite" then
-            ctx.var.upstream_host = upstream_info.upstream_host
-            return
-        end
-
-        ctx.var.upstream_host = host
+    local pass_host = upstream_info.pass_host or "pass"
+    if pass_host == "pass" then
         return
     end
 
-    return
+    if pass_host == "rewrite" then
+        ctx.var.upstream_host = upstream_info.upstream_host
+        return
+    end
+
+    -- only support single node for `node` mode currently
+    ctx.var.upstream_host = host
 end
 
 
@@ -201,6 +192,8 @@ local function set_upstream(upstream_info, ctx)
     local up_conf = {
         name = upstream_info.name,
         type = upstream_info.type,
+        hash_on = upstream_info.hash_on,
+        key = upstream_info.key,
         nodes = new_nodes,
         timeout = {
             send = upstream_info.timeout and upstream_info.timeout.send or 15,
@@ -226,7 +219,7 @@ local function set_upstream(upstream_info, ctx)
 end
 
 
-local function new_rr_obj(weighted_upstreams, route_upstream_id)
+local function new_rr_obj(weighted_upstreams)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
         if upstream_obj.upstream_id then
@@ -239,12 +232,8 @@ local function new_rr_obj(weighted_upstreams, route_upstream_id)
             -- If the upstream object has only the weight value, it means
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
-            if route_upstream_id then
-                server_list[route_upstream_id] = upstream_obj.weight
-            else
-                upstream_obj.upstream = "plugin#upstream#is#empty"
-                server_list[upstream_obj.upstream] = upstream_obj.weight
-            end
+            upstream_obj.upstream = "plugin#upstream#is#empty"
+            server_list[upstream_obj.upstream] = upstream_obj.weight
 
         end
     end
@@ -285,9 +274,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    local route_upstream_id = ctx.matched_route.value.upstream_id
     local rr_up, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_rr_obj,
-                                                weighted_upstreams,route_upstream_id)
+                                                weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
@@ -298,13 +286,13 @@ function _M.access(conf, ctx)
         core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
-        ctx.matched_route.value.upstream_id = upstream
+        ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
         return
     end
 
+    ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
-    ctx.matched_route.value.upstream_id = nil
     return
 end
 

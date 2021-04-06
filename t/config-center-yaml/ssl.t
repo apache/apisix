@@ -175,7 +175,7 @@ end
 received: HTTP/1.1 200 OK
 close: 1 nil
 --- error_log
-lua ssl server name: "test.com"
+server name: "test.com"
 
 
 
@@ -246,4 +246,4 @@ end
 received: HTTP/1.1 200 OK
 close: 1 nil
 --- error_log
-lua ssl server name: "test.com"
+server name: "test.com"

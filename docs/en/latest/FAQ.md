@@ -70,6 +70,13 @@ There are two possibilities when encountering slow luarocks:
 
 For the first problem, you can use https_proxy or use the `--server` option to specify a luarocks server that you can access or access faster.
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
+For China mainland users, you can use the `luarocks.cn` as the luarocks server.
+
+We already provide a wrapper in the Makefile to simplify your job:
+
+```bash
+LUAROCKS_SERVER=https://luarocks.cn make deps
+```
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
 
@@ -204,67 +211,18 @@ Server: APISIX web server
 </html>
 ```
 
-## How to fix OpenResty Installation Failure on MacOS 10.15
-
-When you install the OpenResty on MacOs 10.15, you may face this error
-
-```shell
-> brew install openresty
-Updating Homebrew...
-==> Auto-updated Homebrew!
-Updated 1 tap (homebrew/cask).
-No changes to formulae.
-
-==> Installing openresty from openresty/brew
-Warning: A newer Command Line Tools release is available.
-Update them from Software Update in System Preferences or
-https://developer.apple.com/download/more/.
-
-==> Downloading https://openresty.org/download/openresty-1.15.8.2.tar.gz
-Already downloaded: /Users/wusheng/Library/Caches/Homebrew/downloads/4395089f0fd423261d4f1124b7beb0f69e1121e59d399e89eaa6e25b641333bc--openresty-1.15.8.2.tar.gz
-==> ./configure -j8 --prefix=/usr/local/Cellar/openresty/1.15.8.2 --pid-path=/usr/local/var/run/openresty.pid --lock-path=/usr/
-Last 15 lines from /Users/wusheng/Library/Logs/Homebrew/openresty/01.configure:
-DYNASM    host/buildvm_arch.h
-HOSTCC    host/buildvm.o
-HOSTLINK  host/buildvm
-BUILDVM   lj_vm.S
-BUILDVM   lj_ffdef.h
-BUILDVM   lj_bcdef.h
-BUILDVM   lj_folddef.h
-BUILDVM   lj_recdef.h
-BUILDVM   lj_libdef.h
-BUILDVM   jit/vmdef.lua
-make[1]: *** [lj_folddef.h] Segmentation fault: 11
-make[1]: *** Deleting file `lj_folddef.h'
-make[1]: *** Waiting for unfinished jobs....
-make: *** [default] Error 2
-ERROR: failed to run command: gmake -j8 TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-msse4.2 -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/Cellar/openresty/1.15.8.2/luajit
-
-If reporting this issue please do so at (not Homebrew/brew or Homebrew/core):
-  https://github.com/openresty/homebrew-brew/issues
-
-These open issues may also help:
-Can't install openresty on macOS 10.15 https://github.com/openresty/homebrew-brew/issues/10
-The openresty-debug package should use openresty-openssl-debug instead https://github.com/openresty/homebrew-brew/issues/3
-Fails to install OpenResty https://github.com/openresty/homebrew-brew/issues/5
-
-Error: A newer Command Line Tools release is available.
-Update them from Software Update in System Preferences or
-https://developer.apple.com/download/more/.
-```
-
-This is an OS incompatible issue, you could fix by these two steps
-
-1. `brew edit openresty/brew/openresty`
-1. add `\ -fno-stack-check` in with-luajit-xcflags line.
-
 ## How to change the log level?
 
 The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
 
 Steps:
 
-1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
+1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml.
+
+```yaml
+nginx_config:
+  error_log_level: "info"
+```
 
 2. Reload or restart APISIX
 
@@ -360,7 +318,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](doc/install-dependencies.md) document for installation.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
@@ -404,3 +362,39 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     }
 }'
 ```
+
+## How to use route `uri` for regular matching
+
+The regular matching of uri is achieved through the `vars` field of route.
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", "^/[a-z]+$"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+Test request:
+
+```shell
+# The uri matched successfully
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+...
+
+# The uri match failed
+curl http://127.0.0.1:9080/12ab -i
+HTTP/1.1 404 Not Found
+...
+```
+
+In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).

@@ -69,20 +69,16 @@ Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like 
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
-needs to declare in **apisix/cli/ngx_tpl.lua**, for example :
+needs to declare via [customizing Nginx configuration](./customize-nginx-configuration.md), for example :
 
-```nginx
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict upstream-healthcheck 10m;
-    lua_shared_dict worker-events        10m;
-
-    # for openid-connect plugin
-    lua_shared_dict discovery             1m; # cache for discovery metadata documents
-    lua_shared_dict jwks                  1m; # cache for JWKs
-    lua_shared_dict introspection        10m; # cache for JWT verification results
+```yaml
+# put this in config.yaml:
+nginx_config:
+    http_configuration_snippet: |
+        # for openid-connect plugin
+        lua_shared_dict discovery             1m; # cache for discovery metadata documents
+        lua_shared_dict jwks                  1m; # cache for JWKs
+        lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
@@ -91,7 +87,7 @@ the plugin is loaded.
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
 method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
 configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
-existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
+existing plugin mechanism, **we do not recommend this unless you have a complete grasp of the code**.
 
 ## name and config
 

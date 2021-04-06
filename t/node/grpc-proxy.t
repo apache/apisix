@@ -71,7 +71,6 @@ proxy request to 127.0.0.1:9088
 --- apisix_yaml
 consumers:
   - username: jack
-    id: jack
     plugins:
         key-auth:
             key: user-key
@@ -123,7 +122,6 @@ proxy request to 127.0.0.1:9088
 --- apisix_yaml
 consumers:
   - username: jack
-    id: jack
     plugins:
         key-auth:
             key: user-key

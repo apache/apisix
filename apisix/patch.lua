@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
@@ -30,7 +31,17 @@ local setmetatable = setmetatable
 local type = type
 
 
+local config_local
 local _M = {}
+
+
+local function get_local_conf()
+    if not config_local then
+        config_local = require("apisix.core.config_local")
+    end
+
+    return config_local.local_conf()
+end
 
 
 local function flatten(args)
@@ -119,7 +130,12 @@ local luasocket_wrapper = {
         return self.sock:settimeout(time)
     end,
 
-    sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+    tlshandshake = function (self, options)
+        local reused_session = options.reused_session
+        local server_name = options.server_name
+        local verify = options.verify
+        local send_status_req = options.ocsp_status_req
+
         if reused_session then
             log(WARN, "reused_session is not supported yet")
         end
@@ -132,6 +148,8 @@ local luasocket_wrapper = {
             mode = "client",
             protocol = "any",
             verify = verify and "peer" or "none",
+            certificate = options.client_cert_path,
+            key = options.client_priv_key_path,
             options = {
                 "all",
                 "no_sslv2",
@@ -139,6 +157,16 @@ local luasocket_wrapper = {
                 "no_tlsv1"
             }
         }
+
+        local local_conf, err = get_local_conf()
+        if not local_conf then
+            return nil, err
+        end
+
+        local apisix_ssl = local_conf.apisix.ssl
+        if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+            params.cafile = apisix_ssl.ssl_trusted_certificate
+        end
 
         local sec_sock, err = ssl.wrap(self.sock, params)
         if not sec_sock then
@@ -157,6 +185,15 @@ local luasocket_wrapper = {
 
         self.sock = sec_sock
         return true
+    end,
+
+    sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+        return self:tlshandshake({
+            reused_session = reused_session,
+            server_name = server_name,
+            verify = verify,
+            ocsp_status_req = send_status_req,
+        })
     end
 }
 

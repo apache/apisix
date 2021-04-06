@@ -29,7 +29,6 @@ local upstream_util = require("apisix.utils.upstream")
 local ctxdump       = require("resty.ctxdump")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
-local ngx_version   = ngx.config.nginx_version
 local get_method    = ngx.req.get_method
 local ngx_exit      = ngx.exit
 local math          = math
@@ -387,6 +386,12 @@ function _M.http_access_phase()
     end
 
     local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
@@ -403,12 +408,6 @@ function _M.http_access_phase()
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
-            end
-
-            if upstream.value.enable_websocket then
-                core.log.warn("DEPRECATE: enable websocket in upstream will be removed soon. ",
-                              "Please enable it in route/service level.")
-                enable_websocket = true
             end
 
             if upstream.value.pass_host then
@@ -468,10 +467,6 @@ function _M.http_access_phase()
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
-        if ngx_version < 1017008 then
-            return ngx.exec("@1_15_" .. up_scheme .. "_pass")
-        end
-
         return ngx.exec("@grpc_pass")
     end
 

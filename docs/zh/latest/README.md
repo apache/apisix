@@ -66,7 +66,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **多协议**
 
   - [TCP/UDP 代理](stream-proxy.md): 动态 TCP/UDP 代理。
-  - [Dubbo 代理](../../en/latest/plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
+  - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
@@ -153,9 +153,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 下载最新的源码发布包：
 
      ```shell
-     $ mkdir apisix-2.4
-     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
-     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
+     $ mkdir apisix-2.5
+     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
+     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
      ```
 
    - 安装运行时依赖的 Lua 库：
@@ -192,7 +192,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 安装 APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
    ```
 
    - 检查 APISIX 的版本号：
@@ -339,7 +339,7 @@ APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gatew
 
 ## Logo
 
-- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo(PNG)](../../../logos/apache-apisix.png)
 - [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 贡献
@@ -354,4 +354,4 @@ APISIX 被纳入 <a href="https://landscape.cncf.io/card-mode?category=api-gatew
 
 ## 协议
 
-[Apache 2.0 License](LICENSE)
+[Apache 2.0 License](../../../LICENSE)

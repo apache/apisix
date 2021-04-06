@@ -168,9 +168,9 @@ Note: The last request header also needs + `\n`.
 Use Python to generate the signature `SIGNATURE`:
 
 ```python
+import base64
 import hashlib
 import hmac
-import base64
 
 secret = bytes('my-secret-key', 'utf-8')
 message = bytes("""GET

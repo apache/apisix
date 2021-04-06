@@ -386,11 +386,6 @@ local upstream_schema = {
             minLength = 1
         },
         id = id_schema,
-        -- deprecate fields, will be removed soon
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean",
-        },
     },
     oneOf = {
         {required = {"type", "nodes"}},
@@ -594,8 +589,6 @@ _M.consumer = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         desc = desc_def,
-        -- deprecate fields, will be removed soon
-        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,
@@ -671,6 +664,10 @@ _M.ssl = {
 _M.proto = {
     type = "object",
     properties = {
+        id = id_schema,
+        desc = desc_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -697,6 +694,9 @@ _M.stream_route = {
     type = "object",
     properties = {
         id = id_schema,
+        desc = desc_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",

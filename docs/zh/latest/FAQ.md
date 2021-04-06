@@ -69,7 +69,13 @@ APISIX 需要一个配置中心，上面提到的很多功能是传统关系型�
 
 针对第一个问题，你可以使用 https_proxy 或者使用 `--server` 选项来指定一个你可以访问或者访问更快的
 luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令在 luarocks 3.0 版本后开始支持）
-可以查看有哪些可用服务。
+可以查看有哪些可用服务。对于中国大陆用户，你可以使用 `luarocks.cn` 这一个 luarocks 服务。
+
+我们已经封装好了选择服务地址的操作：
+
+```bash
+LUAROCKS_SERVER=https://luarocks.cn make deps
+```
 
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
@@ -211,7 +217,12 @@ Server: APISIX web server
 
 具体步骤：
 
-1、修改 conf/config.yaml 中的 nginx log 配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
+1、修改 conf/config.yaml 中的 `nginx_config` 配置参数`error_log_level: "warn"` 为 `error_log_level: "info"`。
+
+```yaml
+nginx_config:
+  error_log_level: "info"
+```
 
 2、重启抑或 reload APISIX
 
@@ -308,7 +319,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](doc/zh-cn/install-dependencies.md) 文档进行安装。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps
@@ -352,3 +363,39 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     }
 }'
 ```
+
+## route 的 `uri` 如何进行正则匹配
+
+这里通过 route 的 `vars` 字段来实现 uri 的正则匹配。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", "^/[a-z]+$"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+# uri 匹配成功
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+...
+
+# uri 匹配失败
+curl http://127.0.0.1:9080/12ab -i
+HTTP/1.1 404 Not Found
+...
+```
+
+在 route 中，我们可以通过 `uri` 结合 `vars` 字段来实现更多的条件匹配，`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
