@@ -1680,7 +1680,7 @@
         "allValue": ".*",
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
-        "definition": "label_values(apisix_http_status,instance)",
+        "definition": "label_values(apisix_nginx_http_current_connections,instance)",
         "error": null,
         "hide": 0,
         "includeAll": true,
