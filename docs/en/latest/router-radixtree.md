@@ -71,11 +71,13 @@ Here are the rules:
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
 
-#### 4. Different routes have the same uri
+#### 4. Different routes have the same `uri`
 
-When different routes have the same uri, you can set the priority attribute of the route to determine which route to match first, or add matching rules to distinguish different routes.
+When different routes have the same uri, you can set the priority field of the route to determine which route to match first, or add other matching rules to distinguish different routes.
 
-1. Different routes have the same uri and set the `priority` attribute
+Note: In matching rules, the `priority` field takes precedence over other rules. Therefore, we can set other matching rules only when the value of the `priority` field is the same.
+
+1. Different routes have the same `uri` and set the `priority` field
 
 Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
 
@@ -116,9 +118,9 @@ curl http://127.0.0.1:1980/hello
 
 All requests only hit the route of port `1980`.
 
-2. Different routes have the same uri and set different matching conditions
+2. Different routes have the same `uri` and set `different matching conditions`
 
-Here is an example of setting host matching rules.
+Here is an example of setting host matching rules：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
