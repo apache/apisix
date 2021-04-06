@@ -142,8 +142,8 @@ function _M.log(conf, ctx)
         gen_arr("request", service_id, consumer_name, balancer_ip))
 
     local apisix_latency = latency
-    local upstream_latency = ctx.var.upstream_response_time * 1000
-    if upstream_latency then
+    if ctx.var.upstream_response_time then
+        local upstream_latency = ctx.var.upstream_response_time * 1000
         metrics.latency:observe(upstream_latency,
             gen_arr("upstream", service_id, consumer_name, balancer_ip))
         apisix_latency =  apisix_latency - upstream_latency
