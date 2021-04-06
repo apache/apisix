@@ -1,5 +1,5 @@
 {
-  "version": 2.4,
+  "version": 2.5,
   "sidebar": [
     {
       "type": "link",
@@ -157,7 +157,8 @@
           "items": [
             "discovery",
             "discovery/dns",
-            "discovery/consul_kv"
+            "discovery/consul_kv",
+            "discovery/eureka"
           ]
         },
         {
