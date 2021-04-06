@@ -90,7 +90,6 @@ function _M.incoming(self, key)
     end
 
     if remaining <0 then
-        core.log.error(remaining)
         return nil,"rejected"
     end
     return 0,remaining
