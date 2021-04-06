@@ -93,7 +93,6 @@ local function request(request_uri, path, body, method, basic_auth)
         if not body then
             return nil, 'invalid body : ' .. err
         end
-        -- log.warn(method, url, body)
         headers['Content-Type'] = 'application/json'
     end
 
@@ -103,7 +102,7 @@ local function request(request_uri, path, body, method, basic_auth)
     local send_timeout = timeout.send
     local read_timeout = timeout.read
     log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout,
-             ", read_timeout:", read_timeout, ".")
+             ", read_timeout:", read_timeout)
     httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     local res, err = httpc:request_uri(url, {
         method = method,
@@ -143,7 +142,7 @@ local function get_token_param(base_uri, username, password)
         local data, err = post_url(base_uri, auth_path .. "?username=" .. username
                                    .. "&password=" .. password, nil)
         if err then
-            log.error("nacos login fail:" .. username .. " " .. password .. " desc:" .. err)
+            log.error("nacos login fail:", username, " ", password, " desc:", err)
             return nil, err
         end
         return "&accessToken=" .. data.accessToken
@@ -184,6 +183,7 @@ end
 
 
 local function get_page_service(infos, base_uri, token_param, page_num)
+    --  TODO Hardcode:page size=100,will rewrite by spacewander after merge
     local path = str_format(service_list_path, page_num, 100) .. token_param
     local data, err = get_url(base_uri, path)
     if err then
@@ -200,15 +200,17 @@ end
 local function iter_and_add_service_info(infos, base_uri, token_param)
     local data, err, path = get_page_service(infos, base_uri, token_param, 1)
     if err then
-        log.error("get_url:" .. path .. " err:" .. err)
+        log.error("get_url:", path, " err:", err)
         return
     end
 
+    --  TODO Hardcode:page size=100,will rewrite by spacewander after merge
     local maxPage = math.ceil(data.count / 100)
     if maxPage == 0 then
         return
     end
 
+    -- more than 1 page,continue fetch other pages
     if maxPage > 1 then
         for i = 2, maxPage do
             get_page_service(infos, base_uri, token_param, i)
@@ -233,6 +235,7 @@ local function fetch_full_registry(premature)
     local base_uri, username, password = get_base_uri()
     local token_param, err = get_token_param(base_uri, username, password)
     if err then
+        log.error("get_token_param error:", err)
         if not applications then
             applications = up_apps
         end
@@ -249,7 +252,7 @@ local function fetch_full_registry(premature)
     for _, service_name in ipairs(infos) do
         data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
         if err then
-            log.error("get_url:" .. instance_list_path .. " err:" .. err)
+            log.error("get_url:", instance_list_path, " err:", err)
             if not applications then
                 applications = up_apps
             end
@@ -303,9 +306,9 @@ function _M.init_worker()
         return
     end
     default_weight = local_conf.discovery.nacos.weight
-    log.info("default_weight:", default_weight, ".")
+    log.info("default_weight:", default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
-    log.info("fetch_interval:", fetch_interval, ".")
+    log.info("fetch_interval:", fetch_interval)
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
