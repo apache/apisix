@@ -30,7 +30,7 @@ __DATA__
         content_by_lua_block {
             local core = require("apisix.core")
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({userdn = 'foo'}, core.schema.TYPE_CONSUMER)
+            local ok, err = plugin.check_schema({user_dn = 'foo'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -52,7 +52,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({basedn = 123, ldapuri = "127.0.0.1"})
+            local ok, err = plugin.check_schema({base_dn = 123, ldap_uri = "127.0.0.1:1389"})
             if not ok then
                 ngx.say(err)
             end
@@ -82,7 +82,7 @@ done
                     "username": "user01",
                     "plugins": {
                         "ldap-auth": {
-                            "userdn": "cn=user01,ou=users,dc=example,dc=org"
+                            "user_dn": "cn=user01,ou=users,dc=example,dc=org"
                         }
                     }
                 }]],
@@ -92,7 +92,7 @@ done
                             "username": "user01",
                             "plugins": {
                                 "ldap-auth": {
-                                    "userdn": "cn=user01,ou=users,dc=example,dc=org"
+                                    "user_dn": "cn=user01,ou=users,dc=example,dc=org"
                                 }
                             }
                         }
@@ -124,10 +124,9 @@ passed
                 [[{
                     "plugins": {
                         "ldap-auth": {
-                            "basedn": "ou=users,dc=example,dc=org",
-                            "ldapuri": "172.19.0.1",
-                            "uid": "cn",
-                            "auto_create_consumer": true
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn"
                         }
                     },
                     "upstream": {
@@ -189,7 +188,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log
-find consumer cn=user01,ou=users,dc=example,dc=org
+find consumer user01
 
 
 
@@ -203,10 +202,9 @@ find consumer cn=user01,ou=users,dc=example,dc=org
                 [[{
                     "plugins": {
                         "ldap-auth": {
-                            "basedn": "ou=users,dc=example,dc=org",
-                            "ldapuri": "172.19.0.1",
-                            "uid": "cn",
-                            "auto_create_consumer": false
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn"
                         }
                     },
                     "upstream": {
@@ -272,7 +270,7 @@ find consumer user01
 GET /t
 --- error_code: 400
 --- response_body_like eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin ldap-auth err: property \\"(userdn)\\" is required"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin ldap-auth err: property \\"(user_dn)\\" is required"\}/
 --- no_error_log
 [error]
 
@@ -316,7 +314,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"additionalProperties":false,"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -338,7 +336,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","additionalProperties":false,"required":["userdn"],"properties":{"userdn":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["user_dn"],"properties":{"user_dn":{"type":"string"}},"additionalProperties":false,"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -360,8 +358,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
-                ]]
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"additionalProperties":false,"type":"object"}                ]]
                 )
             ngx.status = code
         }

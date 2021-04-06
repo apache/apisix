@@ -80,7 +80,7 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev  libldap
 
 if [ "$OPENRESTY_VERSION" == "1.15.8.2" ]; then
     sudo apt-get install openresty-openssl-debug-dev

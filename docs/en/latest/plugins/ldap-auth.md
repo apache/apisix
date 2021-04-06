@@ -43,11 +43,11 @@ This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plu
 
 | Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
 | -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| basedn | string | required    |         |       | the base dn of the `ldap` server (example : `ou=users,dc=example,dc=org`)   |
-| ldapuri | string | required    |         |       | the uri of the ldap server  |
-| usetls | boolean | optional    |    `true`     |       | Boolean flag indicating if Transport Layer Security (TLS) should be used. |
-| uid | string | optional    |     `cn`      |     | the user's password |
-| auto_create_consumer | boolean | optional    |    `false`     |       | enable this to automatically create consumer for each authentication , the consumer name will be the full `dn` of the user |
+| base_dn | string | required    |         |       | the base dn of the `ldap` server (example : `ou=users,dc=example,dc=org`)   |
+| ldap_uri | string | required    |         |       | the uri of the ldap server  |
+| use_tls | boolean | optional    |    `true`     |       | Boolean flag indicating if Transport Layer Security (TLS) should be used. |
+| uid | string | optional    |     `cn`      |     | the `uid` attribute |
+
 
 ## How To Enable
 
@@ -59,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     "username": "foo",
     "plugins": {
         "ldap-auth": {
-            "userdn": "cn=user01,ou=users,dc=example,dc=org"
+            "user_dn": "cn=user01,ou=users,dc=example,dc=org"
         }
     }
 }'
@@ -78,8 +78,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/hello",
     "plugins": {
         "ldap-auth": {
-            "basedn": "ou=users,dc=example,dc=org",
-            "ldapuri": "172.19.0.1",
+            "base_dn": "ou=users,dc=example,dc=org",
+            "ldap_uri": "localhost:1389",
             "uid": "cn"
         },
     },

@@ -32,23 +32,22 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
-        basedn = { type = "string" },
-        ldapuri = { type = "string" },
-        usetls = { type = "boolean" },
-        uid = { type = "string" },
-        auto_create_consumer = {type ="boolean"}
+        base_dn = { type = "string" },
+        ldap_uri = { type = "string" },
+        use_tls = { type = "boolean" },
+        uid = { type = "string" }
     },
-    required = {"basedn","ldapuri"},
-    additionalProperties = true,
+    required = {"base_dn","ldap_uri"},
+    additionalProperties = false,
 }
 
 local consumer_schema = {
     type = "object",
     title = "work with consumer object",
     properties = {
-        userdn = { type = "string" },
+        user_dn = { type = "string" },
     },
-    required = {"userdn"},
+    required = {"user_dn"},
     additionalProperties = false,
 }
 
@@ -71,11 +70,7 @@ function _M.check_schema(conf, schema_type)
         ok, err = core.schema.check(schema, conf)
     end
 
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return ok, err
 end
 
 local create_consume_cache
@@ -87,7 +82,7 @@ do
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.userdn] = consumer
+            consumer_names[consumer.auth_conf.user_dn] = consumer
         end
 
         return consumer_names
@@ -138,32 +133,24 @@ function _M.rewrite(conf, ctx)
     if conf.uid then 
         uid = conf.uid
     end
-    local userdn =  uid .. "=" .. user.username .. "," .. conf.basedn
-    local ld = lualdap.open_simple (conf.ldapuri, userdn, user.password, conf.usetls)
+    local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
+    local ld = lualdap.open_simple (conf.ldap_uri, userdn, user.password, conf.use_tls)
     if not ld then
         return 401, { message = "Invalid user authorization" }
     end
     
     -- 3. Retreive consumer for authorization plugin
-    if conf.auto_create_consumer then 
-        local tmpCustomer = {consumer_name = userdn, auth_conf = {username = userdn}}
-        local tmpCustomerConf = {conf_version = "1", consumer_name="ldapauth"}
-        consumer_mod.attach_consumer(ctx, tmpCustomer, tmpCustomerConf)
-    else
-        local consumer_conf = consumer_mod.plugin(plugin_name)
-        if not consumer_conf then
-            return 401, {message = "Missing related consumer"}
-        end
-        core.log.error(consumer_conf.conf_version)
-        local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
-
-        local consumer = consumers[userdn]
-        if not consumer then
-            return 401, {message = "Invalid API key in request"}
-        end
-        consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
     end
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
+    local consumer = consumers[userdn]
+    if not consumer then
+        return 401, {message = "Invalid API key in request"}
+    end
+    consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 
     core.log.info("hit basic-auth access")
 end
