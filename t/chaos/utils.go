@@ -90,7 +90,7 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 			 },
 			 "upstream": {
 				 "nodes": {
-					 "localhost:8080": 1
+					 "httpbin.default.svc.cluster.local:8000": 1
 				 },
 				 "type": "roundrobin"
 			 }
