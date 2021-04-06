@@ -130,7 +130,7 @@ function _M.rewrite(conf, ctx)
 
     -- 2. try authenticate the user against the ldap server
     local uid = "cn"
-    if conf.uid then 
+    if conf.uid then
         uid = conf.uid
     end
     local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
@@ -138,7 +138,7 @@ function _M.rewrite(conf, ctx)
     if not ld then
         return 401, { message = "Invalid user authorization" }
     end
-    
+
     -- 3. Retreive consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then

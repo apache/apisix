@@ -48,7 +48,6 @@ This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plu
 | use_tls | boolean | optional    |    `true`     |       | Boolean flag indicating if Transport Layer Security (TLS) should be used. |
 | uid | string | optional    |     `cn`      |     | the `uid` attribute |
 
-
 ## How To Enable
 
 ### 1. set a consumer and config the value of the `ldap-auth` option

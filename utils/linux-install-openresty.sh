@@ -40,4 +40,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev libldap
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev libldap-2.4-2
