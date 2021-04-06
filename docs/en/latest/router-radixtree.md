@@ -80,7 +80,7 @@ When different routes have the same uri, you can set the priority attribute of t
 Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -94,7 +94,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -135,7 +135,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -181,26 +181,6 @@ route like
 will match both `/blog/dog` and `/blog/cat`.
 
 For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
-
-#### 6. Match host and uri at the same time
-
-When `radixtree_host_uri` is used, we can match routes with `host` and `uri`.
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "upstream": {
-       "nodes": {
-           "127.0.0.1:1980": 1
-       },
-       "type": "roundrobin"
-    },
-    "host": "localhost.com",
-    "uri": "/hello"
-}'
-```
-
-This route will require the request `uri` equal `/hello` and request header `host` equal `localhost.com`.
 
 ### How to filter route by Nginx builtin variable
 
