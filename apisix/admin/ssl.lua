@@ -207,12 +207,30 @@ function _M.patch(id, conf, sub_path)
     local modified_index = res_old.body.node.modifiedIndex
 
     if sub_path and sub_path ~= "" then
+        if sub_path == "key" then
+            conf = apisix_ssl.aes_encrypt_pkey(conf)
+        elseif sub_path == "keys" then
+            for i = 1, #conf do
+                conf[i] = apisix_ssl.aes_encrypt_pkey(conf[i])
+            end
+        end
+
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)
         node_value = node_val
         if code then
             return code, err
         end
     else
+        if conf.key then
+            conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+        end
+
+        if conf.keys then
+            for i = 1, #conf.keys do
+                conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+            end
+        end
+
         node_value = core.table.merge(node_value, conf);
     end
 
