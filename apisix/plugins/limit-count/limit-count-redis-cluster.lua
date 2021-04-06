@@ -17,7 +17,6 @@
 
 local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
-local resty_lock = require("resty.lock")
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -72,13 +71,19 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
+local script = "if redis.call('ttl',KEYS[1]) < 0 then "
+    .. "redis.call('set',KEYS[1],ARGV[1]-1,'EX',ARGV[2]) "
+    .. "return ARGV[1]-1 "
+    .. "end "
+    .. "return redis.call('incrby',KEYS[1],-1)"
 
 function _M.incoming(self, key)
     local red = self.red_cli
     local limit = self.limit
     local window = self.window
     key = self.plugin_name .. tostring(key)
-    local remaining,err = red:eval("if redis.call('ttl',KEYS[1]) < 0 then redis.call('set',KEYS[1],ARGV[1]-1,'EX',ARGV[2]) return ARGV[1]-1 end return redis.call('incrby',KEYS[1],-1)",1,key,limit,window)
+
+    local remaining,err = red:eval(script,1,key,limit,window)
 
     if err then
         return nil,err
