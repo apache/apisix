@@ -29,8 +29,31 @@ title: prometheus
 
 ## 接口
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。
+插件会增加 `/apisix/prometheus/metrics` 这个接口。
+
+指标默认会通过独立的服务地址暴露。
+默认情况下，这个地址是 `127.0.0.1:9091`。你可以在 `conf/config.yaml` 里面修改它，比如：
+
+```
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: ${{INTRANET_IP}}
+      port: 9092
+```
+
+假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，现在 APISIX 会在 `172.1.1.1:9092` 上暴露指标。
+
+**在 2.6 版本之前，指标会直接暴露到数据面的端口上，你可能需要通过 [interceptors](../plugin-interceptors.md)
+来保护它。**
+
+如果你依然想要这样的行为，你可以这么配置：
+
+```
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
 
 ## 如何开启插件
 
@@ -67,7 +90,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
 
 ```
-curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 把该 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
@@ -79,7 +102,7 @@ scrape_configs:
   - job_name: "apisix"
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-      - targets: ["127.0.0.1:9080"]
+      - targets: ["127.0.0.1:9091"]
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:

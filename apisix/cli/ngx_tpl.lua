@@ -288,6 +288,21 @@ http {
     }
     {% end %}
 
+    {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
+    server {
+        listen {* prometheus_server_addr *};
+
+        access_log off;
+
+        location / {
+            content_by_lua_block {
+                local prometheus = require("apisix.plugins.prometheus")
+                prometheus.export_metrics()
+            }
+        }
+    }
+    {% end %}
+
     {% if enable_admin and port_admin then %}
     server {
         {%if https_admin then%}

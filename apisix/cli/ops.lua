@@ -494,6 +494,24 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.plugin_attr.prometheus then
+        local prometheus = yaml_conf.plugin_attr.prometheus
+        if prometheus.enable_export_server then
+            local ip = prometheus.export_addr.ip
+            local port = tonumber(prometheus.export_addr.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9091
+            end
+
+            sys_conf.prometheus_server_addr = ip .. ":" .. port
+        end
+    end
+
     local wrn = sys_conf["worker_rlimit_nofile"]
     local wc = sys_conf["event"]["worker_connections"]
     if not wrn or wrn <= wc then
