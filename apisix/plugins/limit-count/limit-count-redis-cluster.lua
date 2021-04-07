@@ -32,7 +32,8 @@ local mt = {
 
 local function new_redis_cluster(conf)
     local config = {
-        name = "apisix-redis-cluster",
+        -- can set different name for different redis cluster
+        name = conf.redis_cluster_name,
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password,
