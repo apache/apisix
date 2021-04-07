@@ -29,11 +29,13 @@ local mt = {
 }
 
 
-local script = "if redis.call('ttl', KEYS[1]) < 0 then "
-    .. "redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2]) "
-    .. "return ARGV[1] - 1 "
-    .. "end "
-    .. "return redis.call('incrby', KEYS[1], -1)"
+local script = [=[
+    if redis.call('ttl', KEYS[1]) < 0 then
+        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
+        return ARGV[1] - 1
+    end
+    return redis.call('incrby', KEYS[1], -1)
+]=]
 
 
 local function new_redis_cluster(conf)
