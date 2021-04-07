@@ -106,6 +106,7 @@ location /nacos {
 ]
 --- response_code eval
 [200, 200, 200, 200]
+--- wait: 1
 
 
 
