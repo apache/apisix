@@ -92,41 +92,12 @@ POST /apisix/admin/schema/service
 --- config
 location /t {
     content_by_lua_block {
+        local ssl = require("apisix.schema_def").ssl
         local t = require("lib.test_admin").test
         local code, body = t('/apisix/admin/schema/ssl',
             ngx.HTTP_GET,
             nil,
-            {
-                type = "object",
-                properties = {
-                    cert = {
-                        type = "string", minLength = 128, maxLength = 64*1024
-                    },
-                    key = {
-                        type = "string", minLength = 128, maxLength = 64*1024
-                    },
-                    sni = {
-                        type = "string",
-                        pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-                    },
-                    snis = {
-                        type = "array",
-                        items = {
-                            type = "string",
-                            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-                        }
-                    },
-                    exptime = {
-                        type = "integer",
-                        minimum = 1588262400,  -- 2020/5/1 0:0:0
-                    },
-                },
-                oneOf = {
-                    {required = {"sni", "key", "cert"}},
-                    {required = {"snis", "key", "cert"}}
-                },
-                additionalProperties = false,
-            }
+            ssl
             )
 
         ngx.status = code
