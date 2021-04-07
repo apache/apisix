@@ -79,6 +79,7 @@ if ($custom_dns_server) {
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
 $default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
