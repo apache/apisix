@@ -150,7 +150,7 @@ jobs:
 
       - name: Publish Artifact
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.2
+        uses: actions/upload-artifact@v2.2.3
         with:
           name: ${{ steps.branch_env.outputs.fullname }}
           path: ${{ steps.branch_env.outputs.fullname }}
