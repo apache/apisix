@@ -103,8 +103,11 @@ local schema = {
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
                         },
+                        redis_cluster_name = {
+                            type = "string",
+                        },
                     },
-                    required = {"redis_cluster_nodes"},
+                    required = {"redis_cluster_nodes", "redis_cluster_name"},
                 }
             }
         }
