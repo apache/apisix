@@ -124,7 +124,7 @@ If the `http_method_as_scope` attribute is set to `true`, the plugin maps the re
 of the same name. The scope is then added to every permission to check.
 
 If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
-in the `permissions` attribute, even if they contain one or more scopes alreay.
+in the `permissions` attribute, even if they contain one or more scopes already.
 
 ## How To Enable
 
