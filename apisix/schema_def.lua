@@ -598,16 +598,22 @@ _M.consumer = {
 _M.upstream = upstream_schema
 
 
+local certificate_scheme = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
+local private_key_schema = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
 _M.ssl = {
     type = "object",
     properties = {
         id = id_schema,
-        cert = {
-            type = "string", minLength = 128, maxLength = 64*1024
-        },
-        key = {
-            type = "string", minLength = 128, maxLength = 64*1024
-        },
+        cert = certificate_scheme,
+        key = private_key_schema,
         sni = {
             type = "string",
             pattern = [[^\*?[0-9a-zA-Z-.]+$]],
@@ -622,19 +628,11 @@ _M.ssl = {
         },
         certs = {
             type = "array",
-            items = {
-                type = "string",
-                minLength = 128,
-                maxLength = 64*1024,
-            }
+            items = certificate_scheme,
         },
         keys = {
             type = "array",
-            items = {
-                type = "string",
-                minLength = 128,
-                maxLength = 64*1024,
-            }
+            items = private_key_schema,
         },
         exptime = {
             type = "integer",
