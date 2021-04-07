@@ -73,9 +73,9 @@ Here are the rules:
 
 #### 4. Different routes have the same `uri`
 
-When different routes have the same uri, you can set the priority field of the route to determine which route to match first, or add other matching rules to distinguish different routes.
+When different routes have the same `uri`, you can set the priority field of the route to determine which route to match first, or add other matching rules to distinguish different routes.
 
-Note: In matching rules, the `priority` field takes precedence over other rules.
+Note: In the matching rules, the `priority` field takes precedence over other rules except `uri`.
 
 1. Different routes have the same `uri` and set the `priority` field
 
@@ -161,6 +161,13 @@ $ curl http://127.0.0.1:9080/hello -H 'host: localhost.com'
 $ curl http://127.0.0.1:9080/hello -H 'host: test.com'
 1981
 ```
+
+```shell
+$ curl http://127.0.0.1:9080/hello
+{"error_msg":"404 Route Not Found"}
+```
+
+The `host` rule matches, the request hits the corresponding upstream, and the `host` does not match, the request returns a 404 message.
 
 #### 5. Parameter match
 
