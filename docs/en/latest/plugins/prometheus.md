@@ -159,7 +159,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
     | Name      | Description |
     | ----------| ------------- |
-    | type      | The optional values are `apisix`, `upstream` and `request`, which means http latency caused by apisix, upstream, and in total. |
+    | type      | The value can be `apisix`, `upstream` or `request`, which means http latency caused by apisix, upstream, or their sum. |
     | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
     | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node      | The `ip` of the upstream node. |

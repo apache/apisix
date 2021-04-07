@@ -151,7 +151,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 可能取值包括`apisix`, `upstream` 和 `request`，表示耗时的来源，分为 APISIX、上游和总和。 |
+    | type         | 该值可以为`apisix`, `upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
