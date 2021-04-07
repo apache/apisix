@@ -30,7 +30,30 @@ none.
 ## API
 
 This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+
+The metrics are exposed via a separate Prometheus server address.
+By default, the address is `127.0.0.1:9091`. You can change it in the `conf/config.yaml`, for example:
+
+```
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: ${{INTRANET_IP}}
+      port: 9092
+```
+
+Assume environment variable `INTRANET_IP` is `172.1.1.1`, now APISIX will export the metrics via `172.1.1.1:9092`.
+
+**Before version `2.6`, the metrics are exposed via the data panel port,
+you may need to use [interceptors](../plugin-interceptors.md) to protect it.**
+
+If you still want this behavior, you can configure it like this:
+
+```
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
 
 ## How to enable it
 
@@ -68,7 +91,7 @@ Then add prometheus plugin:
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
 ```
-curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 Puts this URL address into prometheus, and it will automatically fetch
@@ -81,7 +104,7 @@ scrape_configs:
   - job_name: 'apisix'
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
-    - targets: ['127.0.0.1:9080']
+    - targets: ['127.0.0.1:9091']
 ```
 
 And we can check the status at prometheus console:

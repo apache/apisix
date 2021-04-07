@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
 
@@ -45,7 +46,7 @@ function _M.check_schema(conf)
 end
 
 
-function _M.api()
+local function get_api(called_by_api_router)
     local export_uri = default_export_uri
     local local_conf = core.config.local_conf()
     local attr = core.table.try_read_attr(local_conf, "plugin_attr",
@@ -54,13 +55,39 @@ function _M.api()
         export_uri = attr.export_uri
     end
 
-    return {
-        {
-            methods = {"GET"},
-            uri = export_uri,
-            handler = exporter.collect
-        }
+    local api = {
+        methods = {"GET"},
+        uri = export_uri,
+        handler = exporter.collect
     }
+
+    if not called_by_api_router then
+        return api
+    end
+
+    if attr.enable_export_server then
+        return {}
+    end
+
+    return {api}
+end
+
+
+function _M.api()
+    return get_api(true)
+end
+
+
+function _M.export_metrics()
+    local api = get_api(false)
+    local uri = ngx.var.uri
+    local method = ngx.req.get_method()
+
+    if uri == api.uri and method == api.methods[1] then
+        return api.handler()
+    end
+
+    return core.response.exit(404)
 end
 
 
