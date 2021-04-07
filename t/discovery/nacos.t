@@ -99,12 +99,13 @@ location /nacos {
 
 --- pipelined_requests eval
 [
-    "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
-    "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true",
+    "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true&clusterName=c1",
+    "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true&clusterName=c1",
+    "PUT  /nacos/v1/ns/instance/beat?serviceName=APISIX-NACOS&beat=%7B%22cluster%22%3A%22c1%22%2C%22ip%22%3A%22127.0.0.1%22%2C%22metadata%22%3A%7B%7D%2C%22port%22%3A18001%2C%22scheduled%22%3Atrue%2C%22serviceName%22%3A%22APISIX-NACOS%22%2C%22weight%22%3A1%7D",
+    "PUT  /nacos/v1/ns/instance/beat?serviceName=APISIX-NACOS&beat=%7B%22cluster%22%3A%22c1%22%2C%22ip%22%3A%22127.0.0.1%22%2C%22metadata%22%3A%7B%7D%2C%22port%22%3A18002%2C%22scheduled%22%3Atrue%2C%22serviceName%22%3A%22APISIX-NACOS%22%2C%22weight%22%3A1%7D",
 ]
---- response_body eval
-["ok", "ok"]
---- wait: 1
+--- response_code eval
+[200, 200, 200, 200]
 
 
 
