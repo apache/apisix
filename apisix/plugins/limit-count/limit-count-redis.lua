@@ -29,11 +29,11 @@ local mt = {
 }
 
 
-local script = "if redis.call('ttl',KEYS[1]) < 0 then "
-    .. "redis.call('set',KEYS[1],ARGV[1]-1,'EX',ARGV[2]) "
-    .. "return ARGV[1]-1 "
+local script = "if redis.call('ttl', KEYS[1]) < 0 then "
+    .. "redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2]) "
+    .. "return ARGV[1] - 1 "
     .. "end "
-    .. "return redis.call('incrby',KEYS[1],-1)"
+    .. "return redis.call('incrby', KEYS[1], -1)"
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -82,17 +82,19 @@ function _M.incoming(self, key)
 
     local limit = self.limit
     local window = self.window
+    local remaining
     key = self.plugin_name .. tostring(key)
-    local remaining, err = red:eval(script,1,key,limit,window)
+
+    remaining, err = red:eval(script, 1, key, limit, window)
 
     if err then
-        return nil,err
+        return nil, err
     end
 
-    if remaining <0 then
-        return nil,"rejected"
+    if remaining < 0 then
+        return nil, "rejected"
     end
-    return 0,remaining
+    return 0, remaining
 end
 
 

@@ -29,6 +29,13 @@ local mt = {
 }
 
 
+local script = "if redis.call('ttl', KEYS[1]) < 0 then "
+    .. "redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2]) "
+    .. "return ARGV[1] - 1 "
+    .. "end "
+    .. "return redis.call('incrby', KEYS[1], -1)"
+
+
 local function new_redis_cluster(conf)
     local config = {
         name = "apisix-redis-cluster",
@@ -71,11 +78,6 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-local script = "if redis.call('ttl',KEYS[1]) < 0 then "
-    .. "redis.call('set',KEYS[1],ARGV[1]-1,'EX',ARGV[2]) "
-    .. "return ARGV[1]-1 "
-    .. "end "
-    .. "return redis.call('incrby',KEYS[1],-1)"
 
 function _M.incoming(self, key)
     local red = self.red_cli
@@ -83,16 +85,16 @@ function _M.incoming(self, key)
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
-    local remaining,err = red:eval(script,1,key,limit,window)
+    local remaining, err = red:eval(script, 1, key, limit, window)
 
     if err then
-        return nil,err
+        return nil, err
     end
 
-    if remaining <0 then
-        return nil,"rejected"
+    if remaining < 0 then
+        return nil, "rejected"
     end
-    return 0,remaining
+    return 0, remaining
 end
 
 
