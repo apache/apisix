@@ -119,7 +119,7 @@ jobs:
 
     - name: Publish Artifact
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v2.2.3
       with:
         name: "rpm"
         path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.x86_64.rpm"
