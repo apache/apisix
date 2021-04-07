@@ -35,7 +35,11 @@ modify_config() {
   - ${DNS_IP}
 etcd:
   host:
-    - \"http://etcd-cluster-client.default.svc.cluster.local:2379\" " > ./conf/config.yaml
+  - \"http://etcd-cluster-client.default.svc.cluster.local:2379\"
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+  " > ./conf/config.yaml
     sed -i -e 's/apisix:latest/apisix:alpine-local/g' kubernetes/deployment.yaml
 }
 
