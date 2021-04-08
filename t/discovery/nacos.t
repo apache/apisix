@@ -21,34 +21,6 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    my $http_config = $block->http_config // <<_EOC_;
-
-    server {
-        listen 18001;
-
-        location /hello {
-            content_by_lua_block {
-                ngx.say("server 1")
-            }
-        }
-    }
-    server {
-        listen 18002;
-
-        location /hello {
-            content_by_lua_block {
-                ngx.say("server 2")
-            }
-        }
-    }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
-});
-
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -91,24 +63,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: prepare nacos register nodes
---- config
-location /nacos {
-    proxy_pass http://127.0.0.1:8858;
-}
-
---- pipelined_requests eval
-[
-    "POST /nacos/v1/ns/instance?port=18001&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true&clusterName=c1",
-    "POST /nacos/v1/ns/instance?port=18002&healthy=true&ip=127.0.0.1&weight=1.0&serviceName=APISIX-NACOS&encoding=GBK&enabled=true&clusterName=c1",
-]
---- response_code eval
-[200, 200]
---- wait: 2
-
-
-
-=== TEST 2: get APISIX-NACOS info from NACOS - no auth
+=== TEST 1: get APISIX-NACOS info from NACOS - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -127,15 +82,15 @@ routes:
 ]
 --- response_body_like eval
 [
-    qr/server [1-2]\n/,
-    qr/server [1-2]\n/,
+    qr/server [1-2]/,
+    qr/server [1-2]/,
 ]
 --- no_error_log
 [error, error]
 
 
 
-=== TEST 3: error service_name name - no auth
+=== TEST 2: error service_name name - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -153,7 +108,7 @@ GET /hello
 
 
 
-=== TEST 4: get APISIX-NACOS info from NACOS - auth
+=== TEST 3: get APISIX-NACOS info from NACOS - auth
 --- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
@@ -172,15 +127,15 @@ routes:
 ]
 --- response_body_like eval
 [
-    qr/server [1-2]\n/,
-    qr/server [1-2]\n/,
+    qr/server [1-2]/,
+    qr/server [1-2]/,
 ]
 --- no_error_log
 [error, error]
 
 
 
-=== TEST 5: error service_name name - auth
+=== TEST 4: error service_name name - auth
 --- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
