@@ -73,15 +73,26 @@ routes:
       service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
-
 #END
+--- config
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 15
 --- pipelined_requests eval
 [
+    "GET /sleep?sec=10",
     "GET /hello",
     "GET /hello",
 ]
 --- response_body_like eval
 [
+    qr/ok\n/,
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
