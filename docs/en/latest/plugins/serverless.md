@@ -69,6 +69,8 @@ local count = 1
 ngx.say(count)
 ```
 
+Since `v2.6`, we pass the `conf` and `ctx` as the first two arguments to the servelss function, like a regular plugin.
+
 ## How To Enable
 
 Here's an example, enable the serverless plugin on the specified route:
@@ -81,7 +83,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
         "serverless-pre-function": {
             "phase": "rewrite",
             "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
-        }
+        },
+        "serverless-post-function": {
+            "phase": "rewrite",
+            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+        },
     },
     "upstream": {
         "type": "roundrobin",
@@ -100,7 +106,7 @@ Use curl to access:
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-Then you will find the message 'serverless pre-function' in the error.log,
+Then you will find the message 'serverless pre-function' and 'match uri /index.html' in the error.log,
 which indicates that the specified function is in effect.
 
 ## Disable Plugin
