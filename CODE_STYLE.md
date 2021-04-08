@@ -21,7 +21,7 @@ title: APISIX Lua Coding Style Guide
 #
 -->
 
-## indentation
+## Indentation
 
 Use 4 spaces as an indent:
 
