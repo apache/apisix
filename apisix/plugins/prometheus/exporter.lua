@@ -139,10 +139,9 @@ function _M.log(conf, ctx)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
-
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
-            service_id, consumer_name, balancer_ip))
+                service_id, consumer_name, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
