@@ -71,7 +71,105 @@ Here are the rules:
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
 
-#### 4. Parameter match
+#### 4. Different routes have the same `uri`
+
+When different routes have the same `uri`, you can set the priority field of the route to determine which route to match first, or add other matching rules to distinguish different routes.
+
+Note: In the matching rules, the `priority` field takes precedence over other rules except `uri`.
+
+1. Different routes have the same `uri` and set the `priority` field
+
+Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
+    "priority": 3,
+    "uri": "/hello"
+}'
+```
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1981": 1
+       },
+       "type": "roundrobin"
+    },
+    "priority": 2,
+    "uri": "/hello"
+}'
+```
+
+Test:
+
+```shell
+curl http://127.0.0.1:1980/hello
+1980
+```
+
+All requests only hit the route of port `1980`.
+
+2. Different routes have the same `uri` and set different matching conditions
+
+Here is an example of setting host matching rules:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
+    "hosts": ["localhost.com"],
+    "uri": "/hello"
+}'
+```
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1981": 1
+       },
+       "type": "roundrobin"
+    },
+    "hosts": ["test.com"],
+    "uri": "/hello"
+}'
+```
+
+Test:
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'host: localhost.com'
+1980
+```
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'host: test.com'
+1981
+```
+
+```shell
+$ curl http://127.0.0.1:9080/hello
+{"error_msg":"404 Route Not Found"}
+```
+
+The `host` rule matches, the request hits the corresponding upstream, and the `host` does not match, the request returns a 404 message.
+
+#### 5. Parameter match
 
 When `radixtree_uri_with_parameter` is used, we can match routes with parameters.
 
