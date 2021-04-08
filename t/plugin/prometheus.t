@@ -344,7 +344,7 @@ passed
 
 
 
-=== TEST 16: use service 1 in route 1
+=== TEST 16: use service 1 in route 2
 --- config
     location /t {
         content_by_lua_block {
@@ -807,5 +807,90 @@ GET /apisix/prometheus/metrics
 qr/apisix_/
 --- response_body_unlike eval
 qr/etcd/
+--- no_error_log
+[error]
+
+=== TEST 45: create service with name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "service_name",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: use service 1 in route 1 with name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "service_id": 1,
+                    "plugins": {
+                        "prometheus": {
+                            "route_type": "name"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+=== TEST 47: pipeline of client request
+--- pipelined_requests eval
+["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 404, 200, 200]
+--- no_error_log
+[error]
+
+
+
+
+=== TEST 48: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]

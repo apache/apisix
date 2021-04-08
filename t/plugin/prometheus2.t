@@ -78,6 +78,7 @@ passed
 [401, 401, 401, 401]
 --- no_error_log
 [error]
+-- LAST
 
 
 
@@ -238,7 +239,7 @@ GET /not_found
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="localhost",consumer="",node=""\} \d+/
+qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""\} \d+/
 --- no_error_log
 [error]
 

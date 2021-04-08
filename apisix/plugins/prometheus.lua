@@ -23,6 +23,13 @@ local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
 local schema = {
     type = "object",
+    properties = {
+        route_type = {
+            type = "string",
+            enum = {"id", "name"},
+            default = "id",
+        }
+    },
     additionalProperties = false,
 }
 
