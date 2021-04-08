@@ -68,6 +68,10 @@ before_install() {
       echo 'wait nacos service...'
       sleep 1;
     done
+    until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?pageNo=1&pageSize=2" | grep "APISIX-NACOS") ]]; do
+      echo 'wait nacos reg...'
+      sleep 1;
+    done
     cd ..
 }
 
