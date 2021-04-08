@@ -24,10 +24,9 @@ local default_export_uri = "/apisix/prometheus/metrics"
 local schema = {
     type = "object",
     properties = {
-        prefer_type = {
-            type = "string",
-            enum = {"id", "name"},
-            default = "id",
+        prefer_name = {
+            type = "boolean",
+            default = false
         }
     },
     additionalProperties = false,

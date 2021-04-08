@@ -761,7 +761,7 @@ qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="12
                     "service_id": 1,
                     "plugins": {
                         "prometheus": {
-                            "prefer_type": "name"
+                            "prefer_name": true
                         }
                     },
                     "uri": "/hello"
@@ -854,19 +854,18 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",no
 
 
 
-=== TEST 43: remove route name, but still set prefer_type to name
+=== TEST 43: remove route name, but still set prefer_name to name
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "service_id": 1,
                     "plugins": {
                         "prometheus": {
-                            "prefer_type": "name"
+                            "prefer_name": true
                         }
                     },
                     "uri": "/hello"

@@ -123,7 +123,7 @@ function _M.log(conf, ctx)
     if matched_route then
         route_id = matched_route.id
         service_id = matched_route.service_id or ""
-        if conf.prefer_type == "name" then
+        if conf.prefer_name == true then
             route_id = matched_route.name or route_id
             if service_id ~= "" then
                 local service = service_fetch(service_id)
