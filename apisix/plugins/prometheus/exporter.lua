@@ -123,7 +123,7 @@ function _M.log(conf, ctx)
     if matched_route then
         route_id = matched_route.id
         service_id = matched_route.service_id or ""
-        if conf.route_type == "name" then
+        if conf.prefer_type == "name" then
             route_id = matched_route.name or route_id
             if service_id ~= "" then
                 local service = service_fetch(service_id)
@@ -142,7 +142,7 @@ function _M.log(conf, ctx)
 
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
-        service_id, consumer_name, balancer_ip))
+            service_id, consumer_name, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
