@@ -69,7 +69,7 @@ GET /t
 
 
 
-=== TEST 2: set route, with redis host and port
+=== TEST 2: set route, with redis host and port and redis_cluster_name
 --- config
     location /t {
         content_by_lua_block {
@@ -89,7 +89,8 @@ GET /t
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
                                 "127.0.0.1:5001"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -135,7 +136,8 @@ passed
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
                                 "127.0.0.1:5001"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -159,7 +161,8 @@ passed
                                     "redis_cluster_nodes": [
                                         "127.0.0.1:5000",
                                         "127.0.0.1:5001"
-                                    ]
+                                    ],
+                                    "redis_cluster_name": "redis-cluster-1"
                                 }
                             },
                             "upstream": {
@@ -242,7 +245,8 @@ unlock with key route#1#redis-cluster
                                 "127.0.0.1:8001",
                                 "127.0.0.1:8002",
                                 "127.0.0.1:8003"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -329,7 +333,8 @@ code: 200
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5001"
-                                ]
+                                ],
+                                "redis_cluster_name": "redis-cluster-1"
                             }
                         },
                         "upstream": {

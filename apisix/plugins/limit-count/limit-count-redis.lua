@@ -16,7 +16,6 @@
 --
 local redis_new = require("resty.redis").new
 local core = require("apisix.core")
-local resty_lock = require("resty.lock")
 local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
@@ -28,6 +27,15 @@ local _M = {version = 0.3}
 local mt = {
     __index = _M
 }
+
+
+local script = [=[
+    if redis.call('ttl', KEYS[1]) < 0 then
+        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
+        return ARGV[1] - 1
+    end
+    return redis.call('incrby', KEYS[1], -1)
+]=]
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -79,61 +87,15 @@ function _M.incoming(self, key)
     local remaining
     key = self.plugin_name .. tostring(key)
 
-    -- todo: test case
-    local ret, err = red:ttl(key)
-    if not ret then
-        return false, "failed to get redis `" .. key .."` ttl: " .. err
-    end
+    remaining, err = red:eval(script, 1, key, limit, window)
 
-    core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
-    if ret < 0 then
-        -- todo: test case
-        local lock, err = resty_lock:new("plugin-limit-count")
-        if not lock then
-            return false, "failed to create lock: " .. err
-        end
-
-        local elapsed, err = lock:lock(key)
-        if not elapsed then
-            return false, "failed to acquire the lock: " .. err
-        end
-
-        ret = red:ttl(key)
-        if ret < 0 then
-            ok, err = lock:unlock()
-            if not ok then
-                return false, "failed to unlock: " .. err
-            end
-
-            limit = limit -1
-            ret, err = red:set(key, limit, "EX", window)
-            if not ret then
-                return nil, err
-            end
-
-            return 0, limit
-        end
-
-        ok, err = lock:unlock()
-        if not ok then
-            return false, "failed to unlock: " .. err
-        end
-    end
-
-    remaining, err = red:incrby(key, -1)
-    if not remaining then
-        return nil, err
-    end
-
-    local ok, err = red:set_keepalive(10000, 100)
-    if not ok then
+    if err then
         return nil, err
     end
 
     if remaining < 0 then
         return nil, "rejected"
     end
-
     return 0, remaining
 end
 

@@ -30,7 +30,30 @@ none.
 ## API
 
 This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+
+The metrics are exposed via a separate Prometheus server address.
+By default, the address is `127.0.0.1:9091`. You can change it in the `conf/config.yaml`, for example:
+
+```
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: ${{INTRANET_IP}}
+      port: 9092
+```
+
+Assume environment variable `INTRANET_IP` is `172.1.1.1`, now APISIX will export the metrics via `172.1.1.1:9092`.
+
+**Before version `2.6`, the metrics are exposed via the data panel port,
+you may need to use [interceptors](../plugin-interceptors.md) to protect it.**
+
+If you still want this behavior, you can configure it like this:
+
+```
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
 
 ## How to enable it
 
@@ -68,7 +91,7 @@ Then add prometheus plugin:
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
 ```
-curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 Puts this URL address into prometheus, and it will automatically fetch
@@ -81,7 +104,7 @@ scrape_configs:
   - job_name: 'apisix'
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
-    - targets: ['127.0.0.1:9080']
+    - targets: ['127.0.0.1:9091']
 ```
 
 And we can check the status at prometheus console:
@@ -120,6 +143,8 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ![](../../../assets/images/plugin/grafana-3.png)
 
+![](../../../assets/images/plugin/grafana-4.png)
+
 ### Available metrics
 
 * `Status codes`: HTTP status code returned from upstream services. These status code available per service and across all services.
@@ -151,26 +176,16 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a APISIX or not, where `1` is available, and `0` is unavailable.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
 * `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
-* `Latency`: The per service histogram of request time and the overhead added by APISIX (request time - upstream response time).
+* `Latency`: The per service histogram of request time in different dimensions.
 
     Attributes：
 
     | Name      | Description |
     | ----------| ------------- |
-    | type      | Its value is fixed as `request`, which means HTTP request. |
+    | type      | The value can be `apisix`, `upstream` or `request`, which means http latency caused by apisix, upstream, or their sum. |
     | service   | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
     | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node      | The `ip` of the upstream node. |
-
-* `Overhead`: HTTP request overhead (in milliseconds) added per service in APISIX.
-
-    Attributes：
-    | Name     | Description |
-    | ---------| ------------- |
-    | type     | Its value is fixed as `request`, which means HTTP request. |
-    | service  | The `service_id` of the route matched by the request. When the route lacks service_id, the default is `$host`. |
-    | consumer | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
-    | node     | The `ip` of the upstream node. |
 
 * `Info`: the information of APISIX node.
 
@@ -229,13 +244,12 @@ apisix_nginx_http_current_connections{state="writing"} 1
 apisix_nginx_metric_errors_total 0
 # HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
 # TYPE apisix_http_latency histogram
+apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="2"} 1
 apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
 apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
-...
-# HELP apisix_http_overhead HTTP request overhead added by APISIX in milliseconds per service in APISIX
-# TYPE apisix_http_overhead histogram
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge

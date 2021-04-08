@@ -288,6 +288,10 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+    enable_export_server: true
+    export_addr:
+      ip: "127.0.0.1"
+      port: 9091
   server-info:
     report_interval: 60  # server info report interval (unit: second)
     report_ttl: 3600     # live time for server info in etcd (unit: second)

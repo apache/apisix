@@ -241,7 +241,7 @@ curl -i -X GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' -H
 到目前为止，已经通过使用 admin API 接口编排对 Apache APISIX 的 API 的调用。然而，Apache APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
 可以在[repository](https://github.com/apache/apisix)中使用。控制台是直观的，您可以通过它编排同样的路由配置。
 
-![Dashboard](../../assets/images/dashboard.png)
+![Dashboard](../../assets/images/dashboard.jpeg)
 
 ### 故障排查
 

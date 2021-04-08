@@ -29,8 +29,31 @@ title: prometheus
 
 ## 接口
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。
+插件会增加 `/apisix/prometheus/metrics` 这个接口。
+
+指标默认会通过独立的服务地址暴露。
+默认情况下，这个地址是 `127.0.0.1:9091`。你可以在 `conf/config.yaml` 里面修改它，比如：
+
+```
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: ${{INTRANET_IP}}
+      port: 9092
+```
+
+假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，现在 APISIX 会在 `172.1.1.1:9092` 上暴露指标。
+
+**在 2.6 版本之前，指标会直接暴露到数据面的端口上，你可能需要通过 [interceptors](../plugin-interceptors.md)
+来保护它。**
+
+如果你依然想要这样的行为，你可以这么配置：
+
+```
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
 
 ## 如何开启插件
 
@@ -67,7 +90,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
 
 ```
-curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 把该 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
@@ -79,7 +102,7 @@ scrape_configs:
   - job_name: "apisix"
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-      - targets: ["127.0.0.1:9080"]
+      - targets: ["127.0.0.1:9091"]
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:
@@ -118,6 +141,8 @@ plugin_attr:
 
 ![](../../../assets/images/plugin/grafana-3.png)
 
+![](../../../assets/images/plugin/grafana-4.png)
+
 ### 可有的指标
 
 * `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
@@ -149,16 +174,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
-    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
-    | node         | 命中的 upstream 节点 `ip`。 |
-
-* `Overhead`: 每个服务在 APISIX 中的请求开销（以毫秒为单位）。具有的维度：
-
-    | 名称          |    描述        |
-    | -------------| ------------- |
-    | type         | 它的值固定为 `request`，表示 HTTP 请求。 |
+    | type         | 该值可以为`apisix`, `upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |
@@ -220,13 +236,12 @@ apisix_nginx_http_current_connections{state="writing"} 1
 apisix_nginx_metric_errors_total 0
 # HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
 # TYPE apisix_http_latency histogram
+apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="2"} 1
 apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
 apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
-...
-# HELP apisix_http_overhead HTTP request overhead added by APISIX in milliseconds per service in APISIX
-# TYPE apisix_http_overhead histogram
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_overhead_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge

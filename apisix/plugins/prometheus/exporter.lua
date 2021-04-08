@@ -103,11 +103,6 @@ function _M.init()
         "HTTP request latency in milliseconds per service in APISIX",
         {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
-    metrics.overhead = prometheus:histogram("http_overhead",
-        "HTTP request overhead added by APISIX in milliseconds per service " ..
-        "in APISIX",
-        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
-
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "consumer", "node"})
@@ -146,12 +141,15 @@ function _M.log(conf, ctx)
     metrics.latency:observe(latency,
         gen_arr("request", service_id, consumer_name, balancer_ip))
 
-    local overhead = latency
+    local apisix_latency = latency
     if ctx.var.upstream_response_time then
-        overhead =  overhead - ctx.var.upstream_response_time * 1000
+        local upstream_latency = ctx.var.upstream_response_time * 1000
+        metrics.latency:observe(upstream_latency,
+            gen_arr("upstream", service_id, consumer_name, balancer_ip))
+        apisix_latency =  apisix_latency - upstream_latency
     end
-    metrics.overhead:observe(overhead,
-        gen_arr("request", service_id, consumer_name, balancer_ip))
+    metrics.latency:observe(apisix_latency,
+        gen_arr("apisix", service_id, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))
