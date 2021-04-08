@@ -792,6 +792,8 @@ ssl 对象 json 配置内容：
 }
 ```
 
+更多的配置示例见 [HTTPS](./https.md)。
+
 [Back to TOC](#目录)
 
 ## Global Rule
