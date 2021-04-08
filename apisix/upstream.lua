@@ -18,6 +18,7 @@ local require = require
 local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
+local apisix_ssl = require("apisix.ssl")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -25,6 +26,17 @@ local pairs = pairs
 local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
+
+
+local set_upstream_tls_client_param
+local ok, apisix_ngx_upstream = pcall(require, "resty.apisix.upstream")
+if ok then
+    set_upstream_tls_client_param = apisix_ngx_upstream.set_cert_and_key
+else
+    set_upstream_tls_client_param = function ()
+        return nil, "need to build APISIX-Openresty to support upstream mTLS"
+    end
+end
 
 
 local HTTP_CODE_UPSTREAM_UNAVAILABLE = 503
@@ -279,6 +291,25 @@ function _M.set_by_route(route, api_ctx)
         api_ctx.up_checker = checker
     end
 
+    if up_conf.scheme == "https" and up_conf.tls then
+        -- the sni here is just for logging
+        local sni = api_ctx.var.upstream_host
+        local cert, err = apisix_ssl.fetch_cert(sni, up_conf.tls.client_cert)
+        if not ok then
+            return 503, err
+        end
+
+        local key, err = apisix_ssl.fetch_pkey(sni, up_conf.tls.client_key)
+        if not ok then
+            return 503, err
+        end
+
+        local ok, err = set_upstream_tls_client_param(cert, key)
+        if not ok then
+            return 503, err
+        end
+    end
+
     return
 end
 
@@ -297,50 +328,149 @@ function _M.check_schema(conf)
 end
 
 
+local function get_chash_key_schema(hash_on)
+    if not hash_on then
+        return nil, "hash_on is nil"
+    end
+
+    if hash_on == "vars" then
+        return core.schema.upstream_hash_vars_schema
+    end
+
+    if hash_on == "header" or hash_on == "cookie" then
+        return core.schema.upstream_hash_header_schema
+    end
+
+    if hash_on == "consumer" then
+        return nil, nil
+    end
+
+    if hash_on == "vars_combinations" then
+        return core.schema.upstream_hash_vars_combinations_schema
+    end
+
+    return nil, "invalid hash_on type " .. hash_on
+end
+
+
+local function check_upstream_conf(in_dp, conf)
+    if not in_dp then
+        local ok, err = core.schema.check(core.schema.upstream, conf)
+        if not ok then
+            return false, "invalid configuration: " .. err
+        end
+
+        -- encrypt the key in the admin
+        if conf.tls and conf.tls.client_key then
+            conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
+        end
+    end
+
+    if conf.pass_host == "node" and conf.nodes and
+        core.table.nkeys(conf.nodes) ~= 1
+    then
+        return false, "only support single node for `node` mode currently"
+    end
+
+    if conf.pass_host == "rewrite" and
+        (conf.upstream_host == nil or conf.upstream_host == "")
+    then
+        return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+    end
+
+    if conf.tls then
+        local cert = conf.tls.client_cert
+        local key = conf.tls.client_key
+        local ok, err = apisix_ssl.validate(cert, key)
+        if not ok then
+            return false, err
+        end
+    end
+
+    if conf.type ~= "chash" then
+        return true
+    end
+
+    if conf.hash_on ~= "consumer" and not conf.key then
+        return false, "missing key"
+    end
+
+    local key_schema, err = get_chash_key_schema(conf.hash_on)
+    if err then
+        return false, "type is chash, err: " .. err
+    end
+
+    if key_schema then
+        local ok, err = core.schema.check(key_schema, conf.key)
+        if not ok then
+            return false, "invalid configuration: " .. err
+        end
+    end
+
+    return true
+end
+
+
+function _M.check_upstream_conf(conf)
+    return check_upstream_conf(false, conf)
+end
+
+
+local function filter_upstream(value, parent)
+    if not value then
+        return
+    end
+
+    value.parent = parent
+
+    if not value.nodes then
+        return
+    end
+
+    local nodes = value.nodes
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
+            local host = node.host
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                parent.has_domain = true
+                break
+            end
+        end
+    else
+        local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
+        for addr, weight in pairs(nodes) do
+            local host, port = core.utils.parse_addr(addr)
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                parent.has_domain = true
+            end
+            local node = {
+                host = host,
+                port = port,
+                weight = weight,
+            }
+            core.table.insert(new_nodes, node)
+        end
+        value.nodes = new_nodes
+    end
+end
+_M.filter_upstream = filter_upstream
+
+
 function _M.init_worker()
     local err
     upstreams, err = core.config.new("/upstreams", {
             automatic = true,
             item_schema = core.schema.upstream,
+            -- also check extra fields in the DP side
+            checker = function (item, schema_type)
+                return check_upstream_conf(true, item)
+            end,
             filter = function(upstream)
                 upstream.has_domain = false
-                if not upstream.value then
-                    return
-                end
 
-                upstream.value.parent = upstream
-
-                if not upstream.value.nodes then
-                    return
-                end
-
-                local nodes = upstream.value.nodes
-                if core.table.isarray(nodes) then
-                    for _, node in ipairs(nodes) do
-                        local host = node.host
-                        if not core.utils.parse_ipv4(host) and
-                                not core.utils.parse_ipv6(host) then
-                            upstream.has_domain = true
-                            break
-                        end
-                    end
-                else
-                    local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
-                    for addr, weight in pairs(nodes) do
-                        local host, port = core.utils.parse_addr(addr)
-                        if not core.utils.parse_ipv4(host) and
-                                not core.utils.parse_ipv6(host) then
-                            upstream.has_domain = true
-                        end
-                        local node = {
-                            host = host,
-                            port = port,
-                            weight = weight,
-                        }
-                        core.table.insert(new_nodes, node)
-                    end
-                    upstream.value.nodes = new_nodes
-                end
+                filter_upstream(upstream.value, upstream)
 
                 core.log.info("filter upstream: ", core.json.delay_encode(upstream, true))
             end,

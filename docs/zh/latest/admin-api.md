@@ -546,6 +546,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 | labels         | 可选                               | 匹配规则       | 标识附加属性的键值对                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
 | create_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | update_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
+| tls.client_cert    | 可选                               | https 证书           | 设置跟上游通信时的客户端证书，细节见下文                                                                          | |
+| update_time    | 可选                               | https 证书私钥           | 设置跟上游通信时的客户端私钥，细节见下文                                                                                                                                                                                                                                                                                                              | |
 
 `type` 可以是以下的一种：
 
@@ -561,6 +563,10 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 3. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
+
+`tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
+他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix)。
 
 **upstream 对象 json 配置内容：**
 
