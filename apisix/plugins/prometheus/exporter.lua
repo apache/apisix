@@ -113,17 +113,20 @@ end
 function _M.log(conf, ctx)
     local vars = ctx.var
 
-    local route_id = ""
+    local route_name = ""
     local balancer_ip = ctx.balancer_ip or ""
-    local service_id
+    local service_name
     local consumer_name = ctx.consumer_name or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
-        service_id = matched_route.service_id or ""
-        route_id = matched_route.id
-    else
-        service_id = vars.host
+        route_name = matched_route.name or matched_route.id
+        service_name = matched_route.service_id or ""
+        if service_name then
+            local service_fetch = require("apisix.http.service").get
+            local service = service_fetch(service_name)
+            service_name = service and service.value.name or service_name
+        end
     end
 
     local matched_uri = ""
@@ -134,28 +137,28 @@ function _M.log(conf, ctx)
     end
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, matched_uri, matched_host,
-                service_id, consumer_name, balancer_ip))
+        gen_arr(vars.status, route_name, matched_uri, matched_host,
+        service_name, consumer_name, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, consumer_name, balancer_ip))
+        gen_arr("request", service_name, consumer_name, balancer_ip))
 
     local apisix_latency = latency
     if ctx.var.upstream_response_time then
         local upstream_latency = ctx.var.upstream_response_time * 1000
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", service_id, consumer_name, balancer_ip))
+            gen_arr("upstream", service_name, consumer_name, balancer_ip))
         apisix_latency =  apisix_latency - upstream_latency
     end
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", service_id, consumer_name, balancer_ip))
+        gen_arr("apisix", service_name, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("ingress", route_name, service_name, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("egress", route_name, service_name, consumer_name, balancer_ip))
 end
 
 
