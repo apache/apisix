@@ -792,6 +792,8 @@ Config Example:
 }
 ```
 
+More examples can be found in [HTTPS](./https.md).
+
 ## Global Rule
 
 *API*：/apisix/admin/global_rules/{id}
