@@ -21,15 +21,6 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]\n[alert]");
-    }
-});
-
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
