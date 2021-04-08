@@ -32,6 +32,7 @@ local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
+local service_fetch = require("apisix.http.service").get
 
 
 
@@ -123,7 +124,6 @@ function _M.log(conf, ctx)
         route_name = matched_route.name or matched_route.id
         service_name = matched_route.service_id or ""
         if service_name then
-            local service_fetch = require("apisix.http.service").get
             local service = service_fetch(service_name)
             service_name = service and service.value.name or service_name
         end
