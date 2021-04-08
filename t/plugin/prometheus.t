@@ -810,6 +810,8 @@ qr/etcd/
 --- no_error_log
 [error]
 
+
+
 === TEST 45: create service with name
 --- config
     location /t {
@@ -876,6 +878,7 @@ passed
 [error]
 
 
+
 === TEST 47: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
@@ -883,7 +886,6 @@ passed
 [200, 404, 200, 200]
 --- no_error_log
 [error]
-
 
 
 
