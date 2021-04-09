@@ -253,8 +253,6 @@ function _M.access(conf, ctx)
             break
         end
 
-        core.log.info("#conf.rules: ", core.json.encode(rule.match))
-
         for _, single_match in ipairs(rule.match) do
             local expr, err = expr.new(single_match.vars)
             if err then
