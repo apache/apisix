@@ -37,9 +37,17 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
+For consumer side:
+
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
+
+For route side:
+
+| Name | Type   | Requirement | Default | Valid | Description                                                                  |
+| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| header  | string | optional    | apikey        |       | the header we get the key from |
 
 ## How To Enable
 
@@ -83,6 +91,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
+
+If you don't want to fetch key from the default `apikey` header, you can customize the header:
+
+```json
+{
+    "key-auth": {
+        "header": "Authorization"
+    }
+}
 ```
 
 ## Test Plugin
