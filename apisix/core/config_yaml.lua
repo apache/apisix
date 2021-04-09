@@ -332,6 +332,7 @@ function _M.new(key, opts)
             return nil, "missing `key` argument"
         end
 
+        sync_data(obj)
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 

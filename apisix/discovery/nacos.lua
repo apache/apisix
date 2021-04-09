@@ -19,7 +19,6 @@ local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
 local ipairs             = ipairs
-local tostring           = tostring
 local type               = type
 local math               = math
 local math_random        = math.random
@@ -32,13 +31,11 @@ local string             = string
 local string_sub         = string.sub
 local str_byte           = string.byte
 local str_find           = core.string.find
-local str_format         = string.format
 local log                = core.log
 
 local default_weight
 local applications
 local auth_path = "auth/login"
-local service_list_path = "ns/service/list?pageNo=%s&pageSize=%s"
 local instance_list_path = "ns/instance/list?healthyOnly=true&serviceName="
 
 local schema = {
@@ -182,47 +179,47 @@ local function get_base_uri()
 end
 
 
-local function get_page_service(infos, base_uri, token_param, page_num)
-    --  TODO Hardcode:page size=100,will rewrite by spacewander after merge
-    local path = str_format(service_list_path, page_num, 100) .. token_param
-    local data, err = get_url(base_uri, path)
-    if err then
-        return data, err, path
-    end
-
-    for _, service_name in ipairs(data.doms) do
-        core.table.insert(infos, service_name)
-    end
-    return data, err, path
-end
-
-
-local function iter_and_add_service_info(infos, base_uri, token_param)
-    local data, err, path = get_page_service(infos, base_uri, token_param, 1)
-    if err then
-        log.error("get_url:", path, " err:", err)
+local function iter_and_add_service(services, values)
+	if not values then
         return
     end
 
-    --  TODO Hardcode:page size=100,will rewrite by spacewander after merge
-    local maxPage = math.ceil(data.count / 100)
-    if maxPage == 0 then
-        return
-    end
-
-    -- more than 1 page,continue fetch other pages
-    if maxPage > 1 then
-        for i = 2, maxPage do
-            get_page_service(infos, base_uri, token_param, i)
+    for _, value in core.config_util.iterate_values(values) do
+        local conf = value.value
+        if not conf then
+            goto CONTINUE
         end
+
+        local up
+        if conf.upstream then
+            up = conf.upstream
+        else
+            up = conf
+        end
+
+        if up.discovery_type == "nacos" then
+            core.table.insert(services, up.service_name)
+        end
+::CONTINUE::
     end
 end
 
 
-local function get_services(base_uri, token_param)
-    local infos = core.table.new(0, 0)
-    iter_and_add_service_info(infos, base_uri, token_param)
-    return infos
+local function get_nacos_services()
+    local services = {}
+
+    -- here we use lazy load to work around circle dependency
+    local get_upstreams = require("apisix.upstream").upstreams
+    local get_routes = require("apisix.router").http_routes
+    local get_services = require("apisix.http.service").services
+
+    local values = get_upstreams()
+    iter_and_add_service(services, values)
+    values = get_routes()
+    iter_and_add_service(services, values)
+    values = get_services()
+    iter_and_add_service(services, values)
+    return services
 end
 
 
@@ -242,7 +239,7 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local infos = get_services(base_uri, token_param)
+    local infos = get_nacos_services()
     if #infos == 0 then
         applications = up_apps
         return

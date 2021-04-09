@@ -21,6 +21,14 @@ title: nacos
 #
 -->
 
+## Service discovery via Nacos
+
+This is experimental discovery module for Nacos.
+
+The performance of this module needs to be improved:
+1. avoid synchroning configuration in each workers. You can refer the implementation in `consul_kv.lua`.
+2. send the request parallelly.
+
 ### Configuration for Nacos
 
 Add following configuration in `conf/config.yaml` :

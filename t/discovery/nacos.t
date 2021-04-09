@@ -31,7 +31,7 @@ discovery:
       host:
         - "http://127.0.0.1:8858"
       prefix: "/nacos/v1/"
-      fetch_interval: 30
+      fetch_interval: 1
       weight: 100
       timeout:
         connect: 2000
@@ -50,7 +50,7 @@ discovery:
       host:
         - "http://nacos:nacos\@127.0.0.1:8848"
       prefix: "/nacos/v1/"
-      fetch_interval: 30
+      fetch_interval: 1
       weight: 100
       timeout:
         connect: 2000
@@ -74,15 +74,6 @@ routes:
       discovery_type: nacos
       type: roundrobin
 #END
---- config
-location /sleep {
-    content_by_lua_block {
-        local args = ngx.req.get_uri_args()
-        local sec = args.sec or "2"
-        ngx.sleep(tonumber(sec))
-        ngx.say("ok")
-    }
-}
 --- pipelined_requests eval
 [
     "GET /hello",
@@ -158,3 +149,105 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+
+
+
+=== TEST 5: get APISIX-NACOS info from NACOS - configured in services
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get APISIX-NACOS info from NACOS - configured in upstreams + etcd
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_name": "APISIX-NACOS",
+                    "discovery_type": "nacos",
+                    "type": "roundrobin"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error]
