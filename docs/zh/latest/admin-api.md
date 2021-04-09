@@ -89,10 +89,11 @@ title: Admin API
 | create_time      | 可选                                                                    | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                              | 1602883670                                           |
 | update_time      | 可选                                                                    | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                              | 1602883670                                           |
 
-有两点需要特别注意：
+有三点需要特别注意：
 
-- 除了 `uri`/`uris` 是必选的之外，`plugins`、`script`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
+- 除了 `uri`/`uris` 是必选的之外，`plugins`、`script`、`upstream`/`upstream_id`、`service_id` 这四类必须选择其中至少一个。
 - 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
+- 在使用 `vars` 时，对于 `cookie` 值的获取是区分大小写字母的。例如：`var` 为 "cookie\_`x_foo`" 与 `var` 为 "cookie\_`X_Foo`" 表示获取不同的 `cookie`。
 
 route 对象 json 配置内容：
 
@@ -558,7 +559,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
 2. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http\_`key`"
-3. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"
+3. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。注意: cookie name 是区分大小写字母的。例如："cookie\_`x_foo`" 与 "cookie\_`X_Foo`" 表示获取不同的 `cookie`。
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
