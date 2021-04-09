@@ -268,7 +268,7 @@ x-real-ip: 127.0.0.1
                                                 "type": "roundrobin",
                                                 "pass_host": "node",
                                                 "nodes": {
-                                                    "localhost:1981":1
+                                                    "127.0.0.1:1981":1
                                                 }
                                             }
                                         }
@@ -304,10 +304,10 @@ passed
 --- request
 GET /uri?name=jack
 --- more_headers
-host: 127.0.0.1
+host: localhost
 --- response_body
 uri: /uri
-host: localhost
+host: 127.0.0.1
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]

@@ -44,9 +44,6 @@ local match_schema = {
             vars = vars_schema
         }
     },
-    -- When there is no `match` rule, the default rule passes.
-    -- Perform upstream logic of plugin configuration.
-    default = {{ vars = {{"server_port", ">", 0}}}}
 }
 
 
@@ -247,9 +244,17 @@ function _M.access(conf, ctx)
         return
     end
 
-    local weighted_upstreams, match_flag
+    local weighted_upstreams
+    local match_flag = true
+
     for _, rule in ipairs(conf.rules) do
-        match_flag = true
+        if not rule.match then
+            weighted_upstreams = rule.weighted_upstreams
+            break
+        end
+
+        core.log.info("#conf.rules: ", core.json.encode(rule.match))
+
         for _, single_match in ipairs(rule.match) do
             local expr, err = expr.new(single_match.vars)
             if err then
@@ -268,6 +273,7 @@ function _M.access(conf, ctx)
             break
         end
     end
+
     core.log.info("match_flag: ", match_flag)
 
     if not match_flag then
