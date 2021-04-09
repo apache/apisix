@@ -35,6 +35,11 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
+if ! curl -i http://127.0.0.1:9091/apisix/prometheus/metrics | grep "apisix_nginx_http_current_connections" > /dev/null; then
+    echo "failed: should listen default prometheus address"
+    exit 1
+fi
+
 make stop
 
 echo "passed: should listen default prometheus address"

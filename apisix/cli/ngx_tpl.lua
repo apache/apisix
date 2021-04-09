@@ -300,6 +300,14 @@ http {
                 prometheus.export_metrics()
             }
         }
+
+        {% if with_module_status then %}
+        location = /apisix/nginx_status {
+            allow 127.0.0.0/24;
+            deny all;
+            stub_status;
+        }
+        {% end %}
     }
     {% end %}
 
