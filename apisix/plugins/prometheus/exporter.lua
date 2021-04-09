@@ -102,7 +102,7 @@ function _M.init()
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
+        {"type", "route", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
@@ -145,17 +145,17 @@ function _M.log(conf, ctx)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, consumer_name, balancer_ip))
+        gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
 
     local apisix_latency = latency
     if ctx.var.upstream_response_time then
         local upstream_latency = ctx.var.upstream_response_time * 1000
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", service_id, consumer_name, balancer_ip))
+            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
         apisix_latency =  apisix_latency - upstream_latency
     end
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", service_id, consumer_name, balancer_ip))
+        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))
