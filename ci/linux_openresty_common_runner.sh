@@ -59,8 +59,8 @@ before_install() {
     rm -rf tmp
     mkdir tmp
     cd tmp
-    wget https://raw.githubusercontent.com/benx203/nacos-test-service/main/spring-nacos-1.0-SNAPSHOT.jar
-    curl https://raw.githubusercontent.com/benx203/nacos-test-service/main/Dockerfile | docker build -t nacos-test-service:1.0-SNAPSHOT -f - .
+    wget https://raw.githubusercontent.com/api7/nacos-test-service/main/spring-nacos-1.0-SNAPSHOT.jar
+    curl https://raw.githubusercontent.com/api7/nacos-test-service/main/Dockerfile | docker build -t nacos-test-service:1.0-SNAPSHOT -f - .
     docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
     docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
     url="127.0.0.1:18002/hello"
