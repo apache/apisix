@@ -25,7 +25,9 @@ title: prometheus
 
 ## 属性
 
-无
+| 名称         | 类型   | 必选项 | 默认值  | 有效值       | 描述                                                  |
+| ------------ | ------ | ------ | ------ | ------------ | ----------------------------------------------------- |
+| prefer_type  | boolean | 可选 | false   |             | 设置为`true`时，Prometheus 指标中将使用路由和服务的 `name` 而不是 `id`。 |
 
 ## 接口
 
@@ -57,7 +59,8 @@ plugin_attr:
 
 ## 如何开启插件
 
-`prometheus` 插件用空{}就可以开启了,他没有任何的选项。
+`prometheus` 插件可以使用空 {} 开启。
+注意，多个路由/服务可以设置为相同的名称，因此当设置 `prefer_name` 为 `true` 时，注意规范命名否则容易引起误解。
 
 例子如下:
 
@@ -184,13 +187,13 @@ plugin_attr:
 这里是 APISIX 的原始的指标数据集:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/prometheus/metrics
+$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",route="",service="127.0.0.1",consumer="",node=""} 8417
+apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
 apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
 apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="ingress",route="",service="127.0.0.1",consumer="",node=""} 189
+apisix_bandwidth{type="ingress",route="",service="",consumer="",node=""} 189
 apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
 apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
@@ -219,9 +222,9 @@ apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.
 apisix_etcd_reachable 1
 # HELP apisix_http_status HTTP status codes per service in Apisix
 # TYPE apisix_http_status counter
-apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="127.0.0.2",consumer="",node="127.0.0.1"} 4
-apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="bar.com",consumer="",node="127.0.0.1"} 4
-apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="127.0.0.1",consumer="",node=""} 1
+apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""} 1
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
@@ -236,12 +239,12 @@ apisix_nginx_http_current_connections{state="writing"} 1
 apisix_nginx_metric_errors_total 0
 # HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
 # TYPE apisix_http_latency histogram
-apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="2"} 1
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
-apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="apisix",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="apisix",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="request",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="request",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
