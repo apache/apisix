@@ -83,21 +83,18 @@ location /sleep {
         ngx.say("ok")
     }
 }
---- timeout: 15
 --- pipelined_requests eval
 [
-    "GET /sleep?sec=10",
     "GET /hello",
     "GET /hello",
 ]
 --- response_body_like eval
 [
-    qr/ok\n/,
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
 --- no_error_log
-[error, error, error]
+[error, error]
 
 
 

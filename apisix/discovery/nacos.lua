@@ -260,20 +260,16 @@ local function fetch_full_registry(premature)
         end
 
         for _, host in ipairs(data.hosts) do
-            if tostring(host.valid) == 'true' and
-                    tostring(host.healthy) == 'true' and
-                    tostring(host.enabled) == 'true' then
-                local nodes = up_apps[service_name]
-                if not nodes then
-                    nodes = core.table.new(0, 0)
-                    up_apps[service_name] = nodes
-                end
-                core.table.insert(nodes, {
-                    host = host.ip,
-                    port = host.port,
-                    weight = host.weight or default_weight,
-                })
+            local nodes = up_apps[service_name]
+            if not nodes then
+                nodes = core.table.new(0, 0)
+                up_apps[service_name] = nodes
             end
+            core.table.insert(nodes, {
+                host = host.ip,
+                port = host.port,
+                weight = host.weight or default_weight,
+            })
         end
     end
     applications = up_apps
