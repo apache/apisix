@@ -27,7 +27,7 @@ This plugin exposes metrics in Prometheus Exposition format.
 
 | Name         | Type      | Requirement | Default  | Valid | Description                                                                                |
 | ------------ | --------- | ----------- | -------- | ----- | ------------------------------------------------------------------------------------------ |
-| prefer_name  | boolean   | optional    | false    |       | When set to `true`, would print route/service `name` instead of `id` in prometheus metric. |
+| prefer_name  | boolean   | optional    | false    |       | When set to `true`, would print route/service `name` instead of `id` in Prometheus metric. |
 
 ## API
 
@@ -59,9 +59,8 @@ plugin_attr:
 
 ## How to enable it
 
-`prometheus` plugin can be enable with empty table. An optional attribute is `prefer_name`.
-When set it to `true`, the presentation type of `route` and `service` would change to its name instead of id.
-Notice, `name` could be duplicated for multiple routes/services, so take care of naming format or it could be misleading.
+`prometheus` plugin could be enable with empty table.
+Notice, `name` could be duplicated for multiple routes/services, so when set `prefer_name` to `true`, take care of naming format or it could be misleading.
 
 For example:
 
