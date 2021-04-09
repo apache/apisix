@@ -25,7 +25,9 @@ This plugin exposes metrics in Prometheus Exposition format.
 
 ## Attributes
 
-none.
+| Name         | Type      | Requirement | Default  | Valid | Description                                                                                |
+| ------------ | --------- | ----------- | -------- | ----- | ------------------------------------------------------------------------------------------ |
+| prefer_name  | boolean   | optional    | false    |       | When set to `true`, would print route/service `name` instead of `id` in Prometheus metric. |
 
 ## API
 
@@ -57,8 +59,8 @@ plugin_attr:
 
 ## How to enable it
 
-`prometheus` plugin can be enable with empty table, because it doesn't have
-any options yet.
+`prometheus` plugin could be enable with empty table.
+Notice, `name` could be duplicated for multiple routes/services, so when set `prefer_name` to `true`, take care of naming format or it could be misleading.
 
 For example:
 
@@ -192,13 +194,13 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 Here is the original metric data of APISIX:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/prometheus/metrics
+$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",route="",service="127.0.0.1",consumer="",node=""} 8417
+apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
 apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
 apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="ingress",route="",service="127.0.0.1",consumer="",node=""} 189
+apisix_bandwidth{type="ingress",route="",service="",consumer="",node=""} 189
 apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
 apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
@@ -227,9 +229,9 @@ apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.
 apisix_etcd_reachable 1
 # HELP apisix_http_status HTTP status codes per service in Apisix
 # TYPE apisix_http_status counter
-apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="127.0.0.2",consumer="",node="127.0.0.1"} 4
-apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="bar.com",consumer="",node="127.0.0.1"} 4
-apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="127.0.0.1",consumer="",node=""} 1
+apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="",consumer="",node="127.0.0.1"} 4
+apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""} 1
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
@@ -244,12 +246,12 @@ apisix_nginx_http_current_connections{state="writing"} 1
 apisix_nginx_metric_errors_total 0
 # HELP apisix_http_latency HTTP request latency in milliseconds per service in APISIX
 # TYPE apisix_http_latency histogram
-apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="apisix",service="",consumer="",node="127.0.0.1",le="2"} 1
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="request",service="",consumer="",node="127.0.0.1",le="2"} 1
-apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="1"} 1
-apisix_http_latency_bucket{type="upstream",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="apisix",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="apisix",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="request",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="request",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
+apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="1"} 1
+apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="2"} 1
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge

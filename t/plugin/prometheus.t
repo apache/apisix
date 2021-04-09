@@ -303,7 +303,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -344,7 +344,7 @@ passed
 
 
 
-=== TEST 16: use service 1 in route 1
+=== TEST 16: use service 1 in route 2
 --- config
     location /t {
         content_by_lua_block {
