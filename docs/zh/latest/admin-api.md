@@ -92,7 +92,7 @@ title: Admin API
 有两点需要特别注意：
 
 - 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
-- 在 `vars` 中，当获取 cookie 的值时，cookie name 是却分大小写字母的。例如：`var` 等于 "cookie_x_foo" 与 `var` 等于 "cookie_X_Foo" 表示不同的 `cookie`。
+- 在 `vars` 中，当获取 cookie 的值时，cookie name 是区分大小写字母的。例如：`var` 等于 "cookie_x_foo" 与 `var` 等于 "cookie_X_Foo" 表示不同的 `cookie`。
 
 route 对象 json 配置内容：
 
