@@ -245,7 +245,7 @@ function _M.access(conf, ctx)
     end
 
     local weighted_upstreams
-    local match_flag = true
+    local match_passed = true
 
     for _, rule in ipairs(conf.rules) do
         if not rule.match then
@@ -260,21 +260,21 @@ function _M.access(conf, ctx)
                 return 500, err
             end
 
-            match_flag = expr:eval(ctx.var)
-            if match_flag then
+            match_passed = expr:eval(ctx.var)
+            if match_passed then
                 break
             end
         end
 
-        if match_flag then
+        if match_passed then
             weighted_upstreams = rule.weighted_upstreams
             break
         end
     end
 
-    core.log.info("match_flag: ", match_flag)
+    core.log.info("match_passed: ", match_passed)
 
-    if not match_flag then
+    if not match_passed then
         return
     end
 
