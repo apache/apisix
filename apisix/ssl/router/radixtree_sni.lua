@@ -29,35 +29,10 @@ local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
 
-local cert_cache = core.lrucache.new {
-    ttl = 3600, count = 512,
-}
-
-local pkey_cache = core.lrucache.new {
-    ttl = 3600, count = 512,
-}
-
-
 local _M = {
     version = 0.1,
     server_name = ngx_ssl.server_name,
 }
-
-
-local function parse_pem_cert(sni, cert)
-    core.log.debug("parsing cert for sni: ", sni)
-
-    local parsed, err = ngx_ssl.parse_pem_cert(cert)
-    return parsed, err
-end
-
-
-local function parse_pem_priv_key(sni, pkey)
-    core.log.debug("parsing priv key for sni: ", sni)
-
-    local parsed, err = ngx_ssl.parse_pem_priv_key(pkey)
-    return parsed, err
-end
 
 
 local function create_router(ssl_items)
@@ -80,23 +55,6 @@ local function create_router(ssl_items)
                 end
             else
                 sni = ssl.value.sni:reverse()
-            end
-
-            -- decrypt private key
-            if ssl.value.key then
-                local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.key)
-                if decrypted then
-                    ssl.value.key = decrypted
-                end
-            end
-
-            if ssl.value.keys then
-                for i = 1, #ssl.value.keys do
-                    local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.keys[i])
-                    if decrypted then
-                        ssl.value.keys[i] = decrypted
-                    end
-                end
             end
 
             idx = idx + 1
@@ -133,7 +91,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
         return false, "no request found"
     end
 
-    local parsed_cert, err = cert_cache(cert, nil, parse_pem_cert, sni, cert)
+    local parsed_cert, err = apisix_ssl.fetch_cert(sni, cert)
     if not parsed_cert then
         return false, "failed to parse PEM cert: " .. err
     end
@@ -143,9 +101,8 @@ local function set_pem_ssl_key(sni, cert, pkey)
         return false, "failed to set PEM cert: " .. err
     end
 
-    local parsed_pkey, err = pkey_cache(pkey, nil, parse_pem_priv_key, sni,
-                                        pkey)
-    if not parsed_pkey then
+    local parsed_pkey, err = apisix_ssl.fetch_pkey(sni, pkey)
+    if not parsed_cert then
         return false, "failed to parse PEM priv key: " .. err
     end
 

@@ -389,6 +389,10 @@ _EOC_
 
 _EOC_
 
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
+
     my $ipv6_fake_server = "";
     if (defined $block->listen_ipv6) {
         $ipv6_fake_server = "listen \[::1\]:1980;";
@@ -426,7 +430,13 @@ _EOC_
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
+_EOC_
 
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
+
+    $http_config .= <<_EOC_;
         server_tokens off;
 
         ssl_certificate_by_lua_block {
