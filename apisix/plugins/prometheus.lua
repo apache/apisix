@@ -90,7 +90,10 @@ function _M.export_metrics()
     local method = ngx.req.get_method()
 
     if uri == api.uri and method == api.methods[1] then
-        return api.handler()
+        local code, body = api.handler()
+        if code or body then
+            core.response.exit(code, body)
+        end
     end
 
     return core.response.exit(404)
