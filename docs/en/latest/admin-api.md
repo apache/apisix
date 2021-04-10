@@ -543,6 +543,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
+|tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details|
+|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details|
 
 `type` can be one of:
 
@@ -559,6 +561,10 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
 1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
+
+`tls.client_cert/key` can be used to communicate with upstream via mTLS.
+Their formats are the same as SSL's `cert` and `key` fields.
+This feature requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
 
 **Config Example:**
 
