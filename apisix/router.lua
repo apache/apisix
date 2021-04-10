@@ -16,11 +16,11 @@
 --
 local require = require
 local http_route = require("apisix.http.route")
+local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local str_lower = string.lower
 local error   = error
-local pairs   = pairs
 local ipairs  = ipairs
 
 
@@ -44,43 +44,7 @@ local function filter(route)
         end
     end
 
-    if not route.value.upstream then
-        return
-    end
-
-    route.value.upstream.parent = route
-
-    if not route.value.upstream.nodes then
-        return
-    end
-
-    local nodes = route.value.upstream.nodes
-    if core.table.isarray(nodes) then
-        for _, node in ipairs(nodes) do
-            local host = node.host
-            if not core.utils.parse_ipv4(host) and
-                    not core.utils.parse_ipv6(host) then
-                route.has_domain = true
-                break
-            end
-        end
-    else
-        local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
-        for addr, weight in pairs(nodes) do
-            local host, port = core.utils.parse_addr(addr)
-            if not core.utils.parse_ipv4(host) and
-                    not core.utils.parse_ipv6(host) then
-                route.has_domain = true
-            end
-            local node = {
-                host = host,
-                port = port,
-                weight = weight,
-            }
-            core.table.insert(new_nodes, node)
-        end
-        route.value.upstream.nodes = new_nodes
-    end
+    apisix_upstream.filter_upstream(route.value.upstream, route)
 
     core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
