@@ -32,6 +32,7 @@ local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
+local service_fetch = require("apisix.http.service").get
 
 
 
@@ -101,7 +102,7 @@ function _M.init()
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
+        {"type", "route", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
@@ -115,15 +116,20 @@ function _M.log(conf, ctx)
 
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
-    local service_id
+    local service_id = ""
     local consumer_name = ctx.consumer_name or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
-        service_id = matched_route.service_id or ""
         route_id = matched_route.id
-    else
-        service_id = vars.host
+        service_id = matched_route.service_id or ""
+        if conf.prefer_name == true then
+            route_id = matched_route.name or route_id
+            if service_id ~= "" then
+                local service = service_fetch(service_id)
+                service_id = service and service.value.name or service_id
+            end
+        end
     end
 
     local matched_uri = ""
@@ -139,17 +145,17 @@ function _M.log(conf, ctx)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, consumer_name, balancer_ip))
+        gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
 
     local apisix_latency = latency
     if ctx.var.upstream_response_time then
         local upstream_latency = ctx.var.upstream_response_time * 1000
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", service_id, consumer_name, balancer_ip))
+            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
         apisix_latency =  apisix_latency - upstream_latency
     end
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", service_id, consumer_name, balancer_ip))
+        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))

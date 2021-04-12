@@ -322,6 +322,16 @@ local nodes_schema = {
 }
 
 
+local certificate_scheme = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
+local private_key_schema = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -340,6 +350,14 @@ local upstream_schema = {
                 read = {type = "number", exclusiveMinimum = 0},
             },
             required = {"connect", "send", "read"},
+        },
+        tls = {
+            type = "object",
+            properties = {
+                client_cert = certificate_scheme,
+                client_key = private_key_schema,
+            },
+            required = {"client_cert", "client_key"},
         },
         type = {
             description = "algorithms of load balancing",
@@ -596,16 +614,6 @@ _M.consumer = {
 
 
 _M.upstream = upstream_schema
-
-
-local certificate_scheme = {
-    type = "string", minLength = 128, maxLength = 64*1024
-}
-
-
-local private_key_schema = {
-    type = "string", minLength = 128, maxLength = 64*1024
-}
 
 
 _M.ssl = {

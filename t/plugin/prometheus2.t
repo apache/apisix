@@ -238,7 +238,7 @@ GET /not_found
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="localhost",consumer="",node=""\} \d+/
+qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""\} \d+/
 --- no_error_log
 [error]
 
@@ -728,3 +728,178 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 37: create service and route both with name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "service_name",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "service_id": 1,
+                    "plugins": {
+                        "prometheus": {
+                            "prefer_name": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: pipeline of client request
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: remove service name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: pipeline of client request
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: remove route name, but still set prefer_name to name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "service_id": 1,
+                    "plugins": {
+                        "prometheus": {
+                            "prefer_name": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: pipeline of client request
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="1",service="1",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
