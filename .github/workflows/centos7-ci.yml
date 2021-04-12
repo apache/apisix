@@ -36,7 +36,7 @@ jobs:
         env:
           cache-name: cache-deps
         with:
-          path: ~/deps
+          path: deps
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
       - name: Extract branch name
