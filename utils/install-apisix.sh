@@ -42,7 +42,8 @@ echo $UNAME
 
 
 do_install() {
-    for (( i = 0; i < 10; i++ )); do
+    i=0
+    while true; do
         if [[ "$i" -eq 10 ]]; then
             echo "failed to install in time"
             cat build.log && exit 1
@@ -53,6 +54,7 @@ do_install() {
         else
             sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
         fi
+        i=$(( i + 1 ))
     done
 
     sudo rm -f /usr/bin/apisix
