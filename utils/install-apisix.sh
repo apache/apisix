@@ -42,12 +42,18 @@ echo $UNAME
 
 
 do_install() {
-    if [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
-        sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
-
-    else
-        sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
-    fi
+    for (( i = 0; i < 10; i++ )); do
+        if [[ "$i" -eq 10 ]]; then
+            echo "failed to install in time"
+            cat build.log && exit 1
+            exit 1
+        fi
+        if [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
+            sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
+        else
+            sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
+        fi
+    done
 
     sudo rm -f /usr/bin/apisix
     sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/bin/apisix
