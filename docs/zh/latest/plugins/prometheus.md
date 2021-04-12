@@ -82,7 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来完成上面的操作。
 
-先增加一个 route：
+先增加一个 Route：
 
 ![](../../../assets/images/plugin/prometheus-1.png)
 
