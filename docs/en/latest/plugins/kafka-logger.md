@@ -47,6 +47,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | ---------------- | ------- | ----------- | -------------- | ------- | ---------------------------------------------------------------------------------------- |
 | broker_list      | object  | required    |                |         | An array of Kafka brokers.                                                               |
 | kafka_topic      | string  | required    |                |         | Target  topic to push data.                                                              |
+| producer_type    | string  | optional    | async          | ["async", "sync"]        | Producer's mode of sending messages.          |
 | key              | string  | optional    |                |         | Used for partition allocation of messages.                                               |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor.                                     |

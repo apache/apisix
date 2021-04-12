@@ -45,6 +45,7 @@ title: kafka-logger
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
+| producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
 | key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
