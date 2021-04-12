@@ -94,7 +94,10 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 | create_time      | False                                    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                                                                                                                                                                                                                                                                                                                                                                | 1602883670                                           |
 | update_time      | False                                    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                                                                                                                                                                                                                                                                                                                                                                | 1602883670                                           |
 
-For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will respond with an error.
+There are two points that need special attention:
+
+- For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will respond with an error.
+- In `vars`, when getting the cookie value, the cookie name is **case-sensitive**. For example: `var` equals "cookie_x_foo" and `var` equals "cookie_X_Foo" means different `cookie`.
 
 Config Example:
 
@@ -555,11 +558,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `hash_on` can be set to different types:
 
-1. when it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
-1. when it is `header`, the `key` is required. It is equal to "http_`key`".
-1. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
-1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
-1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
+1. When it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
+1. When it is `header`, the `key` is required. It is equal to "http_`key`".
+1. When it is `cookie`, the `key` is required. It is equal to "cookie_`key`". Please note that the cookie name is **case-sensitive**. For example: "cookie_x_foo" and "cookie_X_Foo" indicate different `cookie`.
+1. When it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
+1. When it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
