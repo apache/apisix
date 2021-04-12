@@ -88,13 +88,6 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
-
-![](../../../assets/images/plugin/jwt-auth-1.png)
-
-then add jwt-auth plugin in the Consumer page:
-![](../../../assets/images/plugin/jwt-auth-2.png)
-
 2. add a Route or add a Service, and enable the `jwt-auth` plugin
 
 ```shell
@@ -113,6 +106,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to complete the above operations through the web console.
+
+1. Add a Consumer through the web console:
+
+![](../../../assets/images/plugin/jwt-auth-1.png)
+
+then add jwt-auth plugin in the Consumer page:
+![](../../../assets/images/plugin/jwt-auth-2.png)
+
+2. Create a Route or Service object and enable the jwt-auth plugin:
+
+![](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## Test Plugin
 
