@@ -418,7 +418,7 @@ local function merge_service_route(service_conf, route_conf)
 
     if route_conf.value.name then
         new_conf.value.name = route_conf.value.name
-    else 
+    else
         new_conf.value.name = nil
     end
 
