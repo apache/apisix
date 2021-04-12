@@ -50,8 +50,16 @@ do_install() {
     ./utils/linux-install-openresty.sh
 
     ./utils/linux-install-luarocks.sh
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
+    while true; do
+        if [[ "$i" -eq 10 ]]; then
+            echo "failed to install luacheck in time"
+            cat build.log && exit 1
+            exit 1
+        fi
+        sudo luarocks install luacheck > build.log 2>&1
+        i=$(( i + 1 ))
+    done
     ./utils/linux-install-etcd-client.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
