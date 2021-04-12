@@ -42,7 +42,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 |              参数名             | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
 | ---------------------- | --------------| ------ | ------ | ------ | -------------------- |
-| rules.match                    | array[object] | 可选  |        |        | 匹配规则列表  |
+| rules.match                    | array[object] | 可选  |        |        | 匹配规则列表，默认为空且规则将被无条件执行。 |
 | rules.match.vars               | array[array]  | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
 | weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
