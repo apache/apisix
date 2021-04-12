@@ -906,7 +906,7 @@ passed
 
 
 
-=== TEST 41: pipeline of client request
+=== TEST 44: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
@@ -915,7 +915,7 @@ GET /hello
 
 
 
-=== TEST 42: fetch the prometheus metric data
+=== TEST 45: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -925,7 +925,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",
 
 
 
-=== TEST 43: remove both name, but still set prefer_name to true
+=== TEST 46: remove both name, but still set prefer_name to true
 --- config
     location /t {
         content_by_lua_block {
@@ -958,7 +958,7 @@ passed
 
 
 
-=== TEST 44: pipeline of client request
+=== TEST 47: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
@@ -967,7 +967,7 @@ GET /hello
 
 
 
-=== TEST 45: fetch the prometheus metric data
+=== TEST 48: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
