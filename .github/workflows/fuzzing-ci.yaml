@@ -11,6 +11,8 @@ on:
       - master
     paths-ignore:
       - 'docs/**'
+  schedule:
+    - cron:  '0 0 * * *'
 
 jobs:
   test_apisix:
