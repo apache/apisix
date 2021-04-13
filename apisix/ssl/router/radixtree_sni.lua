@@ -196,10 +196,10 @@ function _M.match_and_set(api_ctx)
     end
 
     if matched_ssl.value.client then
-        local client_cert = matched_ssl.value.client.ca
+        local ca_cert = matched_ssl.value.client.ca
         local depth = matched_ssl.value.client.depth
         if apisix_ssl.support_client_verification() then
-            local parsed_cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+            local parsed_cert, err = apisix_ssl.fetch_cert(sni, ca_cert)
             if not parsed_cert then
                 return false, "failed to parse client cert: " .. err
             end
