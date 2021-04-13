@@ -205,9 +205,6 @@ hello world
         content_by_lua_block {
             local t = require("lib.test_admin")
             local json = require("toolkit.json")
-            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
-            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
-            local ssl_key = t.read_file("t/certs/mtls_client.key")
             local data = {
                 upstream = {
                     scheme = "https",
@@ -259,7 +256,6 @@ client certificate was not present
         content_by_lua_block {
             local t = require("lib.test_admin")
             local json = require("toolkit.json")
-            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
             local ssl_cert = t.read_file("t/certs/apisix.crt")
             local ssl_key = t.read_file("t/certs/apisix.key")
             local data = {
