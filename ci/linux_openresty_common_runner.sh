@@ -51,6 +51,7 @@ do_install() {
 
     ./utils/linux-install-luarocks.sh
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
+
     ./utils/linux-install-etcd-client.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
