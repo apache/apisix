@@ -50,9 +50,9 @@ do_install() {
             exit 1
         fi
         if [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
-            sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
+            sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local > build.log 2>&1 && break
         else
-            sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
+            sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local > build.log 2>&1 && break
         fi
         i=$(( i + 1 ))
     done
