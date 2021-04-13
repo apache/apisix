@@ -44,7 +44,7 @@ echo $UNAME
 do_install() {
     i=0
     while true; do
-        if [[ "$i" -eq 10 ]]; then
+        if [ "$i" = "10" ]; then
             echo "failed to install in time"
             cat build.log && exit 1
             exit 1
