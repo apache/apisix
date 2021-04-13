@@ -267,14 +267,12 @@ function _M.load(config)
         -- called during synchronizing plugin data
         http_plugin_names = {}
         stream_plugin_names = {}
-        for _, conf_value in config_util.iterate_values(config.values) do
-            local plugins_conf = conf_value.value
-            for _, conf in ipairs(plugins_conf) do
-                if conf.stream then
-                    core.table.insert(stream_plugin_names, conf.name)
-                else
-                    core.table.insert(http_plugin_names, conf.name)
-                end
+        local plugins_conf = config.value
+        for _, conf in ipairs(plugins_conf) do
+            if conf.stream then
+                core.table.insert(stream_plugin_names, conf.name)
+            else
+                core.table.insert(http_plugin_names, conf.name)
             end
         end
     end
@@ -486,8 +484,10 @@ do
             automatic = true,
             item_schema = core.schema.plugins,
             single_item = true,
-            filter = function()
-                _M.load(plugins_conf)
+            filter = function(item)
+                -- we need to pass 'item' instead of plugins_conf because
+                -- the latter one is nil at the first run
+                _M.load(item)
             end,
         })
         if not plugins_conf then
