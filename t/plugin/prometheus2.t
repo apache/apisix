@@ -803,7 +803,7 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",con
 
 
 
-=== TEST 40: remove service name
+=== TEST 40: set route name but remove service name
 --- config
     location /t {
         content_by_lua_block {
@@ -854,7 +854,78 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",no
 
 
 
-=== TEST 43: remove route name, but still set prefer_name to name
+=== TEST 43: set service name but remove route name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "service_name",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "service_id": 1,
+                    "plugins": {
+                        "prometheus": {
+                            "prefer_name": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: pipeline of client request
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: remove both name, but still set prefer_name to true
 --- config
     location /t {
         content_by_lua_block {
@@ -887,7 +958,7 @@ passed
 
 
 
-=== TEST 44: pipeline of client request
+=== TEST 47: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
@@ -896,7 +967,7 @@ GET /hello
 
 
 
-=== TEST 45: fetch the prometheus metric data
+=== TEST 48: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
