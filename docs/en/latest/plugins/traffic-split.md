@@ -42,7 +42,7 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 
 |               Name             |       Type    | Requirement | Default | Valid   | Description                                                                              |
 | ------------------------------ | ------------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
-| rules.match                    | array[object] | optional    |         |  | List of matching rules.                                                                    |
+| rules.match                    | array[object] | optional    |         |  | List of matching rules, by default the list is empty and the rule will be executed unconditionally. |
 | rules.match.vars               | array[array]  | optional    |     |  | A list consisting of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.weighted_upstreams       | array[object] | optional    |    |         | List of upstream configuration rules.                                                   |
 | weighted_upstreams.upstream_id | string/integer| optional    |         |         | The upstream id is bound to the corresponding upstream.            |
