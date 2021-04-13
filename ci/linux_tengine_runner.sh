@@ -221,19 +221,7 @@ do_install() {
 
     ./utils/linux-install-luarocks.sh
 
-    if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
-        create_lua_deps
-
-    else
-        src=`md5sum rockspec/apisix-master-0.rockspec | awk '{print $1}'`
-        src_cp=`md5sum build-cache/apisix-master-0.rockspec | awk '{print $1}'`
-        if [ "$src" = "$src_cp" ]; then
-            echo "Use lua deps cache"
-            sudo cp -r build-cache/deps ./
-        else
-            create_lua_deps
-        fi
-    fi
+    create_lua_deps
 
     for (( i = 0; i < 10; i++ )); do
         if [[ "$i" -eq 10 ]]; then
