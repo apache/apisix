@@ -235,7 +235,15 @@ do_install() {
         fi
     fi
 
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
+    for (( i = 0; i < 10; i++ )); do
+        if [[ "$i" -eq 10 ]]; then
+            echo "failed to install luacheck in time"
+            cat build.log && exit 1
+            exit 1
+        fi
+        sudo luarocks install luacheck > build.log 2>&1 && break
+        i=$(( i + 1 ))
+    done
 
     ./utils/linux-install-etcd-client.sh
 
