@@ -63,19 +63,7 @@ do_install() {
 
     ./utils/linux-install-etcd-client.sh
 
-    if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
-        create_lua_deps
-
-    else
-        src=`md5sum rockspec/apisix-master-0.rockspec | awk '{print $1}'`
-        src_cp=`md5sum build-cache/apisix-master-0.rockspec | awk '{print $1}'`
-        if [ "$src" = "$src_cp" ]; then
-            echo "Use lua deps cache"
-            sudo cp -r build-cache/deps ./
-        else
-            create_lua_deps
-        fi
-    fi
+    create_lua_deps
 
     # sudo apt-get install tree -y
     # tree deps
@@ -86,7 +74,7 @@ do_install() {
     git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
     cp ci/ASF* ci/openwhisk-utilities/scancode/
 
-    ls -l ./
+    mkdir -p build-cache
     if [ ! -f "build-cache/grpc_server_example_20210122" ]; then
         wget https://github.com/api7/grpc_server_example/releases/download/20210122/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
