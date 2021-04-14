@@ -718,8 +718,8 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
-    router.stream_init_worker()
     plugin.init_worker()
+    router.stream_init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()

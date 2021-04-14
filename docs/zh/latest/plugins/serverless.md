@@ -58,6 +58,8 @@ local count = 1
 ngx.say(count)
 ```
 
+从 `v2.6` 版本开始，我们会把 `conf` 和 `ctx` 作为头两个参数传递给 serverless 函数，就跟一般的插件一样。
+
 ## 示例
 
 ### 启动插件
@@ -72,7 +74,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
         "serverless-pre-function": {
             "phase": "rewrite",
             "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
-        }
+        },
+        "serverless-post-function": {
+            "phase": "rewrite",
+            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+        },
     },
     "upstream": {
         "type": "roundrobin",
@@ -91,7 +97,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-然后你在 error.log 日志中就会发现 `serverless pre function` 这个 error 级别的日志，
+然后你在 error.log 日志中就会发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，
 表示指定的函数已经生效。
 
 ### 移除插件

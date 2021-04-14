@@ -33,6 +33,14 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Cache deps
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-deps
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
     - name: run apisix
       run: |
         wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -43,7 +51,13 @@ jobs:
         sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc
         ./utils/linux-install-luarocks.sh
 
-        make deps
+        for (( i = 0; i < 10; i++ )); do
+            if [[ "$i" -eq 10 ]]; then
+                echo "failed to make deps in time"
+                exit 1
+            fi
+            make deps && break
+        done
         make init
         make run
 

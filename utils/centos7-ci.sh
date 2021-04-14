@@ -56,7 +56,13 @@ install_dependencies() {
 
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    make deps
+    for (( i = 0; i < 10; i++ )); do
+        if [[ "$i" -eq 10 ]]; then
+            echo "failed to make deps in time"
+            exit 1
+        fi
+        make deps && break
+    done
 }
 
 run_case() {
