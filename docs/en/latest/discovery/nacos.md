@@ -26,6 +26,7 @@ title: nacos
 This is experimental discovery module for Nacos.
 
 The performance of this module needs to be improved:
+
 1. avoid synchroning configuration in each workers. You can refer the implementation in `consul_kv.lua`.
 2. send the request parallelly.
 
