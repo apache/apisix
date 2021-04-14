@@ -1,5 +1,5 @@
 <div dir="rtl">
-  
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,7 +29,7 @@
 **أباتشي أبيسكس** هو عبارة عن بوابة ديناميكية وفي الوقت الفعلي وعالية الاداء
 
 أباتشي أبيسكس توفر امتيازات حركة مرور كبيرة مثل (موازنة التحميل، المنبع الديناميكي، إصدار كناري، كسر الدائرة، المصادقة، إمكانية المراقبة، والمزيد.
-يمكنك استخدام أباتشي أبيسكس للتعامل مع حركة المرور التقليدية شمالا-جنوبا 
+يمكنك استخدام أباتشي أبيسكس للتعامل مع حركة المرور التقليدية شمالا-جنوبا
 وأيضا بحركة شرق-غرب بين الخدمات.
 يمكن استخدامه أيضا [كوحدة تحكم دخول k8s](https://github.com/apache/apisix-ingress-controller).
 
@@ -44,9 +44,9 @@
 
 مجموعة QQ - 578997126
 
-- [مساحة عمل Slack ](https://join.slack.com/t/the-asf/shared_invite/zt-mrougyeu-2aG7BnFaV0VnAT9_JIUVaA) - تابع `#apisix` على Slack لمقابلة الفريق وطرح الأسئلة
+- [مساحة عمل Slack](https://join.slack.com/t/the-asf/shared_invite/zt-mrougyeu-2aG7BnFaV0VnAT9_JIUVaA) - تابع `#apisix` على Slack لمقابلة الفريق وطرح الأسئلة
 - ![متابعة Twitter -](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - تابعنا وتفاعل معنا باستخدام الهاشتاج  `#ApacheAPISIX`
-- [bilibili فيديو ](https://space.bilibili.com/551921247)
+- [bilibili فيديو](https://space.bilibili.com/551921247)
 - **الاصدارات الأولى الجيدة**:
   - [اباتشي ابيسكس](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [وحدة تحكم الدخول أباتشي ابيسكس](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -58,12 +58,12 @@
 
 ## السمات
 
-•	يمكنك استخدام أباتشي أبيسكس كمدخل لحركة المرور لمعالجة جميع بيانات الأعمال ، بما في ذلك التوجيه الديناميكي ، والمنبع الديناميكي ، والشهادات الديناميكية ، واختبار A / B ، وإصدار الكناري ، والنشر الأزرق والأخضر ، ومعدل الحد ، والدفاع ضد الهجمات الضارة ، والمقاييس ، وإنذارات المراقبة ، وقابلية مراقبة الخدمة ، وحوكمة الخدمة ، وما إلى ذلك. 
+•	يمكنك استخدام أباتشي أبيسكس كمدخل لحركة المرور لمعالجة جميع بيانات الأعمال ، بما في ذلك التوجيه الديناميكي ، والمنبع الديناميكي ، والشهادات الديناميكية ، واختبار A / B ، وإصدار الكناري ، والنشر الأزرق والأخضر ، ومعدل الحد ، والدفاع ضد الهجمات الضارة ، والمقاييس ، وإنذارات المراقبة ، وقابلية مراقبة الخدمة ، وحوكمة الخدمة ، وما إلى ذلك.
 
 - **جميع المنصات**
 
  Native: النظام الأساسي غير المقيد ، لا يوجد قفل للبائع ، يمكن تشغيل APISIX من النظام الأساسي إلى Kubernetes.
- 
+
 •	بيئة التشغيل: يتم دعم كل من OpenResty و Tengine.
 
 •	يدعم ARM64: لا تقلق بشأن قفل تقنية الأشعة تحت الحمراء.
@@ -78,7 +78,7 @@
   - مقبس الويب الوكيل
   - بروتوكول الوكيل
   - الوكيل  Dubbo: Dubbo يعتمد على  Tengine.
-  - HTTP(S)	وكيل إعادة التوجيه 
+  - HTTP(S)	وكيل إعادة التوجيه
   - [SSL](docs/en/latest/https.md): تحميل شهادة SSL ديناميكيًا.
 
 - **ديناميكية كاملة**
@@ -94,12 +94,11 @@
   - [مرآة الوكيل](docs/en/latest/plugins/proxy-mirror.md): توفر القدرة على عكس طلبات العميل
   - [تقسيم حركة المرور](docs/en/latest/plugins/traffic-split.md): يسمح للمستخدمين بتوجيه النسب المئوية بشكل متزايد من حركة المرور بين مختلف التدفقات.
 
-
 - **التوجيه الدقيق**
 
   - [يدعم مطابقة المسار الكامل ومطابقة البادئة](docs/en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [دعم جميع متغيرات Nginx المضمنة كشرط للتوجيه](docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), بحيث يمكنك استخدام  `ملفات تعريف الارتباط `, `args`, وما إلى ذلك. كظروف توجيه لتنفيذ إصدار canary ، واختبار A / B ، إلخ
-  - دعم  [العديد من المشغلين كشروط حكم للتوجيه ](https://github.com/iresty/lua-resty-radixtree#operator-list), على سبيل المثال  `{"arg_age", ">", 24}`
+  - [دعم جميع متغيرات Nginx المضمنة كشرط للتوجيه](docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), بحيث يمكنك استخدام  `ملفات تعريف الارتباط`, `args`, وما إلى ذلك. كظروف توجيه لتنفيذ إصدار canary ، واختبار A / B ، إلخ
+  - دعم  [العديد من المشغلين كشروط حكم للتوجيه](https://github.com/iresty/lua-resty-radixtree#operator-list), على سبيل المثال  `{"arg_age", ">", 24}`
   - دعم  [وظيفة مطابقة الطريق المخصصة](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6: استخدم IPv6 لمطابقة المسار.
   - دعم  [TTL](docs/en/latest/admin-api.md#route)
@@ -134,14 +133,14 @@
   - [القاعدة العالمية](docs/en/latest/architecture-design/global-rule.md): تسمح بتشغيل أي مكون إضافي لجميع الطلبات، على سبيل المثال: معدل الحد، مرشح IP، إلخ.
   - أداء عالٍ: يصل معدل QPS أحادي النواة إلى 18 ألفًا بمتوسط تأخير أقل من 0.2 مللي ثانية
   - [حقن خاطئ](docs/en/latest/plugins/fault-injection.md)
-  - [REST Admin API](docs/en/latest/admin-api.md): استخدام REST Admin API للتحكم ب أباتشي أبيسكس, والذي يسمح فقط 127.0.0.1 الوصول افتراضيا, يمكنك تعديل حقل  `allow_admin` حقل في `conf/config.yaml` لتحديد قائمة عناوين  IPs المسموح لها باستدعاء  Admin API. Also,لاحظ أيضًا أن Admin API تستخدم مصادقة المفتاح للتحقق من هوية المتصل. ** `admin_key` حقل في `conf/config.yaml` يحتاج إلى تعديل قبل النشر لضمان الأمان**.
+  - [REST Admin API](docs/en/latest/admin-api.md): استخدام REST Admin API للتحكم ب أباتشي أبيسكس, والذي يسمح فقط 127.0.0.1 الوصول افتراضيا, يمكنك تعديل حقل  `allow_admin` حقل في `conf/config.yaml` لتحديد قائمة عناوين  IPs المسموح لها باستدعاء  Admin API. Also,لاحظ أيضًا أن Admin API تستخدم مصادقة المفتاح للتحقق من هوية المتصل. **`admin_key` حقل في `conf/config.yaml` يحتاج إلى تعديل قبل النشر لضمان الأمان**.
   - المسجلات الخارجية: تصدير سجلات الوصول إلى أدوات إدارة السجلات الخارجيةs. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md))
   - [مخططات الخوذة](https://github.com/apache/apisix-helm-chart)
 
 - **قابلة للتطوير بدرجة كبيرة**
   - [المكونات الإضافية المخصصة](docs/en/latest/plugin-develop.md): تسمح بربط المراحل الشائعة مثل `إعادة الكتابة`, `الوصول`, `مرشح العنوان`, `مرشح الجسم` and `السجل`, كما يسمح بربط `الموازنة` مرحلة.
   - خوارزميات موازنة الحمل المخصصة: يمكنك استخدام خوارزميات موازنة التحميل المخصصة أثناء  `الموازنة` مرحلة.
-  - التوجيه المخصص: دعم المستخدمين لتنفيذ خوارزميات التوجيه بأنفسهم. 
+  - التوجيه المخصص: دعم المستخدمين لتنفيذ خوارزميات التوجيه بأنفسهم.
 
 ## البدء
 
@@ -190,7 +189,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    $ docker pull apache/apisix
    ```
 
-   لا تتضمن صورة Docker  `etcd`; يمكنك الرجوع الى [مثال تكوين عامل الإرساء ](https://github.com/apache/apisix-docker/tree/master/example) لبدء مجموعة اختبار.
+   لا تتضمن صورة Docker  `etcd`; يمكنك الرجوع الى [مثال تكوين عامل الإرساء](https://github.com/apache/apisix-docker/tree/master/example) لبدء مجموعة اختبار.
 
 3. RPM حزمة（فقط ل CentOS 7）
 
@@ -247,7 +246,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 4. تطوير البرنامج المساعد
 
-   يمكنك الرجوع إلى  [دليل تطوير البرنامج المساعد ](docs/en/latest/plugin-develop.md), و [عينة من وثائق`echo`](docs/en/latest/plugins/echo.md) صدى البرنامج المساعد وتنفيذ التعليمات البرمجية.
+   يمكنك الرجوع إلى  [دليل تطوير البرنامج المساعد](docs/en/latest/plugin-develop.md), و [عينة من وثائق`echo`](docs/en/latest/plugins/echo.md) صدى البرنامج المساعد وتنفيذ التعليمات البرمجية.
 
    يرجى ملاحظة أن إضافات أباتشي أبيسكس المضافة ، المحدثة ، المحذوفة ، وما إلى ذلك ، يتم تحميلها دون إعادة تشغيل الخدمة.
 
@@ -259,7 +258,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 [البرنامج النصي المعياري](benchmark/run.sh), [طريقة الاختبار وعملية](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) كان مفتوح المصدر, ومرحبًا بكم في المحاولة والمساهمة.
 
-##  أباتشي أبيسكس مقابل كونغ
+## أباتشي أبيسكس مقابل كونغ
 
 #### تمت تغطية كلاهما بالميزات الأساسية لبوابة API
 
@@ -303,16 +302,16 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 ### مساهم بمرور الوقت
 
-> [قم بزيارة هنا ](https://www.apiseven.com/contributor-graph) لإنشاء "مساهم بمرور الوقت".
+> [قم بزيارة هنا](https://www.apiseven.com/contributor-graph) لإنشاء "مساهم بمرور الوقت".
 
 [![مساهم-بمرور-الوقت](docs/assets/images/contributor-over-time.png)](https://www.apiseven.com/contributor-graph)
 
 ## مقاطع الفيديو والمقالات
 
 - [أباتشي أبيسكس: كيفية تنفيذ تزامن البرنامج المساعد في بوابة API](https://www.youtube.com/watch?v=iEegNXOtEhQ)
-- [تحسين إمكانية ملاحظة أباتشي أبيسكس باستخدام أباتشي سكايووكنغ  ](https://www.youtube.com/watch?v=DleVJwPs4i4)
-- [اختيار تكنولوجيا أبيسكس والاختبار والتكامل المستمر  ](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
-- [تحليل الأداء الممتاز لبوابة أباتشي أبيسكس بوابة الخدمات المصغرة ](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
+- [تحسين إمكانية ملاحظة أباتشي أبيسكس باستخدام أباتشي سكايووكنغ](https://www.youtube.com/watch?v=DleVJwPs4i4)
+- [اختيار تكنولوجيا أبيسكس والاختبار والتكامل المستمر](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
+- [تحليل الأداء الممتاز لبوابة أباتشي أبيسكس بوابة الخدمات المصغرة](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
 
 ## قصص المستخدم
 
@@ -325,7 +324,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 ## من يستخدم أبيسكس?
 
-تستخدم مجموعة متنوعة من الشركات والمؤسسات أبيسكس للبحث والإنتاج والمنتجات التجارية ، بما في ذلك:  
+تستخدم مجموعة متنوعة من الشركات والمؤسسات أبيسكس للبحث والإنتاج والمنتجات التجارية ، بما في ذلك:
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
