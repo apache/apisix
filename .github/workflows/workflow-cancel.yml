@@ -16,10 +16,9 @@ jobs:
       - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
         uses: actions/checkout@v2
         with:
-          persist-credentials: false
           submodules: recursive
 
-      - uses: ./.github/actions/get-workflow-origin
+      - uses: ./.github/actions/cancel-workflow-runs
         name: "Cancel duplicate workflow runs"
         with:
           cancelMode: allDuplicates
