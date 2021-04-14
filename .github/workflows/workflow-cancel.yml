@@ -1,7 +1,11 @@
 name: Cancelling Duplicates
 on:
   workflow_run:
-    workflows: ['CI']
+    workflows:
+      - 'CI'
+      - 'CI Centos7'
+      - 'Chaos Test'
+      - 'fuzzing'
     types: ['requested']
 
 jobs:
