@@ -18,6 +18,7 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+
       - uses: ./.github/actions/get-workflow-origin
         name: "Cancel duplicate workflow runs"
         with:
