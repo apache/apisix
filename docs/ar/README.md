@@ -1,3 +1,4 @@
+<div dir="rtl">
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -350,3 +351,4 @@ CNCF API مشهد بوابةe.</a>
 ## رخصة
 
 [أباتشي 2.0 رخصة](https://github.com/apache/apisix/tree/master/LICENSE)
+</div>
