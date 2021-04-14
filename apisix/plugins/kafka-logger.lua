@@ -18,6 +18,7 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
+local math     = math
 local pairs    = pairs
 local type     = type
 local ipairs   = ipairs
@@ -44,6 +45,11 @@ local schema = {
             type = "object"
         },
         kafka_topic = {type = "string"},
+        producer_type = {
+            type = "string",
+            default = "async",
+            enum = {"async", "sync"},
+        },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "kafka logger"},
@@ -70,7 +76,21 @@ function _M.check_schema(conf)
 end
 
 
-local function get_partition_id(sendbuffer, topic, log_message)
+local function get_partition_id(prod, topic, log_message)
+    if prod.async then
+        local ringbuffer = prod.ringbuffer
+        for i = 1, ringbuffer.size, 3 do
+            if ringbuffer.queue[i] == topic and
+                ringbuffer.queue[i+2] == log_message then
+                return math.floor(i / 3)
+            end
+        end
+        core.log.info("current topic in ringbuffer has no message")
+        return nil
+    end
+
+    -- sync mode
+    local sendbuffer = prod.sendbuffer
     if not sendbuffer.topics[topic] then
         core.log.info("current topic in sendbuffer has no message")
         return nil
@@ -115,7 +135,7 @@ local function send_kafka_data(conf, log_message, prod)
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     core.log.info("partition_id: ",
                   core.log.delay_exec(get_partition_id,
-                                      prod.sendbuffer, conf.kafka_topic, log_message))
+                                      prod, conf.kafka_topic, log_message))
 
     if not ok then
         return nil, "failed to send data to Kafka topic: " .. err
@@ -164,6 +184,7 @@ function _M.log(conf, ctx)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
+    broker_config["producer_type"] = conf.producer_type
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config)
