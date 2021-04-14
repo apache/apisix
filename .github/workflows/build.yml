@@ -54,6 +54,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Cache deps
