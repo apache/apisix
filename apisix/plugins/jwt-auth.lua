@@ -28,6 +28,7 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 local pcall = pcall
+local log      = core.log
 
 
 local lrucache = core.lrucache.new({
@@ -104,7 +105,7 @@ do
         core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            log.info("consumer node: ", core.json.delay_encode(consumer))
             consumer_names[consumer.auth_conf.key] = consumer
         end
 
@@ -115,7 +116,7 @@ end -- do
 
 
 function _M.check_schema(conf, schema_type)
-    core.log.info("input conf: ", core.json.delay_encode(conf))
+    log.info("input conf: ", core.json.delay_encode(conf))
 
     local ok, err
     if schema_type == core.schema.TYPE_CONSUMER then
@@ -186,7 +187,20 @@ local function get_secret(conf)
 end
 
 
-local function sign_jwt_with_HS(key, auth_conf)
+local function get_real_payload(key, auth_conf, payload)
+    local real_payload = {
+        key = key,
+        exp = ngx_time() + auth_conf.exp
+    }
+    if payload then
+        local payloadEx = core.json.decode(payload)
+        core.table.merge(real_payload, payloadEx)
+    end
+    return real_payload
+end
+
+
+local function sign_jwt_with_HS(key, auth_conf, payload)
     local auth_secret = get_secret(auth_conf)
     local ok, jwt_token = pcall(jwt.sign, _M,
             auth_secret,
@@ -195,21 +209,18 @@ local function sign_jwt_with_HS(key, auth_conf)
                     typ = "JWT",
                     alg = auth_conf.algorithm
                 },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
-                }
+                payload = get_real_payload(key, auth_conf, payload)
             }
     )
     if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        log.warn("failed to sign jwt, err: ", jwt_token.reason)
         core.response.exit(500, "failed to sign jwt")
     end
     return jwt_token
 end
 
 
-local function sign_jwt_with_RS256(key, auth_conf)
+local function sign_jwt_with_RS256(key, auth_conf, payload)
     local ok, jwt_token = pcall(jwt.sign, _M,
             auth_conf.private_key,
             {
@@ -220,14 +231,11 @@ local function sign_jwt_with_RS256(key, auth_conf)
                         auth_conf.public_key,
                     }
                 },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
-                }
+                payload = get_real_payload(key, auth_conf, payload)
             }
     )
     if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        log.warn("failed to sign jwt, err: ", jwt_token.reason)
         core.response.exit(500, "failed to sign jwt")
     end
     return jwt_token
@@ -248,14 +256,14 @@ function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         if err and err:sub(1, #"no cookie") ~= "no cookie" then
-            core.log.error("failed to fetch JWT token: ", err)
+            log.error("failed to fetch JWT token: ", err)
         end
 
         return 401, {message = "Missing JWT token in request"}
     end
 
     local jwt_obj = jwt:load_jwt(jwt_token)
-    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
         return 401, {message = jwt_obj.reason}
     end
@@ -277,18 +285,44 @@ function _M.rewrite(conf, ctx)
     if not consumer then
         return 401, {message = "Invalid user key in JWT token"}
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
+    log.info("consumer: ", core.json.delay_encode(consumer))
 
     local _, auth_secret = algorithm_handler(consumer)
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
-    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
-    core.log.info("hit jwt-auth rewrite")
+    log.info("hit jwt-auth rewrite")
+end
+
+
+local function user_info()
+    local args = ngx.req.get_uri_args()
+    if not args or not args.jwt then
+        return core.response.exit(400)
+    end
+
+    local jwt_token = args.jwt
+    if not jwt_token then
+        return 401, {message = "Missing JWT token in request"}
+    end
+
+    local jwt_obj = jwt:load_jwt(jwt_token)
+    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    if not jwt_obj.valid then
+        return 401, {message = jwt_obj.reason}
+    end
+
+    local user_key = jwt_obj.payload and jwt_obj.payload.key
+    if not user_key then
+        return 401, {message = "missing user key in JWT token"}
+    end
+
+    return 200, {user_info = jwt_obj.payload}
 end
 
 
@@ -299,6 +333,10 @@ local function gen_token()
     end
 
     local key = args.key
+    local payload = args.payload
+    if payload then
+        payload = ngx.unescape_uri(payload)
+    end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
@@ -308,16 +346,16 @@ local function gen_token()
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
         create_consume_cache, consumer_conf)
 
-    core.log.info("consumers: ", core.json.delay_encode(consumers))
+    log.info("consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[key]
     if not consumer then
         return core.response.exit(404)
     end
 
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
+    log.info("consumer: ", core.json.delay_encode(consumer))
 
     local sign_handler, _ = algorithm_handler(consumer)
-    local jwt_token = sign_handler(key, consumer.auth_conf)
+    local jwt_token = sign_handler(key, consumer.auth_conf, payload)
     if jwt_token then
         return core.response.exit(200, jwt_token)
     end
@@ -332,7 +370,12 @@ function _M.api()
             methods = {"GET"},
             uri = "/apisix/plugin/jwt/sign",
             handler = gen_token,
-        }
+        },
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/user-info",
+            handler = user_info,
+        },
     }
 end
 
