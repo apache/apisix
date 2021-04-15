@@ -112,7 +112,7 @@ Config Example:
     "name": "route-xxx",
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"], # A set of Client IP.
-    "vars": [],                 # A list of one or more `{var, operator, val}` elements
+    "vars": [["http_user", "==", "ios"]], # A list of one or more `[var, operator, val]` elements
     "upstream_id": "1",         # upstream id, recommended
     "upstream": {},             # upstream, not recommended
     "filter_func": "",          # User-defined filtering function
