@@ -40,10 +40,6 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
-        auth_value = {
-            description = "auth value",
-            type = "string"
-        },
     },
     anyOf = {
         {required = {"before_body"}},

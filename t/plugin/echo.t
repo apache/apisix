@@ -87,7 +87,6 @@ done
                                     "Location":"https://www.iresty.com",
                                     "Authorization": "userpass"
                                 },
-                                "auth_value" : "userpass"
                             }
                         },
                         "upstream": {
@@ -108,7 +107,6 @@ done
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                  },
-                                 "auth_value" : "userpass"
                                }
                             },
                             "upstream": {
@@ -167,7 +165,6 @@ Authorization: userpass
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -187,7 +184,6 @@ Authorization: userpass
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -249,7 +245,6 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -269,7 +264,6 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -405,7 +399,6 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -425,7 +418,6 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -485,7 +477,6 @@ Location: https://www.iresty.com
                     "plugins": {
                         "echo": {
                             "before_body": "before the body modification ",
-                            "auth_value" : "userpass",
                             "headers": {
                                 "Location":"https://www.iresty.com"
                             }
@@ -506,7 +497,7 @@ Location: https://www.iresty.com
 --- request
 GET /t
 --- response_body
-{"echo":{"auth_value":"userpass","before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
+{"echo":{"before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
 --- no_error_log
 [error]
 
