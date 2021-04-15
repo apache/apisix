@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
       - name: setup go
         uses: actions/setup-go@v2.1.3
         with:
