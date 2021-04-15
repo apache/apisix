@@ -107,7 +107,7 @@ route 对象 json 配置内容：
     "name": "路由xxx",
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址
-    "vars": [],                 # 由一个或多个 {var, operator, val} 元素组成的列表
+    "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
     "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},             # upstream 信息对象，建议尽量不要使用
     "filter_func": "",          # 用户自定义的过滤函数，非必填
