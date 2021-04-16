@@ -75,8 +75,8 @@ do_install() {
     cp ci/ASF* ci/openwhisk-utilities/scancode/
 
     mkdir -p build-cache
-    if [ ! -f "build-cache/grpc_server_example_20210122" ]; then
-        wget https://github.com/api7/grpc_server_example/releases/download/20210122/grpc_server_example-amd64.tar.gz
+    if [ ! -f "build-cache/grpc_server_example_$GRPC_SERVER_EXAMPLE_VER" ]; then
+        wget https://github.com/api7/grpc_server_example/releases/download/"$GRPC_SERVER_EXAMPLE_VER"/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
 
@@ -85,7 +85,7 @@ do_install() {
         mv proto/ ../build-cache/
         popd || exit 1
 
-        touch build-cache/grpc_server_example_20210122
+        touch build-cache/grpc_server_example_"$GRPC_SERVER_EXAMPLE_VER"
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
@@ -102,8 +102,8 @@ script() {
     ./utils/set-dns.sh
 
     ./build-cache/grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 \
-        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key \
+        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
 
     # listen 9081 for http2 with plaintext
