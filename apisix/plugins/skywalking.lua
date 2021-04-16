@@ -17,6 +17,7 @@
 local sw_tracer = require("skywalking.tracer")
 local core = require("apisix.core")
 local process = require("ngx.process")
+local Span = require("skywalking.span")
 local ngx = ngx
 local math = math
 local require = require
@@ -90,6 +91,8 @@ end
 
 function _M.body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
+        Span.setComponentId(ngx.ctx.exitSpan, 6002)
+        Span.setComponentId(ngx.ctx.entrySpan, 6002)
         sw_tracer:finish()
         core.log.info("tracer finish")
     end
