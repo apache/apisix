@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+
       - uses: ./.github/actions/cancel-workflow-runs
         name: "Cancel duplicate workflow runs"
         with:
