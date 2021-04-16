@@ -284,7 +284,6 @@ plugin_attr:
     max_kept: 168     # max number of log files will be kept
   skywalking:
     service_name: APISIX
-    service_instance_name: "APISIX Instance Name"
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
