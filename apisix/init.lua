@@ -211,13 +211,16 @@ local function parse_domain_in_up(up)
         return up
     end
 
-    local up_new = core.table.clone(up)
-    up_new.modifiedIndex = up.modifiedIndex .. "#" .. ngx_now()
-    up_new.dns_value = core.table.clone(up.value)
-    up_new.dns_value.nodes = new_nodes
+    if not up.orig_modifiedIndex then
+        up.orig_modifiedIndex = up.modifiedIndex
+    end
+    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+
+    up.dns_value = core.table.clone(up.value)
+    up.dns_value.nodes = new_nodes
     core.log.info("resolve upstream which contain domain: ",
-                  core.json.delay_encode(up_new))
-    return up_new
+                  core.json.delay_encode(up, true))
+    return up
 end
 
 
@@ -234,14 +237,14 @@ local function parse_domain_in_route(route)
         return route
     end
 
-    local route_new = core.table.clone(route)
-    route_new.modifiedIndex = route.modifiedIndex .. "#" .. ngx_now()
+    -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
+    -- has changed
 
-    route_new.dns_value = core.table.deepcopy(route.value)
-    route_new.dns_value.upstream.nodes = new_nodes
+    route.dns_value = core.table.deepcopy(route.value)
+    route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
-                  core.json.delay_encode(route))
-    return route_new
+                  core.json.delay_encode(route, true))
+    return route
 end
 
 
@@ -428,6 +431,7 @@ function _M.http_access_phase()
                 return core.response.exit(500)
             end
 
+            api_ctx.conf_version = route.modifiedIndex
             api_ctx.matched_route = route
         end
 
