@@ -24,13 +24,15 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    echo "Create lua deps cache"
+    echo "Create lua deps"
 
-    make deps
+    for (( i = 0; i < 10; i++ )); do
+        if [[ "$i" -eq 10 ]]; then
+            echo "failed to make deps in time"
+            exit 1
+        fi
+        make deps && break
+    done
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
-
-    sudo rm -rf build-cache/deps
-    sudo cp -r deps build-cache/
-    sudo cp rockspec/apisix-master-0.rockspec build-cache/
 }

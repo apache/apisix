@@ -25,19 +25,24 @@ make run
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/prometheus/metrics)
 if [ ! $code -eq 404 ]; then
-    echo "failed: should listen default prometheus address"
+    echo "failed: should listen at default prometheus address"
     exit 1
 fi
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9091/apisix/prometheus/metrics)
 if [ ! $code -eq 200 ]; then
-    echo "failed: should listen default prometheus address"
+    echo "failed: should listen at default prometheus address"
+    exit 1
+fi
+
+if ! curl -i http://127.0.0.1:9091/apisix/prometheus/metrics | grep "apisix_nginx_http_current_connections" > /dev/null; then
+    echo "failed: should listen at default prometheus address"
     exit 1
 fi
 
 make stop
 
-echo "passed: should listen default prometheus address"
+echo "passed: should listen at default prometheus address"
 
 echo '
 plugin_attr:
@@ -51,13 +56,13 @@ IP=127.0.0.1 PORT=9092 make run
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/apisix/prometheus/metrics)
 if [ ! $code -eq 200 ]; then
-    echo "failed: should listen configured prometheus address"
+    echo "failed: should listen at configured prometheus address"
     exit 1
 fi
 
 make stop
 
-echo "passed: should listen configured prometheus address"
+echo "passed: should listen at configured prometheus address"
 
 echo '
 plugin_attr:
@@ -73,16 +78,16 @@ IP=127.0.0.1 PORT=9092 make run
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s http://127.0.0.1:9092/prometheus/metrics || echo 'ouch')
 if [ "$code" != "ouch" ]; then
-    echo "failed: should listen previous prometheus address"
+    echo "failed: should listen at previous prometheus address"
     exit 1
 fi
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/prometheus/metrics)
 if [ ! $code -eq 200 ]; then
-    echo "failed: should listen previous prometheus address"
+    echo "failed: should listen at previous prometheus address"
     exit 1
 fi
 
 make stop
 
-echo "passed: should listen previous prometheus address"
+echo "passed: should listen at previous prometheus address"

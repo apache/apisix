@@ -88,12 +88,6 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![](../../../assets/images/plugin/jwt-auth-1.png)
-
-然后在 consumer 页面中添加 jwt-auth 插件：
-![](../../../assets/images/plugin/jwt-auth-2.png)
-
 2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
 
 ```shell
@@ -112,6 +106,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
+
+1. 先增加一个 consumer：
+![](../../../assets/images/plugin/jwt-auth-1.png)
+
+然后在 consumer 页面中添加 jwt-auth 插件：
+![](../../../assets/images/plugin/jwt-auth-2.png)
+
+2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
+
+![](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## 测试插件
 

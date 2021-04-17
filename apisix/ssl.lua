@@ -23,6 +23,15 @@ local assert = assert
 local type = type
 
 
+local cert_cache = core.lrucache.new {
+    ttl = 3600, count = 1024,
+}
+
+local pkey_cache = core.lrucache.new {
+    ttl = 3600, count = 1024,
+}
+
+
 local _M = {}
 
 
@@ -60,13 +69,13 @@ end
 local function decrypt_priv_pkey(iv, key)
     local decoded_key = ngx_decode_base64(key)
     if not decoded_key then
-        core.log.error("base64 decode ssl key failed and skipped. key[", key, "] ")
+        core.log.error("base64 decode ssl key failed. key[", key, "] ")
         return nil
     end
 
     local decrypted = iv:decrypt(decoded_key)
     if not decrypted then
-        core.log.error("decrypt ssl key failed and skipped. key[", key, "] ")
+        core.log.error("decrypt ssl key failed. key[", key, "] ")
     end
 
     return decrypted
@@ -84,7 +93,6 @@ local function aes_decrypt_pkey(origin)
     end
     return origin
 end
-_M.aes_decrypt_pkey = aes_decrypt_pkey
 
 
 function _M.validate(cert, key)
@@ -105,6 +113,42 @@ function _M.validate(cert, key)
 
     -- TODO: check if key & cert match
     return true
+end
+
+
+local function parse_pem_cert(sni, cert)
+    core.log.debug("parsing cert for sni: ", sni)
+
+    local parsed, err = ngx_ssl.parse_pem_cert(cert)
+    return parsed, err
+end
+
+
+function _M.fetch_cert(sni, cert)
+    local parsed_cert, err = cert_cache(cert, nil, parse_pem_cert, sni, cert)
+    if not parsed_cert then
+        return false, err
+    end
+
+    return parsed_cert
+end
+
+
+local function parse_pem_priv_key(sni, pkey)
+    core.log.debug("parsing priv key for sni: ", sni)
+
+    local parsed, err = ngx_ssl.parse_pem_priv_key(aes_decrypt_pkey(pkey))
+    return parsed, err
+end
+
+
+function _M.fetch_pkey(sni, pkey)
+    local parsed_pkey, err = pkey_cache(pkey, nil, parse_pem_priv_key, sni, pkey)
+    if not parsed_pkey then
+        return false, err
+    end
+
+    return parsed_pkey
 end
 
 
