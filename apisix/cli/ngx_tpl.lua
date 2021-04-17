@@ -235,6 +235,7 @@ http {
 
     # error_page
     error_page 500 502 503 504 @apisix_error_handler;
+    error_page 400 401 403 404 405 @apisix_error_handler;
 
     # http configuration snippet starts
     {% if http_configuration_snippet then %}

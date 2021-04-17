@@ -799,7 +799,7 @@ end
 
 
 function _M.error_handler()
-    error_handler()
+    error_handler.error_page()
 end
 
 

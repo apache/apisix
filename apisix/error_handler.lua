@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local ngx = ngx
+local str_format = string.format
 
 
 local html_5xx = [[
@@ -34,20 +35,43 @@ local html_5xx = [[
 </head>
 <body>
 <h1>An error occurred.</h1>
-<p>Sorry, the page you are looking for is currently unavailable.<br/>
-Please try again later.</p>
-<p>If you are the system administrator of this resource then you should check
-the <a href="https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L135">error log
-</a> for details.</p>
-<p>If you need any help, click <a href="https://apisix.apache.org/">need help</a>.</em></p>
+<p>You can report issue to <a href="https://github.com/apache/apisix/issues">APISIX</a></p>
 <p><em>Faithfully yours, <a href="https://apisix.apache.org/">APISIX</a>.</em></p>
 </body>
 </html>
 ]]
 
+local html_4xx = [[
+<html>
+<head><title>%s</title></head>
+<body>
+<center><h1>%s</h1></center>
+<hr><center> <a href="https://apisix.apache.org/">APISIX</a></center>
+</body>
+</html>
+]]
 
-return function()
+local ngx_status_line = {
+    [400] = "400 Bad Request",
+    [401] = "401 Unauthorized",
+    [403] = "403 Forbidden",
+    [404] = "404 Not Found",
+    [405] = "405 Not Allowed",
+}
+
+local _M = {}
+_M.error_page = function()
+    ngx.header.content_type = "text/html; charset=utf-8"
     if ngx.status >= 500 and ngx.status <= 599 then
         ngx.say(html_5xx)
     end
+
+    if ngx.status >= 400 and ngx.status <= 499 then
+        local status_line = ngx_status_line[ngx.status] or ""
+        local resp = str_format(html_4xx, status_line, status_line)
+        ngx.say(resp)
+    end
 end
+
+return _M
+
