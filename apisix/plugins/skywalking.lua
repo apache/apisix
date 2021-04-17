@@ -33,7 +33,7 @@ local metadata_schema = {
         service_instance_name = {
             type = "string",
             description = "User Service Instance Name",
-            default = core.utils.gethostname(),
+            default = "APISIX Instance Name",
         },
         endpoint_addr = {
             type = "string",
