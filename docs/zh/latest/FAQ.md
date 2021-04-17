@@ -400,9 +400,9 @@ HTTP/1.1 404 Not Found
 
 在 route 中，我们可以通过 `uri` 结合 `vars` 字段来实现更多的条件匹配，`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
 
-## upstream 节点是否支持配置 `FQDN`（Fully Qualified Domain Name） 地址
+## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
 
-这是支持，下面是一个 `FQDN` 为 `localhost.localdomain.com` 的示例：
+这是支持的，下面是一个 `FQDN` 为 `localhost.localdomain` 的示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -411,7 +411,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "localhost.localdomain.com:1980": 1
+            "localhost.localdomain:1980": 1
         }
     }
 }'
