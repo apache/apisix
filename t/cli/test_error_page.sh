@@ -35,7 +35,7 @@ code=$(curl -XPUT -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9
     "plugins": {
         "serverless-pre-function": {
             "phase": "rewrite",
-            "functions" : ["return function() if ngx.var.http_x_test_status ~= nil then;ngx.exit(tonumber(status));end;end"]
+            "functions" : ["return function() if ngx.var.http_x_test_status ~= nil then;ngx.exit(tonumber(ngx.var.http_x_test_status));end;end"]
         }
     }
 }')

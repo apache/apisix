@@ -107,7 +107,8 @@ end
 function _M.specific_status()
     local status = ngx.var.http_x_test_upstream_status
     if status ~= nil then
-        ngx.exit(status)
+        ngx.status = status
+        ngx.say("upstream status: ", status)
     end
 end
 

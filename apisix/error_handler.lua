@@ -60,6 +60,7 @@ local ngx_status_line = {
 }
 
 local _M = {}
+
 _M.error_page = function()
     ngx.header.content_type = "text/html; charset=utf-8"
     if ngx.status >= 500 and ngx.status <= 599 then
