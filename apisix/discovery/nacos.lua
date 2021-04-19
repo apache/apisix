@@ -35,7 +35,7 @@ local str_find           = core.string.find
 local log                = core.log
 
 local default_weight
-local applications = {}
+local applications
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 
@@ -243,6 +243,9 @@ local function fetch_full_registry(premature)
     local token_param, err = get_token_param(base_uri, username, password)
     if err then
         log.error('get_token_param error:', err)
+        if not applications then
+            applications = up_apps
+        end
         return
     end
 
@@ -257,6 +260,9 @@ local function fetch_full_registry(premature)
         data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
+            if not applications then
+                applications = up_apps
+            end
             return
         end
 
@@ -278,6 +284,18 @@ end
 
 
 function _M.nodes(service_name)
+    local logged = false
+    -- maximum waiting time: 5 seconds
+    local waiting_time = 5;
+    local step = 0.1
+    while not applications and waiting_time > 0 do
+        if not logged then
+            log.warn('wait init')
+            logged = true
+        end
+        ngx.sleep(step)
+        waiting_time = waiting_time - step
+    end
     return applications[service_name]
 end
 
@@ -304,7 +322,7 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.nacos, services = applications}
+    return {config = local_conf.discovery.nacos, services = applications or {}}
 end
 
 

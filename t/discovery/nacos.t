@@ -74,30 +74,18 @@ routes:
       discovery_type: nacos
       type: roundrobin
 #END
---- config
-location /sleep {
-    content_by_lua_block {
-        local args = ngx.req.get_uri_args()
-        local sec = args.sec or "2"
-        ngx.sleep(tonumber(sec))
-        ngx.say("ok")
-    }
-}
---- timeout: 6
 --- pipelined_requests eval
 [
-    "GET /sleep?sec=5",
     "GET /hello",
     "GET /hello",
 ]
 --- response_body_like eval
 [
-    qr/ok\n/,
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
 --- no_error_log
-[error, error, error]
+[error, error]
 
 
 
