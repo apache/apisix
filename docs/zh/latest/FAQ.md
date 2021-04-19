@@ -402,7 +402,7 @@ HTTP/1.1 404 Not Found
 
 ## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
 
-这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local` 的示例：
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`(a Kubernetes Service) 的示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

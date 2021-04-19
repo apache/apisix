@@ -403,6 +403,8 @@ In route, we can achieve more condition matching by combining `uri` with `vars` 
 
 This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
 
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
