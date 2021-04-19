@@ -194,6 +194,10 @@
           "id": "benchmark"
         },
         {
+          "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
           "type": "link",
           "label": "CODE_STYLE",
           "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"

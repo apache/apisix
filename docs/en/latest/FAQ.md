@@ -35,7 +35,7 @@ In addition, APISIX has dynamic routing and hot loading of plug-ins, which is es
 
 ## What's the performance of APISIX?
 
-One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/apisix/blob/master/benchmark.md)
+One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](benchmark.md)
 
 APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
@@ -59,7 +59,7 @@ For the configuration center, configuration storage is only the most basic funct
 4. Change Notification
 5. High Performance
 
-See more [etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart).
+See more [etcd why](https://github.com/etcd-io/website/blob/master/content/docs/next/learning/why.md#comparison-chart).
 
 ## Why is it that installing APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
 
@@ -318,7 +318,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](install-dependencies.md) document for installation.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install dependencies](install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
