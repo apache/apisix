@@ -176,6 +176,10 @@
         },
         {
           "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
+          "type": "doc",
           "id": "CODE_STYLE"
         },
         {
