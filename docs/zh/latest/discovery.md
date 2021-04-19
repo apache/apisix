@@ -53,6 +53,8 @@ title: 集成服务发现注册中心
 
 Consul 的支持见 [基于 Consul 的服务支持发现](../../en/latest/discovery/consul_kv.md)
 
+Nacos 的支持见 [基于 Nacos 的服务支持发现](../../en/latest/discovery/nacos.md)
+
 Eureka 的支持方式见下文。
 
 ## 如何扩展注册中心？
