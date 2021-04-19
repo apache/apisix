@@ -224,7 +224,6 @@ qr/failed to new websocket: bad "upgrade" request header: nil/
 
 
 === TEST 8: set wss
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
