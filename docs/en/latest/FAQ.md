@@ -401,16 +401,16 @@ In route, we can achieve more condition matching by combining `uri` with `vars` 
 
 ## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
 
-This is supported. Here is an example where the `FQDN` is `localhost.localdomain`:
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/ip",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "localhost.localdomain:1980": 1
+            "httpbin.default.svc.cluster.local": 1
         }
     }
 }'
@@ -418,7 +418,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ```shell
 # Test request
-$ curl http://127.0.0.1:9080/hello -i
+$ curl http://127.0.0.1:9080/ip -i
 HTTP/1.1 200 OK
 ...
 ```

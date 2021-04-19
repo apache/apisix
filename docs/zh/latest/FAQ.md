@@ -402,16 +402,16 @@ HTTP/1.1 404 Not Found
 
 ## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
 
-这是支持的，下面是一个 `FQDN` 为 `localhost.localdomain` 的示例：
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local` 的示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/ip",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "localhost.localdomain:1980": 1
+            "httpbin.default.svc.cluster.local": 1
         }
     }
 }'
@@ -419,7 +419,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ```shell
 # 测试请求
-$ curl http://127.0.0.1:9080/hello -i
+$ curl http://127.0.0.1:9080/ip -i
 HTTP/1.1 200 OK
 ...
 ```
