@@ -34,7 +34,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/docs/en/latest/benchmark.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.4.0/learning/why/)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/website/blob/master/content/docs/next/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -319,7 +319,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](install-dependencies.md) 文档进行安装。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install dependencies](install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps
