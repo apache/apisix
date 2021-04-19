@@ -93,6 +93,11 @@ function _M.incoming(self, key)
         return nil, err
     end
 
+    local ok, err = red:set_keepalive(10000, 100)
+    if not ok then
+        return nil, err
+    end
+
     if remaining < 0 then
         return nil, "rejected"
     end
