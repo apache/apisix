@@ -157,10 +157,10 @@ local function get_base_uri()
     local host = local_conf.discovery.nacos.host
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local auth_idx = str_find(url, '@', 1, true)
+    local auth_idx = str_find(url, '@')
     local username, password
     if auth_idx then
-        local protocol_idx = str_find(url, '://', 1, true)
+        local protocol_idx = str_find(url, '://')
         local protocol = string_sub(url, 1, protocol_idx + 2)
         local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
         local arr = ngx_re.split(user_and_password, ':')
