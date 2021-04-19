@@ -55,7 +55,12 @@ local schema = {
             },
         },
         fetch_interval = {type = 'integer', minimum = 1, default = 30},
-        prefix = {type = 'string', pattern = prefix_pattern, maxLength = 100, default = '/nacos/v1/'},
+        prefix = {
+            type = 'string',
+            pattern = prefix_pattern,
+            maxLength = 100,
+            default = '/nacos/v1/'
+        },
         weight = {type = 'integer', minimum = 1, default = 100},
         timeout = {
             type = 'object',
