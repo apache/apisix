@@ -193,7 +193,7 @@ X-Test-Status: 405
 
 
 
-=== TEST 12: test apisix with upstream error code 400
+=== TEST 11: test apisix with upstream error code 400
 --- request
 GET /specific_status
 --- more_headers
@@ -204,7 +204,7 @@ upstream status: 400
 
 
 
-=== TEST 11: test apisix with upstream error code 500
+=== TEST 12: test apisix with upstream error code 500
 --- request
 GET /specific_status
 --- more_headers
