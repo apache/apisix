@@ -402,6 +402,9 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
+    error_page 500 502 503 504 @apisix_error_handler;
+    error_page 400 401 403 404 405 @apisix_error_handler;
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -532,6 +535,14 @@ _EOC_
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
+            }
+        }
+
+        location @apisix_error_handler {
+            internal;
+
+            content_by_lua_block {
+                apisix.error_handler()
             }
         }
 
