@@ -32,7 +32,7 @@ discovery:
         - "http://127.0.0.1:8858"
       prefix: "/nacos/v1/"
       fetch_interval: 1
-      weight: 100
+      weight: 1
       timeout:
         connect: 2000
         send: 2000
@@ -51,7 +51,7 @@ discovery:
         - "http://nacos:nacos\@127.0.0.1:8848"
       prefix: "/nacos/v1/"
       fetch_interval: 1
-      weight: 100
+      weight: 1
       timeout:
         connect: 2000
         send: 2000
