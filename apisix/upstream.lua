@@ -291,7 +291,8 @@ function _M.set_by_route(route, api_ctx)
         api_ctx.up_checker = checker
     end
 
-    if up_conf.scheme == "https" and up_conf.tls then
+    local scheme = up_conf.scheme
+    if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
         -- the sni here is just for logging
         local sni = api_ctx.var.upstream_host
         local cert, err = apisix_ssl.fetch_cert(sni, up_conf.tls.client_cert)
@@ -304,13 +305,30 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
+        if scheme == "grpcs" then
+            api_ctx.upstream_grpcs_cert = cert
+            api_ctx.upstream_grpcs_key = key
+        else
+            local ok, err = set_upstream_tls_client_param(cert, key)
+            if not ok then
+                return 503, err
+            end
+        end
+    end
+
+    return
+end
+
+
+function _M.set_grpcs_upstream_param(ctx)
+    if ctx.upstream_grpcs_cert then
+        local cert = ctx.upstream_grpcs_cert
+        local key = ctx.upstream_grpcs_key
         local ok, err = set_upstream_tls_client_param(cert, key)
         if not ok then
             return 503, err
         end
     end
-
-    return
 end
 
 

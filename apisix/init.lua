@@ -14,32 +14,33 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require       = require
+local require         = require
 require("apisix.patch").patch()
-local core          = require("apisix.core")
-local plugin        = require("apisix.plugin")
-local plugin_config = require("apisix.plugin_config")
-local script        = require("apisix.script")
-local service_fetch = require("apisix.http.service").get
-local admin_init    = require("apisix.admin.init")
-local get_var       = require("resty.ngxvar").fetch
-local router        = require("apisix.router")
-local set_upstream  = require("apisix.upstream").set_by_route
-local upstream_util = require("apisix.utils.upstream")
-local ctxdump       = require("resty.ctxdump")
-local ipmatcher     = require("resty.ipmatcher")
-local ngx           = ngx
-local get_method    = ngx.req.get_method
-local ngx_exit      = ngx.exit
-local math          = math
-local error         = error
-local ipairs        = ipairs
-local tostring      = tostring
-local ngx_now       = ngx.now
-local ngx_var       = ngx.var
-local str_byte      = string.byte
-local str_sub       = string.sub
-local tonumber      = tonumber
+local core            = require("apisix.core")
+local plugin          = require("apisix.plugin")
+local plugin_config   = require("apisix.plugin_config")
+local script          = require("apisix.script")
+local service_fetch   = require("apisix.http.service").get
+local admin_init      = require("apisix.admin.init")
+local get_var         = require("resty.ngxvar").fetch
+local router          = require("apisix.router")
+local apisix_upstream = require("apisix.upstream")
+local set_upstream    = apisix_upstream.set_by_route
+local upstream_util   = require("apisix.utils.upstream")
+local ctxdump         = require("resty.ctxdump")
+local ipmatcher       = require("resty.ipmatcher")
+local ngx             = ngx
+local get_method      = ngx.req.get_method
+local ngx_exit        = ngx.exit
+local math            = math
+local error           = error
+local ipairs          = ipairs
+local tostring        = tostring
+local ngx_now         = ngx.now
+local ngx_var         = ngx.var
+local str_byte        = string.byte
+local str_sub         = string.sub
+local tonumber        = tonumber
 local control_api_router
 if ngx.config.subsystem == "http" then
     control_api_router = require("apisix.control.router")
@@ -488,6 +489,17 @@ end
 
 function _M.grpc_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    local code, err = apisix_upstream.set_grpcs_upstream_param(api_ctx)
+    if code then
+        core.log.error("failed to set grpcs upstream param: ", err)
+        core.response.exit(code)
+    end
 end
 
 
