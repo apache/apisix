@@ -124,7 +124,7 @@ function fetch_api_router()
 
                             if not skip_global_rule then
                                 plugin_mod.run_global_rules(api_ctx,
-                                    apisix_router.global_rules, "access")
+                                    apisix_router.global_rules, nil)
                             end
 
                             code, body = route.handler(api_ctx)
