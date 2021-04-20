@@ -262,7 +262,7 @@ $ curl -i -X GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' 
 
 ### APISIX Dashboard
 
-Apache APISIX provides a [Dashboard](https://github.com/apache/apisix) to let us operate Apache APISIX more easier.
+Apache APISIX provides a [Dashboard](https://github.com/apache/apisix-dashboard) to let us operate Apache APISIX more easier.
 
 ![Dashboard](../../assets/images/dashboard.jpeg)
 
