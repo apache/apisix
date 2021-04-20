@@ -299,7 +299,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 > [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
 
-[![contributor-over-time](docs/assets/images/contributor-over-time.png)](https://www.apiseven.com/contributor-graph)
+[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## Videos And Articles
 
