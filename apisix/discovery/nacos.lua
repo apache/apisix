@@ -286,7 +286,7 @@ end
 function _M.nodes(service_name)
     local logged = false
     -- maximum waiting time: 5 seconds
-    local waiting_time = 5;
+    local waiting_time = 5
     local step = 0.1
     while not applications and waiting_time > 0 do
         if not logged then
