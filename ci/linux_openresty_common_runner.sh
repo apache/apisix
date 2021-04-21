@@ -42,6 +42,37 @@ before_install() {
     # start consul servers
     docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
     docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
+
+    # start nacos server
+    nohup docker network rm nacos_net > /dev/null 2>&1 &
+    nohup docker network create nacos_net > /dev/null 2>&1 &
+    # nacos no auth server - for test no auth
+    docker run --rm -d --name nacos_no_auth --network nacos_net --hostname nacos2 --env NACOS_SERVERS="nacos1:8848 nacos2:8848" --env PREFER_HOST_MODE=hostname --env MODE=cluster --env EMBEDDED_STORAGE=embedded  --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8858:8848 nacos/nacos-server:1.4.1
+    # nacos auth server - for test auth
+    docker run --rm -d --name nacos_auth --network nacos_net --hostname nacos1 --env NACOS_AUTH_ENABLE=true --env NACOS_SERVERS="nacos1:8848 nacos2:8848" --env PREFER_HOST_MODE=hostname --env MODE=cluster --env EMBEDDED_STORAGE=embedded  --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8848:8848 nacos/nacos-server:1.4.1
+    url="127.0.0.1:8858/nacos/v1/ns/service/list?pageNo=1&pageSize=2"
+    until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do
+      echo 'wait nacos server...'
+      sleep 1;
+    done
+    # register nacos service
+    rm -rf tmp
+    mkdir tmp
+    cd tmp
+    wget https://raw.githubusercontent.com/api7/nacos-test-service/main/spring-nacos-1.0-SNAPSHOT.jar
+    curl https://raw.githubusercontent.com/api7/nacos-test-service/main/Dockerfile | docker build -t nacos-test-service:1.0-SNAPSHOT -f - .
+    docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
+    docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
+    url="127.0.0.1:18002/hello"
+    until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do
+      echo 'wait nacos service...'
+      sleep 1;
+    done
+    until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?pageNo=1&pageSize=2" | grep "APISIX-NACOS") ]]; do
+      echo 'wait nacos reg...'
+      sleep 1;
+    done
+    cd ..
 }
 
 do_install() {
