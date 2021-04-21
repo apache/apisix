@@ -28,7 +28,6 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 local pcall = pcall
-local log      = core.log
 
 
 local lrucache = core.lrucache.new({
@@ -105,7 +104,7 @@ do
         core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
-            log.info("consumer node: ", core.json.delay_encode(consumer))
+            core.log.info("consumer node: ", core.json.delay_encode(consumer))
             consumer_names[consumer.auth_conf.key] = consumer
         end
 
@@ -116,7 +115,7 @@ end -- do
 
 
 function _M.check_schema(conf, schema_type)
-    log.info("input conf: ", core.json.delay_encode(conf))
+    core.log.info("input conf: ", core.json.delay_encode(conf))
 
     local ok, err
     if schema_type == core.schema.TYPE_CONSUMER then
@@ -193,8 +192,8 @@ local function get_real_payload(key, auth_conf, payload)
         exp = ngx_time() + auth_conf.exp
     }
     if payload then
-        local payloadEx = core.json.decode(payload)
-        core.table.merge(real_payload, payloadEx)
+        local extra_payload = core.json.decode(payload)
+        core.table.merge(real_payload, extra_payload)
     end
     return real_payload
 end
@@ -213,7 +212,7 @@ local function sign_jwt_with_HS(key, auth_conf, payload)
         }
     )
     if not ok then
-        log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
         core.response.exit(500, "failed to sign jwt")
     end
     return jwt_token
@@ -235,7 +234,7 @@ local function sign_jwt_with_RS256(key, auth_conf, payload)
         }
     )
     if not ok then
-        log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
         core.response.exit(500, "failed to sign jwt")
     end
     return jwt_token
@@ -256,14 +255,14 @@ function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         if err and err:sub(1, #"no cookie") ~= "no cookie" then
-            log.error("failed to fetch JWT token: ", err)
+            core.log.error("failed to fetch JWT token: ", err)
         end
 
         return 401, {message = "Missing JWT token in request"}
     end
 
     local jwt_obj = jwt:load_jwt(jwt_token)
-    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
         return 401, {message = jwt_obj.reason}
     end
@@ -285,18 +284,18 @@ function _M.rewrite(conf, ctx)
     if not consumer then
         return 401, {message = "Invalid user key in JWT token"}
     end
-    log.info("consumer: ", core.json.delay_encode(consumer))
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local _, auth_secret = algorithm_handler(consumer)
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
-    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
-    log.info("hit jwt-auth rewrite")
+    core.log.info("hit jwt-auth rewrite")
 end
 
 
@@ -312,7 +311,7 @@ local function user_info()
     end
 
     local jwt_obj = jwt:load_jwt(jwt_token)
-    log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
         return 401, {message = jwt_obj.reason}
     end
@@ -346,13 +345,13 @@ local function gen_token()
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
         create_consume_cache, consumer_conf)
 
-    log.info("consumers: ", core.json.delay_encode(consumers))
+    core.log.info("consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[key]
     if not consumer then
         return core.response.exit(404)
     end
 
-    log.info("consumer: ", core.json.delay_encode(consumer))
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local sign_handler, _ = algorithm_handler(consumer)
     local jwt_token = sign_handler(key, consumer.auth_conf, payload)
