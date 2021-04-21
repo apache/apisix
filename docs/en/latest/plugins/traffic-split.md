@@ -485,11 +485,11 @@ hello 1980
 
 ### Matching rules correspond to upstream
 
-How to make different matching rules correspond to different upstreams. We can achieve this by configuring multiple `rules.match` + `rules.weighted_upstreams`.
+By configuring multiple `rules`, we can achieve one-to-one correspondence between different matching rules and upstream.
 
 **Example:**
 
-When the request header `x-api-id` is equal to 1, it hits the upstream of port 1981; when `x-api-id` is equal to 2, it hits the upstream of port 1982; otherwise, it hits the upstream of port 1980 (the upstream response data is the corresponding port number).
+When the request header `x-api-id` is equal to 1, it hits the upstream with port 1981; when `x-api-id` is equal to 2, it hits the upstream with port 1982; otherwise, it hits the upstream with port 1980 (the upstream response data is the corresponding port number).
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -554,21 +554,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **Test plugin:**
 
-The request header `x-api-id` is equal to 1, which hits the upstream of the 1981 port.
+The request header `x-api-id` is equal to 1, hitting the upstream with the 1981 port.
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
 1981
 ```
 
-The request header `x-api-id` is equal to 2, which hits the upstream of the 1982 port.
+The request header `x-api-id` is equal to 2, hitting the upstream with the 1982 port.
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
 1982
 ```
 
-The request header `x-api-id` is equal to 3, the rule does not match, and it hits the upstream of the 1980 port.
+The request header `x-api-id` is equal to 3, the rule does not match, and it hits the upstream with port 1980.
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'

@@ -614,7 +614,7 @@ qr/1980, 1980, 1980, 1980, 1981, 1981, 1982, 1982/
 
 
 
-=== TEST 16: set upstream(upstream_id: 1, upstream_id: 2)
+=== TEST 16: set upstream(upstream_id: 1, upstream_id: 2) and add route
 --- config
     location /t {
         content_by_lua_block {
@@ -648,25 +648,10 @@ qr/1980, 1980, 1980, 1980, 1981, 1981, 1982, 1982/
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
             end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
-
-
-=== TEST 17: the plugin has multiple weighted_upstreams(upstream_id method)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [=[{
                     "uri": "/server_port",
@@ -716,6 +701,8 @@ passed
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 --- no_error_log
@@ -723,7 +710,7 @@ passed
 
 
 
-=== TEST 18: hit each upstream separately
+=== TEST 17: hit each upstream separately
 --- config
 location /t {
     content_by_lua_block {

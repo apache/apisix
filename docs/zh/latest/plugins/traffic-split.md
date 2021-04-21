@@ -496,7 +496,7 @@ hello 1980
 
 ### 匹配规则与上游对应
 
-如何让不同的匹配规则对应到不同的上游，我们可以通过配置多个 `rules.match` + `rules.weighted_upstreams` 来实现。
+通过配置多个 `rules`，我们可以实现不同的匹配规则与上游一一对应。
 
 **示例：**
 
@@ -565,21 +565,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件：**
 
-请求头 `x-api-id` 等于 1，命中 1981 端口的上游。
+请求头 `x-api-id` 等于 1，命中带 1981 端口的上游。
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
 1981
 ```
 
-请求头 `x-api-id` 等于 2，命中 1982 端口的上游。
+请求头 `x-api-id` 等于 2，命中带 1982 端口的上游。
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
 1982
 ```
 
-请求头 `x-api-id` 等于 3，规则不匹配，命中 1980 端口的上游。
+请求头 `x-api-id` 等于 3，规则不匹配，命中带 1980 端口的上游。
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
