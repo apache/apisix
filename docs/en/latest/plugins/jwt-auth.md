@@ -124,6 +124,8 @@ then add jwt-auth plugin in the Consumer page:
 
 #### get the token in `jwt-auth` plugin:
 
+* without extension payload:
+
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
@@ -134,6 +136,20 @@ Connection: keep-alive
 Server: APISIX web server
 
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
+```
+
+* with extension payload:
+
+```shell
+$ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+HTTP/1.1 200 OK
+Date: Wed, 21 Apr 2021 06:43:59 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.4
+
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
 ```
 
 #### try request with token
@@ -190,6 +206,36 @@ Accept-Ranges: bytes
 <!DOCTYPE html>
 <html lang="cn">
 ...
+```
+
+## Check up token info
+
+* without extension payload token:
+
+```shell
+$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
+HTTP/1.1 200 OK
+Date: Wed, 21 Apr 2021 06:55:58 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.4
+
+{"user_info":{"key":"user-key","exp":1564050811}}
+```
+
+* with extension payload token:
+
+```shell
+$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY' -i
+HTTP/1.1 200 OK
+Date: Wed, 21 Apr 2021 06:57:01 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.4
+
+{"user_info":{"exp":1619073839,"key":"user-key","uid":10000,"uname":"test"}}
 ```
 
 ## Disable Plugin
