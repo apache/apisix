@@ -16,6 +16,7 @@ assignees: ''
 * OpenResty / Nginx version (cmd: `nginx -V` or `openresty -V`):
 * etcd version, if have (cmd: run `curl http://127.0.0.1:9090/v1/server_info` to get the info from server-info API):
 * apisix-dashboard version, if have:
+* luarocks version, if the issue is about installation (cmd: `luarocks --version`):
 
 ### Minimal test code / Steps to reproduce the issue
 
