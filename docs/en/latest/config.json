@@ -158,6 +158,7 @@
             "discovery",
             "discovery/dns",
             "discovery/consul_kv",
+            "discovery/nacos",
             "discovery/eureka"
           ]
         },
