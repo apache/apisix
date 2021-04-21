@@ -267,7 +267,7 @@ $ curl -i -X  GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar'
 
 ### APISIX Dashboard（控制台）
 
-Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix)，让我们的操作更直观更轻松。
+Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashboard)，让我们的操作更直观更轻松。
 
 ![Dashboard](../../assets/images/dashboard.jpeg)
 
