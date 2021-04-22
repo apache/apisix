@@ -642,6 +642,18 @@ _M.ssl = {
             type = "array",
             items = private_key_schema,
         },
+        client = {
+            type = "object",
+            properties = {
+                ca = certificate_scheme,
+                depth = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 1,
+                },
+            },
+            required = {"ca"},
+        },
         exptime = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
