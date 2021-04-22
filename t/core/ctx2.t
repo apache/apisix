@@ -103,8 +103,8 @@ post uri: /server_port
                         "serverless-post-function": {
                             "phase": "log",
                             "functions" : ["return function(conf, ctx)
-                                        ngx.log(ngx.WARN, 'balancer_ip: ', ctx.var.balancer_ip);
-                                        ngx.log(ngx.WARN, 'balancer_port: ', ctx.var.balancer_port);
+                                        ngx.log(ngx.WARN, 'balancer_ip: ', ctx.var.balancer_ip)
+                                        ngx.log(ngx.WARN, 'balancer_port: ', ctx.var.balancer_port)
                                         end"]
                         }
                     },
