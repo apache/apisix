@@ -278,8 +278,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local rr_up, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_rr_obj,
-                                                weighted_upstreams)
+    local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500
