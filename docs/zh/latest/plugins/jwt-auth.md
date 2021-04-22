@@ -201,36 +201,6 @@ Accept-Ranges: bytes
 ...
 ```
 
-## 查看token信息
-
-* 没有额外payload的token:
-
-```shell
-$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:55:58 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-{"user_info":{"key":"user-key","exp":1564050811}}
-```
-
-* 有额外payload的token:
-
-```shell
-$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY' -i
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:57:01 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-{"user_info":{"exp":1619073839,"key":"user-key","uid":10000,"uname":"test"}}
-```
-
 ## 禁用插件
 
 当你想去掉 `jwt-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：

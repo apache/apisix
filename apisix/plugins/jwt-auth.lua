@@ -299,32 +299,6 @@ function _M.rewrite(conf, ctx)
 end
 
 
-local function user_info()
-    local args = ngx.req.get_uri_args()
-    if not args or not args.jwt then
-        return core.response.exit(400)
-    end
-
-    local jwt_token = args.jwt
-    if not jwt_token then
-        return 401, {message = "Missing JWT token in request"}
-    end
-
-    local jwt_obj = jwt:load_jwt(jwt_token)
-    core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
-    if not jwt_obj.valid then
-        return 401, {message = jwt_obj.reason}
-    end
-
-    local user_key = jwt_obj.payload and jwt_obj.payload.key
-    if not user_key then
-        return 401, {message = "missing user key in JWT token"}
-    end
-
-    return 200, {user_info = jwt_obj.payload}
-end
-
-
 local function gen_token()
     local args = ngx.req.get_uri_args()
     if not args or not args.key then
@@ -369,12 +343,7 @@ function _M.api()
             methods = {"GET"},
             uri = "/apisix/plugin/jwt/sign",
             handler = gen_token,
-        },
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/user-info",
-            handler = user_info,
-        },
+        }
     }
 end
 

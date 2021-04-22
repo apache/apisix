@@ -202,36 +202,6 @@ Accept-Ranges: bytes
 ...
 ```
 
-## Check up token info
-
-* without extension payload token:
-
-```shell
-$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:55:58 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-{"user_info":{"key":"user-key","exp":1564050811}}
-```
-
-* with extension payload token:
-
-```shell
-$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/user-info?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY' -i
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:57:01 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-{"user_info":{"exp":1619073839,"key":"user-key","uid":10000,"uname":"test"}}
-```
-
 ## Disable Plugin
 
 When you want to disable the `jwt-auth` plugin, it is very simple,
