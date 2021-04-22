@@ -70,6 +70,17 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    if conf.client then
+        if not apisix_ssl.support_client_verification() then
+            return nil, {error_msg = "client tls verify unsupported"}
+        end
+
+        local ok, err = apisix_ssl.validate(conf.client.ca, nil)
+        if not ok then
+            return nil, {error_msg = "failed to validate client_cert: " .. err}
+        end
+    end
+
     return need_id and id or true
 end
 
