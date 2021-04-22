@@ -457,39 +457,7 @@ hello world
 
 
 
-=== TEST 19: sign / verify(with extra payload)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- request
-GET /t
---- response_body
-hello world
---- no_error_log
-[error]
-
-
-
-=== TEST 20: verify: invalid JWT token
+=== TEST 19: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -500,7 +468,7 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 
 
 
-=== TEST 21: verify: invalid signature
+=== TEST 20: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -513,7 +481,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 22: verify: happy path
+=== TEST 21: verify: happy path
 --- request
 GET /hello
 --- more_headers
@@ -525,7 +493,7 @@ hello world
 
 
 
-=== TEST 23: without key
+=== TEST 22: without key
 --- config
     location /t {
         content_by_lua_block {
@@ -549,7 +517,7 @@ property "key" is required
 
 
 
-=== TEST 24: enable jwt auth plugin with extra field
+=== TEST 23: enable jwt auth plugin with extra field
 --- config
     location /t {
         content_by_lua_block {
@@ -588,7 +556,7 @@ GET /t
 
 
 
-=== TEST 25: get the schema by schema_type
+=== TEST 24: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -610,7 +578,7 @@ GET /t
 
 
 
-=== TEST 26: get the schema by error schema_type
+=== TEST 25: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -632,7 +600,7 @@ GET /t
 
 
 
-=== TEST 27: get the schema by default schema_type
+=== TEST 26: get the schema by default schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -654,7 +622,7 @@ GET /t
 
 
 
-=== TEST 28: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
+=== TEST 27: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -702,7 +670,7 @@ passed
 
 
 
-=== TEST 29: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 28: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -738,7 +706,7 @@ passed
 
 
 
-=== TEST 30: sign/verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 29: sign/verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -770,7 +738,7 @@ hello world
 
 
 
-=== TEST 31: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
+=== TEST 30: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -821,7 +789,7 @@ passed
 
 
 
-=== TEST 32: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 31: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -857,12 +825,44 @@ passed
 
 
 
-=== TEST 33: sign/verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 32: sign/verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: sign/verify use RS256 algorithm(private_key numbits = 1024,with extra payload)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
                 ngx.HTTP_GET
             )
 
@@ -1008,7 +1008,39 @@ hello world
 
 
 
-=== TEST 37: JWT sign with the public key when using the RS256 algorithm
+=== TEST 37: sign/verify use RS256 algorithm(private_key numbits = 2048,with extra payload)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: JWT sign with the public key when using the RS256 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1056,7 +1088,7 @@ passed
 
 
 
-=== TEST 38: JWT sign and verify RS256
+=== TEST 39: JWT sign and verify RS256
 --- config
     location /t {
         content_by_lua_block {
@@ -1092,7 +1124,7 @@ passed
 
 
 
-=== TEST 39: sign failed
+=== TEST 40: sign failed
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key-rs256
 --- error_code: 500
@@ -1101,7 +1133,7 @@ qr/failed to sign jwt/
 
 
 
-=== TEST 40: sanity(algorithm = HS512)
+=== TEST 41: sanity(algorithm = HS512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1126,7 +1158,7 @@ qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","secret":"
 
 
 
-=== TEST 41: add consumer with username and plugins use HS512 algorithm
+=== TEST 42: add consumer with username and plugins use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1173,7 +1205,7 @@ passed
 
 
 
-=== TEST 42: JWT sign and verify use HS512 algorithm
+=== TEST 43: JWT sign and verify use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1209,7 +1241,7 @@ passed
 
 
 
-=== TEST 43: sign / verify (algorithm = HS512)
+=== TEST 44: sign / verify (algorithm = HS512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1241,7 +1273,7 @@ hello world
 
 
 
-=== TEST 44: sign / verify (algorithm = HS512,with extra payload)
+=== TEST 45: sign / verify (algorithm = HS512,with extra payload)
 --- config
     location /t {
         content_by_lua_block {
@@ -1273,7 +1305,7 @@ hello world
 
 
 
-=== TEST 45: test for unsupported algorithm
+=== TEST 46: test for unsupported algorithm
 --- request
 PATCH /apisix/plugin/jwt/sign?key=user-key
 --- config
@@ -1298,7 +1330,7 @@ qr/property "algorithm" validation failed/
 
 
 
-=== TEST 46: wrong format of secret
+=== TEST 47: wrong format of secret
 --- config
     location /t {
         content_by_lua_block {
@@ -1325,7 +1357,7 @@ GET /t
 
 
 
-=== TEST 47: when the exp value is not set, make sure the default value(86400) works
+=== TEST 48: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
@@ -1370,7 +1402,7 @@ qr/"exp":86400/
 
 
 
-=== TEST 48: when the exp value is not set, sign jwt use the default value(86400)
+=== TEST 49: when the exp value is not set, sign jwt use the default value(86400)
 --- config
     location /t {
         content_by_lua_block {
@@ -1395,7 +1427,7 @@ true
 
 
 
-=== TEST 49: RS256 without public key
+=== TEST 50: RS256 without public key
 --- config
     location /t {
         content_by_lua_block {
@@ -1426,7 +1458,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 50: RS256 without private key
+=== TEST 51: RS256 without private key
 --- config
     location /t {
         content_by_lua_block {
