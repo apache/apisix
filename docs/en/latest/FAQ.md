@@ -392,9 +392,35 @@ HTTP/1.1 200 OK
 ...
 
 # The uri match failed
-curl http://127.0.0.1:9080/12ab -i
+$ curl http://127.0.0.1:9080/12ab -i
 HTTP/1.1 404 Not Found
 ...
 ```
 
 In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
+
+## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
+
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
+
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.default.svc.cluster.local": 1
+        }
+    }
+}'
+```
+
+```shell
+# Test request
+$ curl http://127.0.0.1:9080/ip -i
+HTTP/1.1 200 OK
+...
+```
