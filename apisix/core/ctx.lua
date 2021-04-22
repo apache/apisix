@@ -182,6 +182,12 @@ do
             elseif key == "service_name" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_name
 
+            elseif key == "balancer_ip" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_ip
+
+            elseif key == "balancer_port" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_port
+
             else
                 val = get_var(key, t._request)
             end

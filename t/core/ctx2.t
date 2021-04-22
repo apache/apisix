@@ -87,3 +87,52 @@ GET /xxx
 --- error_log
 pre uri: /hello
 post uri: /server_port
+
+
+
+=== TEST 3: get balancer_ip and balancer_port through ctx.var
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions" : ["return function(conf, ctx)
+                                        ngx.log(ngx.WARN, 'balancer_ip: ', ctx.var.balancer_ip)
+                                        ngx.log(ngx.WARN, 'balancer_port: ', ctx.var.balancer_port)
+                                        end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 4: check(balancer_ip is 127.0.0.1 and balancer_port is 1980)
+--- request
+GET /hello
+--- response_body
+hello world
+--- grep_error_log eval
+qr/balancer_ip: 127.0.0.1|balancer_port: 1980/
+--- grep_error_log_out
+balancer_ip: 127.0.0.1
+balancer_port: 1980
