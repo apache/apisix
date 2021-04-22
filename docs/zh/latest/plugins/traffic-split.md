@@ -30,6 +30,7 @@ title: traffic-split
   - [灰度发布](#灰度发布)
   - [蓝绿发布](#蓝绿发布)
   - [自定义发布](#自定义发布)
+  - [匹配规则与上游对应](#匹配规则与上游对应)
 - [禁用插件](#禁用插件)
 
 ## 名字
@@ -491,6 +492,98 @@ Content-Type: text/html; charset=utf-8
 ......
 
 hello 1980
+```
+
+### 匹配规则与上游对应
+
+通过配置多个 `rules`，我们可以实现不同的匹配规则与上游一一对应。
+
+**示例：**
+
+当请求头 `x-api-id` 等于 1 时，命中 1981 端口的上游；当 `x-api-id` 等于 2 时，命中 1982 端口的上游；否则，命中 1980 端口的上游（上游响应数据为对应的端口号）。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","1"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                },
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","2"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-B",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1982":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+**测试插件：**
+
+请求头 `x-api-id` 等于 1，命中带 1981 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+1981
+```
+
+请求头 `x-api-id` 等于 2，命中带 1982 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
+1982
+```
+
+请求头 `x-api-id` 等于 3，规则不匹配，命中带 1980 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
+1980
 ```
 
 ## 禁用插件
