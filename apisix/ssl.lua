@@ -101,6 +101,11 @@ function _M.validate(cert, key)
         return nil, "failed to parse cert: " .. err
     end
 
+    if key == nil then
+        -- sometimes we only need to validate the cert
+        return true
+    end
+
     key = aes_decrypt_pkey(key)
     if not key then
         return nil, "failed to decrypt previous encrypted key"
@@ -149,6 +154,11 @@ function _M.fetch_pkey(sni, pkey)
     end
 
     return parsed_pkey
+end
+
+
+function _M.support_client_verification()
+    return ngx_ssl.verify_client ~= nil
 end
 
 

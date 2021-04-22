@@ -281,6 +281,19 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
+
+    if ngx_ctx.api_ctx and ngx_ctx.api_ctx.ssl_client_verified then
+        local res = ngx_var.ssl_client_verify
+        if res ~= "SUCCESS" then
+            if res == "NONE" then
+                core.log.error("client certificate was not present")
+            else
+                core.log.error("clent certificate verification is not passed: ", res)
+            end
+            return core.response.exit(400)
+        end
+    end
+
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
