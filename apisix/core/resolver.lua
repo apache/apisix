@@ -25,7 +25,7 @@ local _M = {}
 function _M.init_resolver(args)
     local dns_resolver = args and args["dns_resolver"]
     utils.set_resolver(dns_resolver)
-    log.info("dns resolver", json.delay_encode(dns_resolver, true))
+    log.info("dns resolver ", json.delay_encode(dns_resolver, true))
 end
 
 
