@@ -21,7 +21,10 @@ set -ex
 
 luacheck -q apisix t/lib
 
-find apisix -name '*.lua' ! -wholename 'apisix/cli/ngx_tpl.lua' -exec ./utils/lj-releng {} + > \
+find apisix -name '*.lua' \
+    ! -wholename 'apisix/cli/ngx_tpl.lua' \
+    ! -wholename 'apisix/plugins/ext-plugin/A6/*.lua' \
+    -exec ./utils/lj-releng {} + > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log || true
