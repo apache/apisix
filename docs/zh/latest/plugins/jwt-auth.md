@@ -123,6 +123,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 #### 首先进行登录获取 `jwt-auth` token:
 
+* 没有额外的payload:
+
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
@@ -133,6 +135,20 @@ Connection: keep-alive
 Server: APISIX web server
 
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
+```
+
+* 有额外的payload:
+
+```shell
+$ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+HTTP/1.1 200 OK
+Date: Wed, 21 Apr 2021 06:43:59 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.4
+
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
 ```
 
 #### 使用获取到的 token 进行请求尝试
