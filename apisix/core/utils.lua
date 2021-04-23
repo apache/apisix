@@ -114,9 +114,10 @@ end
 _M.dns_parse = dns_parse
 
 
-function _M.set_resolver(resolvers)
+local function set_resolver(resolvers)
     dns_resolvers = resolvers
 end
+_M.set_resolver = set_resolver
 
 
 function _M.get_resolver(resolvers)
