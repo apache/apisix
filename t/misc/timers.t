@@ -41,8 +41,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local timers = require("apisix.timers")
-            local ngx_now = ngx.now
-            local start_at = ngx_now()
             timers.register_timer("t", function()
                 ngx.log(ngx.WARN, "fire")
             end)
