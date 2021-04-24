@@ -429,6 +429,8 @@ HTTP/1.1 200 OK
 
 1. The `X-API-KEY` of Admin API refers to the `apisix.admin_key.key` in the `config.yaml` file, and the default value is `edd1c9f034335f136f87ad84b625c8f1`. It is the access token of the Admin API.
 
+Note: There are security risks in using the default API token. It is recommended to update it when deploying to a production environment.
+
 2. `X-API-KEY` can be modified.
 
 For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload APISIX.

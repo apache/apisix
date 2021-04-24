@@ -428,6 +428,8 @@ HTTP/1.1 200 OK
 
 1、Admin API 的 `X-API-KEY` 指的是 `config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
 
+注意：使用默认的 API token 存在安全风险，建议在部署到生产环境时对其进行更新。
+
 2、`X-API-KEY` 是可以修改的。
 
 例如：在 `conf/config.yaml` 文件中对 `apisix.admin_key.key` 做如下修改并 reload APISIX。
