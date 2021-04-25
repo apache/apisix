@@ -435,6 +435,15 @@ _M.upstream_hash_vars_combinations_schema = {
 }
 
 
+local method_schema = {
+    description = "HTTP method",
+    type = "string",
+    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+        "OPTIONS", "CONNECT", "TRACE"},
+}
+_M.method_schema = method_schema
+
+
 _M.route = {
     type = "object",
     properties = {
@@ -456,12 +465,7 @@ _M.route = {
 
         methods = {
             type = "array",
-            items = {
-                description = "HTTP method",
-                type = "string",
-                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                        "OPTIONS", "CONNECT", "TRACE"}
-            },
+            items = method_schema,
             uniqueItems = true,
         },
         host = host_def,
