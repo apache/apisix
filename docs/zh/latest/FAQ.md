@@ -423,3 +423,47 @@ $ curl http://127.0.0.1:9080/ip -i
 HTTP/1.1 200 OK
 ...
 ```
+
+## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
+
+1、Admin API 的 `X-API-KEY` 指的是 `config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+
+注意：使用默认的 API token 存在安全风险，建议在部署到生产环境时对其进行更新。
+
+2、`X-API-KEY` 是可以修改的。
+
+例如：在 `conf/config.yaml` 文件中对 `apisix.admin_key.key` 做如下修改并 reload APISIX。
+
+```yaml
+apisix:
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+访问 Admin API：
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"admin-token-test",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":1980,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+
+HTTP/1.1 200 OK
+......
+```
+
+路由创建成功，表示 `X-API-KEY` 修改生效。

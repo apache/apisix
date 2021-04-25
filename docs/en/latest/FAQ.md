@@ -424,3 +424,47 @@ $ curl http://127.0.0.1:9080/ip -i
 HTTP/1.1 200 OK
 ...
 ```
+
+## What is the `X-API-KEY` of Admin API? Can it be modified?
+
+1. The `X-API-KEY` of Admin API refers to the `apisix.admin_key.key` in the `config.yaml` file, and the default value is `edd1c9f034335f136f87ad84b625c8f1`. It is the access token of the Admin API.
+
+Note: There are security risks in using the default API token. It is recommended to update it when deploying to a production environment.
+
+2. `X-API-KEY` can be modified.
+
+For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload APISIX.
+
+```yaml
+apisix:
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+Access the Admin API:
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"admin-token-test",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":1980,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+
+HTTP/1.1 200 OK
+......
+```
+
+The route was created successfully. It means that the modification of `X-API-KEY` takes effect.
