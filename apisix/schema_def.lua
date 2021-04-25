@@ -400,6 +400,7 @@ local upstream_schema = {
         desc = desc_def,
         service_name = {
             type = "string",
+            pattern = [[^[\w\-_.+*(),!:@$^]+$]],
             maxLength = 256,
             minLength = 1
         },

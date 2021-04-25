@@ -117,3 +117,23 @@ eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: bad service_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /eureka/*
+    upstream:
+      service_name: APISIX&EUREKA=a
+      discovery_type: eureka
+      type: roundrobin
+
+#END
+--- request
+GET /eureka/apps/APISIX\&EUREKA=a
+--- error_code: 404
+--- error_log
+property "service_name" validation failed
