@@ -62,18 +62,82 @@ title: kafka-logger
 - **default**:
 
     ```json
-    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":"APISIX\/1.5","connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
+    [
+      {
+        "client_ip": "127.0.0.1",
+        "latency": 493.99995803833,
+        "request": {
+          "headers": {
+            "accept": "*/*",
+            "host": "httpbin.org",
+            "user-agent": "curl/7.29.0"
+          },
+          "method": "GET",
+          "querystring": {
+            "foo1": "bar1",
+            "foo2": "bar2"
+          },
+          "size": 98,
+          "uri": "/get?foo1=bar1&foo2=bar2",
+          "url": "http://httpbin.org:9080/get?  foo1=bar1&foo2=bar2"
+        },
+        "response": {
+          "headers": {
+            "access-control-allow-credentials":     "true",
+            "access-control-allow-origin": "*",
+            "connection": "close",
+            "content-length": "370",
+            "content-type": "application/json",
+            "date": "Mon, 26 Apr 2021 02:03:27  GMT",
+            "server": "APISIX/2.5"
+          },
+          "size": 595,
+          "status": 200
+        },
+        "route_id": "5",
+        "server": {
+          "hostname": "localhost.localdomain",
+          "version": "2.5"
+        },
+        "service_id": "",
+        "start_time": 1619402607026,
+        "upstream": "34.199.75.4:80"
+      }
+    ]
     ```
 
 - **origin**:
 
     ```http
-    GET /hello?ab=cd HTTP/1.1
-    host: localhost
-    content-length: 6
-    connection: close
+    GET /get?foo1=bar1&foo2=bar2 HTTP/1.1
+    User-Agent: curl/7.29.0
+    Accept: */*
+    Host: httpbin.org
 
-    abcdef
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+    Content-Length: 370
+    Connection: keep-alive
+    Date: Mon, 26 Apr 2021 02:03:31 GMT
+    Access-Control-Allow-Origin: *
+    Access-Control-Allow-Credentials: true
+    Server: APISIX/2.5
+
+    {
+      "args": {
+        "foo1": "bar1",
+        "foo2": "bar2"
+      },
+      "headers": {
+        "Accept": "*/*",
+        "Host": "httpbin.org",
+        "User-Agent": "curl/7.29.0",
+        "X-Amzn-Trace-Id": "Root=1-60861f73-265a57f8445eff076c072f04",
+        "X-Forwarded-Host": "httpbin.org"
+      },
+      "origin": "127.0.0.1, 129.227.137.235",
+      "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
+    }
     ```
 
 ## 工作原理
