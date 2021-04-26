@@ -132,7 +132,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 
 In this case, the plugin can enforce that the access token and the UserInfo object get set in respective configured request headers.
 
-When the Oauth 2 authorization server returns an expire time with the token, the token will be cached in APISIX until it is expired. 
+When the Oauth 2 authorization server returns an expire time with the token, the token will be cached in APISIX until it is expired.
 For more details, please read:
 
 1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc)'s doc and source code.
