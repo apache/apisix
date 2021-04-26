@@ -15,12 +15,17 @@
 -- limitations under the License.
 --
 local ext = require("apisix.plugins.ext-plugin.init")
+local constants = require("apisix.constants")
+local flatbuffers = require("flatbuffers")
+local prepare_conf_req = require("A6.PrepareConf.Req")
+local prepare_conf_resp = require("A6.PrepareConf.Resp")
 
 
 local _M = {}
+local builder = flatbuffers.Builder(0)
 
 
-function _M.go()
+function _M.go(case)
     local sock = ngx.req.socket()
     local ty, data = ext.receive(sock)
     if not ty then
@@ -28,6 +33,28 @@ function _M.go()
         return
     end
     ngx.log(ngx.WARN, "receive rpc call successfully")
+
+    if ty == constants.RPC_PREPARE_CONF then
+        local buf = flatbuffers.binaryArray.New(data)
+        local pc = prepare_conf_req.GetRootAsReq(buf, 0)
+
+        if case.with_conf then
+            local conf = pc:Conf(1)
+            assert(conf:Name(), "foo")
+            assert(conf:Value(), "bar")
+            local conf = pc:Conf(2)
+            assert(conf:Name(), "cat")
+            assert(conf:Value(), "dog")
+        else
+            assert(pc:ConfLength() == 0)
+        end
+
+        prepare_conf_resp.Start(builder)
+        prepare_conf_resp.AddConfToken(builder, 233)
+        local req = prepare_conf_req.End(builder)
+        builder:Finish(req)
+        data = builder:Output()
+    end
 
     local ok, err = ext.send(sock, ty, data)
     if not ok then

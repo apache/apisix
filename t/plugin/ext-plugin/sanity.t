@@ -36,7 +36,7 @@ add_block_preprocessor(sub {
 
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
-            ext.go()
+            ext.go({})
         }
     }
 
@@ -110,6 +110,10 @@ passed
 GET /hello
 --- response_body
 hello world
+--- error_log
+get conf token: 233
+--- no_error_log
+[error]
 --- grep_error_log eval
 qr/(sending|receiving) rpc type: \d data length:/
 --- grep_error_log_out
@@ -247,5 +251,68 @@ sending rpc type: 1 data length:
 receiving rpc type: 1 data length:
 --- error_log
 flush conf token lrucache
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: prepare conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-pre-req": {
+                            "conf": [
+                                {"name":"foo", "value":"bar"},
+                                {"name":"cat", "value":"dog"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: hit
+--- request
+GET /hello
+--- response_body
+hello world
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({with_conf = true})
+        }
+    }
+--- error_log eval
+qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
 --- no_error_log
 [error]

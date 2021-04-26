@@ -15,6 +15,11 @@
 -- limitations under the License.
 --
 local is_http = ngx.config.subsystem == "http"
+local flatbuffers = require("flatbuffers")
+local prepare_conf_req = require("A6.PrepareConf.Req")
+local prepare_conf_resp = require("A6.PrepareConf.Resp")
+local text_entry = require("A6.TextEntry")
+local constants = require("apisix.constants")
 local core = require("apisix.core")
 local helper = require("apisix.plugins.ext-plugin.helper")
 local process, ngx_pipe, events
@@ -45,15 +50,40 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        conf = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    name = {
+                        type = "string",
+                        maxLength = 128,
+                        minLength = 1
+                    },
+                    value = {
+                        type = "string",
+                    },
+                }
+            },
+            minItems = 1,
+        },
+        extra_info = {
+            type = "array",
+            items = {
+                type = "string",
+                maxLength = 64,
+                minLength = 1,
+            },
+            minItems = 1,
+        }
+    },
 }
 
 local _M = {
     schema = schema,
 }
-local RPC_ERROR = 0
-local RPC_PREPARE_CONF = 1
-local RPC_HTTP_REQ_CALL = 2
+local builder = flatbuffers.Builder(0)
 
 
 local send
@@ -97,7 +127,7 @@ local function receive(sock)
     end
 
     local ty = str_byte(hdr, 1)
-    if ty == RPC_ERROR then
+    if ty == constants.RPC_ERROR then
         return nil, "TODO: handler err"
     end
 
@@ -126,8 +156,36 @@ local rpc_call
 local rpc_handlers = {
     nil,
     function (conf, ctx, sock)
-        local req = "prepare"
-        local ok, err = send(sock, RPC_PREPARE_CONF, req)
+        builder:Clear()
+
+        local conf_vec
+        if conf.conf then
+            local len = #conf.conf
+            local textEntries = core.table.new(len, 0)
+            for i = 1, len do
+                local name = builder:CreateString(conf.conf[i].name)
+                local value = builder:CreateString(conf.conf[i].value)
+                text_entry.Start(builder)
+                text_entry.AddName(builder, name)
+                text_entry.AddValue(builder, value)
+                local c = text_entry.End(builder)
+                textEntries[i] = c
+            end
+            prepare_conf_req.StartConfVector(builder, len)
+            for i = len, 1, -1 do
+                builder:PrependUOffsetTRelative(textEntries[i])
+            end
+            conf_vec = builder:EndVector(len)
+        end
+
+        prepare_conf_req.Start(builder)
+        if conf_vec then
+            prepare_conf_req.AddConf(builder, conf_vec)
+        end
+        local req = prepare_conf_req.End(builder)
+        builder:Finish(req)
+
+        local ok, err = send(sock, constants.RPC_PREPARE_CONF, builder:Output())
         if not ok then
             return nil, "failed to send RPC_PREPARE_CONF: " .. err
         end
@@ -137,22 +195,26 @@ local rpc_handlers = {
             return nil, "failed to receive RPC_PREPARE_CONF: " .. resp
         end
 
-        if ty ~= RPC_PREPARE_CONF then
+        if ty ~= constants.RPC_PREPARE_CONF then
             return nil, "failed to receive RPC_PREPARE_CONF: unexpected type " .. ty
         end
 
-        core.log.warn(resp)
-        return true
+        local buf = flatbuffers.binaryArray.New(resp)
+        local pcr = prepare_conf_resp.GetRootAsResp(buf, 0)
+        local token = pcr:ConfToken()
+
+        core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
+        return token
     end,
     function (conf, ctx, sock)
         local token, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, rpc_call,
-                                                    RPC_PREPARE_CONF, conf, ctx)
+                                                    constants.RPC_PREPARE_CONF, conf, ctx)
         if not token then
             return nil, err
         end
 
         local req = "hello"
-        local ok, err = send(sock, RPC_HTTP_REQ_CALL, req)
+        local ok, err = send(sock, constants.RPC_HTTP_REQ_CALL, req)
         if not ok then
             return nil, "failed to send RPC_HTTP_REQ_CALL: " .. err
         end
@@ -162,7 +224,7 @@ local rpc_handlers = {
             return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
         end
 
-        if ty ~= RPC_HTTP_REQ_CALL then
+        if ty ~= constants.RPC_HTTP_REQ_CALL then
             return nil, "failed to receive RPC_HTTP_REQ_CALL: unexpected type " .. ty
         end
 
@@ -197,7 +259,7 @@ end
 
 
 function _M.communicate(conf, ctx)
-    local ok, err = rpc_call(RPC_HTTP_REQ_CALL, conf, ctx)
+    local ok, err = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
     if not ok then
         core.log.error(err)
         return 503
