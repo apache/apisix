@@ -615,13 +615,11 @@ local function healthcheck_passive(api_ctx)
     end
 
     for i, status in ipairs(http_statuses) do
-        for i, status in ipairs(http_statuses) do
-            if resp_status == status then
-                checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
-                                           host,
-                                           resp_status)
-            end
+        if resp_status == status then
+            checker:report_http_status(api_ctx.balancer_ip,
+                                       port or api_ctx.balancer_port,
+                                       host,
+                                       resp_status)
         end
     end
 end
