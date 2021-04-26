@@ -129,6 +129,11 @@ function _M.init()
 
     -- TODO: maybe need to fetch them from plugin-metadata
     local metadata_shdict = ngx.shared.tracing_buffer
+
+    if local_plugin_info.service_instance_name == "$hostname" then
+        local_plugin_info.service_instance_name = core.utils.gethostname()
+    end
+
     metadata_shdict:set('serviceName', local_plugin_info.service_name)
     metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
 
