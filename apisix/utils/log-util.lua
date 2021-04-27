@@ -52,6 +52,10 @@ local function get_full_log(ngx, conf)
             headers = ngx.resp.get_headers(),
             size = var.bytes_sent
         },
+        server = {
+            hostname = core.utils.gethostname(),
+            version = core.version.VERSION
+        },
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,
