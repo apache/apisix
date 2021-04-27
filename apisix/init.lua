@@ -126,7 +126,7 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
-    require("apisix.upstream").init_worker()
+    apisix_upstream.init_worker()
 
     local_conf = core.config.local_conf()
 
@@ -437,9 +437,9 @@ function _M.http_access_phase()
         local upstream = get_upstream_by_id(up_id)
         api_ctx.matched_upstream = upstream
 
-        if upstream and upstream.value.pass_host then
-            api_ctx.pass_host = upstream.value.pass_host
-            api_ctx.upstream_host = upstream.value.upstream_host
+        if upstream and upstream.pass_host then
+            api_ctx.pass_host = upstream.pass_host
+            api_ctx.upstream_host = upstream.upstream_host
         end
 
     else
@@ -755,6 +755,7 @@ function _M.stream_init_worker()
 
     plugin.init_worker()
     router.stream_init_worker()
+    apisix_upstream.init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()
