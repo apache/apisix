@@ -21,208 +21,239 @@ title: jwt-auth
 #
 -->
 
-## 目录
+## 简介
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+启用该插件后，客户端访问路由、服务时需提供正确的 JSON Web Token，插件将从 HTTP 请求头、HTTP 查询参数（QueryString）或 Cookie 中获取凭证信息。
 
-## 名字
+该插件需配合 Consumer 共同使用，为路由、服务增加该插件时，不需要进行配置。详情请见下方示例。
 
-`jwt-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+## 参数
 
-添加 JWT Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其密钥添加到查询字符串参数、请求头或 `cookie` 中以验证其请求。
+|    参数名     |  类型  | 必选  | 默认值 |          可选值          |                                   描述                                   |
+| :-----------: | :----: | :---: | :----: | :----------------------: | :----------------------------------------------------------------------: |
+|      key      | 字符串 |  是   |        |                          | 该值与 Consumer 相关联，会被存储到 Payload 中，请避免使用重复的 Key 值。 |
+|    secret     | 字符串 |  否   |        |                          |      对 Payload 进行签名的密钥，若不设置，将会使用自动生成的密钥。       |
+|  public_key   | 字符串 |  否   |        |                          |                  RSA 公钥。仅当使用 RS256 算法时必填。                   |
+|  private_key  | 字符串 |  否   |        |                          |                  RSA 私钥。仅当使用 RS256 算法时必填。                   |
+|   algorithm   | 字符串 |  否   | HS256  |    HS256,HS512,RS256     |                       对 Payload 进行签名的算法。                        |
+|      exp      |  数字  |  否   | 86400  |         最小为 1         |                           Token 过期时间（秒）                           |
+| base64_secret | 布尔值 |  否   | false  | 密钥是否被 base64 编码。 |
 
-有关 JWT 的更多信息，可参考 [JWT](https://jwt.io/) 查看更多信息。
+## 注意
 
-## 属性
+使用本插件时，需访问 `/apisix/plugin/jwt/sign` 接口获取 Token，该接口应参照如下方式进行保护：[https://apisix.apache.org/docs/apisix/plugin-interceptors/](https://apisix.apache.org/docs/apisix/plugin-interceptors/)
 
-| 名称          | 类型    | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
-| :------------ | :------ | :----- | :------ | :-------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| key           | string  | 必须   |         |                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
-| secret        | string  | 可选   |         |                             | 加密秘钥。如果您未指定，后台将会自动帮您生成。                                                                |
-| public_key    | string  | 可选   |         |                             | RSA 公钥， `algorithm` 属性选择 `RS256` 算法时必填                                                            |
-| private_key   | string  | 可选   |         |                             | RSA 私钥， `algorithm` 属性选择 `RS256` 算法时必填                                                            |
-| algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                                      |
-| exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                              |
-| base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                                        |
+## 使用 AdminAPI 启用插件
 
-## 接口
+首先，创建消费者并配置 jwt-auth 插件：
 
-插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。
-
-## 如何启用
-
-1. 创建一个 consumer 对象，并设置插件 `jwt-auth` 的值。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+# 场景1：使用默认的 HS256 算法进行加密
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "username": "jack",
-    "plugins": {
-        "jwt-auth": {
-            "key": "user-key",
-            "secret": "my-secret-key"
-        }
+  "username": "consumer_username",
+  "plugins": {
+    "jwt-auth": {
+      "key": "consumer-key",
+      "secret": "jwt-secret"
     }
-}'
+  }
+}
+'
+
+# 场景2：使用指定的 RS256 算法进行加密，这需要指定公钥、私钥
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
+{
+  "username": "consumer_username",
+  "plugins": {
+    "jwt-auth": {
+      "key": "consumer-key",
+      "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
+      "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
+      "algorithm": "RS256"
+    }
+  }
+}
+'
 ```
 
-`jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥与私钥，示例如下：
+其次，创建路由并绑定 jwt-auth 插件（该插件无需进行配置）：
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "username": "kerouac",
-    "plugins": {
-        "jwt-auth": {
-            "key": "user-key",
-            "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
-            "algorithm": "RS256"
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "jwt-auth": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
 
-2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
+接着，需要生成 Token：
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "jwt-auth": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
+```bash
+# 场景1：生成不包含 Payload 的 Token
 
-你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=consumer-key
 
-1. 先增加一个 consumer：
-![](../../../assets/images/plugin/jwt-auth-1.png)
-
-然后在 consumer 页面中添加 jwt-auth 插件：
-![](../../../assets/images/plugin/jwt-auth-2.png)
-
-2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
-
-![](../../../assets/images/plugin/jwt-auth-3.png)
-
-## 测试插件
-
-#### 首先进行登录获取 `jwt-auth` token:
-
-* 没有额外的payload:
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+## Response
 HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
-```
-
-* 有额外的payload:
-
-```shell
-$ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:43:59 GMT
+Date: Wed, 28 Apr 2021 10:06:56 GMT
 Content-Type: text/plain; charset=utf-8
 Transfer-Encoding: chunked
 Connection: keep-alive
-Server: APISIX/2.4
+Server: APISIX/2.5
 
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE
+
+# 场景2：生成包含 Payload 的 Token
+
+## Request
+$ curl -i -G --data-urlencode 'payload={"id":10000,"name":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=consumer-key
+
+## Response
+HTTP/1.1 200 OK
+Date: Wed, 28 Apr 2021 10:18:37 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTE1MTcsImtleSI6ImNvbnN1bWVyLWtleSJ9.ZGD9MLRzdfYK-y1179gi8odB9FtoaunBlwrD1ysaFQk
 ```
 
-#### 使用获取到的 token 进行请求尝试
+最后，访问路由进行测试：
 
-* 缺少 token
+```bash
+# 场景1：访问路由时，不携带 Token
 
-```shell
-$ curl http://127.0.0.1:9080/index.html -i
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get
+
+## Response
 HTTP/1.1 401 Unauthorized
-...
+Date: Wed, 28 Apr 2021 10:21:04 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
 {"message":"Missing JWT token in request"}
-```
 
-* token 放到请求头中：
+# 场景2：访问路由时，将 Token 存放在 Authorization 中
 
-```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE"
+
+## Response
 HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-...
-Accept-Ranges: bytes
+Content-Type: application/json
+Content-Length: 457
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 10:21:50 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
 
-<!DOCTYPE html>
-<html lang="cn">
-...
-```
-
-* token 放到请求参数中：
-
-```shell
-$ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-...
-Accept-Ranges: bytes
-
-<!DOCTYPE html>
-<html lang="cn">
-...
-```
-
-* token 放到 cookie 中：
-
-```shell
-$ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-...
-Accept-Ranges: bytes
-
-<!DOCTYPE html>
-<html lang="cn">
-...
-```
-
-## 禁用插件
-
-当你想去掉 `jwt-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
-
-```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6089373e-3c03e8be49b0bef2000a23a4",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get"
+}
+
+# 场景3：访问路由时，将 Token 存放在 HTTP 查询参数中
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE
+
+## Response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 586
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 10:22:22 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
+
+{
+  "args": {
+    "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6089375e-0e631aa5485ed6290d582bf4",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE"
+}
+
+# 场景4：访问路由时，将 Token 存放在 Cookie 中
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE
+
+## Response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 454
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 10:22:57 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Cookie": "jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MTk2OTA4MTYsImtleSI6ImNvbnN1bWVyLWtleSJ9.ubUiKrLUMODdNww7nQi7GPwCLVt_PZQ4ovx0jZDEOvE",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-60893781-754dad6c4eaf22c25b89508e",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get"
+}
+```
+
+## 使用 AdminAPI 禁用插件
+
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
+
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
+{
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
