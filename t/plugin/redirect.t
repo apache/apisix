@@ -140,58 +140,7 @@ hello world
 
 
 
-=== TEST 6: add plugin with uri and regex_uri together
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "redirect": {
-                            "uri" : "/first",
-                            "regex_uri": ["^/test/(.*)", "http://test.com/${1}"],
-                            "ret_code": 301
-                        }
-                    },
-                    "uris": ["/test/*", "/hello"],
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 7: uri first
---- request
-GET /test/1
---- response_headers
-Location: /first
---- error_code: 301
---- no_error_log
-[error]
-
-
-
-=== TEST 8: add plugin with new uri: /test/add
+=== TEST 6: add plugin with new uri: /test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -224,7 +173,7 @@ passed
 
 
 
-=== TEST 9: redirect
+=== TEST 7: redirect
 --- request
 GET /hello
 --- response_headers
@@ -235,7 +184,7 @@ Location: /test/add
 
 
 
-=== TEST 10: add plugin with new uri: $uri/test/add
+=== TEST 8: add plugin with new uri: $uri/test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -268,7 +217,7 @@ passed
 
 
 
-=== TEST 11: redirect
+=== TEST 9: redirect
 --- request
 GET /hello
 --- response_headers
@@ -279,7 +228,7 @@ Location: /hello/test/add
 
 
 
-=== TEST 12: add plugin with new uri: $uri/test/a${arg_name}c
+=== TEST 10: add plugin with new uri: $uri/test/a${arg_name}c
 --- config
     location /t {
         content_by_lua_block {
@@ -312,7 +261,7 @@ passed
 
 
 
-=== TEST 13: redirect
+=== TEST 11: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -323,7 +272,7 @@ Location: /hello/test/ajsonc
 
 
 
-=== TEST 14: add plugin with new uri: /foo$$uri
+=== TEST 12: add plugin with new uri: /foo$$uri
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +305,7 @@ passed
 
 
 
-=== TEST 15: redirect
+=== TEST 13: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -367,7 +316,7 @@ Location: /foo$/hello
 
 
 
-=== TEST 16: add plugin with new uri: \\$uri/foo$uri\\$uri/bar
+=== TEST 14: add plugin with new uri: \\$uri/foo$uri\\$uri/bar
 --- config
     location /t {
         content_by_lua_block {
@@ -400,7 +349,7 @@ passed
 
 
 
-=== TEST 17: redirect
+=== TEST 15: redirect
 --- request
 GET /hello
 --- response_headers
@@ -411,7 +360,7 @@ Location: \$uri/foo/hello\$uri/bar
 
 
 
-=== TEST 18: add plugin with new uri: $uri/$bad_var/bar
+=== TEST 16: add plugin with new uri: $uri/$bad_var/bar
 --- config
     location /t {
         content_by_lua_block {
@@ -444,7 +393,7 @@ passed
 
 
 
-=== TEST 19: redirect
+=== TEST 17: redirect
 --- request
 GET /hello
 --- response_headers
@@ -455,7 +404,7 @@ Location: /hello//bar
 
 
 
-=== TEST 20: http -> https redirect
+=== TEST 18: http -> https redirect
 --- config
     location /t {
         content_by_lua_block {
@@ -496,7 +445,7 @@ passed
 
 
 
-=== TEST 21: redirect
+=== TEST 19: redirect
 --- request
 GET /hello
 --- more_headers
@@ -507,7 +456,7 @@ Location: https://foo.com/hello
 
 
 
-=== TEST 22: enable http_to_https
+=== TEST 20: enable http_to_https
 --- config
     location /t {
         content_by_lua_block {
@@ -540,7 +489,7 @@ passed
 
 
 
-=== TEST 23: redirect
+=== TEST 21: redirect
 --- request
 GET /hello
 --- more_headers
@@ -551,7 +500,7 @@ Location: https://foo.com/hello
 
 
 
-=== TEST 24: enable http_to_https with ret_code(not take effect)
+=== TEST 22: enable http_to_https with ret_code(not take effect)
 --- config
     location /t {
         content_by_lua_block {
@@ -585,7 +534,7 @@ passed
 
 
 
-=== TEST 25: redirect
+=== TEST 23: redirect
 --- request
 GET /hello
 --- more_headers
@@ -596,7 +545,7 @@ Location: https://foo.com/hello
 
 
 
-=== TEST 26: wrong configure, enable http_to_https with uri
+=== TEST 24: wrong configure, enable http_to_https with uri
 --- config
     location /t {
         content_by_lua_block {
@@ -625,13 +574,13 @@ Location: https://foo.com/hello
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches both schemas 1 and 2/
+qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches both schemas 1 and 3/
 --- no_error_log
 [error]
 
 
 
-=== TEST 27: enable http_to_https with upstream
+=== TEST 25: enable http_to_https with upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -670,7 +619,7 @@ passed
 
 
 
-=== TEST 28: redirect
+=== TEST 26: redirect
 --- request
 GET /hello
 --- more_headers
@@ -681,7 +630,7 @@ Location: https://test.com/hello
 
 
 
-=== TEST 29: set ssl(sni: test.com)
+=== TEST 27: set ssl(sni: test.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -719,7 +668,7 @@ passed
 
 
 
-=== TEST 30: client https request
+=== TEST 28: client https request
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -793,7 +742,7 @@ close: 1 nil}
 
 
 
-=== TEST 31: add plugin with new uri: /test/add
+=== TEST 29: add plugin with new uri: /test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -828,7 +777,7 @@ passed
 
 
 
-=== TEST 32: http to https post redirect
+=== TEST 30: http to https post redirect
 --- request
 POST /hello-https
 --- more_headers
@@ -841,7 +790,7 @@ Location: https://test.com/hello-https
 
 
 
-=== TEST 33: http to https get redirect
+=== TEST 31: http to https get redirect
 --- request
 GET /hello-https
 --- more_headers
@@ -854,7 +803,7 @@ Location: https://test.com/hello-https
 
 
 
-=== TEST 34: http to https head redirect
+=== TEST 32: http to https head redirect
 --- request
 HEAD /hello-https
 --- more_headers

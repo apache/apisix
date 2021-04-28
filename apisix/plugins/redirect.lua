@@ -37,8 +37,8 @@ local schema = {
         ret_code = {type = "integer", minimum = 200, default = 302},
         uri = {type = "string", minLength = 2, pattern = reg},
         regex_uri = {
-            description = "new uri that substitute from client uri " ..
-                    "for upstream, lower priority than uri property",
+            description = "params array for generating new uri that substitute from client uri " ..
+                    "fist param is regular expression, second one is uri template",
             type        = "array",
             maxItems    = 2,
             minItems    = 2,
@@ -50,12 +50,8 @@ local schema = {
         http_to_https = {type = "boolean"},
     },
     oneOf = {
-        {
-            anyOf = {
-                {required = {"uri"}},
-                {required = {"regex_uri"}},
-            }
-        },
+        {required = {"uri"}},
+        {required = {"regex_uri"}},
         {required = {"http_to_https"}}
     }
 }
@@ -105,8 +101,9 @@ function _M.check_schema(conf)
         local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
                 conf.regex_uri[2], "jo")
         if err then
-            return false, "invalid regex_uri(" .. conf.regex_uri[1] ..
-                    ", " .. conf.regex_uri[2] .. "): " .. err
+            local msg = string.format("invalid regex_uri (%s, %s), err:%s",
+                                        conf.regex_uri[1], conf.regex_uri[2], err)
+            return false, msg
         end
     end
 
@@ -176,9 +173,8 @@ function _M.rewrite(conf, ctx)
             local new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
                                            regex_uri[2], "jo")
             if not new_uri then
-                local msg = "failed to substitute the uri " .. ctx.var.uri ..
-                        " (" .. regex_uri[1] .. ") with " ..
-                        regex_uri[2] .. " : " .. err
+                local msg = string.format("failed to substitute the uri:%s (%s) with %s, error:%s",
+                                          ctx.var.uri, regex_uri[1], regex_uri[2], err)
                 core.log.error(msg)
                 return 500
             end
