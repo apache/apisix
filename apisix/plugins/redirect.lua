@@ -174,7 +174,7 @@ function _M.rewrite(conf, ctx)
             return ret_code
         elseif regex_uri then
             local new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
-                    regex_uri[2], "jo")
+                                           regex_uri[2], "jo")
             if not new_uri then
                 local msg = "failed to substitute the uri " .. ctx.var.uri ..
                         " (" .. regex_uri[1] .. ") with " ..
