@@ -21,8 +21,6 @@ title: basic-auth
 #
 -->
 
-# basic-auth
-
 ## 简介
 
 启用该插件后，客户端访问路由、服务时需提供正确的用户名与密码，插件将从 HTTP 请求头 Authorization 中获取凭证信息。
