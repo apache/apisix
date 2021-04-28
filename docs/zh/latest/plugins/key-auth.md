@@ -21,129 +21,138 @@ title: key-auth
 #
 -->
 
-## 目录
+## 简介
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+启用该插件后，客户端访问路由、服务时需提供正确的密钥，插件将从 HTTP 请求头中获取凭证信息。
 
-## 名字
+:::caution 注意
+该插件需配合 Consumer 共同使用，为路由、服务增加该插件时，不需要进行配置。详情请见下方示例。
+:::
 
-`key-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+## 参数
 
-添加 Key Authentication 到一个 `service` 或 `route`。 然后，`consumer` 将其密钥添加到查询字符串参数或标头中以验证其请求。
+| 参数名 |  类型  | 必选  | 默认值 |                                              描述                                              |
+| :----: | :----: | :---: | :----: | :--------------------------------------------------------------------------------------------: |
+|  key   | 字符串 |  是   |        | 消费者访问资源进行身份验证时，需使用的密钥。请注意，不同消费者配置该插件时，需使用不同的密钥。 |
 
-## 属性
+## 使用 AdminAPI 启用插件
 
-consumer 端配置：
+首先，创建消费者并配置 key-auth 插件（密钥为：auth-key）：
 
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| key  | string | 必需   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
-
-router 端配置：
-
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| header  | string | 可选| apikey |        | 设置我们从哪个 header 获取 key。 |
-
-## 如何启用
-
-1. 创建一个 consumer 对象，并设置插件 `key-auth` 的值。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "username": "jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-one"
-        }
-    }
-}'
-```
-
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![](../../../assets/images/plugin/key-auth-1.png)
-
-然后在 consumer 页面中添加 key-auth 插件：
-![](../../../assets/images/plugin/key-auth-2.png)
-
-2. 创建 route 或 service 对象，并开启 `key-auth` 插件。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {
-        "key-auth": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
-
-如果不想从默认的 `apikey` header 获取 key，可以自定义 header：
-
-```json
-{
+  "username": "consumer_username",
+  "plugins": {
     "key-auth": {
-        "header": "Authorization"
+      "key": "auth-key"
     }
+  }
+}
+'
+```
+
+其次，创建路由并绑定 key-auth 插件（该插件无需进行配置）：
+
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
+{
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "key-auth": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}
+'
+```
+
+最后，我们访问路由进行测试：
+
+```bash
+# 场景1：访问路由时，不携带密钥
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get
+
+## Response
+HTTP/1.1 401 Unauthorized
+Date: Wed, 28 Apr 2021 09:02:40 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
+{"message":"Missing API key found in request"}
+
+# 场景2：访问路由时，携带错误密钥
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get -H "apikey: wrong-key"
+
+## Response
+HTTP/1.1 401 Unauthorized
+Date: Wed, 28 Apr 2021 09:03:40 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
+{"message":"Invalid API key in request"}
+
+# 场景3：访问路由时，携带正确密钥（在 HTTP 请求头中）
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get -H "apikey: auth-key"
+
+## Response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 325
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 09:03:53 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Apikey": "auth-key",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-608924f9-4a20a14821ce0ae97337e9f8",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get"
 }
 ```
 
-## 测试插件
+## 使用 AdminAPI 禁用插件
 
-下面是一个正常通过 `key-auth` 验证的请求:
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
 
-```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
-HTTP/1.1 200 OK
-...
-```
-
-如果当前请求没有正确设置 `apikey` ，将得到一个 `401` 的应答。
-
-```shell
-$ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing API key found in request"}
-
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid API key in request"}
-```
-
-## 禁用插件
-
-当你想去掉 `key-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
-
-```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "key-auth": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
-
-现在就已经移除了该插件配置，其他插件的开启和移除也是同样的方法。
