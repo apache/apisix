@@ -21,128 +21,156 @@ title: basic-auth
 #
 -->
 
-## 目录
+# basic-auth
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+## 简介
 
-## 名字
+启用该插件后，客户端访问路由、服务时需提供正确的用户名与密码，插件将从 HTTP 请求头 Authorization 中获取凭证信息。
 
-`basic-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+:::caution 注意
+该插件需配合 Consumer 共同使用，为路由、服务增加该插件时，不需要进行配置。详情请见下方示例。
+:::
 
-添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
+## 参数
 
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81) 查看更多信息。
+|  参数名  |  类型  | 必选  | 默认值 |                                                          描述                                                          |
+| :------: | :----: | :---: | :----: | :--------------------------------------------------------------------------------------------------------------------: |
+| username | 字符串 |  是   |        | 消费者访问资源进行身份验证时，需使用的用户名。请注意，不同消费者配置该插件时，需使用不同的用户名，否则将产生匹配异常。 |
+| password | 字符串 |  是   |        |                                      消费者访问资源进行身份验证时，需使用的密码。                                      |
 
-## 属性
+## 使用 AdminAPI 启用插件
 
-| 名称     | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                               |
-| -------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| username | string | 必须   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。 |
-| password | string | 必须   |        |        | 用户的密码                                                                                                         |
+首先，创建消费者并配置 basic-auth 插件（用户名为 foo，密码为 bar）：
 
-## 如何启用
-
-### 1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "username": "foo",
-    "plugins": {
-        "basic-auth": {
-            "username": "foo",
-            "password": "bar"
-        }
+  "username": "consumer_username",
+  "plugins": {
+    "basic-auth": {
+      "username": "foo",
+      "password": "bar"
     }
-}'
+  }
+}
+'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
+其次，创建路由并绑定 basic-auth 插件（注意：该插件无需进行配置）：
 
-![auth-1](../../../assets/images/plugin/basic-auth-1.png)
-
-然后在 consumer 页面中添加 basic-auth 插件：
-
-![auth-2](../../../assets/images/plugin/basic-auth-2.png)
-
-### 2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {
-        "basic-auth": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "basic-auth": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
 
-## 测试插件
+最后，我们访问路由进行测试：
 
-- 缺少 Authorization header
+```bash
+# 场景1：访问路由时，不传递用户名与密码：
 
-```shell
-$ curl -i http://127.0.0.1:9080/hello
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get
+
+## Response
 HTTP/1.1 401 Unauthorized
-...
+Date: Wed, 28 Apr 2021 08:07:36 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+WWW-Authenticate: Basic realm='.'
+Server: APISIX/2.5
+
 {"message":"Missing authorization in request"}
-```
 
-- 用户名不存在：
+# 场景2：访问路由时，使用不存在的用户名
 
-```shell
-$ curl -i -ubar:bar http://127.0.0.1:9080/hello
+## Request
+$ curl -i --user bar:bar -X GET http://127.0.0.1:9080/get
+
+## Response
 HTTP/1.1 401 Unauthorized
-...
+Date: Wed, 28 Apr 2021 08:11:23 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
 {"message":"Invalid user key in authorization"}
-```
 
-- 密码错误：
+# 场景3：访问路由时，使用错误的密码
 
-```shell
-$ curl -i -ufoo:foo http://127.0.0.1:9080/hello
+## Request
+$ curl -i --user foo:foo -X GET http://127.0.0.1:9080/get
+
+## Response
 HTTP/1.1 401 Unauthorized
-...
+Date: Wed, 28 Apr 2021 08:12:05 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
 {"message":"Password is error"}
-...
-```
 
-- 成功请求：
+# 场景4：访问路由时，使用正确的用户名与密码
 
-```shell
-$ curl -i -ufoo:bar http://127.0.0.1:9080/hello
+## Request
+$ curl -i --user foo:bar -X GET http://127.0.0.1:9080/get
+
+## Response
 HTTP/1.1 200 OK
-...
-hello, foo!
-...
+Content-Type: application/json
+Content-Length: 342
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 08:13:32 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Authorization": "Basic Zm9vOmJhcg==",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6089192c-1050819b2b42a25375748181",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get"
+}
 ```
 
-## 禁用插件
+## 使用 AdminAPI 禁用插件
 
-当你想去掉 `basic-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
 
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
