@@ -27,10 +27,11 @@ __DATA__
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
+            local etcd = require("apisix.core.etcd")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -49,6 +50,13 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/ssl/1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
         }
     }
 --- request
@@ -149,8 +157,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "foo.com"}
 
             local code, message, res = t.test('/apisix/admin/ssl',
@@ -202,8 +210,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {sni = "foo.com"}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -241,8 +249,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "*.foo.com"}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -279,8 +287,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
                 cert = ssl_cert, key = ssl_key,
                 snis = {"*.foo.com", "bar.com"},
@@ -320,8 +328,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
                 cert = ssl_cert, key = ssl_key,
                 sni = "bar.com",
@@ -363,8 +371,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
@@ -393,8 +401,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
@@ -422,8 +430,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body = t.test('/apisix/admin/ssl/*invalid',
@@ -451,10 +459,10 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
-            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
-            local ssl_ecc_key = t.read_file("conf/cert/apisix_ecc.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local ssl_ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
+            local ssl_ecc_key = t.read_file("t/certs/apisix_ecc.key")
             local data = {
                 cert = ssl_cert,
                 key = ssl_key,
@@ -497,7 +505,7 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+            local ssl_ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
 
             local data = {
                 sni = "test.com",
@@ -540,8 +548,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { version = "v2", build = "16", env = "production"}}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -584,8 +592,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { env = {"production", "release"}}}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -627,11 +635,11 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
-                cert = ssl_cert, 
-                key = ssl_key, 
+                cert = ssl_cert,
+                key = ssl_key,
                 sni = "test.com",
                 create_time = 1602883670,
                 update_time = 1602893670,
@@ -689,5 +697,77 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: create/patch ssl
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("apisix.core.etcd")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+
+            local code, body, res = t.test('/apisix/admin/ssl',
+                ngx.HTTP_POST,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com"
+                        }
+                    },
+                    "action": "create"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
+            local res = assert(etcd.get('/ssl/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
+            local code, body = t.test('/apisix/admin/ssl/' .. id,
+                ngx.HTTP_PATCH,
+                core.json.encode({create_time = 0, update_time = 1})
+                )
+
+            if code ~= 201 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local res = assert(etcd.get('/ssl/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(create_time == 0, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time == 1, "update_time mismatched")
+
+            -- clean up
+            local code, body = t.test('/apisix/admin/ssl/' .. id,
+                ngx.HTTP_DELETE
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

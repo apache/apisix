@@ -41,7 +41,52 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc SayHello (HelloRequest) returns (HelloReply) {}
+                      }
+                      message HelloRequest {
+                          string name = 1;
+                      }
+                      message HelloReply {
+                          string message = 1;
+                         }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            local res = assert(etcd.get('/proto/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: set proto(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/2',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -73,7 +118,31 @@ passed
 
 
 
-=== TEST 2: set routes(id: 1)
+=== TEST 3: delete proto(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/2',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: set routes(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -83,7 +152,6 @@ passed
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -92,6 +160,7 @@ passed
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -115,7 +184,7 @@ passed
 
 
 
-=== TEST 3: hit route
+=== TEST 5: hit route
 --- request
 GET /grpctest?name=world
 --- response_body eval
@@ -125,7 +194,7 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 4: hit route by post
+=== TEST 6: hit route by post
 --- request
 POST /grpctest
 name=world
@@ -136,7 +205,7 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 5: hit route by post json
+=== TEST 7: hit route by post json
 --- request
 POST /grpctest
 {"name": "world"}
@@ -149,7 +218,7 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 6: wrong service protocol
+=== TEST 8: wrong upstream scheme
 --- config
     location /t {
         content_by_lua_block {
@@ -159,7 +228,6 @@ qr/\{"message":"Hello world"\}/
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpctest",
-                    "service_protocol": "asf",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -168,6 +236,7 @@ qr/\{"message":"Hello world"\}/
                         }
                     },
                     "upstream": {
+                        "scheme": "asf",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -190,7 +259,7 @@ GET /t
 
 
 
-=== TEST 7: wrong upstream address
+=== TEST 9: wrong upstream address
 --- config
     location /t {
         content_by_lua_block {
@@ -200,7 +269,6 @@ GET /t
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -209,6 +277,7 @@ GET /t
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:1970": 1
@@ -232,7 +301,7 @@ passed
 
 
 
-=== TEST 8: hit route (Connection refused)
+=== TEST 10: hit route (Connection refused)
 --- request
 GET /grpctest
 --- response_body eval
@@ -243,7 +312,7 @@ Connection refused) while connecting to upstream
 
 
 
-=== TEST 9: update proto(id: 1)
+=== TEST 11: update proto(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -290,7 +359,7 @@ passed
 
 
 
-=== TEST 10: set routes(id: 2)
+=== TEST 12: set routes(id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -300,16 +369,16 @@ passed
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpc_plus",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
                             "method": "Plus",
-                            "pb_option":["int64_as_string"]
+                            "pb_option":["int64_as_string", "enum_as_name"]
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -333,7 +402,7 @@ passed
 
 
 
-=== TEST 11: hit route
+=== TEST 13: hit route
 --- request
 GET /grpc_plus?a=1&b=2
 --- response_body eval
@@ -343,7 +412,7 @@ qr/\{"result":3\}/
 
 
 
-=== TEST 12: hit route
+=== TEST 14: hit route
 --- request
 GET /grpc_plus?a=1&b=2251799813685260
 --- response_body eval
@@ -353,7 +422,7 @@ qr/\{"result":"#2251799813685261"\}/
 
 
 
-=== TEST 13: set route3 deadline nodelay
+=== TEST 15: set route3 deadline nodelay
 --- config
     location /t {
         content_by_lua_block {
@@ -363,7 +432,6 @@ qr/\{"result":"#2251799813685261"\}/
                 [[{
                     "methods": ["GET"],
                     "uri": "/grpc_deadline",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -373,58 +441,7 @@ qr/\{"result":"#2251799813685261"\}/
                         }
                     },
                     "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:50051": 1
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 14: hit route
---- request
-GET /grpc_deadline?name=apisix
---- response_body eval
-qr/\{"message":"Hello apisix"\}/
---- no_error_log
-[error]
-
-
-
-=== TEST 15: set route4 deadline delay
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/4',
-                ngx.HTTP_PUT,
-                [[{
-                    "methods": ["GET"],
-                    "uri": "/grpc_delay",
-                    "service_protocol": "grpc",
-                    "plugins": {
-                        "grpc-transcode": {
-                            "proto_id": "1",
-                            "service": "helloworld.Greeter",
-                            "method": "SayHelloAfterDelay",
-                            "deadline": 500
-                        }
-                    },
-                    "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -449,12 +466,64 @@ passed
 
 === TEST 16: hit route
 --- request
+GET /grpc_deadline?name=apisix
+--- response_body eval
+qr/\{"message":"Hello apisix"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set route4 deadline delay
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpc_delay",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayHelloAfterDelay",
+                            "deadline": 500
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit route
+--- request
 GET /grpc_delay?name=apisix
 --- error_code: 504
 
 
 
-=== TEST 17: set routes: missing method
+=== TEST 19: set routes: missing method
 --- config
     location /t {
         content_by_lua_block {
@@ -488,7 +557,7 @@ GET /t
 
 
 
-=== TEST 18: set proto(id: 1, with array parameter)
+=== TEST 20: set proto(id: 1, with array parameter)
 --- config
     location /t {
         content_by_lua_block {
@@ -527,7 +596,7 @@ passed
 
 
 
-=== TEST 19: set routes(id: 1, with array parameter)
+=== TEST 21: set routes(id: 1, with array parameter)
 --- config
     location /t {
         content_by_lua_block {
@@ -546,6 +615,7 @@ passed
                         }
                     },
                     "upstream": {
+                        "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:50051": 1
@@ -569,13 +639,25 @@ passed
 
 
 
-=== TEST 20: hit route
+=== TEST 22: hit route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/grpctest',
+                ngx.HTTP_POST,
+                [[
+                {"name":"apisix", "items": ["a","b","c"]}
+                ]],
+                [[
+                {"message":"Hello apisix", "items": ["a","b","c"]}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
 --- request
-POST /grpctest
-{"name":"apisix", "items": ["a","b","c"]}
---- more_headers
-Content-Type: application/json
---- response_body eval
-qr/\{"items":\["a","b","c"\],"message":"Hello apisix"\}/
+GET /t
 --- no_error_log
 [error]

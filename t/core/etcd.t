@@ -333,3 +333,85 @@ Host: foo.com
 --- no_error_log
 [error]
 --- timeout: 20
+
+
+
+=== TEST 5: get single
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a")
+            ngx.status = res.status
+        }
+    }
+--- request
+GET /t
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a", true)
+            ngx.status = res.status
+            ngx.say(res.body.node.value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+ab
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: run etcd in init phase
+--- init_by_lua_block
+    local apisix = require("apisix")
+    apisix.http_init()
+    local etcd = require("apisix.core.etcd")
+    assert(etcd.set("/a", "ab"))
+
+    local res, err = etcd.get("/a")
+    if not res then
+        ngx.log(ngx.ERR, err)
+        return
+    end
+    ngx.log(ngx.WARN, res.body.node.value)
+
+    local res, err = etcd.delete("/a")
+    if not res then
+        ngx.log(ngx.ERR, err)
+        return
+    end
+    ngx.log(ngx.WARN, res.status)
+
+    local res, err = etcd.get("/a")
+    if not res then
+        ngx.log(ngx.ERR, err)
+        return
+    end
+    ngx.log(ngx.WARN, res.status)
+--- config
+    location /t {
+        return 200;
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/init_by_lua:\d+: \S+/
+--- grep_error_log_out
+init_by_lua:12: ab
+init_by_lua:19: 200
+init_by_lua:26: 404

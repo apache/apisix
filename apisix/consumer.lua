@@ -14,12 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local plugin   = require("apisix.plugin")
-local error    = error
-local ipairs   = ipairs
-local pairs    = pairs
-local type     = type
+local core           = require("apisix.core")
+local plugin         = require("apisix.plugin")
+local plugin_checker = require("apisix.plugin").plugin_checker
+local error          = error
+local ipairs         = ipairs
+local pairs          = pairs
+local type           = type
 local consumers
 
 
@@ -51,12 +52,12 @@ local function plugin_consumer()
                 end
 
                 local new_consumer = core.table.clone(consumer.value)
-                new_consumer.consumer_id = new_consumer.id
+                -- Note: the id here is the key of consumer data, which
+                -- is 'username' field in admin
+                new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
-
-                break
             end
         end
 
@@ -74,6 +75,14 @@ function _M.plugin(plugin_name)
 end
 
 
+-- attach chosen consumer to the ctx, used in auth plugin
+function _M.attach_consumer(ctx, consumer, conf)
+    ctx.consumer = consumer
+    ctx.consumer_name = consumer.consumer_name
+    ctx.consumer_ver = conf.conf_version
+end
+
+
 function _M.consumers()
     if not consumers then
         return nil, nil
@@ -83,12 +92,34 @@ function _M.consumers()
 end
 
 
+local function check_consumer(consumer)
+    return plugin_checker(consumer, core.schema.TYPE_CONSUMER)
+end
+
+
+local function filter(consumer)
+    if not consumer.value then
+        return
+    end
+
+    -- We expect the id is the same as username. Fix up it here if it isn't.
+    consumer.value.id = consumer.value.username
+end
+
+
 function _M.init_worker()
     local err
-    consumers, err = core.config.new("/consumers", {
-            automatic = true,
-            item_schema = core.schema.consumer
-        })
+    local config = core.config.new()
+    local cfg = {
+        automatic = true,
+        item_schema = core.schema.consumer,
+        checker = check_consumer,
+    }
+    if config.type ~= "etcd" then
+        cfg.filter = filter
+    end
+
+    consumers, err = core.config.new("/consumers", cfg)
     if not consumers then
         error("failed to create etcd instance for fetching consumers: " .. err)
         return

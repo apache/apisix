@@ -14,17 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
+use t::APISIX 'no_plan';
 
 no_root_location();
-
-my $travis_os_name = $ENV{TRAVIS_OS_NAME};
-if ((defined $travis_os_name) && $travis_os_name eq "linux") {
-    plan(skip_all =>
-      "skip under Travis CI inux environment which doesn't work well with IPv6");
-} else {
-    plan 'no_plan';
-}
 
 run_tests();
 
@@ -113,9 +105,9 @@ qr{connected: 1
 request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: Server: \w+
 received: 
 received: hello world
 failed to receive a line: closed \[\]

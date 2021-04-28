@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+apiVersion: apps/v1  # for versions before 1.8.0 use apps/v1beta1, before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
   labels:
@@ -23,7 +23,7 @@ metadata:
   name: apisix-gw-deployment
   # namespace: default
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: apisix-gw
@@ -35,39 +35,38 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - apisix-gw
-              topologyKey: kubernetes.io/hostname
-            weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - apisix-gw
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       initContainers:
-      - command:
-        - /bin/sh
-        - -c
-        - |
-          sysctl -w net.core.somaxconn=65535
-          sysctl -w net.ipv4.ip_local_port_range="1024 65535"
-          sysctl -w net.ipv4.tcp_max_syn_backlog=8192
-          sysctl -w fs.file-max=1048576
-          sysctl -w fs.inotify.max_user_instances=16384
-          sysctl -w fs.inotify.max_user_watches=524288
-          sysctl -w fs.inotify.max_queued_events=16384
-        image: busybox:latest
-        name: init-sysctl
-        resources: {}
-        securityContext:
-          privileged: true
-          procMount: Default
+        - command:
+            - /bin/sh
+            - -c
+            - |
+              sysctl -w net.core.somaxconn=65535
+              sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+              sysctl -w net.ipv4.tcp_max_syn_backlog=8192
+              sysctl -w fs.file-max=1048576
+              sysctl -w fs.inotify.max_user_instances=16384
+              sysctl -w fs.inotify.max_user_watches=524288
+              sysctl -w fs.inotify.max_queued_events=16384
+          image: busybox:latest
+          imagePullPolicy: IfNotPresent
+          name: init-sysctl
+          resources: {}
+          securityContext:
+            privileged: true
+            procMount: Default
       restartPolicy: Always
 
       containers:
         - env:
-            - name: TZ
-              value: "Asia/Shanghai"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -78,16 +77,16 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-          image: 'apache/apisix:latest'
+          image: "apache/apisix:latest"
           imagePullPolicy: IfNotPresent
           name: apisix-gw-deployment
           ports:
-          - containerPort: 9080
-            name: http
-            protocol: TCP
-          - containerPort: 9443
-            name: https
-            protocol: TCP
+            - containerPort: 9080
+              name: http
+              protocol: TCP
+            - containerPort: 9443
+              name: https
+              protocol: TCP
           readinessProbe:
             failureThreshold: 6
             initialDelaySeconds: 10

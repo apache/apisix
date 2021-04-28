@@ -17,7 +17,6 @@
 
 use t::APISIX 'no_plan';
 
-master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -56,7 +55,7 @@ __DATA__
                                     "interval": 100,
                                     "http_failures": 2
                                 }
-                            },
+                            },]] .. [[
                             "passive": {
                                 "healthy": {
                                     "http_statuses": [200, 201],
@@ -92,7 +91,7 @@ passed
         content_by_lua_block {
             ngx.sleep(1) -- wait for sync
 
-            local json_sort = require("lib.json_sort")
+            local json_sort = require("toolkit.json")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 

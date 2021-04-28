@@ -28,7 +28,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.echo")
-            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach" ,
+            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach",
             after_body = "body to attach"})
             if not ok then
                 ngx.say(err)
@@ -51,7 +51,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.echo")
-            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach" ,
+            local ok, err = plugin.check_schema({before_body = "body before", body = "body to attach",
             after_body = 10})
             if not ok then
                 ngx.say(err)
@@ -82,11 +82,12 @@ done
                             "echo": {
                                 "before_body": "before the body modification ",
                                 "body":"hello upstream",
-                                 "headers": {
+                                "after_body": " after the body modification.",
+                                "headers": {
                                     "Location":"https://www.iresty.com",
                                     "Authorization": "userpass"
-                                 },
-                                 "auth_value" : "userpass"
+                                },
+                                "auth_value" : "userpass"
                             }
                         },
                         "upstream": {
@@ -145,7 +146,7 @@ GET /hello
 --- more_headers
 Authorization: userpass
 --- response_body chomp
-before the body modification hello upstream
+before the body modification hello upstream after the body modification.
 --- response_headers
 Location: https://www.iresty.com
 Authorization: userpass
@@ -248,7 +249,7 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpasswrd",
+                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -268,7 +269,7 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpasswrd",
+                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -476,7 +477,7 @@ Location: https://www.iresty.com
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -518,7 +519,7 @@ GET /t
             local plugin = require("apisix.plugins.echo")
             local ok, err = plugin.check_schema({
                 before_body = "body before",
-                body = "body to attach" ,
+                body = "body to attach",
                 after_body = "body to attach",
                 invalid_att = "invalid",
             })
@@ -534,5 +535,103 @@ GET /t
 GET /t
 --- response_body
 additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: set body with chunked upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "body":"hello upstream"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello_chunked"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: access
+--- request
+GET /hello_chunked
+--- response_body chomp
+hello upstream
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: add before/after body with chunked upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                "after_body": " after the body modification."
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello_chunked"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: access
+--- request
+GET /hello_chunked
+--- response_body chomp
+before the body modification hello world
+ after the body modification.
 --- no_error_log
 [error]

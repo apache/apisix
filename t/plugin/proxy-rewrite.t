@@ -80,7 +80,7 @@ done
 --- request
 GET /t
 --- response_body
-property "scheme" validation failed: matches non of the enum values
+property "scheme" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]
@@ -517,8 +517,8 @@ passed
 GET /hello?q=apisix&a=iresty HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite_args
-q: apisix
 a: iresty
+q: apisix
 --- no_error_log
 [error]
 
@@ -1045,10 +1045,13 @@ passed
 === TEST 35: rewrite uri with args
 --- request
 GET /hello?a=iresty
---- response_body
-uri: /plugin_proxy_rewrite_args
+--- response_body_like eval
+qr/uri: \/plugin_proxy_rewrite_args(
 q: apisix
+a: iresty|
 a: iresty
+q: apisix)
+/
 --- no_error_log
 [error]
 
@@ -1060,7 +1063,7 @@ a: iresty
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -1123,5 +1126,247 @@ GET /t
 GET /t
 --- response_body
 additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: set route(header contains nginx variables)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/uri",
+                            "headers": {
+                                "x-api": "$remote_addr",
+                                "name": "$arg_name",
+                                "x-key": "$http_key"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: hit route(header supports nginx variables)
+--- request
+GET /hello?name=Bill HTTP/1.1
+--- more_headers
+key: X-APISIX
+--- response_body
+uri: /uri
+host: localhost
+key: X-APISIX
+name: Bill
+x-api: 127.0.0.1
+x-key: X-APISIX
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: set route(nginx variable does not exist)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/uri",
+                            "headers": {
+                                "x-api": "$helle",
+                                "name": "$arg_world",
+                                "x-key": "$http_key",
+                                "Version": "nginx_var_does_not_exist"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: hit route(get nginx variable is nil)
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /uri
+host: localhost
+version: nginx_var_does_not_exist
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: set route(rewrite uri based on ctx.var)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/$arg_new_uri"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: hit route(upstream uri: should be /hello)
+--- request
+GET /test?new_uri=hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: host with port
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.proxy-rewrite")
+            local ok, err = plugin.check_schema({
+                host = 'apisix.iresty.com:6443',
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: set route(rewrite host with port)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/uri",
+                                "host": "test.com:6443"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: rewrite host with port
+--- request
+GET /hello
+--- response_body
+uri: /uri
+host: test.com:6443
+x-real-ip: 127.0.0.1
 --- no_error_log
 [error]

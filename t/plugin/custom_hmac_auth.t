@@ -254,7 +254,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))

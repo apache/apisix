@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local utils = require("apisix.admin.utils")
 local schema_plugin = require("apisix.admin.plugins").stream_check_schema
 local tostring = tostring
 
@@ -86,6 +87,12 @@ function _M.put(id, conf)
     end
 
     local key = "/stream_routes/" .. id
+
+    local ok, err = utils.inject_conf_with_prev_conf("stream_routes", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put stream route[", key, "]: ", err)
@@ -102,7 +109,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get stream route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -119,6 +126,9 @@ function _M.post(id, conf)
     end
 
     local key = "/stream_routes"
+
+    utils.inject_timestamp(conf)
+
     local res, err = core.etcd.push("/stream_routes", conf)
     if not res then
         core.log.error("failed to post stream route[", key, "]: ", err)

@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local ngx  = ngx
 local pairs = pairs
+local req_get_body_data = ngx.req.get_body_data
 
 local _M = {}
 
@@ -51,6 +52,10 @@ local function get_full_log(ngx, conf)
             headers = ngx.resp.get_headers(),
             size = var.bytes_sent
         },
+        server = {
+            hostname = core.utils.gethostname(),
+            version = core.version.VERSION
+        },
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,
@@ -61,7 +66,7 @@ local function get_full_log(ngx, conf)
     }
 
     if conf.include_req_body then
-        local body = ngx.req.get_body_data()
+        local body = req_get_body_data()
         if body then
             log.request.body = body
         else

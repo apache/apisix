@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local expr = require("resty.expr.v1")
 local core = require("apisix.core")
+local apisix_upstream = require("apisix.upstream")
 local schema_plugin = require("apisix.admin.plugins").check_schema
-local upstreams = require("apisix.admin.upstreams")
+local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -49,10 +51,6 @@ local function check_conf(id, conf, need_id)
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.route))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
 
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
@@ -63,9 +61,14 @@ local function check_conf(id, conf, need_id)
                                  .. "allowed"}
     end
 
+    local ok, err = core.schema.check(core.schema.route, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
     local upstream_conf = conf.upstream
     if upstream_conf then
-        local ok, err = upstreams.check_upstream_conf(upstream_conf)
+        local ok, err = apisix_upstream.check_upstream_conf(upstream_conf)
         if not ok then
             return nil, {error_msg = err}
         end
@@ -105,10 +108,34 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    local plugin_config_id = conf.plugin_config_id
+    if plugin_config_id then
+        local key = "/plugin_configs/" .. plugin_config_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
     if conf.plugins then
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
+        end
+    end
+
+    if conf.vars then
+        ok, err = expr.new(conf.vars)
+        if not ok then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
         end
     end
 
@@ -147,6 +174,12 @@ function _M.put(id, conf, sub_path, args)
     end
 
     local key = "/routes/" .. id
+
+    local ok, err = utils.inject_conf_with_prev_conf("route", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "] to etcd: ", err)
@@ -163,7 +196,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get route[", key, "] from etcd: ", err)
         return 500, {error_msg = err}
@@ -181,6 +214,7 @@ function _M.post(id, conf, sub_path, args)
 
     local key = "/routes"
     -- core.log.info("key: ", key)
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "] to etcd: ", err)
@@ -252,6 +286,8 @@ function _M.patch(id, conf, sub_path, args)
     else
         node_value = core.table.merge(node_value, conf);
     end
+
+    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 

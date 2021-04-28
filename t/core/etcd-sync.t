@@ -22,7 +22,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: minus timeout to watch repeatedly 
+=== TEST 1: minus timeout to watch repeatedly
+--- extra_yaml_config
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  resync_delay: 0.5 # resync after timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -154,3 +159,59 @@ GET /t
 prev_index not update
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: bad plugin configuration (validated via incremental sync)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            assert(core.etcd.set("/global_rules/etcdsync",
+                {id = 1, plugins = { ["proxy-rewrite"] = { uri =  1 }}}
+            ))
+            -- wait for sync
+            ngx.sleep(0.6)
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "uri" validation failed
+
+
+
+=== TEST 5: bad plugin configuration (validated via full sync)
+--- config
+    location /t {
+        content_by_lua_block {
+        }
+    }
+--- request
+GET /t
+--- error_log
+use loaded configuration /global_rules
+property "uri" validation failed
+
+
+
+=== TEST 6: bad plugin configuration (validated without sync during start)
+--- extra_yaml_config
+  disable_sync_configuration_during_start: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            -- wait for full sync finish
+            ngx.sleep(0.6)
+
+            assert(core.etcd.delete("/global_rules/etcdsync"))
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "uri" validation failed
+--- no_error_log
+use loaded configuration /global_rules

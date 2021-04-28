@@ -24,6 +24,7 @@ local tonumber         = tonumber
 local _M = {}
 
 
+-- this function create the etcd client instance used in the Admin API
 local function new()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
@@ -37,6 +38,20 @@ local function new()
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
     etcd_conf.api_prefix = "/v3"
+    etcd_conf.ssl_verify = true
+
+    -- default to verify etcd cluster certificate
+    etcd_conf.ssl_verify = true
+    if etcd_conf.tls then
+        if etcd_conf.tls.verify == false then
+            etcd_conf.ssl_verify = false
+        end
+
+        if etcd_conf.tls.cert then
+            etcd_conf.ssl_cert_path = etcd_conf.tls.cert
+            etcd_conf.ssl_key_path = etcd_conf.tls.key
+        end
+    end
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
@@ -49,6 +64,7 @@ end
 _M.new = new
 
 
+-- convert ETCD v3 entry to v2 one
 local function kvs_to_node(kvs)
     local node = {}
     node.key = kvs.key
@@ -57,6 +73,7 @@ local function kvs_to_node(kvs)
     node.modifiedIndex = tonumber(kvs.mod_revision)
     return node
 end
+_M.kvs_to_node = kvs_to_node
 
 local function kvs_to_nodes(res)
     res.body.node.dir = true
@@ -76,7 +93,9 @@ local function not_found(res)
 end
 
 
-function _M.get_format(res, realkey)
+-- When `is_dir` is true, returns the value of both the dir key and its descendants.
+-- Otherwise, return the value of key only.
+function _M.get_format(res, real_key, is_dir, formatter)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
     end
@@ -86,17 +105,32 @@ function _M.get_format(res, realkey)
     if not res.body.kvs then
         return not_found(res)
     end
+
     res.body.action = "get"
 
-    -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
-    -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-    res.body.node = kvs_to_node(res.body.kvs[1])
-    if not res.body.kvs[1].value then
-        -- remove last "/" when necesary
-        if string.sub(res.body.node.key, -1, -1) == "/" then
-            res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+    if formatter then
+        return formatter(res)
+    end
+
+    if not is_dir then
+        local key = res.body.kvs[1].key
+        if key ~= real_key then
+            return not_found(res)
         end
-        res = kvs_to_nodes(res)
+
+        res.body.node = kvs_to_node(res.body.kvs[1])
+
+    else
+        -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
+        -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
+        res.body.node = kvs_to_node(res.body.kvs[1])
+        if not res.body.kvs[1].value then
+            -- remove last "/" when necessary
+            if string.byte(res.body.node.key, -1) == 47 then
+                res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+            end
+            res = kvs_to_nodes(res)
+        end
     end
 
     res.body.kvs = nil
@@ -112,6 +146,15 @@ function _M.watch_format(v3res)
     v2res.body = {
         node = {}
     }
+
+    local compact_revision = v3res.result.compact_revision
+    if compact_revision and tonumber(compact_revision) > 0 then
+        -- When the revisions are compacted, there might be compacted changes
+        -- which are unsynced. So we need to do a fully sync.
+        -- TODO: cover this branch in CI
+        return nil, "compacted"
+    end
+
     for i, event in ipairs(v3res.result.events) do
         v2res.body.node[i] = kvs_to_node(event.kv)
         if event.type == "DELETE" then
@@ -123,20 +166,22 @@ function _M.watch_format(v3res)
 end
 
 
-function _M.get(key)
+function _M.get(key, is_dir)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
 
+    key = prefix .. key
+
     -- in etcd v2, get could implicitly turn into readdir
     -- while in v3, we need to do it explicitly
-    local res, err = etcd_cli:readdir(prefix .. key)
+    local res, err = etcd_cli:readdir(key)
     if not res then
         return nil, err
     end
 
-    return _M.get_format(res, prefix .. key)
+    return _M.get_format(res, key, is_dir)
 end
 
 
@@ -239,12 +284,16 @@ end
 
 
 function _M.push(key, value, ttl)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, _, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    local res, err = etcd_cli:readdir(prefix .. key)
+    -- Create a new revision and use it as the id.
+    -- It will be better if we use snowflake algorithm like manager-api,
+    -- but we haven't found a good library. It costs too much to write
+    -- our own one as the admin-api will be replaced by manager-api finally.
+    local res, err = set("/gen_id", 1)
     if not res then
         return nil, err
     end

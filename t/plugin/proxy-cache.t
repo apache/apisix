@@ -59,7 +59,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity check (missing required field)
+=== TEST 1: sanity check (missing cache_zone field, the default value is disk_cache_one)
 --- config
        location /t {
            content_by_lua_block {
@@ -83,6 +83,32 @@ __DATA__
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
+                   }]],
+                   [[{
+                       "node": {
+                        "value": {
+                            "uri": "/hello",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "plugins": {
+                                "proxy-cache":{
+                                    "cache_zone":"disk_cache_one",
+                                    "hide_cache_headers":true,
+                                    "cache_bypass":["$arg_bypass"],
+                                    "cache_key":["$host","$request_uri"],
+                                    "no_cache":["$arg_no_cache"],
+                                    "cache_http_status":[200],
+                                    "cache_method":["GET"]
+                                }
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                        },
+                        "action": "set"
                    }]]
                    )
 
@@ -94,9 +120,8 @@ __DATA__
        }
 --- request
 GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
+--- response_body
+passed
 --- no_error_log
 [error]
 
@@ -661,5 +686,54 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err: cache_key variable \$request_method unsupported/
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: don't override cache relative headers
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: hit route
+--- request
+GET /echo
+--- more_headers
+Apisix-Cache-Status: Foo
+Cache-Control: bar
+Expires: any
+--- response_headers
+Apisix-Cache-Status: Foo
+Cache-Control: bar
+Expires: any
 --- no_error_log
 [error]

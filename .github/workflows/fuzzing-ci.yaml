@@ -1,0 +1,82 @@
+name: fuzzing
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  test_apisix:
+    name: run fuzzing
+    runs-on: ubuntu-latest
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Cache deps
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-deps
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+    - name: run apisix
+      run: |
+        wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+        sudo apt-get update
+        sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc
+        ./utils/linux-install-luarocks.sh
+
+        for (( i = 0; i < 10; i++ )); do
+            if [[ "$i" -eq 10 ]]; then
+                echo "failed to make deps in time"
+                exit 1
+            fi
+            make deps && break
+        done
+        make init
+        make run
+
+    - name: run upstream
+      run: |
+        sudo openresty -c $PWD/t/fuzzing/upstream/nginx.conf
+
+    - name: install boofuzz
+      run: |
+        pip install typing boofuzz
+
+    - name: run simpleroute test
+      run: |
+        python $PWD/t/fuzzing/simpleroute_test.py
+
+    - name: run serverless route test
+      run: |
+        python $PWD/t/fuzzing/serverless_route_test.py
+
+    - name: run vars route test
+      run: |
+        python $PWD/t/fuzzing/vars_route_test.py

@@ -33,17 +33,17 @@ __DATA__
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "enable_websocket": true,
-                            "type": "roundrobin"
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "uri": "/websocket_handshake"
+                        "type": "roundrobin"
+                    },
+                    "enable_websocket": true,
+                    "uri": "/websocket_handshake"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -79,7 +79,8 @@ Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
 Sec-WebSocket-Protocol: chat
 !Content-Type
 --- raw_response_headers_like: ^HTTP/1.1 101 Switching Protocols\r\n
---- response_body
+--- response_body_like eval
+qr/hello/
 --- no_error_log
 [error]
 --- error_code: 101
@@ -98,7 +99,6 @@ Sec-WebSocket-Protocol: chat
                         "127.0.0.1:1981": 1
                     },
                     "type": "roundrobin",
-                    "enable_websocket": true,
                     "desc": "new upstream"
                 }]]
                 )
@@ -124,10 +124,11 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/6',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/websocket_handshake/route",
-                        "upstream_id": "6"
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/websocket_handshake/route",
+                    "enable_websocket": true,
+                    "upstream_id": "6"
                 }]]
                 )
 
@@ -165,7 +166,8 @@ Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
 Sec-WebSocket-Protocol: chat
 !Content-Type
 --- raw_response_headers_like: ^HTTP/1.1 101 Switching Protocols\r\n
---- response_body
+--- response_body_like eval
+qr/hello/
 --- no_error_log
 [error]
 --- error_code: 101
@@ -177,15 +179,12 @@ Sec-WebSocket-Protocol: chat
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/6',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {
-                        "127.0.0.1:1981": 1
-                    },
-                    "type": "roundrobin",
+            local code, body = t('/apisix/admin/routes/6',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/websocket_handshake/route",
                     "enable_websocket": false,
-                    "desc": "new upstream"
+                    "upstream_id": "6"
                 }]]
                 )
 
@@ -221,3 +220,89 @@ Origin: http://example.com\r
 --- grep_error_log eval
 qr/failed to new websocket: bad "upgrade" request header: nil/
 --- grep_error_log_out
+
+
+
+=== TEST 8: set wss
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local code, body = t.test('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "scheme": "https",
+                        "nodes": {
+                            "127.0.0.1:1983": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "enable_websocket": true,
+                    "uri": "/websocket_handshake"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "127.0.0.1"}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: send websocket
+--- config
+    location /t {
+        content_by_lua_block {
+            local client = require "resty.websocket.client"
+            local wb = client:new()
+            local uri = "wss://127.0.0.1:1994/websocket_handshake"
+            local ok, err = wb:connect(uri)
+            if not ok then
+                ngx.say("failed to connect: " .. err)
+                return
+            end
+
+            local typ
+            data, typ, err = wb:recv_frame()
+            if not data then
+                ngx.say("failed to receive 2nd frame: ", err)
+                return
+            end
+
+            ngx.say("received: ", data, " (", typ, ")")
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+received: hello (text)

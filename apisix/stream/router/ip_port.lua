@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local plugin_checker = require("apisix.plugin").stream_plugin_checker
 local ipairs    = ipairs
 local error     = error
 local ngx_exit  = ngx.exit
@@ -84,6 +85,7 @@ function _M.stream_init_worker(filter)
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
+            checker = plugin_checker,
             filter = filter,
         })
 

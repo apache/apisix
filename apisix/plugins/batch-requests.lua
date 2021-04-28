@@ -20,7 +20,7 @@ local plugin    = require("apisix.plugin")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
-local str_find  = string.find
+local str_find  = core.string.find
 local str_lower = string.lower
 
 
@@ -44,6 +44,9 @@ local metadata_schema = {
     },
     additionalProperties = false,
 }
+
+local method_schema = core.table.clone(core.schema.method_schema)
+method_schema.default = "GET"
 
 local req_schema = {
     type = "object",
@@ -73,13 +76,7 @@ local req_schema = {
                         enum = {1.0, 1.1},
                         default = 1.1,
                     },
-                    method = {
-                        description = "HTTP method",
-                        type = "string",
-                        enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                                "OPTIONS", "CONNECT", "TRACE"},
-                        default = "GET"
-                    },
+                    method = method_schema,
                     path = {
                         type = "string",
                         minLength = 1,
@@ -163,7 +160,7 @@ local function set_common_header(data)
 
         if outer_headers then
             for k, v in pairs(outer_headers) do
-                local is_content_header = str_find(k, "content-", 1, true) == 1
+                local is_content_header = str_find(k, "content-") == 1
                 -- skip header start with "content-"
                 if not req.headers[k] and not is_content_header then
                     req.headers[k] = v

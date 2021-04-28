@@ -447,7 +447,7 @@ invalid base64 content
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -477,7 +477,7 @@ invalid base64 content
 --- request
 GET /t
 --- response_body
-{"response-rewrite":{"body":"new body\n","headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
+{"response-rewrite":{"body":"new body\n","body_base64":false,"headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
 --- no_error_log
 [error]
 
@@ -507,5 +507,125 @@ GET /t
 GET /t
 --- response_body
 additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: add validate vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                vars = {
+                    {"status","==",200}
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: add plugin with invalidate vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                vars = {
+                    {}
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+failed to validate the 'vars' expression: rule too short
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: set route with http status code as expr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "new body3\n",
+                            "status_code": 403,
+                            "vars": [
+                                ["status","==",500]
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/server_error","/hello"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: check http code that matches http_status
+--- request
+GET /server_error
+--- response_body
+new body3
+--- error_code eval
+403
+--- error_log
+500 Internal Server Error
+
+
+
+=== TEST 21: check http code that not matches http_status
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_code eval
+200
 --- no_error_log
 [error]

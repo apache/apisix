@@ -330,8 +330,22 @@ passed
 
 
 === TEST 10: hit prometheus route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1) -- wait for data synced
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/prometheus/metrics',
+                ngx.HTTP_GET)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
+GET /t
 --- error_code: 403
 
 
@@ -405,7 +419,7 @@ GET /apisix/prometheus/metrics
 --- request
 GET /t
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches non of the enum values"\}/
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches none of the enum values"\}/
 --- error_code: 400
 --- no_error_log
 [error]
@@ -472,5 +486,101 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: failed to validate dependent schema for \\"name\\": value should match only one schema, but matches none"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: not unwanted data, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_PUT,
+                [[{
+                    "skey": "val",
+                    "ikey": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"set","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: not unwanted data, GET
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_GET
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local value = res.node.value
+            assert(res.count ~= nil)
+            res.count = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"get","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: not unwanted data, DELETE
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"delete","deleted":"1","key":"/apisix/plugin_metadata/example-plugin","node":{}}
+--- request
+GET /t
 --- no_error_log
 [error]

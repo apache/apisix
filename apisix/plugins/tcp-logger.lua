@@ -23,7 +23,7 @@ local buffers = {}
 local ngx = ngx
 local tcp = ngx.socket.tcp
 local ipairs   = ipairs
-local stale_timer_running = false;
+local stale_timer_running = false
 local timer_at = ngx.timer.at
 
 local schema = {
@@ -68,6 +68,8 @@ local function send_tcp_data(conf, log_message)
 
     sock:settimeout(conf.timeout)
 
+    core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
+
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
         return false, "failed to connect to TCP server: host[" .. conf.host
@@ -77,7 +79,7 @@ local function send_tcp_data(conf, log_message)
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            return false, "failed to to perform TLS handshake to TCP server: host["
+            return false, "failed to perform TLS handshake to TCP server: host["
                           .. conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end
@@ -106,7 +108,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
@@ -115,15 +118,8 @@ local function remove_stale_objects(premature)
 end
 
 
-function _M.log(conf)
+function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
-
-    if not entry.route_id then
-        core.log.error("failed to obtain the route id for tcp logger")
-        return
-    end
-
-    local log_buffer = buffers[entry.route_id]
 
     if not stale_timer_running then
         -- run the timer every 30 mins if any log is present
@@ -131,6 +127,7 @@ function _M.log(conf)
         stale_timer_running = true
     end
 
+    local log_buffer = buffers[conf]
     if log_buffer then
         log_buffer:push(entry)
         return
@@ -159,6 +156,8 @@ function _M.log(conf)
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     local err
@@ -169,7 +168,7 @@ function _M.log(conf)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
 

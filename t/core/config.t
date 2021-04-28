@@ -27,7 +27,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)
@@ -38,7 +38,7 @@ __DATA__
 GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
-first plugin: "example-plugin"
+first plugin: "api-breaker"
 
 
 
@@ -46,7 +46,7 @@ first plugin: "example-plugin"
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "lib.json_sort" .encode
+            local encode_json = require("toolkit.json").encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)
@@ -147,7 +147,7 @@ bool:
 
 float:
   canonical: 6.8523015e+5
-  exponentioal: 685.230_15e+03
+  exponential: 685.230_15e+03
   fixed: 685_230.15
   sexagesimal: 190:20:30.15
   negative infinity: -.inf
@@ -300,3 +300,45 @@ GET /t
 etcd host: http://127.0.0.1:2379
 first plugin: "example-plugin"
 seq: {"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"],"Flow style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"]}
+
+
+
+=== TEST 3: allow environment variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+
+            ngx.say(config.apisix.id)
+        }
+    }
+--- main_config
+env AID=3;
+--- yaml_config
+#nginx_config:
+    #env: AID=3
+apisix:
+    id: ${{ AID }}
+--- request
+GET /t
+--- response_body
+3
+
+
+
+=== TEST 4: allow integer worker processes
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+
+            ngx.say(config.nginx_config.worker_processes)
+        }
+    }
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- request
+GET /t
+--- response_body
+1

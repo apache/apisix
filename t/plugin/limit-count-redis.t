@@ -193,16 +193,27 @@ passed
 
 
 === TEST 4: up the limit
+--- request
+GET /hello
+--- no_error_log
+[error]
+--- error_log
+try to lock with key route#1#redis
+unlock with key route#1#redis
+
+
+
+=== TEST 5: up the limit
 --- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 503, 503]
+[200, 503, 503]
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: up the limit
+=== TEST 6: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -212,7 +223,7 @@ passed
 
 
 
-=== TEST 6: set route, with redis host, port and right password
+=== TEST 7: set route, with redis host, port and right password
 --- config
     location /t {
         content_by_lua_block {
@@ -298,7 +309,7 @@ passed
 
 
 
-=== TEST 7: up the limit
+=== TEST 8: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -308,7 +319,7 @@ passed
 
 
 
-=== TEST 8: up the limit
+=== TEST 9: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -318,7 +329,7 @@ passed
 
 
 
-=== TEST 9: set route, with redis host, port and wrong password
+=== TEST 10: set route, with redis host, port and wrong password
 --- config
     location /t {
         content_by_lua_block {
@@ -364,7 +375,7 @@ GET /t
 
 
 
-=== TEST 10: request for TEST 9
+=== TEST 11: request for TEST 10
 --- request
 GET /hello_new
 --- error_code eval
@@ -376,7 +387,7 @@ failed to limit req: ERR invalid password
 
 
 
-=== TEST 11: multi request for TEST 9
+=== TEST 12: multi request for TEST 10
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
 --- error_code eval
@@ -384,7 +395,7 @@ failed to limit req: ERR invalid password
 
 
 
-=== TEST 12: restore redis password to ''
+=== TEST 13: restore redis password to ''
 --- config
     location /t {
         content_by_lua_block {

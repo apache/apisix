@@ -303,7 +303,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -344,7 +344,7 @@ passed
 
 
 
-=== TEST 16: use service 1 in route 1
+=== TEST 16: use service 1 in route 2
 --- config
     location /t {
         content_by_lua_block {
@@ -521,17 +521,17 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="3",service="",consumer="",node="127.0.0.1"\} 2/
+qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",consumer="",node="127.0.0.1"\} 2/
 --- no_error_log
 [error]
 
 
 
-=== TEST 25: fetch the prometheus metric data with `overhead`
+=== TEST 25: fetch the prometheus metric data with apisix latency
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/.*apisix_http_overhead_bucket.*/
+qr/.*apisix_http_latency_bucket\{type="apisix".*/
 --- no_error_log
 [error]
 
@@ -610,11 +610,11 @@ passed
 
 
 
-=== TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
+=== TEST 29: fetch the prometheus metric data with apisix latency (latency < 1s)
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
+qr/apisix_http_latency_bucket\{type="apisix".*service=\"3\".*le=\"500.*/
 --- no_error_log
 [error]
 
@@ -807,127 +807,5 @@ GET /apisix/prometheus/metrics
 qr/apisix_/
 --- response_body_unlike eval
 qr/etcd/
---- no_error_log
-[error]
-
-
-
-=== TEST 45: set route with key-auth enabled for consumer metrics
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "prometheus": {},
-                        "key-auth": {}
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 46: pipeline of client request without api-key
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[401, 401, 401, 401]
---- no_error_log
-[error]
-
-
-
-=== TEST 47: fetch the prometheus metric data: consumer is empty
---- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
-
-
-
-=== TEST 48: set consumer for metics data collection
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "key-auth": {
-                            "key": "auth-one"
-                        }
-                    }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 49: pipeline of client request with successfuly authorized
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- more_headers
-apikey: auth-one
---- error_code eval
-[200, 200, 200, 200]
---- no_error_log
-[error]
-
-
-
-=== TEST 50: fetch the prometheus metric data: consumer is jack
---- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_http_status\{code="200",route="1",service="",consumer="jack",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]

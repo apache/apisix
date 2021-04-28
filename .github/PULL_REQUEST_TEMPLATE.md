@@ -7,4 +7,4 @@
 * [ ] Did you explain what problem does this PR solve? Or what new features have been added?
 * [ ] Have you added corresponding test cases?
 * [ ] Have you modified the corresponding document?
-* [ ] Is this PR backward compatible?
+* [ ] Is this PR backward compatible? **If it is not backward compatible, please discuss on the [mailing list](https://github.com/apache/apisix/tree/master#community) first**

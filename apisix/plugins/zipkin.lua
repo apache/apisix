@@ -20,11 +20,18 @@ local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
 local ngx = ngx
+local ngx_re = require("ngx.re")
 local pairs = pairs
 local tonumber = tonumber
 
 local plugin_name = "zipkin"
+local ZIPKIN_SPAN_VER_1 = 1
+local ZIPKIN_SPAN_VER_2 = 2
 
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -38,8 +45,12 @@ local schema = {
         },
         server_addr = {
             type = "string",
-            description = "default is $server_addr, you can speific your external ip address",
+            description = "default is $server_addr, you can specify your external ip address",
             pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
+        },
+        span_version = {
+            enum = {ZIPKIN_SPAN_VER_1, ZIPKIN_SPAN_VER_2},
+            default = ZIPKIN_SPAN_VER_2,
         },
     },
     required = {"endpoint", "sample_ratio"}
@@ -48,7 +59,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1000,
+    priority = 11011,
     name = plugin_name,
     schema = schema,
 }
@@ -60,42 +71,33 @@ end
 
 
 local function create_tracer(conf,ctx)
-
-    local headers = core.request.headers(ctx)
-
--- X-B3-Sampled: if an upstream decided to sample this request, we do too.
-    local sample = headers["x-b3-sampled"]
-    if sample == "1" or sample == "true" then
-        conf.sample_ratio = 1
-    elseif sample == "0" or sample == "false" then
-        conf.sample_ratio = 0
-    end
-
--- X-B3-Flags: if it equals '1' then it overrides sampling policy
--- We still want to warn on invalid sample header, so do this after the above
-    local debug = headers["x-b3-flags"]
-    if debug == "1" then
-        conf.sample_ratio = 1
-    end
-
-    local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
+    conf.route_id = ctx.route_id
+    local reporter = new_reporter(conf)
+    reporter:init_processor()
+    local tracer = new_tracer(reporter, new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())
     return tracer
 end
 
-local function report2endpoint(premature, reporter)
-    if premature then
-        return
+
+local function parse_b3(b3)
+    -- See https://github.com/openzipkin/b3-propagation#single-header
+    if b3 == "0" then
+        return nil, nil, nil, "0", nil
     end
 
-    local ok, err = reporter:flush()
-    if not ok then
-        core.log.error("reporter flush ", err)
-        return
+    local pieces, err = ngx_re.split(b3, "-", nil, nil, 4)
+    if not pieces then
+        return err
     end
-
-    core.log.info("report2endpoint ok")
+    if not pieces[1] then
+        return "missing trace_id"
+    end
+    if not pieces[2] then
+        return "missing span_id"
+    end
+    return nil, pieces[1], pieces[2], pieces[3], pieces[4]
 end
 
 
@@ -108,16 +110,64 @@ function _M.rewrite(plugin_conf, ctx)
         conf.server_addr = ctx.var["server_addr"]
     end
 
-    local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
+    local tracer = core.lrucache.plugin_ctx(lrucache, ctx, conf.server_addr .. conf.server_port,
                                             create_tracer, conf, ctx)
 
-    ctx.opentracing_sample = tracer.sampler:sample()
+    local headers = core.request.headers(ctx)
+    local per_req_sample_ratio
+
+    -- X-B3-Flags: if it equals '1' then it overrides sampling policy
+    -- We still want to warn on invalid sampled header, so do this after the above
+    local debug = headers["x-b3-flags"]
+    if debug == "1" then
+        per_req_sample_ratio = 1
+    end
+
+    local trace_id, request_span_id, sampled, parent_span_id
+    local b3 = headers["b3"]
+    if b3 then
+        -- don't pass b3 header by default
+        core.request.set_header(ctx, "b3", nil)
+
+        local err
+        err, trace_id, request_span_id, sampled, parent_span_id = parse_b3(b3)
+
+        if err then
+            core.log.error("invalid b3 header: ", b3, ", ignored: ", err)
+            return 400
+        end
+
+        if sampled == "d" then
+            core.request.set_header(ctx, "x-b3-flags", "1")
+            sampled = "1"
+        end
+    else
+        -- X-B3-Sampled: if the client decided to sample this request, we do too.
+        sampled = headers["x-b3-sampled"]
+        trace_id = headers["x-b3-traceid"]
+        parent_span_id = headers["x-b3-parentspanid"]
+        request_span_id = headers["x-b3-spanid"]
+    end
+
+    if sampled == "1" or sampled == "true" then
+        per_req_sample_ratio = 1
+    elseif sampled == "0" or sampled == "false" then
+        per_req_sample_ratio = 0
+    end
+
+    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
     if not ctx.opentracing_sample then
+        core.request.set_header(ctx, "x-b3-sampled", "0")
         return
     end
 
-    local wire_context = tracer:extract("http_headers",
-                                        core.request.headers(ctx))
+    local zipkin_ctx = core.tablepool.fetch("zipkin_ctx", 0, 3)
+    zipkin_ctx.trace_id = trace_id
+    zipkin_ctx.parent_span_id = parent_span_id
+    zipkin_ctx.request_span_id = request_span_id
+    ctx.zipkin = zipkin_ctx
+
+    local wire_context = tracer:extract("http_headers", ctx)
 
     local start_timestamp = ngx.req.start_time()
     local request_span = tracer:start_span("apisix.request", {
@@ -138,17 +188,19 @@ function _M.rewrite(plugin_conf, ctx)
         tracer = tracer,
         wire_context = wire_context,
         request_span = request_span,
-        rewrite_span = nil,
-        access_span = nil,
-        proxy_span = nil,
     }
 
     local request_span = ctx.opentracing.request_span
-    ctx.opentracing.rewrite_span = request_span:start_child_span(
-                                            "apisix.rewrite", start_timestamp)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
+                                                                     start_timestamp)
 
-    ctx.REWRITE_END_TIME = tracer:time()
-    ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
+        ctx.REWRITE_END_TIME = tracer:time()
+        ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
+    else
+        ctx.opentracing.proxy_span = request_span:start_child_span("apisix.proxy",
+                                                                   start_timestamp)
+    end
 end
 
 function _M.access(conf, ctx)
@@ -157,23 +209,24 @@ function _M.access(conf, ctx)
     end
 
     local opentracing = ctx.opentracing
-
-    opentracing.access_span = opentracing.request_span:start_child_span(
-            "apisix.access", ctx.REWRITE_END_TIME)
-
     local tracer = opentracing.tracer
 
-    ctx.ACCESS_END_TIME = tracer:time()
-    opentracing.access_span:finish(ctx.ACCESS_END_TIME)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        opentracing.access_span = opentracing.request_span:start_child_span(
+            "apisix.access", ctx.REWRITE_END_TIME)
 
-    opentracing.proxy_span = opentracing.request_span:start_child_span(
-            "apisix.proxy", ctx.ACCESS_END_TIME)
+        ctx.ACCESS_END_TIME = tracer:time()
+        opentracing.access_span:finish(ctx.ACCESS_END_TIME)
+
+        opentracing.proxy_span = opentracing.request_span:start_child_span(
+                "apisix.proxy", ctx.ACCESS_END_TIME)
+    end
 
     -- send headers to upstream
     local outgoing_headers = {}
     tracer:inject(opentracing.proxy_span, "http_headers", outgoing_headers)
     for k, v in pairs(outgoing_headers) do
-        core.request.set_header(k, v)
+        core.request.set_header(ctx, k, v)
     end
 end
 
@@ -184,10 +237,19 @@ function _M.header_filter(conf, ctx)
     end
 
     local opentracing = ctx.opentracing
+    local end_time = opentracing.tracer:time()
 
-    ctx.HEADER_FILTER_END_TIME = opentracing.tracer:time()
-    opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
-            "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        ctx.HEADER_FILTER_END_TIME = end_time
+        if  opentracing.proxy_span then
+            opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
+                "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+        end
+    else
+        opentracing.proxy_span:finish(end_time)
+        opentracing.response_span = opentracing.request_span:start_child_span(
+            "apisix.response_span", ctx.HEADER_FILTER_END_TIME)
+    end
 end
 
 
@@ -199,17 +261,26 @@ function _M.log(conf, ctx)
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
-    opentracing.body_filter_span:finish(log_end_time)
+
+    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+        if opentracing.body_filter_span then
+            opentracing.body_filter_span:finish(log_end_time)
+        end
+        if opentracing.proxy_span then
+            opentracing.proxy_span:finish(log_end_time)
+        end
+
+    else
+        opentracing.response_span:finish(log_end_time)
+    end
 
     local upstream_status = core.response.get_upstream_status(ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
-    opentracing.proxy_span:finish(log_end_time)
+
     opentracing.request_span:finish(log_end_time)
 
-    local reporter = opentracing.tracer.reporter
-    local ok, err = ngx.timer.at(0, report2endpoint, reporter)
-    if not ok then
-        core.log.error("failed to create timer: ", err)
+    if ctx.zipkin_ctx then
+        core.tablepool.release("zipkin_ctx", ctx.zipkin_ctx)
     end
 end
 

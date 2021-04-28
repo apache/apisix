@@ -38,6 +38,7 @@ __DATA__
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")
@@ -63,6 +64,7 @@ done
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")
@@ -574,8 +576,8 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/apisix.crt")
-        local ssl_key =  t.read_file("conf/cert/apisix.key")
+        local ssl_cert = t.read_file("t/certs/apisix.crt")
+        local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
         local code, body = t.test('/apisix/admin/ssl/1',
@@ -633,7 +635,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
 
             local req = "GET /hello HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
@@ -664,13 +666,13 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- no_error_log

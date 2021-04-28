@@ -27,10 +27,24 @@ BEGIN {
 
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - skywalking
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+
+    $block;
+});
+
 repeat_each(1);
 no_long_string();
 no_root_location();
 log_level("debug");
+
 run_tests;
 
 __DATA__
@@ -41,31 +55,25 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "skywalking": {
-                                "endpoint": "http://127.0.0.1:1982/mock_skywalking",
-                                "sample_ratio": 1,
-                                "service_name": "APISIX"
-                            }
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "skywalking": {
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/opentracing"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "plugins": {
                                 "skywalking": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_skywalking",
-                                    "sample_ratio": 1,
-                                    "service_name":"APISIX"
                                 }
                             },
                             "upstream": {
@@ -97,21 +105,7 @@ passed
 
 
 
-=== TEST 2: tiger skywalking
---- request
-GET /opentracing
---- response_body
-opentracing
---- no_error_log
-[error]
---- grep_error_log eval
-qr/skywalking service Instance registered, service instance id: \d+/
---- grep_error_log_out eval
-qr/skywalking service Instance registered, service instance id: 1/
-
-
-
-=== TEST 3: test heartbeat
+=== TEST 2: trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -119,38 +113,37 @@ opentracing
 --- no_error_log
 [error]
 --- error_log
-skywalking heartbeat ok
+segments reported
+--- wait: 4
 
 
 
-=== TEST 4: change sample ratio
+=== TEST 3: change sample ratio
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "skywalking": {
-                                "endpoint": "http://127.0.0.1:1982/mock_skywalking",
-                                "sample_ratio": 0.00001
-                            }
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "skywalking": {
+                            "sample_ratio": 0.00001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/opentracing"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "plugins": {
                                 "skywalking": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_skywalking",
                                     "sample_ratio": 0.00001
                                 }
                             },
@@ -183,33 +176,35 @@ passed
 
 
 
-=== TEST 5: not tiger skywalking
+=== TEST 4: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
 opentracing
+--- error_log
+miss sampling, ignore
 --- no_error_log
-push data into skywalking context
+[error]
 
 
 
-=== TEST 6: disabled
+=== TEST 5: disabled
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/opentracing"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
                 }]],
                 [[{
                     "node": {
@@ -245,7 +240,7 @@ passed
 
 
 
-=== TEST 7: not tiger skywalking
+=== TEST 6: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -255,7 +250,7 @@ rewrite phase of skywalking plugin
 
 
 
-=== TEST 8: enable skywalking
+=== TEST 7: enable skywalking(sample_ratio=1)
 --- config
     location /t {
         content_by_lua_block {
@@ -265,9 +260,7 @@ rewrite phase of skywalking plugin
                  [[{
                         "plugins": {
                             "skywalking": {
-                                "endpoint": "http://127.0.0.1:1982/mock_skywalking",
-                                "sample_ratio": 1,
-                                "service_name": "APISIX"
+                                "sample_ratio": 1
                             }
                         },
                         "upstream": {
@@ -283,9 +276,7 @@ rewrite phase of skywalking plugin
                         "value": {
                             "plugins": {
                                 "skywalking": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_skywalking",
-                                    "sample_ratio": 1,
-                                    "service_name":"APISIX"
+                                    "sample_ratio": 1
                                 }
                             },
                             "upstream": {
@@ -317,12 +308,11 @@ passed
 
 
 
-=== TEST 9: test segments report
+=== TEST 8: test segments report
 --- request
 GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
 [error]
---- error_log
-skywalking segments reported
+--- wait: 4

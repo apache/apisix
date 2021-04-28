@@ -29,9 +29,16 @@ local rawset   = rawset
 local setmetatable = setmetatable
 local type     = type
 local string   = string
+local req_read_body = ngx.req.read_body
+local req_get_post_args = ngx.req.get_post_args
+local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -62,17 +69,17 @@ local _M = {
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_conf.appid] = consumer
+            consumer_names[consumer.auth_conf.appid] = consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 
 end -- do
@@ -274,9 +281,8 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
@@ -304,9 +310,9 @@ function _M.rewrite(conf, ctx)
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(prefix .. "UserId", userId)
-        core.request.set_header(prefix .. "Username", username)
-        core.request.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId, ctx)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -324,15 +330,16 @@ end
 local function get_args()
     local ctx = ngx.ctx.api_ctx
     local args, err
-    ngx.req.read_body()
+    req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
                    1, true) then
-        args, err = json.decode(ngx.req.get_body_data())
+        local req_body = req_get_body_data()
+        args, err = json.decode(req_body)
         if err then
-            core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
+            core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
-        args = ngx.req.get_post_args()
+        args = req_get_post_args()
     end
 
     return args
@@ -344,9 +351,8 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]

@@ -27,8 +27,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -49,8 +50,9 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 123})
+            local ok, err = plugin.check_schema({key = 123}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -73,7 +75,7 @@ done
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/1',
+            local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
@@ -194,7 +196,7 @@ GET /hello
             for i = 1, 20 do
                 username = "user_" .. tostring(i)
                 key = "auth-" .. tostring(i)
-                code, body = t(string.format('/apisix/admin/consumers/%d', tostring(i)),
+                code, body = t('/apisix/admin/consumers',
                     ngx.HTTP_PUT,
                     string.format('{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}', username, key),
                     string.format('{"node":{"value":{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}},"action":"set"}', username, key)
@@ -247,6 +249,45 @@ apikey: auth-13
                 )
 
             ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin key-auth err: property \"key\" is required"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: customize header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "header": "Authorization"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -259,11 +300,11 @@ passed
 
 
 
-=== TEST 10: valid consumer
+=== TEST 11: valid consumer
 --- request
 GET /hello
 --- more_headers
-apikey: auth-one
+Authorization: auth-one
 --- response_body
 hello world
 --- no_error_log

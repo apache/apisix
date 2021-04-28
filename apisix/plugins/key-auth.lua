@@ -15,16 +15,33 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
-local consumer = require("apisix.consumer")
+local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 local ipairs   = ipairs
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
+    additionalProperties = false,
+    properties = {
+        header = {
+            type = "string",
+            default = "apikey",
+        },
+    },
+}
+
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
     properties = {
         key = {type = "string"},
-    }
+    },
+    required = {"key"},
 }
 
 
@@ -34,48 +51,50 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            if consumer.auth_conf.key then
-                consumer_ids[consumer.auth_conf.key] = consumer
-            end
+            consumer_names[consumer.auth_conf.key] = consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 
 end -- do
 
 
-function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
 end
 
 
 function _M.rewrite(conf, ctx)
-    local key = core.request.header(ctx, "apikey")
+    local key = core.request.header(ctx, conf.header)
     if not key then
         return 401, {message = "Missing API key found in request"}
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     local consumer = consumers[key]
     if not consumer then
@@ -83,9 +102,7 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    ctx.consumer = consumer
-    ctx.consumer_id = consumer.consumer_id
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit key-auth rewrite")
 end
 

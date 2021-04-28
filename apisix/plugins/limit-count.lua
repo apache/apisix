@@ -26,21 +26,24 @@ do
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
 end
+local lrucache = core.lrucache.new({
+    type = 'plugin', serial_creating = true,
+})
 
 
 local schema = {
     type = "object",
     properties = {
-        count = {type = "integer", minimum = 0},
-        time_window = {type = "integer",  minimum = 0},
+        count = {type = "integer", exclusiveMinimum = 0},
+        time_window = {type = "integer",  exclusiveMinimum = 0},
         key = {
             type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for", "consumer_name", "service_id"},
+            default = "remote_addr",
         },
         rejected_code = {
-            type = "integer", minimum = 200, maximum = 600,
-            default = 503
+            type = "integer", minimum = 200, maximum = 599, default = 503
         },
         policy = {
             type = "string",
@@ -48,7 +51,7 @@ local schema = {
             default = "local",
         }
     },
-    required = {"count", "time_window", "key"},
+    required = {"count", "time_window"},
     dependencies = {
         policy = {
             oneOf = {
@@ -72,6 +75,9 @@ local schema = {
                         },
                         redis_password = {
                             type = "string", minLength = 0,
+                        },
+                        redis_database = {
+                            type = "integer", minimum = 0, default = 0,
                         },
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
@@ -97,8 +103,11 @@ local schema = {
                         redis_timeout = {
                             type = "integer", minimum = 1, default = 1000,
                         },
+                        redis_cluster_name = {
+                            type = "string",
+                        },
                     },
-                    required = {"redis_cluster_nodes"},
+                    required = {"redis_cluster_nodes", "redis_cluster_name"},
                 }
             }
         }
@@ -118,12 +127,6 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
-    end
-
-    if conf.policy == "redis" then
-        if not conf.redis_host then
-            return false, "missing valid redis option host"
-        end
     end
 
     return true
@@ -154,8 +157,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                              create_limit_obj, conf)
+    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
         return 500

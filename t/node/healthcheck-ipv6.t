@@ -24,17 +24,8 @@ BEGIN {
     }
 }
 
-use t::APISIX;
+use t::APISIX 'no_plan';
 
-my $travis_os_name = $ENV{TRAVIS_OS_NAME};
-if ((defined $travis_os_name) && $travis_os_name eq "linux") {
-    plan(skip_all =>
-      "skip under Travis CI inux environment which doesn't work well with IPv6");
-} else {
-    plan 'no_plan';
-}
-
-master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -139,7 +130,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
@@ -148,7 +139,8 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\[error\].*/
---- grep_error_log_out eval
-qr/Connection refused\) while connecting to upstream/
+qr/unhealthy .* for '.*'/
+--- grep_error_log_out
+unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
+unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
 --- timeout: 10

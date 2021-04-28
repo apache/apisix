@@ -1,3 +1,7 @@
+---
+title: APISIX Lua Coding Style Guide
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,10 +20,6 @@
 # limitations under the License.
 #
 -->
-
-[Chinese](CODE_STYLE_CN.md)
-
-# APISIX Lua Coding Style Guide
 
 ## indentation
 
@@ -135,7 +135,7 @@ end
 
 ## Maximum length per line
 
-Each line cannot exceed 80 characters. If it exceeds, you need to wrap and align:
+Each line cannot exceed 100 characters. If it exceeds, you need to wrap and align:
 
 ```lua
 --No
@@ -263,7 +263,8 @@ end
 
 ```lua
 --Yes
-local t = {}
+local new_tab = require "table.new"
+local t = new_tab(100, 0)
 for i = 1, 100000 do
     t[i] = "a"
 end

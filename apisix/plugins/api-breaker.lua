@@ -20,7 +20,6 @@ local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
 local error = error
-local ipairs = ipairs
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -90,18 +89,6 @@ local schema = {
 }
 
 
--- todo: we can move this into `core.talbe`
-local function array_find(array, val)
-    for i, v in ipairs(array) do
-        if v == val then
-            return i
-        end
-    end
-
-    return nil
-end
-
-
 local function gen_healthy_key(ctx)
     return "healthy-" .. core.request.get_host(ctx) .. ctx.var.uri
 end
@@ -113,7 +100,7 @@ end
 
 
 local function gen_lasttime_key(ctx)
-    return "unhealthy-lastime" .. core.request.get_host(ctx) .. ctx.var.uri
+    return "unhealthy-lasttime" .. core.request.get_host(ctx) .. ctx.var.uri
 end
 
 
@@ -187,8 +174,10 @@ function _M.log(conf, ctx)
         return
     end
 
-    -- unhealth process
-    if array_find(conf.unhealthy.http_statuses, upstream_status) then
+    -- unhealthy process
+    if core.table.array_find(conf.unhealthy.http_statuses,
+                             upstream_status)
+    then
         local unhealthy_count, err = shared_buffer:incr(unhealthy_key, 1, 0)
         if err then
             core.log.warn("failed to incr unhealthy_key: ", unhealthy_key,
@@ -212,7 +201,7 @@ function _M.log(conf, ctx)
     end
 
     -- health process
-    if not array_find(conf.healthy.http_statuses, upstream_status) then
+    if not core.table.array_find(conf.healthy.http_statuses, upstream_status) then
         return
     end
 
@@ -235,7 +224,7 @@ function _M.log(conf, ctx)
     -- clear related status
     if healthy_count >= conf.healthy.successes then
         -- stat change to normal
-        core.log.info("chagne to normal, ", healthy_key, " ", healthy_count)
+        core.log.info("change to normal, ", healthy_key, " ", healthy_count)
         shared_buffer:delete(gen_lasttime_key(ctx))
         shared_buffer:delete(unhealthy_key)
         shared_buffer:delete(healthy_key)

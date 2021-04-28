@@ -53,10 +53,24 @@ proxy_temp
 fastcgi_temp
 client_body_temp
 utils/lj-releng
-default.etcd/
+utils/reindex
+*.etcd/
+t/lib/dubbo-backend/dubbo-backend-interface/target/
+t/lib/dubbo-backend/dubbo-backend-provider/target/
 .idea/
 *.iml
 \.*
-
-# .travis
-!.travis/*.sh
+!.github/
+ci/openwhisk-utilities/
+!.gitmodules
+!.markdownlint.yml
+!.yamllint
+/conf/apisix.yaml
+/conf/apisix-*.yaml
+/conf/config-*.yaml
+!/conf/config-default.yaml
+/conf/debug-*.yaml
+/build-cache/
+# release tar package
+*.tgz
+release/*

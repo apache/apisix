@@ -37,6 +37,7 @@ __DATA__
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
 upstreams:
@@ -60,6 +61,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1111
 upstreams:
@@ -82,6 +84,7 @@ failed to find upstream by id: 1111
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
         upstream:
@@ -109,6 +112,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         upstream_id: 1
 upstreams:
@@ -139,6 +143,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /get
         upstream_id: 1
 upstreams:
@@ -151,5 +156,59 @@ upstreams:
 --- request
 GET /get
 --- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: upstream hash_on (bad)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        id: 1
+        uri: /get
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "httpbin.org:80": 1
+        type: chash
+        hash_on: header
+        key: "$aaa"
+#END
+--- request
+GET /get
+--- error_code: 502
+--- error_log
+invalid configuration: failed to match pattern
+
+
+
+=== TEST 7: upstream hash_on (good)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        id: 1
+        uri: /hello
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+            "127.0.0.2:1980": 1
+        type: chash
+        hash_on: header
+        key: "test"
+#END
+--- request
+GET /hello
+--- more_headers
+test: one
+--- error_log
+proxy request to 127.0.0.1:1980
 --- no_error_log
 [error]

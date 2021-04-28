@@ -15,9 +15,12 @@
 -- limitations under the License.
 --
 local require = require
+local http_route = require("apisix.http.route")
+local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
+local plugin_checker = require("apisix.plugin").plugin_checker
+local str_lower = string.lower
 local error   = error
-local pairs   = pairs
 local ipairs  = ipairs
 
 
@@ -25,44 +28,46 @@ local _M = {version = 0.3}
 
 
 local function filter(route)
+    route.orig_modifiedIndex = route.modifiedIndex
+    route.update_count = 0
+
     route.has_domain = false
     if not route.value then
         return
     end
 
-    if not route.value.upstream or not route.value.upstream.nodes then
-        return
+    if route.value.host then
+        route.value.host = str_lower(route.value.host)
+    elseif route.value.hosts then
+        for i, v in ipairs(route.value.hosts) do
+            route.value.hosts[i] = str_lower(v)
+        end
     end
 
-    local nodes = route.value.upstream.nodes
-    if core.table.isarray(nodes) then
-        for _, node in ipairs(nodes) do
-            local host = node.host
-            if not core.utils.parse_ipv4(host) and
-                    not core.utils.parse_ipv6(host) then
-                route.has_domain = true
-                break
+    apisix_upstream.filter_upstream(route.value.upstream, route)
+
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
+end
+
+
+-- attach common methods if the router doesn't provide its custom implementation
+local function attach_http_router_common_methods(http_router)
+    if http_router.routes == nil then
+        http_router.routes = function ()
+            if not http_router.user_routes then
+                return nil, nil
             end
+
+            local user_routes = http_router.user_routes
+            return user_routes.values, user_routes.conf_version
         end
-    else
-        local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
-        for addr, weight in pairs(nodes) do
-            local host, port = core.utils.parse_addr(addr)
-            if not core.utils.parse_ipv4(host) and
-                    not core.utils.parse_ipv6(host) then
-                route.has_domain = true
-            end
-            local node = {
-                host = host,
-                port = port,
-                weight = weight,
-            }
-            core.table.insert(new_nodes, node)
-        end
-        route.value.upstream.nodes = new_nodes
     end
 
-    core.log.info("filter route: ", core.json.delay_encode(route))
+    if http_router.init_worker == nil then
+        http_router.init_worker = function (filter)
+            http_router.user_routes = http_route.init_worker(filter)
+        end
+    end
 end
 
 
@@ -77,6 +82,7 @@ function _M.http_init_worker()
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
+    attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
 
@@ -88,7 +94,8 @@ function _M.http_init_worker()
 
     local global_rules, err = core.config.new("/global_rules", {
             automatic = true,
-            item_schema = core.schema.global_rule
+            item_schema = core.schema.global_rule,
+            checker = plugin_checker,
         })
     if not global_rules then
         error("failed to create etcd instance for fetching /global_rules : "

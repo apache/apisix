@@ -1,4 +1,6 @@
-[submodule "dashboard"]
-	path = dashboard
-	url = https://github.com/apache/incubator-apisix-dashboard.git
-
+[submodule "t/toolkit"]
+	path = t/toolkit
+	url = https://github.com/api7/test-toolkit.git
+[submodule ".github/actions/cancel-workflow-runs"]
+	path = .github/actions/cancel-workflow-runs
+	url = https://github.com/potiuk/cancel-workflow-runs

@@ -28,18 +28,19 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.serverless-pre-function")
-            local ok, err = plugin.check_schema({functions = {"return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"}})
+            local schema =  {functions = {"return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"}}
+            local ok, err = plugin.check_schema(schema)
             if not ok then
                 ngx.say(err)
             end
 
-            ngx.say("done")
+            ngx.say(schema.phase)
         }
     }
 --- request
 GET /t
 --- response_body
-done
+access
 --- no_error_log
 [error]
 
@@ -105,7 +106,7 @@ done
 --- request
 GET /t
 --- response_body
-property "phase" validation failed: matches non of the enum values
+property "phase" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]
@@ -627,3 +628,54 @@ Host: foo.com
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
+
+
+
+=== TEST 21: access conf & ctx in serverless
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                        "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'default phase: ', conf.phase);
+                                       ngx.log(ngx.WARN, 'match uri ', ctx.curr_req_matched and ctx.curr_req_matched._path);
+                                       ctx.var.upstream_uri = '/server_port' end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: check plugin
+--- request
+GET /hello
+--- response_body chomp
+1980
+--- error_log
+default phase: access
+match uri /hello

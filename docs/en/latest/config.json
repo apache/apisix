@@ -1,0 +1,222 @@
+{
+  "version": 2.5,
+  "sidebar": [
+    {
+      "type": "link",
+      "label": "Apache APISIX",
+      "href" : "https://apisix.apache.org/docs/apisix/getting-started"
+    },
+    {
+      "type": "category",
+      "label": "Architecture Design",
+      "items": [
+        "architecture-design/apisix",
+        "architecture-design/route",
+        "architecture-design/plugin",
+        "architecture-design/script",
+        "architecture-design/service",
+        "architecture-design/consumer",
+        "architecture-design/upstream",
+        "architecture-design/global-rule",
+        "architecture-design/plugin-config",
+        "architecture-design/router",
+        "architecture-design/debug-mode"
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "getting-started"
+    },
+    {
+      "type": "doc",
+      "id": "how-to-build"
+    },
+    {
+      "type": "category",
+      "label": "Plugins",
+      "items": [
+        {
+          "type": "category",
+          "label": "General",
+          "items": [
+            "plugins/batch-requests",
+            "plugins/serverless",
+            "plugins/redirect",
+            "plugins/echo",
+            "plugins/server-info"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Transformation",
+          "items": [
+            "plugins/response-rewrite",
+            "plugins/proxy-rewrite",
+            "plugins/grpc-transcode",
+            "plugins/fault-injection"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Authentication",
+          "items": [
+            "plugins/key-auth",
+            "plugins/jwt-auth",
+            "plugins/basic-auth",
+            "plugins/authz-keycloak",
+            "plugins/wolf-rbac",
+            "plugins/openid-connect",
+            "plugins/hmac-auth"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Security",
+          "items": [
+            "plugins/cors",
+            "plugins/uri-blocker",
+            "plugins/ip-restriction",
+            "plugins/referer-restriction",
+            "plugins/consumer-restriction"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Traffic",
+          "items": [
+            "plugins/limit-req",
+            "plugins/limit-conn",
+            "plugins/limit-count",
+            "plugins/proxy-cache",
+            "plugins/request-validation",
+            "plugins/proxy-mirror",
+            "plugins/api-breaker",
+            "plugins/traffic-split",
+            "plugins/request-id"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Monitoring",
+          "items": [
+            "plugins/prometheus",
+            "plugins/zipkin",
+            "plugins/skywalking",
+            "plugins/node-status"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Loggers",
+          "items": [
+            "plugins/http-logger",
+            "plugins/tcp-logger",
+            "plugins/kafka-logger",
+            "plugins/udp-logger",
+            "plugins/syslog",
+            "plugins/log-rotate",
+            "plugins/error-log-logger",
+            "plugins/sls-logger"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Other Protocols",
+          "items": [
+            "plugins/dubbo-proxy",
+            "plugins/mqtt-proxy"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "API",
+      "items": [
+        {
+          "type": "doc",
+          "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
+        }
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "FAQ"
+    },
+    {
+      "type": "category",
+      "label": "Others",
+      "items": [
+        {
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery",
+            "discovery/dns",
+            "discovery/consul_kv",
+            "discovery/nacos",
+            "discovery/eureka"
+          ]
+        },
+        {
+          "type": "doc",
+          "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
+        },
+        {
+          "type": "doc",
+          "id": "stand-alone"
+        },
+        {
+          "type": "doc",
+          "id": "stream-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "grpc-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "customize-nginx-configuration"
+        },
+        {
+          "type": "doc",
+          "id": "https"
+        },
+        {
+          "type": "doc",
+          "id": "batch-processor"
+        },
+        {
+          "type": "doc",
+          "id": "benchmark"
+        },
+        {
+          "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "doc",
+          "id": "debug-function"
+        }
+      ]
+    },
+    {
+      "type": "link",
+      "label": "CHANGELOG",
+      "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+    }
+  ]
+}

@@ -48,8 +48,8 @@ qr/"plugins":\{"type":"object"}/
                 ngx.say("found `anyOf`")
                 return
             end
-            
-            ngx.say("passed") 
+
+            ngx.say("passed")
         }
     }
 --- request
@@ -92,41 +92,12 @@ POST /apisix/admin/schema/service
 --- config
 location /t {
     content_by_lua_block {
+        local ssl = require("apisix.schema_def").ssl
         local t = require("lib.test_admin").test
         local code, body = t('/apisix/admin/schema/ssl',
             ngx.HTTP_GET,
             nil,
-            {
-                type = "object",
-                properties = {
-                    cert = {
-                        type = "string", minLength = 128, maxLength = 64*1024
-                    },
-                    key = {
-                        type = "string", minLength = 128, maxLength = 64*1024
-                    },
-                    sni = {
-                        type = "string",
-                        pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-                    },
-                    snis = {
-                        type = "array",
-                        items = {
-                            type = "string",
-                            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-                        }
-                    },
-                    exptime = {
-                        type = "integer",
-                        minimum = 1588262400,  -- 2020/5/1 0:0:0
-                    },
-                },
-                oneOf = {
-                    {required = {"sni", "key", "cert"}},
-                    {required = {"snis", "key", "cert"}}
-                },
-                additionalProperties = false,
-            }
+            ssl
             )
 
         ngx.status = code
@@ -146,7 +117,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/limit-count
 --- response_body eval
-qr/"required":\["count","time_window","key"\]/
+qr/"required":\["count","time_window"\]/
 --- no_error_log
 [error]
 
@@ -245,7 +216,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/udp-logger
 --- response_body  eval
-qr/{"properties":/
+qr/"properties":/
 --- no_error_log
 [error]
 
@@ -255,7 +226,7 @@ qr/{"properties":/
 --- request
 GET /apisix/admin/schema/plugins/grpc-transcode
 --- response_body eval
-qr/"proto_id".*additionalProperties/
+qr/("proto_id".*additionalProperties|additionalProperties.*"proto_id")/
 --- no_error_log
 [error]
 
@@ -272,9 +243,42 @@ qr/"disable":\{"type":"boolean"\}/
 
 
 === TEST 14: get plugin node-status schema
+--- extra_yaml_config
+plugins:
+    - node-status
 --- request
 GET /apisix/admin/schema/plugins/node-status
 --- response_body eval
 qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: get global_rule schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/global_rule
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: get proto schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/proto
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: get stream_route schema to check if it contains `create_time` and `update_time`
+--- request
+GET /apisix/admin/schema/stream_route
+--- response_body eval
+qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
 --- no_error_log
 [error]

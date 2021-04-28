@@ -68,12 +68,27 @@ function _M.header(ctx, name)
 end
 
 
-function _M.set_header(header_name, header_value)
+function _M.set_header(ctx, header_name, header_value)
+    if type(ctx) == "string" then
+        -- It would be simpler to keep compatibility if we put 'ctx'
+        -- after 'header_value', but the style is too ugly!
+        header_value = header_name
+        header_name = ctx
+        ctx = nil
+
+        log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
+    end
+
     local err
     header_name, err = _validate_header_name(header_name)
     if err then
         error(err)
     end
+
+    if ctx and ctx.headers then
+        ctx.headers[header_name] = header_value
+    end
+
     ngx.req.set_header(header_name, header_value)
 end
 
