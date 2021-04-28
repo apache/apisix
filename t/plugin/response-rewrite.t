@@ -639,7 +639,7 @@ hello world
             local plugin = require("apisix.plugins.response-rewrite")
             local ok, err = plugin.check_schema({
                             body = "",
-                            body_base64 =  true
+                            body_base64 = true
             })
             if not ok then
                 ngx.say(err)
