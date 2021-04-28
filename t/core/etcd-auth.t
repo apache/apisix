@@ -89,8 +89,8 @@ etcd:
   host:
     - "http://127.0.0.1:2379"
   prefix: "/apisix"
-  user: root
-  password: 5tHkHhYkjr6cQY
+  user: apisix
+  password: abc123
 --- request
 GET /t
 --- no_error_log
