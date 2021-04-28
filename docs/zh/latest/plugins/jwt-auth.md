@@ -25,7 +25,9 @@ title: jwt-auth
 
 启用该插件后，客户端访问路由、服务时需提供正确的 JSON Web Token，插件将从 HTTP 请求头、HTTP 查询参数（QueryString）或 Cookie 中获取凭证信息。
 
+:::caution 注意
 该插件需配合 Consumer 共同使用，为路由、服务增加该插件时，不需要进行配置。详情请见下方示例。
+:::
 
 ## 参数
 
