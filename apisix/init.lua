@@ -48,7 +48,8 @@ end
 local load_balancer
 local local_conf
 local dns_resolver
-local ver_header    = "APISIX/" .. core.version.VERSION
+local ver_header = "APISIX/" .. core.version.VERSION
+local is_http = ngx.config.subsystem == "http"
 
 
 local function parse_args(args)
@@ -285,6 +286,10 @@ local function get_upstream_by_id(up_id)
         local upstream = upstreams:get(tostring(up_id))
         if not upstream then
             core.log.error("failed to find upstream by id: " .. up_id)
+            if is_http then
+                return core.response.exit(502)
+            end
+
             return ngx_exit(1)
         end
 
@@ -293,6 +298,10 @@ local function get_upstream_by_id(up_id)
             upstream, err = parse_domain_in_up(upstream)
             if err then
                 core.log.error("failed to get resolved upstream: ", err)
+                if is_http then
+                    return core.response.exit(502)
+                end
+
                 return ngx_exit(1)
             end
         end
