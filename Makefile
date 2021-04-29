@@ -200,17 +200,6 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin
 	$(INSTALL) apisix/plugins/ext-plugin/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6
-	$(INSTALL) apisix/plugins/ext-plugin/A6/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/Err
-	$(INSTALL) apisix/plugins/ext-plugin/A6/Err/*.lua \
-		$(INST_LUADIR)/apisix/plugins/ext-plugin/A6/Err/
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/HTTPReqCall
-	$(INSTALL) apisix/plugins/ext-plugin/A6/HTTPReqCall/*.lua \
-		$(INST_LUADIR)/apisix/plugins/ext-plugin/A6/HTTPReqCall/
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/PrepareConf
-	$(INSTALL) apisix/plugins/ext-plugin/A6/PrepareConf/*.lua \
-		$(INST_LUADIR)/apisix/plugins/ext-plugin/A6/PrepareConf/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
