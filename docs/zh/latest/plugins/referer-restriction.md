@@ -21,94 +21,93 @@ title: referer-restriction
 #
 -->
 
-## 目录
+## 简介
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+启用该插件后，网关将根据预设的主机名白名单，通过判断请求头中 Referer 信息以判断是否限制该请求。
 
-## 名字
+## 参数
 
-`referer-restriction` 插件可以根据 Referer 请求头限制访问。
+|     参数名     |    类型    | 必选  | 默认值 |                         描述                          |
+| :------------: | :--------: | :---: | :----: | :---------------------------------------------------: |
+|   whitelist    | 字符串数组 |  是   |        | 主机名白名单，支持使用通配符域名，如 `*.hostname.com` |
+| bypass_missing |   布尔值   |  否   | false  |     当 Referer 不存在或格式异常时，是否忽略检查。     |
 
-## 属性
+## 使用 AdminAPI 启用插件
 
-| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
-| --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 必须    |         |       | 域名列表。域名开头可以用'*'作为通配符 |
-| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查 |
+首先，创建路由并绑定该插件，以下配置表示：当请求的 Referer 匹配 `xx.com` 或 `*.xx.com` 时，允许请求访问，否则拒绝。
 
-## 如何启用
-
-下面是一个示例，在指定的 route 上开启了 `referer-restriction` 插件:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "plugins": {
-        "referer-restriction": {
-            "bypass_missing": true,
-            "whitelist": [
-                "xx.com",
-                "*.xx.com"
-            ]
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "referer-restriction": {
+      "bypass_missing": true,
+      "whitelist": [
+          "xx.com",
+          "*.xx.com"
+      ]
     }
-}'
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}
+'
 ```
 
-## 测试插件
+接着，访问路由进行测试：
 
-带 `Referer: http://xx.com/x` 请求:
+```bash
+# 场景1：请求携带白名单内的 Referer
+## Request
+$ curl -i http://127.0.0.1:9080/get -H "Referer: http://xx.com/x"
 
-```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+## Response
 HTTP/1.1 200 OK
-...
-```
 
-带 `Referer: http://yy.com/x` 请求:
+# 场景2：请求携带白名单外的 Referer
+## Request
+$ curl -i http://127.0.0.1:9080/get -H "Referer: http://yy.com/x"
 
-```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+## Response
 HTTP/1.1 403 Forbidden
-...
+Date: Thu, 29 Apr 2021 06:32:33 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
 {"message":"Your referer host is not allowed"}
-```
 
-不带 `Referer` 请求:
+# 场景3：请求不携带 Referer
+## Request
+$ curl -i http://127.0.0.1:9080/get
 
-```shell
-$ curl http://127.0.0.1:9080/index.html
+## Response
 HTTP/1.1 200 OK
-...
 ```
 
-## 禁用插件
+## 使用 AdminAPI 禁用插件
 
-当你想去掉 `referer-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
 
-```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "uri": "/index.html",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
-
-现在就已移除 `referer-restriction` 插件，其它插件的开启和移除也类似。
