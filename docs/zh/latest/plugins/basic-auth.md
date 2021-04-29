@@ -74,7 +74,7 @@ $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f
 '
 ```
 
-最后，我们访问路由进行测试：
+最后，访问路由进行测试：
 
 ```bash
 # 场景1：访问路由时，不传递用户名与密码：

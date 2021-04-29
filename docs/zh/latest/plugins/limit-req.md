@@ -33,6 +33,7 @@ title: limit-req
 |     burst     | 整数型 |  是   |        |                                burst >= 0                                 |                         允许被延迟处理的请求速率。                         |
 |      key      | 字符串 |  是   |        | remote_addr,server_addr,http_x_real_ip,http_x_forwarded_for,consumer_name |                         用于限制请求速率的关键字。                         |
 | rejected_code | 整数型 |  否   |  503   |                                 200 ~ 599                                 |             当请求速率超过 `rate + burst` 后，将返回该状态码。             |
+
 ## 使用 AdminAPI 启用插件
 
 首先，创建路由并绑定该插件，以下配置表示：请求速率限制为 1 次/秒；当请求速率介于 1~3 时，这些请求将被延迟处理；当请求速率大于 3 时，请求将会被拒绝，并返回 503 状态码。
