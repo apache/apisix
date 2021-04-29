@@ -21,73 +21,58 @@ title: proxy-mirror
 #
 -->
 
-代理镜像插件，该插件提供了镜像客户端请求的能力。
+## 简介
 
-注：镜像请求返回的响应会被忽略。
+启用该插件后，网关将支持对请求进行镜像复制，以便更好地进行旁路的请求分析。
 
-### 参数
+## 参数
 
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                    |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------- |
-| host | string | 必须   |        |        | 指定镜像服务地址，例如：http://127.0.0.1:9797（地址中需要包含 schema ：http或https，不能包含 URI 部分） |
+| 参数名 |  类型  | 必选  |                                             描述                                             |
+| :----: | :----: | :---: | :------------------------------------------------------------------------------------------: |
+|  host  | 字符串 |  否   | 镜像服务地址，格式：`协议://主机名:端口号`，例如 `http://127.0.0.1:9797`，无需包含其它信息。 |
 
-### 示例
+## 使用 AdminAPI 启用插件
 
-#### 启用插件
+创建路由并绑定该插件：
 
-示例1：为特定路由启用 `proxy-mirror` 插件：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "plugins": {
-        "proxy-mirror": {
-           "host": "http://127.0.0.1:9797"
-        }
-    },
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1999": 1
-        },
-        "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
-```
-
-测试：
-
-```shell
-$ curl http://127.0.0.1:9080/hello -i
-HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Content-Length: 12
-Connection: keep-alive
-Server: APISIX web server
-Date: Wed, 18 Mar 2020 13:01:11 GMT
-Last-Modified: Thu, 20 Feb 2020 14:21:41 GMT
-
-hello world
-```
-
-> 由于指定的 mirror 地址是127.0.0.1:9797，所以验证此插件是否已经正常工作需要在端口为9797的服务上确认，例如，我们可以通过 python 启动一个简单的 server： python -m SimpleHTTPServer 9797。
-
-#### 禁用插件
-
-移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1999": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "proxy-mirror": {
+      "host": "http://127.0.0.1:9797"
     }
-}'
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}
+'
 ```
 
-这时该插件已被禁用。
+测试本插件是否生效，需要在指定的镜像服务侧进行测试。例如：在 `http://127.0.0.1:9797` 启动一个服务，当访问 `http://127.0.0.1:9080/get` 时，可以在 `http://127.0.0.1:9797` 感知到请求。
+
+## 使用 AdminAPI 禁用插件
+
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
+
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
+{
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}
+'
+```
