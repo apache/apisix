@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
+local string_format = string.format
 local re_gmatch = ngx.re.gmatch
 local re_sub      = ngx.re.sub
 local ipairs = ipairs
@@ -101,7 +102,7 @@ function _M.check_schema(conf)
         local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
                 conf.regex_uri[2], "jo")
         if err then
-            local msg = string.format("invalid regex_uri (%s, %s), err:%s",
+            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
                                         conf.regex_uri[1], conf.regex_uri[2], err)
             return false, msg
         end
@@ -173,7 +174,7 @@ function _M.rewrite(conf, ctx)
             local new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
                                            regex_uri[2], "jo")
             if not new_uri then
-                local msg = string.format("failed to substitute the uri:%s (%s) with %s, error:%s",
+                local msg = string_format("failed to substitute the uri:%s (%s) with %s, error:%s",
                                           ctx.var.uri, regex_uri[1], regex_uri[2], err)
                 core.log.error(msg)
                 return 500
