@@ -199,6 +199,7 @@ install: default
 	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin
+	$(INSTALL) apisix/plugins/ext-plugin/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6
 	$(INSTALL) apisix/plugins/ext-plugin/A6/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin/A6/Err
