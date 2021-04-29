@@ -127,6 +127,7 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
     require("apisix.upstream").init_worker()
+    require("apisix.plugins.ext-plugin.init").init_worker()
 
     local_conf = core.config.local_conf()
 

@@ -14,8 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local is_http = ngx.config.subsystem == "http"
 local core = require("apisix.core")
 local helper = require("apisix.plugins.ext-plugin.helper")
+local process, ngx_pipe, events
+if is_http then
+    process = require("ngx.process")
+    ngx_pipe = require("ngx.pipe")
+    events = require("resty.worker.events")
+end
 local bit = require("bit")
 local band = bit.band
 local lshift = bit.lshift
@@ -25,6 +32,10 @@ local ffi_str = ffi.string
 local socket_tcp = ngx.socket.tcp
 local str_byte = string.byte
 local str_format = string.format
+local ngx_timer_at = ngx.timer.at
+local exiting = ngx.worker.exiting
+local error = error
+local events_list
 
 
 local lrucache = core.lrucache.new({
@@ -191,6 +202,106 @@ function _M.communicate(conf, ctx)
         core.log.error(err)
         return 503
     end
+end
+
+
+local function create_lrucache()
+    if lrucache then
+        core.log.warn("flush conf token lrucache")
+    end
+
+    lrucache = core.lrucache.new({
+        type = "plugin",
+        ttl = helper.get_conf_token_cache_time(),
+    })
+end
+
+
+local function spawn_proc(cmd)
+    local opt = {
+        merge_stderr = true,
+        environ = {
+            "APISIX_CONF_EXPIRE_TIME=" .. helper.get_conf_token_cache_time(),
+            "APISIX_LISTEN_ADDRESS=" .. helper.get_path(),
+        },
+    }
+    local proc, err = ngx_pipe.spawn(cmd, opt)
+    if not proc then
+        error(str_format("failed to start %s: %s", core.json.encode(cmd), err))
+        -- TODO: add retry
+    end
+
+    proc:set_timeouts(nil, nil, nil, 0)
+    return proc
+end
+
+
+local function setup_runner()
+    local local_conf = core.config.local_conf()
+    local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
+    if not cmd then
+        return
+    end
+
+    events_list = events.event_list(
+        "process_runner_exit_event",
+        "runner_exit"
+    )
+
+    -- flush cache when runner exited
+    events.register(create_lrucache, events_list._source, events_list.runner_exit)
+
+    -- note that the runner is run under the same user as the Nginx master
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
+    local proc = spawn_proc(cmd)
+    ngx_timer_at(0, function(premature)
+        if premature then
+            return
+        end
+
+        while not exiting() do
+            while true do
+                -- drain output
+                local max = 3800 -- smaller than Nginx error log length limit
+                local data, err = proc:stdout_read_any(max)
+                if not data then
+                    if exiting() then
+                        return
+                    end
+
+                    if err == "closed" then
+                        break
+                    end
+                else
+                    -- we log stdout here just for debug or test
+                    -- the runner itself should log to a file
+                    core.log.warn(data)
+                end
+            end
+
+            local ok, reason, status = proc:wait()
+            if not ok then
+                core.log.warn("runner exited with reason: ", reason, ", status: ", status)
+            end
+
+            local ok, err = events.post(events_list._source, events_list.runner_exit)
+            if not ok then
+                core.log.error("post event failure with ", events_list._source, ", error: ", err)
+            end
+
+            core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
+            proc = spawn_proc(cmd)
+        end
+    end)
+end
+
+
+function _M.init_worker()
+    create_lrucache()
+    setup_runner()
 end
 
 

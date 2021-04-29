@@ -228,6 +228,9 @@ etcd:
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
 
+# ext-plugin:
+  # cmd: ["ls", "-l"]
+
 plugins:                          # plugin list (sorted in alphabetical order)
   - api-breaker
   - authz-keycloak
