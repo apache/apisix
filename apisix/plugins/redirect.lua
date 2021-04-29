@@ -164,7 +164,7 @@ function _M.rewrite(conf, ctx)
             local new_uri, err = concat_new_uri(uri, ctx)
             if not new_uri then
                 local msg = "failed to generate new uri by: " .. uri .. err
-                core.log.error(msg)
+                core.log.error("failed to generate new uri by: " .. uri .. err)
                 return 500
             end
 
