@@ -21,85 +21,99 @@ title: cors
 #
 -->
 
-## 目录
-
-- [**简介**](#简介)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 简介
 
-`cors` 插件可以让你为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) 的返回头。
+启用该插件后，网关将针对路由根据预设参数设置 CORS 规则，以便消费者在浏览器中发起请求。
 
-## 属性
+## 术语
 
-| 名称             | 类型    | 可选项 | 默认值 | 有效值 | 描述                                                         |
-| ---------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------------ |
-| allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081 。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
-| allow_methods    | string  | 可选   | "*"    |        | 允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。 |
-| max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
-| allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
-| allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin, 如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
+- Origin：请求首部字段 Origin 指示了请求来自于哪个站点。该字段仅指示服务器名称，并不包含任何路径信息。该首部用于 CORS 请求或者 POST 请求。除了不包含路径信息，该字段与 Referer 首部字段相似。
 
-> **提示**
->
-> 请注意 `allow_credential` 是一个很敏感的选项，谨慎选择开启。开启之后，其他参数默认的 `*` 将失效，你必须显式指定它们的值。
-> 使用 `**` 时要充分理解它引入了一些安全隐患，比如 CSRF，所以确保这样的安全等级符合自己预期再使用。
+## 参数
 
-## 如何启用
+|         参数名         |    类型    | 必选  | 默认值 |                                                                                                                                                                                                        描述                                                                                                                                                                                                         |
+| :--------------------: | :--------: | :---: | :----: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|     allow_origins      |   字符串   |  否   |   *    |                                                         `Access-Control-Allow-Origin` 请求头表示允许跨域的 Origin 白名单，格式：`协议://主机名:端口号`。当有多个值时，使用 `,` 分隔。当 `allow_credential = false` 时，可以使用 `*` 以允许任意 Origin；当 `allow_credential = true` 时，可以使用 `**` 强制允许任意 Origin，但这会产生安全问题，不推荐使用。                                                         |
+|     allow_methods      |   字符串   |  否   |   *    | `Access-Control-Allow-Methods` 请求头表示允许跨域的 HTTP 方法白名单，例如：`GET/POST/PUT` 等                                                                                                            。当有多个值时，使用 `,` 分隔。当 `allow_credential = false` 时，可以使用 `*` 以允许任意 HTTP 方法；当 `allow_credential = true` 时，可以使用 `**` 强制允许任意 HTTP 方法，但这会产生安全问题，不推荐使用。 |
+|     allow_headers      |   字符串   |  否   |   *    |                                             `Access-Control-Allow-Headers` 请求头表示当访问跨域资源时，允许消费者携带哪些非 CORS 规范以外的 HTTP 请求头。当有多个值时，使用 `,` 分隔。当 `allow_credential = false` 时，可以使用 `*` 以允许任意 HTTP 请求头；当 `allow_credential = true` 时，可以使用 `**` 强制允许任意 HTTP 请求头，但这会产生安全问题，不推荐使用。                                              |
+|     expose_headers     |   字符串   |  否   |   *    |                                                                                                                                               `Access-Control-Expose-Headers` 响应头表示当访问跨域资源时，允许响应方返回哪些 HTTP 请求头。有多个值时，使用 `,` 分隔。                                                                                                                                               |
+|        max_age         |   整数型   |  否   |   5    |               `Access-Controll-Max-Age` 响应头表示 `preflight request` 预检请求的返回结果（即 Access-Control-Allow-Methods 与 Access-Control-Allow-Headers 提供的信息）可以被缓存多久。单位为秒，在该时间范围内浏览器将复用上一次的检查结果，`-1` 表示不缓存。注意：不同浏览器允许的最大时间不同，具体请见 [MDN](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Access-Control-Max-Age)。                |
+|    allow_credential    |   布尔值   |  否   | false  |                                                                                                                                 `Access-Control-Allow-Credentials` 响应头表示是否可以将对请求的响应暴露给前端 JS，只有 `allow_credential = true` 才可以，此时其它选项不可以为 `*`。                                                                                                                                 |
+| allow_origins_by_regex | 字符串数组 |  否   |  nil   |                                                                                                                                                        使用正则表达式数组以匹配允许跨域访问的 Origin，如 `["*.test.com"]` 可以匹配 `test.com` 的子域名 `*`。                                                                                                                                                        |
 
-创建 `Route` 或 `Service` 对象，并配置 `cors` 插件。
+## 使用 AdminAPI 启用插件
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+首先，创建路由并绑定该插件，以下示例使用了 `cors` 插件的默认配置，即允许任意 Origin 访问。
+
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "uri": "/hello",
-    "plugins": {
-        "cors": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "cors": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
 
-## 测试插件
+接着，访问路由进行测试：
 
-请求下接口，发现接口已经返回了`CORS`相关的header，代表插件生效
+```bash
+# 场景1：在未启用 CORS 插件时，访问资源：
 
-```shell
-curl http://127.0.0.1:9080/hello -v
-...
-< Server: APISIX web server
+## Request
+$ curl -i http://127.0.0.1:9080/get -v
+
+## Response
 < Access-Control-Allow-Origin: *
-< Access-Control-Allow-Methods: *
-< Access-Control-Allow-Headers: *
-< Access-Control-Expose-Headers: *
-< Access-Control-Max-Age: 5
+Access-Control-Allow-Origin: *
+< Access-Control-Allow-Credentials: true
+Access-Control-Allow-Credentials: true
+
+# 场景2：启用 CORS 插件后，再发出请求：
+
+## Request
+$ curl -i http://127.0.0.1:9080/get -v
+
+## Response
 ...
+< Access-Control-Allow-Origin: *
+Access-Control-Allow-Origin: *
+< Access-Control-Allow-Credentials: true
+Access-Control-Allow-Credentials: true
+< Access-Control-Allow-Methods: *
+Access-Control-Allow-Methods: *
+< Access-Control-Max-Age: 5
+Access-Control-Max-Age: 5
+< Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers: *
+< Access-Control-Allow-Headers: *
+Access-Control-Allow-Headers: *
 ```
 
-## 禁用插件
+## 使用 AdminAPI 禁用插件
 
-从配置中移除`cors`插件即可。
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
 
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
