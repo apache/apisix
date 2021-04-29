@@ -107,7 +107,7 @@ apisix.apache.org
 
 
 
-=== TEST 12: test apisix with upstream error code 500
+=== TEST 6: test apisix with upstream error code 500
 --- request
 GET /specific_status
 --- more_headers
