@@ -19,7 +19,7 @@ local tab_insert = table.insert
 local tab_concat = table.concat
 local string_format = string.format
 local re_gmatch = ngx.re.gmatch
-local re_sub      = ngx.re.sub
+local re_sub = ngx.re.sub
 local ipairs = ipairs
 local ngx = ngx
 
@@ -38,8 +38,8 @@ local schema = {
         ret_code = {type = "integer", minimum = 200, default = 302},
         uri = {type = "string", minLength = 2, pattern = reg},
         regex_uri = {
-            description = "params array for generating new uri that substitute from client uri " ..
-                    "fist param is regular expression, second one is uri template",
+            description = "params for generating new uri that substitute from client uri, " ..
+                          "first param is regular expression, the second one is uri template",
             type        = "array",
             maxItems    = 2,
             minItems    = 2,
@@ -100,10 +100,10 @@ function _M.check_schema(conf)
 
     if conf.regex_uri and #conf.regex_uri > 0 then
         local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                conf.regex_uri[2], "jo")
+                                 conf.regex_uri[2], "jo")
         if err then
             local msg = string_format("invalid regex_uri (%s, %s), err:%s",
-                                        conf.regex_uri[1], conf.regex_uri[2], err)
+                                      conf.regex_uri[1], conf.regex_uri[2], err)
             return false, msg
         end
     end
@@ -163,7 +163,6 @@ function _M.rewrite(conf, ctx)
         if uri then
             local new_uri, err = concat_new_uri(uri, ctx)
             if not new_uri then
-                local msg = "failed to generate new uri by: " .. uri .. err
                 core.log.error("failed to generate new uri by: " .. uri .. err)
                 return 500
             end
