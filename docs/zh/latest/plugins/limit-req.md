@@ -21,196 +21,78 @@ title: limit-req
 #
 -->
 
-## 目录
-
-  - [简介](#简介)
-  - [属性](#属性)
-  - [示例](#示例)
-    - [如何在 `route` 或 `service` 上使用](#如何在`route`或`service`上使用)
-    - [如何在 `consumer` 上使用](#如何在`consumer`上使用)
-  - [移除插件](#移除插件)
-
 ## 简介
 
-限制请求速度的插件，使用的是漏桶算法。
+启用该插件后，网关将根据预设参数进行请求限速，该插件使用了漏桶算法。
 
-## 属性
+## 参数
 
-| 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
-| ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
-| burst         | integer | 必须   |        | burst >= 0                                                              | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
-| key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
-| rejected_code | integer | 可选   | 503    | [200,...,599]                                                              | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
+|    参数名     |  类型  | 必选  | 默认值 |                                  值范围                                   |                                    描述                                    |
+| :-----------: | :----: | :---: | :----: | :-----------------------------------------------------------------------: | :------------------------------------------------------------------------: |
+|     rate      | 整数型 |  是   |        |                                 rate > 0                                  | 允许的最大请求速率。大于 `rate` 但小于 `rate + burst` 的请求将被延迟处理。 |
+|     burst     | 整数型 |  是   |        |                                burst >= 0                                 |                         允许被延迟处理的请求速率。                         |
+|      key      | 字符串 |  是   |        | remote_addr,server_addr,http_x_real_ip,http_x_forwarded_for,consumer_name |                         用于限制请求速率的关键字。                         |
+| rejected_code | 整数型 |  否   |  503   |                                 200 ~ 599                                 |             当请求速率超过 `rate + burst` 后，将返回该状态码。             |
+## 使用 AdminAPI 启用插件
 
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
+首先，创建路由并绑定该插件，以下配置表示：请求速率限制为 1 次/秒；当请求速率介于 1~3 时，这些请求将被延迟处理；当请求速率大于 3 时，请求将会被拒绝，并返回 503 状态码。
 
-## 示例
-
-### 如何在`route`或`service`上使用
-
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "limit-req": {
-            "rate": 1,
-            "burst": 2,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "limit-req": {
+      "rate": 1,
+      "burst": 2,
+      "rejected_code": 503,
+      "key": "remote_addr"
     }
-}'
-```
-
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
-
-![添加路由](../../../assets/images/plugin/limit-req-1.png)
-
-然后在 route 页面中添加 limit-req 插件：
-
-![添加插件](../../../assets/images/plugin/limit-req-2.png)
-
-**测试插件**
-
-上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
-
-```shell
-curl -i http://127.0.0.1:9080/index.html
-```
-
-当你超过，就会收到包含 503 返回码的响应头：
-
-```html
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX web server
-
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
-
-这就表示 limit req 插件生效了。
-
-### 如何在`consumer`上使用
-
-consumer上开启`limit-req`插件，需要与授权插件一起配合使用，这里以key-auth授权插件为例。
-
-1、将`limit-req`插件绑定到consumer上
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "consumer_jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        },
-        "limit-req": {
-            "rate": 1,
-            "burst": 1,
-            "rejected_code": 403,
-            "key": "consumer_name"
-        }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
 
-2、创建`route`并开启`key-auth`插件
+接着，访问路由进行测试：
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
+```bash
+## Request
+$ curl -i http://127.0.0.1:9080/get & curl -i http://127.0.0.1:9080/get & curl -i http://127.0.0.1:9080/get & curl -i http://127.0.0.1:9080/get
 
-**测试插件**
-
-未超过`rate + burst` 的值
-
-```shell
-curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+## Response
 HTTP/1.1 200 OK
-......
+
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+
+HTTP/1.1 503 Service Temporarily Unavailable
 ```
 
-当超过`rate + burst` 的值
+当同时发出 4 次请求时，第 1 个请求将返回 200 状态码，第 2、3 个请求延迟返回 200 状态码，第 4 个请求将返回 503 状态码。这表示该插件及其配置已生效。
 
-```shell
-curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
-HTTP/1.1 403 Forbidden
-.....
-<html>
-<head><title>403 Forbidden</title></head>
-<body>
-<center><h1>403 Forbidden</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
+## 使用 AdminAPI 禁用插件
 
-说明绑在`consumer`上的 `limit-req`插件生效了
+如果希望禁用插件，只需更新路由配置，从 plugins 字段移除该插件即可：
 
-## 移除插件
-
-当你想去掉 limit req 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
-
-移除`consumer`上的 `limit-req` 插件
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "consumer_jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        }
-    }
-}'
-```
-
-现在就已经移除了 limit req 插件了。其他插件的开启和移除也是同样的方法。
