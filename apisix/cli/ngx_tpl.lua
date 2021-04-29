@@ -236,6 +236,10 @@ http {
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
     {% end %}
+
+    # error_page
+    error_page 500 502 503 504 /50x.html;
+
     # http configuration snippet ends
 
     upstream apisix_backend {
@@ -285,6 +289,10 @@ http {
                 apisix.http_control()
             }
         }
+
+        location = /50x.html {
+            root   html;
+        } 
     }
     {% end %}
 
@@ -362,6 +370,10 @@ http {
                 apisix.http_admin()
             }
         }
+
+        location = /50x.html {
+            root   html;
+        } 
     }
     {% end %}
 
@@ -612,6 +624,10 @@ http {
             proxy_pass $upstream_mirror_host$request_uri;
         }
         {% end %}
+
+        location = /50x.html {
+            root   html;
+        } 
     }
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}

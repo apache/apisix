@@ -370,6 +370,8 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
+    error_page 500 502 503 504 /50x.html;
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -506,6 +508,10 @@ _EOC_
             content_by_lua_block {
                 apisix.http_admin()
             }
+        }
+
+        location = /50x.html {
+            root   html;
         }
 
         location /v1/ {
