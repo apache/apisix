@@ -239,6 +239,8 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - echo
   # - error-log-logger
   # - example-plugin
+  - ext-plugin-pre-req
+  - ext-plugin-post-req
   - fault-injection
   - grpc-transcode
   - hmac-auth
