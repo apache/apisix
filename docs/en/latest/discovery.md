@@ -223,9 +223,9 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/a/*",
     "plugins": {
         "proxy-rewrite" : {
-            regex_uri: ["^/a/(.*)", "/${1}"]
+            "regex_uri": ["^/a/(.*)", "/${1}"]
         }
-    }
+    },
     "upstream": {
         "service_name": "A-SERVICE",
         "type": "roundrobin",
@@ -238,9 +238,9 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/b/*",
     "plugins": {
         "proxy-rewrite" : {
-            regex_uri: ["^/b/(.*)", "/${1}"]
+            "regex_uri": ["^/b/(.*)", "/${1}"]
         }
-    }
+    },
     "upstream": {
         "service_name": "B-SERVICE",
         "type": "roundrobin",
