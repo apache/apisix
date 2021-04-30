@@ -292,7 +292,7 @@ http {
 
         location = /50x.html {
             root   html;
-        } 
+        }
     }
     {% end %}
 
@@ -373,7 +373,7 @@ http {
 
         location = /50x.html {
             root   html;
-        } 
+        }
     }
     {% end %}
 
@@ -627,7 +627,7 @@ http {
 
         location = /50x.html {
             root   html;
-        } 
+        }
     }
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}
