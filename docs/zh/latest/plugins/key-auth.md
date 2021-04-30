@@ -144,9 +144,7 @@ $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f
 {
   "methods": ["GET"],
   "uri": "/get",
-  "plugins": {
-    "key-auth": {}
-  },
+  "plugins": {},
   "upstream": {
     "type": "roundrobin",
     "nodes": {
