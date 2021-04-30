@@ -299,7 +299,7 @@ local function get_upstream_by_id(up_id)
             if err then
                 core.log.error("failed to get resolved upstream: ", err)
                 if is_http then
-                    return core.response.exit(502)
+                    return core.response.exit(500)
                 end
 
                 return ngx_exit(1)
