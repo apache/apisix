@@ -100,6 +100,10 @@ function _M.get_format(res, real_key, is_dir, formatter)
         return nil, "insufficient credentials code: 401"
     end
 
+    if res.body.error == "etcdserver: permission denied" then
+        return nil, "etcd forbidden code: 403"
+    end
+
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     if not res.body.kvs then
