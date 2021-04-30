@@ -214,6 +214,9 @@ http {
     include mime.types;
     charset utf-8;
 
+    # error_page
+    error_page 500 502 503 504 /50x.html;
+
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
     {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
@@ -236,9 +239,6 @@ http {
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
     {% end %}
-
-    # error_page
-    error_page 500 502 503 504 /50x.html;
 
     # http configuration snippet ends
 
