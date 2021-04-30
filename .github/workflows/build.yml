@@ -62,7 +62,7 @@ jobs:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
       - name: Extract branch name
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
