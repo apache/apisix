@@ -54,26 +54,6 @@ make deps
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
-### Installation via Luarocks (macOS not supported)
-
-Execute the following command in the terminal to complete the installation of APISIX (only recommended for developers):
-
-> Install the code for the master branch via a script
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
-```
-
-> Install the specified version via Luarocks:
-
-```shell
-# Install version 2.5
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.5
-
-# old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 2.5
-```
-
 ## 3. Manage (start/stop) APISIX Server
 
 We can start the APISIX server by command `make run` in APISIX home folder,

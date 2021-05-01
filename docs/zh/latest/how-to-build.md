@@ -54,26 +54,6 @@ make deps
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
-### 通过 Luarocks 安装 （不支持 macOS）
-
-在终端中执行下面命令完成 APISIX 的安装（只推荐开发者使用）：
-
-> 通过脚本安装 master 分支的代码
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
-```
-
-> 通过 Luarocks 安装指定的版本:
-
-```shell
-# 安装 apisix 的 2.5 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.5
-
-# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 2.5
-```
-
 ## 3. 管理（启动、关闭等）APISIX 服务
 
 我们可以在 apisix 的目录下用 `make run` 命令来启动服务，或者用 `make stop` 方式关闭服务。
