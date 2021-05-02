@@ -98,7 +98,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Response：
 
-Response is `Array` of [HttpResponse](#HttpResponse).
+Response is `Array` of [HttpResponse](#httpresponse).
 
 #### HttpResponse
 
