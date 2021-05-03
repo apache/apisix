@@ -29,7 +29,7 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 
 | Name | Type   | Requirement | Default | Valid | Description                                                                                                                 |
 | ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| host | string | optional    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
+| host | string | optional    |         |       | Specify a mirror service address, e.g. `http://127.0.0.1:9797` (address needs to contain schema: http or https, not URI part) |
 
 ### Examples
 
