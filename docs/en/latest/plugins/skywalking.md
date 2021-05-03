@@ -29,7 +29,7 @@ title: skywalking
 - [**Test Plugin**](#test-plugin)
   - [**Run Skywalking Example**](#run-skywalking-example)
 - [**Disable Plugin**](#disable-plugin)
-- [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
+- [**Upstream services(Code With SpringBoot)**](#upstream-servicescode-with-springboot))
 
 ## Name
 
@@ -91,7 +91,7 @@ We can set the endpoint by specified the configuration in `conf/config.yaml`.
 | ------------ | ------ | -------- | -------------------------------------------------------------------- |
 | service_name | string | "APISIX" | service name for skywalking reporter                                 |
 | service_instance_name | string |"APISIX Instance Name" | service instance name for skywalking reporter，  set it to `$hostname` to get local hostname directly.|
-| endpoint_addr | string | "http://127.0.0.1:12800" | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+| endpoint_addr | string | `http://127.0.0.1:12800` | the http endpoint of Skywalking, for example: `http://127.0.0.1:12800` |
 | report_interval | integer | use the value in the skywalking client library | the report interval, in seconds |
 
 Here is an example:
@@ -101,7 +101,7 @@ plugin_attr:
   skywalking:
     service_name: APISIX
     service_instance_name: "APISIX Instance Name"
-    endpoint_addr: http://127.0.0.1:12800
+    endpoint_addr: `http://127.0.0.1:12800`
 ```
 
 ## Test Plugin
@@ -145,7 +145,7 @@ plugin_attr:
         ```
 
     2. Open the webUI of  skywalking:
-        You can open dashboard with a browser: http://10.110.149.175:8080. It will be a successful install as follow:
+        You can open dashboard with a browser: `http://10.110.149.175:8080`. It will be a successful install as follow:
         ![ ](../../../assets/images/plugin/skywalking-3.png)
 
 3. Test:
