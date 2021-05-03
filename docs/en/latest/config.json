@@ -163,6 +163,13 @@
           ]
         },
         {
+          "type": "category",
+          "label": "Examples",
+          "items": [
+            "examples/plugins-hmac-auth-generate-signature"
+          ]
+        },
+        {
           "type": "doc",
           "id": "health-check"
         },
