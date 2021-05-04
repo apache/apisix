@@ -47,15 +47,7 @@ if ngx.config.subsystem == "http" then
 end
 local load_balancer
 local local_conf
-local dns_resolver
 local ver_header    = "APISIX/" .. core.version.VERSION
-
-
-local function parse_args(args)
-    dns_resolver = args and args["dns_resolver"]
-    core.utils.set_resolver(dns_resolver)
-    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
-end
 
 
 local _M = {version = 0.4}
@@ -72,7 +64,7 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    parse_args(args)
+    core.resolver.init_resolver(args)
     core.id.init()
 
     local process = require("ngx.process")
@@ -156,24 +148,6 @@ function _M.http_ssl_phase()
 end
 
 
-local function parse_domain(host)
-    local ip_info, err = core.utils.dns_parse(host)
-    if not ip_info then
-        core.log.error("failed to parse domain: ", host, ", error: ",err)
-        return nil, err
-    end
-
-    core.log.info("parse addr: ", core.json.delay_encode(ip_info))
-    core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
-    core.log.info("host: ", host)
-    if ip_info.address then
-        core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
-        return ip_info.address
-    else
-        return nil, "failed to parse domain"
-    end
-end
-_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -182,7 +156,7 @@ local function parse_domain_for_nodes(nodes)
         local host = node.host
         if not ipmatcher.parse_ipv4(host) and
                 not ipmatcher.parse_ipv6(host) then
-            local ip, err = parse_domain(host)
+            local ip, err = core.resolver.parse_domain(host)
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip

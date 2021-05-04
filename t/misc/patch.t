@@ -126,3 +126,28 @@ end
     }
 --- error_log
 failed to read: timeout
+
+
+
+=== TEST 4: resolve host by ourselves
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://apisix")
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+301
