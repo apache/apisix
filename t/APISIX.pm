@@ -229,6 +229,7 @@ _EOC_
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
