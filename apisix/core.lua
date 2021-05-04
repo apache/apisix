@@ -48,5 +48,6 @@ return {
     dns_client  = require("apisix.core.dns.client"),
     etcd        = require("apisix.core.etcd"),
     tablepool   = require("tablepool"),
+    resolver    = require("apisix.core.resolver"),
     empty_tab   = {},
 }

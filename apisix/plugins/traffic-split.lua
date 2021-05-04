@@ -17,7 +17,6 @@
 local core       = require("apisix.core")
 local upstream   = require("apisix.upstream")
 local schema_def = require("apisix.schema_def")
-local init       = require("apisix.init")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
 local expr       = require("resty.expr.v1")
@@ -130,7 +129,7 @@ local function parse_domain_for_node(node)
     if not ipmatcher.parse_ipv4(node)
        and not ipmatcher.parse_ipv6(node)
     then
-        local ip, err = init.parse_domain(node)
+        local ip, err = core.resolver.parse_domain(node)
         if ip then
             return ip
         end
