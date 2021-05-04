@@ -45,6 +45,9 @@ local metadata_schema = {
     additionalProperties = false,
 }
 
+local method_schema = core.table.clone(core.schema.method_schema)
+method_schema.default = "GET"
+
 local req_schema = {
     type = "object",
     properties = {
@@ -73,13 +76,7 @@ local req_schema = {
                         enum = {1.0, 1.1},
                         default = 1.1,
                     },
-                    method = {
-                        description = "HTTP method",
-                        type = "string",
-                        enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                                "OPTIONS", "CONNECT", "TRACE"},
-                        default = "GET"
-                    },
+                    method = method_schema,
                     path = {
                         type = "string",
                         minLength = 1,

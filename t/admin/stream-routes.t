@@ -31,10 +31,12 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
+                    "desc": "test-desc",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -47,6 +49,7 @@ __DATA__
                     "node": {
                         "value": {
                             "remote_addr": "127.0.0.1",
+                            "desc": "test-desc",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -63,6 +66,13 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/stream_routes/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
         }
     }
 --- request
@@ -142,6 +152,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/stream_routes',
                 ngx.HTTP_POST,
                 [[{
@@ -180,6 +191,13 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
+
+            local ret = assert(etcd.get('/stream_routes/' .. id))
+            local create_time = ret.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = ret.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             code, message = t('/apisix/admin/stream_routes/' .. id,
                 ngx.HTTP_DELETE,
                 nil,
@@ -497,7 +515,11 @@ GET /t
 
             res = json.decode(res)
             assert(res.count ~= nil)
+            assert(res.node.value.create_time ~= nil)
+            assert(res.node.value.update_time ~= nil)
             res.count = nil
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }

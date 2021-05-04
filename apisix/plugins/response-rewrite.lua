@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local expr        = require("resty.expr.v1")
 local plugin_name = "response-rewrite"
 local ngx         = ngx
 local pairs       = pairs
@@ -43,7 +44,10 @@ local schema = {
             type = "integer",
             minimum = 200,
             maximum = 598,
-        }
+        },
+        vars = {
+            type = "array",
+        },
     },
     minProperties = 1,
     additionalProperties = false,
@@ -56,6 +60,21 @@ local _M = {
     name     = plugin_name,
     schema   = schema,
 }
+
+local function vars_matched(conf, ctx)
+    if not conf.vars then
+        return true
+    end
+
+    if not conf.response_expr then
+        local response_expr, _ = expr.new(conf.vars)
+        conf.response_expr = response_expr
+    end
+
+    local match_result = conf.response_expr:eval(ctx.var)
+
+    return match_result
+end
 
 
 function _M.check_schema(conf)
@@ -81,9 +100,19 @@ function _M.check_schema(conf)
     end
 
     if conf.body_base64 then
+        if not conf.body or #conf.body == 0 then
+            return false, 'invalid base64 content'
+        end
         local body = ngx.decode_base64(conf.body)
         if not body then
             return  false, 'invalid base64 content'
+        end
+    end
+
+    if conf.vars then
+        local ok, err = expr.new(conf.vars)
+        if not ok then
+            return false, "failed to validate the 'vars' expression: " .. err
         end
     end
 
@@ -94,6 +123,10 @@ end
 do
 
 function _M.body_filter(conf, ctx)
+    if not ctx.response_rewrite_matched then
+        return
+    end
+
     if conf.body then
 
         if conf.body_base64 then
@@ -107,6 +140,11 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
+    ctx.response_rewrite_matched = vars_matched(conf, ctx)
+    if not ctx.response_rewrite_matched then
+        return
+    end
+
     if conf.status_code then
         ngx.status = conf.status_code
     end

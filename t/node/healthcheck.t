@@ -17,7 +17,6 @@
 
 use t::APISIX 'no_plan';
 
-master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -488,7 +487,7 @@ qr{.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*
-.*http://127.0.0.1:1960/server_port.*}
+.*http://127.0.0.1:1961/server_port.*}
 --- timeout: 10
 
 

@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+set -ex
 
 # you might need sudo to run this script
 if [ -z ${OPENRESTY_PREFIX} ]; then
@@ -38,10 +39,18 @@ fi
     > build.log 2>&1 || (cat build.log && exit 1)
 
 make build > build.log 2>&1 || (cat build.log && exit 1)
-sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+msg="rerun this script with 'sudo' if you failed to make install because of privilege problem."
+make install > build.log 2>&1 || (cat build.log && echo "$msg" && exit 1)
 cd .. || exit
 rm -rf luarocks-3.4.0
 
 mkdir ~/.luarocks || true
-luarocks config variables.OPENSSL_LIBDIR ${OPENRESTY_PREFIX}/openssl/lib
-luarocks config variables.OPENSSL_INCDIR ${OPENRESTY_PREFIX}/openssl/include
+
+# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl
+if [ -d ${OPENRESTY_PREFIX}/openssl111 ]; then
+    OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl111
+fi
+
+luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
+luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include

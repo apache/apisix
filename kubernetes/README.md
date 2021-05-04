@@ -23,7 +23,7 @@ There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
 
-- use `etcd` , if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`
+- use `etcd`, if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`
 
 ### Usage
 

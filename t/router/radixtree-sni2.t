@@ -100,7 +100,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -109,7 +109,7 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: true
 
 
 
@@ -143,7 +143,7 @@ location /t {
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
         end  -- do
         -- collectgarbage()
     }
@@ -152,7 +152,7 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: true
 
 
 
@@ -221,7 +221,7 @@ location /t {
                 ngx.say("failed to do SSL handshake: ", err)
                 return
             end
-            ngx.say("ssl handshake: ", type(sess))
+            ngx.say("ssl handshake: ", sess ~= nil)
             local ok, err = sock:close()
             ngx.say("close: ", ok, " ", err)
         end  -- do
@@ -236,10 +236,10 @@ location /t {
 GET /t
 --- response_body eval
 qr{connected: 1
-ssl handshake: userdata
+ssl handshake: true
 close: 1 nil
 connected: 1
-ssl handshake: userdata
+ssl handshake: true
 close: 1 nil}
 --- grep_error_log eval
 qr/parsing (cert|(priv key)) for sni: www.test2.com/

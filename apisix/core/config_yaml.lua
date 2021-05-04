@@ -332,6 +332,16 @@ function _M.new(key, opts)
             return nil, "missing `key` argument"
         end
 
+        local ok, ok2, err = pcall(sync_data, obj)
+        if not ok then
+            err = ok2
+        end
+
+        if err then
+            log.error("failed to fetch data from local file ", apisix_yaml_path, ": ",
+                      err, ", ", key)
+        end
+
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
@@ -358,9 +368,14 @@ function _M.fetch_created_obj(key)
 end
 
 
+function _M.init()
+    read_apisix_yaml()
+    return true
+end
+
+
 function _M.init_worker()
     -- sync data in each non-master process
-    read_apisix_yaml()
     ngx.timer.every(1, read_apisix_yaml)
 end
 

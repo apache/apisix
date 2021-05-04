@@ -26,7 +26,6 @@ local ck           = require "resty.cookie"
 local gq_parse     = require("graphql").parse
 local setmetatable = setmetatable
 local sub_str      = string.sub
-local rawset       = rawset
 local ngx          = ngx
 local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
@@ -129,12 +128,15 @@ do
         upstream_no_cache          = true,
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
-        upstream_hdr_expires       = true,
-        upstream_hdr_cache_control = true,
     }
 
     local mt = {
         __index = function(t, key)
+            local cached = t._cache[key]
+            if cached ~= nil then
+                return cached
+            end
+
             if type(key) ~= "string" then
                 error("invalid argument, expect string value", 2)
             end
@@ -180,12 +182,18 @@ do
             elseif key == "service_name" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_name
 
+            elseif key == "balancer_ip" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_ip
+
+            elseif key == "balancer_port" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_port
+
             else
                 val = get_var(key, t._request)
             end
 
             if val ~= nil then
-                rawset(t, key, val)
+                t._cache[key] = val
             end
 
             return val
@@ -197,12 +205,16 @@ do
             end
 
             -- log.info("key: ", key, " new val: ", val)
-            rawset(t, key, val)
+            t._cache[key] = val
         end,
     }
 
 function _M.set_vars_meta(ctx)
     local var = tablepool.fetch("ctx_var", 0, 32)
+    if not var._cache then
+        var._cache = {}
+    end
+
     var._request = get_request()
     setmetatable(var, mt)
     ctx.var = var
@@ -213,7 +225,8 @@ function _M.release_vars(ctx)
         return
     end
 
-    tablepool.release("ctx_var", ctx.var)
+    core_tab.clear(ctx.var._cache)
+    tablepool.release("ctx_var", ctx.var, true)
     ctx.var = nil
 end
 

@@ -100,10 +100,13 @@ failed to fetch cookie value by key: cookie_host error: no cookie found in the c
             ngx.say("cookie_b: ", ctx.var["cookie_b"])
             ngx.say("cookie_c: ", ctx.var["cookie_c"])
             ngx.say("cookie_d: ", ctx.var["cookie_d"])
+            ngx.say("cookie with dash and uppercase: ", ngx.var["cookie_X-user-id"])
+            ngx.say("cookie with []: ", ngx.var["cookie_user[id]"])
+            ngx.say("cookie with .: ", ngx.var["cookie_user.id"])
         }
     }
 --- more_headers
-Cookie: a=a; b=bb; c=ccc
+Cookie: a=a; b=bb; c=ccc; X-user-id=2; user[id]=3; user.id=4
 --- request
 GET /t?a=aaa
 --- response_body
@@ -111,6 +114,9 @@ cookie_a: a
 cookie_b: bb
 cookie_c: ccc
 cookie_d: nil
+cookie with dash and uppercase: 2
+cookie with []: 3
+cookie with .: 4
 --- no_error_log
 [error]
 
@@ -909,3 +915,96 @@ GET /hello
 hello world
 --- error_log eval
 qr/request log: \{"route_id":"1"\}/
+
+
+
+=== TEST 34: add metadata, service and route, and the service is bound to the route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "route_name": "$route_name",
+                        "service_name": "$service_name"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "log_format": {
+                                "route_name": "$route_name",
+                                "service_name": "$service_name"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "my_service",
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "concat_method": "json"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "my_route",
+                    "uri": "/hello",
+                    "service_id": 1,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: hit route and route_name and service_name are different
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log: \{"route_id":"1","route_name":"my_route","service_id":"1","service_name":"my_service"\}/

@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches: [master]
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   build:
@@ -16,7 +20,6 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_openresty_1_15
           - linux_tengine
           - linux_apisix_master_luarocks
           - linux_apisix_current_luarocks
@@ -53,7 +56,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache deps
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
       - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         id: branch_env
         shell: bash
         run: |
@@ -69,14 +81,14 @@ jobs:
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
         run: |
-          rm -rf $(ls -1 --ignore=*.tgz --ignore=.travis --ignore=t --ignore=utils --ignore=.github)
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
 
       - name: Linux Before install
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty'
@@ -120,17 +132,33 @@ jobs:
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
+      - name: Running etcd server with mTLS
+        run: |
+            sudo docker run -d --rm --name etcd_mtls \
+            -p 22379:22379 -p 22380:22380 \
+            -e ALLOW_NONE_AUTHENTICATION=yes \
+            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_CERT_FILE=/certs/mtls_server.crt \
+            -e ETCD_KEY_FILE=/certs/mtls_server.key \
+            -e ETCD_CLIENT_CERT_AUTH=true \
+            -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
+            -e GITHUB_ACTIONS=true \
+            -e CI=true \
+            -v ${{ github.workspace }}/t/certs:/certs \
+            bitnami/etcd:3.4.0
+
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
-            ./.travis/${{ matrix.os_name }}_runner.sh do_install
+            ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
 
       - name: Publish Artifact
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2.2.3
         with:
           name: ${{ steps.branch_env.outputs.fullname }}
           path: ${{ steps.branch_env.outputs.fullname }}

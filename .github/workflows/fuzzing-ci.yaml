@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   test_apisix:
@@ -29,6 +33,14 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Cache deps
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-deps
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
     - name: run apisix
       run: |
         wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -36,10 +48,16 @@ jobs:
         sudo apt-get -y install software-properties-common
         sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
         sudo apt-get update
-        sudo apt-get install -y git openresty curl openresty-openssl-dev unzip make gcc
-        ./utils/linux-install-luarocks.sh
+        sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc
+        sudo ./utils/linux-install-luarocks.sh
 
-        make deps
+        for (( i = 0; i < 10; i++ )); do
+            if [[ "$i" -eq 10 ]]; then
+                echo "failed to make deps in time"
+                exit 1
+            fi
+            make deps && break
+        done
         make init
         make run
 
@@ -51,11 +69,14 @@ jobs:
       run: |
         pip install typing boofuzz
 
-    - name: run test
+    - name: run simpleroute test
       run: |
-        python $PWD/t/fuzzing/route_test.py
+        python $PWD/t/fuzzing/simpleroute_test.py
 
-    - name: echo test log
-      # more than 150k lines, so only display the last log, actually, this step is not needed.
+    - name: run serverless route test
       run: |
-        tail -n 100 $PWD/t/fuzzing/test.log
+        python $PWD/t/fuzzing/serverless_route_test.py
+
+    - name: run vars route test
+      run: |
+        python $PWD/t/fuzzing/vars_route_test.py

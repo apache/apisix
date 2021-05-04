@@ -63,12 +63,7 @@ local schema = {
         cache_method = {
             type = "array",
             minItems = 1,
-            items = {
-                description = "http method",
-                type = "string",
-                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                    "OPTIONS", "CONNECT", "TRACE"},
-            },
+            items = core.schema.method_schema,
             uniqueItems = true,
             default = {"GET", "HEAD"},
         },
@@ -194,7 +189,7 @@ local function generate_cache_filename(cache_path, cache_levels, cache_key)
     local levels = ngx_re.split(cache_levels, ":")
     local filename = ""
 
-    local index = string.len(md5sum)
+    local index = #md5sum
     for k, v in pairs(levels) do
         local length = tonumber(v)
         index = index - length
@@ -266,13 +261,20 @@ function _M.header_filter(conf, ctx)
         end
     end
 
+    local upstream_hdr_cache_control
+    local upstream_hdr_expires
+
     if conf.hide_cache_headers == true then
-        ctx.var.upstream_hdr_cache_control = ""
-        ctx.var.upstream_hdr_expires = ""
+        upstream_hdr_cache_control = ""
+        upstream_hdr_expires = ""
     else
-        ctx.var.upstream_hdr_cache_control = ctx.var.upstream_http_cache_control
-        ctx.var.upstream_hdr_expires = ctx.var.upstream_http_expires
+        upstream_hdr_cache_control = ctx.var.upstream_http_cache_control
+        upstream_hdr_expires = ctx.var.upstream_http_expires
     end
+
+    core.response.set_header("Cache-Control", upstream_hdr_cache_control,
+                             "Expires", upstream_hdr_expires,
+                             "Apisix-Cache-Status", ctx.var.upstream_cache_status)
 
     ctx.var.upstream_no_cache = no_cache
     core.log.info("proxy-cache no cache:", no_cache)

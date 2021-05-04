@@ -24,6 +24,7 @@ local tonumber         = tonumber
 local _M = {}
 
 
+-- this function create the etcd client instance used in the Admin API
 local function new()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
@@ -40,8 +41,16 @@ local function new()
     etcd_conf.ssl_verify = true
 
     -- default to verify etcd cluster certificate
-    if etcd_conf.tls and etcd_conf.tls.verify == false then
-        etcd_conf.ssl_verify = false
+    etcd_conf.ssl_verify = true
+    if etcd_conf.tls then
+        if etcd_conf.tls.verify == false then
+            etcd_conf.ssl_verify = false
+        end
+
+        if etcd_conf.tls.cert then
+            etcd_conf.ssl_cert_path = etcd_conf.tls.cert
+            etcd_conf.ssl_key_path = etcd_conf.tls.key
+        end
     end
 
     local etcd_cli
@@ -55,6 +64,7 @@ end
 _M.new = new
 
 
+-- convert ETCD v3 entry to v2 one
 local function kvs_to_node(kvs)
     local node = {}
     node.key = kvs.key
@@ -63,6 +73,7 @@ local function kvs_to_node(kvs)
     node.modifiedIndex = tonumber(kvs.mod_revision)
     return node
 end
+_M.kvs_to_node = kvs_to_node
 
 local function kvs_to_nodes(res)
     res.body.node.dir = true
@@ -84,9 +95,13 @@ end
 
 -- When `is_dir` is true, returns the value of both the dir key and its descendants.
 -- Otherwise, return the value of key only.
-function _M.get_format(res, real_key, is_dir)
+function _M.get_format(res, real_key, is_dir, formatter)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
+    end
+
+    if res.body.error == "etcdserver: permission denied" then
+        return nil, "etcd forbidden code: 403"
     end
 
     res.headers["X-Etcd-Index"] = res.body.header.revision
@@ -96,6 +111,10 @@ function _M.get_format(res, real_key, is_dir)
     end
 
     res.body.action = "get"
+
+    if formatter then
+        return formatter(res)
+    end
 
     if not is_dir then
         local key = res.body.kvs[1].key

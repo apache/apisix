@@ -66,7 +66,7 @@ __DATA__
                 )
 
             if code ~= 200 then
-                ngx.say("create comsume jack failed")
+                ngx.say("create consumer jack failed")
                 return
             end
             ngx.say(code .. " " ..body)

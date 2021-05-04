@@ -1,12 +1,20 @@
 name: Chaos Test
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
-  build:
+  chaos-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
       - name: setup go
         uses: actions/setup-go@v2.1.3
         with:
@@ -15,6 +23,10 @@ jobs:
       - name: Creating minikube cluster
         run: |
           bash ./t/chaos/setup_chaos_utils.sh start_minikube
+          wget https://raw.githubusercontent.com/apache/apisix-docker/master/alpine-local/Dockerfile
+          mkdir logs
+          docker build -t apache/apisix:alpine-local --build-arg APISIX_PATH=. -f Dockerfile .
+          minikube cache add apache/apisix:alpine-local -v 7 --alsologtostderr
 
       - name: Print cluster information
         run: |
@@ -40,6 +52,8 @@ jobs:
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
           bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready apisix-gw "True" 30
+          kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
+          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready httpbin "True" 30
           nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
 
       - name: Deploy Chaos mesh

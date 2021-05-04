@@ -45,8 +45,9 @@ return {
     timer       = require("apisix.core.timer"),
     id          = require("apisix.core.id"),
     utils       = utils,
+    dns_client  = require("apisix.core.dns.client"),
     etcd        = require("apisix.core.etcd"),
-    http        = require("apisix.core.http"),
     tablepool   = require("tablepool"),
+    resolver    = require("apisix.core.resolver"),
     empty_tab   = {},
 }

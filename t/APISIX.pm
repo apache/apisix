@@ -26,9 +26,11 @@ no_long_string();
 no_shuffle();
 no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
+master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
 sub read_file($) {
     my $infile = shift;
@@ -78,6 +80,7 @@ if ($custom_dns_server) {
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
 $default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -93,6 +96,7 @@ apisix:
     tcp:
       - 9100
   admin_key: null
+  enable_resolv_search_opt: false
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
@@ -203,59 +207,18 @@ my $grpc_location = <<_EOC_;
         }
 _EOC_
 
-if ($version =~ m/\/1.15.8/) {
-    $grpc_location = <<_EOC_;
-        # hack for OpenResty before 1.17.8, which doesn't support variable inside grpc_pass
-        location \@1_15_grpc_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpc://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
-        location \@1_15_grpcs_pass {
-            access_by_lua_block {
-                apisix.grpc_access_phase()
-            }
-
-            grpc_set_header   Content-Type application/grpc;
-            grpc_socket_keepalive on;
-            grpc_pass         grpcs://apisix_backend;
-
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            body_filter_by_lua_block {
-                apisix.http_body_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-_EOC_
-}
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
+
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+_EOC_
+    }
 
     my $lua_deps_path = <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
@@ -266,6 +229,7 @@ _EOC_
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
@@ -273,9 +237,9 @@ _EOC_
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
 
-    $block->set_value("main_config", $main_config);
-
     my $stream_enable = $block->stream_enable;
+    my $stream_conf_enable = $block->stream_conf_enable;
+    my $extra_stream_config = $block->extra_stream_config // '';
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
@@ -288,8 +252,9 @@ _EOC_
             apisix.stream_balancer_phase()
         }
     }
+_EOC_
 
-    init_by_lua_block {
+    my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
             jit.off()
@@ -299,12 +264,17 @@ _EOC_
 
         apisix = require("apisix")
         apisix.stream_init()
-    }
+_EOC_
 
+    $stream_config .= <<_EOC_;
+    init_by_lua_block {
+        $stream_init_by_lua_block
+    }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
 
+    $extra_stream_config
 
     # fake server, only for test
     server {
@@ -340,6 +310,17 @@ _EOC_
         $block->set_value("stream_server_config", $stream_server_config);
     }
 
+    if (defined $stream_conf_enable) {
+        $main_config .= <<_EOC_;
+stream {
+$stream_config
+}
+_EOC_
+    }
+
+    $block->set_value("main_config", $main_config);
+
+    my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
@@ -353,7 +334,10 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+    $extra_init_by_lua
 _EOC_
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
@@ -367,7 +351,6 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict skywalking-tracing-buffer    100m;
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
@@ -378,7 +361,7 @@ _EOC_
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
-    proxy_ssl_name \$host;
+    proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
 
     resolver $dns_addrs_str;
@@ -405,6 +388,7 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
+        $extra_init_worker_by_lua
     }
 
     log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
@@ -417,6 +401,10 @@ _EOC_
         listen 5044;
 
 _EOC_
+
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
 
     my $ipv6_fake_server = "";
     if (defined $block->listen_ipv6) {
@@ -455,7 +443,13 @@ _EOC_
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
+_EOC_
 
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
+
+    $http_config .= <<_EOC_;
         server_tokens off;
 
         ssl_certificate_by_lua_block {
@@ -486,6 +480,7 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
+        listen 1994 ssl;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
@@ -494,10 +489,6 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
-        set \$upstream_scheme             'http';
-        set \$upstream_host               \$http_host;
-        set \$upstream_uri                '';
-        set \$ctx_ref                     '';
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
         set \$dubbo_method                '';
@@ -509,6 +500,10 @@ _EOC_
         }
 
         location /apisix/admin {
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -525,12 +520,15 @@ _EOC_
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$http_host;
+            set \$upstream_uri                '';
+            set \$ctx_ref                     '';
+
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
-            set \$upstream_hdr_expires           '';
-            set \$upstream_hdr_cache_control     '';
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
@@ -541,12 +539,6 @@ _EOC_
             proxy_cache_key                     \$upstream_cache_key;
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
-
-            proxy_hide_header                   Cache-Control;
-            proxy_hide_header                   Expires;
-            add_header      Cache-Control       \$upstream_hdr_cache_control;
-            add_header      Expires             \$upstream_hdr_expires;
-            add_header      Apisix-Cache-Status \$upstream_cache_status always;
 
             access_by_lua_block {
                 -- wait for etcd sync

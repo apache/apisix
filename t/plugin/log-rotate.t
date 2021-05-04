@@ -90,8 +90,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            ngx.log(ngx.WARN, "start xxxxxx")
             ngx.sleep(0.1)
+            ngx.log(ngx.WARN, "start xxxxxx")
             ngx.say("done")
         }
     }
@@ -131,7 +131,7 @@ start xxxxxx
                     end)
 
                     if counter ~= 1 then
-                        ngx.say("not a single rotater run at the same time: ", file_name)
+                        ngx.say("not a single rotator run at the same time: ", file_name)
                     end
                 end
             end

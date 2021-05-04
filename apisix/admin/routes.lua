@@ -16,8 +16,8 @@
 --
 local expr = require("resty.expr.v1")
 local core = require("apisix.core")
+local apisix_upstream = require("apisix.upstream")
 local schema_plugin = require("apisix.admin.plugins").check_schema
-local upstreams = require("apisix.admin.upstreams")
 local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
@@ -68,7 +68,7 @@ local function check_conf(id, conf, need_id)
 
     local upstream_conf = conf.upstream
     if upstream_conf then
-        local ok, err = upstreams.check_upstream_conf(upstream_conf)
+        local ok, err = apisix_upstream.check_upstream_conf(upstream_conf)
         if not ok then
             return nil, {error_msg = err}
         end
@@ -104,6 +104,23 @@ local function check_conf(id, conf, need_id)
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch service info by "
                                      .. "service id [" .. service_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
+    local plugin_config_id = conf.plugin_config_id
+    if plugin_config_id then
+        local key = "/plugin_configs/" .. plugin_config_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch plugin config info by "
+                                     .. "plugin config id [" .. plugin_config_id .. "], "
                                      .. "response code: " .. res.status}
         end
     end
