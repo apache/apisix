@@ -39,11 +39,17 @@ Apache APISIX 的技术架构如下图所示：
 ## 社区
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
+
 - QQ 群 - 578997126
+
 - [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
+
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
+
 - [哔哩哔哩](https://space.bilibili.com/551921247)
+
 - **新手任务列表**
+  
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -51,6 +57,16 @@ Apache APISIX 的技术架构如下图所示：
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  
+- **微信公众号**
+
+   ![ ](../../assets/images/OA.jpg)
+
+- 微信视频号
+
+   ![](../../assets/images/MA.jpeg)
+
+  
 
 ## 特性
 
@@ -58,11 +74,10 @@ Apache APISIX 的技术架构如下图所示：
 A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
 
 - **全平台**
-
-  - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
+- 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
   - 运行环境: OpenResty 和 Tengine 都支持。
   - 支持 ARM64: 不用担心底层技术的锁定。
-
+  
 - **多协议**
 
   - [TCP/UDP 代理](stream-proxy.md): 动态 TCP/UDP 代理。
