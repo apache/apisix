@@ -31,6 +31,20 @@ So before installation, please follow the different operating systems [install D
 
 You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
 
+### Installation via RPM package (CentOS 7)
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+```
+
+### Installation via Docker
+
+See https://hub.docker.com/r/apache/apisix
+
+### Installation via Helm Chart
+
+See https://github.com/apache/apisix-helm-chart
+
 ### Installation via source release
 
 You need to download the Apache source release first:
@@ -46,12 +60,6 @@ Install the Lua libraries that the runtime depends on:
 ```shell
 cd apisix-2.5
 make deps
-```
-
-### Installation via RPM package (CentOS 7)
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
 ## 3. Manage (start/stop) APISIX Server
