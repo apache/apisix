@@ -31,6 +31,20 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
 
+### 通过 RPM 包安装（CentOS 7）
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+```
+
+### 通过 Docker 安装
+
+见 https://hub.docker.com/r/apache/apisix
+
+### 通过 Helm Chart 安装
+
+见 https://github.com/apache/apisix-helm-chart
+
 ### 通过源码包安装
 
 你需要先下载 Apache Release 源码包：
@@ -46,12 +60,6 @@ $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
 ```
 cd apisix-2.5
 make deps
-```
-
-### 通过 RPM 包安装（CentOS 7）
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
