@@ -24,7 +24,6 @@ local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
 local concat_tab = table.concat
 local new_tab = require("table.new")
-local expr = require("resty.expr.v1")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
@@ -268,27 +267,6 @@ local function luasocket_tcp()
 end
 
 
-local patched_expr_new
-do
-    local function eval_empty_rule(self, ctx, ...)
-        return true
-    end
-
-
-    local mt = {__index = {eval = eval_empty_rule}}
-    local old_expr_new = expr.new
-
-
-    function patched_expr_new(rule)
-        if #rule == 0 then
-            return setmetatable({}, mt)
-        end
-
-        return old_expr_new(rule)
-    end
-end
-
-
 function _M.patch()
     -- make linter happy
     -- luacheck: ignore
@@ -300,8 +278,6 @@ function _M.patch()
 
         return luasocket_tcp()
     end
-
-    expr.new = patched_expr_new
 end
 
 
