@@ -239,7 +239,6 @@ http {
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
     {% end %}
-
     # http configuration snippet ends
 
     upstream apisix_backend {
