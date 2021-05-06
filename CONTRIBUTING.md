@@ -67,7 +67,8 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
     * [Quick start](https://pre-commit.com/#quick-start)
     * [Usage](https://pre-commit.com/#usage)
-    * [pre-commit-autoupdate](https://pre-commit.com/#pre-commit-autoupdate)
+    * [pre-commit autoupdate](https://pre-commit.com/#pre-commit-autoupdate)
+    * [.pre-commit-config.yaml](.pre-commit-config.yaml)
 
 * Spell Checking
 
