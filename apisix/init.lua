@@ -715,8 +715,10 @@ function _M.http_control()
 end
 
 
-function _M.stream_init()
+function _M.stream_init(args)
     core.log.info("enter stream_init")
+
+    core.resolver.init_resolver(args)
 
     if core.config.init then
         local ok, err = core.config.init()
