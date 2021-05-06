@@ -42,21 +42,16 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local control_api_router
+
+local is_http = false
 if ngx.config.subsystem == "http" then
+    is_http = true
     control_api_router = require("apisix.control.router")
 end
+
 local load_balancer
 local local_conf
-local dns_resolver
 local ver_header = "APISIX/" .. core.version.VERSION
-local is_http = ngx.config.subsystem == "http"
-
-
-local function parse_args(args)
-    dns_resolver = args and args["dns_resolver"]
-    core.utils.set_resolver(dns_resolver)
-    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
-end
 
 
 local _M = {version = 0.4}
@@ -73,7 +68,7 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    parse_args(args)
+    core.resolver.init_resolver(args)
     core.id.init()
 
     local process = require("ngx.process")
@@ -128,6 +123,7 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
     apisix_upstream.init_worker()
+    require("apisix.plugins.ext-plugin.init").init_worker()
 
     local_conf = core.config.local_conf()
 
@@ -156,24 +152,6 @@ function _M.http_ssl_phase()
 end
 
 
-local function parse_domain(host)
-    local ip_info, err = core.utils.dns_parse(host)
-    if not ip_info then
-        core.log.error("failed to parse domain: ", host, ", error: ",err)
-        return nil, err
-    end
-
-    core.log.info("parse addr: ", core.json.delay_encode(ip_info))
-    core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
-    core.log.info("host: ", host)
-    if ip_info.address then
-        core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
-        return ip_info.address
-    else
-        return nil, "failed to parse domain"
-    end
-end
-_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -182,7 +160,7 @@ local function parse_domain_for_nodes(nodes)
         local host = node.host
         if not ipmatcher.parse_ipv4(host) and
                 not ipmatcher.parse_ipv6(host) then
-            local ip, err = parse_domain(host)
+            local ip, err = core.resolver.parse_domain(host)
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip
@@ -355,7 +333,7 @@ function _M.http_access_phase()
     router.router_http.match(api_ctx)
 
     -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, "access")
+    plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
     local route = api_ctx.matched_route
     if not route then
@@ -630,13 +608,11 @@ local function healthcheck_passive(api_ctx)
     end
 
     for i, status in ipairs(http_statuses) do
-        for i, status in ipairs(http_statuses) do
-            if resp_status == status then
-                checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
-                                           host,
-                                           resp_status)
-            end
+        if resp_status == status then
+            checker:report_http_status(api_ctx.balancer_ip,
+                                       port or api_ctx.balancer_port,
+                                       host,
+                                       resp_status)
         end
     end
 end

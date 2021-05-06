@@ -82,7 +82,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 | query    | object                      | optional    |         |       | Specify `QueryString` for all request |
 | headers  | object                      | optional    |         |       | Specify `Header` for all request      |
 | timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
-| pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
+| pipeline | [HttpRequest](#httprequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
 
@@ -98,7 +98,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Response：
 
-Response is `Array` of [HttpResponse](#HttpResponse).
+Response is `Array` of [HttpResponse](#httpresponse).
 
 #### HttpResponse
 

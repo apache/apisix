@@ -63,12 +63,7 @@ local schema = {
         cache_method = {
             type = "array",
             minItems = 1,
-            items = {
-                description = "http method",
-                type = "string",
-                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                    "OPTIONS", "CONNECT", "TRACE"},
-            },
+            items = core.schema.method_schema,
             uniqueItems = true,
             default = {"GET", "HEAD"},
         },

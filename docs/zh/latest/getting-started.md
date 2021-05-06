@@ -40,20 +40,10 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
     "foo2": "bar2"
   },
   "headers": {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en,zh-CN;q=0.9,zh;q=0.8",
-    "Cache-Control": "max-age=0",
+    "Accept": "*/*",
     "Host": "httpbin.org",
-    "Sec-Ch-Ua": "\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\"",
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
-    "X-Amzn-Trace-Id": "Root=1-606276ab-2b451d4b36057c186d666351"
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6088fe84-24f39487166cce1f0e41efc9"
   },
   "origin": "58.152.81.42",
   "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
@@ -96,13 +86,13 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ```json
 {
-  "node": {
-    "createdIndex": 6,
-    "modifiedIndex": 6,
-    "key": "/apisix/services",
-    "dir": true
-    },
-  "action": "get"
+  "count":"1",
+  "action":"get",
+  "node":{
+    "key":"/apisix/services",
+    "nodes":{},
+    "dir":true
+  }
 }
 ```
 
@@ -132,7 +122,7 @@ Apache APISIX 是如何知道的呢？那是因为我们为 Route 对象配置�
 }
 ```
 
-这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 上游，```
+这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 上游：
 
 - 请求的 HTTP 方法为 `GET`;
 - 请求头包含 `Host` 字段，且它的值为 `example.com`;
@@ -151,7 +141,7 @@ $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "H
 读完上一节，我们知道必须为 `路由` 设置 `上游`。只需执行下面的命令即可创建一个上游：
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -165,11 +155,11 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f0
 **注意：** 创建上游实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游。
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
-  "upstream_id": "50"
+  "upstream_id": "1"
 }'
 ```
 
@@ -179,11 +169,11 @@ We just created an Upstream(Reference to our backend services), let's bind one R
 我们刚刚创建了一个上游(引用我们的后端服务)，让我们为它绑定一个路由！
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
-  "upstream_id": "50"
+  "upstream_id": "1"
 }'
 ```
 
@@ -208,12 +198,12 @@ $ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpb
 首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥:
 
 ```bash
-$ curl  http://127.0.0.1:9080/apisix/admin/consumers  -H  'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "username": "john",
   "plugins": {
     "key-auth": {
-      "key": "superSecretAPIKey"
+      "key": "key-of-john"
     }
   }
 }'
@@ -222,14 +212,14 @@ $ curl  http://127.0.0.1:9080/apisix/admin/consumers  -H  'X-API-KEY: edd1c9f034
 接下来，让我们绑定 `消费者（John）` 到路由上，我们仅仅需要为路由 **启用** [key-auth](./plugins/key-auth.md) 插件即可。
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
   "plugins": {
     "key-auth": {}
   },
-  "upstream_id": 50
+  "upstream_id": "1"
 }'
 ```
 
@@ -246,7 +236,7 @@ $ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: su
 现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用 `proxy-rewrite` 插件来完成。
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/samplePrefix/get",
   "plugins": {
@@ -255,14 +245,14 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f
     },
     "key-auth": {}
   },
-  "upstream_id": 50
+  "upstream_id": "1"
 }'
 ```
 
 现在您可以使用以下命令来调用路由：
 
 ```bash
-$ curl -i -X  GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' -H 'apikey: superSecretAPIKey'
+$ curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H "apikey: key-of-john"
 ```
 
 ### APISIX Dashboard（控制台）

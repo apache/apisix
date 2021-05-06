@@ -172,11 +172,23 @@
         },
         {
           "type": "doc",
+          "id": "batch-processor"
+        },
+        {
+          "type": "doc",
           "id": "benchmark"
         },
         {
           "type": "doc",
           "id": "install-dependencies"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-interceptors"
         },
         {
           "type": "doc",

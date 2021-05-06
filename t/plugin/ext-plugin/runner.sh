@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -17,16 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
-
-luacheck -q apisix t/lib
-
-find apisix -name '*.lua' ! -wholename 'apisix/cli/ngx_tpl.lua' -exec ./utils/lj-releng {} + > \
-    /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
-
-grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log || true
-if [ -s /tmp/error.log ]; then
-    echo "=====bad style====="
-    cat /tmp/check.log
-    exit 1
-fi
+echo "LISTEN $APISIX_LISTEN_ADDRESS"
+echo "EXPIRE $APISIX_CONF_EXPIRE_TIME"
+sleep "$1"
+exit 111
