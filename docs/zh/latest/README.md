@@ -66,7 +66,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
   - 运行环境: OpenResty 和 Tengine 都支持。
   - 支持 ARM64: 不用担心底层技术的锁定。
-  
+
 - **多协议**
 
   - [TCP/UDP 代理](stream-proxy.md): 动态 TCP/UDP 代理。
