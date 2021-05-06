@@ -34,7 +34,7 @@ title: Apache APISIX
 
 Apache APISIX 的技术架构如下图所示：
 
-![](../../assets/images/apisix.png)
+![Apache APISIX 的技术架构](../../assets/images/apisix.png)
 
 ## 社区
 
