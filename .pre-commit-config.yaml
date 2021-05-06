@@ -50,7 +50,7 @@ repos:
       #    - --fuzzy-match-generates-todo
       - id: insert-license
         name: Add license for all Lua files
-        exclude: ^\.github/.*$
+        exclude: ^\.github/.*$|^apisix/balancer/ewma\.lua$
         files: \.lua$|\.luacov$
         args:
           - --comment-style
@@ -158,7 +158,7 @@ repos:
       - id: luacheck
         name: Run luacheck
         description: Checks Lua files with luacheck
-        exclude: ^apisix|^t/lib|^example/apisix/plugins/3rd-party\.lua$|^benchmark/fake-apisix/lua/apisix\.lua$
+        exclude: ^benchmark/fake-apisix/lua/apisix\.lua$
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.27.1
     hooks:
