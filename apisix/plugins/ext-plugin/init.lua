@@ -19,6 +19,8 @@ local flatbuffers = require("flatbuffers")
 local prepare_conf_req = require("A6.PrepareConf.Req")
 local prepare_conf_resp = require("A6.PrepareConf.Resp")
 local text_entry = require("A6.TextEntry")
+local err_resp = require("A6.Err.Resp")
+local err_code = require("A6.Err.Code")
 local constants = require("apisix.constants")
 local core = require("apisix.core")
 local helper = require("apisix.plugins.ext-plugin.helper")
@@ -117,6 +119,23 @@ end
 _M.send = send
 
 
+local err_to_msg
+do
+    local map = {
+        [err_code.BAD_REQUEST] = "bad request",
+        [err_code.SERVICE_UNAVAILABLE] = "service unavailable",
+        [err_code.CONF_TOKEN_NOT_FOUND] = "conf token not found",
+    }
+
+    function err_to_msg(resp)
+        local buf = flatbuffers.binaryArray.New(resp)
+        local resp = err_resp.GetRootAsResp(buf, 0)
+        local code = resp:Code()
+        return map[code] or str_format("unknown err %d", code)
+    end
+end
+
+
 local function receive(sock)
     local hdr, err = sock:receive(4)
     if not hdr then
@@ -127,10 +146,6 @@ local function receive(sock)
     end
 
     local ty = str_byte(hdr, 1)
-    if ty == constants.RPC_ERROR then
-        return nil, "TODO: handler err"
-    end
-
     local resp
     local hi, mi, li = str_byte(hdr, 2, 4)
     local len = 256 * (256 * hi + mi) + li
@@ -145,6 +160,10 @@ local function receive(sock)
         if #resp ~= len then
             return nil, "data truncated"
         end
+    end
+
+    if ty == constants.RPC_ERROR then
+        return nil, err_to_msg(resp)
     end
 
     return ty, resp

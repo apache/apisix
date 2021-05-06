@@ -316,3 +316,21 @@ hello world
 qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: handle error code
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({inject_error = true})
+        }
+    }
+--- error_code: 503
+--- error_log
+failed to receive RPC_PREPARE_CONF: bad request
