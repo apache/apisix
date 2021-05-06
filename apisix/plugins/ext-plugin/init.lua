@@ -16,8 +16,14 @@
 --
 local is_http = ngx.config.subsystem == "http"
 local flatbuffers = require("flatbuffers")
+local a6_method = require("A6.Method")
 local prepare_conf_req = require("A6.PrepareConf.Req")
 local prepare_conf_resp = require("A6.PrepareConf.Resp")
+local http_req_call_req = require("A6.HTTPReqCall.Req")
+local http_req_call_resp = require("A6.HTTPReqCall.Resp")
+local http_req_call_action = require("A6.HTTPReqCall.Action")
+local http_req_call_stop = require("A6.HTTPReqCall.Stop")
+local http_req_call_rewrite = require("A6.HTTPReqCall.Rewrite")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -35,16 +41,23 @@ local band = bit.band
 local lshift = bit.lshift
 local rshift = bit.rshift
 local ffi = require("ffi")
+local ffi_new = ffi.new
 local ffi_str = ffi.string
 local socket_tcp = ngx.socket.tcp
-local str_byte = string.byte
-local str_format = string.format
+local worker_id = ngx.worker.id
 local ngx_timer_at = ngx.timer.at
 local exiting = ngx.worker.exiting
+local str_byte = string.byte
+local str_format = string.format
+local str_lower = string.lower
+local str_sub = string.sub
 local error = error
+local ipairs = ipairs
+local pairs = pairs
+local type = type
+
+
 local events_list
-
-
 local lrucache = core.lrucache.new({
     type = "plugin",
     ttl = helper.get_conf_token_cache_time(),
@@ -171,6 +184,80 @@ end
 _M.receive = receive
 
 
+local generate_id
+do
+    local count = 0
+    local MAX_COUNT = lshift(1, 22)
+
+    function generate_id()
+        local wid = worker_id()
+        local id = lshift(wid, 22) + count
+        count = count + 1
+        if count == MAX_COUNT then
+            count = 0
+        end
+        return id
+    end
+end
+
+
+local encode_a6_method
+do
+    local map = {
+        GET = a6_method.GET,
+        HEAD = a6_method.HEAD,
+        POST = a6_method.POST,
+        PUT = a6_method.PUT,
+        DELETE = a6_method.DELETE,
+        MKCOL = a6_method.MKCOL,
+        COPY = a6_method.COPY,
+        MOVE = a6_method.MOVE,
+        OPTIONS = a6_method.OPTIONS,
+        PROPFIND = a6_method.PROPFIND,
+        PROPPATCH = a6_method.PROPPATCH,
+        LOCK = a6_method.LOCK,
+        UNLOCK = a6_method.UNLOCK,
+        PATCH = a6_method.PATCH,
+        TRACE = a6_method.TRACE,
+    }
+
+    function encode_a6_method(name)
+        return map[name]
+    end
+end
+
+
+local function build_args(builder, key, val)
+    local name = builder:CreateString(key)
+    local value
+    if val ~= true then
+        value = builder:CreateString(val)
+    end
+
+    text_entry.Start(builder)
+    text_entry.AddName(builder, name)
+    if val ~= true then
+        text_entry.AddValue(builder, value)
+    end
+    return text_entry.End(builder)
+end
+
+
+local function build_headers(var, builder, key, val)
+    if key == "host" then
+        val = var.upstream_host
+    end
+
+    local name = builder:CreateString(key)
+    local value = builder:CreateString(val)
+
+    text_entry.Start(builder)
+    text_entry.AddName(builder, name)
+    text_entry.AddValue(builder, value)
+    return text_entry.End(builder)
+end
+
+
 local rpc_call
 local rpc_handlers = {
     nil,
@@ -232,8 +319,90 @@ local rpc_handlers = {
             return nil, err
         end
 
-        local req = "hello"
-        local ok, err = send(sock, constants.RPC_HTTP_REQ_CALL, req)
+        builder:Clear()
+        local var = ctx.var
+
+        local uri
+        if var.upstream_uri == "" then
+            -- use original uri instead of rewritten one
+            uri = var.uri
+        else
+            uri = var.upstream_uri
+
+            -- the rewritten one may contain new args
+            local index = core.string.find(uri, "?")
+            if index then
+                local raw_uri = uri
+                uri = str_sub(raw_uri, 1, index - 1)
+                core.request.set_uri_args(ctx, str_sub(raw_uri, index + 1))
+            end
+        end
+
+        local path = builder:CreateString(uri)
+
+        local bin_addr = var.binary_remote_addr
+        local len = #bin_addr
+        http_req_call_req.StartSrcIpVector(builder, len)
+        for i = len, 1, -1 do
+            builder:PrependByte(str_byte(bin_addr, i))
+        end
+        local src_ip = builder:EndVector(len)
+
+        local args = core.request.get_uri_args(ctx)
+        local textEntries = {}
+        for key, val in pairs(args) do
+            local ty = type(val)
+            if ty == "table" then
+                for _, v in ipairs(val) do
+                    core.table.insert(textEntries, build_args(builder, key, v))
+                end
+            else
+                core.table.insert(textEntries, build_args(builder, key, val))
+            end
+        end
+        local len = #textEntries
+        http_req_call_req.StartArgsVector(builder, len)
+        for i = len, 1, -1 do
+            builder:PrependUOffsetTRelative(textEntries[i])
+        end
+        local args_vec = builder:EndVector(len)
+
+        local hdrs = core.request.headers(ctx)
+        core.table.clear(textEntries)
+        for key, val in pairs(hdrs) do
+            local ty = type(val)
+            if ty == "table" then
+                for _, v in ipairs(val) do
+                    core.table.insert(textEntries, build_headers(var, builder, key, v))
+                end
+            else
+                core.table.insert(textEntries, build_headers(var, builder, key, val))
+            end
+        end
+        local len = #textEntries
+        http_req_call_req.StartHeadersVector(builder, len)
+        for i = len, 1, -1 do
+            builder:PrependUOffsetTRelative(textEntries[i])
+        end
+        local hdrs_vec = builder:EndVector(len)
+
+        local id = generate_id()
+        local method = var.method
+
+        http_req_call_req.Start(builder)
+        http_req_call_req.AddId(builder, id)
+        http_req_call_req.AddConfToken(builder, token)
+        http_req_call_req.AddSrcIp(builder, src_ip)
+        http_req_call_req.AddPath(builder, path)
+        http_req_call_req.AddArgs(builder, args_vec)
+        http_req_call_req.AddHeaders(builder, hdrs_vec)
+        http_req_call_req.AddMethod(builder, encode_a6_method(method))
+        -- TODO: handle extraInfo
+
+        local req = http_req_call_req.End(builder)
+        builder:Finish(req)
+
+        local ok, err = send(sock, constants.RPC_HTTP_REQ_CALL, builder:Output())
         if not ok then
             return nil, "failed to send RPC_HTTP_REQ_CALL: " .. err
         end
@@ -247,7 +416,95 @@ local rpc_handlers = {
             return nil, "failed to receive RPC_HTTP_REQ_CALL: unexpected type " .. ty
         end
 
-        core.log.warn(resp)
+        local buf = flatbuffers.binaryArray.New(resp)
+        local call_resp = http_req_call_resp.GetRootAsResp(buf, 0)
+        local action_type = call_resp:ActionType()
+
+        if action_type == http_req_call_action.Stop then
+            local action = call_resp:Action()
+            local stop = http_req_call_stop.New()
+            stop:Init(action.bytes, action.pos)
+
+            local len = stop:HeadersLength()
+            if len > 0 then
+                for i = 1, len do
+                    local entry = stop:Headers(i)
+                    core.response.set_header(entry:Name(), entry:Value())
+                end
+            end
+
+            local body
+            local len = stop:BodyLength()
+            if len > 0 then
+                -- TODO: support empty body
+                body = ffi_new("unsigned char[?]", len)
+                for i = 1, len do
+                    body[i - 1] = stop:Body(i)
+                end
+                body = ffi_str(body, len)
+            end
+            return true, nil, stop:Status(), body
+        end
+
+        if action_type == http_req_call_action.Rewrite then
+            ctx.request_rewritten = constants.REWRITTEN_BY_EXT_PLUGIN
+
+            local action = call_resp:Action()
+            local rewrite = http_req_call_rewrite.New()
+            rewrite:Init(action.bytes, action.pos)
+
+            local path = rewrite:Path()
+            if path then
+                path = core.utils.uri_safe_encode(path)
+                var.upstream_uri = path
+            end
+
+            local len = rewrite:HeadersLength()
+            if len > 0 then
+                for i = 1, len do
+                    local entry = rewrite:Headers(i)
+                    local name = entry:Name()
+                    core.request.set_header(ctx, name, entry:Value())
+
+                    if str_lower(name) == "host" then
+                        var.upstream_host = entry:Value()
+                    end
+                end
+            end
+
+            local len = rewrite:ArgsLength()
+            if len > 0 then
+                local changed = {}
+                for i = 1, len do
+                    local entry = rewrite:Args(i)
+                    local name = entry:Name()
+                    local value = entry:Value()
+                    if value == nil then
+                        args[name] = nil
+
+                    else
+                        if changed[name] then
+                            if type(args[name]) == "table" then
+                                core.table.insert(args[name], value)
+                            else
+                                args[name] = {args[name], entry:Value()}
+                            end
+                        else
+                            args[name] = entry:Value()
+                        end
+
+                        changed[name] = true
+                    end
+                end
+
+                core.request.set_uri_args(ctx, args)
+
+                if path then
+                    var.upstream_uri = path .. '?' .. var.args
+                end
+            end
+        end
+
         return true
     end,
 }
@@ -263,8 +520,8 @@ rpc_call = function (ty, conf, ctx)
         return nil, "failed to connect to the unix socket " .. path .. ": " .. err
     end
 
-    local ok, err = rpc_handlers[ty + 1](conf, ctx, sock)
-    if not ok then
+    local res, err, code, body = rpc_handlers[ty + 1](conf, ctx, sock)
+    if not res then
         sock:close()
         return nil, err
     end
@@ -273,16 +530,22 @@ rpc_call = function (ty, conf, ctx)
     if not ok then
         core.log.info("failed to setkeepalive: ", err)
     end
-    return true
+
+    return res, nil, code, body
 end
 
 
 function _M.communicate(conf, ctx)
-    local ok, err = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+    local ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
     if not ok then
         core.log.error(err)
         return 503
     end
+
+    if code then
+        return code, body
+    end
+    return
 end
 
 
