@@ -136,6 +136,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
                 "127.0.0.1:5000",
                 "127.0.0.1:5001"
             ],
+            "redis_password": "password",
             "redis_cluster_name": "redis-cluster-1"
         }
     },
