@@ -15,21 +15,57 @@
 # limitations under the License.
 #
 
+# https://github.com/DavidAnson/markdownlint#rules--aliases
+# MD001 heading-increment/header-increment - Heading levels should only increment by one level at a time
 MD001: false
+
+# MD004 ul-style - Unordered list style
 MD004: false
+
+# MD005 list-indent - Inconsistent indentation for list items at the same level
 MD005: false
+
+# MD006 ul-start-left - Consider starting bulleted lists at the beginning of the line
 MD006: false
+
+# MD007 ul-indent - Unordered list indentation
 MD007: false
+
+# MD010 no-hard-tabs - Hard tabs
 MD010: false
+
+# MD013 line-length - Line length
 MD013: false
+
+# MD014 commands-show-output - Dollar signs used before commands without showing output
 MD014: false
+
+# MD024 no-duplicate-heading/no-duplicate-header - Multiple headings with the same content
 MD024: false
+
+# MD026 no-trailing-punctuation - Trailing punctuation in heading
 MD026: false
+
+# MD029 ol-prefix - Ordered list item prefix
 MD029: false
+
+# MD033 no-inline-html - Inline HTML
 MD033: false
+
+# MD034 no-bare-urls - Bare URL used
 MD034: false
+
+# MD036 no-emphasis-as-heading/no-emphasis-as-header - Emphasis used instead of a heading
 MD036: false
+
+# MD040 fenced-code-language - Fenced code blocks should have a language specified
 MD040: false
+
+# MD041 first-line-heading/first-line-h1 - First line in a file should be a top-level heading
 MD041: false
+
+# MD045 no-alt-text - Images should have alternate text (alt text)
 MD045: false
+
+# MD046 code-block-style - Code block style
 MD046: false
