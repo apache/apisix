@@ -21,9 +21,25 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
+
+sub read_file {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+our $Test50xHTML = read_file("html/50x.html");
+
 run_tests;
 
 __DATA__
+
+--- user_files eval
+">>> 50x.html
+$::Test50xHTML"
+
 
 === TEST 1: set route with serverless-post-function plugin
 --- config
