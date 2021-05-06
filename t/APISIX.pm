@@ -263,7 +263,10 @@ _EOC_
         require "resty.core"
 
         apisix = require("apisix")
-        apisix.stream_init()
+        local args = {
+            dns_resolver = $dns_addrs_tbl_str,
+        }
+        apisix.stream_init(args)
 _EOC_
 
     $stream_config .= <<_EOC_;
