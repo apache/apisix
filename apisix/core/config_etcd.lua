@@ -41,6 +41,7 @@ local debug        = debug
 local error        = error
 local rand         = math.random
 local constants    = require("apisix.constants")
+local health_check = require("resty.etcd.health_check")
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -545,6 +546,27 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
+                if err == "connection refused" then
+                    local etcd_cli, err = get_etcd()
+                    if not etcd_cli then
+                        error("all etcd endpoints are unhealthy: ", err)
+                    end
+                    self.etcd_cli = etcd_cli
+                end
+                if err == "has no healthy etcd endpoint available" then
+                    while err do
+                        local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
+                        for _ = 0, backoff_step, 1 do
+                            ngx_sleep(backoff_duration)
+                            ok, err = sync_data(self)
+                            if not err then
+                                break
+                            end
+                            backoff_duration = backoff_duration * backoff_factor
+                            log.error("next retry after " .. backoff_duration .. "s")
+                        end
+                    end
+                end
                 if err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
@@ -761,6 +783,15 @@ function _M.init()
     local etcd_cli, err = get_etcd()
     if not etcd_cli then
         return nil, "failed to start a etcd instance: " .. err
+    end
+
+    local health_checker, err = health_check.init({
+        shm_name = "etcd_cluster_health_check",
+        fail_timeout = 5,
+        max_fails = 3,
+    })
+    if not health_checker then
+        return nil, err
     end
 
     local etcd_conf = local_conf.etcd
