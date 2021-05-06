@@ -162,18 +162,25 @@ apisix:
 --- stream_enable
 --- stream_server_config
     content_by_lua_block {
+        local sock = ngx.req.socket(true)
+        -- drain the buffer
+        local _, err = sock:receive(1)
+        if err ~= nil then
+          ngx.log(ngx.ERR, err)
+          return ngx.exit(-1)
+        end
         local http = require("resty.http")
         local httpc = http.new()
         local res, err = httpc:request_uri("http://apisix")
         if not res then
             ngx.log(ngx.ERR, err)
-            return
+            return ngx.exit(-1)
         end
-        ngx.say(res.status)
+        sock:send(res.status)
     }
 --- stream_request eval
-mmm
---- stream_response
-301
+m
+--- stream_response: 301
+
 --- no_error_log
 [error]
