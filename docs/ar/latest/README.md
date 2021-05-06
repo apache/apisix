@@ -70,75 +70,75 @@
 
 - **متعدد البروتوكولات**
 
-  - [TCP/UDP وكيل](docs/en/latest/stream-proxy.md): ديناميكي TCP/UDP وكيل.
-  - [Dubbo وكيل](docs/en/latest/plugins/dubbo-proxy.md): ديناميكي HTTP to Dubbo وكيل.
-  - [ديناميكي MQTT وكيل](docs/en/latest/plugins/mqtt-proxy.md): يدعم تحميل  MQTT بواسطة  `client_id`, وكلاهما يدعم  MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
-  - [gRPC proxy](docs/en/latest/grpc-proxy.md):توكيل حركة مرور  gRPC .
-  - [gRPC transcoding](docs/en/latest/plugins/grpc-transcode.md): يدعم تحويل ترميز البروتوكول بحيث يمكن للعملاء الوصول إلى واجهة برمجة تطبيقات gRPC الخاصة بك باستخدام  HTTP/JSON.
+  - [TCP/UDP وكيل](../../en/latest/stream-proxy.md): ديناميكي TCP/UDP وكيل.
+  - [Dubbo وكيل](../../en/latest/plugins/dubbo-proxy.md): ديناميكي HTTP to Dubbo وكيل.
+  - [ديناميكي MQTT وكيل](../../en/latest/plugins/mqtt-proxy.md): يدعم تحميل  MQTT بواسطة  `client_id`, وكلاهما يدعم  MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+  - [gRPC proxy](../../en/latest/grpc-proxy.md):توكيل حركة مرور  gRPC .
+  - [gRPC transcoding](../../en/latest/plugins/grpc-transcode.md): يدعم تحويل ترميز البروتوكول بحيث يمكن للعملاء الوصول إلى واجهة برمجة تطبيقات gRPC الخاصة بك باستخدام  HTTP/JSON.
   - مقبس الويب الوكيل
   - بروتوكول الوكيل
   - الوكيل  Dubbo: Dubbo يعتمد على  Tengine.
   - HTTP(S)	وكيل إعادة التوجيه
-  - [SSL](docs/en/latest/https.md): تحميل شهادة SSL ديناميكيًا.
+  - [SSL](../../en/latest/https.md): تحميل شهادة SSL ديناميكيًا.
 
 - **ديناميكية كاملة**
 
-  - [التحديثات الطارئة والإضافات الطارئة](docs/en/latest/plugins.md): يقوم باستمرار بتحديث التكوينات والإضافات دون إعادة التشغيل!
-  - [إعادة كتابة الوكيل](docs/en/latest/plugins/proxy-rewrite.md):دعم إعادة كتابة المضيف، uri، المخطط، enable_websocket، رؤوس الطلب قبل الإرسال إلى المنبع.
-  - [إعادة كتابة الاستجابة](docs/en/latest/plugins/response-rewrite.md): قم بتعيين رمز حالة الاستجابة المخصص والجسم والرأس للعميل.
-  - [بدون خادم](docs/en/latest/plugins/serverless.md): استدعاء الوظائف في كل مرحلة في ابيسكس.
+  - [التحديثات الطارئة والإضافات الطارئة](../../en/latest/plugins.md): يقوم باستمرار بتحديث التكوينات والإضافات دون إعادة التشغيل!
+  - [إعادة كتابة الوكيل](../../en/latest/plugins/proxy-rewrite.md):دعم إعادة كتابة المضيف، uri، المخطط، enable_websocket، رؤوس الطلب قبل الإرسال إلى المنبع.
+  - [إعادة كتابة الاستجابة](../../en/latest/plugins/response-rewrite.md): قم بتعيين رمز حالة الاستجابة المخصص والجسم والرأس للعميل.
+  - [بدون خادم](../../en/latest/plugins/serverless.md): استدعاء الوظائف في كل مرحلة في ابيسكس.
   - موازنة الحمل الديناميكية: موازنة تحميل دائرية مع الوزن.
   - موازنة التحميل المستندة إلى التجزئة: توازن الحمل مع جلسات التجزئة المتسقة.
-  - [الفحوصات الصحية](docs/en/latest/health-check.md): قم بتمكين الفحص الصحي على عقدة المنبع وسيقوم تلقائيًا بتصفية العقد غير الصحية أثناء موازنة التحميل لضمان استقرار النظام.
+  - [الفحوصات الصحية](../../en/latest/health-check.md): قم بتمكين الفحص الصحي على عقدة المنبع وسيقوم تلقائيًا بتصفية العقد غير الصحية أثناء موازنة التحميل لضمان استقرار النظام.
   - قاطع الدائرة: تتبع ذكي لخدمات المنبع غير الصحية.
-  - [مرآة الوكيل](docs/en/latest/plugins/proxy-mirror.md): توفر القدرة على عكس طلبات العميل
-  - [تقسيم حركة المرور](docs/en/latest/plugins/traffic-split.md): يسمح للمستخدمين بتوجيه النسب المئوية بشكل متزايد من حركة المرور بين مختلف التدفقات.
+  - [مرآة الوكيل](../../en/latest/plugins/proxy-mirror.md): توفر القدرة على عكس طلبات العميل
+  - [تقسيم حركة المرور](../../en/latest/plugins/traffic-split.md): يسمح للمستخدمين بتوجيه النسب المئوية بشكل متزايد من حركة المرور بين مختلف التدفقات.
 
 - **التوجيه الدقيق**
 
-  - [يدعم مطابقة المسار الكامل ومطابقة البادئة](docs/en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [دعم جميع متغيرات Nginx المضمنة كشرط للتوجيه](docs/en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), بحيث يمكنك استخدام  `ملفات تعريف الارتباط`, `args`, وما إلى ذلك. كظروف توجيه لتنفيذ إصدار canary ، واختبار A / B ، إلخ
+  - [يدعم مطابقة المسار الكامل ومطابقة البادئة](../../en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
+  - [دعم جميع متغيرات Nginx المضمنة كشرط للتوجيه](../../en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), بحيث يمكنك استخدام  `ملفات تعريف الارتباط`, `args`, وما إلى ذلك. كظروف توجيه لتنفيذ إصدار canary ، واختبار A / B ، إلخ
   - دعم  [العديد من المشغلين كشروط حكم للتوجيه](https://github.com/iresty/lua-resty-radixtree#operator-list), على سبيل المثال  `{"arg_age", ">", 24}`
   - دعم  [وظيفة مطابقة الطريق المخصصة](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6: استخدم IPv6 لمطابقة المسار.
-  - دعم  [TTL](docs/en/latest/admin-api.md#route)
-  - [أولوية الدعم](docs/en/latest/router-radixtree.md#3-match-priority)
-  - [دعم طلبات Http الدفعية](docs/en/latest/plugins/batch-requests.md)
+  - دعم  [TTL](../../en/latest/admin-api.md#route)
+  - [أولوية الدعم](../../en/latest/router-radixtree.md#3-match-priority)
+  - [دعم طلبات Http الدفعية](../../en/latest/plugins/batch-requests.md)
 
 - **الحماية**
 
-  -المصادقات: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
-  - [IP القائمة البيضاء/القائمة السوداء](docs/en/latest/plugins/ip-restriction.md)
-  - [القائمة البيضاء للمراجع / القائمة السوداء](docs/en/latest/plugins/referer-restriction.md)
-  - [IdP](docs/en/latest/plugins/openid-connect.md): دعم خدمات المصادقة الخارجية , مثل Auth0, okta, etc., يمكن للمستخدمين استخدام هذا للاتصال بـ OAuth 2.0 وطرق المصادقة الأخرى.
-  - [حد-مطلوب](docs/en/latest/plugins/limit-req.md)
-  - [حد-العد](docs/en/latest/plugins/limit-count.md)
-  - [المحدد-التزامن](docs/en/latest/plugins/limit-conn.md)
+  -المصادقات: [key-auth](../../en/latest/plugins/key-auth.md), [JWT](../../en/latest/plugins/jwt-auth.md), [basic-auth](../../en/latest/plugins/basic-auth.md), [wolf-rbac](../../en/latest/plugins/wolf-rbac.md)
+  - [IP القائمة البيضاء/القائمة السوداء](../../en/latest/plugins/ip-restriction.md)
+  - [القائمة البيضاء للمراجع / القائمة السوداء](../../en/latest/plugins/referer-restriction.md)
+  - [IdP](../../en/latest/plugins/openid-connect.md): دعم خدمات المصادقة الخارجية , مثل Auth0, okta, etc., يمكن للمستخدمين استخدام هذا للاتصال بـ OAuth 2.0 وطرق المصادقة الأخرى.
+  - [حد-مطلوب](../../en/latest/plugins/limit-req.md)
+  - [حد-العد](../../en/latest/plugins/limit-count.md)
+  - [المحدد-التزامن](../../en/latest/plugins/limit-conn.md)
   - Anti-ReDoS(التعبير العادي رفض الخدمة): سياسات مضمنة لـ Anti-ReDoS بدون تكوين.
-  - [CORS](docs/en/latest/plugins/cors.md) تمكين CORS(مشاركة الموارد عبر الأصل) لواجهة برمجة التطبيقات الخاصة بك.
-  - [URI حظر](docs/en/latest/plugins/uri-blocker.md): حظر طلب العميل عن طريق URI.
-  - [طلب مدقق](docs/en/latest/plugins/request-validation.md)
+  - [CORS](../../en/latest/plugins/cors.md) تمكين CORS(مشاركة الموارد عبر الأصل) لواجهة برمجة التطبيقات الخاصة بك.
+  - [URI حظر](../../en/latest/plugins/uri-blocker.md): حظر طلب العميل عن طريق URI.
+  - [طلب مدقق](../../en/latest/plugins/request-validation.md)
 
 - **OPS ودي**
 
-  - أوبينتراكينج: دعم [أباتشي سكايواكينغ](docs/en/latest/plugins/skywalking.md)  [زيبكين](docs/en/latest/plugins/zipkin.md)
-  - يعمل مع اكتشاف الخدمة الخارجية：بالإضافة إلى الخادم المدمج, فإنه يدعم أيضًا وضع  `Consul` و `Nacos` [DNS وضع الاكتشاف](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), و [يوريكا](docs/en/latest/discovery.md)
-  - المراقبة والقياسات: [بروميثيوس](docs/en/latest/plugins/prometheus.md)
+  - أوبينتراكينج: دعم [أباتشي سكايواكينغ](../../en/latest/plugins/skywalking.md)  [زيبكين](../../en/latest/plugins/zipkin.md)
+  - يعمل مع اكتشاف الخدمة الخارجية：بالإضافة إلى الخادم المدمج, فإنه يدعم أيضًا وضع  `Consul` و `Nacos` [DNS وضع الاكتشاف](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), و [يوريكا](../../en/latest/discovery.md)
+  - المراقبة والقياسات: [بروميثيوس](../../en/latest/plugins/prometheus.md)
   - التجميع: عُقد أبيسكس عديمة الحالة، وتقوم بإنشاء مجموعات لمركز التكوين، يرجى الرجوع إلى [etcd دليل المجموعات](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
   - التوافر العالي: دعم تكوين عناوين etcd متعددة في نفس المجموعة.
   - [لوحة القيادة](https://github.com/apache/apisix-dashboard)
   - التحكم في الإصدار: يدعم التراجع عن العمليات.
   - CLI: بدء\ايقاف\اعادة تحميل أبيسكس من خلال سطر الأوامر.
-  - [قائمة-ذاتية](docs/en/latest/stand-alone.md):يدعم تحميل قواعد المسار من ملف YAML المحلي ، وهو أكثر ملاءمة مثل تحت kubernetes (k8s).
-  - [القاعدة العالمية](docs/en/latest/architecture-design/global-rule.md): تسمح بتشغيل أي مكون إضافي لجميع الطلبات، على سبيل المثال: معدل الحد، مرشح IP، إلخ.
+  - [قائمة-ذاتية](../../en/latest/stand-alone.md):يدعم تحميل قواعد المسار من ملف YAML المحلي ، وهو أكثر ملاءمة مثل تحت kubernetes (k8s).
+  - [القاعدة العالمية](../../en/latest/architecture-design/global-rule.md): تسمح بتشغيل أي مكون إضافي لجميع الطلبات، على سبيل المثال: معدل الحد، مرشح IP، إلخ.
   - أداء عالٍ: يصل معدل QPS أحادي النواة إلى 18 ألفًا بمتوسط تأخير أقل من 0.2 مللي ثانية
-  - [حقن خاطئ](docs/en/latest/plugins/fault-injection.md)
-  - [REST Admin API](docs/en/latest/admin-api.md): استخدام REST Admin API للتحكم ب أباتشي أبيسكس, والذي يسمح فقط 127.0.0.1 الوصول افتراضيا, يمكنك تعديل حقل  `allow_admin` حقل في `conf/config.yaml` لتحديد قائمة عناوين  IPs المسموح لها باستدعاء  Admin API. Also,لاحظ أيضًا أن Admin API تستخدم مصادقة المفتاح للتحقق من هوية المتصل. **`admin_key` حقل في `conf/config.yaml` يحتاج إلى تعديل قبل النشر لضمان الأمان**.
-  - المسجلات الخارجية: تصدير سجلات الوصول إلى أدوات إدارة السجلات الخارجيةs. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md))
+  - [حقن خاطئ](../../en/latest/plugins/fault-injection.md)
+  - [REST Admin API](../../en/latest/admin-api.md): استخدام REST Admin API للتحكم ب أباتشي أبيسكس, والذي يسمح فقط 127.0.0.1 الوصول افتراضيا, يمكنك تعديل حقل  `allow_admin` حقل في `conf/config.yaml` لتحديد قائمة عناوين  IPs المسموح لها باستدعاء  Admin API. Also,لاحظ أيضًا أن Admin API تستخدم مصادقة المفتاح للتحقق من هوية المتصل. **`admin_key` حقل في `conf/config.yaml` يحتاج إلى تعديل قبل النشر لضمان الأمان**.
+  - المسجلات الخارجية: تصدير سجلات الوصول إلى أدوات إدارة السجلات الخارجيةs. ([HTTP Logger](../../en/latest/plugins/http-logger.md), [TCP Logger](../../en/latest/plugins/tcp-logger.md), [Kafka Logger](../../en/latest/plugins/kafka-logger.md), [UDP Logger](../../en/latest/plugins/udp-logger.md))
   - [مخططات الخوذة](https://github.com/apache/apisix-helm-chart)
 
 - **قابلة للتطوير بدرجة كبيرة**
-  - [المكونات الإضافية المخصصة](docs/en/latest/plugin-develop.md): تسمح بربط المراحل الشائعة مثل `إعادة الكتابة`, `الوصول`, `مرشح العنوان`, `مرشح الجسم` and `السجل`, كما يسمح بربط `الموازنة` مرحلة.
+  - [المكونات الإضافية المخصصة](../../en/latest/plugin-develop.md): تسمح بربط المراحل الشائعة مثل `إعادة الكتابة`, `الوصول`, `مرشح العنوان`, `مرشح الجسم` and `السجل`, كما يسمح بربط `الموازنة` مرحلة.
   - خوارزميات موازنة الحمل المخصصة: يمكنك استخدام خوارزميات موازنة التحميل المخصصة أثناء  `الموازنة` مرحلة.
   - التوجيه المخصص: دعم المستخدمين لتنفيذ خوارزميات التوجيه بأنفسهم.
 
@@ -154,7 +154,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 1. تجميع الكود المصدر (ينطبق على جميع الأنظمة)
 
-   - تبعيات وقت تشغيل التثبيت: OpenResty and etcd, و وتبعيات التجميع: luarocks. الرجوع إلى  [وثائق تبعيات التثبيت](docs/en/latest/install-dependencies.md)
+   - تبعيات وقت تشغيل التثبيت: OpenResty and etcd, و وتبعيات التجميع: luarocks. الرجوع إلى  [وثائق تبعيات التثبيت](../../en/latest/install-dependencies.md)
    - قم بتنزيل أحدث حزمة إصدار لشفرة المصدر:
 
      ```shell
@@ -193,7 +193,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 3. RPM حزمة（فقط ل CentOS 7）
 
-   - تبعيات وقت تشغيل التثبيت: OpenResty, etcd and OpenSSL طور مكتبة, الرجوع الى [وثائق تبعيات تثبيت](docs/en/latest/install-dependencies.md#centos-7)
+   - تبعيات وقت تشغيل التثبيت: OpenResty, etcd and OpenSSL طور مكتبة, الرجوع الى [وثائق تبعيات تثبيت](../../en/latest/install-dependencies.md#centos-7)
    - تثبيت أبيسكس：
 
    ```shell
@@ -236,17 +236,17 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 2. البدء
 
-   يعد دليل البدء طريقة رائعة لتعلم أساسيات أبيسكس. ما عليك سوى اتباع الخطوات الواردة في  [البدء](docs/en/latest/getting-started.md).
+   يعد دليل البدء طريقة رائعة لتعلم أساسيات أبيسكس. ما عليك سوى اتباع الخطوات الواردة في  [البدء](../../en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins.md).
+   Further, you can follow the documentation to try more [plugins](../../en/latest/plugins.md).
 
 3. مدير API
 
-   يوفر أباتشي أبيسكس  [REST Admin API](docs/en/latest/admin-api.md) للتحكم الديناميكي في مجموعة أباتشي أبيسكس.
+   يوفر أباتشي أبيسكس  [REST Admin API](../../en/latest/admin-api.md) للتحكم الديناميكي في مجموعة أباتشي أبيسكس.
 
 4. تطوير البرنامج المساعد
 
-   يمكنك الرجوع إلى  [دليل تطوير البرنامج المساعد](docs/en/latest/plugin-develop.md), و [عينة من وثائق`echo`](docs/en/latest/plugins/echo.md) صدى البرنامج المساعد وتنفيذ التعليمات البرمجية.
+   يمكنك الرجوع إلى  [دليل تطوير البرنامج المساعد](../../en/latest/plugin-develop.md), و [عينة من وثائق`echo`](../../en/latest/plugins/echo.md) صدى البرنامج المساعد وتنفيذ التعليمات البرمجية.
 
    يرجى ملاحظة أن إضافات أباتشي أبيسكس المضافة ، المحدثة ، المحذوفة ، وما إلى ذلك ، يتم تحميلها دون إعادة تشغيل الخدمة.
 
@@ -256,7 +256,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 باستخدام خادم AWS ثماني النواة ، تصل خدمة QPS الخاصة بـ APISIX إلى 140000 مع زمن انتقال يبلغ 0.2 مللي ثانية فقط.
 
-[البرنامج النصي المعياري](benchmark/run.sh), [طريقة الاختبار وعملية](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) كان مفتوح المصدر, ومرحبًا بكم في المحاولة والمساهمة.
+[البرنامج النصي المعياري](../../../benchmark/run.sh), [طريقة الاختبار وعملية](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) كان مفتوح المصدر, ومرحبًا بكم في المحاولة والمساهمة.
 
 ## أباتشي أبيسكس مقابل كونغ
 
@@ -304,7 +304,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 > [قم بزيارة هنا](https://www.apiseven.com/contributor-graph) لإنشاء "مساهم بمرور الوقت".
 
-[![مساهم-بمرور-الوقت](docs/assets/images/contributor-over-time.png)](https://www.apiseven.com/contributor-graph)
+[![مساهم-بمرور-الوقت](../../assets/images/contributor-over-time.png)](https://www.apiseven.com/contributor-graph)
 
 ## مقاطع الفيديو والمقالات
 
@@ -328,7 +328,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-يتم تشجيع المستخدمين على إضافة أنفسهم إلى صفحة  [Powered By](powered-by.md) صفحة.
+يتم تشجيع المستخدمين على إضافة أنفسهم إلى صفحة  [Powered By](../../../powered-by.md) صفحة.
 
 ## الشاشة العريضة
 
