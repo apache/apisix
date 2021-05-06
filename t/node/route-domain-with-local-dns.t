@@ -62,7 +62,7 @@ GET /t
 --- response_body
 passed
 --- error_log eval
-qr/.*parse_args\(\): dns resolver\[.+\]/
+qr/.*init_resolver\(\): dns resolver \[.+\]/
 --- no_error_log
 [error]
 
@@ -75,7 +75,7 @@ GET /not_found
 --- response_body
 {"error_msg":"404 Route Not Found"}
 --- error_log eval
-qr/.*parse_args\(\): dns resolver\[.+\]/
+qr/.*init_resolver\(\): dns resolver \[.+\]/
 --- no_error_log
 [error]
 

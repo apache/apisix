@@ -23,7 +23,7 @@ title: Admin API
 
 ## 目录
 
-- [目录](#目录)
+- [Description](#description)
 - [Route](#route)
 - [Service](#service)
 - [Consumer](#consumer)
@@ -33,6 +33,14 @@ title: Admin API
 - [Plugin Config](#plugin-config)
 - [Plugin Metadata](#plugin-metadata)
 - [Plugin](#plugin)
+
+## Description
+
+Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [architecture-design](./architecture-design/apisix.md) 中的文档。
+
+启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](../../../conf/config.yaml) 文件来改变默认监听的端口。
+
+在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
 
 ## Route
 
@@ -107,7 +115,7 @@ route 对象 json 配置内容：
     "name": "路由xxx",
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址
-    "vars": [],                 # 由一个或多个 {var, operator, val} 元素组成的列表
+    "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
     "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},             # upstream 信息对象，建议尽量不要使用
     "filter_func": "",          # 用户自定义的过滤函数，非必填
@@ -781,6 +789,8 @@ $ curl http://127.0.0.1:9080/get
 | key         | 必需   | 私钥           | https 证书私钥                                                                                         |                                                  |
 | certs       | 可选   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 cert 传递外，剩下的证书可以通过该参数传递上来 |                                                  |
 | keys        | 可选   | 私钥字符串数组 | certs 对应的证书私钥，注意要跟 certs 一一对应                                                          |                                                  |
+| client.ca | 可选   | 证书|  设置将用于客户端证书校验的 CA 证书。该特性需要 OpenResty 1.19+ |                                                  |
+| client.depth | 可选   | 辅助|  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 1.19+ |                                             |
 | snis        | 必需   | 匹配规则       | 非空数组形式，可以匹配多个 SNI                                                                         |                                                  |
 | labels      | 可选   | 匹配规则       | 标识附加属性的键值对                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | create_time | 可选   | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                          | 1602883670                                       |

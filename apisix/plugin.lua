@@ -336,7 +336,9 @@ function _M.filter(user_route, plugins)
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         trace_plugins_info_for_debug(nil)
-        return core.empty_tab
+        -- when 'plugins' is given, always return 'plugins' itself instead
+        -- of another one
+        return plugins or core.empty_tab
     end
 
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
@@ -699,7 +701,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == "access" then
+        if phase_name == nil then
             api_ctx.global_rules = global_rules
         end
 
@@ -712,7 +714,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 
             core.table.clear(plugins)
             plugins = _M.filter(global_rule, plugins)
-            if phase_name == "access" then
+            if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
             else

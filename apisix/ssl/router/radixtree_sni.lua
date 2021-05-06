@@ -20,7 +20,7 @@ local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
-local ipairs	       = ipairs
+local ipairs           = ipairs
 local type             = type
 local error            = error
 local str_find         = core.string.find
@@ -28,6 +28,7 @@ local str_gsub         = string.gsub
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
+
 
 local _M = {
     version = 0.1,
@@ -191,6 +192,24 @@ function _M.match_and_set(api_ctx)
             if not ok then
                 return false, err
             end
+        end
+    end
+
+    if matched_ssl.value.client then
+        local ca_cert = matched_ssl.value.client.ca
+        local depth = matched_ssl.value.client.depth
+        if apisix_ssl.support_client_verification() then
+            local parsed_cert, err = apisix_ssl.fetch_cert(sni, ca_cert)
+            if not parsed_cert then
+                return false, "failed to parse client cert: " .. err
+            end
+
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth)
+            if not ok then
+                return false, err
+            end
+
+            api_ctx.ssl_client_verified = true
         end
     end
 

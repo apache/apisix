@@ -44,12 +44,15 @@ install_dependencies() {
 
     # install and start grpc_server_example
     mkdir build-cache
-    wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
+    wget https://github.com/api7/grpc_server_example/releases/download/"$GRPC_SERVER_EXAMPLE_VER"/grpc_server_example-amd64.tar.gz
     tar -xvf grpc_server_example-amd64.tar.gz
     mv grpc_server_example build-cache/
     git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
     cd grpc_server_example/ && mv proto/ ../build-cache/ && cd ..
-    ./build-cache/grpc_server_example > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
+    ./build-cache/grpc_server_example \
+        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
+        > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
 
     # wait for grpc_server_example to fully start
     sleep 3
