@@ -28,5 +28,4 @@ hook_phase:                     # module and function list, name: hook_phase
     - http_body_filter_phase
     - http_log_phase
 
-# yamllint disable-line rule:comments
 #END
