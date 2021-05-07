@@ -513,7 +513,7 @@ Location: https://foo.com/hello
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches both schemas 1 and 2/
+qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches both schemas 1 and 3/
 --- no_error_log
 [error]
 
@@ -750,5 +750,66 @@ Host: test.com
 --- response_headers
 Location: https://test.com/hello-https
 --- error_code: 301
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "regex_uri": ["^/test/(.*)", "http://test.com/${1}"],
+                            "ret_code": 301
+                        }
+                    },
+                    "uris": ["/test/*", "/hello"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: regex_uri redirect
+--- request
+GET /test/1
+--- response_headers
+Location: http://test.com/1
+--- error_code: 301
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: regex_uri not match, get response from upstream
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
 --- no_error_log
 [error]

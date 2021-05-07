@@ -17,7 +17,9 @@
 local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
+local string_format = string.format
 local re_gmatch = ngx.re.gmatch
+local re_sub = ngx.re.sub
 local ipairs = ipairs
 local ngx = ngx
 
@@ -35,10 +37,22 @@ local schema = {
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
         uri = {type = "string", minLength = 2, pattern = reg},
+        regex_uri = {
+            description = "params for generating new uri that substitute from client uri, " ..
+                          "first param is regular expression, the second one is uri template",
+            type        = "array",
+            maxItems    = 2,
+            minItems    = 2,
+            items       = {
+                description = "regex uri",
+                type = "string",
+            }
+        },
         http_to_https = {type = "boolean"},
     },
     oneOf = {
         {required = {"uri"}},
+        {required = {"regex_uri"}},
         {required = {"http_to_https"}}
     }
 }
@@ -79,7 +93,22 @@ end
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    if conf.regex_uri and #conf.regex_uri > 0 then
+        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
+                                 conf.regex_uri[2], "jo")
+        if err then
+            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
+                                      conf.regex_uri[1], conf.regex_uri[2], err)
+            return false, msg
+        end
+    end
+
+    return true
 end
 
 
@@ -115,6 +144,7 @@ function _M.rewrite(conf, ctx)
 
     local ret_code = conf.ret_code
     local uri = conf.uri
+    local regex_uri = conf.regex_uri
 
     if conf.http_to_https and ctx.var.scheme == "http" then
         -- TODO： add test case
@@ -129,17 +159,33 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    if uri and ret_code then
-        local new_uri, err = concat_new_uri(uri, ctx)
-        if not new_uri then
-            core.log.error("failed to generate new uri by: ", uri, " error: ",
-                           err)
-            return 500
-        end
+    if ret_code then
+        if uri then
+            local new_uri, err = concat_new_uri(uri, ctx)
+            if not new_uri then
+                core.log.error("failed to generate new uri by: " .. uri .. err)
+                return 500
+            end
 
-        core.response.set_header("Location", new_uri)
-        return ret_code
+            core.response.set_header("Location", new_uri)
+            return ret_code
+        elseif regex_uri then
+            local new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
+                                           regex_uri[2], "jo")
+            if not new_uri then
+                local msg = string_format("failed to substitute the uri:%s (%s) with %s, error:%s",
+                                          ctx.var.uri, regex_uri[1], regex_uri[2], err)
+                core.log.error(msg)
+                return 500
+            end
+
+            if n > 0 then
+                core.response.set_header("Location", new_uri)
+                return ret_code
+            end
+        end
     end
+
 end
 
 
