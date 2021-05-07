@@ -47,6 +47,7 @@ worker_rlimit_core  {* worker_rlimit_core *};
 worker_shutdown_timeout {* worker_shutdown_timeout *};
 
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
@@ -84,7 +85,11 @@ stream {
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
-        apisix.stream_init()
+        local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
+        local args = {
+            dns_resolver = dns_resolver,
+        }
+        apisix.stream_init(args)
     }
 
     init_worker_by_lua_block {
