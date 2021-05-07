@@ -530,6 +530,15 @@ local function _automatic_fetch(premature, self)
         return
     end
 
+    local health_checker, err = health_check.init({
+        shm_name = "etcd_cluster_health_check",
+        fail_timeout = 5,
+        max_fails = 3,
+    })
+    if not health_checker then
+        return nil, err
+    end
+
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
@@ -546,20 +555,21 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                if err == "connection refused" then
+                if string.find(err, "connection refused") then
                     local etcd_cli, err = get_etcd()
                     if not etcd_cli then
                         error("all etcd endpoints are unhealthy: ", err)
                     end
                     self.etcd_cli = etcd_cli
                 end
-                if err == "has no healthy etcd endpoint available" then
+                if string.find(err, "has no healthy etcd endpoint available") then
                     while err do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
                         for _ = 0, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
                             if not err then
+                                log.warn("reconnected to etcd")
                                 break
                             end
                             backoff_duration = backoff_duration * backoff_factor
@@ -568,7 +578,8 @@ local function _automatic_fetch(premature, self)
                     end
                 end
                 if err ~= "timeout" and err ~= "Key not found"
-                    and err ~= "connection refused" and self.last_err ~= err then
+                    and not string.find(err, "connection refused")
+                    and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
                               tostring(self))
                 end
@@ -783,15 +794,6 @@ function _M.init()
     local etcd_cli, err = get_etcd()
     if not etcd_cli then
         return nil, "failed to start a etcd instance: " .. err
-    end
-
-    local health_checker, err = health_check.init({
-        shm_name = "etcd_cluster_health_check",
-        fail_timeout = 5,
-        max_fails = 3,
-    })
-    if not health_checker then
-        return nil, err
     end
 
     local etcd_conf = local_conf.etcd
