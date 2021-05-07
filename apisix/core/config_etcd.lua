@@ -558,7 +558,7 @@ local function _automatic_fetch(premature, self)
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
                         for _ = 0, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
-                            ok, err = sync_data(self)
+                            _, err = sync_data(self)
                             if not err then
                                 break
                             end
@@ -568,7 +568,7 @@ local function _automatic_fetch(premature, self)
                     end
                 end
                 if err ~= "timeout" and err ~= "Key not found"
-                    and self.last_err ~= err then
+                    and err ~= "connection refused" and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
                               tostring(self))
                 end
