@@ -89,6 +89,7 @@ my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
 my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
 my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
+my $test_50x_html = read_file("html/50x.html");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -627,6 +628,8 @@ $ssl_ecc_key
 $test2_crt
 >>> ../conf/cert/test2.key
 $test2_key
+>>> 50x.html
+$test_50x_html
 $user_apisix_yaml
 _EOC_
 
