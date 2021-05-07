@@ -139,9 +139,7 @@ To enable your plugin, copy this plugin list into `conf/config.yaml`, and add yo
 apisix:
   admin_key:
     - name: "admin"
-      # yamllint disable rule:comments-indentation
       key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
-      # yamllint enable rule:comments-indentation
       role: admin
 
 plugins: # copied from config-default.yaml
