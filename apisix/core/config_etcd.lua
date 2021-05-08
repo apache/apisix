@@ -38,6 +38,7 @@ local tostring     = tostring
 local tonumber     = tonumber
 local xpcall       = xpcall
 local debug        = debug
+local string       = string
 local error        = error
 local rand         = math.random
 local constants    = require("apisix.constants")
