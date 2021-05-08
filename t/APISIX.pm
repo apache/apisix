@@ -79,7 +79,7 @@ if ($custom_dns_server) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
 $default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
@@ -230,6 +230,7 @@ _EOC_
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
@@ -263,7 +264,10 @@ _EOC_
         require "resty.core"
 
         apisix = require("apisix")
-        apisix.stream_init()
+        local args = {
+            dns_resolver = $dns_addrs_tbl_str,
+        }
+        apisix.stream_init(args)
 _EOC_
 
     $stream_config .= <<_EOC_;

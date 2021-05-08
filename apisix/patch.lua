@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require = require
+local ipmatcher = require("resty.ipmatcher")
 local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
@@ -23,7 +24,6 @@ local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
 local concat_tab = table.concat
 local new_tab = require("table.new")
-local expr = require("resty.expr.v1")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
@@ -42,6 +42,45 @@ local function get_local_conf()
     end
 
     return config_local.local_conf()
+end
+
+
+local patch_tcp_socket
+do
+    local old_tcp_sock_connect
+
+    local function new_tcp_sock_connect(sock, host, port, opts)
+        local core_str = require("apisix.core.string")
+        local resolver = require("apisix.core.resolver")
+
+        if host then
+            if core_str.has_prefix(host, "unix:") then
+                if not opts then
+                    -- workaround for https://github.com/openresty/lua-nginx-module/issues/860
+                    return old_tcp_sock_connect(sock, host)
+                end
+
+            elseif not ipmatcher.parse_ipv4(host) and not ipmatcher.parse_ipv6(host) then
+                local err
+                host, err = resolver.parse_domain(host)
+                if not host then
+                    return nil, "failed to parse domain: " .. err
+                end
+            end
+        end
+
+        return old_tcp_sock_connect(sock, host, port, opts)
+    end
+
+
+    function patch_tcp_socket(sock)
+        if not old_tcp_sock_connect then
+            old_tcp_sock_connect = sock.connect
+        end
+
+        sock.connect = new_tcp_sock_connect
+        return sock
+    end
 end
 
 
@@ -228,40 +267,17 @@ local function luasocket_tcp()
 end
 
 
-local patched_expr_new
-do
-    local function eval_empty_rule(self, ctx, ...)
-        return true
-    end
-
-
-    local mt = {__index = {eval = eval_empty_rule}}
-    local old_expr_new = expr.new
-
-
-    function patched_expr_new(rule)
-        if #rule == 0 then
-            return setmetatable({}, mt)
-        end
-
-        return old_expr_new(rule)
-    end
-end
-
-
 function _M.patch()
     -- make linter happy
     -- luacheck: ignore
     ngx_socket.tcp = function ()
         local phase = get_phase()
         if phase ~= "init" and phase ~= "init_worker" then
-            return original_tcp()
+            return patch_tcp_socket(original_tcp())
         end
 
         return luasocket_tcp()
     end
-
-    expr.new = patched_expr_new
 end
 
 

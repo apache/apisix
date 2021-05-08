@@ -36,7 +36,7 @@ También puede usarse como [k8s ingress controller (control de ingreso)](https:/
 
 La arquitectura técnica de Apache APISIX:
 
-![](../../assets/images/apisix.png)
+![La arquitectura técnica de Apache APISIX](../../assets/images/apisix.png)
 
 ## Communidad
 

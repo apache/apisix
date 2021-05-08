@@ -34,7 +34,7 @@ It can also be used as a [k8s ingress controller](https://github.com/apache/apis
 
 The technical architecture of Apache APISIX:
 
-![](docs/assets/images/apisix.png)
+![Technical architecture of Apache APISIX](docs/assets/images/apisix.png)
 
 ## Community
 

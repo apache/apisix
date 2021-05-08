@@ -27,7 +27,7 @@ title: prometheus
 
 | 名称         | 类型   | 必选项 | 默认值  | 有效值       | 描述                                                  |
 | ------------ | ------ | ------ | ------ | ------------ | ----------------------------------------------------- |
-| prefer_type  | boolean | 可选 | false   |             | 设置为`true`时，Prometheus 指标中将使用路由和服务的 `name` 而不是 `id`。 |
+| prefer_name  | boolean | 可选 | false   |             | 设置为`true`时，Prometheus 指标中将使用路由和服务的 `name` 而不是 `id`。 |
 
 ## 接口
 

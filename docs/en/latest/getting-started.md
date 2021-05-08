@@ -42,20 +42,10 @@ $ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
     "foo2": "bar2"
   },
   "headers": {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en,zh-CN;q=0.9,zh;q=0.8",
-    "Cache-Control": "max-age=0",
+    "Accept": "*/*",
     "Host": "httpbin.org",
-    "Sec-Ch-Ua": "\"Google Chrome\";v=\"89\", \"Chromium\";v=\"89\", \";Not A Brand\";v=\"99\"",
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
-    "X-Amzn-Trace-Id": "Root=1-606276ab-2b451d4b36057c186d666351"
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6088fe84-24f39487166cce1f0e41efc9"
   },
   "origin": "58.152.81.42",
   "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
@@ -100,13 +90,13 @@ We expect the following data to be returned:
 
 ```json
 {
-  "node": {
-    "createdIndex": 6,
-    "modifiedIndex": 6,
-    "key": "/apisix/services",
-    "dir": true
-  },
-  "action": "get"
+  "count":"1",
+  "action":"get",
+  "node":{
+    "key":"/apisix/services",
+    "nodes":{},
+    "dir":true
+  }
 }
 ```
 
@@ -155,7 +145,7 @@ This will be forward to `http://httpbin.org:80/getAll?limit=10` by Apache APISIX
 After reading the above section, we know we have to set the `Upstream` for `Route`. Just executing the following command to create one:
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -173,11 +163,11 @@ We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:80` as 
 We just created an Upstream(Reference to our backend services), let's bind one Route with it!
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
-  "upstream_id": "50"
+  "upstream_id": "1"
 }'
 ```
 
@@ -202,12 +192,12 @@ Let's do some interesting things, due to **anyone** could access our public `Rou
 First, let's create the [consumer](./architecture-design/consumer.md) `John` with [key-auth](./plugins/key-auth.md) plugin, we need to provide a specified secret key:
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "username": "john",
   "plugins": {
     "key-auth": {
-      "key": "superSecretAPIKey"
+      "key": "key-of-john"
     }
   }
 }'
@@ -216,21 +206,21 @@ $ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335
 Next, let's bind our `Consumer(John)` to that `Route`, we only need to **Enable** the [key-auth](./plugins/key-auth.md) plugin for that `Route`:
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
   "plugins": {
     "key-auth": {}
   },
-  "upstream_id": 50
+  "upstream_id": "1"
 }'
 ```
 
 Ok, when we access the `Route` created in Step2 from now on, an **Unauthorized Error** will occur. Let's see how to access that `Route`:
 
 ```bash
-$ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
+$ curl -i -X GET "http://127.0.0.1:9080/get" -H "Host: httpbin.org" -H "apikey: key-of-john"
 ```
 
 Ya, just added an `Header` called `apikey` with correct key! It's so easy to protect any `Routes`, right?
@@ -241,7 +231,7 @@ Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not
 the proxy-rewrite plugin to do it.
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/samplePrefix/get",
   "plugins": {
@@ -250,14 +240,14 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f
     },
     "key-auth": {}
   },
-  "upstream_id": 50
+  "upstream_id": "1"
 }'
 ```
 
 Now you can invoke the route with the following command:
 
 ```bash
-$ curl -i -X GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' -H 'apikey: superSecretAPIKey'
+$ curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H "apikey: key-of-john"
 ```
 
 ### APISIX Dashboard

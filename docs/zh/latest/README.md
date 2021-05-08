@@ -34,7 +34,7 @@ title: Apache APISIX
 
 Apache APISIX 的技术架构如下图所示：
 
-![](../../assets/images/apisix.png)
+![Apache APISIX 的技术架构](../../assets/images/apisix.png)
 
 ## 社区
 
@@ -51,6 +51,10 @@ Apache APISIX 的技术架构如下图所示：
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- **微信公众号**
+   ![](../../assets/images/OA.jpg)
+- **微信视频号**
+   ![](../../assets/images/MA.jpeg)
 
 ## 特性
 
