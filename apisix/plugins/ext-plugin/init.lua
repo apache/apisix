@@ -341,12 +341,7 @@ local rpc_handlers = {
         local path = builder:CreateString(uri)
 
         local bin_addr = var.binary_remote_addr
-        local len = #bin_addr
-        http_req_call_req.StartSrcIpVector(builder, len)
-        for i = len, 1, -1 do
-            builder:PrependByte(str_byte(bin_addr, i))
-        end
-        local src_ip = builder:EndVector(len)
+        local src_ip = builder.CreateByteVector(builder, bin_addr)
 
         local args = core.request.get_uri_args(ctx)
         local textEntries = {}
