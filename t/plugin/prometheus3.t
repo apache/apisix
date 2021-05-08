@@ -58,8 +58,6 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "plugin_config_id": 1,
-                    "plugins": {
-                    },
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
