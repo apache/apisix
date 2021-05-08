@@ -679,7 +679,7 @@ invalid base64 content
 
 
 
-=== TEST 24: rewrite header with variable
+=== TEST 24: rewrite header with variables
 --- config
     location /t {
         content_by_lua_block {
