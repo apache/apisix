@@ -70,7 +70,7 @@ GET /hello
 X-Test-Status: 500
 --- error_code: 500
 --- response_body_like
-apisix.apache.org
+.*apisix.apache.org.*
 
 
 
@@ -81,7 +81,7 @@ GET /hello
 X-Test-Status: 502
 --- error_code: 502
 --- response_body_like
-apisix.apache.org
+.*apisix.apache.org.*
 
 
 
@@ -92,7 +92,7 @@ GET /hello
 X-Test-Status: 503
 --- error_code: 503
 --- response_body_like
-apisix.apache.org
+.*apisix.apache.org.*
 
 
 
@@ -103,7 +103,7 @@ GET /hello
 X-Test-Status: 504
 --- error_code: 504
 --- response_body_like
-apisix.apache.org
+.*apisix.apache.org.*
 
 
 
