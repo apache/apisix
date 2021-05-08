@@ -47,38 +47,10 @@ local function check_conf(id, conf, need_id)
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.ssl))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.ssl, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
 
-    local ok, err = apisix_ssl.validate(conf.cert, conf.key)
+    local ok, err = apisix_ssl.check_ssl_conf(false, conf)
     if not ok then
         return nil, {error_msg = err}
-    end
-
-    local numcerts = conf.certs and #conf.certs or 0
-    local numkeys = conf.keys and #conf.keys or 0
-    if numcerts ~= numkeys then
-        return nil, {error_msg = "mismatched number of certs and keys"}
-    end
-
-    for i = 1, numcerts do
-        local ok, err = apisix_ssl.validate(conf.certs[i], conf.keys[i])
-        if not ok then
-            return nil, {error_msg = "failed to handle cert-key pair[" .. i .. "]: " .. err}
-        end
-    end
-
-    if conf.client then
-        if not apisix_ssl.support_client_verification() then
-            return nil, {error_msg = "client tls verify unsupported"}
-        end
-
-        local ok, err = apisix_ssl.validate(conf.client.ca, nil)
-        if not ok then
-            return nil, {error_msg = "failed to validate client_cert: " .. err}
-        end
     end
 
     return need_id and id or true
