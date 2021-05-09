@@ -624,6 +624,10 @@ function _M.http_log_phase()
         api_ctx = ctx and ctx.api_ctx
     end
 
+    if not api_ctx then
+        return
+    end
+
     healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
