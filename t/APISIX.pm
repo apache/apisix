@@ -429,6 +429,10 @@ _EOC_
             more_clear_headers Date;
         }
 
+	location = /50x.html {
+            root   html;
+        }
+
         location = /v3/auth/authenticate {
             content_by_lua_block {
                 ngx.log(ngx.WARN, "etcd auth failed!")

@@ -304,8 +304,8 @@ passed
 === TEST 10: hit route (Connection refused)
 --- request
 GET /grpctest
---- response_body eval
-qr/502 Bad Gateway/
+--- response_body_like
+.*apisix.apache.org.*
 --- error_log
 Connection refused) while connecting to upstream
 --- error_code: 502
