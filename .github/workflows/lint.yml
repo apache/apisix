@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: 🧹 Check for trailing whitespace
-        run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"
+        run: "! git grep -EIn $'[ \t]+$'"
   misc:
     name: misc checker
     runs-on: ubuntu-latest
