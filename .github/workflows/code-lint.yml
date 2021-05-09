@@ -1,0 +1,23 @@
+name: Code Lint
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: leafo/gh-actions-lua@v8
+      with:
+        luaVersion: "luajit-openresty"
+    - uses: leafo/gh-actions-luarocks@v4
+    - run: luarocks install luacheck
+    - run: make lint

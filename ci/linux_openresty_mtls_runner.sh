@@ -29,16 +29,6 @@ do_install() {
 
     ./utils/linux-install-luarocks.sh
 
-    for (( i = 0; i < 10; i++ )); do
-        if [[ "$i" -eq 10 ]]; then
-            echo "failed to install luacheck in time"
-            cat build.log && exit 1
-            exit 1
-        fi
-        sudo luarocks install luacheck > build.log 2>&1 && break
-        i=$(( i + 1 ))
-    done
-
     ./utils/linux-install-etcd-client.sh
 
     create_lua_deps
@@ -122,7 +112,7 @@ apisix:
     ./bin/apisix stop
     sleep 1
 
-    make lint && make license-check || exit 1
+    make license-check || exit 1
 }
 
 after_success() {
