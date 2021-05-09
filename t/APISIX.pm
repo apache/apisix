@@ -429,8 +429,17 @@ _EOC_
             more_clear_headers Date;
         }
 
-	location = /50x.html {
+        location = /50x.html {
+            internal;
             root   html;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
 
         location = /v3/auth/authenticate {
@@ -520,7 +529,16 @@ _EOC_
         }
 
         location = /50x.html {
+            internal;
             root   html;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
 
         location /v1/ {

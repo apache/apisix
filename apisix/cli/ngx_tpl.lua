@@ -296,6 +296,13 @@ http {
 
         location = /50x.html {
             root   html;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
     }
     {% end %}
@@ -377,6 +384,13 @@ http {
 
         location = /50x.html {
             root   html;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
     }
     {% end %}
@@ -631,6 +645,13 @@ http {
 
         location = /50x.html {
             root   html;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
     }
     # http end configuration snippet starts

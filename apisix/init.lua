@@ -476,13 +476,12 @@ function _M.http_access_phase()
     set_upstream_host(api_ctx)
 
     local up_scheme = api_ctx.upstream_scheme
+    ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
     if up_scheme == "grpcs" or up_scheme == "grpc" then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
 end
@@ -620,6 +619,11 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
+    if not api_ctx then
+        local ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+        api_ctx = ctx and ctx.api_ctx
+    end
+
     healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
