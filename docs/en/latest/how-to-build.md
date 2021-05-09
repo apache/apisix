@@ -108,6 +108,8 @@ see how to do it.
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+    * Some tests depend on external services and modified system configuration. If you want to setup a local CI environment,
+      you can refer to `ci/linux_openresty_common_runner.sh`.
 
 ### Troubleshoot Testing
 
