@@ -1602,6 +1602,7 @@ GET /t
     }
 --- request
 GET /t
+--- skip_nginx: 5: > 1.19.0
 --- error_code: 400
 --- no_error_log
 [error]
