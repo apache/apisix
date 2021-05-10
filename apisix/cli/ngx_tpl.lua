@@ -294,7 +294,7 @@ http {
             }
         }
 
-        locaton = @50x.html {
+        locaton @50x.html {
             try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -382,7 +382,7 @@ http {
             }
         }
 
-        location = @50x.html {
+        location @50x.html {
             try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -643,7 +643,7 @@ http {
         }
         {% end %}
 
-        location = @50x.html {
+        location @50x.html {
             try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
