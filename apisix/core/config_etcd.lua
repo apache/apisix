@@ -537,7 +537,7 @@ local function _automatic_fetch(premature, self)
             fail_timeout = 5,
             max_fails = 3,
         })
-        if not health_checker then
+        if err then
             log.warn("fail to create health_check: " .. err)
         end
     end
