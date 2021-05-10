@@ -30,6 +30,7 @@ title: traffic-split
   - [Grayscale Release](#grayscale-release)
   - [Blue-green Release](#blue-green-release)
   - [Custom Release](#custom-release)
+  - [Matching rules correspond to upstream](#matching-rules-correspond-to-upstream)
 - [Disable Plugin](#disable-plugin)
 
 ## Name
@@ -480,6 +481,98 @@ Content-Type: text/html; charset=utf-8
 ......
 
 hello 1980
+```
+
+### Matching rules correspond to upstream
+
+By configuring multiple `rules`, we can achieve one-to-one correspondence between different matching rules and upstream.
+
+**Example:**
+
+When the request header `x-api-id` is equal to 1, it hits the upstream with port 1981; when `x-api-id` is equal to 2, it hits the upstream with port 1982; otherwise, it hits the upstream with port 1980 (the upstream response data is the corresponding port number).
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","1"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                },
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","2"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-B",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1982":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+**Test plugin:**
+
+The request header `x-api-id` is equal to 1, hitting the upstream with the 1981 port.
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+1981
+```
+
+The request header `x-api-id` is equal to 2, hitting the upstream with the 1982 port.
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
+1982
+```
+
+The request header `x-api-id` is equal to 3, the rule does not match, and it hits the upstream with port 1980.
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
+1980
 ```
 
 ## Disable Plugin

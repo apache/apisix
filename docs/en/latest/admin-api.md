@@ -40,6 +40,8 @@ The Admin API is a group of APIs served for the Apache APISIX, we could pass par
 
 When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](../../../conf/config.yaml) file.
 
+The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `conf/config.yaml` file, which is the access token of the Admin API.
+
 ## Route
 
 *API*：/apisix/admin/routes/{id}?ttl=0
@@ -112,7 +114,7 @@ Config Example:
     "name": "route-xxx",
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"], # A set of Client IP.
-    "vars": [],                 # A list of one or more `{var, operator, val}` elements
+    "vars": [["http_user", "==", "ios"]], # A list of one or more `[var, operator, val]` elements
     "upstream_id": "1",         # upstream id, recommended
     "upstream": {},             # upstream, not recommended
     "filter_func": "",          # User-defined filtering function
@@ -784,6 +786,8 @@ Return response from etcd currently.
 | key         | True     | Private key             | https private key                                                                                                                                          |                                                  |
 | certs       | False    | An array of certificate | when you need to configure multiple certificate for the same domain, you can pass extra https certificates (excluding the one given as cert) in this field |                                                  |
 | keys        | False    | An array of private key | https private keys. The keys should be paired with certs above                                                                                             |                                                  |
+| client.ca | False | Certificate| set the CA certificate which will use to verify client. This feature requires OpenResty 1.19+.                                                            |                                                  |
+| client.depth | False | Certificate| set the verification depth in the client certificates chain, default to 1. This feature requires OpenResty 1.19+.                                                            |                                                  |
 | snis        | True     | Match Rules             | a non-empty arrays of https SNI                                                                                                                            |                                                  |
 | labels      | False    | Match Rules             | Key/value pairs to specify attributes                                                                                                                      | {"version":"v2","build":"16","env":"production"} |
 | create_time | False    | Auxiliary               | epoch timestamp in second, will be created automatically if missing                                                                                        | 1602883670                                       |

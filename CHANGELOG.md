@@ -43,14 +43,20 @@ title: Changelog
 
 ## 2.5.0
 
+**The changes marked with :warning: are not backward compatible.**
+**Please upgrade your data accordingly before upgrading to this version.**
+**[#3809](https://github.com/apache/apisix/pull/3809) Means that empty vars will make the route fail to match any requests.**
+
 ### Change
 
+- :warning: change: remove unused consumer.id  [#3868](https://github.com/apache/apisix/pull/3868)
+- :warning: change: remove deprecated upstream.enable_websocket [#3854](https://github.com/apache/apisix/pull/3854)
 - change(zipkin): rearrange the child span [#3877](https://github.com/apache/apisix/pull/3877)
 
 ### Core
 
 - :sunrise: feat: support mTLS with etcd [#3905](https://github.com/apache/apisix/pull/3905)
-- :sunrise: feat: upgrade lua-resty-expr/radixtree to support logical expression [#3809](https://github.com/apache/apisix/pull/3809)
+- :warning: feat: upgrade lua-resty-expr/radixtree to support logical expression [#3809](https://github.com/apache/apisix/pull/3809)
 - :sunrise: feat: load etcd configuration when apisix starts [#3799](https://github.com/apache/apisix/pull/3799)
 - :sunrise: feat: let balancer support priority [#3755](https://github.com/apache/apisix/pull/3755)
 - :sunrise: feat: add control api for discovery module [#3742](https://github.com/apache/apisix/pull/3742)

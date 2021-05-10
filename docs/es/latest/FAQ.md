@@ -57,7 +57,7 @@ Para el centro de la configuración, la configuración del almacenamiento es sol
 4. Notificación de cambios
 5. Alto rendimiento
 
-Más información en [Por qué etcd](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart).
+Más información en [Por qué etcd](https://github.com/etcd-io/website/blob/master/content/docs/next/learning/why.md#comparison-chart).
 
 ## ¿Por qué sucede que instalar dependencias APISIX con Luarocks provoca interrupciones por exceso de tiempo (timeout), o instalaciones lentas y fallidas?
 

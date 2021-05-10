@@ -34,7 +34,7 @@ title: Apache APISIX
 
 Apache APISIX 的技术架构如下图所示：
 
-![](../../assets/images/apisix.png)
+![Apache APISIX 的技术架构](../../assets/images/apisix.png)
 
 ## 社区
 
@@ -51,6 +51,10 @@ Apache APISIX 的技术架构如下图所示：
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- **微信公众号**
+   ![](../../assets/images/OA.jpg)
+- **微信视频号**
+   ![](../../assets/images/MA.jpeg)
 
 ## 特性
 
@@ -117,7 +121,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **运维友好**
 
   - OpenTracing 可观测性: 支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
-  - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](discovery.md)。
+  - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md) 和 [Nacos](../../en/latest/discovery/nacos.md)，以及 [Eureka](discovery.md)。
   - 监控和指标: [Prometheus](plugins/prometheus.md)
   - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/)。
   - 高可用：支持配置同一个集群内的多个 etcd 地址。

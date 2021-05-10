@@ -44,6 +44,7 @@ GET /t
 --- response_body
 done
 --- error_log
+loaded plugin and sort by priority: 12000 name: ext-plugin-pre-req
 loaded plugin and sort by priority: 11011 name: zipkin
 loaded plugin and sort by priority: 11010 name: request-id
 loaded plugin and sort by priority: 11000 name: fault-injection
@@ -84,6 +85,7 @@ loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
 loaded plugin and sort by priority: -2000 name: serverless-post-function
+loaded plugin and sort by priority: -3000 name: ext-plugin-post-req
 
 
 

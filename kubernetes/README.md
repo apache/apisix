@@ -17,7 +17,7 @@
 #
 -->
 
-### kubernetes
+### Kubernetes
 
 There are some yaml files for deploying apisix in Kubernetes.
 
@@ -35,7 +35,7 @@ if you do not need to change any config, and use default config in `../conf/conf
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
-#### when using etcd-operator
+#### When using etcd-operator
 
 when using etcd-operator, you need to change `apisix-gw-config-cm.yaml`:
 

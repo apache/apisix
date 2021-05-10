@@ -31,6 +31,20 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
 
+### 通过 RPM 包安装（CentOS 7）
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+```
+
+### 通过 Docker 安装
+
+见 https://hub.docker.com/r/apache/apisix
+
+### 通过 Helm Chart 安装
+
+见 https://github.com/apache/apisix-helm-chart
+
 ### 通过源码包安装
 
 你需要先下载 Apache Release 源码包：
@@ -46,32 +60,6 @@ $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
 ```
 cd apisix-2.5
 make deps
-```
-
-### 通过 RPM 包安装（CentOS 7）
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
-```
-
-### 通过 Luarocks 安装 （不支持 macOS）
-
-在终端中执行下面命令完成 APISIX 的安装（只推荐开发者使用）：
-
-> 通过脚本安装 master 分支的代码
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
-```
-
-> 通过 Luarocks 安装指定的版本:
-
-```shell
-# 安装 apisix 的 2.5 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.5
-
-# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 2.5
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
@@ -116,6 +104,7 @@ Makefile rules:
     * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
     * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+    * 部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，可以参考 `ci/linux_openresty_common_runner.sh`。
 
 ### 疑难排解测试
 

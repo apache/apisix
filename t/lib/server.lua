@@ -94,7 +94,11 @@ function _M.plugin_proxy_rewrite_args()
     table.sort(keys)
 
     for _, key in ipairs(keys) do
-        ngx.say(key, ": ", args[key])
+        if type(args[key]) == "table" then
+            ngx.say(key, ": ", table.concat(args[key], ','))
+        else
+            ngx.say(key, ": ", args[key])
+        end
     end
 end
 

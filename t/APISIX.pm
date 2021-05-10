@@ -30,6 +30,7 @@ master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
 sub read_file($) {
     my $infile = shift;
@@ -78,7 +79,7 @@ if ($custom_dns_server) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
 $default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
@@ -228,6 +229,7 @@ _EOC_
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
@@ -235,9 +237,9 @@ _EOC_
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
 
-    $block->set_value("main_config", $main_config);
-
     my $stream_enable = $block->stream_enable;
+    my $stream_conf_enable = $block->stream_conf_enable;
+    my $extra_stream_config = $block->extra_stream_config // '';
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
@@ -261,7 +263,10 @@ _EOC_
         require "resty.core"
 
         apisix = require("apisix")
-        apisix.stream_init()
+        local args = {
+            dns_resolver = $dns_addrs_tbl_str,
+        }
+        apisix.stream_init(args)
 _EOC_
 
     $stream_config .= <<_EOC_;
@@ -272,6 +277,7 @@ _EOC_
         apisix.stream_init_worker()
     }
 
+    $extra_stream_config
 
     # fake server, only for test
     server {
@@ -306,6 +312,16 @@ _EOC_
     if (defined $stream_enable) {
         $block->set_value("stream_server_config", $stream_server_config);
     }
+
+    if (defined $stream_conf_enable) {
+        $main_config .= <<_EOC_;
+stream {
+$stream_config
+}
+_EOC_
+    }
+
+    $block->set_value("main_config", $main_config);
 
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;

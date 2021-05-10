@@ -31,6 +31,20 @@ So before installation, please follow the different operating systems [install D
 
 You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
 
+### Installation via RPM package (CentOS 7)
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+```
+
+### Installation via Docker
+
+See https://hub.docker.com/r/apache/apisix
+
+### Installation via Helm Chart
+
+See https://github.com/apache/apisix-helm-chart
+
 ### Installation via source release
 
 You need to download the Apache source release first:
@@ -46,32 +60,6 @@ Install the Lua libraries that the runtime depends on:
 ```shell
 cd apisix-2.5
 make deps
-```
-
-### Installation via RPM package (CentOS 7)
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
-```
-
-### Installation via Luarocks (macOS not supported)
-
-Execute the following command in the terminal to complete the installation of APISIX (only recommended for developers):
-
-> Install the code for the master branch via a script
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
-```
-
-> Install the specified version via Luarocks:
-
-```shell
-# Install version 2.5
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 2.5
-
-# old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 2.5
 ```
 
 ## 3. Manage (start/stop) APISIX Server
@@ -120,6 +108,8 @@ see how to do it.
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+    * Some tests depend on external services and modified system configuration. If you want to setup a local CI environment,
+      you can refer to `ci/linux_openresty_common_runner.sh`.
 
 ### Troubleshoot Testing
 

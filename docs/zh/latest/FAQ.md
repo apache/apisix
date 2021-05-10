@@ -34,7 +34,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/docs/en/latest/benchmark.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.4.0/learning/why/)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -319,7 +319,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](install-dependencies.md) 文档进行安装。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install dependencies](install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps
@@ -393,9 +393,77 @@ HTTP/1.1 200 OK
 ...
 
 # uri 匹配失败
-curl http://127.0.0.1:9080/12ab -i
+$ curl http://127.0.0.1:9080/12ab -i
 HTTP/1.1 404 Not Found
 ...
 ```
 
 在 route 中，我们可以通过 `uri` 结合 `vars` 字段来实现更多的条件匹配，`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
+
+## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
+
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`(一个 Kubernetes Service) 的示例：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.default.svc.cluster.local": 1
+        }
+    }
+}'
+```
+
+```shell
+# 测试请求
+$ curl http://127.0.0.1:9080/ip -i
+HTTP/1.1 200 OK
+...
+```
+
+## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
+
+1、Admin API 的 `X-API-KEY` 指的是 `config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+
+注意：使用默认的 API token 存在安全风险，建议在部署到生产环境时对其进行更新。
+
+2、`X-API-KEY` 是可以修改的。
+
+例如：在 `conf/config.yaml` 文件中对 `apisix.admin_key.key` 做如下修改并 reload APISIX。
+
+```yaml
+apisix:
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+访问 Admin API：
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"admin-token-test",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":1980,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+
+HTTP/1.1 200 OK
+......
+```
+
+路由创建成功，表示 `X-API-KEY` 修改生效。
