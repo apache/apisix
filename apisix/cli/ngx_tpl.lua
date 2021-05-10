@@ -220,7 +220,7 @@ http {
     charset utf-8;
 
     # error_page
-    error_page 500 502 503 504 /50x.html;
+    error_page 500 502 503 504 @50x.html;
 
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
@@ -294,8 +294,8 @@ http {
             }
         }
 
-        location = /50x.html {
-            root   html;
+        locaton = @50x.html {
+            try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -382,8 +382,8 @@ http {
             }
         }
 
-        location = /50x.html {
-            root   html;
+        location = @50x.html {
+            try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -643,8 +643,8 @@ http {
         }
         {% end %}
 
-        location = /50x.html {
-            root   html;
+        location = @50x.html {
+            try_files /50x.html $uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }

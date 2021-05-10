@@ -375,7 +375,7 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
-    error_page 500 502 503 504 /50x.html;
+    error_page 500 502 503 504 \@50x.html;
 
     upstream apisix_backend {
         server 0.0.0.1;
@@ -429,10 +429,8 @@ _EOC_
             more_clear_headers Date;
         }
 
-        location = /50x.html {
-            internal;
-            root   html;
-
+        location \@50x.html {
+            try_files /50x.html \$uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -528,10 +526,8 @@ _EOC_
             }
         }
 
-        location = /50x.html {
-            internal;
-            root   html;
-
+        location \@50x.html {
+            try_files /50x.html \$uri;
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
