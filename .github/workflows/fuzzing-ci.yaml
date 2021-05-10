@@ -51,13 +51,7 @@ jobs:
         sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc
         sudo ./utils/linux-install-luarocks.sh
 
-        for (( i = 0; i < 10; i++ )); do
-            if [[ "$i" -eq 10 ]]; then
-                echo "failed to make deps in time"
-                exit 1
-            fi
-            make deps && break
-        done
+        make deps
         make init
         make run
 
