@@ -37,7 +37,7 @@ ETCD_NAME_0=etcd0
 ETCD_NAME_1=etcd1
 ETCD_NAME_2=etcd2
 
-docker-compose up -d
+docker-compose up -f .t/cli/docker-compose-etcd-cluster.yaml -d
 
 # Check apisix not got effected when one etcd node disconnected
 git checkout conf/config.yaml
