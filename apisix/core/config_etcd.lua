@@ -531,13 +531,15 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    local health_checker, err = health_check.init({
-        shm_name = "etcd_cluster_health_check",
-        fail_timeout = 5,
-        max_fails = 3,
-    })
-    if not health_checker then
-        return nil, err
+    if not health_check.conf then
+        local health_checker, err = health_check.init({
+            shm_name = "etcd_cluster_health_check",
+            fail_timeout = 5,
+            max_fails = 3,
+        })
+        if not health_checker then
+            log.error("fail to create health_check: " .. err)
+        end
     end
 
     local i = 0
@@ -556,30 +558,34 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                if string.find(err, "connection refused") then
+                if string.find(err, "connection refused")
+                    or string.find(err, "Service Unavailable") then
                     local etcd_cli, err = get_etcd()
                     if not etcd_cli then
-                        error("all etcd endpoints are unhealthy: ", err)
+                        error("all etcd endpoints are unhealthy: " .. err)
                     end
                     self.etcd_cli = etcd_cli
+                    log.warn("changed to new etcd endpoint")
                 end
                 if string.find(err, "has no healthy etcd endpoint available") then
-                    while err do
+                    local reconnected = false
+                    while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
                         for _ = 0, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not err then
+                            if not string.find(err, "has no healthy etcd endpoint available") then
                                 log.warn("reconnected to etcd")
+                                reconnected = true
                                 break
                             end
                             backoff_duration = backoff_duration * backoff_factor
-                            log.error("next retry after " .. backoff_duration .. "s")
+                            log.error("no healthy etcd endpoint available, next retry after "
+                                       .. backoff_duration .. "s")
                         end
                     end
                 end
                 if err ~= "timeout" and err ~= "Key not found"
-                    and not string.find(err, "connection refused")
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
                               tostring(self))

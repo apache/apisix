@@ -19,41 +19,63 @@
 
 . ./t/cli/common.sh
 
-# create 3 node etcd cluster in docker
+start_apisix() {
+  echo '
+  etcd:
+    host:
+      - "http://127.0.0.1:23790"
+      - "http://127.0.0.1:23791"
+      - "http://127.0.0.1:23792"
+  ' > conf/config.yaml
 
-REGISTRY=gcr.io/etcd-development/etcd
-ETCD_VERSION=v3.4.15
-TOKEN=my-etcd-token
-CLUSTER_STATE=new
-NAME_1=etcd-node-0
-NAME_2=etcd-node-1
-NAME_3=etcd-node-2
-PORT_1=32379
-PORT_2=42379
-PORT_3=52379
-PORT_PEER_1=32380
-PORT_PEER_2=42380
-PORT_PEER_3=52380
-CLUSTER=${NAME_1}=http://0.0.0.0:${PORT_PEER_1},${NAME_2}=http://0.0.0.0:${PORT_PEER_2},${NAME_3}=http://0.0.0.0:${PORT_PEER_3}
-DATA_DIR=/var/lib/etcd
-
-CreateEtcdNode() {
-  docker run \
-    -d \
-    -p $2:$2 \
-    -p $3:$3 \
-    --volume=${DATA_DIR}:/etcd-data \
-    --name $1 ${REGISTRY}:${ETCD_VERSION} \
-    /usr/local/bin/etcd \
-    --data-dir=/etcd-data --name $1 \
-    --advertise-client-urls http://0.0.0.0:$2 --listen-client-urls http://0.0.0.0:$2 \
-    --initial-cluster ${CLUSTER} \
-    --initial-cluster-state ${CLUSTER_STATE} --initial-cluster-token ${TOKEN}
+  make init
+  make run
 }
 
-CreateEtcdNode ${NAME_1} ${PORT_1} ${PORT_PEER_1}
-CreateEtcdNode ${NAME_2} ${PORT_2} ${PORT_PEER_2}
-CreateEtcdNode ${NAME_3} ${PORT_3} ${PORT_PEER_3}
+# create 3 node etcd cluster in docker
+ETCD_NAME_0=etcd0
+ETCD_NAME_1=etcd1
+ETCD_NAME_2=etcd2
 
+docker-compose up -d
 
+# Check apisix not got effected when one etcd node disconnected
+git checkout conf/config.yaml
 
+start_apisix
+docker stop ${ETCD_NAME_0}
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: apisix got effect when one etcd node failed out of a cluster"
+    exit 1
+fi
+
+docker start ${ETCD_NAME_0}
+make stop
+
+echo "passed: apisix not got effected when one etcd node disconnected"
+
+# Check when all etcd nodes disconnected, apisix trying to reconnect with backoff, and could successfully recover when reconnected
+git checkout conf/config.yaml
+
+start_apisix
+docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_NAME_2}
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ $code -eq 200 ]; then
+    echo "failed: apisix not got effect when all etcd nodes fail"
+    #exit 1
+fi
+
+docker start ${ETCD_NAME_0} && docker start ${ETCD_NAME_1} && docker start ${ETCD_NAME_2}
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: apisix could not recover when etcd node recover"
+    #exit 1
+fi
+
+make stop
+
+echo "passed: when all etcd nodes disconnected, apisix trying to reconnect with backoff, and could successfully recover when reconnected"
