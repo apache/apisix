@@ -624,7 +624,7 @@ end
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
     if not api_ctx then
-        return 
+        return
     end
 
     healthcheck_passive(api_ctx)
