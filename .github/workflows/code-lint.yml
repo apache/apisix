@@ -11,9 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: leafo/gh-actions-lua@v8
-      with:
-        luaVersion: "luajit-openresty"
-    - uses: leafo/gh-actions-luarocks@v4
-    - run: luarocks install luacheck
-    - run: make lint
+    - name: Install
+      run: |
+        . ./ci/common.sh
+        export_or_prefix
+        export OPENRESTY_VERSION=default
+
+        ./utils/linux-install-openresty.sh
+        ./utils/linux-install-luarocks.sh
+        luarocks install luacheck
+
+    - name: Script
+      run: make lint
