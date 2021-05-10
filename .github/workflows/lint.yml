@@ -3,17 +3,6 @@ name: ❄️ Lint
 on: [pull_request]
 
 jobs:
-  markdownlint:
-    name: 🍇 Markdown
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🚀 Use Node.js
-        uses: actions/setup-node@v2.1.5
-        with:
-          node-version: '12.x'
-      - run: npm install -g markdownlint-cli@0.25.0
-      - run: markdownlint '**/*.md'
   trailing-whitespace:
     name: 🌌 Trailing whitespace
     runs-on: ubuntu-latest
@@ -21,3 +10,18 @@ jobs:
       - uses: actions/checkout@v2
       - name: 🧹 Check for trailing whitespace
         run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"
+  misc:
+    name: misc checker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v2
+      - name: Install
+        run: |
+          wget -O - -q https://git.io/misspell | sh -s -- -b .
+      - name: Misspell
+        run: |
+          git ls-files | grep -v "docs/es" | grep -v "t/toolkit" | xargs ./misspell -error
+      - name: Merge conflict
+        run: |
+          grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
