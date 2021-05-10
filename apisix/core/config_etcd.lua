@@ -532,7 +532,7 @@ local function _automatic_fetch(premature, self)
     end
 
     if not health_check.conf then
-        local health_checker, err = health_check.init({
+        local _, err = health_check.init({
             shm_name = "etcd_cluster_health_check",
             fail_timeout = 5,
             max_fails = 3,
