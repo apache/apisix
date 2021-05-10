@@ -30,7 +30,6 @@ do_install() {
     ./utils/linux-install-openresty.sh
 
     ./utils/linux-install-luarocks.sh
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     ./utils/linux-install-etcd-client.sh
 
@@ -120,7 +119,7 @@ apisix:
 
     sudo bash ./utils/check-plugins-code.sh
 
-    make lint && make license-check || exit 1
+    make license-check || exit 1
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t

@@ -28,7 +28,6 @@ do_install() {
     ./utils/linux-install-openresty.sh
 
     ./utils/linux-install-luarocks.sh
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     ./utils/linux-install-etcd-client.sh
 
@@ -113,7 +112,7 @@ apisix:
     ./bin/apisix stop
     sleep 1
 
-    make lint && make license-check || exit 1
+    make license-check || exit 1
 }
 
 after_success() {

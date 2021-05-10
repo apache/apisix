@@ -205,8 +205,6 @@ do_install() {
 
     create_lua_deps
 
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
-
     ./utils/linux-install-etcd-client.sh
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
@@ -233,7 +231,7 @@ script() {
     sleep 1
     ./bin/apisix stop
     sleep 1
-    make lint && make license-check || exit 1
+    make license-check || exit 1
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
