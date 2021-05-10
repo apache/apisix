@@ -19,7 +19,7 @@ jobs:
 
         ./utils/linux-install-openresty.sh
         sudo ./utils/linux-install-luarocks.sh
-        luarocks install luacheck
+        sudo luarocks install luacheck
 
     - name: Script
       run: make lint
