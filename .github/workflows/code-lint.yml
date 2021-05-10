@@ -22,4 +22,7 @@ jobs:
         sudo luarocks install luacheck
 
     - name: Script
-      run: make lint
+      run: |
+        . ./ci/common.sh
+        export_or_prefix
+        make lint
