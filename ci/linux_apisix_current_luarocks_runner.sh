@@ -33,14 +33,7 @@ script() {
     sudo rm -rf /usr/local/apisix
 
     # install APISIX with local version
-    for (( i = 0; i < 10; i++ )); do
-        if [[ "$i" -eq 10 ]]; then
-            echo "failed to install in time"
-            cat build.log && exit 1
-            exit 1
-        fi
-        sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 && break
-    done
+    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
 
     mkdir cli_tmp && cd cli_tmp
