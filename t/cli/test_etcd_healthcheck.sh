@@ -62,18 +62,18 @@ git checkout conf/config.yaml
 start_apisix
 docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_NAME_2}
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ $code -eq 200 ]; then
     echo "failed: apisix not got effect when all etcd nodes fail"
-    #exit 1
+    exit 1
 fi
 
 docker start ${ETCD_NAME_0} && docker start ${ETCD_NAME_1} && docker start ${ETCD_NAME_2}
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix could not recover when etcd node recover"
-    #exit 1
+    exit 1
 fi
 
 make stop
