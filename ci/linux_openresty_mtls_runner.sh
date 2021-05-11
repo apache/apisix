@@ -37,12 +37,6 @@ do_install() {
     # tree deps
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    make utils
-
-    git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-    cp ci/ASF* ci/openwhisk-utilities/scancode/
-
-    ls -l ./
 }
 
 script() {
@@ -111,8 +105,6 @@ apisix:
 
     ./bin/apisix stop
     sleep 1
-
-    make license-check || exit 1
 }
 
 after_success() {
