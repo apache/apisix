@@ -25,3 +25,9 @@ jobs:
       - name: Merge conflict
         run: |
           grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
+      - name: License
+        run: |
+          make license-check
+      - name: Plugin Code
+        run: |
+          sudo bash ./utils/check-plugins-code.sh
