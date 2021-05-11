@@ -588,6 +588,9 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("failed to update nginx.conf: ", err, "\n")
     end
 
+    local cmd_html = "mkdir -p " .. env.apisix_home .. "/html"
+    util.execute_cmd(cmd_html)
+
     local ok, err = util.write_file(env.apisix_home .. "/html/50x.html", html_page)
     if not ok then
         util.die("failed to write 50x.html: ", err, "\n")
@@ -611,8 +614,6 @@ local function start(env, ...)
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
 
-    local cmd_html = "mkdir -p " .. env.apisix_home .. "/html"
-    util.execute_cmd(cmd_html)
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
