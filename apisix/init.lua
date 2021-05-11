@@ -540,7 +540,7 @@ function _M.http_header_filter_phase()
         local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
 
         -- internal redirect, so we should apply the ctx
-        if ngx_var.error_page == "true" then
+        if ngx_var.from_error_page == "true" then
             ngx.ctx = stash_ctx
         end
     end
