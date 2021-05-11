@@ -15,8 +15,10 @@
 -- limitations under the License.
 --
 local schema    = require('apisix.core.schema')
+local table     = require('apisix.core.table')
 local table_insert = table.insert
 local table_concat = table.concat
+local str_format = string.format
 local setmetatable = setmetatable
 local error     = error
 
@@ -332,6 +334,14 @@ local private_key_schema = {
 }
 
 
+local scheme_schema = {
+    enum = {"grpc", "grpcs", "http", "https"}
+}
+local upstream_scheme_schema = table.clone(scheme_schema)
+upstream_scheme_schema.default = "http"
+local scheme_regex = str_format("^(%s)$", table_concat(scheme_schema.enum, "|"))
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -380,10 +390,7 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
-        scheme = {
-            default = "http",
-            enum = {"grpc", "grpcs", "http", "https"}
-        },
+        scheme = upstream_scheme_schema,
         labels = labels_def,
         discovery_type = {
             description = "discovery type",
@@ -411,6 +418,44 @@ local upstream_schema = {
     },
     additionalProperties = false,
 }
+
+
+_M.multitier_network = {
+    type = "object",
+    properties = {
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+        desc = desc_def,
+        selector = {
+            type = "string",
+        },
+        selector_conf = {
+            type = "object",
+        },
+        gateways = {
+            type = "object",
+            patternProperties = {
+                [".*"] = {
+                    type = "object",
+                    propertyNames = scheme_schema,
+                    patternProperties = {
+                        [scheme_regex] = {
+                            type = "object",
+                            properties = {
+                                nodes = nodes_schema,
+                            },
+                            required = {"nodes"},
+                        }
+                    },
+                    additionalProperties = false,
+                }
+            },
+        }
+    },
+    required = {"selector", "selector_conf", "gateways"},
+    additionalProperties = false,
+}
+
 
 -- TODO: add more nginx variable support
 _M.upstream_hash_vars_schema = {
