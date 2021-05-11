@@ -74,3 +74,4 @@ ci/openwhisk-utilities/
 # release tar package
 *.tgz
 release/*
+html/*

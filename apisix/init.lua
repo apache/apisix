@@ -475,14 +475,13 @@ function _M.http_access_phase()
 
     set_upstream_host(api_ctx)
 
+    ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
 end
@@ -490,11 +489,13 @@ end
 
 function _M.dubbo_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 end
 
 
 function _M.grpc_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -534,6 +535,16 @@ end
 
 
 function _M.http_header_filter_phase()
+    if ngx_var.ctx_ref ~= '' then
+        -- prevent for the table leak
+        local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+
+        -- internal redirect, so we should apply the ctx
+        if ngx_var.from_error_page == "true" then
+            ngx.ctx = stash_ctx
+        end
+    end
+
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -620,6 +631,10 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
+    if not api_ctx then
+        return
+    end
+
     healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
