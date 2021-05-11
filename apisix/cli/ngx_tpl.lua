@@ -220,7 +220,7 @@ http {
     charset utf-8;
 
     # error_page
-    error_page 500 502 503 504 @50x.html;
+    error_page 500 @50x.html;
 
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};

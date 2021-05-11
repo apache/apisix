@@ -116,8 +116,8 @@ passed
 --- request
 GET /sleep1
 --- error_code: 504
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/504 Gateway Time-out/
 --- error_log
 X-APISIX-Upstream-Status: 504
 
@@ -161,8 +161,8 @@ passed
 --- request
 GET /hello
 --- error_code: 502
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/502 Bad Gateway/
 --- error_log
 X-APISIX-Upstream-Status: 502
 

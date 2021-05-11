@@ -80,8 +80,8 @@ GET /hello
 --- more_headers
 X-Test-Status: 502
 --- error_code: 502
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/502 Bad Gateway/
 
 
 
@@ -91,8 +91,8 @@ GET /hello
 --- more_headers
 X-Test-Status: 503
 --- error_code: 503
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/503 Service Unavailable/
 
 
 
@@ -102,8 +102,8 @@ GET /hello
 --- more_headers
 X-Test-Status: 504
 --- error_code: 504
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/504 Gateway Time-out/
 
 
 

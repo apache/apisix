@@ -533,7 +533,7 @@ end
 
 
 function _M.http_header_filter_phase()
-    if not ngx.ctx then
+    if not ngx.ctx or not ngx.ctx.api_ctx then
         ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
     end
 

@@ -69,8 +69,8 @@ passed
 --- request
 GET /sleep1
 --- error_code: 504
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/504 Gateway Time-out/
 
 --- error_log
 timed out) while reading response header from upstream

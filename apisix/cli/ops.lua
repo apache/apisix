@@ -19,6 +19,7 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local html_page = require("apisix.cli.html_page")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -586,6 +587,11 @@ Please modify "admin_key" in conf/config.yaml .
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
     end
+
+    local ok, err = util.write_file(env.apisix_home .. "/html/50x.html", html_page)
+    if not ok then
+        util.die("failed to write 50x.html: ", err, "\n")
+    end
 end
 
 
@@ -604,6 +610,9 @@ local function start(env, ...)
 
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
+
+    local cmd_html = "mkdir -p " .. env.apisix_home .. "/html"
+    util.execute_cmd(cmd_html)
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
