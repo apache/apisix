@@ -70,7 +70,7 @@ function _M.put(id, conf)
 
     local key = "/global_rules/" .. id
 
-    local ok, err = utils.inject_conf_with_prev_conf("route", key, conf)
+    local ok, err = utils.inject_conf_with_prev_conf("global_rule", key, conf)
     if not ok then
         return 500, {error_msg = err}
     end
