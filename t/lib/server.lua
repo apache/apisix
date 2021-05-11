@@ -103,6 +103,15 @@ function _M.plugin_proxy_rewrite_args()
 end
 
 
+function _M.specific_status()
+    local status = ngx.var.http_x_test_upstream_status
+    if status ~= nil then
+        ngx.status = status
+        ngx.say("upstream status: ", status)
+    end
+end
+
+
 function _M.status()
     ngx.say("ok")
 end
