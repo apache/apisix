@@ -208,12 +208,6 @@ do_install() {
     ./utils/linux-install-etcd-client.sh
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    make utils
-
-    git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-    cp ci/ASF* ci/openwhisk-utilities/scancode/
-
-    ls -l ./
 }
 
 script() {
@@ -231,7 +225,6 @@ script() {
     sleep 1
     ./bin/apisix stop
     sleep 1
-    make license-check || exit 1
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
