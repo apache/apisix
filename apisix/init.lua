@@ -489,11 +489,13 @@ end
 
 function _M.dubbo_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 end
 
 
 function _M.grpc_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -533,8 +535,14 @@ end
 
 
 function _M.http_header_filter_phase()
-    if not ngx.ctx or not ngx.ctx.api_ctx then
-        ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    if ngx_var.ctx_ref ~= '' then
+        -- prevent for the table leak
+        local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+
+        -- internal redirect, so we should apply the ctx
+        if ngx_var.error_page == "true" then
+            ngx.ctx = stash_ctx
+        end
     end
 
     core.response.set_header("Server", ver_header)

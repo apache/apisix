@@ -73,7 +73,6 @@ X-Test-Status: 500
 .*apisix.apache.org.*
 
 
-
 === TEST 3: test apisix with internal error code 502
 --- request
 GET /hello
@@ -92,7 +91,7 @@ GET /hello
 X-Test-Status: 503
 --- error_code: 503
 --- response_body eval
-qr/503 Service Unavailable/
+qr/503 Service Temporarily Unavailable/
 
 
 
