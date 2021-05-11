@@ -73,6 +73,7 @@ X-Test-Status: 500
 .*apisix.apache.org.*
 
 
+
 === TEST 3: test apisix with internal error code 502
 --- request
 GET /hello
