@@ -219,6 +219,9 @@ http {
     include mime.types;
     charset utf-8;
 
+    # error_page
+    error_page 500 @50x.html;
+
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
     {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
@@ -288,6 +291,18 @@ http {
         location / {
             content_by_lua_block {
                 apisix.http_control()
+            }
+        }
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
             }
         }
     }
@@ -365,6 +380,18 @@ http {
 
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
             }
         }
     }
@@ -617,6 +644,18 @@ http {
             proxy_pass $upstream_mirror_host$request_uri;
         }
         {% end %}
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
     }
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}

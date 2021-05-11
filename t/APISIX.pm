@@ -89,6 +89,7 @@ my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
 my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
 my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
+my $test_50x_html = read_file("t/error_page/50x.html");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -374,6 +375,8 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
+    error_page 500 \@50x.html;
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -424,6 +427,18 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+
+        location \@50x.html {
+            set \$from_error_page 'true';
+            try_files /50x.html \$uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
         }
 
         location = /v3/auth/authenticate {
@@ -509,6 +524,18 @@ _EOC_
 
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location \@50x.html {
+            set \$from_error_page 'true';
+            try_files /50x.html \$uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
             }
         }
 
@@ -625,6 +652,8 @@ $ssl_ecc_key
 $test2_crt
 >>> ../conf/cert/test2.key
 $test2_key
+>>> 50x.html
+$test_50x_html
 $user_apisix_yaml
 _EOC_
 
