@@ -468,3 +468,15 @@ HTTP/1.1 200 OK
 ```
 
 The route was created successfully. It means that the modification of `X-API-KEY` takes effect.
+
+## How to allow all IPs to access Admin API
+
+By default, Apache APISIX only allows the IP range of `127.0.0.0/24` to access the `Admin API`. If you want to allow all IP access, then you only need to add the following configuration in the `conf/config.yaml` configuration file.
+
+```yaml
+apisix:
+  allow_admin:
+    - 0.0.0.0/0
+```
+
+Restart or reload APISIX, all IPs can access the `Admin API`.
