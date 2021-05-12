@@ -57,7 +57,7 @@ jobs:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v2
+        uses: actions/cache@v2.1.5
         env:
           cache-name: cache-deps
         with:
