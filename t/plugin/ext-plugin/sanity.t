@@ -46,9 +46,11 @@ _EOC_
 
     my $unix_socket_path = $ENV{"TEST_NGINX_HTML_DIR"} . "/nginx.sock";
     my $orig_extra_yaml_config = $block->extra_yaml_config // "";
+    my $cmd = $block->ext_plugin_cmd // "['sleep', '5s']";
     my $extra_yaml_config = <<_EOC_;
 ext-plugin:
     path_for_test: $unix_socket_path
+    cmd: $cmd
 _EOC_
     $extra_yaml_config = $extra_yaml_config . $orig_extra_yaml_config;
 
@@ -114,6 +116,7 @@ hello world
 get conf token: 233
 --- no_error_log
 [error]
+flush conf token lrucache
 --- grep_error_log eval
 qr/(sending|receiving) rpc type: \d data length:/
 --- grep_error_log_out
@@ -179,8 +182,8 @@ failed to connect to the unix socket
 
 
 === TEST 6: spawn runner
---- extra_yaml_config
-    cmd: ["t/plugin/ext-plugin/runner.sh", "3600"]
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
         return 200;
@@ -195,8 +198,8 @@ EXPIRE 3600
 
 
 === TEST 7: respawn runner when it exited
---- extra_yaml_config
-    cmd: ["t/plugin/ext-plugin/runner.sh", "0.1"]
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "0.1"]
 --- config
     location /t {
         content_by_lua_block {
@@ -210,8 +213,8 @@ respawn runner with cmd: ["t\/plugin\/ext-plugin\/runner.sh","0.1"]
 
 
 === TEST 8: flush cache when runner exited
---- extra_yaml_config
-    cmd: ["t/plugin/ext-plugin/runner.sh", "0.4"]
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "0.4"]
 --- config
     location /t {
         content_by_lua_block {

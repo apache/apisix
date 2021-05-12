@@ -575,26 +575,7 @@ local function spawn_proc(cmd)
 end
 
 
-local function setup_runner()
-    local local_conf = core.config.local_conf()
-    local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
-    if not cmd then
-        return
-    end
-
-    events_list = events.event_list(
-        "process_runner_exit_event",
-        "runner_exit"
-    )
-
-    -- flush cache when runner exited
-    events.register(create_lrucache, events_list._source, events_list.runner_exit)
-
-    -- note that the runner is run under the same user as the Nginx master
-    if process.type() ~= "privileged agent" then
-        return
-    end
-
+local function setup_runner(cmd)
     local proc = spawn_proc(cmd)
     ngx_timer_at(0, function(premature)
         if premature then
@@ -639,8 +620,24 @@ end
 
 
 function _M.init_worker()
-    create_lrucache()
-    setup_runner()
+    local local_conf = core.config.local_conf()
+    local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
+    if not cmd then
+        return
+    end
+
+    events_list = events.event_list(
+        "process_runner_exit_event",
+        "runner_exit"
+    )
+
+    -- flush cache when runner exited
+    events.register(create_lrucache, events_list._source, events_list.runner_exit)
+
+    -- note that the runner is run under the same user as the Nginx master
+    if process.type() == "privileged agent" then
+        setup_runner(cmd)
+    end
 end
 
 
