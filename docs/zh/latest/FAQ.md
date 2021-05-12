@@ -467,3 +467,15 @@ HTTP/1.1 200 OK
 ```
 
 路由创建成功，表示 `X-API-KEY` 修改生效。
+
+## 如何允许所有 IP 访问 Admin API
+
+Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`，如果你想允许所有的 IP 访问，那么你只需在 `conf/config.yaml` 配置文件中添加如下的配置。
+
+```yaml
+apisix:
+  allow_admin:
+    - 0.0.0.0/0
+```
+
+重启或 reload APISIX，所有 IP 便可以访问 `Admin API`。
