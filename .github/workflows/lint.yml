@@ -7,7 +7,7 @@ jobs:
     name: 🌌 Trailing whitespace
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - name: 🧹 Check for trailing whitespace
         run: "! git grep -EIn $'[ \t]+$'"
   misc:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - name: Install
         run: |
           wget -O - -q https://git.io/misspell | sh -s -- -b .
