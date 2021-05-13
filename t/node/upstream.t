@@ -394,3 +394,119 @@ GET /t
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: multi nodes with `node` mode to pass host
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "localhost:1979": 1000,
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "node"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/uri",
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- skip_nginx: 5: < 1.19.0
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit route
+--- request
+GET /uri
+--- skip_nginx: 5: < 1.19.0
+--- response_body eval
+qr/host: 127.0.0.1/
+--- error_log
+proxy request to 127.0.0.1:1980
+
+
+
+=== TEST 19: multi nodes with `node` mode to pass host, the second node has domain
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:1979": 1000,
+                        "localhost:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "node"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/uri",
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- skip_nginx: 5: < 1.19.0
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: hit route
+--- request
+GET /uri
+--- skip_nginx: 5: < 1.19.0
+--- response_body eval
+qr/host: localhost/
+--- error_log
+proxy request to 127.0.0.1:1980
