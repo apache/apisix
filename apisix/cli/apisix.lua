@@ -25,7 +25,7 @@ local pkg_path = apisix_home .. "/deps/share/lua/5.1/?.lua;"
 
 -- modify the load path to load our dependencies
 package.cpath = pkg_cpath .. pkg_cpath_org
-package.path  = pkg_path .. pkg_path_org
+package.path  = pkg_path .. pkg_path_org .. ";" .. apisix_home .. "/?.lua"
 
 -- pass path to construct the final result
 local env = require("apisix.cli.env")(apisix_home, pkg_cpath_org, pkg_path_org)
