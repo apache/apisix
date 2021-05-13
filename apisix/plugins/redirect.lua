@@ -22,6 +22,8 @@ local re_gmatch = ngx.re.gmatch
 local re_sub = ngx.re.sub
 local ipairs = ipairs
 local ngx = ngx
+local str_find    = core.string.find
+local sub_str     = string.sub
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -49,6 +51,7 @@ local schema = {
             }
         },
         http_to_https = {type = "boolean"},
+        encode_uri = {type = "boolean", default = false}
     },
     oneOf = {
         {required = {"uri"}},
@@ -160,17 +163,17 @@ function _M.rewrite(conf, ctx)
     end
 
     if ret_code then
+        local new_uri
         if uri then
-            local new_uri, err = concat_new_uri(uri, ctx)
+            local err
+            new_uri, err = concat_new_uri(uri, ctx)
             if not new_uri then
                 core.log.error("failed to generate new uri by: " .. uri .. err)
                 return 500
             end
-
-            core.response.set_header("Location", new_uri)
-            return ret_code
         elseif regex_uri then
-            local new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
+            local n, err
+            new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
                                            regex_uri[2], "jo")
             if not new_uri then
                 local msg = string_format("failed to substitute the uri:%s (%s) with %s, error:%s",
@@ -179,11 +182,23 @@ function _M.rewrite(conf, ctx)
                 return 500
             end
 
-            if n > 0 then
-                core.response.set_header("Location", new_uri)
-                return ret_code
+            if n < 1 then
+                return
             end
         end
+
+        if conf.encode_uri then
+            local index = str_find(new_uri, "?")
+            if index then
+                new_uri = core.utils.uri_safe_encode(sub_str(new_uri, 1, index-1)) ..
+                        sub_str(new_uri, index)
+            else
+                new_uri = core.utils.uri_safe_encode(new_uri)
+            end
+        end
+
+        core.response.set_header("Location", new_uri)
+        return ret_code
     end
 
 end
