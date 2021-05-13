@@ -30,9 +30,10 @@ echo "search apache.org" | sudo tee -a /etc/resolv.conf
 
 mkdir -p build-cache
 
-UNAME=`uname -a` | grep "aarch64"
+echo `uname -a`
+UNAME=`uname -a | grep -o aarch64 | wc -l`
 ARCH="amd64"
-if [ -z $UNAME ]; then
+if [ $UNAME -ne 0 ]; then
     ARCH="arm64"
 fi
 echo $ARCH
