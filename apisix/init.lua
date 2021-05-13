@@ -29,6 +29,7 @@ local set_upstream    = apisix_upstream.set_by_route
 local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
+local ngx_balancer    = require("ngx.balancer")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -106,7 +107,7 @@ function _M.http_init_worker()
         discovery.init_worker()
     end
     require("apisix.balancer").init_worker()
-    load_balancer = require("apisix.balancer").run
+    load_balancer = require("apisix.balancer")
     require("apisix.admin.init").init_worker()
 
     require("apisix.timers").init_worker()
@@ -228,7 +229,7 @@ local function parse_domain_in_route(route)
 end
 
 
-local function set_upstream_host(api_ctx)
+local function set_upstream_host(api_ctx, picked_server)
     local pass_host = api_ctx.pass_host or "pass"
     if pass_host == "pass" then
         return
@@ -239,21 +240,13 @@ local function set_upstream_host(api_ctx)
         return
     end
 
-    -- only support single node for `node` mode currently
-    local host
     local up_conf = api_ctx.upstream_conf
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
-        if node.domain and #node.domain > 0 then
-            host = node.domain
-        else
-            host = node.host
-        end
-    end
-
-    if host then
-        api_ctx.var.upstream_host = host
+        api_ctx.var.upstream_host = node.domain or node.host
+    elseif picked_server.domain and ngx_balancer.recreate_request then
+        api_ctx.var.upstream_host = picked_server.domain
     end
 end
 
@@ -473,7 +466,15 @@ function _M.http_access_phase()
         core.response.exit(code)
     end
 
-    set_upstream_host(api_ctx)
+    local server, err = load_balancer.pick_server(route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return core.response.exit(502)
+    end
+
+    api_ctx.picked_server = server
+
+    set_upstream_host(api_ctx, server)
 
     ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
     local up_scheme = api_ctx.upstream_scheme
@@ -665,7 +666,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx)
 end
 
 
@@ -763,7 +764,7 @@ function _M.stream_init_worker()
         core.config.init_worker()
     end
 
-    load_balancer = require("apisix.balancer").run
+    load_balancer = require("apisix.balancer")
 
     local_conf = core.config.local_conf()
 end
@@ -815,6 +816,14 @@ function _M.stream_preread_phase()
         core.log.error("failed to set upstream: ", err)
         return ngx_exit(1)
     end
+
+    local server, err = load_balancer.pick_server(matched_route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return ngx_exit(1)
+    end
+
+    api_ctx.picked_server = server
 end
 
 
@@ -826,7 +835,7 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    load_balancer(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx)
 end
 
 
