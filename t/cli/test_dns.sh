@@ -59,3 +59,24 @@ if [ "$count" -ne 2 ]; then
 fi
 
 echo "pass: dns_resolver_valid takes effect"
+
+echo '
+apisix:
+  stream_proxy:
+    tcp:
+      - 9100
+  dns_resolver:
+    - 127.0.0.1
+    - "::1"
+    - "[::2]"
+' > conf/config.yaml
+
+make init
+
+count=$(grep -c "resolver 127.0.0.1 \[::1\] \[::2\];" conf/nginx.conf)
+if [ "$count" -ne 2 ]; then
+    echo "failed: can't handle IPv6 resolver w/o bracket"
+    exit 1
+fi
+
+echo "pass: handle IPv6 resolver w/o bracket"

@@ -546,6 +546,16 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+    for i, r in ipairs(sys_conf["dns_resolver"]) do
+        if r:match(":[^:]*:") then
+            -- more than one colon, is IPv6
+            if r:byte(1) ~= str_byte('[') then
+                -- ensure IPv6 address is always wrapped in []
+                sys_conf["dns_resolver"][i] = "[" .. r .. "]"
+            end
+        end
+    end
+
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
