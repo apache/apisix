@@ -187,6 +187,10 @@ function _M.rewrite(conf, ctx)
             end
         end
 
+        if not new_uri then
+            return
+        end
+
         if conf.encode_uri then
             local index = str_find(new_uri, "?")
             if index then
