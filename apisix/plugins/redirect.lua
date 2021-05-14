@@ -22,8 +22,8 @@ local re_gmatch = ngx.re.gmatch
 local re_sub = ngx.re.sub
 local ipairs = ipairs
 local ngx = ngx
-local str_find    = core.string.find
-local sub_str     = string.sub
+local str_find = core.string.find
+local str_sub  = string.sub
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -174,7 +174,7 @@ function _M.rewrite(conf, ctx)
         elseif regex_uri then
             local n, err
             new_uri, n, err = re_sub(ctx.var.uri, regex_uri[1],
-                                           regex_uri[2], "jo")
+                                     regex_uri[2], "jo")
             if not new_uri then
                 local msg = string_format("failed to substitute the uri:%s (%s) with %s, error:%s",
                                           ctx.var.uri, regex_uri[1], regex_uri[2], err)
@@ -190,8 +190,8 @@ function _M.rewrite(conf, ctx)
         if conf.encode_uri then
             local index = str_find(new_uri, "?")
             if index then
-                new_uri = core.utils.uri_safe_encode(sub_str(new_uri, 1, index-1)) ..
-                        sub_str(new_uri, index)
+                new_uri = core.utils.uri_safe_encode(str_sub(new_uri, 1, index-1)) ..
+                          str_sub(new_uri, index)
             else
                 new_uri = core.utils.uri_safe_encode(new_uri)
             end
