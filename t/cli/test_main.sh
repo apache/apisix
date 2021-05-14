@@ -597,10 +597,10 @@ endpath=$(basename $(pwd))
 
 cd ..
 out=$(./${endpath}/bin/apisix start 2>&1 || true)
-if echo "$out" | grep -v "no file"; then
-    cd endpath && ./bin/apisix stop
+if echo "$out" | grep "not found"; then
+    cd $endpath && ./bin/apisix stop
     echo "failed: should run apisix in non apisix dir"
     exit 1
 fi
-cd endpath && ./bin/apisix stop
+cd $endpath && ./bin/apisix stop
 echo "pass: run apisix in non apisix dir"
