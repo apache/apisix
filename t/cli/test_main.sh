@@ -583,12 +583,12 @@ echo "passed: detect invalid extra_lua_path"
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
 if echo "$out" | grep "APISIX is running"; then
-    ./bin/apisix stop
+    rm logs/nginx.pid
     echo "failed: should ignore stale nginx.pid"
     exit 1
 fi
 
-./bin/apisix stop
+rm logs/nginx.pid
 echo "pass: ignore stale nginx.pid"
 
 # check run apisix in non apisix dir works
