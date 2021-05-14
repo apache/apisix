@@ -2,12 +2,10 @@
 dist: bionic
 sudo: required
 
-matrix:
-  include:
-    - os: linux
-      arch: arm64-graviton2
-      services:
-        - docker
+os: linux
+arch: arm64-graviton2
+services:
+  - docker
 
 language: c
 
