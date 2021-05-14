@@ -502,6 +502,7 @@ http {
             set $upstream_host               $http_host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
+            set $from_error_page             '';
 
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';

@@ -554,6 +554,7 @@ _EOC_
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
             set \$ctx_ref                     '';
+            set \$from_error_page             '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
