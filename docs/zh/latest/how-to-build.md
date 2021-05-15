@@ -165,6 +165,7 @@ Content-Type: text/html
 ## 7. 为 APISIX 添加 systemd 配置文件
 
 如果通过 rpm 包安装 APISIX，配置文件已经自动安装到位，你可以直接运行
+
 ```
 $ systemctl start apisix
 $ systemctl stop apisix
