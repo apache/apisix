@@ -34,11 +34,11 @@ endif
 
 ifeq ($(UNAME), Darwin)
 LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl
 endif
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl111
 endif
 endif
 
