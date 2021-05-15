@@ -33,7 +33,7 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(UNAME), Darwin)
-LUAROCKS=luarocks --lua-dir=/usr/local/opt/lua@5.1
+LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
 ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
 	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
 endif
