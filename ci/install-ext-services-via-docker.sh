@@ -36,8 +36,8 @@ docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server 
 docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
 
 # start nacos server
-nohup docker network rm nacos_net > /dev/null 2>&1 &
-nohup docker network create nacos_net > /dev/null 2>&1 &
+docker network rm nacos_net
+docker network create nacos_net
 # nacos no auth server - for test no auth
 docker run --rm -d --name nacos_no_auth --network nacos_net --hostname nacos2 --env NACOS_SERVERS="nacos1:8848 nacos2:8848" --env PREFER_HOST_MODE=hostname --env MODE=cluster --env EMBEDDED_STORAGE=embedded  --env JVM_XMS=512m --env JVM_XMX=512m --env JVM_XMN=256m -p8858:8848 nacos/nacos-server:1.4.1
 # nacos auth server - for test auth
