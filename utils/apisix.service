@@ -1,0 +1,15 @@
+# Another copy of apisix.service locates at
+#   https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service
+# If you change this file, please also change that copy
+
+[Unit]
+Description=apisix
+Conflicts=apisix.service
+After=network-online.target
+
+[Service]
+Type=forking
+WorkingDirectory=/usr/local/apisix
+ExecStart=/usr/bin/apisix start
+ExecStop=/usr/bin/apisix stop
+ExecReload=/usr/bin/apisix reload

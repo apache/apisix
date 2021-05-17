@@ -172,4 +172,4 @@ $ systemctl stop apisix
 $ systemctl enable apisix
 ```
 
-如果通过其他方法安装，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其放置在 `usr/lib/systemd/system/apisix.service`。
+如果通过其他方法安装，可以参考[配置文件模板](https://github.com/apache/apisix/blob/master/utils/apisix.service)进行修改，并将其放置在 `usr/lib/systemd/system/apisix.service`。

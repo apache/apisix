@@ -178,4 +178,4 @@ $ systemctl stop apisix
 $ systemctl enable apisix
 ```
 
-If installed in other methods, you could refer to [the unit file template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service), modify if needed, and place it as `usr/lib/systemd/system/apisix.service`.
+If installed in other methods, you could refer to [the unit file template](https://github.com/apache/apisix/blob/master/utils/apisix.service), modify if needed, and place it as `usr/lib/systemd/system/apisix.service`.
