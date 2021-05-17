@@ -128,6 +128,8 @@ do
         upstream_no_cache          = true,
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
+
+        var_x_forwarded_proto = true,
     }
 
     local mt = {
