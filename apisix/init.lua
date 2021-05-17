@@ -251,6 +251,16 @@ local function set_upstream_host(api_ctx, picked_server)
 end
 
 
+local function set_upstream_headers(api_ctx, picked_server)
+    set_upstream_host(api_ctx, picked_server)
+
+    local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
+    if hdr then
+        api_ctx.var.var_x_forwarded_proto = hdr
+    end
+end
+
+
 local function get_upstream_by_id(up_id)
     local upstreams = core.config.fetch_created_obj("/upstreams")
     if upstreams then
@@ -474,7 +484,7 @@ function _M.http_access_phase()
 
     api_ctx.picked_server = server
 
-    set_upstream_host(api_ctx, server)
+    set_upstream_headers(api_ctx, server)
 
     ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
     local up_scheme = api_ctx.upstream_scheme

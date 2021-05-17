@@ -134,6 +134,13 @@ function _M.ewma()
 end
 
 
+local builtin_hdr_ignore_list = {
+    ["x-forwarded-for"] = true,
+    ["x-forwarded-proto"] = true,
+    ["x-forwarded-host"] = true,
+    ["x-forwarded-port"] = true,
+}
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
@@ -141,7 +148,9 @@ function _M.uri()
 
     local keys = {}
     for k in pairs(headers) do
-        table.insert(keys, k)
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
     end
     table.sort(keys)
 

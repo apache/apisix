@@ -377,6 +377,8 @@ _EOC_
 
     error_page 500 \@50x.html;
 
+    variables_hash_bucket_size 128;
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -583,6 +585,29 @@ _EOC_
             proxy_set_header   Connection        \$upstream_connection;
             proxy_set_header   X-Real-IP         \$remote_addr;
             proxy_pass_header  Date;
+
+            ### the following x-forwarded-* headers is to send to upstream server
+
+            set \$var_x_forwarded_for        \$remote_addr;
+            set \$var_x_forwarded_proto      \$scheme;
+            set \$var_x_forwarded_host       \$host;
+            set \$var_x_forwarded_port       \$server_port;
+
+            if (\$http_x_forwarded_for != "") {
+                set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
+            }
+            if (\$http_x_forwarded_host != "") {
+                set \$var_x_forwarded_host \$http_x_forwarded_host;
+            }
+            if (\$http_x_forwarded_port != "") {
+                set \$var_x_forwarded_port \$http_x_forwarded_port;
+            }
+
+            proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
+
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
 

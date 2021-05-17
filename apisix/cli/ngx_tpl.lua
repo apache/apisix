@@ -531,9 +531,6 @@ http {
             if ($http_x_forwarded_for != "") {
                 set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
             }
-            if ($http_x_forwarded_proto != "") {
-                set $var_x_forwarded_proto $http_x_forwarded_proto;
-            }
             if ($http_x_forwarded_host != "") {
                 set $var_x_forwarded_host $http_x_forwarded_host;
             }
