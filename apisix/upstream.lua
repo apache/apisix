@@ -215,8 +215,7 @@ end
 
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
-        core.log.warn("upstream node has been specified, ",
-                      "cannot be set repeatedly")
+        -- upstream_conf has been set by traffic-split plugin
         return
     end
 
