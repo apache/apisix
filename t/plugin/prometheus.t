@@ -303,7 +303,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -344,7 +344,7 @@ passed
 
 
 
-=== TEST 16: use service 1 in route 1
+=== TEST 16: use service 1 in route 2
 --- config
     location /t {
         content_by_lua_block {
@@ -527,11 +527,11 @@ qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host=
 
 
 
-=== TEST 25: fetch the prometheus metric data with `overhead`
+=== TEST 25: fetch the prometheus metric data with apisix latency
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/.*apisix_http_overhead_bucket.*/
+qr/.*apisix_http_latency_bucket\{type="apisix".*/
 --- no_error_log
 [error]
 
@@ -610,11 +610,11 @@ passed
 
 
 
-=== TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
+=== TEST 29: fetch the prometheus metric data with apisix latency (latency < 1s)
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"500.*/
+qr/apisix_http_latency_bucket\{type="apisix".*service=\"3\".*le=\"500.*/
 --- no_error_log
 [error]
 

@@ -186,20 +186,30 @@ local function get_secret(conf)
 end
 
 
-local function sign_jwt_with_HS(key, auth_conf)
+local function get_real_payload(key, auth_conf, payload)
+    local real_payload = {
+        key = key,
+        exp = ngx_time() + auth_conf.exp
+    }
+    if payload then
+        local extra_payload = core.json.decode(payload)
+        core.table.merge(real_payload, extra_payload)
+    end
+    return real_payload
+end
+
+
+local function sign_jwt_with_HS(key, auth_conf, payload)
     local auth_secret = get_secret(auth_conf)
     local ok, jwt_token = pcall(jwt.sign, _M,
-            auth_secret,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm
-                },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
-                }
-            }
+        auth_secret,
+        {
+            header = {
+                typ = "JWT",
+                alg = auth_conf.algorithm
+            },
+            payload = get_real_payload(key, auth_conf, payload)
+        }
     )
     if not ok then
         core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
@@ -209,22 +219,19 @@ local function sign_jwt_with_HS(key, auth_conf)
 end
 
 
-local function sign_jwt_with_RS256(key, auth_conf)
+local function sign_jwt_with_RS256(key, auth_conf, payload)
     local ok, jwt_token = pcall(jwt.sign, _M,
-            auth_conf.private_key,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm,
-                    x5c = {
-                        auth_conf.public_key,
-                    }
-                },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
+        auth_conf.private_key,
+        {
+            header = {
+                typ = "JWT",
+                alg = auth_conf.algorithm,
+                x5c = {
+                    auth_conf.public_key,
                 }
-            }
+            },
+            payload = get_real_payload(key, auth_conf, payload)
+        }
     )
     if not ok then
         core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
@@ -299,6 +306,10 @@ local function gen_token()
     end
 
     local key = args.key
+    local payload = args.payload
+    if payload then
+        payload = ngx.unescape_uri(payload)
+    end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
@@ -317,7 +328,7 @@ local function gen_token()
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local sign_handler, _ = algorithm_handler(consumer)
-    local jwt_token = sign_handler(key, consumer.auth_conf)
+    local jwt_token = sign_handler(key, consumer.auth_conf, payload)
     if jwt_token then
         return core.response.exit(200, jwt_token)
     end

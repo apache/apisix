@@ -52,9 +52,17 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
         with:
           submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v2.1.5
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
       - name: Extract branch name
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -150,7 +158,7 @@ jobs:
 
       - name: Publish Artifact
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.2
+        uses: actions/upload-artifact@v2.2.3
         with:
           name: ${{ steps.branch_env.outputs.fullname }}
           path: ${{ steps.branch_env.outputs.fullname }}

@@ -30,6 +30,7 @@ title: traffic-split
   - [灰度发布](#灰度发布)
   - [蓝绿发布](#蓝绿发布)
   - [自定义发布](#自定义发布)
+  - [匹配规则与上游对应](#匹配规则与上游对应)
 - [禁用插件](#禁用插件)
 
 ## 名字
@@ -42,7 +43,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 |              参数名             | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
 | ---------------------- | --------------| ------ | ------ | ------ | -------------------- |
-| rules.match                    | array[object] | 可选  |        |        | 匹配规则列表  |
+| rules.match                    | array[object] | 可选  |        |        | 匹配规则列表，默认为空且规则将被无条件执行。 |
 | rules.match.vars               | array[array]  | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
 | weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
@@ -491,6 +492,98 @@ Content-Type: text/html; charset=utf-8
 ......
 
 hello 1980
+```
+
+### 匹配规则与上游对应
+
+通过配置多个 `rules`，我们可以实现不同的匹配规则与上游一一对应。
+
+**示例：**
+
+当请求头 `x-api-id` 等于 1 时，命中 1981 端口的上游；当 `x-api-id` 等于 2 时，命中 1982 端口的上游；否则，命中 1980 端口的上游（上游响应数据为对应的端口号）。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","1"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                },
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_x-api-id","==","2"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream-B",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1982":1
+                                }
+                            },
+                            "weight": 3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+**测试插件：**
+
+请求头 `x-api-id` 等于 1，命中带 1981 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+1981
+```
+
+请求头 `x-api-id` 等于 2，命中带 1982 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
+1982
+```
+
+请求头 `x-api-id` 等于 3，规则不匹配，命中带 1980 端口的上游。
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
+1980
 ```
 
 ## 禁用插件

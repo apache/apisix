@@ -61,7 +61,7 @@
   "gnetId": 11719,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1616655621009,
+  "iteration": 1617695812393,
   "links": [],
   "panels": [
     {
@@ -498,7 +498,9 @@
         "min": true,
         "rightSide": true,
         "show": true,
-        "total": false,
+        "sort": "total",
+        "sortDesc": true,
+        "total": true,
         "values": true
       },
       "lines": true,
@@ -582,121 +584,24 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 19
-      },
-      "hiddenSeries": false,
-      "id": 19,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.3.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
-          "legendFormat": "service:{{service}}",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
-          "legendFormat": "route:{{route}}",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Egress per service/route",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "decbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
         "y": 19
       },
       "hiddenSeries": false,
       "id": 21,
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
         "show": true,
-        "total": false,
-        "values": false
+        "sort": "total",
+        "sortDesc": true,
+        "total": true,
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -768,13 +673,119 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "hiddenSeries": false,
+      "id": 19,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "sort": "total",
+        "sortDesc": true,
+        "total": true,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.7",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
+          "interval": "",
+          "legendFormat": "service:{{service}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
+          "legendFormat": "route:{{route}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Egress per service/route",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
       "collapsed": false,
       "datasource": "${DS_PROMETHEUS}",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "id": 15,
       "panels": [],
@@ -782,7 +793,10 @@
       "type": "row"
     },
     {
-      "aliasColors": {},
+      "aliasColors": {
+        "HTTP Status:200": "green",
+        "HTTP Status:500": "red"
+      },
       "bars": false,
       "cacheTimeout": null,
       "dashLength": 10,
@@ -802,7 +816,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 32
       },
       "hiddenSeries": false,
       "id": 2,
@@ -839,38 +853,19 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_http_status{code=~\"2..\",service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (status_2xx)",
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (code)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "status_2xx",
+          "legendFormat": "HTTP Status:{{code}}",
           "refId": "A"
-        },
-        {
-          "expr": "sum(rate(apisix_http_status{code=~\"3..\",service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (status_3xx)",
-          "interval": "",
-          "legendFormat": "status_3xx",
-          "refId": "D"
-        },
-        {
-          "expr": "sum(rate(apisix_http_status{code=~\"4..\",service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (status_4xx)",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "status_4xx",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(rate(apisix_http_status{code=~\"5..\",service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (status_5xx)",
-          "interval": "",
-          "legendFormat": "status_5xx",
-          "refId": "C"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Requests per second (RPS)",
+      "title": "Requests per second (RPS) by status code",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -929,19 +924,23 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 38
       },
       "hiddenSeries": false,
       "id": 32,
       "interval": "",
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
         "show": true,
-        "total": false,
-        "values": false
+        "sort": "total",
+        "sortDesc": true,
+        "total": true,
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -1052,9 +1051,9 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 6,
-        "w": 24,
+        "w": 8,
         "x": 0,
-        "y": 38
+        "y": 44
       },
       "hiddenSeries": false,
       "id": 27,
@@ -1084,20 +1083,20 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "format": "time_series",
           "interval": "",
           "legendFormat": "P90",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "interval": "",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "interval": "",
           "legendFormat": "P99",
           "refId": "C"
@@ -1107,7 +1106,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "HTTP Latency",
+      "title": "Request Latency",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1175,8 +1174,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 6,
-        "w": 24,
-        "x": 0,
+        "w": 8,
+        "x": 8,
         "y": 44
       },
       "hiddenSeries": false,
@@ -1207,7 +1206,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_overhead_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1216,13 +1215,13 @@
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_overhead_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "interval": "",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_overhead_bucket{service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
           "interval": "",
           "legendFormat": "P99",
           "refId": "C"
@@ -1232,7 +1231,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "HTTP Overhead",
+      "title": "APISIX Latency",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1270,20 +1269,10 @@
       }
     },
     {
-      "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 50
-      },
-      "id": 23,
-      "panels": [],
-      "title": "Misc",
-      "type": "row"
-    },
-    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
@@ -1298,51 +1287,122 @@
               },
               {
                 "color": "red",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 1
+                "value": 80
               }
             ]
           }
         },
         "overrides": []
       },
+      "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 0,
-        "y": 51
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 44
       },
-      "id": 25,
+      "hiddenSeries": false,
+      "id": 33,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "last"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "alertThreshold": true
       },
+      "percentage": false,
       "pluginVersion": "7.3.7",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(apisix_etcd_reachable{instance=~\"$instance\"})",
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "format": "time_series",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "P90",
           "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "interval": "",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
+          "interval": "",
+          "legendFormat": "P99",
+          "refId": "C"
         }
       ],
+      "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "Etcd reachable",
-      "type": "stat"
+      "title": "Upstream Latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Misc",
+      "type": "row"
     },
     {
       "aliasColors": {},
@@ -1361,8 +1421,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 6,
-        "w": 10,
-        "x": 4,
+        "w": 18,
+        "x": 0,
         "y": 51
       },
       "hiddenSeries": false,
@@ -1446,105 +1506,65 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
           "custom": {},
-          "links": []
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 6,
-        "w": 10,
-        "x": 14,
+        "w": 3,
+        "x": 18,
         "y": 51
       },
-      "hiddenSeries": false,
-      "id": 31,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 25,
       "options": {
-        "alertThreshold": true
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
       },
-      "percentage": false,
       "pluginVersion": "7.3.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(apisix_batch_process_entries{name=~\"sys-logger|http-logger|sls-logger|tcp-logger|udp-logger|zipkin\"}) by (name)",
+          "expr": "sum(apisix_etcd_reachable{instance=~\"$instance\"})",
           "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{name}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Batch process entries",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "short",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "decimals": null,
-          "format": "short",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Etcd reachable",
+      "type": "stat"
     },
     {
       "datasource": "${DS_PROMETHEUS}",
@@ -1569,10 +1589,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 0,
-        "y": 54
+        "h": 6,
+        "w": 3,
+        "x": 21,
+        "y": 51
       },
       "id": 29,
       "options": {
@@ -1660,7 +1680,7 @@
         "allValue": ".*",
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
-        "definition": "label_values(apisix_http_status,instance)",
+        "definition": "label_values(apisix_nginx_http_current_connections,instance)",
         "error": null,
         "hide": 0,
         "includeAll": true,
@@ -1728,7 +1748,7 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -1748,5 +1768,5 @@
   "timezone": "",
   "title": "Apache APISIX",
   "uid": "bLlNuRLWz",
-  "version": 9
+  "version": 13
 }

@@ -629,3 +629,102 @@ hello world
 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: set an empty body with setting body_base64 to true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                            body = "",
+                            body_base64 = true
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid base64 content
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: set an nil body with setting body_base64 to true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                            body_base64 = true
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid base64 content
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: rewrite header with variables
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers" : {
+                                "X-A": "$remote_addr",
+                                "X-B": "from $remote_addr to $balancer_ip:$balancer_port"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/with_header"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: hit
+--- request
+GET /with_header
+--- response_headers
+X-A: 127.0.0.1
+X-B: from 127.0.0.1 to 127.0.0.1:1980
+--- no_error_log
+[error]

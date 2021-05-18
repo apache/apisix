@@ -11,7 +11,10 @@ jobs:
   chaos-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
       - name: setup go
         uses: actions/setup-go@v2.1.3
         with:

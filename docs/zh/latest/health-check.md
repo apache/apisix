@@ -25,8 +25,13 @@ title: 健康检查
 
 APISIX 的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck)实现，你可以在 upstream 中使用它。
 
-注意只有在 upstream 被请求时才会开始健康检查。
+注意:
+
+* 只有在 upstream 被请求时才会开始健康检查。
 如果一个 upstream 被配置但没有被请求，那么就不会有健康检查。
+* 如果没有健康的节点，那么请求会继续发送给上游。
+* 如果 upstream 中只有一个节点，就不会有健康检查。
+因为该唯一节点无论是否健康，请求都会发送给上游，
 
 下面是一个检查检查的例子：
 

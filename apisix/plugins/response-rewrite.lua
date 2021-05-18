@@ -100,6 +100,9 @@ function _M.check_schema(conf)
     end
 
     if conf.body_base64 then
+        if not conf.body or #conf.body == 0 then
+            return false, 'invalid base64 content'
+        end
         local body = ngx.decode_base64(conf.body)
         if not body then
             return  false, 'invalid base64 content'
@@ -165,7 +168,8 @@ function _M.header_filter(conf, ctx)
 
     local field_cnt = #conf.headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
+        local val = core.utils.resolve_var(conf.headers_arr[i+1], ctx.var)
+        ngx.header[conf.headers_arr[i]] = val
     end
 end
 

@@ -75,7 +75,7 @@ return function(plugin_name, priority)
                                                    load_funcs, conf.functions)
 
         for _, func in ipairs(functions) do
-            func()
+            func(conf, ctx)
         end
     end
 

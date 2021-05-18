@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.5.0](#250)
 - [2.4.0](#240)
 - [2.3.0](#230)
 - [2.2.0](#220)
@@ -39,6 +40,36 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.5.0
+
+### Change
+
+- 更改 zipkin 插件的 span 类型 [#3877](https://github.com/apache/apisix/pull/3877)
+
+### Core
+
+- :sunrise: 支持 etcd 客户端证书校验 [#3905](https://github.com/apache/apisix/pull/3905)
+- :sunrise: 支持表达式使用“或”和“非”的逻辑 [#3809](https://github.com/apache/apisix/pull/3809)
+- :sunrise: 默认启动时会同步etcd配置 [#3799](https://github.com/apache/apisix/pull/3799)
+- :sunrise: 负载均衡支持节点优先级 [#3755](https://github.com/apache/apisix/pull/3755)
+- :sunrise: 服务发现提供了一系列 control API [#3742](https://github.com/apache/apisix/pull/3742)
+
+### Plugin
+
+- :sunrise: 允许热更新 skywalking 插件配置，并允许配置上报间隔 [#3925](https://github.com/apache/apisix/pull/3925)
+- :sunrise: consumer-restriction 支持 HTTP method 级别的白名单配置 [#3691](https://github.com/apache/apisix/pull/3691)
+- :sunrise: cors 插件支持通过正则表达式匹配 Origin [#3839](https://github.com/apache/apisix/pull/3839)
+- :sunrise: response-rewrite 插件支持条件改写 [#3577](https://github.com/apache/apisix/pull/3577)
+
+### Bugfix
+
+- error-log-logger 插件需要在每个进程中上报日志 [#3912](https://github.com/apache/apisix/pull/3912)
+- 当使用 snippet 引入 Nginx server 段配置时，确保内置 server 是默认 server [#3907](https://github.com/apache/apisix/pull/3907)
+- 修复 traffic-split 插件通过 upstream_id 绑定上游的问题 [#3842](https://github.com/apache/apisix/pull/3842)
+- 修复 ssl_trusted_certificate 配置项的校验 [#3832](https://github.com/apache/apisix/pull/3832)
+- 启用 proxy-cache 时，避免覆盖到其他路由缓存相关的响应头 [#3789](https://github.com/apache/apisix/pull/3789)
+- 解决 macOS 下无法 `make deps` 的问题 [#3718](https://github.com/apache/apisix/pull/3718)
 
 ## 2.4.0
 

@@ -95,7 +95,20 @@ function _M.plugin_proxy_rewrite_args()
     table.sort(keys)
 
     for _, key in ipairs(keys) do
-        ngx.say(key, ": ", args[key])
+        if type(args[key]) == "table" then
+            ngx.say(key, ": ", table.concat(args[key], ','))
+        else
+            ngx.say(key, ": ", args[key])
+        end
+    end
+end
+
+
+function _M.specific_status()
+    local status = ngx.var.http_x_test_upstream_status
+    if status ~= nil then
+        ngx.status = status
+        ngx.say("upstream status: ", status)
     end
 end
 
@@ -122,6 +135,13 @@ function _M.ewma()
 end
 
 
+local builtin_hdr_ignore_list = {
+    ["x-forwarded-for"] = true,
+    ["x-forwarded-proto"] = true,
+    ["x-forwarded-host"] = true,
+    ["x-forwarded-port"] = true,
+}
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
@@ -129,7 +149,9 @@ function _M.uri()
 
     local keys = {}
     for k in pairs(headers) do
-        table.insert(keys, k)
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
     end
     table.sort(keys)
 
@@ -316,6 +338,12 @@ function _M.websocket_handshake()
     if not wb then
         ngx.log(ngx.ERR, "failed to new websocket: ", err)
         return ngx.exit(400)
+    end
+
+    local bytes, err = wb:send_text("hello")
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send text: ", err)
+        return ngx.exit(444)
     end
 end
 _M.websocket_handshake_route = _M.websocket_handshake

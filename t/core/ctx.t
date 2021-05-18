@@ -100,10 +100,13 @@ failed to fetch cookie value by key: cookie_host error: no cookie found in the c
             ngx.say("cookie_b: ", ctx.var["cookie_b"])
             ngx.say("cookie_c: ", ctx.var["cookie_c"])
             ngx.say("cookie_d: ", ctx.var["cookie_d"])
+            ngx.say("cookie with dash and uppercase: ", ngx.var["cookie_X-user-id"])
+            ngx.say("cookie with []: ", ngx.var["cookie_user[id]"])
+            ngx.say("cookie with .: ", ngx.var["cookie_user.id"])
         }
     }
 --- more_headers
-Cookie: a=a; b=bb; c=ccc
+Cookie: a=a; b=bb; c=ccc; X-user-id=2; user[id]=3; user.id=4
 --- request
 GET /t?a=aaa
 --- response_body
@@ -111,6 +114,9 @@ cookie_a: a
 cookie_b: bb
 cookie_c: ccc
 cookie_d: nil
+cookie with dash and uppercase: 2
+cookie with []: 3
+cookie with .: 4
 --- no_error_log
 [error]
 

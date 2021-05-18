@@ -46,11 +46,7 @@ local schema = {
                     methods = {
                         type = "array",
                         minItems = 1,
-                        items = {
-                            type = "string",
-                            enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                                    "OPTIONS", "CONNECT", "TRACE"},
-                        }
+                        items = core.schema.method_schema,
                     }
                 }
             }
