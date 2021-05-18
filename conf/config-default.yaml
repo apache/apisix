@@ -189,6 +189,12 @@ nginx_config:                     # config for render the template to generate n
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
     # when establishing a connection with the proxied HTTPS server.
     proxy_ssl_server_name: true
+    upstream:
+      keepalive: 320               # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
+                                   # When this number is exceeded, the least recently used connections are closed.
+      keepalive_requests: 1000     # Sets the maximum number of requests that can be served through one keepalive connection.
+                                   # After the maximum number of requests is made, the connection is closed.
+      keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
