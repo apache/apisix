@@ -590,3 +590,34 @@ fi
 
 rm logs/nginx.pid
 echo "pass: ignore stale nginx.pid"
+
+# check the keepalive related parameter settings in the upstream
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    upstream:
+      keepalive: 32
+      keepalive_requests: 100
+      keepalive_timeout: 6s
+' > conf/config.yaml
+
+make init
+
+if ! grep "keepalive 32;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive 32;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "keepalive_requests 100;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive_requests 100;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "keepalive_timeout 6s;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive_timeout 6s;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the keepalive related parameter in nginx.conf"
