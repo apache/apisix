@@ -52,7 +52,7 @@ title: response-rewrite
 
 ### 开启插件
 
-下面是一个示例，在指定的 route 上开启了 `response rewrite` 插件：
+下面是一个示例，在指定的 route 上开启了 `response-rewrite` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -89,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
-如果看到返回的头部信息和内容都被修改了，即表示 `response rewrite` 插件生效了,`vars` 将确保仅覆盖状态为 200 的响应。
+如果看到返回的头部信息和内容都被修改了，即表示 `response-rewrite` 插件生效了,`vars` 将确保仅覆盖状态为 200 的响应。
 
 ```shell
 HTTP/1.1 200 OK
