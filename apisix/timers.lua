@@ -21,7 +21,7 @@ local unpack = unpack
 local thread_spawn = ngx.thread.spawn
 local thread_wait = ngx.thread.wait
 
-local check_interval = 0.5
+local check_interval = 1
 
 local timers = {}
 
@@ -30,6 +30,10 @@ local _M = {}
 
 
 local function background_timer()
+    if core.table.nkeys(timers) == 0 then
+        return
+    end
+
     local threads = {}
     for name, timer in pairs(timers) do
         core.log.info("run timer[", name, "]")
@@ -59,6 +63,8 @@ end
 
 function _M.init_worker()
     local opts = {
+        each_ttl = 0,
+        sleep_succ = 0,
         check_interval = check_interval,
     }
     local timer, err = core.timer.new("background", background_timer, opts)

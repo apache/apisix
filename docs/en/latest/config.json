@@ -1,5 +1,5 @@
 {
-  "version": 2.4,
+  "version": 2.5,
   "sidebar": [
     {
       "type": "link",
@@ -158,6 +158,7 @@
             "discovery",
             "discovery/dns",
             "discovery/consul_kv",
+            "discovery/nacos",
             "discovery/eureka"
           ]
         },
@@ -191,7 +192,23 @@
         },
         {
           "type": "doc",
+          "id": "batch-processor"
+        },
+        {
+          "type": "doc",
           "id": "benchmark"
+        },
+        {
+          "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-interceptors"
         },
         {
           "type": "link",

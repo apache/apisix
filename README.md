@@ -34,7 +34,7 @@ It can also be used as a [k8s ingress controller](https://github.com/apache/apis
 
 The technical architecture of Apache APISIX:
 
-![](docs/assets/images/apisix.png)
+![Technical architecture of Apache APISIX](docs/assets/images/apisix.png)
 
 ## Community
 
@@ -117,7 +117,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **OPS friendly**
 
   - OpenTracing: support [Apache Skywalking](docs/en/latest/plugins/skywalking.md) and [Zipkin](docs/en/latest/plugins/zipkin.md)
-  - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](docs/en/latest/discovery.md)
+  - works with external service discovery：In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
@@ -153,9 +153,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.4
-     $ wget https://downloads.apache.org/apisix/2.4/apache-apisix-2.4-src.tgz
-     $ tar zxvf apache-apisix-2.4-src.tgz -C apisix-2.4
+     $ mkdir apisix-2.5
+     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
+     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
      ```
 
    - Install the dependencies：
@@ -192,7 +192,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.4/apisix-2.4-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
    ```
 
    - check the version of APISIX:
@@ -275,7 +275,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 | :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
 | Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
 | Tech Architecture                                               | Nginx + etcd                                      | Nginx + Postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, GitHub, meetup | GitHub, Freenode, forum |
+| Communication channels                                          | Mail list, Wechat group, QQ group, [GitHub](https://github.com/apache/apisix/issues), [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg), meetup | GitHub, Freenode, forum |
 | Single-core CPU, QPS(enable limit-count and Prometheus plugins) | 18000                                             | 1700                    |
 | Latency                                                         | 0.2 ms                                            | 2 ms                    |
 | Dubbo                                                           | Yes                                               | No                      |
@@ -299,7 +299,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 > [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
 
-[![contributor-over-time](docs/assets/images/contributor-over-time.png)](https://www.apiseven.com/contributor-graph)
+[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## Videos And Articles
 

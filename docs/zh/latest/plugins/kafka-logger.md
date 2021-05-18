@@ -45,6 +45,7 @@ title: kafka-logger
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
+| producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
 | key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
@@ -61,7 +62,44 @@ title: kafka-logger
 - **default**:
 
     ```json
-    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":"APISIX\/1.5","connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
+    {
+     "upstream": "127.0.0.1:1980",
+     "start_time": 1619414294760,
+     "client_ip": "127.0.0.1",
+     "service_id": "",
+     "route_id": "1",
+     "request": {
+       "querystring": {
+         "ab": "cd"
+       },
+       "size": 90,
+       "uri": "/hello?ab=cd",
+       "url": "http://localhost:1984/hello?ab=cd",
+       "headers": {
+         "host": "localhost",
+         "content-length": "6",
+         "connection": "close"
+       },
+       "body": "abcdef",
+       "method": "GET"
+     },
+     "response": {
+       "headers": {
+         "connection": "close",
+         "content-type": "text/plain; charset=utf-8",
+         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+         "server": "APISIX/2.5",
+         "transfer-encoding": "chunked"
+       },
+       "size": 190,
+       "status": 200
+     },
+     "server": {
+       "hostname": "localhost",
+       "version": "2.5"
+     },
+     "latency": 0
+    }
     ```
 
 - **origin**:

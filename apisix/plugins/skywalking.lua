@@ -17,6 +17,7 @@
 local sw_tracer = require("skywalking.tracer")
 local core = require("apisix.core")
 local process = require("ngx.process")
+local Span = require("skywalking.span")
 local ngx = ngx
 local math = math
 local require = require
@@ -90,6 +91,8 @@ end
 
 function _M.body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
+        Span.setComponentId(ngx.ctx.exitSpan, 6002)
+        Span.setComponentId(ngx.ctx.entrySpan, 6002)
         sw_tracer:finish()
         core.log.info("tracer finish")
     end
@@ -126,6 +129,11 @@ function _M.init()
 
     -- TODO: maybe need to fetch them from plugin-metadata
     local metadata_shdict = ngx.shared.tracing_buffer
+
+    if local_plugin_info.service_instance_name == "$hostname" then
+        local_plugin_info.service_instance_name = core.utils.gethostname()
+    end
+
     metadata_shdict:set('serviceName', local_plugin_info.service_name)
     metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
 

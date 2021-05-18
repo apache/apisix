@@ -35,7 +35,7 @@ In addition, APISIX has dynamic routing and hot loading of plug-ins, which is es
 
 ## What's the performance of APISIX?
 
-One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/apisix/blob/master/benchmark.md)
+One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](benchmark.md)
 
 APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
@@ -59,7 +59,7 @@ For the configuration center, configuration storage is only the most basic funct
 4. Change Notification
 5. High Performance
 
-See more [etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart).
+See more [etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart).
 
 ## Why is it that installing APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
 
@@ -318,7 +318,7 @@ The high availability of APISIX can be divided into two parts:
 
 ## Why does the `make deps` command fail in source installation?
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install-dependencies.md](install-dependencies.md) document for installation.
+When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install dependencies](install-dependencies.md) document for installation.
 
 ```shell
 $ make deps
@@ -392,9 +392,91 @@ HTTP/1.1 200 OK
 ...
 
 # The uri match failed
-curl http://127.0.0.1:9080/12ab -i
+$ curl http://127.0.0.1:9080/12ab -i
 HTTP/1.1 404 Not Found
 ...
 ```
 
 In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
+
+## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
+
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
+
+This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.default.svc.cluster.local": 1
+        }
+    }
+}'
+```
+
+```shell
+# Test request
+$ curl http://127.0.0.1:9080/ip -i
+HTTP/1.1 200 OK
+...
+```
+
+## What is the `X-API-KEY` of Admin API? Can it be modified?
+
+1. The `X-API-KEY` of Admin API refers to the `apisix.admin_key.key` in the `config.yaml` file, and the default value is `edd1c9f034335f136f87ad84b625c8f1`. It is the access token of the Admin API.
+
+Note: There are security risks in using the default API token. It is recommended to update it when deploying to a production environment.
+
+2. `X-API-KEY` can be modified.
+
+For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload APISIX.
+
+```yaml
+apisix:
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+Access the Admin API:
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"admin-token-test",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":1980,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+
+HTTP/1.1 200 OK
+......
+```
+
+The route was created successfully. It means that the modification of `X-API-KEY` takes effect.
+
+## How to allow all IPs to access Admin API
+
+By default, Apache APISIX only allows the IP range of `127.0.0.0/24` to access the `Admin API`. If you want to allow all IP access, then you only need to add the following configuration in the `conf/config.yaml` configuration file.
+
+```yaml
+apisix:
+  allow_admin:
+    - 0.0.0.0/0
+```
+
+Restart or reload APISIX, all IPs can access the `Admin API`.

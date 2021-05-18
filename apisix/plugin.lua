@@ -267,14 +267,12 @@ function _M.load(config)
         -- called during synchronizing plugin data
         http_plugin_names = {}
         stream_plugin_names = {}
-        for _, conf_value in config_util.iterate_values(config.values) do
-            local plugins_conf = conf_value.value
-            for _, conf in ipairs(plugins_conf) do
-                if conf.stream then
-                    core.table.insert(stream_plugin_names, conf.name)
-                else
-                    core.table.insert(http_plugin_names, conf.name)
-                end
+        local plugins_conf = config.value
+        for _, conf in ipairs(plugins_conf) do
+            if conf.stream then
+                core.table.insert(stream_plugin_names, conf.name)
+            else
+                core.table.insert(http_plugin_names, conf.name)
             end
         end
     end
@@ -338,7 +336,9 @@ function _M.filter(user_route, plugins)
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         trace_plugins_info_for_debug(nil)
-        return core.empty_tab
+        -- when 'plugins' is given, always return 'plugins' itself instead
+        -- of another one
+        return plugins or core.empty_tab
     end
 
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
@@ -418,6 +418,8 @@ local function merge_service_route(service_conf, route_conf)
 
     if route_conf.value.name then
         new_conf.value.name = route_conf.value.name
+    else
+        new_conf.value.name = nil
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
@@ -486,8 +488,10 @@ do
             automatic = true,
             item_schema = core.schema.plugins,
             single_item = true,
-            filter = function()
-                _M.load(plugins_conf)
+            filter = function(item)
+                -- we need to pass 'item' instead of plugins_conf because
+                -- the latter one is nil at the first run
+                _M.load(item)
             end,
         })
         if not plugins_conf then
@@ -697,7 +701,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == "access" then
+        if phase_name == nil then
             api_ctx.global_rules = global_rules
         end
 
@@ -710,7 +714,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 
             core.table.clear(plugins)
             plugins = _M.filter(global_rule, plugins)
-            if phase_name == "access" then
+            if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
             else

@@ -322,6 +322,16 @@ local nodes_schema = {
 }
 
 
+local certificate_scheme = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
+local private_key_schema = {
+    type = "string", minLength = 128, maxLength = 64*1024
+}
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -340,6 +350,14 @@ local upstream_schema = {
                 read = {type = "number", exclusiveMinimum = 0},
             },
             required = {"connect", "send", "read"},
+        },
+        tls = {
+            type = "object",
+            properties = {
+                client_cert = certificate_scheme,
+                client_key = private_key_schema,
+            },
+            required = {"client_cert", "client_key"},
         },
         type = {
             description = "algorithms of load balancing",
@@ -417,6 +435,15 @@ _M.upstream_hash_vars_combinations_schema = {
 }
 
 
+local method_schema = {
+    description = "HTTP method",
+    type = "string",
+    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+        "OPTIONS", "CONNECT", "TRACE"},
+}
+_M.method_schema = method_schema
+
+
 _M.route = {
     type = "object",
     properties = {
@@ -438,12 +465,7 @@ _M.route = {
 
         methods = {
             type = "array",
-            items = {
-                description = "HTTP method",
-                type = "string",
-                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                        "OPTIONS", "CONNECT", "TRACE"}
-            },
+            items = method_schema,
             uniqueItems = true,
         },
         host = host_def,
@@ -602,12 +624,8 @@ _M.ssl = {
     type = "object",
     properties = {
         id = id_schema,
-        cert = {
-            type = "string", minLength = 128, maxLength = 64*1024
-        },
-        key = {
-            type = "string", minLength = 128, maxLength = 64*1024
-        },
+        cert = certificate_scheme,
+        key = private_key_schema,
         sni = {
             type = "string",
             pattern = [[^\*?[0-9a-zA-Z-.]+$]],
@@ -622,19 +640,23 @@ _M.ssl = {
         },
         certs = {
             type = "array",
-            items = {
-                type = "string",
-                minLength = 128,
-                maxLength = 64*1024,
-            }
+            items = certificate_scheme,
         },
         keys = {
             type = "array",
-            items = {
-                type = "string",
-                minLength = 128,
-                maxLength = 64*1024,
-            }
+            items = private_key_schema,
+        },
+        client = {
+            type = "object",
+            properties = {
+                ca = certificate_scheme,
+                depth = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 1,
+                },
+            },
+            required = {"ca"},
         },
         exptime = {
             type = "integer",

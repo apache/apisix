@@ -57,7 +57,7 @@ if [ $count_test_access_log -eq 0 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -eq 3 ]; then
+if [ $count_access_log_off -eq 4 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -92,7 +92,7 @@ if [ $count_test_access_log -eq 1 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 3 ]; then
+if [ $count_access_log_off -ne 4 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi

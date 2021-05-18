@@ -325,7 +325,77 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log eval
 qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: set route(with upstream)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "localhost:1981": 2,
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/server_port",
+                    "service_id": "1",
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: roundrobin
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        for i = 1, 3 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981
+--- no_error_log
+[error]
