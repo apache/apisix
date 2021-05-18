@@ -91,7 +91,11 @@ function _M.test_ipv6(uri)
     while true do
         local line, err, part = sock:receive()
         if line then
-            ngx.say("received: ", line)
+            if line ~= "" then
+                ngx.say("received: ", line)
+            else
+                ngx.say("received:")
+            end
 
         else
             ngx.say("failed to receive a line: ", err, " [", part, "]")

@@ -29,6 +29,7 @@ local set_upstream    = apisix_upstream.set_by_route
 local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
+local ngx_balancer    = require("ngx.balancer")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -42,20 +43,16 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local control_api_router
+
+local is_http = false
 if ngx.config.subsystem == "http" then
+    is_http = true
     control_api_router = require("apisix.control.router")
 end
+
 local load_balancer
 local local_conf
-local dns_resolver
-local ver_header    = "APISIX/" .. core.version.VERSION
-
-
-local function parse_args(args)
-    dns_resolver = args and args["dns_resolver"]
-    core.utils.set_resolver(dns_resolver)
-    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
-end
+local ver_header = "APISIX/" .. core.version.VERSION
 
 
 local _M = {version = 0.4}
@@ -72,7 +69,7 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    parse_args(args)
+    core.resolver.init_resolver(args)
     core.id.init()
 
     local process = require("ngx.process")
@@ -110,7 +107,7 @@ function _M.http_init_worker()
         discovery.init_worker()
     end
     require("apisix.balancer").init_worker()
-    load_balancer = require("apisix.balancer").run
+    load_balancer = require("apisix.balancer")
     require("apisix.admin.init").init_worker()
 
     require("apisix.timers").init_worker()
@@ -126,7 +123,8 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
-    require("apisix.upstream").init_worker()
+    apisix_upstream.init_worker()
+    require("apisix.plugins.ext-plugin.init").init_worker()
 
     local_conf = core.config.local_conf()
 
@@ -155,24 +153,6 @@ function _M.http_ssl_phase()
 end
 
 
-local function parse_domain(host)
-    local ip_info, err = core.utils.dns_parse(host)
-    if not ip_info then
-        core.log.error("failed to parse domain: ", host, ", error: ",err)
-        return nil, err
-    end
-
-    core.log.info("parse addr: ", core.json.delay_encode(ip_info))
-    core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
-    core.log.info("host: ", host)
-    if ip_info.address then
-        core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
-        return ip_info.address
-    else
-        return nil, "failed to parse domain"
-    end
-end
-_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -181,7 +161,7 @@ local function parse_domain_for_nodes(nodes)
         local host = node.host
         if not ipmatcher.parse_ipv4(host) and
                 not ipmatcher.parse_ipv6(host) then
-            local ip, err = parse_domain(host)
+            local ip, err = core.resolver.parse_domain(host)
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip
@@ -249,7 +229,13 @@ local function parse_domain_in_route(route)
 end
 
 
-local function set_upstream_host(api_ctx)
+local function set_upstream_host(api_ctx, picked_server)
+    local up_conf = api_ctx.upstream_conf
+    if up_conf.pass_host then
+        api_ctx.pass_host = up_conf.pass_host
+        api_ctx.upstream_host = up_conf.upstream_host
+    end
+
     local pass_host = api_ctx.pass_host or "pass"
     if pass_host == "pass" then
         return
@@ -260,21 +246,54 @@ local function set_upstream_host(api_ctx)
         return
     end
 
-    -- only support single node for `node` mode currently
-    local host
-    local up_conf = api_ctx.upstream_conf
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
-        if node.domain and #node.domain > 0 then
-            host = node.domain
-        else
-            host = node.host
-        end
+        api_ctx.var.upstream_host = node.domain or node.host
+    elseif picked_server.domain and ngx_balancer.recreate_request then
+        api_ctx.var.upstream_host = picked_server.domain
     end
+end
 
-    if host then
-        api_ctx.var.upstream_host = host
+
+local function set_upstream_headers(api_ctx, picked_server)
+    set_upstream_host(api_ctx, picked_server)
+
+    local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
+    if hdr then
+        api_ctx.var.var_x_forwarded_proto = hdr
+    end
+end
+
+
+local function get_upstream_by_id(up_id)
+    local upstreams = core.config.fetch_created_obj("/upstreams")
+    if upstreams then
+        local upstream = upstreams:get(tostring(up_id))
+        if not upstream then
+            core.log.error("failed to find upstream by id: " .. up_id)
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        if upstream.has_domain then
+            local err
+            upstream, err = parse_domain_in_up(upstream)
+            if err then
+                core.log.error("failed to get resolved upstream: ", err)
+                if is_http then
+                    return core.response.exit(500)
+                end
+
+                return ngx_exit(1)
+            end
+        end
+
+        core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+        return upstream.dns_value or upstream.value
     end
 end
 
@@ -410,31 +429,8 @@ function _M.http_access_phase()
     end
 
     if up_id then
-        local upstreams = core.config.fetch_created_obj("/upstreams")
-        if upstreams then
-            local upstream = upstreams:get(tostring(up_id))
-            if not upstream then
-                core.log.error("failed to find upstream by id: " .. up_id)
-                return core.response.exit(502)
-            end
-
-            if upstream.has_domain then
-                local err
-                upstream, err = parse_domain_in_up(upstream)
-                if err then
-                    core.log.error("failed to get resolved upstream: ", err)
-                    return core.response.exit(500)
-                end
-            end
-
-            if upstream.value.pass_host then
-                api_ctx.pass_host = upstream.value.pass_host
-                api_ctx.upstream_host = upstream.value.upstream_host
-            end
-
-            core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
-            api_ctx.matched_upstream = upstream.dns_value or upstream.value
-        end
+        local upstream = get_upstream_by_id(up_id)
+        api_ctx.matched_upstream = upstream
 
     else
         if route.has_domain then
@@ -452,11 +448,6 @@ function _M.http_access_phase()
         local route_val = route.value
         if route_val.upstream and route_val.upstream.enable_websocket then
             enable_websocket = true
-        end
-
-        if route_val.upstream and route_val.upstream.pass_host then
-            api_ctx.pass_host = route_val.upstream.pass_host
-            api_ctx.upstream_host = route_val.upstream.upstream_host
         end
 
         api_ctx.matched_upstream = (route.dns_value and
@@ -480,16 +471,23 @@ function _M.http_access_phase()
         core.response.exit(code)
     end
 
-    set_upstream_host(api_ctx)
+    local server, err = load_balancer.pick_server(route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return core.response.exit(502)
+    end
 
+    api_ctx.picked_server = server
+
+    set_upstream_headers(api_ctx, server)
+
+    ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
-        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
 end
@@ -497,11 +495,13 @@ end
 
 function _M.dubbo_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 end
 
 
 function _M.grpc_access_phase()
     ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+    ngx_var.ctx_ref = ''
 
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -541,6 +541,16 @@ end
 
 
 function _M.http_header_filter_phase()
+    if ngx_var.ctx_ref ~= '' then
+        -- prevent for the table leak
+        local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+
+        -- internal redirect, so we should apply the ctx
+        if ngx_var.from_error_page == "true" then
+            ngx.ctx = stash_ctx
+        end
+    end
+
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -627,6 +637,10 @@ end
 
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
+    if not api_ctx then
+        return
+    end
+
     healthcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
@@ -657,7 +671,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx)
 end
 
 
@@ -722,8 +736,10 @@ function _M.http_control()
 end
 
 
-function _M.stream_init()
+function _M.stream_init(args)
     core.log.info("enter stream_init")
+
+    core.resolver.init_resolver(args)
 
     if core.config.init then
         local ok, err = core.config.init()
@@ -747,12 +763,13 @@ function _M.stream_init_worker()
 
     plugin.init_worker()
     router.stream_init_worker()
+    apisix_upstream.init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()
     end
 
-    load_balancer = require("apisix.balancer").run
+    load_balancer = require("apisix.balancer")
 
     local_conf = core.config.local_conf()
 end
@@ -781,11 +798,18 @@ function _M.stream_preread_phase()
         return ngx_exit(1)
     end
 
+
+    local up_id = matched_route.value.upstream_id
+    if up_id then
+        api_ctx.matched_upstream = get_upstream_by_id(up_id)
+    else
+        api_ctx.matched_upstream = matched_route.value.upstream
+    end
+
     local plugins = core.tablepool.fetch("plugins", 32, 0)
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
-    api_ctx.matched_upstream = matched_route.value.upstream
     api_ctx.conf_type = "stream/route"
     api_ctx.conf_version = matched_route.modifiedIndex
     api_ctx.conf_id = matched_route.value.id
@@ -797,6 +821,14 @@ function _M.stream_preread_phase()
         core.log.error("failed to set upstream: ", err)
         return ngx_exit(1)
     end
+
+    local server, err = load_balancer.pick_server(matched_route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return ngx_exit(1)
+    end
+
+    api_ctx.picked_server = server
 end
 
 
@@ -808,7 +840,7 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    load_balancer(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx)
 end
 
 

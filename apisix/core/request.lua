@@ -29,6 +29,8 @@ local io_open  = io.open
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 local req_get_body_file = ngx.req.get_body_file
+local req_get_uri_args = ngx.req.get_uri_args
+local req_set_uri_args = ngx.req.set_uri_args
 
 
 local _M = {}
@@ -119,6 +121,32 @@ function _M.get_remote_client_port(ctx)
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.remote_port)
+end
+
+
+function _M.get_uri_args(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+
+    if not ctx.req_uri_args then
+        -- use 0 to avoid truncated result and keep the behavior as the
+        -- same as other platforms
+        local args = req_get_uri_args(0)
+        ctx.req_uri_args = args
+    end
+
+    return ctx.req_uri_args
+end
+
+
+function _M.set_uri_args(ctx, args)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+
+    ctx.req_uri_args = nil
+    return req_set_uri_args(args)
 end
 
 

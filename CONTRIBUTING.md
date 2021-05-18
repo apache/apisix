@@ -56,7 +56,6 @@ Once we've discussed your changes and you've got your code ready, make sure that
     For linting both our Markdown and YAML files we use:
 
     - npm based [markdownlint-cli](https://www.npmjs.com/package/markdownlint-cli)
-    - [yamllint](https://yamllint.readthedocs.io/en/stable/) which can be installed in multiple ways
 
 * Active Voice
 

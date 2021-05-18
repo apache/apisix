@@ -205,25 +205,9 @@ do_install() {
 
     create_lua_deps
 
-    for (( i = 0; i < 10; i++ )); do
-        if [[ "$i" -eq 10 ]]; then
-            echo "failed to install luacheck in time"
-            cat build.log && exit 1
-            exit 1
-        fi
-        sudo luarocks install luacheck > build.log 2>&1 && break
-        i=$(( i + 1 ))
-    done
-
     ./utils/linux-install-etcd-client.sh
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    make utils
-
-    git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-    cp ci/ASF* ci/openwhisk-utilities/scancode/
-
-    ls -l ./
 }
 
 script() {
@@ -241,7 +225,6 @@ script() {
     sleep 1
     ./bin/apisix stop
     sleep 1
-    make lint && make license-check || exit 1
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 

@@ -95,7 +95,7 @@ local function aes_decrypt_pkey(origin)
 end
 
 
-function _M.validate(cert, key)
+local function validate(cert, key)
     local parsed_cert, err = ngx_ssl.parse_pem_cert(cert)
     if not parsed_cert then
         return nil, "failed to parse cert: " .. err
@@ -119,6 +119,7 @@ function _M.validate(cert, key)
     -- TODO: check if key & cert match
     return true
 end
+_M.validate = validate
 
 
 local function parse_pem_cert(sni, cert)
@@ -157,8 +158,50 @@ function _M.fetch_pkey(sni, pkey)
 end
 
 
-function _M.support_client_verification()
+local function support_client_verification()
     return ngx_ssl.verify_client ~= nil
+end
+_M.support_client_verification = support_client_verification
+
+
+function _M.check_ssl_conf(in_dp, conf)
+    if not in_dp then
+        local ok, err = core.schema.check(core.schema.ssl, conf)
+        if not ok then
+            return nil, "invalid configuration: " .. err
+        end
+    end
+
+    local ok, err = validate(conf.cert, conf.key)
+    if not ok then
+        return nil, err
+    end
+
+    local numcerts = conf.certs and #conf.certs or 0
+    local numkeys = conf.keys and #conf.keys or 0
+    if numcerts ~= numkeys then
+        return nil, "mismatched number of certs and keys"
+    end
+
+    for i = 1, numcerts do
+        local ok, err = validate(conf.certs[i], conf.keys[i])
+        if not ok then
+            return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+        end
+    end
+
+    if conf.client then
+        if not support_client_verification() then
+            return nil, "client tls verify unsupported"
+        end
+
+        local ok, err = validate(conf.client.ca, nil)
+        if not ok then
+            return nil, "failed to validate client_cert: " .. err
+        end
+    end
+
+    return true
 end
 
 

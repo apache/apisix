@@ -87,7 +87,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | query    | object                      | 可选   |        |        | 给所有请求都携带的 `QueryString` |
 | headers  | object                      | 可选   |        |        | 给所有请求都携带的 `Header`      |
 | timeout  | number                      | 可选   | 30000  |        | 聚合请求的超时时间，单位为 `ms`  |
-| pipeline | [HttpRequest](#HttpRequest) | 必须   |        |        | Http 请求的详细信息              |
+| pipeline | [HttpRequest](#httprequest) | 必须   |        |        | Http 请求的详细信息              |
 
 #### HttpRequest
 
@@ -103,7 +103,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 ### 接口响应参数：
 
-返回值为一个 [HttpResponse](#HttpResponse) 的 `数组`。
+返回值为一个 [HttpResponse](#httpresponse) 的 `数组`。
 
 #### HttpResponse
 

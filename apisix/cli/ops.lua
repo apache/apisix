@@ -19,6 +19,7 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local html_page = require("apisix.cli.html_page")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -545,6 +546,16 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+    for i, r in ipairs(sys_conf["dns_resolver"]) do
+        if r:match(":[^:]*:") then
+            -- more than one colon, is IPv6
+            if r:byte(1) ~= str_byte('[') then
+                -- ensure IPv6 address is always wrapped in []
+                sys_conf["dns_resolver"][i] = "[" .. r .. "]"
+            end
+        end
+    end
+
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
@@ -585,6 +596,14 @@ Please modify "admin_key" in conf/config.yaml .
                                     ngxconf)
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
+    end
+
+    local cmd_html = "mkdir -p " .. env.apisix_home .. "/html"
+    util.execute_cmd(cmd_html)
+
+    local ok, err = util.write_file(env.apisix_home .. "/html/50x.html", html_page)
+    if not ok then
+        util.die("failed to write 50x.html: ", err, "\n")
     end
 end
 
