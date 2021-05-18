@@ -260,7 +260,7 @@ release-src: compress-tar
 	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
 	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
 
-.PHONY: compress-tar 
+.PHONY: compress-tar
 compress-tar:
 	tar -zcvf $(RELEASE_SRC).tgz \
 	./apisix \
