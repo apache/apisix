@@ -230,6 +230,12 @@ end
 
 
 local function set_upstream_host(api_ctx, picked_server)
+    local up_conf = api_ctx.upstream_conf
+    if up_conf.pass_host then
+        api_ctx.pass_host = up_conf.pass_host
+        api_ctx.upstream_host = up_conf.upstream_host
+    end
+
     local pass_host = api_ctx.pass_host or "pass"
     if pass_host == "pass" then
         return
@@ -240,7 +246,6 @@ local function set_upstream_host(api_ctx, picked_server)
         return
     end
 
-    local up_conf = api_ctx.upstream_conf
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
@@ -427,11 +432,6 @@ function _M.http_access_phase()
         local upstream = get_upstream_by_id(up_id)
         api_ctx.matched_upstream = upstream
 
-        if upstream and upstream.pass_host then
-            api_ctx.pass_host = upstream.pass_host
-            api_ctx.upstream_host = upstream.upstream_host
-        end
-
     else
         if route.has_domain then
             local err
@@ -448,11 +448,6 @@ function _M.http_access_phase()
         local route_val = route.value
         if route_val.upstream and route_val.upstream.enable_websocket then
             enable_websocket = true
-        end
-
-        if route_val.upstream and route_val.upstream.pass_host then
-            api_ctx.pass_host = route_val.upstream.pass_host
-            api_ctx.upstream_host = route_val.upstream.upstream_host
         end
 
         api_ctx.matched_upstream = (route.dns_value and
