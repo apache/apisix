@@ -161,3 +161,15 @@ Content-Type: text/html
 有些功能需要你引入额外的 Nginx 模块到 OpenResty 当中。
 如果你需要这些功能，你可以用[这个脚本](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh)
 构建 OpenResty。
+
+## 7. 为 APISIX 添加 systemd 配置文件
+
+如果通过 rpm 包安装 APISIX，配置文件已经自动安装到位，你可以直接运行
+
+```
+$ systemctl start apisix
+$ systemctl stop apisix
+$ systemctl enable apisix
+```
+
+如果通过其他方法安装，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service`。
