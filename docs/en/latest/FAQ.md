@@ -481,4 +481,4 @@ apisix:
 
 Restart or reload APISIX, all IPs can access the `Admin API`.
 
-**Note: You can use this method in a non-production environment to allow all IPs to access your `Apache APISIX` instance, but it is not safe to use it in a production environment. In production, please only authorize specific IP addresses or address ranges to access your instance.**
+**Note: You can use this method in a non-production environment to allow all clients from anywhere to access your `Apache APISIX` instances, but it is not safe to use it in a production environment. In production environment, please only authorize specific IP addresses or address ranges to access your instance.**
