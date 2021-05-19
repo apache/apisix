@@ -299,13 +299,6 @@ http {
         location @50x.html {
             set $from_error_page 'true';
             try_files /50x.html $uri;
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
         }
     }
     {% end %}
@@ -388,13 +381,6 @@ http {
         location @50x.html {
             set $from_error_page 'true';
             try_files /50x.html $uri;
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
         }
     }
     {% end %}
