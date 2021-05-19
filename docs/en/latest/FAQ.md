@@ -306,6 +306,11 @@ Note this option is not shown in the output of `etcd --help`.
 }
 ```
 
+```yml
+# etcd.conf.yml
+enable-grpc-gateway: true
+```
+
 Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.
 
 ## How to set up high available Apache APISIX clusters?
