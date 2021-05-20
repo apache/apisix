@@ -157,6 +157,21 @@ local function get_token_param(base_uri, username, password)
     return '&accessToken=' .. data.accessToken
 end
 
+local function get_group_and_namespace_param(service_info)
+    if not service_info then
+        return ''
+    end
+    local param = ''
+    local namespace_id = service_info.namespace_id
+    if namespace_id then
+        param = '&namespaceId=' .. namespace_id
+    end
+    local group_name = service_info.group_name
+    if group_name then
+        param = param .. '&groupName=' .. group_name
+    end
+    return param
+end
 
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
@@ -208,7 +223,11 @@ local function iter_and_add_service(services, values)
         end
 
         if up.discovery_type == 'nacos' then
-            core.table.insert(services, up.service_name)
+            core.table.insert(services, {
+                service_name=up.service_name,
+                namespace_id=up.namespace_id,
+                group_name=up.group_name
+            })
         end
         ::CONTINUE::
     end
@@ -222,7 +241,6 @@ local function get_nacos_services()
     local get_upstreams = require('apisix.upstream').upstreams
     local get_routes = require('apisix.router').http_routes
     local get_services = require('apisix.http.service').services
-
     local values = get_upstreams()
     iter_and_add_service(services, values)
     values = get_routes()
@@ -254,10 +272,10 @@ local function fetch_full_registry(premature)
         applications = up_apps
         return
     end
-
     local data, err
-    for _, service_name in ipairs(infos) do
-        data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
+    for _, service_info in ipairs(infos) do
+        local group_and_namespace_param = get_group_and_namespace_param(service_info);
+        data, err = get_url(base_uri, instance_list_path .. service_info.service_name .. group_and_namespace_param .. token_param)
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
             if not applications then
@@ -267,10 +285,10 @@ local function fetch_full_registry(premature)
         end
 
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[service_name]
+            local nodes = up_apps[service_info.service_name]
             if not nodes then
                 nodes = {}
-                up_apps[service_name] = nodes
+                up_apps[service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
