@@ -34,7 +34,7 @@ title: prometheus
 插件会增加 `/apisix/prometheus/metrics` 这个接口。
 
 指标默认会通过独立的服务地址暴露。
-默认情况下，这个地址是 `127.0.0.1:9091`。你可以在 `conf/config.yaml` 里面修改它，比如：
+默认情况下，这个地址是 `127.0.0.1:9080`。你可以在 `conf/config.yaml` 里面修改它，比如：
 
 ```
 plugin_attr:
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
 
 ```
-curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
 把该 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
@@ -107,7 +107,7 @@ scrape_configs:
   - job_name: "apisix"
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-      - targets: ["127.0.0.1:9091"]
+      - targets: ["127.0.0.1:9080"]
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:
@@ -189,7 +189,7 @@ plugin_attr:
 这里是 APISIX 的原始的指标数据集:
 
 ```shell
-$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
+$ curl http://127.0.0.1:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
 apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
