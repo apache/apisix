@@ -65,7 +65,7 @@ title: CHANGELOG
 - :sunrise: redirect 插件，支持编码 uri [#4244](https://github.com/apache/apisix/pull/4244)
 - :sunrise: key-auth 插件: 支持自定义鉴权头 [#4013](https://github.com/apache/apisix/pull/4013)
 - :sunrise: response-rewrite 插件: 允许在 header 里面使用变量 [#4194](https://github.com/apache/apisix/pull/4194)
-- :sunrise: 实现 ext-plugin 第一版 [#4183](https://github.com/apache/apisix/pull/4183)
+- :sunrise: 实现 ext-plugin 第一版，APISIX 现在支持使用其他语言编写自定义插件 [#4183](https://github.com/apache/apisix/pull/4183)
 
 ### Bugfix
 
