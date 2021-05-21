@@ -612,7 +612,9 @@ local function setup_runner(cmd)
                 core.log.error("post event failure with ", events_list._source, ", error: ", err)
             end
 
-            core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
+            core.log.warn("respawn runner 3 seconds later with cmd: ", core.json.encode(cmd))
+            core.utils.sleep(3)
+            core.log.warn("respawning new runner...")
             proc = spawn_proc(cmd)
         end
     end)
