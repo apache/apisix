@@ -64,7 +64,7 @@ title: Changelog
 
 - :sunrise: feat(redirect): support uri encoding [#4244](https://github.com/apache/apisix/pull/4244)
 - :sunrise: feat(key-auth): allow customizing header [#4013](https://github.com/apache/apisix/pull/4013)
-- :sunrise: feat(reponse-rewrite): allow using variable in the header [#4194](https://github.com/apache/apisix/pull/4194)
+- :sunrise: feat(response-rewrite): allow using variable in the header [#4194](https://github.com/apache/apisix/pull/4194)
 - :sunrise: feat(ext-plugin): finish the first version [#4183](https://github.com/apache/apisix/pull/4183)
 
 ### Bugfix
