@@ -208,7 +208,7 @@ EXPIRE 3600
     }
 --- error_log
 runner exited with reason: exit, status: 111
-respawn runner with cmd: ["t\/plugin\/ext-plugin\/runner.sh","0.1"]
+respawn runner 3 seconds later with cmd: ["t\/plugin\/ext-plugin\/runner.sh","0.1"]
 
 
 
