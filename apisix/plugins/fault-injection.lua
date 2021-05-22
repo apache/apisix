@@ -36,7 +36,7 @@ local schema = {
                 vars = {
                     type = "array",
                     maxItems = 20,
-                    item = {
+                    items = {
                         type = "array",
                     },
                 }
@@ -51,7 +51,7 @@ local schema = {
                 vars = {
                     type = "array",
                     maxItems = 20,
-                    item = {
+                    items = {
                         type = "array",
                     },
                 }
