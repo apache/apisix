@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.6.0](#260)
 - [2.5.0](#250)
 - [2.4.0](#240)
 - [2.3.0](#230)
@@ -40,6 +41,41 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.6.0
+
+### Change
+
+- 更改 prometheus 里面关于 latency 的指标的 label [#3993](https://github.com/apache/apisix/pull/3993)
+- 修改 prometheus 默认端口，不再暴露到数据面的端口上 [#3994](https://github.com/apache/apisix/pull/3994)
+- limit-count 里面如果使用 redis cluster，需要指定名称 [#3910](https://github.com/apache/apisix/pull/3910)
+- 不再支持 OpenResty 1.15 [#3960](https://github.com/apache/apisix/pull/3960)
+
+### Core
+
+- :sunrise: 允许 paas_host 为 node 时，upstream 配置多个节点 [#4208](https://github.com/apache/apisix/pull/4208)
+- :sunrise: 自定义 500 错误页 [#4164](https://github.com/apache/apisix/pull/4164)
+- :sunrise: stream_route 中支持 upstream_id [#4121](https://github.com/apache/apisix/pull/4121)
+- :sunrise: 支持客户端证书认证 [#4034](https://github.com/apache/apisix/pull/4034)
+- :sunrise: 实验性支持 nacos 服务发现 [#3820](https://github.com/apache/apisix/pull/3820)
+- :sunrise: 给 tcp.sock.connect 打补丁，采用配置的 DNS resolver [#4114](https://github.com/apache/apisix/pull/4114)
+
+### Plugin
+
+- :sunrise: redirect 插件，支持编码 uri [#4244](https://github.com/apache/apisix/pull/4244)
+- :sunrise: key-auth 插件: 支持自定义鉴权头 [#4013](https://github.com/apache/apisix/pull/4013)
+- :sunrise: response-rewrite 插件: 允许在 header 里面使用变量 [#4194](https://github.com/apache/apisix/pull/4194)
+- :sunrise: 实现 ext-plugin 第一版，APISIX 现在支持使用其他语言编写自定义插件 [#4183](https://github.com/apache/apisix/pull/4183)
+
+### Bugfix
+
+- 支持 IPv6 DNS resolver [#4242](https://github.com/apache/apisix/pull/4242)
+- 修复被动健康检查可能重复报告的问题 [#4116](https://github.com/apache/apisix/pull/4116)
+- 修复 traffic-split 中偶发的规则紊乱 [#4092](https://github.com/apache/apisix/pull/4092)
+- 修复带域名的 upstream 配置的访问问题 [#4061](https://github.com/apache/apisix/pull/4061)
+- 修复 2.5 版本的 APISIX 无法识别之前版本的 route 配置的问题 [#4056](https://github.com/apache/apisix/pull/4056)
+- standalone 模式下，启动程序时应该可以读取配置 [#4027](https://github.com/apache/apisix/pull/4027)
+- limit-count 插件 redis 模式下原子化计数操作 [#3991](https://github.com/apache/apisix/pull/3991)
 
 ## 2.5.0
 
