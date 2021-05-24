@@ -73,7 +73,7 @@ local _M = {
 }
 ```
 
-注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同，您可以使用 [control API](../../en/latest/control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的[确定执行阶段](#确定执行阶段)这一节。
+注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同，您可以使用 [control API](../../en/latest/control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的[确定执行阶段](#确定执行阶段)这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
 
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 

@@ -235,54 +235,55 @@ graphql:
 #ext-plugin:
   #cmd: ["ls", "-l"]
 
-plugins:                          # plugin list (sorted in alphabetical order)
-  - api-breaker
-  - authz-keycloak
-  - basic-auth
-  - batch-requests
-  - consumer-restriction
-  - cors
-  #- dubbo-proxy
-  - echo
-  #- error-log-logger
-  #- example-plugin
-  - ext-plugin-pre-req
-  - ext-plugin-post-req
-  - fault-injection
-  - grpc-transcode
-  - hmac-auth
-  - http-logger
-  - ip-restriction
-  - jwt-auth
-  - kafka-logger
-  - key-auth
-  - limit-conn
-  - limit-count
-  - limit-req
-  #- log-rotate
-  #- node-status
-  - openid-connect
-  - prometheus
-  - proxy-cache
-  - proxy-mirror
-  - proxy-rewrite
-  - redirect
-  - referer-restriction
-  - request-id
-  - request-validation
-  - response-rewrite
-  - serverless-post-function
-  - serverless-pre-function
-  #- skywalking
-  - sls-logger
-  - syslog
-  - tcp-logger
-  - udp-logger
-  - uri-blocker
-  - wolf-rbac
-  - zipkin
-  - server-info
-  - traffic-split
+plugins:                          # plugin list (sorted by priority)
+  - ext-plugin-pre-req             # priority: 12000
+  - zipkin                         # priority: 11011
+  - request-id                     # priority: 11010
+  - fault-injection                # priority: 11000
+  - serverless-pre-function        # priority: 10000
+  - batch-requests                 # priority: 4010
+  - cors                           # priority: 4000
+  - ip-restriction                 # priority: 3000
+  - referer-restriction            # priority: 2990
+  - uri-blocker                    # priority: 2900
+  - request-validation             # priority: 2800
+  - openid-connect                 # priority: 2599
+  - wolf-rbac                      # priority: 2555
+  - hmac-auth                      # priority: 2530
+  - basic-auth                     # priority: 2520
+  - jwt-auth                       # priority: 2510
+  - key-auth                       # priority: 2500
+  - consumer-restriction           # priority: 2400
+  - authz-keycloak                 # priority: 2000
+  #- error-log-logger              # priority: 1091
+  - proxy-mirror                   # priority: 1010
+  - proxy-cache                    # priority: 1009
+  - proxy-rewrite                  # priority: 1008
+  - api-breaker                    # priority: 1005
+  - limit-conn                     # priority: 1003
+  - limit-count                    # priority: 1002
+  - limit-req                      # priority: 1001
+  #- node-status                   # priority: 1000
+  - server-info                    # priority: 990
+  - traffic-split                  # priority: 966
+  - redirect                       # priority: 900
+  - response-rewrite               # priority: 899
+  #- dubbo-proxy                   # priority: 507
+  - grpc-transcode                 # priority: 506
+  - prometheus                     # priority: 500
+  - echo                           # priority: 412
+  - http-logger                    # priority: 410
+  - sls-logger                     # priority: 406
+  - tcp-logger                     # priority: 405
+  - kafka-logger                   # priority: 403
+  - syslog                         # priority: 401
+  - udp-logger                     # priority: 400
+  #- log-rotate                    # priority: 100
+  # <- recommend to use priority (0, 100) for your custom plugins
+  - example-plugin                 # priority: 0
+  #- skywalking                    # priority: -1100
+  - serverless-post-function       # priority: -2000
+  - ext-plugin-post-req            # priority: -3000
 
 stream_plugins:
   - mqtt-proxy
