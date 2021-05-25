@@ -500,4 +500,4 @@ $ acme.sh --renew --domain demo.domain
 
 ```
 
-详细步骤，可以参考我的博客 https://juejin.cn/post/6965778290619449351
+详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
