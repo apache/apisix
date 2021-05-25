@@ -32,6 +32,7 @@ URI 重定向插件。
 | regex_uri | array[string] | 可选        |         |                   | 转发到上游的新 `uri` 地址, 使用正则表达式匹配来自客户端的 `uri`，当匹配成功后使用模板替换发送重定向到客户端, 未匹配成功时将客户端请求的 `uri` 转发至上游。`uri` 和 `regex_uri` 不可以同时存在。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后发送重定向到客户端的 `uri` 模板。 |
 | ret_code      | integer | 可选        | 302     | [200, ...] | 请求响应码                                                                                                                                                                                                                    |
 | encode_uri    | boolean | 可选        | false   |       | 当设置为 `true` 时，对返回的 `Location` header进行编码，编码格式参考 [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986) |
+| append_query_string    | boolean | optional    | false   |       | 当设置为`true`时，将请求url的query部分添加到Location里。如果在`uri`或`regex_uri`中配置了query, 那么请求的query会被追加在这个query后，以`&`分隔。 注意：如果已经处理了query，比如使用了nginx变量`$request_uri`，那么启用此功能会造成query重复 |
 
 `http_to_https`，`uri` 或 `regex_uri` 三个中只能配置一个。
 
