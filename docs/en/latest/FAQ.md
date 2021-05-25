@@ -497,10 +497,10 @@ $ curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist
 
 $ chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
 
-$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "~/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
+$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "/root/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
 
 $ acme.sh --renew --domain demo.domain
 
 ```
 
-My blog https://juejin.cn/post/6965778290619449351 has detail setup.
+Blog https://juejin.cn/post/6965778290619449351 has detail setup.
