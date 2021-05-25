@@ -910,3 +910,93 @@ Location: /hello/with%20space
 --- error_code: 301
 --- no_error_log
 [error]
+
+
+
+=== TEST 37: add plugin with new uri: $uri (append_query_string = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "uri": "$uri",
+                            "ret_code": 302,
+                            "append_query_string": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: redirect
+--- request
+GET /hello?name=json
+--- response_headers
+Location: /hello?name=json
+--- error_code: 302
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: add plugin with new uri: $uri?type=string (append_query_string = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "uri": "$uri?type=string",
+                            "ret_code": 302,
+                            "append_query_string": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: redirect
+--- request
+GET /hello?name=json
+--- response_headers
+Location: /hello?type=string&name=json
+--- error_code: 302
+--- no_error_log
+[error]
