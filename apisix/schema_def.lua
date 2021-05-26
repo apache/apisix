@@ -389,6 +389,16 @@ local upstream_schema = {
             description = "discovery type",
             type = "string",
         },
+        discovery_host = {
+            description = "discovery host",
+            type = "array",
+            items = {
+                description = "host",
+                type = "string",
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
         namespace_id = {
             description = "nacos namespace id",
             type = "string",

@@ -99,3 +99,97 @@ The format response as below:
   "action": "set"
 }
 ```
+
+example of routing a request with a URL of "/nacosWithNamespaceIdAndGroupId/*" to a service which name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test&namespaceId=test" and use nacos discovery client in the registry :
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/nacosWithNamespaceIdAndGroupId/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "namespace_id": "test",
+        "group_name":"test"
+    }
+}'
+```
+
+The format response as below:
+
+```json
+{
+  "node": {
+    "key": "\/apisix\/routes\/2",
+    "value": {
+      "id": "1",
+      "create_time": 1615796097,
+      "status": 1,
+      "update_time": 1615799165,
+      "upstream": {
+        "hash_on": "vars",
+        "pass_host": "pass",
+        "scheme": "http",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "namespace_id": "test",
+        "group_name": "test"
+      },
+      "priority": 0,
+      "uri": "\/nacosWithNamespaceIdAndGroupId\/*"
+    }
+  },
+  "action": "set"
+}
+```
+
+example to use other nacos host
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/nacosWithOtherHost/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "namespace_id": "test",
+        "group_name":"test",
+        "discovery_host": ["http://nacos:nacos@$192.168.33.1:8848"]
+    }
+}'
+```
+
+The format response as below:
+
+```json
+{
+  "node": {
+    "key": "\/apisix\/routes\/3",
+    "value": {
+      "id": "1",
+      "create_time": 1615796097,
+      "status": 1,
+      "update_time": 1615799165,
+      "upstream": {
+        "discovery_host": [
+          "http://nacos:nacos@192.168.33.1:8848"
+        ],
+        "hash_on": "vars",
+        "pass_host": "pass",
+        "scheme": "http",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "namespace_id": "test",
+        "group_name": "test"
+      },
+      "priority": 0,
+      "uri": "\/nacosWithOtherHost\/*"
+    }
+  },
+  "action": "set"
+}
+```

@@ -173,8 +173,7 @@ local function get_group_and_namespace_param(service_info)
     return param
 end
 
-local function get_base_uri()
-    local host = local_conf.discovery.nacos.host
+local function get_base_uri(host)
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
     local auth_idx = str_find(url, '@')
@@ -226,7 +225,8 @@ local function iter_and_add_service(services, values)
             core.table.insert(services, {
                 service_name=up.service_name,
                 namespace_id=up.namespace_id,
-                group_name=up.group_name
+                group_name=up.group_name,
+                discovery_host=up.discovery_host
             })
         end
         ::CONTINUE::
@@ -257,25 +257,34 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = {}
-    local base_uri, username, password = get_base_uri()
-    local token_param, err = get_token_param(base_uri, username, password)
-    if err then
-        log.error('get_token_param error:', err)
-        if not applications then
-            applications = up_apps
-        end
-        return
-    end
 
     local infos = get_nacos_services()
     if #infos == 0 then
         applications = up_apps
         return
     end
+    local token_param_map = {}
     local data, err
     for _, service_info in ipairs(infos) do
         local group_and_namespace_param = get_group_and_namespace_param(service_info);
-        data, err = get_url(base_uri, instance_list_path .. service_info.service_name .. group_and_namespace_param .. token_param)
+        local md5_sum = ngx.md5(core.table.concat(service_info.discovery_host))
+        if not token_param_map[md5_sum] then
+            if not service_info.discovery_host then
+                service_info.discovery_host = local_conf.discovery.nacos.host
+            end
+            local base_uri, username, password = get_base_uri(service_info.discovery_host)
+            local token_param, err = get_token_param(base_uri, username, password)
+            if err then
+                log.error('get_token_param error:', err)
+                if not applications then
+                    applications = up_apps
+                end
+                return
+            end
+            token_param_map[md5_sum] = { base_uri = base_uri, token_param = token_param}
+        end
+
+        data, err = get_url(token_param_map[md5_sum].base_uri, instance_list_path .. service_info.service_name .. group_and_namespace_param .. token_param_map[md5_sum].token_param)
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
             if not applications then
@@ -321,7 +330,7 @@ end
 function _M.init_worker()
     if not local_conf.discovery.nacos or
             not local_conf.discovery.nacos.host or #local_conf.discovery.nacos.host == 0 then
-        error('do not set nacos.host')
+        error('do not set default nacos.host')
         return
     end
 
