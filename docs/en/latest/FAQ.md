@@ -487,3 +487,18 @@ apisix:
 Restart or reload APISIX, all IPs can access the `Admin API`.
 
 **Note: You can use this method in a non-production environment to allow all clients from anywhere to access your `Apache APISIX` instances, but it is not safe to use it in a production environment. In production environment, please only authorize specific IP addresses or address ranges to access your instance.**
+
+## How to auto renew SSL cert via acme.sh
+
+```bash
+$ curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
+
+$ chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
+
+$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "/root/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
+
+$ acme.sh --renew --domain demo.domain
+
+```
+
+Blog https://juejin.cn/post/6965778290619449351 has detail setup.
