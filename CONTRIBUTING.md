@@ -103,39 +103,27 @@ Once we've discussed your changes and you've got your code ready, make sure that
         $ luarocks install luacheck
         # check source code
         $ make lint
-        luacheck -q lua
-        Total: 0 warnings / 0 errors in 74 files
-        ./utils/lj-releng \
-            apisix/*.lua \
-            apisix/admin/*.lua \
-            apisix/core/*.lua \
-            apisix/http/*.lua \
-            apisix/http/router/*.lua \
-            apisix/plugins/*.lua \
-            apisix/plugins/grpc-transcode/*.lua \
-            apisix/plugins/limit-count/*.lua > \
-            /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+        ./utils/check-lua-code-style.sh
+        + luacheck -q apisix t/lib
+        Total: 0 warnings / 0 errors in 146 files
+        + find apisix -name *.lua ! -wholename apisix/cli/ngx_tpl.lua -exec ./utils/lj-releng {} +
+        + grep -E ERROR.*.lua: /tmp/check.log
+        + true
+        + [ -s /tmp/error.log ]
+        ./utils/check-test-code-style.sh
+        + find t -name '*.t' -exec grep -E '\-\-\-\s+(SKIP|ONLY|LAST|FIRST)$' '{}' +
+        + true
+        + '[' -s /tmp/error.log ']'
+        + find t -name '*.t' -exec ./utils/reindex '{}' +
+        + grep done. /tmp/check.log
+        + true
+        + '[' -s /tmp/error.log ']'
 ```
 
-      The `lj-releng` will be downloaded automatically by `make lint` if not exists.
+      The `lj-releng` and `reindex` will be downloaded automatically by `make lint` if not exists.
 
 * test case style
-    * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
-
-```shell
-    # install `reindex` first before run it
-    # wget https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
-    # ./reindex test cases
-    $ reindex t/admin/*.t
-    reindex: t/plugin/example.t:	skipped.        # No changes needed
-    reindex: t/plugin/fault-injection.t:	done.   # updated
-    reindex: t/plugin/grpc-transcode.t:	skipped.
-    ... ...
-    reindex: t/plugin/udp-logger.t:	done.
-    reindex: t/plugin/zipkin.t:	skipped.
-```
-
-    * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
+    * Use tool to check your test case style statically by command, eg: `make lint`.
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
 
