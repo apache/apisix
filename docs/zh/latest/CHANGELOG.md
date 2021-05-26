@@ -53,7 +53,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: 允许 paas_host 为 node 时，upstream 配置多个节点 [#4208](https://github.com/apache/apisix/pull/4208)
+- :sunrise: 允许 pass_host 为 node 时，upstream 配置多个节点 [#4208](https://github.com/apache/apisix/pull/4208)
 - :sunrise: 自定义 500 错误页 [#4164](https://github.com/apache/apisix/pull/4164)
 - :sunrise: stream_route 中支持 upstream_id [#4121](https://github.com/apache/apisix/pull/4121)
 - :sunrise: 支持客户端证书认证 [#4034](https://github.com/apache/apisix/pull/4034)
