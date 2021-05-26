@@ -4,6 +4,7 @@ require (
 	github.com/chaos-mesh/chaos-mesh v1.1.1
 	github.com/gavv/httpexpect/v2 v2.1.0
 	github.com/onsi/gomega v1.9.0
+	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0

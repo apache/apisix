@@ -64,4 +64,31 @@ ensure_pods_ready() {
     done
 }
 
+port_forward() {
+    apisix_pod_name=$(kubectl get pod -l app=apisix-gw -o 'jsonpath={.items[0].metadata.name}')
+    nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
+    nohup kubectl port-forward $apisix_pod_name 9091:9091 >/dev/null 2>&1 &
+}
+
+restart_apisix() {
+    for proc in $(pgrep -f port-forward); do kill $proc; done
+    kubectl delete -f ../../../kubernetes/deployment.yaml
+    kubectl apply -f ../../../kubernetes/deployment.yaml
+    ensure_pods_ready apisix-gw "True" 30
+    port_forward
+}
+
+restart_etcd_and_apisix() {
+    for proc in $(pgrep -f port-forward); do kill $proc; done
+    #kubectl delete -f ../../../etcd-operator/example/example-etcd-cluster.yaml
+    #kubectl create -f ../../../etcd-operator/example/example-etcd-cluster.yaml
+    kubectl delete -f ~/etcd-operator/example/deployment.yaml
+    kubectl create -f ~/etcd-operator/example/deployment.yaml
+    ensure_pods_ready etcd-operator "True" 30
+    kubectl delete -f ~/etcd-operator/example/example-etcd-cluster.yaml
+    kubectl create -f ~/etcd-operator/example/example-etcd-cluster.yaml
+    ensure_pods_ready etcd "True True True" 30
+    restart_apisix
+}
+
 "$@"

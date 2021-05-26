@@ -15,11 +15,15 @@
  * limitations under the License.
  */
 
-package chaos
+package utils
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -29,18 +33,23 @@ import (
 )
 
 var (
-	token = "edd1c9f034335f136f87ad84b625c8f1"
-	host  = "http://127.0.0.1:9080"
+	token          = "edd1c9f034335f136f87ad84b625c8f1"
+	Host           = "http://127.0.0.1:9080"
+	HostPrometheus = "http://127.0.0.1:9091"
+
+	ReAPISIXFunc = "restart_apisix"
+	ReEtcdFunc   = "restart_etcd_and_apisix"
 )
 
 type httpTestCase struct {
-	E            *httpexpect.Expect
-	Method       string
-	Path         string
-	Body         string
-	Headers      map[string]string
-	ExpectStatus int
-	ExpectBody   string
+	E                 *httpexpect.Expect
+	Method            string
+	Path              string
+	Body              string
+	Headers           map[string]string
+	ExpectStatus      int
+	ExpectBody        string
+	ExpectStatusRange httpexpect.StatusRange
 }
 
 func caseCheck(tc httpTestCase) *httpexpect.Response {
@@ -51,6 +60,8 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 		req = e.GET(tc.Path)
 	case http.MethodPut:
 		req = e.PUT(tc.Path)
+	case http.MethodDelete:
+		req = e.DELETE(tc.Path)
 	default:
 		panic("invalid HTTP method")
 	}
@@ -70,6 +81,10 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 		resp.Status(tc.ExpectStatus)
 	}
 
+	if tc.ExpectStatusRange != 0 {
+		resp.StatusRange(tc.ExpectStatusRange)
+	}
+
 	if tc.ExpectBody != "" {
 		resp.Body().Contains(tc.ExpectBody)
 	}
@@ -77,7 +92,7 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	return resp
 }
 
-func setRoute(e *httpexpect.Expect, expectStatus int) {
+func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) {
 	caseCheck(httpTestCase{
 		E:       e,
 		Method:  http.MethodPut,
@@ -95,11 +110,11 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 				 "type": "roundrobin"
 			 }
 		 }`,
-		ExpectStatus: expectStatus,
+		ExpectStatusRange: expectStatusRange,
 	})
 }
 
-func getRoute(e *httpexpect.Expect, expectStatus int) {
+func GetRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
@@ -108,7 +123,7 @@ func getRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func getRouteList(e *httpexpect.Expect, expectStatus int) {
+func GetRouteList(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
@@ -119,7 +134,7 @@ func getRouteList(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func deleteRoute(e *httpexpect.Expect, expectStatus int) {
+func DeleteRoute(e *httpexpect.Expect, expectStatus int) {
 	caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodDelete,
@@ -129,7 +144,7 @@ func deleteRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func testPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
+func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 	caseCheck(httpTestCase{
 		E:          e,
 		Method:     http.MethodGet,
@@ -158,7 +173,7 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 	return targetSlice[1]
 }
 
-func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
+func GetIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
 	key := "apisix_bandwidth{type=\"ingress\","
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
@@ -176,7 +191,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, floa
 	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }
 
-func roughCompare(a float64, b float64) bool {
+func RoughCompare(a float64, b float64) bool {
 	ratio := a / b
 	if ratio < 1.3 && ratio > 0.7 {
 		return true
@@ -184,11 +199,36 @@ func roughCompare(a float64, b float64) bool {
 	return false
 }
 
+func RestartWithBash(g *WithT, funcName string) {
+	cmd := exec.Command("bash", "../utils/setup_chaos_utils.sh", funcName)
+
+	stdoutIn, _ := cmd.StdoutPipe()
+	stderrIn, _ := cmd.StderrPipe()
+
+	var errStdout, errStderr error
+	var stdoutBuf, stderrBuf bytes.Buffer
+	stdout := io.MultiWriter(os.Stdout, &stdoutBuf)
+	stderr := io.MultiWriter(os.Stderr, &stderrBuf)
+
+	err := cmd.Start()
+	g.Expect(err).To(BeNil())
+	go func() {
+		_, errStdout = io.Copy(stdout, stdoutIn)
+	}()
+	go func() {
+		_, errStderr = io.Copy(stderr, stderrIn)
+	}()
+	err = cmd.Wait()
+	g.Expect(err).To(BeNil())
+	g.Expect(errStdout).To(BeNil())
+	g.Expect(errStderr).To(BeNil())
+}
+
 type silentPrinter struct {
 	logger httpexpect.Logger
 }
 
-func newSilentPrinter(logger httpexpect.Logger) silentPrinter {
+func NewSilentPrinter(logger httpexpect.Logger) silentPrinter {
 	return silentPrinter{logger}
 }
 

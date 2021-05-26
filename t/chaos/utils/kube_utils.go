@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
-package chaos
+package utils
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -36,11 +38,11 @@ import (
 )
 
 type clientSet struct {
-	ctrlCli client.Client
-	kubeCli *kubernetes.Clientset
+	CtrlCli client.Client
+	KubeCli *kubernetes.Clientset
 }
 
-func initClientSet(g *WithT) *clientSet {
+func InitClientSet(g *WithT) *clientSet {
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
 	clientScheme.AddToScheme(scheme)
@@ -54,14 +56,14 @@ func initClientSet(g *WithT) *clientSet {
 	return &clientSet{ctrlCli, kubeCli}
 }
 
-func getPod(g *WithT, cli client.Client, ns string, listOption client.MatchingLabels) *corev1.Pod {
+func GetPod(g *WithT, cli client.Client, ns string, listOption client.MatchingLabels) *corev1.Pod {
 	podList := &corev1.PodList{}
 	err := cli.List(context.Background(), podList, client.InNamespace(ns), listOption)
 	g.Expect(err).To(BeNil())
 	return &podList.Items[0]
 }
 
-func execInPod(g *WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
+func ExecInPod(g *WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string) string {
 	name := pod.GetName()
 	namespace := pod.GetNamespace()
 	// only get the first container, no harm for now
@@ -99,4 +101,23 @@ func execInPod(g *WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string)
 		panic(fmt.Sprintf("error: %s\nin streaming remotecommand: pod: %s/%s, command: %s", err.Error(), namespace, pod.Name, cmd))
 	}
 	return stdout.String()
+}
+
+// Log print log of pod
+func Log(pod *corev1.Pod, c *kubernetes.Clientset) (string, error) {
+	podLogOpts := corev1.PodLogOptions{}
+
+	req := c.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	podLogs, err := req.Stream()
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to open log stream for pod %s/%s", pod.GetNamespace(), pod.GetName())
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to copy information from podLogs to buf")
+	}
+	return buf.String(), nil
 }

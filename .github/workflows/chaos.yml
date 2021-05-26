@@ -22,7 +22,7 @@ jobs:
 
       - name: Creating minikube cluster
         run: |
-          bash ./t/chaos/setup_chaos_utils.sh start_minikube
+          bash ./t/chaos/utils/setup_chaos_utils.sh start_minikube
           wget https://raw.githubusercontent.com/apache/apisix-docker/master/alpine-local/Dockerfile
           mkdir logs
           docker build -t apache/apisix:alpine-local --build-arg APISIX_PATH=. -f Dockerfile .
@@ -41,20 +41,20 @@ jobs:
           git clone https://github.com/api7/etcd-operator.git --depth 1
           bash etcd-operator/example/rbac/create_role.sh
           kubectl create -f etcd-operator/example/deployment.yaml
-          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready etcd-operator "True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd-operator "True" 30
           kubectl create -f etcd-operator/example/example-etcd-cluster.yaml
-          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready etcd "True True True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd "True True True" 30
 
       - name: Deploy APISIX
         run: |
-          bash ./t/chaos/setup_chaos_utils.sh modify_config
+          bash ./t/chaos/utils/setup_chaos_utils.sh modify_config
           kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
-          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready apisix-gw "True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready apisix-gw "True" 30
           kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
-          bash ./t/chaos/setup_chaos_utils.sh ensure_pods_ready httpbin "True" 30
-          nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready httpbin "True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh port_forward
 
       - name: Deploy Chaos mesh
         run: |
