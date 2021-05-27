@@ -51,7 +51,8 @@ local schema = {
             }
         },
         http_to_https = {type = "boolean"},
-        encode_uri = {type = "boolean", default = false}
+        encode_uri = {type = "boolean", default = false},
+        append_query_string = {type = "boolean", default = false},
     },
     oneOf = {
         {required = {"uri"}},
@@ -191,13 +192,21 @@ function _M.rewrite(conf, ctx)
             return
         end
 
+        local index = str_find(new_uri, "?")
         if conf.encode_uri then
-            local index = str_find(new_uri, "?")
             if index then
                 new_uri = core.utils.uri_safe_encode(str_sub(new_uri, 1, index-1)) ..
                           str_sub(new_uri, index)
             else
                 new_uri = core.utils.uri_safe_encode(new_uri)
+            end
+        end
+
+        if conf.append_query_string and ctx.var.is_args == "?" then
+            if index then
+                new_uri = new_uri .. "&" .. (ctx.var.args or "")
+            else
+                new_uri = new_uri .. "?" .. (ctx.var.args or "")
             end
         end
 

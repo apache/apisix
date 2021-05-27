@@ -93,7 +93,8 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	apisixPod := getPod(g, cliSet.ctrlCli, metav1.NamespaceDefault, listOption)
 
 	t.Run("error log not contains etcd error", func(t *testing.T) {
-		errorLog := execInPod(g, cliSet.kubeCli, apisixPod, "cat logs/error.log")
+		errorLog, err := log(apisixPod, cliSet.kubeCli)
+		g.Expect(err).To(BeNil())
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeFalse())
 	})
 
@@ -110,7 +111,8 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	testPrometheusEtcdMetric(e, 0)
 
 	t.Run("error log contains etcd error", func(t *testing.T) {
-		errorLog := execInPod(g, cliSet.kubeCli, apisixPod, "cat logs/error.log")
+		errorLog, err := log(apisixPod, cliSet.kubeCli)
+		g.Expect(err).To(BeNil())
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
