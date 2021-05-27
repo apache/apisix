@@ -286,8 +286,31 @@ local function post_reload_plugins()
 end
 
 
+local function plugins_eq(old, new)
+    local old_set = {}
+    for _, p in ipairs(old) do
+        old_set[p.name] = p
+    end
+
+    local new_set = {}
+    for _, p in ipairs(new) do
+        new_set[p.name] = p
+    end
+
+    return core.table.set_eq(old_set, new_set)
+end
+
+
 local function sync_local_conf_to_etcd()
     core.log.warn("sync local conf to etcd")
+
+    -- we can assume each admin has same configuration so there is no need
+    -- for transaction
+    local res, err = core.etcd.get("/plugins")
+    if not res then
+        core.log.error("failed to get current plugins: ", err)
+        return
+    end
 
     local local_conf = core.config.local_conf()
 
@@ -303,6 +326,10 @@ local function sync_local_conf_to_etcd()
             name = name,
             stream = true,
         })
+    end
+
+    if plugins_eq(res, plugins) then
+        core.log.info("plugins not changed, don't need to reset")
     end
 
     -- need to store all plugins name into one key so that it can be updated atomically
