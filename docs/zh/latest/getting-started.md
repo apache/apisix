@@ -134,7 +134,7 @@ Apache APISIX 是如何知道的呢？那是因为我们为 Route 对象配置�
 $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
-这将会被 Apache APISIX 转发到 `http://httpbin.org:80/getAll?limit=10`。
+这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
 
 ### 创建一个上游（Upstream）
 
@@ -150,18 +150,9 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f03
 }'
 ```
 
-我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游目标（后端服务），其 ID 为 `50`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
+我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游目标（后端服务），其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
 
 **注意：** 创建上游实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游。
-
-```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
-{
-  "uri": "/get",
-  "host": "httpbin.org",
-  "upstream_id": "1"
-}'
-```
 
 ### 路由与上游绑定
 

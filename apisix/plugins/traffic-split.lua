@@ -126,36 +126,21 @@ end
 
 
 local function parse_domain_for_node(node)
-    if not ipmatcher.parse_ipv4(node)
-       and not ipmatcher.parse_ipv6(node)
+    local host = node.host
+    if not ipmatcher.parse_ipv4(host)
+       and not ipmatcher.parse_ipv6(host)
     then
-        local ip, err = core.resolver.parse_domain(node)
+        node.domain = host
+
+        local ip, err = core.resolver.parse_domain(host)
         if ip then
-            return ip
+            node.host = ip
         end
 
         if err then
-            return nil, err
+            core.log.error("dns resolver domain: ", host, " error: ", err)
         end
     end
-
-    return node
-end
-
-
-local function set_pass_host(ctx, upstream_info, host)
-    local pass_host = upstream_info.pass_host or "pass"
-    if pass_host == "pass" then
-        return
-    end
-
-    if pass_host == "rewrite" then
-        ctx.var.upstream_host = upstream_info.upstream_host
-        return
-    end
-
-    -- only support single node for `node` mode currently
-    ctx.var.upstream_host = host
 end
 
 
@@ -164,31 +149,28 @@ local function set_upstream(upstream_info, ctx)
     local new_nodes = {}
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
-            set_pass_host(ctx, upstream_info, node.host)
-            node.host = parse_domain_for_node(node.host)
-            node.port = node.port
-            node.weight = node.weight
+            parse_domain_for_node(node)
             table_insert(new_nodes, node)
         end
     else
         for addr, weight in pairs(nodes) do
             local node = {}
-            local ip, port, host
+            local port, host
             host, port = core.utils.parse_addr(addr)
-            set_pass_host(ctx, upstream_info, host)
-            ip = parse_domain_for_node(host)
-            node.host = ip
+            node.host = host
+            parse_domain_for_node(node)
             node.port = port
             node.weight = weight
             table_insert(new_nodes, node)
         end
     end
-    core.log.info("upstream_host: ", ctx.var.upstream_host)
 
     local up_conf = {
         name = upstream_info.name,
         type = upstream_info.type,
         hash_on = upstream_info.hash_on,
+        pass_host = upstream_info.pass_host,
+        upstream_host = upstream_info.upstream_host,
         key = upstream_info.key,
         nodes = new_nodes,
         timeout = {

@@ -252,7 +252,9 @@ http {
             apisix.http_balancer_phase()
         }
 
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -297,13 +299,6 @@ http {
         location @50x.html {
             set $from_error_page 'true';
             try_files /50x.html $uri;
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
         }
     }
     {% end %}
@@ -386,13 +381,6 @@ http {
         location @50x.html {
             set $from_error_page 'true';
             try_files /50x.html $uri;
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
         }
     }
     {% end %}
@@ -502,6 +490,7 @@ http {
             set $upstream_host               $http_host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
+            set $from_error_page             '';
 
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
@@ -529,9 +518,6 @@ http {
 
             if ($http_x_forwarded_for != "") {
                 set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
-            }
-            if ($http_x_forwarded_proto != "") {
-                set $var_x_forwarded_proto $http_x_forwarded_proto;
             }
             if ($http_x_forwarded_host != "") {
                 set $var_x_forwarded_host $http_x_forwarded_host;

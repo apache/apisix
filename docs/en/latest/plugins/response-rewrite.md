@@ -51,7 +51,7 @@ response rewrite plugin, rewrite the content returned by the upstream as well as
 
 ## How To Enable
 
-Here's an example, enable the `response rewrite` plugin on the specified route:
+Here's an example, enable the `response-rewrite` plugin on the specified route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -103,11 +103,11 @@ X-Server-balancer_addr: 127.0.0.1:80
 {"code":"ok","message":"new json body"}
 ```
 
-This means that the `response rewrite` plugin is in effect.
+This means that the `response-rewrite` plugin is in effect.
 
 ## Disable Plugin
 
-When you want to disable the `response rewrite` plugin, it is very simple,
+When you want to disable the `response-rewrite` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
@@ -125,7 +125,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-The `response rewrite` plugin has been disabled now. It works for other plugins.
+The `response-rewrite` plugin has been disabled now. It works for other plugins.
 
 ## Attention
 

@@ -21,6 +21,8 @@
 
 There are some yaml files for deploying apisix in Kubernetes.
 
+**Note: You can also install Apache APISIX in Kubernetes by [Helm Chart](https://github.com/apache/apisix-helm-chart).**
+
 ### Prerequisites
 
 - use `etcd`, if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`

@@ -33,12 +33,12 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(UNAME), Darwin)
-LUAROCKS=luarocks --lua-dir=/usr/local/opt/lua@5.1
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
+LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl
 endif
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl111
 endif
 endif
 
@@ -236,6 +236,7 @@ install: default
 
 
 ### test:             Run the test case
+.PHONY: test
 test:
 	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
@@ -249,8 +250,8 @@ ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
 
+.PHONY: release-src
 release-src: compress-tar
-
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
 
@@ -259,6 +260,7 @@ release-src: compress-tar
 	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
 	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
 
+.PHONY: compress-tar
 compress-tar:
 	tar -zcvf $(RELEASE_SRC).tgz \
 	./apisix \
