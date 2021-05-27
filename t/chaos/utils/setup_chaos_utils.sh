@@ -72,8 +72,8 @@ port_forward() {
 
 restart_apisix() {
     for proc in $(pgrep -f port-forward); do kill $proc; done
-    kubectl delete -f ../../kubernetes/deployment.yaml
-    kubectl apply -f ../../kubernetes/deployment.yaml
+    kubectl delete -f ../../../kubernetes/deployment.yaml
+    kubectl apply -f ../../../kubernetes/deployment.yaml
     ensure_pods_ready apisix-gw "True" 30
     port_forward
 }

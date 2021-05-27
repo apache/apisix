@@ -69,9 +69,19 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	e := httpexpect.New(t, utils.Host)
 	ePrometheus := httpexpect.New(t, utils.HostPrometheus)
 	cliSet := utils.InitClientSet(g)
+	stopChan := make(chan bool)
 
 	defer func() {
 		t.Logf("restore test environment")
+
+		stopChan <- true
+		chaosList := &v1alpha1.PodChaosList{}
+		err := cliSet.CtrlCli.List(ctx, chaosList)
+		g.Expect(err).To(BeNil())
+		for _, chaos := range chaosList.Items {
+			cliSet.CtrlCli.Delete(ctx, &chaos)
+		}
+
 		utils.DeleteRoute(e)
 		utils.RestartWithBash(g, utils.ReEtcdFunc)
 	}()
@@ -100,6 +110,15 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		for {
 			go utils.GetRoute(eSilent, http.StatusOK)
 			time.Sleep(100 * time.Millisecond)
+			stopLoop := false
+			select {
+			case <-stopChan:
+				stopLoop = true
+			default:
+			}
+			if stopLoop {
+				break
+			}
 		}
 	}()
 	// wait 1 seconds to let first route access returns
@@ -121,14 +140,6 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(3 * time.Second)
-		defer func() {
-			chaosList := &v1alpha1.PodChaosList{}
-			err := cliSet.CtrlCli.List(ctx, chaosList)
-			g.Expect(err).To(BeNil())
-			for _, chaos := range chaosList.Items {
-				cliSet.CtrlCli.Delete(ctx, &chaos)
-			}
-		}()
 	})
 
 	// fail to set route since etcd is all killed

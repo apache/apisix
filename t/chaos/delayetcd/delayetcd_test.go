@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package etcddelay
+package delayetcd
 
 import (
 	"context"
@@ -73,6 +73,14 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 
 	defer func() {
 		t.Logf("restore test environment")
+
+		chaosList := &v1alpha1.NetworkChaosList{}
+		err := cliSet.CtrlCli.List(ctx, chaosList)
+		g.Expect(err).To(BeNil())
+		for _, chaos := range chaosList.Items {
+			cliSet.CtrlCli.Delete(ctx, &chaos)
+		}
+
 		utils.DeleteRoute(e)
 		utils.RestartWithBash(g, utils.ReAPISIXFunc)
 	}()
