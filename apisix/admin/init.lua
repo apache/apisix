@@ -301,17 +301,7 @@ local function plugins_eq(old, new)
 end
 
 
-local function sync_local_conf_to_etcd()
-    core.log.warn("sync local conf to etcd")
-
-    -- we can assume each admin has same configuration so there is no need
-    -- for transaction
-    local res, err = core.etcd.get("/plugins")
-    if not res then
-        core.log.error("failed to get current plugins: ", err)
-        return
-    end
-
+local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
     local plugins = {}
@@ -328,9 +318,31 @@ local function sync_local_conf_to_etcd()
         })
     end
 
-    if plugins_eq(res, plugins) then
-        core.log.info("plugins not changed, don't need to reset")
+    if reset then
+        local res, err = core.etcd.get("/plugins")
+        if (not res) or (res.status ~= 200) then
+            core.log.error("failed to get current plugins: ", err or res.body)
+            return
+        end
+
+        local stored_plugins = res.body.node.value
+        local revision = res.body.node.modifiedIndex
+        if plugins_eq(stored_plugins, plugins) then
+            core.log.info("plugins not changed, don't need to reset")
+            return
+        end
+
+        core.log.warn("sync local conf to etcd")
+
+        local res, err = core.etcd.atomic_set("/plugins", plugins, nil, revision)
+        if not res then
+            core.log.error("failed to set plugins: ", err)
+        end
+
+        return
     end
+
+    core.log.warn("sync local conf to etcd")
 
     -- need to store all plugins name into one key so that it can be updated atomically
     local res, err = core.etcd.set("/plugins", plugins)
@@ -391,7 +403,7 @@ function _M.init_worker()
                 return
             end
 
-            sync_local_conf_to_etcd()
+            sync_local_conf_to_etcd(true)
         end)
 
         if not ok then

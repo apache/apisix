@@ -56,6 +56,10 @@ location /t {
 GET /t
 --- response_body
 done
+--- grep_error_log eval
+qr/sync local conf to etcd/
+--- grep_error_log_out
+sync local conf to etcd
 --- error_log
 load plugin times: 2
 load plugin times: 2
