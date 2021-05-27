@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gavv/httpexpect/v2"
@@ -211,10 +212,16 @@ func RestartWithBash(g *WithT, funcName string) {
 
 	err := cmd.Start()
 	g.Expect(err).To(BeNil())
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		_, errStdout = io.Copy(stdout, stdoutIn)
 	}()
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		_, errStderr = io.Copy(stderr, stderrIn)
 	}()
 	err = cmd.Wait()
