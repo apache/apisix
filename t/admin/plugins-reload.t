@@ -82,8 +82,7 @@ location /t {
             automatic = true,
             single_item = true,
             filter = function(item)
-                -- called twice before reload,
-                -- one for worker start, another for sync data from admin
+                -- called once before reload for sync data from admin
                 ngx.log(ngx.WARN, "reload plugins on node ",
                         before_reload and "before reload" or "after reload")
                 ngx.log(ngx.WARN, require("toolkit.json").encode(item.value))
@@ -123,7 +122,6 @@ done
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out
-reload plugins on node before reload
 reload plugins on node before reload
 reload plugins on node after reload
 --- error_log
