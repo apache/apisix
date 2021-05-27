@@ -224,6 +224,8 @@ func RestartWithBash(g *WithT, funcName string) {
 		defer wg.Done()
 		_, errStderr = io.Copy(stderr, stderrIn)
 	}()
+	wg.Wait()
+
 	err = cmd.Wait()
 	g.Expect(err).To(BeNil())
 	g.Expect(errStdout).To(BeNil())
