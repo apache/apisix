@@ -18,6 +18,7 @@
 package killetcd
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -61,8 +62,8 @@ func createEtcdKillChaos() *v1alpha1.PodChaos {
 }
 
 func TestGetSuccessWhenEtcdKilled(t *testing.T) {
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	g := NewWithT(t)
 	e := httpexpect.New(t, utils.Host)
@@ -108,47 +109,45 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeFalse())
 	})
 
-	/*
-		// apply chaos to kill all etcd pods
-		t.Run("kill all etcd pods", func(t *testing.T) {
-			chaos := createEtcdKillChaos()
-			err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
+	// apply chaos to kill all etcd pods
+	t.Run("kill all etcd pods", func(t *testing.T) {
+		chaos := createEtcdKillChaos()
+		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
+		g.Expect(err).To(BeNil())
+		time.Sleep(3 * time.Second)
+		defer func() {
+			chaosList := &v1alpha1.PodChaosList{}
+			err := cliSet.CtrlCli.List(ctx, chaosList)
 			g.Expect(err).To(BeNil())
-			time.Sleep(3 * time.Second)
-			defer func() {
-				chaosList := &v1alpha1.PodChaosList{}
-				err := cliSet.CtrlCli.List(ctx, chaosList)
-				g.Expect(err).To(BeNil())
-				for _, chaos := range chaosList.Items {
-					cliSet.CtrlCli.Delete(ctx, &chaos)
-				}
-			}()
-		})
+			for _, chaos := range chaosList.Items {
+				cliSet.CtrlCli.Delete(ctx, &chaos)
+			}
+		}()
+	})
 
-		// fail to set route since etcd is all killed
-		// while get route could still succeed
+	// fail to set route since etcd is all killed
+	// while get route could still succeed
 
-		t.Run("get stats after kill etcd", func(t *testing.T) {
-			utils.SetRoute(e, httpexpect.Status5xx)
-			utils.GetRoute(e, http.StatusOK)
-			utils.TestPrometheusEtcdMetric(ePrometheus, 0)
+	t.Run("get stats after kill etcd", func(t *testing.T) {
+		utils.SetRoute(e, httpexpect.Status5xx)
+		utils.GetRoute(e, http.StatusOK)
+		utils.TestPrometheusEtcdMetric(ePrometheus, 0)
 
-			bandwidthAfter, durationAfter = utils.GetIngressBandwidthPerSecond(ePrometheus, g)
-			bpsAfter = bandwidthAfter / durationAfter
+		bandwidthAfter, durationAfter = utils.GetIngressBandwidthPerSecond(ePrometheus, g)
+		bpsAfter = bandwidthAfter / durationAfter
 
-			errorLog, err := utils.Log(apisixPod, cliSet.KubeCli)
-			g.Expect(err).To(BeNil())
-			g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
-		})
+		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli)
+		g.Expect(err).To(BeNil())
+		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
+	})
 
-		t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
-			t.Logf("bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)
-			t.Logf("duration before: %f, after: %f", durationBefore, durationAfter)
-			t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
-			g.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(BeTrue())
-		})
+	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
+		t.Logf("bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)
+		t.Logf("duration before: %f, after: %f", durationBefore, durationAfter)
+		t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
+		g.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(BeTrue())
+	})
 
-		t.Logf("restore test environment")
-		utils.RestartWithBash(g, utils.ReEtcdFunc)
-	*/
+	t.Logf("restore test environment")
+	utils.RestartWithBash(g, utils.ReEtcdFunc)
 }
