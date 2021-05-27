@@ -134,13 +134,12 @@ func GetRouteList(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func DeleteRoute(e *httpexpect.Expect, expectStatus int) {
+func DeleteRoute(e *httpexpect.Expect) {
 	caseCheck(httpTestCase{
-		E:            e,
-		Method:       http.MethodDelete,
-		Path:         "/apisix/admin/routes/1",
-		Headers:      map[string]string{"X-API-KEY": token},
-		ExpectStatus: expectStatus,
+		E:       e,
+		Method:  http.MethodDelete,
+		Path:    "/apisix/admin/routes/1",
+		Headers: map[string]string{"X-API-KEY": token},
 	})
 }
 

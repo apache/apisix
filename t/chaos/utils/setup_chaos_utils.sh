@@ -72,16 +72,14 @@ port_forward() {
 
 restart_apisix() {
     for proc in $(pgrep -f port-forward); do kill $proc; done
-    kubectl delete -f ../../../kubernetes/deployment.yaml
-    kubectl apply -f ../../../kubernetes/deployment.yaml
+    kubectl delete -f ../../kubernetes/deployment.yaml
+    kubectl apply -f ../../kubernetes/deployment.yaml
     ensure_pods_ready apisix-gw "True" 30
     port_forward
 }
 
 restart_etcd_and_apisix() {
     for proc in $(pgrep -f port-forward); do kill $proc; done
-    #kubectl delete -f ../../../etcd-operator/example/example-etcd-cluster.yaml
-    #kubectl create -f ../../../etcd-operator/example/example-etcd-cluster.yaml
     kubectl delete -f ~/etcd-operator/example/deployment.yaml
     kubectl create -f ~/etcd-operator/example/deployment.yaml
     ensure_pods_ready etcd-operator "True" 30

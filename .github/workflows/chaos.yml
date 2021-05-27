@@ -38,12 +38,13 @@ jobs:
 
       - name: Deploy Etcd Operator
         run: |
-          git clone https://github.com/api7/etcd-operator.git --depth 1
-          bash etcd-operator/example/rbac/create_role.sh
-          kubectl create -f etcd-operator/example/deployment.yaml
+          git clone https://github.com/api7/etcd-operator.git --depth 1 ~/etcd-operator
+          bash ~/etcd-operator/example/rbac/create_role.sh
+          kubectl create -f ~/etcd-operator/example/deployment.yaml
           bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd-operator "True" 30
-          kubectl create -f etcd-operator/example/example-etcd-cluster.yaml
+          kubectl create -f ~/etcd-operator/example/example-etcd-cluster.yaml
           bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd "True True True" 30
+
 
       - name: Deploy APISIX
         run: |
@@ -62,4 +63,4 @@ jobs:
 
       - name: run test
         working-directory: ./t/chaos
-        run: go test -v
+        run: go test -v -p 1 ./...

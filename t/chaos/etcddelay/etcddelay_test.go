@@ -71,6 +71,12 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 	e := httpexpect.New(t, utils.Host)
 	cliSet := utils.InitClientSet(g)
 
+	defer func() {
+		t.Logf("restore test environment")
+		utils.DeleteRoute(e)
+		utils.RestartWithBash(g, utils.ReAPISIXFunc)
+	}()
+
 	// check if everything works
 	utils.SetRoute(e, http.StatusCreated)
 	utils.GetRouteList(e, http.StatusOK)
@@ -145,8 +151,4 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 		err = cliSet.CtrlCli.Delete(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 	})
-
-	t.Logf("restore test environment")
-	utils.DeleteRoute(e, http.StatusOK)
-	utils.RestartWithBash(g, utils.ReAPISIXFunc)
 }

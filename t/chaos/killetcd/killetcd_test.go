@@ -70,6 +70,12 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	ePrometheus := httpexpect.New(t, utils.HostPrometheus)
 	cliSet := utils.InitClientSet(g)
 
+	defer func() {
+		t.Logf("restore test environment")
+		utils.DeleteRoute(e)
+		utils.RestartWithBash(g, utils.ReEtcdFunc)
+	}()
+
 	eSilent := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  utils.Host,
 		Reporter: httpexpect.NewAssertReporter(t),
@@ -147,7 +153,4 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
 		g.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(BeTrue())
 	})
-
-	t.Logf("restore test environment")
-	utils.RestartWithBash(g, utils.ReEtcdFunc)
 }
