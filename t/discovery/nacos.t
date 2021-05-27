@@ -251,3 +251,157 @@ discovery:
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: get APISIX-NACOS info from NACOS - no auth with namespace
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: error namespace_id - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: err_ns
+#END
+--- request
+GET /hello
+--- error_code: 503
+
+
+
+=== TEST 10: get APISIX-NACOS info from NACOS - configured in services with namespace
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with namespace
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_name": "APISIX-NACOS",
+                    "discovery_type": "nacos",
+                    "type": "roundrobin",
+                    "discovery_args": {
+                      "namespace_id": "test_ns"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit with namespace
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error]
