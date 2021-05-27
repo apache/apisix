@@ -124,7 +124,7 @@ The formatted response as below:
   "node": {
     "key": "\/apisix\/routes\/2",
     "value": {
-      "id": "1",
+      "id": "2",
       "create_time": 1615796097,
       "status": 1,
       "update_time": 1615799165,
@@ -141,6 +141,102 @@ The formatted response as below:
       },
       "priority": 0,
       "uri": "\/nacosWithNamespaceId\/*"
+    }
+  },
+  "action": "set"
+}
+```
+
+Example of routing a request with a URL of "/nacosWithGroupName/*" to a service which name, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group" and use nacos discovery client in the registry:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/nacosWithGroupName/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "group_name": "test_group"
+        }
+    }
+}'
+```
+
+The formatted response as below:
+
+```json
+{
+  "node": {
+    "key": "\/apisix\/routes\/3",
+    "value": {
+      "id": "3",
+      "create_time": 1615796097,
+      "status": 1,
+      "update_time": 1615799165,
+      "upstream": {
+        "hash_on": "vars",
+        "pass_host": "pass",
+        "scheme": "http",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "group_name": "test_group"
+        }
+      },
+      "priority": 0,
+      "uri": "\/nacosWithGroupName\/*"
+    }
+  },
+  "action": "set"
+}
+```
+
+Example of routing a request with a URL of "/nacosWithNamespaceIdAndGroupName/*" to a service which name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group" and use nacos discovery client in the registry:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/nacosWithNamespaceIdAndGroupName/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "namespace_id": "test_ns",
+          "group_name": "test_group"
+        }
+    }
+}'
+```
+
+The formatted response as below:
+
+```json
+{
+  "node": {
+    "key": "\/apisix\/routes\/4",
+    "value": {
+      "id": "4",
+      "create_time": 1615796097,
+      "status": 1,
+      "update_time": 1615799165,
+      "upstream": {
+        "hash_on": "vars",
+        "pass_host": "pass",
+        "scheme": "http",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "namespace_id": "test_ns",
+          "group_name": "test_group"
+        }
+      },
+      "priority": 0,
+      "uri": "\/nacosWithNamespaceIdAndGroupName\/*"
     }
   },
   "action": "set"
