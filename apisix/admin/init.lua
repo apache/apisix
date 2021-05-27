@@ -320,8 +320,18 @@ local function sync_local_conf_to_etcd(reset)
 
     if reset then
         local res, err = core.etcd.get("/plugins")
-        if (not res) or (res.status ~= 200) then
-            core.log.error("failed to get current plugins: ", err or res.body)
+        if not res then
+            core.log.error("failed to get current plugins: ", err)
+            return
+        end
+
+        if res.status == 404 then
+            -- nothing need to be reset
+            return
+        end
+
+        if res.status ~= 200 then
+            core.log.error("failed to get current plugins, status: ", res.status)
             return
         end
 
@@ -403,6 +413,7 @@ function _M.init_worker()
                 return
             end
 
+            -- try to reset the /plugins to the current configuration in the admin
             sync_local_conf_to_etcd(true)
         end)
 
