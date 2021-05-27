@@ -59,7 +59,7 @@ discovery:
 
 ### Upstream setting
 
-Here is an example of routing a request with a URL of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry :
+Here is an example of routing a request with a URL of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -73,7 +73,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The format response as below:
+The formatted response as below:
 
 ```json
 {
@@ -100,7 +100,7 @@ The format response as below:
 }
 ```
 
-Example of routing a request with a URL of "/nacosWithNamespaceId/*" to a service which name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry :
+Example of routing a request with a URL of "/nacosWithNamespaceId/*" to a service which name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -117,7 +117,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The format response as below:
+The formatted response as below:
 
 ```json
 {
