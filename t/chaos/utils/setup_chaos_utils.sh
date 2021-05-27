@@ -68,6 +68,7 @@ port_forward() {
     apisix_pod_name=$(kubectl get pod -l app=apisix-gw -o 'jsonpath={.items[0].metadata.name}')
     nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
     nohup kubectl port-forward $apisix_pod_name 9091:9091 >/dev/null 2>&1 &
+    ps aux | grep '[p]ort-forward'
 }
 
 restart_apisix() {
@@ -76,6 +77,7 @@ restart_apisix() {
     kubectl apply -f ../../../kubernetes/deployment.yaml
     ensure_pods_ready apisix-gw "True" 30
     port_forward
+    kubectl get pods
 }
 
 restart_etcd_and_apisix() {
