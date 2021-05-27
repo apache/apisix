@@ -55,7 +55,14 @@ wget https://raw.githubusercontent.com/api7/nacos-test-service/main/spring-nacos
 curl https://raw.githubusercontent.com/api7/nacos-test-service/main/Dockerfile | docker build -t nacos-test-service:1.0-SNAPSHOT -f - .
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
-url="127.0.0.1:18002/hello"
+# register nacos service with namespaceId=test_ns
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env SUFFIX_NUM=1 -p 18003:18001 --name nacos-service3 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with group=test_group
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with namespaceId=test_ns and group=test_group
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group --env SUFFIX_NUM=1 -p 18005:18001 --name nacos-service5 nacos-test-service:1.0-SNAPSHOT
+
+url="127.0.0.1:18005/hello"
 until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do
     echo 'wait nacos service...'
     sleep 1;
@@ -64,4 +71,17 @@ until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?pageNo=1&pageSize=2
     echo 'wait nacos reg...'
     sleep 1;
 done
+until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?groupName=test_group&pageNo=1&pageSize=2" | grep "APISIX-NACOS") ]]; do
+    echo 'wait nacos reg...'
+    sleep 1;
+done
+until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?groupName=DEFAULT_GROUP&namespaceId=test_ns&pageNo=1&pageSize=2" | grep "APISIX-NACOS") ]]; do
+    echo 'wait nacos reg...'
+    sleep 1;
+done
+until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?groupName=test_group&namespaceId=test_ns&pageNo=1&pageSize=2" | grep "APISIX-NACOS") ]]; do
+    echo 'wait nacos reg...'
+    sleep 1;
+done
+
 cd ..
