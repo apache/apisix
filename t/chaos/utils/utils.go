@@ -34,9 +34,8 @@ import (
 )
 
 var (
-	token          = "edd1c9f034335f136f87ad84b625c8f1"
-	Host           = "http://127.0.0.1:9080"
-	HostPrometheus = "http://127.0.0.1:9091"
+	token = "edd1c9f034335f136f87ad84b625c8f1"
+	Host  = "http://127.0.0.1:9080"
 
 	ReAPISIXFunc = "restart_apisix"
 	ReEtcdFunc   = "restart_etcd_and_apisix"

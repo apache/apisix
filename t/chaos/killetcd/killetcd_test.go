@@ -67,7 +67,6 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	g := NewWithT(t)
 	e := httpexpect.New(t, utils.Host)
-	ePrometheus := httpexpect.New(t, utils.HostPrometheus)
 	cliSet := utils.InitClientSet(g)
 	stopChan := make(chan bool)
 
@@ -102,7 +101,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		utils.GetRouteList(e, http.StatusOK)
 		time.Sleep(1 * time.Second)
 		utils.GetRoute(e, http.StatusOK)
-		utils.TestPrometheusEtcdMetric(ePrometheus, 1)
+		utils.TestPrometheusEtcdMetric(e, 1)
 	})
 
 	// run in background
@@ -125,7 +124,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	t.Run("get stats before kill etcd", func(t *testing.T) {
-		bandwidthBefore, durationBefore = utils.GetIngressBandwidthPerSecond(ePrometheus, g)
+		bandwidthBefore, durationBefore = utils.GetIngressBandwidthPerSecond(e, g)
 		bpsBefore = bandwidthBefore / durationBefore
 		g.Expect(bpsBefore).NotTo(BeZero())
 
@@ -148,9 +147,9 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	t.Run("get stats after kill etcd", func(t *testing.T) {
 		utils.SetRoute(e, httpexpect.Status5xx)
 		utils.GetRoute(e, http.StatusOK)
-		utils.TestPrometheusEtcdMetric(ePrometheus, 0)
+		utils.TestPrometheusEtcdMetric(e, 0)
 
-		bandwidthAfter, durationAfter = utils.GetIngressBandwidthPerSecond(ePrometheus, g)
+		bandwidthAfter, durationAfter = utils.GetIngressBandwidthPerSecond(e, g)
 		bpsAfter = bandwidthAfter / durationAfter
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli)
