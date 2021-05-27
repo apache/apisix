@@ -83,15 +83,6 @@ local schema = {
             },
             minItems = 1,
         },
-        extra_info = {
-            type = "array",
-            items = {
-                type = "string",
-                maxLength = 64,
-                minLength = 1,
-            },
-            minItems = 1,
-        }
     },
 }
 
