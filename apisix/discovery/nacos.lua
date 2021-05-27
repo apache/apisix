@@ -215,10 +215,15 @@ local function iter_and_add_service(services, values)
             up = conf
         end
 
+        local namespace_id
+        if up.discovery_args then
+            namespace_id = up.discovery_args.namespace_id
+        end
+
         if up.discovery_type == 'nacos' then
             core.table.insert(services, {
                 service_name = up.service_name,
-                nacos_namespace_id = up.nacos_namespace_id
+                namespace_id = namespace_id
             })
         end
         ::CONTINUE::
@@ -266,7 +271,7 @@ local function fetch_full_registry(premature)
     end
     local data, err
     for _, service_info in ipairs(infos) do
-        local namespace_param = get_namespace_param(service_info.nacos_namespace_id);
+        local namespace_param = get_namespace_param(service_info.namespace_id);
         data, err = get_url(base_uri, instance_list_path .. service_info.service_name
                             .. token_param .. namespace_param)
         if err then

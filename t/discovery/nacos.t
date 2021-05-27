@@ -264,7 +264,8 @@ routes:
       service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
-      nacos_namespace_id: test_ns
+      discovery_args:
+        namespace_id: test_ns
 #END
 --- pipelined_requests eval
 [
@@ -281,7 +282,26 @@ routes:
 
 
 
-=== TEST 9: get APISIX-NACOS info from NACOS - configured in services with namespace
+=== TEST 9: error namespace_id - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: err_ns
+#END
+--- request
+GET /hello
+--- error_code: 503
+
+
+
+=== TEST 10: get APISIX-NACOS info from NACOS - configured in services with namespace
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -295,7 +315,8 @@ services:
       service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
-      nacos_namespace_id: test_ns
+      discovery_args:
+        namespace_id: test_ns
 #END
 --- pipelined_requests eval
 [
@@ -312,7 +333,7 @@ services:
 
 
 
-=== TEST 10: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with namespace
+=== TEST 11: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with namespace
 --- extra_yaml_config
 discovery:
   nacos:
@@ -329,7 +350,9 @@ discovery:
                     "service_name": "APISIX-NACOS",
                     "discovery_type": "nacos",
                     "type": "roundrobin",
-                    "nacos_namespace_id": "test_ns"
+                    "discovery_args": {
+                      "namespace_id": "test_ns"
+                    }
                 }]]
                 )
 
@@ -363,7 +386,7 @@ passed
 
 
 
-=== TEST 11: hit with namespace
+=== TEST 12: hit with namespace
 --- extra_yaml_config
 discovery:
   nacos:

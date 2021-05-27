@@ -389,9 +389,14 @@ local upstream_schema = {
             description = "discovery type",
             type = "string",
         },
-        nacos_namespace_id = {
-            description = "nacos namespace id",
-            type = "string",
+        discovery_args = {
+            type = "object",
+            properties = {
+                namespace_id = {
+                    description = "namespace id",
+                    type = "string",
+                },
+            }
         },
         pass_host = {
             description = "mod of host passing",

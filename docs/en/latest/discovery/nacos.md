@@ -110,7 +110,9 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
         "discovery_type": "nacos",
-        "nacos_namespace_id": "test_ns"
+        "discovery_args": {
+          "namespace_id": "test_ns"
+        }
     }
 }'
 ```
@@ -133,7 +135,9 @@ The format response as below:
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
         "discovery_type": "nacos",
-        "nacos_namespace_id": "test_ns"
+        "discovery_args": {
+          "namespace_id": "test_ns"
+        }
       },
       "priority": 0,
       "uri": "\/nacosWithNamespaceId\/*"
