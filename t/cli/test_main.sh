@@ -628,14 +628,14 @@ git checkout conf/config.yaml
 echo '
 nginx_config:
   http:
-    charset: utf-8
+    charset: gbk
 ' > conf/config.yaml
 
 make init
 
-if ! grep "charset utf-8;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'charset utf-8;' not in nginx.conf"
+if ! grep "charset gbk;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'charset gbk;' not in nginx.conf"
     exit 1
 fi
 
-echo "passed: found the 'charset utf-8;' in nginx.conf"
+echo "passed: found the 'charset gbk;' in nginx.conf"
