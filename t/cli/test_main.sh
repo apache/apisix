@@ -622,9 +622,17 @@ fi
 
 echo "passed: found the keepalive related parameter in nginx.conf"
 
-if ! grep "real_ip_recursive off;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'real_ip_recursive off;' not in nginx.conf"
+echo '
+nginx_config:
+    http:
+        real_ip_recursive: "on"
+' > conf/config.yaml
+
+make init
+
+if ! grep "real_ip_recursive on;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'real_ip_recursive on;' not in nginx.conf"
     exit 1
 fi
 
-echo "passed: disable real_ip_recursive by default in nginx.conf"
+echo "passed: enable real_ip_recursive in nginx.conf successfully"
