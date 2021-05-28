@@ -621,3 +621,10 @@ if ! grep "keepalive_timeout 6s;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the keepalive related parameter in nginx.conf"
+
+if ! grep "real_ip_recursive off;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'real_ip_recursive off;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: disable real_ip_recursive by default in nginx.conf"
