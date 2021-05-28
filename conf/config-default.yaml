@@ -196,6 +196,8 @@ nginx_config:                     # config for render the template to generate n
                                    # After the maximum number of requests is made, the connection is closed.
       keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
 
+    charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field.
+
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
     - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,

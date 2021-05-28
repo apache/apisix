@@ -217,7 +217,7 @@ http {
     server_tokens off;
 
     include mime.types;
-    charset utf-8;
+    charset {* http.charset *};
 
     # error_page
     error_page 500 @50x.html;
