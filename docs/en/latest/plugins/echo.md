@@ -45,7 +45,6 @@ This plugin addresses the corresponding functionality in the common phases such 
 | body        | string | optional    |         |       | Body to replace upstream response.           |
 | after_body  | string | optional    |         |       | Body after the modification of filter phase. |
 | headers     | object | optional    |         |       | New headers for response                     |
-| auth_value  | string | optional    |         |       | Auth value                                   |
 
 At least one of `before_body`, `body`, and `after_body` must be specified.
 
