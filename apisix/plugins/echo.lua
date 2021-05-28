@@ -87,16 +87,6 @@ function _M.body_filter(conf, ctx)
 end
 
 
-function _M.access(conf, ctx)
-    local value = core.request.header(ctx, "Authorization")
-
-    if value ~= conf.auth_value then
-        return 401, "unauthorized body"
-    end
-
-end
-
-
 function _M.header_filter(conf, ctx)
     if conf.body or conf.before_body or conf.after_body then
         core.response.clear_header_as_body_modified()
