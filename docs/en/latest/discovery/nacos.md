@@ -100,6 +100,17 @@ The formatted response as below:
 }
 ```
 
+### Use namespace or group
+
+#### discovery_args
+
+| Name         | Type   | Requirement | Default | Valid | Description                                                  |
+| ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
+| group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
+
+#### Specify the namespace
+
 Example of routing a request with a URL of "/nacosWithNamespaceId/*" to a service which name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry:
 
 ```shell
@@ -147,6 +158,8 @@ The formatted response as below:
 }
 ```
 
+#### Specify the group
+
 Example of routing a request with a URL of "/nacosWithGroupName/*" to a service which name, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group" and use nacos discovery client in the registry:
 
 ```shell
@@ -193,6 +206,8 @@ The formatted response as below:
   "action": "set"
 }
 ```
+
+#### Specify the namespace and group
 
 Example of routing a request with a URL of "/nacosWithNamespaceIdAndGroupName/*" to a service which name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group" and use nacos discovery client in the registry:
 
