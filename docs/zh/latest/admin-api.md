@@ -23,7 +23,6 @@ title: Admin API
 
 ## 目录
 
-- [目录](#目录)
 - [Description](#description)
 - [Route](#route)
 - [Service](#service)
