@@ -574,7 +574,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](../how-to-build.md#6-为-apisix-构建-openresty)。
 
 **upstream 对象 json 配置内容：**
 
