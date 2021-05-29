@@ -42,7 +42,7 @@ The result of external plugins execution will affect the behavior of the current
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner and their configuration    |
+| conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner with their configuration    |
 
 ## How To Enable
 
@@ -80,7 +80,7 @@ is executed at that side.
 
 ## Disable Plugin
 
-When you want to disable the serverless plugin, it is very simple,
+When you want to disable this plugin, it is very simple,
 you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
