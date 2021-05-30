@@ -35,7 +35,7 @@ We could use the `key-auth` plugin to protect `Routes` and `Services`.
 | ---- | ------ | -------- | ------- | ------------------------------------------------------------------------------------------------- |
 | key  | String | Yes      |         | Consumers will use this key to access the resource for authentication, this key should be unique. |
 
-### Bind plugin with Route
+### Bind plugin with Route/Service
 
 | Name   | Type   | Required | Default | Description                                                          |
 | ------ | ------ | -------- | ------- | -------------------------------------------------------------------- |
