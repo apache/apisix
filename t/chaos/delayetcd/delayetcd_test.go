@@ -55,11 +55,16 @@ func createEtcdDelayChaos(delay int) *v1alpha1.NetworkChaos {
 	}
 }
 
-func setRouteMultipleTimes(e *httpexpect.Expect, times int, status httpexpect.StatusRange) time.Duration {
+func setRouteMultipleTimes(t *testing.T, e *httpexpect.Expect, times int, status httpexpect.StatusRange) time.Duration {
 	now := time.Now()
+	timeLast := now
+	var timeList []string
 	for i := 0; i < times; i++ {
 		utils.SetRoute(e, status)
+		timeList = append(timeList, time.Now().Sub(timeLast).String())
+		timeLast = time.Now()
 	}
+	t.Logf("takes %v separately", timeList)
 	return time.Now().Sub(now) / time.Duration(times)
 }
 
@@ -81,6 +86,8 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 			cliSet.CtrlCli.Delete(ctx, &chaos)
 		}
 
+		t.Log("########################################################################")
+		time.Sleep(3 * time.Minute)
 		utils.DeleteRoute(e)
 		utils.RestartWithBash(g, utils.ReAPISIXFunc)
 	}()
@@ -93,7 +100,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 
 	// get default
 	t.Run("get default apisix delay", func(t *testing.T) {
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(t, e, 5, httpexpect.Status2xx)
 		t.Logf("set route cost time: %v", setDuration)
 		g.Expect(setDuration < 15*time.Millisecond).To(BeTrue())
 
@@ -109,7 +116,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
 
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(t, e, 5, httpexpect.Status2xx)
 		t.Logf("set route cost time: %v", setDuration)
 		g.Expect(setDuration < 400*time.Millisecond).To(BeTrue())
 
@@ -129,7 +136,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
 
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(t, e, 5, httpexpect.Status2xx)
 		t.Logf("set route cost time: %v", setDuration)
 		g.Expect(setDuration < 4*time.Second).To(BeTrue())
 
@@ -142,14 +149,14 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 		time.Sleep(1 * time.Second)
 	})
 
-	// 1s delay and cause error
-	t.Run("generate a 1s delay between etcd and apisix", func(t *testing.T) {
-		chaos := createEtcdDelayChaos(1000)
+	// 3s delay and cause error
+	t.Run("generate a 3s delay between etcd and apisix", func(t *testing.T) {
+		chaos := createEtcdDelayChaos(3000)
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
 
-		setDuration := setRouteMultipleTimes(e, 2, httpexpect.Status5xx)
+		setDuration := setRouteMultipleTimes(t, e, 2, httpexpect.Status5xx)
 		t.Logf("set route cost time: %v", setDuration)
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli)
