@@ -622,6 +622,27 @@ fi
 
 echo "passed: found the keepalive related parameter in nginx.conf"
 
+# check the charset setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    charset: gbk
+' > conf/config.yaml
+
+make init
+
+if ! grep "charset gbk;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'charset gbk;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'charset gbk;' in nginx.conf"
+
+# check realip recursive setting
+git checkout conf/config.yaml
+
 echo '
 nginx_config:
     http:
@@ -635,4 +656,4 @@ if ! grep "real_ip_recursive on;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
-echo "passed: enable real_ip_recursive in nginx.conf successfully"
+echo "passed: found 'real_ip_recursive on' in nginx.conf"

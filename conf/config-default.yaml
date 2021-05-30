@@ -196,6 +196,8 @@ nginx_config:                     # config for render the template to generate n
       keepalive_requests: 1000     # Sets the maximum number of requests that can be served through one keepalive connection.
                                    # After the maximum number of requests is made, the connection is closed.
       keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
+    charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field, see
+                                   # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
@@ -286,8 +288,9 @@ plugins:                          # plugin list (sorted by priority)
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
 
-stream_plugins:
-  - mqtt-proxy
+stream_plugins: # sorted by priority
+  - mqtt-proxy                     # priority: 1000
+  # <- recommend to use priority (0, 100) for your custom plugins
 
 plugin_attr:
   log-rotate:
