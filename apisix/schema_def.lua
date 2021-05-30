@@ -491,6 +491,15 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
+        upstream_timeout = {
+            type = "object",
+            properties = {
+                connect = {type = "number", exclusiveMinimum = 0},
+                send = {type = "number", exclusiveMinimum = 0},
+                read = {type = "number", exclusiveMinimum = 0},
+            },
+            required = {"connect", "send", "read"},
+        },
         vars = {
             type = "array",
         },

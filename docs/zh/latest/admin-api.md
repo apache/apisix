@@ -79,6 +79,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 | script           | 可选                               | Script   | 详见 [Script](architecture-design/script.md)                                                                                                                                                                                                                                                                                                               |                                                      |
 | upstream         | 可选                               | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md)                                                                                                                                                                                                                                                                                     |                                                      |
 | upstream_id      | 可选                               | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md)                                                                                                                                                                                                                                                                                       |                                                      |
+| upstream_timeout | 可选                               | Upstream | 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。这个配置将会覆盖在 upsteam 中 配置的 [timeout](#upstream) 选项                                                                                                                                                                        | {"connect": 3, "send": 3, "read": 3}              |
 | service_id       | 可选                               | Service  | 绑定的 Service 配置，详见 [Service](architecture-design/service.md)                                                                                                                                                                                                                                                                                        |                                                      |
 | plugin_config_id | 可选，无法跟 script 一起配置          | Plugin   | 绑定的 Plugin config 配置，详见 [Plugin config](architecture-design/plugin-config.md)                                                                                                                                                                                                                                                                      |                                                      |
 | name             | 可选                               | 辅助     | 标识路由名称                                                                                                                                                                                                                                                                                                                                               | route-xxxx                                           |
@@ -118,6 +119,11 @@ route 对象 json 配置内容：
     "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
     "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},             # upstream 信息对象，建议尽量不要使用
+    "upstream_timeout": {       # 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。
+        "connect": 3,
+        "send": 3,
+        "read": 3
+    },
     "filter_func": "",          # 用户自定义的过滤函数，非必填
 }
 ```

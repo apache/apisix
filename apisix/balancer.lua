@@ -136,8 +136,18 @@ end
 -- set_balancer_opts will be called in balancer phase and before any tries
 local function set_balancer_opts(ctx)
     local up_conf = ctx.upstream_conf
-    if up_conf.timeout then
-        local timeout = up_conf.timeout
+
+    -- If the matched route has timeout config, prefer to use the route config.
+    local route_conf = ctx.matched_route.value
+    local timeout = nil
+    if route_conf.upstream_timeout then
+        timeout = route_conf.upstream_timeout
+    else
+        if up_conf.timeout then
+            timeout = up_conf.timeout
+        end
+    end
+    if timeout then
         local ok, err = set_timeouts(timeout.connect, timeout.send,
                                      timeout.read)
         if not ok then
