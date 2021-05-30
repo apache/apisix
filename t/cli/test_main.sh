@@ -621,3 +621,21 @@ if ! grep "keepalive_timeout 6s;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the keepalive related parameter in nginx.conf"
+
+# check the charset setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    charset: gbk
+' > conf/config.yaml
+
+make init
+
+if ! grep "charset gbk;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'charset gbk;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'charset gbk;' in nginx.conf"

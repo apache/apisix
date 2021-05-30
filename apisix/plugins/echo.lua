@@ -40,10 +40,6 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
-        auth_value = {
-            description = "auth value",
-            type = "string"
-        },
     },
     anyOf = {
         {required = {"before_body"}},
@@ -88,16 +84,6 @@ function _M.body_filter(conf, ctx)
     if ngx.arg[2] and conf.after_body then
         ngx.arg[1] = ngx.arg[1] .. conf.after_body
     end
-end
-
-
-function _M.access(conf, ctx)
-    local value = core.request.header(ctx, "Authorization")
-
-    if value ~= conf.auth_value then
-        return 401, "unauthorized body"
-    end
-
 end
 
 
