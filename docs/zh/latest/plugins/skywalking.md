@@ -33,7 +33,7 @@ title: skywalking
 
 ## 名字
 
-`Skywalking`(https://github.com/apache/skywalking) 是一个开源的服务跟踪插件。
+`Skywalking`(https://github.com/apache/skywalking) 使用其原生的Nignx LUA tracer，提供分布式追踪，拓扑分析，以及服务和URI级别的metrics信息。
 
 服务端目前支持http和grpc两种协议，在apisix中目前只支持http协议
 
