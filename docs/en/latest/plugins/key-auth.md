@@ -43,7 +43,7 @@ We could use the `key-auth` plugin to protect `Routes` and `Services`.
 
 ## How to enable
 
-Firstly, please create a `Consumer` and bind this plugin, we will use `auth-key` as key's value: 
+Firstly, please create a `Consumer` and bind this plugin, we will use `auth-key` as key's value:
 
 ```bash
 $ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
