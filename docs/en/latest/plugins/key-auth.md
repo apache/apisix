@@ -21,130 +21,142 @@ title: key-auth
 #
 -->
 
-## Summary
+## Description
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+We could use the `key-auth` plugin to protect `Routes` and `Services`.
 
-## Name
+**NOTE**: We need to bind this plugin with `Consumer` first, then bind it with `Route` or `Service`.
 
-`key-auth` is an authentication plugin, it should work with `consumer` together.
+## Parameters
 
-Add Key Authentication (also sometimes referred to as an API key) to a Service or a Route. Consumers then add their key either in a querystring parameter or a header to authenticate their requests.
+### Bind plugin with Consumer
 
-## Attributes
+| Name | Type   | Required | Default | Description                                                                                       |
+| ---- | ------ | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| key  | String | Yes      |         | Consumers will use this key to access the resource for authentication, this key should be unique. |
 
-For consumer side:
+### Bind plugin with Route
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
+| Name   | Type   | Required | Default | Description                                                          |
+| ------ | ------ | -------- | ------- | -------------------------------------------------------------------- |
+| header | String | False    | apikey  | The plugin will get API Key from target header, default to `apikey`. |
 
-For route side:
+## How to enable
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| header  | string | optional    | apikey        |       | the header we get the key from |
+Firstly, please create a `Consumer` and bind this plugin, we will use `auth-key` as key's value: 
 
-## How To Enable
-
-Two steps are required:
-
-1. creates a consumer object, and set the attributes of plugin `key-auth`.
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/consumers -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "username": "jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-one"
-        }
-    }
-}'
-```
-
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-![](../../../assets/images/plugin/key-auth-1.png)
-
-Then add key-auth plugin:
-![](../../../assets/images/plugin/key-auth-2.png)
-
-2. creates a route or service object, and enable plugin `key-auth`.
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {
-        "key-auth": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
-
-If you don't want to fetch key from the default `apikey` header, you can customize the header:
-
-```json
-{
+  "username": "jack",
+  "plugins": {
     "key-auth": {
-        "header": "Authorization"
+      "key": "auth-key"
     }
+  }
+}
+'
+```
+
+Secondly, please create a `Route` and bind this plugin, no configuration needed:
+
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
+{
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {
+    "key-auth": {}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}
+'
+```
+
+Let's have a test:
+
+```bash
+# Scenario 1: Access the route without key
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get
+
+## Response
+HTTP/1.1 401 Unauthorized
+Date: Wed, 28 Apr 2021 09:02:40 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
+{"message":"Missing API key found in request"}
+
+# Scenario 2: Access the route with wrong key
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get -H "apikey: wrong-key"
+
+## Response
+HTTP/1.1 401 Unauthorized
+Date: Wed, 28 Apr 2021 09:03:40 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.5
+
+{"message":"Invalid API key in request"}
+
+# Scenario 3: Access the route with correct key (in the HTTP Header)
+
+## Request
+$ curl -i -X GET http://127.0.0.1:9080/get -H "apikey: auth-key"
+
+## Response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 325
+Connection: keep-alive
+Date: Wed, 28 Apr 2021 09:03:53 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.5
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Apikey": "auth-key",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-608924f9-4a20a14821ce0ae97337e9f8",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 8.210.41.192",
+  "url": "http://127.0.0.1/get"
 }
 ```
 
-## Test Plugin
+## How to disable
 
-Here is a correct test example:
+Just updated the Route configuration without that plugin:
 
-```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
-HTTP/1.1 200 OK
-...
-```
-
-If the request does not set `apikey` correctly, will get a `401` response.
-
-```shell
-$ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing API key found in request"}
-
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid API key in request"}
-```
-
-## Disable Plugin
-
-When you want to disable the `key-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
-
-```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+```bash
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -d '
 {
-    "uri": "/index.html",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+  "methods": ["GET"],
+  "uri": "/get",
+  "plugins": {},
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
+'
 ```
-
-The `key-auth` plugin has been disabled now. It works for other plugins.
