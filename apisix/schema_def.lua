@@ -396,6 +396,10 @@ local upstream_schema = {
                     description = "namespace id",
                     type = "string",
                 },
+                group_name = {
+                    description = "group name",
+                    type = "string",
+                },
             }
         },
         pass_host = {
