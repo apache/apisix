@@ -100,9 +100,7 @@ The formatted response as below:
 }
 ```
 
-### Use namespace or group
-
-#### discovery_args
+### discovery_args
 
 | Name         | Type   | Requirement | Default | Valid | Description                                                  |
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
