@@ -37,6 +37,9 @@ title: Plugin Develop
   - [Register public API](#register-public-api)
   - [Register control API](#register-control-api)
 
+This documentation is about developing plugin in Lua. For other languages,
+see [external plugin](./external-plugin.md).
+
 ## where to put your plugins
 
 There are two ways to add new features based on APISIX.
