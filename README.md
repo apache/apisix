@@ -116,7 +116,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **OPS friendly**
 
-  - OpenTracing: support [Apache Skywalking](docs/en/latest/plugins/skywalking.md) and [Zipkin](docs/en/latest/plugins/zipkin.md)
+  - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
+  - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
   - works with external service discovery：In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
