@@ -1,5 +1,5 @@
 ---
-title: external plugin
+title: External Plugin
 ---
 
 <!--
@@ -41,7 +41,7 @@ Once you have configured `ext-plugin-*` plugins for a given route, the requests
 which hit the route will trigger RPC call from APISIX to the plugin runner via
 unix socket.
 
-The plugin runner will handle the PRC call, create a fake request at its side,
+The plugin runner will handle the RPC call, create a fake request at its side,
 run external plugins and return the result back to APISIX.
 
 The target external plugins and the execution order are configured in the `ext-plugin-*`
@@ -56,7 +56,7 @@ Go: https://github.com/apache/apisix-go-plugin-runner
 
 To run plugin runner in the prod, add the section below to `config.yaml`:
 
-```
+```yaml
 ext-plugin:
   cmd: ["blah"] # replace it to the real runner executable according to the runner you choice
 ```
@@ -73,7 +73,7 @@ By specifying the environment variable `APISIX_LISTEN_ADDRESS`, we can force the
 listen to a fixed address.
 For instance:
 
-```
+```bash
 APISIX_LISTEN_ADDRESS=unix:/tmp/x.sock ./the_runner
 ```
 
@@ -81,7 +81,7 @@ will force the runner to listen to `/tmp/x.sock`.
 
 Then you need to configure APISIX to send RPC to the fixed address:
 
-```
+```yaml
 ext-plugin:
   # cmd: ["blah"] # don't configure the executable!
   path_for_test: "/tmp/x.sock" # without 'unix:' prefix
