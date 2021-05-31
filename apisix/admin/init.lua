@@ -286,9 +286,22 @@ local function post_reload_plugins()
 end
 
 
-local function sync_local_conf_to_etcd()
-    core.log.warn("sync local conf to etcd")
+local function plugins_eq(old, new)
+    local old_set = {}
+    for _, p in ipairs(old) do
+        old_set[p.name] = p
+    end
 
+    local new_set = {}
+    for _, p in ipairs(new) do
+        new_set[p.name] = p
+    end
+
+    return core.table.set_eq(old_set, new_set)
+end
+
+
+local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
     local plugins = {}
@@ -304,6 +317,42 @@ local function sync_local_conf_to_etcd()
             stream = true,
         })
     end
+
+    if reset then
+        local res, err = core.etcd.get("/plugins")
+        if not res then
+            core.log.error("failed to get current plugins: ", err)
+            return
+        end
+
+        if res.status == 404 then
+            -- nothing need to be reset
+            return
+        end
+
+        if res.status ~= 200 then
+            core.log.error("failed to get current plugins, status: ", res.status)
+            return
+        end
+
+        local stored_plugins = res.body.node.value
+        local revision = res.body.node.modifiedIndex
+        if plugins_eq(stored_plugins, plugins) then
+            core.log.info("plugins not changed, don't need to reset")
+            return
+        end
+
+        core.log.warn("sync local conf to etcd")
+
+        local res, err = core.etcd.atomic_set("/plugins", plugins, nil, revision)
+        if not res then
+            core.log.error("failed to set plugins: ", err)
+        end
+
+        return
+    end
+
+    core.log.warn("sync local conf to etcd")
 
     -- need to store all plugins name into one key so that it can be updated atomically
     local res, err = core.etcd.set("/plugins", plugins)
@@ -364,7 +413,8 @@ function _M.init_worker()
                 return
             end
 
-            sync_local_conf_to_etcd()
+            -- try to reset the /plugins to the current configuration in the admin
+            sync_local_conf_to_etcd(true)
         end)
 
         if not ok then

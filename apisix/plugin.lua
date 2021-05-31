@@ -137,37 +137,12 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
 end
 
 
-local function plugins_eq(old, new)
-    local eq = core.table.set_eq(old, new)
-    if not eq then
-        core.log.info("plugin list changed")
-        return false
-    end
-
-    for name, plugin in pairs(old) do
-        eq = core.table.deep_eq(plugin.attr, plugin_attr(name))
-        if not eq then
-            core.log.info("plugin_attr of ", name, " changed")
-            return false
-        end
-    end
-
-    return true
-end
-
-
 local function load(plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
         if processed[name] == nil then
             processed[name] = true
         end
-    end
-
-    -- the same configure may be synchronized more than one
-    if plugins_eq(local_plugins_hash, processed) then
-        core.log.info("plugins not changed")
-        return true
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
@@ -210,12 +185,6 @@ local function load_stream(plugin_names)
         if processed[name] == nil then
             processed[name] = true
         end
-    end
-
-    -- the same configure may be synchronized more than one
-    if plugins_eq(stream_local_plugins_hash, processed) then
-        core.log.info("plugins not changed")
-        return true
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))

@@ -82,7 +82,7 @@ load(): new plugins
 
 
 
-=== TEST 2: plugins not changed
+=== TEST 2: plugins not changed, but still need to reload
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -104,12 +104,17 @@ plugins:
 GET /hello
 --- response_body
 hello world
---- error_log
-load(): loaded plugin and sort by priority: 3000 name: ip-restriction
-load(): loaded plugin and sort by priority: 2510 name: jwt-auth
-load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
-load(): plugins not changed
-load_stream(): plugins not changed
+--- grep_error_log eval
+qr/loaded plugin and sort by priority: \d+ name: [^,]+/
+--- grep_error_log_out
+loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2510 name: jwt-auth
+loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2510 name: jwt-auth
+loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2510 name: jwt-auth
+loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2510 name: jwt-auth
 
 
 
