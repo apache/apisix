@@ -659,7 +659,8 @@ local function start(env, ...)
         profile.apisix_home = env.apisix_home .. "/"
         local local_conf_path = profile:yaml_path("config")
 
-        local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " "
+                                                .. local_conf_path .. ".bak")
         if len(err) > 0 then
             util.die("failed to mv config to backup, error: ", err)
         end
