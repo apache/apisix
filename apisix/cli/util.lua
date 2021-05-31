@@ -46,8 +46,8 @@ local function execute_cmd(cmd)
 
     return data
 end
-
 _M.execute_cmd = execute_cmd
+
 
 -- For commands which stdout would be always be empty,
 -- forward stderr to stdout to get the error msg
