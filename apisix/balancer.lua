@@ -138,10 +138,10 @@ local function set_balancer_opts(ctx)
     local up_conf = ctx.upstream_conf
 
     -- If the matched route has timeout config, prefer to use the route config.
-    local route_conf = ctx.matched_route.value
+    local matched_route = ctx.matched_route
     local timeout = nil
-    if route_conf.upstream_timeout then
-        timeout = route_conf.upstream_timeout
+    if matched_route and matched_route.value and matched_route.value.timeout then
+        timeout = matched_route.value.timeout
     else
         if up_conf.timeout then
             timeout = up_conf.timeout

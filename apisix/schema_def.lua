@@ -491,7 +491,7 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
-        upstream_timeout = {
+        timeout = {
             type = "object",
             properties = {
                 connect = {type = "number", exclusiveMinimum = 0},

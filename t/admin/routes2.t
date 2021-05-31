@@ -653,7 +653,7 @@ GET /t
 
 
 
-=== TEST 18: valid route with upstream_timeout
+=== TEST 18: valid route with timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -668,7 +668,7 @@ GET /t
                             },
                             "type": "roundrobin"
                         },
-                        "upstream_timeout": {
+                        "timeout": {
                             "connect": 3,
                             "send": 3,
                             "read": 3
