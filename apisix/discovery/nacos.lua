@@ -166,6 +166,15 @@ local function get_namespace_param(namespace_id)
     return param
 end
 
+local function get_group_name_param(group_name)
+    local param = ''
+    if group_name then
+        local args = {groupName = group_name}
+        param = '&' .. ngx.encode_args(args)
+    end
+    return param
+end
+
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
     -- TODO Add health check to get healthy nodes.
@@ -220,10 +229,16 @@ local function iter_and_add_service(services, values)
             namespace_id = up.discovery_args.namespace_id
         end
 
+        local group_name
+        if up.discovery_args then
+            group_name = up.discovery_args.group_name
+        end
+
         if up.discovery_type == 'nacos' then
             core.table.insert(services, {
                 service_name = up.service_name,
-                namespace_id = namespace_id
+                namespace_id = namespace_id,
+                group_name = group_name
             })
         end
         ::CONTINUE::
@@ -272,8 +287,9 @@ local function fetch_full_registry(premature)
     local data, err
     for _, service_info in ipairs(infos) do
         local namespace_param = get_namespace_param(service_info.namespace_id);
+        local group_name_param = get_group_name_param(service_info.group_name);
         data, err = get_url(base_uri, instance_list_path .. service_info.service_name
-                            .. token_param .. namespace_param)
+                            .. token_param .. namespace_param .. group_name_param)
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
             if not applications then
