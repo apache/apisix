@@ -43,7 +43,6 @@ local floor = math.floor
 local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
-local len = string.len
 
 
 local _M = {}
@@ -661,11 +660,11 @@ local function start(env, ...)
 
         local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " "
                                                 .. local_conf_path .. ".bak")
-        if len(err) > 0 then
+        if #err then
             util.die("failed to mv config to backup, error: ", err)
         end
         err = util.execute_cmd_with_error("ln " .. customized_yaml .. " " .. local_conf_path)
-        if len(err) > 0 then
+        if #err then
             util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
             util.die("failed to link customized config, error: ", err)
         end
@@ -685,11 +684,11 @@ local function stop(env)
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
         local err = util.execute_cmd_with_error("rm " .. local_conf_path)
-        if len(err) > 0 then
+        if #err then
             print("failed to remove customized config, error: ", err)
         end
         err = util.execute_cmd_with_error("mv " .. local_conf_path .. ".bak " .. local_conf_path)
-        if len(err) > 0 then
+        if #err then
             util.die("failed to mv original config file, error: ", err)
         end
     end

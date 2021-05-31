@@ -49,7 +49,7 @@ end
 
 _M.execute_cmd = execute_cmd
 
--- For ls and mv which stdout would be always be empty,
+-- For commands which stdout would be always be empty,
 -- forward stderr to stdout to get the error msg
 function _M.execute_cmd_with_error(cmd)
     return execute_cmd(cmd .. " 2>&1")
