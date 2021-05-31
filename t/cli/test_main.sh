@@ -639,3 +639,21 @@ if ! grep "charset gbk;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the 'charset gbk;' in nginx.conf"
+
+# check realip recursive setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+    http:
+        real_ip_recursive: "on"
+' > conf/config.yaml
+
+make init
+
+if ! grep "real_ip_recursive on;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'real_ip_recursive on;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'real_ip_recursive on' in nginx.conf"
