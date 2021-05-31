@@ -229,6 +229,10 @@ http {
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
+    {% if http.real_ip_recursive then %}
+    real_ip_recursive {* http.real_ip_recursive *};
+    {% end %}
+
     {% if real_ip_from then %}
     {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
     {% for _, real_ip in ipairs(real_ip_from) do %}
