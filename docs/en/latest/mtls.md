@@ -72,7 +72,7 @@ Using mTLS is a way to verify clients cryptographically. It is useful and import
 
 When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain.
 
-Here is an example Python script to create SSL with mTLS (id is `1`):
+Here is an example Python script to create SSL with mTLS (id is `1`, changes admin API url if needed):
 
 ```py
 #!/usr/bin/env python
@@ -105,7 +105,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssl/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -127,7 +127,7 @@ Please make sure that the SNI fits the certificate domain.
 
 ### Why use it
 
-Sometimes the upstream enabled mTLS. In this situation, the APISIX acts as the client, it needs to provide client certificate to communicate with upstream.
+Sometimes the upstream requires mTLS. In this situation, the APISIX acts as the client, it needs to provide client certificate to communicate with upstream.
 
 ### How to configure
 
@@ -135,7 +135,7 @@ When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.
 
 This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
-Here is a similar Python script to patch a existed upstream with mTLS:
+Here is a similar Python script to patch a existed upstream with mTLS (changes admin API url if needed):
 
 ```python
 #!/usr/bin/env python
@@ -162,7 +162,7 @@ reqParam = {
     },
 }
 
-resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
+resp = requests.patch("http://127.0.0.1:9080/apisix/admin/upstreams/"+id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
