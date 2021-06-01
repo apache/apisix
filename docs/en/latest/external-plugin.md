@@ -63,8 +63,7 @@ ext-plugin:
 
 Then APISIX will manage the runner as its subprocess.
 
-Note: APISIX can't manage the runner on the Mac. It is fine, we can run the runner by ourselves
-during development.
+Note: APISIX can't manage the runner on the Mac in `v2.6`.
 
 During development, we want to run the runner separately so that we can restart it without
 restarting APISIX first.
@@ -89,3 +88,18 @@ ext-plugin:
 
 In the prod environment, `path_for_test` should not be used and the unix socket
 path will be generated dynamically.
+
+## FAQ
+
+### When managing by APISIX, the runner can't access my environment variable
+
+Since `v2.7`, APISIX can pass environment to the runner.
+
+However, Nginx will hide all environment variables by default. So you need to
+declare your variable first in the `conf/config.yaml`:
+
+```yaml
+nginx_config:
+  envs:
+    - MY_ENV_VAR
+```

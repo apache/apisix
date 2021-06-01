@@ -547,13 +547,20 @@ local function create_lrucache()
 end
 
 
+local function must_set(env, value)
+    local ok, err = core.os.setenv(env, value)
+    if not ok then
+        error(str_format("failed to set %s: %s", env, err), 2)
+    end
+end
+
+
 local function spawn_proc(cmd)
+    must_set("APISIX_CONF_EXPIRE_TIME", helper.get_conf_token_cache_time())
+    must_set("APISIX_LISTEN_ADDRESS", helper.get_path())
+
     local opt = {
         merge_stderr = true,
-        environ = {
-            "APISIX_CONF_EXPIRE_TIME=" .. helper.get_conf_token_cache_time(),
-            "APISIX_LISTEN_ADDRESS=" .. helper.get_path(),
-        },
     }
     local proc, err = ngx_pipe.spawn(cmd, opt)
     if not proc then
