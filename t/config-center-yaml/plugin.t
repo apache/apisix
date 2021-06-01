@@ -106,15 +106,9 @@ GET /hello
 hello world
 --- grep_error_log eval
 qr/loaded plugin and sort by priority: \d+ name: [^,]+/
---- grep_error_log_out
-loaded plugin and sort by priority: 3000 name: ip-restriction
-loaded plugin and sort by priority: 2510 name: jwt-auth
-loaded plugin and sort by priority: 3000 name: ip-restriction
-loaded plugin and sort by priority: 2510 name: jwt-auth
-loaded plugin and sort by priority: 3000 name: ip-restriction
-loaded plugin and sort by priority: 2510 name: jwt-auth
-loaded plugin and sort by priority: 3000 name: ip-restriction
-loaded plugin and sort by priority: 2510 name: jwt-auth
+--- grep_error_log_out eval
+qr/(loaded plugin and sort by priority: (3000 name: ip-restriction|2510 name: jwt-auth)
+){4}/
 
 
 
