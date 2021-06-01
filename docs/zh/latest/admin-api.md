@@ -92,6 +92,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 | vars             | 可选                               | 匹配规则 | 由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等。更多细节请参考[lua-resty-expr](https://github.com/api7/lua-resty-expr) | {{"arg_name", "==", "json"}, {"arg_age", ">", 18}}   |
 | filter_func      | 可选                               | 匹配规则 | 用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。                                                                                                                                                                                                                          | function(vars) return vars["arg_name"] == "json" end |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                                                                                                                                                                                                                                                                                                       | {"version":"v2","build":"16","env":"production"}     |
+| timeout          | 可选                               | 辅助     | 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。这个配置将会覆盖在 upstream 中 配置的 [timeout](#upstream) 选项                                                                                                                                                                        | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | 可选                               | 辅助     | 是否启用 `websocket`(boolean), 缺省 `false`.                                                                                                                                                                                                                                                                                                               |                                                      |
 | status           | 可选                               | 辅助     | 是否启用此路由, 缺省 `1`。                                                                                                                                                                                                                                                                                                                                 | `1` 表示启用，`0` 表示禁用                           |
 | create_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                              | 1602883670                                           |
@@ -118,6 +119,11 @@ route 对象 json 配置内容：
     "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
     "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},             # upstream 信息对象，建议尽量不要使用
+    "timeout": {                # 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。
+        "connect": 3,
+        "send": 3,
+        "read": 3
+    },
     "filter_func": "",          # 用户自定义的过滤函数，非必填
 }
 ```
