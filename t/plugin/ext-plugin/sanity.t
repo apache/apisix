@@ -340,7 +340,38 @@ failed to receive RPC_PREPARE_CONF: bad request
 
 
 
-=== TEST 12: runner can access the environment variable
+=== TEST 12: refresh token
+--- request
+GET /hello
+--- response_body
+hello world
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            if not package.loaded.count then
+                package.loaded.count = 1
+            else
+                package.loaded.count = package.loaded.count + 1
+            end
+
+            if package.loaded.count == 1 then
+                ext.go({no_token = true})
+            else
+                ext.go({with_conf = true})
+            end
+        }
+    }
+--- error_log
+refresh cache and try again
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: runner can access the environment variable
 --- main_config
 env MY_ENV_VAR=foo;
 --- ext_plugin_cmd

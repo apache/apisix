@@ -521,20 +521,6 @@ rpc_call = function (ty, conf, ctx)
 end
 
 
-function _M.communicate(conf, ctx)
-    local ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
-    if not ok then
-        core.log.error(err)
-        return 503
-    end
-
-    if code then
-        return code, body
-    end
-    return
-end
-
-
 local function create_lrucache()
     if lrucache then
         core.log.warn("flush conf token lrucache")
@@ -544,6 +530,34 @@ local function create_lrucache()
         type = "plugin",
         ttl = helper.get_conf_token_cache_time(),
     })
+end
+
+
+function _M.communicate(conf, ctx)
+    local ok, err, code, body
+    local tries = 0
+    while tries < 3 do
+        tries = tries + 1
+        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+        if ok then
+            if code then
+                return code, body
+            end
+
+            return
+        end
+
+        if not core.string.find(err, "conf token not found") then
+            core.log.error(err)
+            return 503
+        end
+
+        core.log.warn("refresh cache and try again")
+        create_lrucache()
+    end
+
+    core.log.error(err)
+    return 503
 end
 
 
