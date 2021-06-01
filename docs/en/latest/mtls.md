@@ -68,9 +68,9 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 Using mTLS is a way to verify clients cryptographically. It is useful and important in cases where you want to have encrypted and secure traffic in both directions.
 
-### How to config
+### How to configure
 
-When configuring `ssl`, use parameter `client.ca` and `client.depth` to config the root CA that signing client certificates and the max length of certificate chain.
+When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain.
 
 Here is an example Python script to create SSL with mTLS (id is `1`):
 
@@ -82,7 +82,7 @@ import sys
 # sudo pip install requests
 import requests
 
-if len(sys.argv) <= 3:
+if len(sys.argv) <= 4:
     print("bad argument")
     sys.exit(1)
 with open(sys.argv[1]) as f:
@@ -97,7 +97,7 @@ reqParam = {
     "key": key,
     "snis": [sni],
 }
-if len(sys.argv) >= 5:
+if len(sys.argv) >= 6:
     print("Setting mTLS")
     reqParam["client"] = {}
     with open(sys.argv[4]) as f:
@@ -130,9 +130,9 @@ Sometimes the upstream enabled mTLS. In this situation, the APISIX acts as the c
 
 ### How to config
 
-When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to config the client certificate APISIX used to communicate with upstreams.
+When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams.
 
-This feature requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
 Here is a similar Python script to patch a existed upstream with mTLS:
 
@@ -144,7 +144,7 @@ import sys
 # sudo pip install requests
 import requests
 
-if len(sys.argv) <= 3:
+if len(sys.argv) <= 4:
     print("bad argument")
     sys.exit(1)
 with open(sys.argv[2]) as f:
