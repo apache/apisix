@@ -435,6 +435,11 @@ cp conf/config.yaml conf/config_original.yaml
 
 make init
 
+if ./bin/apisix start -c conf/not_existed_config.yaml; then
+    echo "failed: apisix still start with invalid customized config.yaml"
+    exit 1
+fi
+
 ./bin/apisix start -c conf/customized_config.yaml
 
 if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
