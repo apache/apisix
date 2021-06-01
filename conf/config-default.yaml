@@ -198,6 +198,7 @@ nginx_config:                     # config for render the template to generate n
       keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
     charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field, see
                                    # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
+    variables_hash_max_size: 2048  # Sets the maximum size of the variables hash table.
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.

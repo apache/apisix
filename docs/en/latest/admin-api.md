@@ -91,6 +91,7 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 | service_id       | False                                    | Service     | Binded Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | plugin_config_id | False, can't be used with `script`       | Plugin      | Binded plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
 | labels           | False                                    | Match Rules | Key/value pairs to specify attributes                                                                                                                                                                                                                                                                                                                                                                                              | {"version":"v2","build":"16","env":"production"}     |
+| timeout          | False                                    | Auxiliary   | Set the upstream timeout for connecting, sending and receiving messages of the route. This option will overwrite the [timeout](#upstream) option which set in upstream configuration.                                                                                                                                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | False                                    | Auxiliary   | enable `websocket`(boolean), default `false`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                      |
 | status           | False                                    | Auxiliary   | enable this route, default `1`.                                                                                                                                                                                                                                                                                                                                                                                                    | `1` to enable, `0` to disable                        |
 | create_time      | False                                    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                                                                                                                                                                                                                                                                                                                                                                | 1602883670                                           |
@@ -117,6 +118,11 @@ Config Example:
     "vars": [["http_user", "==", "ios"]], # A list of one or more `[var, operator, val]` elements
     "upstream_id": "1",         # upstream id, recommended
     "upstream": {},             # upstream, not recommended
+    "timeout": {                # Set the upstream timeout for connecting, sending and receiving messages of the route.
+        "connect": 3,
+        "send": 3,
+        "read": 3
+    },
     "filter_func": "",          # User-defined filtering function
 }
 ```
@@ -539,7 +545,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of available backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.|
-|timeout         |optional| Set the timeout for connection, sending and receiving messages. |
+|timeout         |optional| Set the timeout for connecting, sending and receiving messages. |
 |name            |optional|Identifies upstream names|
 |desc            |optional|upstream usage scenarios, and more.|
 |pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.|
@@ -577,7 +583,7 @@ This feature requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-b
 {
     "id": "1",                  # id
     "retries": 1,               # retry times
-    "timeout": {                # Set the timeout for connection, sending and receiving messages.
+    "timeout": {                # Set the timeout for connecting, sending and receiving messages.
         "connect":15,
         "send":15,
         "read":15,

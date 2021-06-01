@@ -435,6 +435,11 @@ cp conf/config.yaml conf/config_original.yaml
 
 make init
 
+if ./bin/apisix start -c conf/not_existed_config.yaml; then
+    echo "failed: apisix still start with invalid customized config.yaml"
+    exit 1
+fi
+
 ./bin/apisix start -c conf/customized_config.yaml
 
 if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
@@ -657,3 +662,21 @@ if ! grep "real_ip_recursive on;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found 'real_ip_recursive on' in nginx.conf"
+
+# check the variables_hash_max_size setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    variables_hash_max_size: 1024
+' > conf/config.yaml
+
+make init
+
+if ! grep "variables_hash_max_size 1024;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'variables_hash_max_size 1024;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'variables_hash_max_size 1024;' in nginx.conf"

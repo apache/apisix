@@ -368,3 +368,17 @@ hello world
 refresh cache and try again
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: runner can access the environment variable
+--- main_config
+env MY_ENV_VAR=foo;
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "3600"]
+--- config
+    location /t {
+        return 200;
+    }
+--- error_log
+MY_ENV_VAR foo
