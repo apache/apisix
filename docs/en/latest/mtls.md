@@ -97,13 +97,14 @@ reqParam = {
     "key": key,
     "snis": [sni],
 }
-if len(sys.argv) >= 6:
+if len(sys.argv) >= 5:
     print("Setting mTLS")
     reqParam["client"] = {}
     with open(sys.argv[4]) as f:
         clientCert = f.read()
         reqParam["client"]["ca"] = clientCert
-    reqParam["client"]["depth"] = int(sys.argv[5])
+    if len(sys.argv) >= 6:
+        reqParam["client"]["depth"] = int(sys.argv[5])
 resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssl/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
@@ -128,7 +129,7 @@ Please make sure that the SNI fits the certificate domain.
 
 Sometimes the upstream enabled mTLS. In this situation, the APISIX acts as the client, it needs to provide client certificate to communicate with upstream.
 
-### How to config
+### How to configure
 
 When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams.
 
