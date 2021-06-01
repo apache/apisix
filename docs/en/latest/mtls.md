@@ -62,6 +62,19 @@ Please replace the following certificate paths and domain name with your real on
 curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
+## etcd with mTLS
+
+### How to configure
+
+You need to [build APISIX-Openresty](./how-to-build.md#6-build-openresty-for-apisix) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
+
+```yaml
+etcd:
+  tls:
+    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+```
+
 ## Protect Route
 
 ### Why use it
