@@ -57,6 +57,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
@@ -679,7 +680,7 @@ local function start(env, ...)
 end
 
 
-local function stop(env)
+local function cleanup()
     local local_conf_path = profile:yaml_path("config")
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
@@ -692,6 +693,20 @@ local function stop(env)
             util.die("failed to mv original config file, error: ", err)
         end
     end
+end
+
+
+local function quit(env)
+    cleanup()
+
+    local cmd = env.openresty_args .. [[ -s quit]]
+    util.execute_cmd(cmd)
+end
+
+
+local function stop(env)
+    cleanup()
+
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)
 end
@@ -730,6 +745,7 @@ local action = {
     init_etcd = etcd.init,
     start = start,
     stop = stop,
+    quit = quit,
     restart = restart,
     reload = reload,
 }
