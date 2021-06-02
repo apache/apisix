@@ -50,7 +50,7 @@ The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `con
 
 Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/apisix/admin`. Therefore, in order to avoid conflicts between your design API and `/apisix/admin`, it is recommended to use a different port for the Admin API. You can customize the Admin API port through `port_admin` in `conf/config.yaml`.
 
-### Request Methods：
+### Request Methods
 
 | Method | Request URI                      | Request Body | Description                                                                                                                                                                                                                                                                                                       |
 | ------ | -------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -287,7 +287,7 @@ After successful execution, status nodes will be updated to:
 
 ```
 
-### Request Body Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -436,7 +436,7 @@ After successful execution, upstream nodes will not retain the original data, an
 
 ```
 
-### Request Body Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -507,7 +507,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
-### Request Body Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -762,7 +762,7 @@ For example:
 Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
 Therefore it is the backup of `127.0.0.1`.
 
-### Request Body Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
