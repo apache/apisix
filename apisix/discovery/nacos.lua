@@ -88,8 +88,8 @@ local _M = {}
 local function discovery_nacos_callback(data, event, source, pid)
     applications = data
     log.notice("update local variable application, event is: ", event,
-            "source: ", source, "server pid:", pid,
-            ", application: ", core.json.encode(applications, true))
+               "source: ", source, "server pid:", pid,
+               ", application: ", core.json.encode(applications, true))
 end
 
 local function request(request_uri, path, body, method, basic_auth)
