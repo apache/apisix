@@ -48,6 +48,8 @@ script() {
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix quit
+    sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
     sudo PATH=$PATH ./utils/install-apisix.sh remove > build.log 2>&1 || (cat build.log && exit 1)
@@ -61,6 +63,8 @@ script() {
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
+    sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix quit
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
