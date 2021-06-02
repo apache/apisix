@@ -43,9 +43,11 @@ _EOC_
     }
 
     my $unix_socket_path = $ENV{"TEST_NGINX_HTML_DIR"} . "/nginx.sock";
+    my $cmd = $block->ext_plugin_cmd // "['sleep', '5s']";
     my $extra_yaml_config = <<_EOC_;
 ext-plugin:
     path_for_test: $unix_socket_path
+    cmd: $cmd
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);

@@ -83,15 +83,6 @@ local schema = {
             },
             minItems = 1,
         },
-        extra_info = {
-            type = "array",
-            items = {
-                type = "string",
-                maxLength = 64,
-                minLength = 1,
-            },
-            minItems = 1,
-        }
     },
 }
 
@@ -341,12 +332,7 @@ local rpc_handlers = {
         local path = builder:CreateString(uri)
 
         local bin_addr = var.binary_remote_addr
-        local len = #bin_addr
-        http_req_call_req.StartSrcIpVector(builder, len)
-        for i = len, 1, -1 do
-            builder:PrependByte(str_byte(bin_addr, i))
-        end
-        local src_ip = builder:EndVector(len)
+        local src_ip = builder.CreateByteVector(builder, bin_addr)
 
         local args = core.request.get_uri_args(ctx)
         local textEntries = {}
@@ -535,20 +521,6 @@ rpc_call = function (ty, conf, ctx)
 end
 
 
-function _M.communicate(conf, ctx)
-    local ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
-    if not ok then
-        core.log.error(err)
-        return 503
-    end
-
-    if code then
-        return code, body
-    end
-    return
-end
-
-
 local function create_lrucache()
     if lrucache then
         core.log.warn("flush conf token lrucache")
@@ -561,13 +533,48 @@ local function create_lrucache()
 end
 
 
+function _M.communicate(conf, ctx)
+    local ok, err, code, body
+    local tries = 0
+    while tries < 3 do
+        tries = tries + 1
+        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+        if ok then
+            if code then
+                return code, body
+            end
+
+            return
+        end
+
+        if not core.string.find(err, "conf token not found") then
+            core.log.error(err)
+            return 503
+        end
+
+        core.log.warn("refresh cache and try again")
+        create_lrucache()
+    end
+
+    core.log.error(err)
+    return 503
+end
+
+
+local function must_set(env, value)
+    local ok, err = core.os.setenv(env, value)
+    if not ok then
+        error(str_format("failed to set %s: %s", env, err), 2)
+    end
+end
+
+
 local function spawn_proc(cmd)
+    must_set("APISIX_CONF_EXPIRE_TIME", helper.get_conf_token_cache_time())
+    must_set("APISIX_LISTEN_ADDRESS", helper.get_path())
+
     local opt = {
         merge_stderr = true,
-        environ = {
-            "APISIX_CONF_EXPIRE_TIME=" .. helper.get_conf_token_cache_time(),
-            "APISIX_LISTEN_ADDRESS=" .. helper.get_path(),
-        },
     }
     local proc, err = ngx_pipe.spawn(cmd, opt)
     if not proc then
@@ -580,26 +587,7 @@ local function spawn_proc(cmd)
 end
 
 
-local function setup_runner()
-    local local_conf = core.config.local_conf()
-    local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
-    if not cmd then
-        return
-    end
-
-    events_list = events.event_list(
-        "process_runner_exit_event",
-        "runner_exit"
-    )
-
-    -- flush cache when runner exited
-    events.register(create_lrucache, events_list._source, events_list.runner_exit)
-
-    -- note that the runner is run under the same user as the Nginx master
-    if process.type() ~= "privileged agent" then
-        return
-    end
-
+local function setup_runner(cmd)
     local proc = spawn_proc(cmd)
     ngx_timer_at(0, function(premature)
         if premature then
@@ -636,7 +624,9 @@ local function setup_runner()
                 core.log.error("post event failure with ", events_list._source, ", error: ", err)
             end
 
-            core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
+            core.log.warn("respawn runner 3 seconds later with cmd: ", core.json.encode(cmd))
+            core.utils.sleep(3)
+            core.log.warn("respawning new runner...")
             proc = spawn_proc(cmd)
         end
     end)
@@ -644,8 +634,24 @@ end
 
 
 function _M.init_worker()
-    create_lrucache()
-    setup_runner()
+    local local_conf = core.config.local_conf()
+    local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
+    if not cmd then
+        return
+    end
+
+    events_list = events.event_list(
+        "process_runner_exit_event",
+        "runner_exit"
+    )
+
+    -- flush cache when runner exited
+    events.register(create_lrucache, events_list._source, events_list.runner_exit)
+
+    -- note that the runner is run under the same user as the Nginx master
+    if process.type() == "privileged agent" then
+        setup_runner(cmd)
+    end
 end
 
 

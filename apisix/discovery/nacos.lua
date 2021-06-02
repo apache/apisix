@@ -39,6 +39,9 @@ local applications
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 
+local events
+local events_list
+
 local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@]+$]]
 local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
 local schema = {
@@ -82,6 +85,12 @@ local schema = {
 
 local _M = {}
 
+local function discovery_nacos_callback(data, event, source, pid)
+    applications = data
+    log.notice("update local variable application, event is: ", event,
+               "source: ", source, "server pid:", pid,
+               ", application: ", core.json.encode(applications, true))
+end
 
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
@@ -157,6 +166,23 @@ local function get_token_param(base_uri, username, password)
     return '&accessToken=' .. data.accessToken
 end
 
+local function get_namespace_param(namespace_id)
+    local param = ''
+    if namespace_id then
+        local args = {namespaceId = namespace_id}
+        param = '&' .. ngx.encode_args(args)
+    end
+    return param
+end
+
+local function get_group_name_param(group_name)
+    local param = ''
+    if group_name then
+        local args = {groupName = group_name}
+        param = '&' .. ngx.encode_args(args)
+    end
+    return param
+end
 
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
@@ -207,8 +233,22 @@ local function iter_and_add_service(services, values)
             up = conf
         end
 
+        local namespace_id
+        if up.discovery_args then
+            namespace_id = up.discovery_args.namespace_id
+        end
+
+        local group_name
+        if up.discovery_args then
+            group_name = up.discovery_args.group_name
+        end
+
         if up.discovery_type == 'nacos' then
-            core.table.insert(services, up.service_name)
+            core.table.insert(services, {
+                service_name = up.service_name,
+                namespace_id = namespace_id,
+                group_name = group_name
+            })
         end
         ::CONTINUE::
     end
@@ -222,7 +262,6 @@ local function get_nacos_services()
     local get_upstreams = require('apisix.upstream').upstreams
     local get_routes = require('apisix.router').http_routes
     local get_services = require('apisix.http.service').services
-
     local values = get_upstreams()
     iter_and_add_service(services, values)
     values = get_routes()
@@ -254,10 +293,12 @@ local function fetch_full_registry(premature)
         applications = up_apps
         return
     end
-
     local data, err
-    for _, service_name in ipairs(infos) do
-        data, err = get_url(base_uri, instance_list_path .. service_name .. token_param)
+    for _, service_info in ipairs(infos) do
+        local namespace_param = get_namespace_param(service_info.namespace_id)
+        local group_name_param = get_group_name_param(service_info.group_name)
+        data, err = get_url(base_uri, instance_list_path .. service_info.service_name
+                            .. token_param .. namespace_param .. group_name_param)
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
             if not applications then
@@ -267,10 +308,10 @@ local function fetch_full_registry(premature)
         end
 
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[service_name]
+            local nodes = up_apps[service_info.service_name]
             if not nodes then
                 nodes = {}
-                up_apps[service_name] = nodes
+                up_apps[service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
@@ -279,7 +320,18 @@ local function fetch_full_registry(premature)
             })
         end
     end
+    local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
+    local old_apps_md5sum = ngx.md5(core.json.encode(applications))
+    if new_apps_md5sum == old_apps_md5sum then
+        return
+    end
     applications = up_apps
+    local ok, err = events.post(events_list._source, events_list.updating,
+                                applications)
+    if not ok then
+        log.error("post_event failure with ", events_list._source,
+                  ", update application error: ", err)
+    end
 end
 
 
@@ -312,6 +364,17 @@ function _M.init_worker()
         error('invalid nacos configuration: ' .. err)
         return
     end
+
+    events = require("resty.worker.events")
+    events_list = events.event_list("discovery_nacos_update_application",
+                                    "updating")
+
+    if 0 ~= ngx.worker.id() then
+        events.register(discovery_nacos_callback, events_list._source,
+                        events_list.updating)
+        return
+    end
+
     default_weight = local_conf.discovery.nacos.weight
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval

@@ -111,6 +111,17 @@ local desc_def = {
 }
 
 
+local timeout_def = {
+    type = "object",
+    properties = {
+        connect = {type = "number", exclusiveMinimum = 0},
+        send = {type = "number", exclusiveMinimum = 0},
+        read = {type = "number", exclusiveMinimum = 0},
+    },
+    required = {"connect", "send", "read"},
+}
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -342,15 +353,7 @@ local upstream_schema = {
             type = "integer",
             minimum = 0,
         },
-        timeout = {
-            type = "object",
-            properties = {
-                connect = {type = "number", exclusiveMinimum = 0},
-                send = {type = "number", exclusiveMinimum = 0},
-                read = {type = "number", exclusiveMinimum = 0},
-            },
-            required = {"connect", "send", "read"},
-        },
+        timeout = timeout_def,
         tls = {
             type = "object",
             properties = {
@@ -388,6 +391,19 @@ local upstream_schema = {
         discovery_type = {
             description = "discovery type",
             type = "string",
+        },
+        discovery_args = {
+            type = "object",
+            properties = {
+                namespace_id = {
+                    description = "namespace id",
+                    type = "string",
+                },
+                group_name = {
+                    description = "group name",
+                    type = "string",
+                },
+            }
         },
         pass_host = {
             description = "mod of host passing",
@@ -482,6 +498,7 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
+        timeout = timeout_def,
         vars = {
             type = "array",
         },

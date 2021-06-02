@@ -19,6 +19,7 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local html_page = require("apisix.cli.html_page")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -56,6 +57,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
@@ -545,6 +547,16 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+    for i, r in ipairs(sys_conf["dns_resolver"]) do
+        if r:match(":[^:]*:") then
+            -- more than one colon, is IPv6
+            if r:byte(1) ~= str_byte('[') then
+                -- ensure IPv6 address is always wrapped in []
+                sys_conf["dns_resolver"][i] = "[" .. r .. "]"
+            end
+        end
+    end
+
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
@@ -585,6 +597,14 @@ Please modify "admin_key" in conf/config.yaml .
                                     ngxconf)
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
+    end
+
+    local cmd_html = "mkdir -p " .. env.apisix_home .. "/html"
+    util.execute_cmd(cmd_html)
+
+    local ok, err = util.write_file(env.apisix_home .. "/html/50x.html", html_page)
+    if not ok then
+        util.die("failed to write 50x.html: ", err, "\n")
     end
 end
 
@@ -638,8 +658,18 @@ local function start(env, ...)
     if customized_yaml then
         profile.apisix_home = env.apisix_home .. "/"
         local local_conf_path = profile:yaml_path("config")
-        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
+
+        local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " "
+                                                .. local_conf_path .. ".bak")
+        if #err > 0 then
+            util.die("failed to mv config to backup, error: ", err)
+        end
+        err = util.execute_cmd_with_error("ln " .. customized_yaml .. " " .. local_conf_path)
+        if #err > 0 then
+            util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+            util.die("failed to link customized config, error: ", err)
+        end
+
         print("Use customized yaml: ", customized_yaml)
     end
 
@@ -650,13 +680,33 @@ local function start(env, ...)
 end
 
 
-local function stop(env)
+local function cleanup()
     local local_conf_path = profile:yaml_path("config")
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
-        util.execute_cmd("rm " .. local_conf_path)
-        util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+        local err = util.execute_cmd_with_error("rm " .. local_conf_path)
+        if #err > 0 then
+            print("failed to remove customized config, error: ", err)
+        end
+        err = util.execute_cmd_with_error("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+        if #err > 0 then
+            util.die("failed to mv original config file, error: ", err)
+        end
     end
+end
+
+
+local function quit(env)
+    cleanup()
+
+    local cmd = env.openresty_args .. [[ -s quit]]
+    util.execute_cmd(cmd)
+end
+
+
+local function stop(env)
+    cleanup()
+
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)
 end
@@ -695,6 +745,7 @@ local action = {
     init_etcd = etcd.init,
     start = start,
     stop = stop,
+    quit = quit,
     restart = restart,
     reload = reload,
 }

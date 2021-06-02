@@ -1,5 +1,5 @@
 {
-  "version": 2.5,
+  "version": 2.6,
   "sidebar": [
     {
       "type": "link",
@@ -43,7 +43,9 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
-            "plugins/server-info"
+            "plugins/server-info",
+            "plugins/ext-plugin-pre-req",
+            "plugins/ext-plugin-post-req"
           ]
         },
         {
@@ -205,6 +207,10 @@
         {
           "type": "doc",
           "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
         },
         {
           "type": "doc",

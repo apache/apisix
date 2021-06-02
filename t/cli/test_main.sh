@@ -435,6 +435,11 @@ cp conf/config.yaml conf/config_original.yaml
 
 make init
 
+if ./bin/apisix start -c conf/not_existed_config.yaml; then
+    echo "failed: apisix still start with invalid customized config.yaml"
+    exit 1
+fi
+
 ./bin/apisix start -c conf/customized_config.yaml
 
 if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
@@ -590,3 +595,88 @@ fi
 
 rm logs/nginx.pid
 echo "pass: ignore stale nginx.pid"
+
+# check the keepalive related parameter settings in the upstream
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    upstream:
+      keepalive: 32
+      keepalive_requests: 100
+      keepalive_timeout: 6s
+' > conf/config.yaml
+
+make init
+
+if ! grep "keepalive 32;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive 32;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "keepalive_requests 100;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive_requests 100;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "keepalive_timeout 6s;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'keepalive_timeout 6s;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the keepalive related parameter in nginx.conf"
+
+# check the charset setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    charset: gbk
+' > conf/config.yaml
+
+make init
+
+if ! grep "charset gbk;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'charset gbk;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'charset gbk;' in nginx.conf"
+
+# check realip recursive setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+    http:
+        real_ip_recursive: "on"
+' > conf/config.yaml
+
+make init
+
+if ! grep "real_ip_recursive on;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'real_ip_recursive on;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'real_ip_recursive on' in nginx.conf"
+
+# check the variables_hash_max_size setting
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    variables_hash_max_size: 1024
+' > conf/config.yaml
+
+make init
+
+if ! grep "variables_hash_max_size 1024;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'variables_hash_max_size 1024;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'variables_hash_max_size 1024;' in nginx.conf"

@@ -138,7 +138,7 @@ After this Route is created, we could use Apache APISIX's address to access our 
 $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
-This will be forward to `http://httpbin.org:80/getAll?limit=10` by Apache APISIX.
+This will be forward to `http://httpbin.org:80/services/users/getAll?limit=10` by Apache APISIX.
 
 ### Create an Upstream
 
@@ -154,7 +154,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f03
 }'
 ```
 
-We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:80` as our Upstream target(backend server), and its ID is `50`. For more fields, please refer to [Admin API](./admin-api.md).
+We use `roundrobin` as our load balancer mechanism, and set `httpbin.org:80` as our Upstream target(backend server), and its ID is `1`. For more fields, please refer to [Admin API](./admin-api.md).
 
 **NOTE:** `Create an Upstream` is not required actually, because we could use [Plugin](./architecture-design/plugin.md) to interceptor requests then response directly, but let's assume we need to set at least one `Upstream` in this guide.
 

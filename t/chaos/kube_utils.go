@@ -21,10 +21,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -99,4 +101,22 @@ func execInPod(g *WithT, cli *kubernetes.Clientset, pod *corev1.Pod, cmd string)
 		panic(fmt.Sprintf("error: %s\nin streaming remotecommand: pod: %s/%s, command: %s", err.Error(), namespace, pod.Name, cmd))
 	}
 	return stdout.String()
+}
+
+func log(pod *corev1.Pod, c *kubernetes.Clientset) (string, error) {
+	podLogOpts := corev1.PodLogOptions{}
+
+	req := c.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	podLogs, err := req.Stream()
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to open log stream for pod %s/%s", pod.GetNamespace(), pod.GetName())
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to copy information from podLogs to buf")
+	}
+	return buf.String(), nil
 }

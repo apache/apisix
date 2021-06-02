@@ -206,8 +206,8 @@ passed
 --- request
 GET /server_error
 --- error_code: 500
---- response_body eval
-qr/500 Internal Server Error/
+--- response_body_like
+.*apisix.apache.org.*
 --- error_log
 X-APISIX-Upstream-Status: 500
 

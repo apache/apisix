@@ -116,7 +116,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **OPS friendly**
 
-  - OpenTracing: support [Apache Skywalking](docs/en/latest/plugins/skywalking.md) and [Zipkin](docs/en/latest/plugins/zipkin.md)
+  - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
+  - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
   - works with external service discovery：In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
@@ -153,9 +154,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.5
-     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
-     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
+     $ mkdir apisix-2.6
+     $ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
+     $ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
      ```
 
    - Install the dependencies：
@@ -192,7 +193,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
    ```
 
    - check the version of APISIX:

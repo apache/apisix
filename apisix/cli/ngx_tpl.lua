@@ -214,17 +214,25 @@ http {
     client_header_timeout {* http.client_header_timeout *};
     client_body_timeout {* http.client_body_timeout *};
     send_timeout {* http.send_timeout *};
+    variables_hash_max_size {* http.variables_hash_max_size *};
 
     server_tokens off;
 
     include mime.types;
-    charset utf-8;
+    charset {* http.charset *};
+
+    # error_page
+    error_page 500 @50x.html;
 
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
     {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
     {% elseif http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
+    {% end %}
+
+    {% if http.real_ip_recursive then %}
+    real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
     {% if real_ip_from then %}
@@ -250,7 +258,9 @@ http {
             apisix.http_balancer_phase()
         }
 
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -290,6 +300,11 @@ http {
             content_by_lua_block {
                 apisix.http_control()
             }
+        }
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
         }
     }
     {% end %}
@@ -367,6 +382,11 @@ http {
             content_by_lua_block {
                 apisix.http_admin()
             }
+        }
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
         }
     }
     {% end %}
@@ -476,6 +496,7 @@ http {
             set $upstream_host               $http_host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
+            set $from_error_page             '';
 
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
@@ -503,9 +524,6 @@ http {
 
             if ($http_x_forwarded_for != "") {
                 set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
-            }
-            if ($http_x_forwarded_proto != "") {
-                set $var_x_forwarded_proto $http_x_forwarded_proto;
             }
             if ($http_x_forwarded_host != "") {
                 set $var_x_forwarded_host $http_x_forwarded_host;
@@ -618,6 +636,18 @@ http {
             proxy_pass $upstream_mirror_host$request_uri;
         }
         {% end %}
+
+        location @50x.html {
+            set $from_error_page 'true';
+            try_files /50x.html $uri;
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
     }
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}

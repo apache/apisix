@@ -108,7 +108,7 @@ received: Content-Type: text/plain
 received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: 
+received:
 received: hello world
 failed to receive a line: closed \[\]
 close: 1 nil}

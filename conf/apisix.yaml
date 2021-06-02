@@ -22,5 +22,4 @@ routes:
       nodes:
         "127.0.0.1:1980": 1
       type: roundrobin
-# yamllint disable-line rule:comments
 #END

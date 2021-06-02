@@ -48,20 +48,14 @@ script() {
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix quit
+    sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
     sudo PATH=$PATH ./utils/install-apisix.sh remove > build.log 2>&1 || (cat build.log && exit 1)
 
     # install APISIX by luarocks
-    for (( i = 0; i < 10; i++ )); do
-        if [[ "$i" -eq 10 ]]; then
-            echo "failed to fetch lua rocks in time"
-            cat build.log && exit 1
-            exit 1
-        fi
-        sudo luarocks install $APISIX_MAIN > build.log 2>&1 && break
-        i=$(( i + 1 ))
-    done
+    sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
 
     # show install files
@@ -69,6 +63,8 @@ script() {
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
+    sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix quit
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 

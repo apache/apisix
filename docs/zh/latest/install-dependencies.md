@@ -105,7 +105,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl openresty-openssl111-dev
+sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -

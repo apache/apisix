@@ -163,7 +163,7 @@ plugins:
             ngx.status = code
             ngx.say(org_body)
 
-            ngx.sleep(1.5)
+            ngx.sleep(2.1) -- make sure two files will be rotated out if we don't disable it
 
             local n_split_error_file = 0
             local lfs = require("lfs")
@@ -173,11 +173,13 @@ plugins:
                 end
             end
 
-            ngx.say(n_split_error_file)
+            -- Before hot reload, the log rotate may or may not take effect.
+            -- It depends on the time we start the test
+            ngx.say(n_split_error_file <= 1)
         }
     }
 --- response_body
 done
-1
+true
 --- no_error_log
 [error]

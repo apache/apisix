@@ -11,6 +11,8 @@ assignees: ''
 
 ### Environment
 
+Request help without environment information will be ignored or closed.
+
 * apisix version (cmd: `apisix version`):
 * OS (cmd: `uname -a`):
 * OpenResty / Nginx version (cmd: `nginx -V` or `openresty -V`):
