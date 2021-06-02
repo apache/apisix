@@ -50,7 +50,7 @@ The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `con
 
 Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/apisix/admin`. Therefore, in order to avoid conflicts between your design API and `/apisix/admin`, it is recommended to use a different port for the Admin API. You can customize the Admin API port through `port_admin` in `conf/config.yaml`.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                      | Request Body | Description                                                                                                                                                                                                                                                                                                       |
 | ------ | -------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,13 +62,13 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 | PATCH  | /apisix/admin/routes/{id}        | {...}        | Standard PATCH. Update some attributes of the existing Route, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full |
 | PATCH  | /apisix/admin/routes/{id}/{path} | {...}        | SubPath PATCH, specify the attribute of Route to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are. The difference between the two PATCH can refer to the following examples                                              |
 
-> URI Request Parameters：
+### URI Request Parameters
 
 | parameter | Required | Type      | Description                  | Example |
 | --------- | -------- | --------- | ---------------------------- | ------- |
 | ttl       | False    | Auxiliary | Expires after target seconds | ttl=1   |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter        | Required                                 | Type        | Description                                                                                                                                                                                                                                                                                                                                                                                                                        | Example                                              |
 | ---------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
@@ -287,7 +287,7 @@ After successful execution, status nodes will be updated to:
 
 ```
 
-> Response Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -299,7 +299,7 @@ Return response from etcd currently.
 
 *Description*：A `Service` is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to the upstream service abstraction. Between `Route` and `Service`, usually the relationship of N:1.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                        | Request Body | Description                                                                                                                                                                                                                                                                                                         |
 | ------ | ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -311,7 +311,7 @@ Return response from etcd currently.
 | PATCH  | /apisix/admin/services/{id}        | {...}        | Standard PATCH. Update some attributes of the existing Service, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full |
 | PATCH  | /apisix/admin/services/{id}/{path} | {...}        | SubPath PATCH, specify the attribute of Service to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are. The difference between the two PATCH can refer to the following examples                                              |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter        | Required | Type        | Description                                                                              | Example                                          |
 | ---------------- | -------- | ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -436,7 +436,7 @@ After successful execution, upstream nodes will not retain the original data, an
 
 ```
 
-> Response Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -448,7 +448,7 @@ Return response from etcd currently.
 
 *Description*：Consumers are consumers of certain types of services and can only be used in conjunction with a user authentication system. Consumer regards the `username` property as the identity, so only the HTTP `PUT` method is supported for creating a new consumer.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                        | Request Body | Description                 |
 | ------ | ---------------------------------- | ------------ | --------------------------- |
@@ -457,7 +457,7 @@ Return response from etcd currently.
 | PUT    | /apisix/admin/consumers            | {...}        | Create resource by username |
 | DELETE | /apisix/admin/consumers/{username} | NULL         | Remove resource             |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter   | Required | Type        | Description                                                         | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------- | ------------------------------------------------ |
@@ -507,7 +507,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
-> Response Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -519,7 +519,7 @@ Return response from etcd currently.
 
 *Description*：Upstream configuration can be directly bound to the specified `Route` or it can be bound to `Service`, but the configuration in `Route` has a higher priority. The priority behavior here is very similar to `Plugin`.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                         | Request Body | Description                                                                                                                                                                                                                                                                                                          |
 | ------ | ----------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -531,7 +531,7 @@ Return response from etcd currently.
 | PATCH  | /apisix/admin/upstreams/{id}        | {...}        | Standard PATCH. Update some attributes of the existing Upstream, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full |
 | PATCH  | /apisix/admin/upstreams/{id}/{path} | {...}        | SubPath PATCH, specify the attribute of Upstream to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are. The difference between the two PATCH can refer to the following example                                               |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
@@ -762,7 +762,7 @@ For example:
 Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
 Therefore it is the backup of `127.0.0.1`.
 
-> Response Parameters
+### Response Parameters
 
 Return response from etcd currently.
 
@@ -774,7 +774,7 @@ Return response from etcd currently.
 
 *Description*：SSL.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI            | Request Body | Description                                    |
 | ------ | ---------------------- | ------------ | ---------------------------------------------- |
@@ -784,7 +784,7 @@ Return response from etcd currently.
 | POST   | /apisix/admin/ssl      | {...}        | Create resource, and ID is generated by server |
 | DELETE | /apisix/admin/ssl/{id} | NULL         | Remove resource                                |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter   | Required | Type                    | Description                                                                                                                                                | Example                                          |
 | ----------- | -------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -819,7 +819,7 @@ More examples can be found in [HTTPS](./https.md).
 
 *Description*: Set plugins which run globally. Those plugins will be run before any Route/Service level plugins.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                            | Request Body | Description                                                                                                                                                                                                                                                                                                             |
 | ------ | -------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -830,7 +830,7 @@ More examples can be found in [HTTPS](./https.md).
 | PATCH  | /apisix/admin/global_rules/{id}        | {...}        | Standard PATCH. Update some attributes of the existing global rule, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full |
 | PATCH  | /apisix/admin/global_rules/{id}/{path} | {...}        | SubPath PATCH, specify the attribute of global rule to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.                                                                                                                       |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter   | Required | Description                                                         | Example    |
 | ----------- | -------- | ------------------------------------------------------------------- | ---------- |
@@ -844,7 +844,7 @@ More examples can be found in [HTTPS](./https.md).
 
 *Description*: Provide a group of plugins which can be reused across routes.
 
-> Request Methods：
+### Request Methods
 
 | Method | Request URI                              | Request Body | Description                                                                                                                                                                                                                                                                                                               |
 | ------ | ---------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -855,7 +855,7 @@ More examples can be found in [HTTPS](./https.md).
 | PATCH  | /apisix/admin/plugin_configs/{id}        | {...}        | Standard PATCH. Update some attributes of the existing plugin config, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full |
 | PATCH  | /apisix/admin/plugin_configs/{id}/{path} | {...}        | SubPath PATCH, specify the attribute of plugin config to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.                                                                                                                       |
 
-> Request Body Parameters：
+### Request Body Parameters
 
 | Parameter   | Required | Description                                                         | Example                                          |
 | ----------- | -------- | ------------------------------------------------------------------- | ------------------------------------------------ |
@@ -873,7 +873,7 @@ More examples can be found in [HTTPS](./https.md).
 
 *Description*: plugin metadata.
 
-> Request Methods:
+### Request Methods
 
 | Method | Request URI                                 | Request Body | Description                    |
 | ------ | ------------------------------------------- | ------------ | ------------------------------ |
@@ -881,7 +881,7 @@ More examples can be found in [HTTPS](./https.md).
 | PUT    | /apisix/admin/plugin_metadata/{plugin_name} | {...}        | Create resource by plugin name |
 | DELETE | /apisix/admin/plugin_metadata/{plugin_name} | NULL         | Remove resource                |
 
-> Request Body Parameters:
+### Request Body Parameters
 
 A json object with a data structure defined according to `metadata_schema` of the plugin ({plugin_name}).
 
@@ -906,14 +906,14 @@ Content-Type: text/plain
 
 *Description*: plugin
 
-> Request Methods:
+### Request Methods
 
 | Method | Request URI                         | Request Body | Description         |
 | ------ | ----------------------------------- | ------------ | ------------------- |
 | GET    | /apisix/admin/plugins/list          | NULL         | Fetch resource list |
 | GET    | /apisix/admin/plugins/{plugin_name} | NULL         | Fetch resource      |
 
-> Request Body Parameters:
+### Request Body Parameters
 
 Get the plugin ({plugin_name}) of the data structure.
 
@@ -931,7 +931,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
-> Request Methods:
+### Request Methods
 
 | Method | Request URI                    | Request Body | Description    |
 | ------ | ------------------------------ | ------------ | -------------- |
