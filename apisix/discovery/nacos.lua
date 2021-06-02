@@ -83,9 +83,7 @@ local schema = {
 }
 
 
-local _M = {
-    version = 0.2,
-}
+local _M = {}
 
 local function discovery_nacos_callback(data, event, source, pid)
     applications = data
