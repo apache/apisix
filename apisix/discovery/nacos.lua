@@ -39,6 +39,9 @@ local applications
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 
+local events
+local events_list
+
 local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@]+$]]
 local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
 local schema = {
@@ -82,6 +85,12 @@ local schema = {
 
 local _M = {}
 
+local function discovery_nacos_callback(data, event, source, pid)
+    applications = data
+    log.notice("update local variable application, event is: ", event,
+               "source: ", source, "server pid:", pid,
+               ", application: ", core.json.encode(applications, true))
+end
 
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
@@ -286,8 +295,8 @@ local function fetch_full_registry(premature)
     end
     local data, err
     for _, service_info in ipairs(infos) do
-        local namespace_param = get_namespace_param(service_info.namespace_id);
-        local group_name_param = get_group_name_param(service_info.group_name);
+        local namespace_param = get_namespace_param(service_info.namespace_id)
+        local group_name_param = get_group_name_param(service_info.group_name)
         data, err = get_url(base_uri, instance_list_path .. service_info.service_name
                             .. token_param .. namespace_param .. group_name_param)
         if err then
@@ -311,7 +320,18 @@ local function fetch_full_registry(premature)
             })
         end
     end
+    local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
+    local old_apps_md5sum = ngx.md5(core.json.encode(applications))
+    if new_apps_md5sum == old_apps_md5sum then
+        return
+    end
     applications = up_apps
+    local ok, err = events.post(events_list._source, events_list.updating,
+                                applications)
+    if not ok then
+        log.error("post_event failure with ", events_list._source,
+                  ", update application error: ", err)
+    end
 end
 
 
@@ -344,6 +364,17 @@ function _M.init_worker()
         error('invalid nacos configuration: ' .. err)
         return
     end
+
+    events = require("resty.worker.events")
+    events_list = events.event_list("discovery_nacos_update_application",
+                                    "updating")
+
+    if 0 ~= ngx.worker.id() then
+        events.register(discovery_nacos_callback, events_list._source,
+                        events_list.updating)
+        return
+    end
+
     default_weight = local_conf.discovery.nacos.weight
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
