@@ -202,7 +202,8 @@ function _M.init(env, args)
                 break
             end
             retry_time = retry_time + 1
-            print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s", version_url, err, retry_time))
+            print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s",
+                             version_url, err, retry_time))
         end
 
         if not res then
@@ -263,7 +264,8 @@ function _M.init(env, args)
                     break
                 end
                 retry_time = retry_time + 1
-                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s", auth_url, err, retry_time))
+                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s",
+                                 auth_url, err, retry_time))
             end
 
             if not res then
@@ -317,7 +319,8 @@ function _M.init(env, args)
                 if res then
                     break
                 end
-                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s", put_url, err, retry_time))
+                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry_time=%s",
+                                 put_url, err, retry_time))
             end
 
             if not res then
