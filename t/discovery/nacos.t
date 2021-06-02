@@ -20,6 +20,7 @@ repeat_each(1);
 log_level('info');
 no_root_location();
 no_shuffle();
+workers(4);
 
 our $yaml_config = <<_EOC_;
 apisix:
