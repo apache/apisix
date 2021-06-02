@@ -19,6 +19,8 @@ return [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
 
+user root;
+
 master_process on;
 
 worker_processes {* worker_processes *};
