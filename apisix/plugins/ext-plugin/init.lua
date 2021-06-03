@@ -79,7 +79,8 @@ local schema = {
                     value = {
                         type = "string",
                     },
-                }
+                },
+                required = {"name", "value"}
             },
             minItems = 1,
         },

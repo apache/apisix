@@ -382,3 +382,66 @@ env MY_ENV_VAR=foo;
     }
 --- error_log
 MY_ENV_VAR foo
+
+
+
+=== TEST 14: bad conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-pre-req": {
+                            "conf": [
+                                {"value":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(message)
+            end
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-post-req": {
+                            "conf": [
+                                {"name":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.print(message)
+            end
+        }
+    }
+--- response_body
+{"error_msg":"failed to check the configuration of plugin ext-plugin-pre-req err: property \"conf\" validation failed: failed to validate item 1: property \"name\" is required"}
+
+{"error_msg":"failed to check the configuration of plugin ext-plugin-post-req err: property \"conf\" validation failed: failed to validate item 1: property \"value\" is required"}
