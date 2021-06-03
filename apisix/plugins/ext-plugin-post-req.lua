@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
 local ext = require("apisix.plugins.ext-plugin.init")
 
 
@@ -23,6 +24,11 @@ local _M = {
     name = "ext-plugin-post-req",
     schema = ext.schema,
 }
+
+
+function _M.check_schema(conf)
+    return core.schema.check(_M.schema, conf)
+end
 
 
 function _M.access(conf, ctx)
