@@ -134,6 +134,11 @@ function _M.http_init_worker()
 end
 
 
+function _M.http_exit_worker()
+    require("apisix.plugins.ext-plugin.init").exit_worker()
+end
+
+
 function _M.http_ssl_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
