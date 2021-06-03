@@ -502,3 +502,14 @@ $ acme.sh --renew --domain demo.domain
 ```
 
 Blog https://juejin.cn/post/6965778290619449351 has detail setup.
+
+
+## How to run APISIX on the Chinese OS
+
+When the APISIX is run as the root user on the Chinese OS, the worker process of nginx is started as the nobody user by default. In the Chinese OS, luajit will have a ·`require` failure problem. You can start APISIX by adding the following configuration in `conf/conf-default.yaml` and executing `make run` as the root user.
+```yaml
+nginx: 
+  user: "root"
+```
+
+
