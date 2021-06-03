@@ -79,7 +79,8 @@ local schema = {
                     value = {
                         type = "string",
                     },
-                }
+                },
+                required = {"name", "value"}
             },
             minItems = 1,
         },
@@ -521,20 +522,6 @@ rpc_call = function (ty, conf, ctx)
 end
 
 
-function _M.communicate(conf, ctx)
-    local ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
-    if not ok then
-        core.log.error(err)
-        return 503
-    end
-
-    if code then
-        return code, body
-    end
-    return
-end
-
-
 local function create_lrucache()
     if lrucache then
         core.log.warn("flush conf token lrucache")
@@ -547,13 +534,48 @@ local function create_lrucache()
 end
 
 
+function _M.communicate(conf, ctx)
+    local ok, err, code, body
+    local tries = 0
+    while tries < 3 do
+        tries = tries + 1
+        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+        if ok then
+            if code then
+                return code, body
+            end
+
+            return
+        end
+
+        if not core.string.find(err, "conf token not found") then
+            core.log.error(err)
+            return 503
+        end
+
+        core.log.warn("refresh cache and try again")
+        create_lrucache()
+    end
+
+    core.log.error(err)
+    return 503
+end
+
+
+local function must_set(env, value)
+    local ok, err = core.os.setenv(env, value)
+    if not ok then
+        error(str_format("failed to set %s: %s", env, err), 2)
+    end
+end
+
+
 local function spawn_proc(cmd)
+    must_set("APISIX_CONF_EXPIRE_TIME", helper.get_conf_token_cache_time())
+    must_set("APISIX_LISTEN_ADDRESS", helper.get_path())
+
     local opt = {
         merge_stderr = true,
-        environ = {
-            "APISIX_CONF_EXPIRE_TIME=" .. helper.get_conf_token_cache_time(),
-            "APISIX_LISTEN_ADDRESS=" .. helper.get_path(),
-        },
     }
     local proc, err = ngx_pipe.spawn(cmd, opt)
     if not proc then

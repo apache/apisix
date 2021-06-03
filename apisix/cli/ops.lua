@@ -57,6 +57,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
@@ -657,8 +658,18 @@ local function start(env, ...)
     if customized_yaml then
         profile.apisix_home = env.apisix_home .. "/"
         local local_conf_path = profile:yaml_path("config")
-        util.execute_cmd("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        util.execute_cmd("ln " .. customized_yaml .. " " .. local_conf_path)
+
+        local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " "
+                                                .. local_conf_path .. ".bak")
+        if #err > 0 then
+            util.die("failed to mv config to backup, error: ", err)
+        end
+        err = util.execute_cmd_with_error("ln " .. customized_yaml .. " " .. local_conf_path)
+        if #err > 0 then
+            util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+            util.die("failed to link customized config, error: ", err)
+        end
+
         print("Use customized yaml: ", customized_yaml)
     end
 
@@ -669,13 +680,33 @@ local function start(env, ...)
 end
 
 
-local function stop(env)
+local function cleanup()
     local local_conf_path = profile:yaml_path("config")
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
-        util.execute_cmd("rm " .. local_conf_path)
-        util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+        local err = util.execute_cmd_with_error("rm " .. local_conf_path)
+        if #err > 0 then
+            print("failed to remove customized config, error: ", err)
+        end
+        err = util.execute_cmd_with_error("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+        if #err > 0 then
+            util.die("failed to mv original config file, error: ", err)
+        end
     end
+end
+
+
+local function quit(env)
+    cleanup()
+
+    local cmd = env.openresty_args .. [[ -s quit]]
+    util.execute_cmd(cmd)
+end
+
+
+local function stop(env)
+    cleanup()
+
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)
 end
@@ -714,6 +745,7 @@ local action = {
     init_etcd = etcd.init,
     start = start,
     stop = stop,
+    quit = quit,
     restart = restart,
     reload = reload,
 }

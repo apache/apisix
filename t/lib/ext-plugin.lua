@@ -81,9 +81,16 @@ function _M.go(case)
             builder:Finish(req)
             data = builder:Output()
         end
-    end
 
-    if ty == constants.RPC_HTTP_REQ_CALL then
+    elseif case.no_token then
+        ty = constants.RPC_ERROR
+        err_resp.Start(builder)
+        err_resp.AddCode(builder, err_code.CONF_TOKEN_NOT_FOUND)
+        local req = prepare_conf_req.End(builder)
+        builder:Finish(req)
+        data = builder:Output()
+
+    elseif ty == constants.RPC_HTTP_REQ_CALL then
         local buf = flatbuffers.binaryArray.New(data)
         local call_req = http_req_call_req.GetRootAsReq(buf, 0)
         if case.check_input then

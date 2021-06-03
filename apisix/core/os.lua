@@ -14,25 +14,41 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local ext = require("apisix.plugins.ext-plugin.init")
+local ffi = require("ffi")
+local ffi_str = ffi.string
+local ffi_errno = ffi.errno
+local C = ffi.C
+local tostring = tostring
+local type = type
 
 
-local _M = {
-    version = 0.1,
-    priority = -3000,
-    name = "ext-plugin-post-req",
-    schema = ext.schema,
-}
+local _M = {}
 
 
-function _M.check_schema(conf)
-    return core.schema.check(_M.schema, conf)
+ffi.cdef[[
+    int setenv(const char *name, const char *value, int overwrite);
+    char *strerror(int errnum);
+]]
+
+
+local function err()
+    return ffi_str(C.strerror(ffi_errno()))
 end
 
 
-function _M.access(conf, ctx)
-    return ext.communicate(conf, ctx)
+-- setenv sets the value of the environment variable
+function _M.setenv(name, value)
+    local tv = type(value)
+    if type(name) ~= "string" or (tv ~= "string" and tv ~= "number") then
+        return false, "invalid argument"
+    end
+
+    value = tostring(value)
+    local ok = C.setenv(name, value, 1) == 0
+    if not ok then
+        return false, err()
+    end
+    return true
 end
 
 
