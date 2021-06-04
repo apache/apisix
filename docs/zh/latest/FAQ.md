@@ -502,12 +502,3 @@ $ acme.sh --renew --domain demo.domain
 
 详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
 
-## 如何在kylin v10 国产操作系统运行apisix
-
-在国产境以root用户启动APISIX运行时，nginx的worker进程默认以`nobody`用户启动，在国产环境下`luajit`会出现`require`失败的问题。可以通过在`conf/conf-default.yaml`中添加如下配置，并以root用户执行`make run`启动APISIX。
-```yaml
-nginx: 
-  user: "root"
-```
-
-
