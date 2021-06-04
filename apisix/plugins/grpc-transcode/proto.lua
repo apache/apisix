@@ -43,7 +43,12 @@ local function create_proto_obj(proto_id)
     end
 
     local _p  = protoc.new()
-    local res = _p:load(content)
+    -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
+    -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
+    -- name to keep the code below unchanged, or we can create our own load function with returning
+    -- the loaded DescriptorProto table additionally, see more details in
+    -- https://github.com/apache/apisix/pull/4368
+    local res = _p:load(content, "filename for loaded")
 
     if not res or not _p.loaded then
         return nil, "failed to load proto content"
