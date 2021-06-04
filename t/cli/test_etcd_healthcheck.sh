@@ -43,7 +43,7 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 git checkout conf/config.yaml
 
 start_apisix
-docker stop ${ETCD_NAME_0}
+docker stop ${ETCD_NAME_1}
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
@@ -51,7 +51,7 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
-docker start ${ETCD_NAME_0}
+docker start ${ETCD_NAME_1}
 make stop
 
 echo "passed: apisix not got effected when one etcd node disconnected"
