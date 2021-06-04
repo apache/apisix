@@ -489,8 +489,8 @@ local get_etcd
 do
     local etcd_cli
 
-    function get_etcd()
-        if etcd_cli ~= nil then
+    function get_etcd(force)
+        if not force and etcd_cli ~= nil then
             return etcd_cli
         end
 
@@ -560,14 +560,13 @@ local function _automatic_fetch(premature, self)
             if err then
                 if string.find(err, "connection refused")
                     or string.find(err, "Service Unavailable") then
-                    local etcd_cli, err = get_etcd()
+                    local etcd_cli, err = get_etcd(true)
                     if not etcd_cli then
                         error("all etcd endpoints are unhealthy: " .. err)
                     end
                     self.etcd_cli = etcd_cli
                     log.warn("changed to new etcd endpoint")
-                end
-                if string.find(err, "has no healthy etcd endpoint available") then
+                elseif string.find(err, "has no healthy etcd endpoint available") then
                     local reconnected = false
                     while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
@@ -584,8 +583,7 @@ local function _automatic_fetch(premature, self)
                                        .. backoff_duration .. "s")
                         end
                     end
-                end
-                if err ~= "timeout" and err ~= "Key not found"
+                elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
                               tostring(self))
