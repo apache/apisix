@@ -104,6 +104,11 @@ function _M.get_format(res, real_key, is_dir, formatter)
         return nil, "etcd forbidden code: 403"
     end
 
+    if res.body.error then
+        -- other errors, like "grpc: received message larger than max"
+        return nil, res.body.error
+    end
+
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     if not res.body.kvs then
