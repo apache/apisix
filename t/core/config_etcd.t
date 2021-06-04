@@ -44,9 +44,9 @@ etcd:
 --- request
 GET /t
 --- grep_error_log eval
-qr{failed to fetch data from etcd: connection refused,  etcd key: .*routes}
+qr{connection refused,  etcd key: .*routes}
 --- grep_error_log_out eval
-qr/(failed to fetch data from etcd: connection refused,  etcd key: .*routes\n){1,}/
+qr/(connection refused,  etcd key: .*routes\n){1,}/
 
 
 

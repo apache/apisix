@@ -560,6 +560,7 @@ local function _automatic_fetch(premature, self)
             if err then
                 if string.find(err, "connection refused")
                     or string.find(err, "Service Unavailable") then
+                    log.warn(err, ", ", tostring(self))
                     local etcd_cli, err = get_etcd(true)
                     if not etcd_cli then
                         error("all etcd endpoints are unhealthy: " .. err)
@@ -567,6 +568,7 @@ local function _automatic_fetch(premature, self)
                     self.etcd_cli = etcd_cli
                     log.warn("changed to new etcd endpoint")
                 elseif string.find(err, "has no healthy etcd endpoint available") then
+                    log.warn(err, ", ", tostring(self))
                     local reconnected = false
                     while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
