@@ -130,6 +130,9 @@ apisix:
   disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
 
 nginx_config:                     # config for render the template to generate nginx.conf
+  #user: "root"                   # specifies the execution user of the worker process.
+                                  # the "user" directive makes sense only if the master process runs with super-user privileges.
+                                  # if you're not root user,the default is current user.
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
   worker_processes: auto          # one worker will get best performance, you can use "auto", but remember it is just work well only on physical machine
