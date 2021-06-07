@@ -620,7 +620,7 @@ _M.consumer = {
     type = "object",
     properties = {
         username = {
-            type = "string", minLength = 1, maxLength = 32,
+            type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
