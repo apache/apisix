@@ -16,6 +16,7 @@
 --
 local core    = require("apisix.core")
 local ngx_time = ngx.time
+local tonumber = tonumber
 
 
 local _M = {}
@@ -54,6 +55,19 @@ function _M.inject_conf_with_prev_conf(kind, key, conf)
     end
 
     return true
+end
+
+
+-- fix_count makes the "count" field returned by etcd reasonable
+function _M.fix_count(body, id)
+    if body.count then
+        if not id then
+            -- remove the count of placeholder (init_dir)
+            body.count = tonumber(body.count) - 1
+        else
+            body.count = tonumber(body.count)
+        end
+    end
 end
 
 

@@ -90,7 +90,7 @@ We expect the following data to be returned:
 
 ```json
 {
-  "count":"1",
+  "count":1,
   "action":"get",
   "node":{
     "key":"/apisix/services",
