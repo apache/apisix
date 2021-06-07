@@ -2,11 +2,6 @@
   "version": 2.6,
   "sidebar": [
     {
-      "type": "link",
-      "label": "Apache APISIX",
-      "href" : "https://apisix.apache.org/docs/apisix/getting-started"
-    },
-    {
       "type": "category",
       "label": "Architecture Design",
       "items": [
