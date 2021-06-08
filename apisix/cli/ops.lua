@@ -631,11 +631,10 @@ local function start(env, ...)
     pid = tonumber(pid)
     if pid then
         local lsof_cmd = "lsof -p " .. pid
-        local hd = popen(lsof_cmd)
-        local res = hd:read("*a")
+        local res, err = util.execute_cmd(lsof_cmd)
         if not (res and res == "") then
             if not res then
-                print("failed to read the result of command: " .. lsof_cmd)
+                print(err)
             else
                 print("APISIX is running...")
             end
