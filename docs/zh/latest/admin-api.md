@@ -33,6 +33,7 @@ title: Admin API
 - [Plugin Config](#plugin-config)
 - [Plugin Metadata](#plugin-metadata)
 - [Plugin](#plugin)
+- [Stream Route](#stream-route)
 
 ## Description
 
@@ -943,5 +944,31 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | Method | 请求 URI                       | 请求 body | 说明     |
 | ------ | ------------------------------ | --------- | -------- |
 | GET    | /apisix/admin/plugins?all=true | 无        | 获取资源 |
+
+[Back to TOC](#目录)
+
+## Stream Route
+
+*API*：/apisix/admin/stream_routes/{id}
+
+*Description*：Stream Route 是用于 TCP/UDP 动态代理的路由。参见 [TCP/UDP 动态代理](./stream-proxy.md) 一节.
+
+### 请求方法
+
+| 名字   | 请求 uri                         | 请求 body | 说明                                                                                                                                                                             |
+| ------ | -------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /apisix/admin/stream_routes             | 无        | 获取资源列表                                                                                                                                                                     |
+| GET    | /apisix/admin/stream_routes/{id}        | 无        | 获取资源                                                                                                                                                                         |
+| PUT    | /apisix/admin/stream_routes/{id}        | {...}     | 根据 id 创建资源                                                                                                                                                                 |
+| POST   | /apisix/admin/stream_routes             | {...}     | 创建资源，id 由后台服务自动生成                                                                                                                                                  |
+| DELETE | /apisix/admin/stream_routes/{id}        | 无        | 删除资源                                                                                                                                                                         |
+
+### body 请求参数
+
+| 名字             | 可选项| 类型     | 说明  | 示例 |
+| ---------------- | ------| -------- | ------| -----|
+| remote_addr      | 可选  | IP       |  客户端 IP 地址 | "127.0.0.1" |
+| server_addr      | 可选  | IP       | 服务端 IP 地址 | "127.0.0.1"  |
+| server_port      | 可选  | 整数     | 服务端端口 | 9090  |
 
 [Back to TOC](#目录)
