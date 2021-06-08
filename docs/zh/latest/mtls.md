@@ -47,7 +47,7 @@ title: TLS 双向认证
 
 3. 执行命令，使配置生效：
 
-```bash
+```shell
 apisix init
 apisix reload
 ```
