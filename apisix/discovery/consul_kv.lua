@@ -102,12 +102,12 @@ local schema = {
                     type = "object",
                     properties = {
                         fail_timeout = {type = "integer", default = 1},
-                        weigth = {type = "integer", default = 1},
+                        weight = {type = "integer", default = 1},
                         max_fails = {type = "integer", default = 1}
                     },
                     default = {
                         fail_timeout = 1,
-                        weigth = 1,
+                        weight = 1,
                         max_fails = 1
                     }
                 }
