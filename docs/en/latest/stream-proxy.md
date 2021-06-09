@@ -25,7 +25,7 @@ TCP is the protocol for many popular applications and services, such as LDAP, My
 
 APISIX can dynamic load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
 
-## How to enable Stream proxy?
+## How to enable stream proxy?
 
 Setting the `stream_proxy` option in `conf/config.yaml`, specify a list of addresses that require dynamic proxy.
 By default, no any stream proxy is enabled.
@@ -62,9 +62,11 @@ It means APISIX will proxy the request to `127.0.0.1:1995` which the client remo
 
 For more use cases, please take a look at [test case](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
 
-## More Limit Options
+## More route match options
 
-And we can add more limit options to match a route, here is an example:
+And we can add more options to match a route.
+
+Here is an example:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -80,4 +82,6 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-It means APISIX will proxy the request to `127.0.0.1:1995` which the server remote address is `127.0.0.1` and the server port is equal `2000`.
+It means APISIX will proxy the request to `127.0.0.1:1995` which the server address is `127.0.0.1` and the server port is equal `2000`.
+
+Read [Admin API's Stream Route section](./admin-api.md#stream-route) for the complete options list.
