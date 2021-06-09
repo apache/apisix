@@ -29,7 +29,7 @@ Mutual TLS authentication provides a better way to prevent unauthorized access t
 
 The clients will provide their certificates to the server and the server will check whether the cert is signed by the supplied CA and decide whether to serve the request.
 
-### How to enable
+### How to configure
 
 1. Generate self-signed key pairs, including ca, server, client key pairs.
 
@@ -83,7 +83,7 @@ Using mTLS is a way to verify clients cryptographically. It is useful and import
 
 ### How to configure
 
-When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain.
+When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain. Please refer to [Admin API](./admin-api.md#ssl) for details.
 
 Here is an example Python script to create SSL with mTLS (id is `1`, changes admin API url if needed):
 
@@ -144,7 +144,7 @@ Sometimes the upstream requires mTLS. In this situation, the APISIX acts as the 
 
 ### How to configure
 
-When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams.
+When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams. Please refer to [Admin API](./admin-api.md#upstream) for details.
 
 This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
