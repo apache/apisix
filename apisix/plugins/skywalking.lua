@@ -23,7 +23,7 @@ local math = math
 local require = require
 
 local plugin_name = "skywalking"
-local metadata_schema = {
+local attr_schema = {
     type = "object",
     properties = {
         service_name = {
@@ -66,7 +66,7 @@ local _M = {
     priority = -1100, -- last running plugin, but before serverless post func
     name = plugin_name,
     schema = schema,
-    metadata_schema = metadata_schema,
+    attr_schema = attr_schema,
 }
 
 
@@ -117,7 +117,7 @@ function _M.init()
                                                        "plugin_attr",
                                                        plugin_name) or {}
     local_plugin_info = core.table.clone(local_plugin_info)
-    local ok, err = core.schema.check(metadata_schema, local_plugin_info)
+    local ok, err = core.schema.check(attr_schema, local_plugin_info)
     if not ok then
         core.log.error("failed to check the plugin_attr[", plugin_name, "]",
                        ": ", err)
