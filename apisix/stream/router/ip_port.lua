@@ -15,8 +15,8 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local config_util = require("apisix.core.config_util")
 local plugin_checker = require("apisix.plugin").stream_plugin_checker
-local ipairs    = ipairs
 local error     = error
 local ngx_exit  = ngx.exit
 local tonumber  = tonumber
@@ -58,7 +58,7 @@ function _M.match(api_ctx)
     end
     core.log.info("stream routes: ", core.json.delay_encode(routes))
 
-    for _, route in ipairs(routes) do
+    for _, route in config_util.iterate_values(routes) do
         local hit = match_opts(route, api_ctx)
         if hit then
             api_ctx.matched_route = route
