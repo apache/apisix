@@ -230,3 +230,54 @@ mmm
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: skip route config tombstone
+--- stream_conf_enable
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        t('/apisix/admin/stream_routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1995": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]
+        )
+        t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+        t('/apisix/admin/stream_routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1995": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]
+        )
+
+        local sock = ngx.socket.tcp()
+        local ok, err = sock:connect("127.0.0.1", 1985)
+        if not ok then
+            ngx.say("failed to connect: ", err)
+            return
+        end
+
+        assert(sock:send("mmm"))
+        local data = assert(sock:receive("*a"))
+        ngx.print(data)
+    }
+}
+--- request
+GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
