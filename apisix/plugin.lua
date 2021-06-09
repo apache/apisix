@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
+local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
 local pcall         = pcall
@@ -27,6 +28,7 @@ local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
 local tostring      = tostring
 local error         = error
+local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
@@ -275,8 +277,6 @@ local function trace_plugins_info_for_debug(plugins)
     if not (local_conf and local_conf.apisix.enable_debug) then
         return
     end
-
-    local is_http = ngx.config.subsystem == "http"
 
     if not plugins then
         if is_http and not ngx.headers_sent then
@@ -641,11 +641,19 @@ function _M.run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
-                    if code >= 400 then
-                        core.log.warn(plugins[i].name, " exits with http status code ", code)
-                    end
+                    if is_http then
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with http status code ", code)
+                        end
 
-                    core.response.exit(code, body)
+                        core.response.exit(code, body)
+                    else
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with status code ", code)
+                        end
+
+                        ngx_exit(1)
+                    end
                 end
             end
         end
