@@ -186,7 +186,11 @@ failed to connect to the unix socket
 ["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
-        return 200;
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
     }
 --- grep_error_log eval
 qr/LISTEN unix:\S+/
@@ -378,7 +382,11 @@ env MY_ENV_VAR=foo;
 ["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
-        return 200;
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
     }
 --- error_log
 MY_ENV_VAR foo
