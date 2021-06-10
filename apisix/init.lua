@@ -481,7 +481,10 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
-    ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         return ngx.exec("@grpc_pass")
@@ -493,15 +496,22 @@ function _M.http_access_phase()
 end
 
 
-function _M.dubbo_access_phase()
-    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
     ngx_var.ctx_ref = ''
+    return ctx
+end
+
+
+function _M.dubbo_access_phase()
+    ngx.ctx = fetch_ctx()
 end
 
 
 function _M.grpc_access_phase()
-    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
-    ngx_var.ctx_ref = ''
+    ngx.ctx = fetch_ctx()
 
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -543,7 +553,7 @@ end
 function _M.http_header_filter_phase()
     if ngx_var.ctx_ref ~= '' then
         -- prevent for the table leak
-        local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+        local stash_ctx = fetch_ctx()
 
         -- internal redirect, so we should apply the ctx
         if ngx_var.from_error_page == "true" then
@@ -636,6 +646,16 @@ end
 
 
 function _M.http_log_phase()
+    if ngx_var.ctx_ref ~= '' then
+        -- prevent for the table leak
+        local stash_ctx = fetch_ctx()
+
+        -- internal redirect, so we should apply the ctx
+        if ngx_var.from_error_page == "true" then
+            ngx.ctx = stash_ctx
+        end
+    end
+
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
