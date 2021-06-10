@@ -42,6 +42,7 @@ limit request rate using the "leaky bucket" method.
 | burst         | integer | required    |         | burst >= 0                                                               | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
 | key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
 | rejected_code | integer | optional    | 503     | [200,...,599]                                                            | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
+| nodelay       | boolean | optional    | false   |                                                                          | If nodelay flag is true, bursted requests will not get delayed  |
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
