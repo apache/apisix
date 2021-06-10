@@ -36,7 +36,7 @@ gRPC client -> APISIX -> gRPC/gRPCS server
 Here's an example, to proxying gRPC service by specified route:
 
 * attention: the `scheme` of the route's upstream must be `grpc` or `grpcs`.
-* attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service, so need to [config SSL certificate](https.md)
+* attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service, so need to [config SSL certificate](certificate.md)
 * attention: APISIX also support to expose gRPC service with plaintext HTTP/2, which does not rely on TLS, usually used to proxy gRPC service in intranet environment
 * the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 

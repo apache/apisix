@@ -79,7 +79,7 @@
   - بروتوكول الوكيل
   - الوكيل  Dubbo: Dubbo يعتمد على  Tengine.
   - HTTP(S)	وكيل إعادة التوجيه
-  - [SSL](docs/en/latest/https.md): تحميل شهادة SSL ديناميكيًا.
+  - [SSL](docs/en/latest/certificate.md): تحميل شهادة SSL ديناميكيًا.
 
 - **ديناميكية كاملة**
 

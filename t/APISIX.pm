@@ -238,6 +238,52 @@ _EOC_
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
 
+    my $stream_tls_request = $block->stream_tls_request;
+    if ($stream_tls_request) {
+        # generate a springboard to send tls stream request
+        $block->set_value("stream_conf_enable", 1);
+        $block->set_value("request", "GET /stream_tls_request");
+
+        my $sni = "nil";
+        if ($block->stream_sni) {
+            $sni = '"' . $block->stream_sni . '"';
+        }
+        chomp $stream_tls_request;
+
+        my $config = <<_EOC_;
+            location /stream_tls_request {
+                content_by_lua_block {
+                    local sock = ngx.socket.tcp()
+                    local ok, err = sock:connect("127.0.0.1", 2005)
+                    if not ok then
+                        ngx.say("failed to connect: ", err)
+                        return
+                    end
+
+                    local sess, err = sock:sslhandshake(nil, $sni, false)
+                    if not sess then
+                        ngx.say("failed to do SSL handshake: ", err)
+                        return
+                    end
+
+                    local bytes, err = sock:send("$stream_tls_request")
+                    if not bytes then
+                        ngx.say("send stream request error: ", err)
+                        return
+                    end
+                    local data, err = sock:receive("*a")
+                    if not data then
+                        sock:close()
+                        ngx.say("receive stream response error: ", err)
+                        return
+                    end
+                    ngx.print(data)
+                }
+            }
+_EOC_
+        $block->set_value("config", $config)
+    }
+
     my $stream_enable = $block->stream_enable;
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
@@ -297,6 +343,15 @@ _EOC_
     }
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
+    listen 2005 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+    lua_ssl_trusted_certificate cert/apisix.crt;
+
+    ssl_certificate_by_lua_block {
+        apisix.stream_ssl_phase()
+    }
+
     preread_by_lua_block {
         -- wait for etcd sync
         ngx.sleep($wait_etcd_sync)

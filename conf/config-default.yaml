@@ -98,8 +98,9 @@ apisix:
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   #stream_proxy:                  # TCP/UDP proxy
   #  tcp:                         # TCP proxy port list
-  #    - 9100
-  #    - "127.0.0.1:9101"
+  #    - addr: 9100
+  #      tls: true
+  #    - addr: "127.0.0.1:9101"
   #  udp:                         # UDP proxy port list
   #    - 9200
   #    - "127.0.0.1:9201"
