@@ -80,6 +80,24 @@ fi
 
 echo "passed: properly handle the error when connecting to etcd without auth"
 
+# Check etcd retry if connect failed
+git checkout conf/config.yaml
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2389"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "retry time"; then
+    echo "failed: apisix should echo \"retry time\""
+    exit 1
+fi
+
+echo "passed: Show retry time info successfully"
+
 # Check etcd connect refused
 git checkout conf/config.yaml
 
