@@ -318,6 +318,10 @@ _EOC_
         $main_config .= <<_EOC_;
 stream {
 $stream_config
+    server {
+        listen 1985;
+        $stream_server_config
+    }
 }
 _EOC_
     }

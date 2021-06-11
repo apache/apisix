@@ -16,6 +16,7 @@
 --
 local core      = require("apisix.core")
 local upstream  = require("apisix.upstream")
+local ipmatcher = require("resty.ipmatcher")
 local bit       = require("bit")
 local ngx       = ngx
 local ngx_exit  = ngx.exit
@@ -31,9 +32,14 @@ local schema = {
         upstream = {
             type = "object",
             properties = {
-                ip = {type = "string"},
+                ip = {type = "string"}, -- deprecated, use "host" instead
+                host = {type = "string"},
                 port = {type = "number"},
-            }
+            },
+            oneOf = {
+                {required = {"host", "port"}},
+                {required = {"ip", "port"}},
+            },
         }
     },
     required = {"protocol_name", "protocol_level", "upstream"},
@@ -159,16 +165,38 @@ function _M.preread(conf, ctx)
 
     core.log.info("mqtt client id: ", res.client_id)
 
+    local host = conf.upstream.host
+    if not host then
+        host = conf.upstream.ip
+    end
+
+    if conf.host_is_domain == nil then
+        conf.host_is_domain = not ipmatcher.parse_ipv4(host)
+                              and not ipmatcher.parse_ipv6(host)
+    end
+
+    if conf.host_is_domain then
+        local ip, err = core.resolver.parse_domain(host)
+        if not ip then
+            core.log.error("failed to parse host ", host, ", err: ", err)
+            return 500
+        end
+
+        host = ip
+    end
+
     local up_conf = {
         type = "roundrobin",
         nodes = {
-            {host = conf.upstream.ip, port = conf.upstream.port, weight = 1},
+            {host = host, port = conf.upstream.port, weight = 1},
         }
     }
 
     local ok, err = upstream.check_schema(up_conf)
     if not ok then
-        return 500, err
+        core.log.error("failed to check schema ", core.json.delay_encode(up_conf),
+                       ", err: ", err)
+        return 500
     end
 
     local matched_route = ctx.matched_route
