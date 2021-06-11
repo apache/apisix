@@ -74,7 +74,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Proxy Protocol
   - Proxy Dubbo: Dubbo Proxy based on Tengine.
   - HTTP(S) Forward Proxy
-  - [SSL](docs/en/latest/https.md): Dynamically load an SSL certificate.
+  - [SSL](docs/en/latest/certificate.md): Dynamically load an SSL certificate.
 
 - **Full Dynamic**
 

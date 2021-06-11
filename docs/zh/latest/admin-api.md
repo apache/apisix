@@ -815,7 +815,7 @@ ssl 对象 json 配置内容：
 }
 ```
 
-更多的配置示例见 [HTTPS](./https.md)。
+更多的配置示例见 [证书](./certificate.md)。
 
 [Back to TOC](#目录)
 
