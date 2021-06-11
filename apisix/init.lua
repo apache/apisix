@@ -823,7 +823,21 @@ function _M.stream_preread_phase()
     if up_id then
         api_ctx.matched_upstream = get_upstream_by_id(up_id)
     else
-        api_ctx.matched_upstream = matched_route.value.upstream
+        if matched_route.has_domain then
+            local err
+            matched_route, err = parse_domain_in_route(matched_route)
+            if err then
+                core.log.error("failed to get resolved route: ", err)
+                return ngx_exit(1)
+            end
+
+            api_ctx.matched_route = matched_route
+        end
+
+        local route_val = matched_route.value
+        api_ctx.matched_upstream = (matched_route.dns_value and
+                                    matched_route.dns_value.upstream)
+                                   or route_val.upstream
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
