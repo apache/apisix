@@ -77,6 +77,22 @@ __DATA__
                 ngx.status = code
             end
             ngx.say(body)
+
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 
@@ -92,7 +108,7 @@ __DATA__
 [
 "foo=bar\nok",
 "foo=bar",
-"passed\n",
+"passed\npassed",
 "",
 "\"host\":\"httpbin.org\""
 ]
