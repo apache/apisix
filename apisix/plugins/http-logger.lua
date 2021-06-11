@@ -215,6 +215,19 @@ function _M.log(conf, ctx)
             entry.service_id = matched_route.service_id
             entry.route_id = matched_route.id
         end
+
+        local matched_host = ctx.balancer_ip
+        if matched_host then
+            if ctx.matched_upstream and ctx.matched_upstream.nodes then
+                for _, node in pairs(ctx.matched_upstream.nodes) do
+                    if node.domain and node.host == matched_host then
+                        matched_host = node.domain
+                        break
+                    end
+                end
+            end
+            entry.host = matched_host
+        end
     else
         entry = log_util.get_full_log(ngx, conf)
     end
