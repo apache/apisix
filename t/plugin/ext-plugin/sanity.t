@@ -453,3 +453,13 @@ MY_ENV_VAR foo
 {"error_msg":"failed to check the configuration of plugin ext-plugin-pre-req err: property \"conf\" validation failed: failed to validate item 1: property \"name\" is required"}
 
 {"error_msg":"failed to check the configuration of plugin ext-plugin-post-req err: property \"conf\" validation failed: failed to validate item 1: property \"value\" is required"}
+
+
+
+=== TEST 15: spawn runner which can't be terminated, ensure APISIX won't be blocked
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner_can_not_terminated.sh"]
+--- config
+    location /t {
+        return 200;
+    }

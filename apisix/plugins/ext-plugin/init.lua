@@ -36,6 +36,7 @@ if is_http then
     ngx_pipe = require("ngx.pipe")
     events = require("resty.worker.events")
 end
+local resty_signal = require "resty.signal"
 local bit = require("bit")
 local band = bit.band
 local lshift = bit.lshift
@@ -588,8 +589,10 @@ local function spawn_proc(cmd)
 end
 
 
+local runner
 local function setup_runner(cmd)
-    local proc = spawn_proc(cmd)
+    runner = spawn_proc(cmd)
+
     ngx_timer_at(0, function(premature)
         if premature then
             return
@@ -599,7 +602,7 @@ local function setup_runner(cmd)
             while true do
                 -- drain output
                 local max = 3800 -- smaller than Nginx error log length limit
-                local data, err = proc:stdout_read_any(max)
+                local data, err = runner:stdout_read_any(max)
                 if not data then
                     if exiting() then
                         return
@@ -615,10 +618,12 @@ local function setup_runner(cmd)
                 end
             end
 
-            local ok, reason, status = proc:wait()
+            local ok, reason, status = runner:wait()
             if not ok then
                 core.log.warn("runner exited with reason: ", reason, ", status: ", status)
             end
+
+            runner = nil
 
             local ok, err = events.post(events_list._source, events_list.runner_exit)
             if not ok then
@@ -628,7 +633,7 @@ local function setup_runner(cmd)
             core.log.warn("respawn runner 3 seconds later with cmd: ", core.json.encode(cmd))
             core.utils.sleep(3)
             core.log.warn("respawning new runner...")
-            proc = spawn_proc(cmd)
+            runner = spawn_proc(cmd)
         end
     end)
 end
@@ -652,6 +657,23 @@ function _M.init_worker()
     -- note that the runner is run under the same user as the Nginx master
     if process.type() == "privileged agent" then
         setup_runner(cmd)
+    end
+end
+
+
+function _M.exit_worker()
+    if process.type() == "privileged agent" and runner then
+        -- We need to send SIGTERM in the exit_worker phase, as:
+        -- 1. privileged agent doesn't support graceful exiting when I write this
+        -- 2. better to make it work without graceful exiting
+        local pid = runner:pid()
+        core.log.notice("terminate runner ", pid, " with SIGTERM")
+        local num = resty_signal.signum("TERM")
+        runner:kill(num)
+
+        -- give 1s to clean up the mess
+        core.os.waitpid(pid, 1)
+        -- then we KILL it via gc finalizer
     end
 end
 
