@@ -23,12 +23,12 @@ title: Stream Proxy
 
 TCP is the protocol for many popular applications and services, such as LDAP, MySQL, and RTMP. UDP (User Datagram Protocol) is the protocol for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
 
-APISIX can dynamic load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
+APISIX can dynamically load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
 
 ## How to enable stream proxy?
 
 Setting the `stream_proxy` option in `conf/config.yaml`, specify a list of addresses that require dynamic proxy.
-By default, no any stream proxy is enabled.
+By default, no stream proxy is enabled.
 
 ```yaml
 apisix:
@@ -82,6 +82,38 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-It means APISIX will proxy the request to `127.0.0.1:1995` which the server address is `127.0.0.1` and the server port is equal `2000`.
+It means APISIX will proxy the request to `127.0.0.1:1995` which the server address is `127.0.0.1` and the server port is equal to `2000`.
 
 Read [Admin API's Stream Route section](./admin-api.md#stream-route) for the complete options list.
+
+## Accept TLS over TCP
+
+APISIX can accept TLS over TCP.
+
+First of all, we need to enable TLS for the TCP address:
+
+```yaml
+apisix:
+  stream_proxy: # TCP/UDP proxy
+    tcp: # TCP proxy address list
+      - addr: 9100
+        tls: true
+```
+
+Second, we need to configure certificate for the given SNI.
+See [Admin API's SSL section](./admin-api.md#ssl) for how to do.
+
+Third, we need to configure a stream route to match and proxy it to the upstream:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```

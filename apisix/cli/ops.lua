@@ -192,6 +192,25 @@ local config_schema = {
                                     {
                                         type = "string",
                                     },
+                                    {
+                                        type = "object",
+                                        properties = {
+                                            addr = {
+                                                anyOf = {
+                                                    {
+                                                        type = "integer",
+                                                    },
+                                                    {
+                                                        type = "string",
+                                                    },
+                                                }
+                                            },
+                                            tls = {
+                                                type = "boolean",
+                                            }
+                                        },
+                                        required = {"addr"}
+                                    },
                                 },
                             },
                             uniqueItems = true,
@@ -435,6 +454,21 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
+    local tcp_enable_ssl
+    -- compatible with the original style which only has the addr
+    if yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
+        local tcp = yaml_conf.apisix.stream_proxy.tcp
+        for i, item in ipairs(tcp) do
+            if type(item) ~= "table" then
+                tcp[i] = {addr = item}
+            else
+                if item.tls then
+                    tcp_enable_ssl = true
+                end
+            end
+        end
+    end
+
     local dubbo_upstream_multiplex_count = 32
     if yaml_conf.plugin_attr and yaml_conf.plugin_attr["dubbo-proxy"] then
         local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
@@ -460,6 +494,7 @@ Please modify "admin_key" in conf/config.yaml .
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
+        tcp_enable_ssl = tcp_enable_ssl,
     }
 
     if not yaml_conf.apisix then

@@ -78,7 +78,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - Proxy Protocol
   - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
   - HTTP(S) 反向代理
-  - [SSL](https.md)：动态加载 SSL 证书。
+  - [SSL](certificate.md)：动态加载 SSL 证书。
 
 - **全动态能力**
 

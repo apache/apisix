@@ -76,7 +76,7 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
   - Proxy de Protocolo
   - Proxy Dubbo: Proxy de Dubbo basado en Tengine.
   - Proxy de HTTP(S) hacia adelante
-  - [SSL](../../en/latest/https.md): Carga dinámica de certificado SSL.
+  - [SSL](../../en/latest/certificate.md): Carga dinámica de certificado SSL.
 
 - **Completamente Dinámico**
 
