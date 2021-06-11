@@ -45,7 +45,9 @@ curl -k -i http://127.0.0.1:9080/apisix/admin/stream_routes/1  \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
 sleep 0.1
-if ! openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt | \
+if ! echo -e 'mmm' | \
+    openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
+        -ign_eof | \
     grep 'OK FROM UPSTREAM';
 then
     echo "failed: should proxy tls over tcp"
