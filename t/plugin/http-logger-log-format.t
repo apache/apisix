@@ -247,7 +247,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","route_id":"1"\}/
+qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\}/
 
 
 
