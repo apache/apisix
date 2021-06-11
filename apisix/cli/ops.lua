@@ -65,7 +65,7 @@ version:    print the version of apisix
 end
 
 
-local function check_version(cur_ver_s, need_ver_s)
+local function version_greater_equal(cur_ver_s, need_ver_s)
     local cur_vers = util.split(cur_ver_s, [[.]])
     local need_vers = util.split(need_ver_s, [[.]])
     local len = max(#cur_vers, #need_vers)
@@ -357,12 +357,12 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     local need_ver = "1.17.3"
-    if not check_version(or_ver, need_ver) then
+    if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
     end
 
     local use_openresty_1_17 = false
-    if not check_version(or_ver, "1.19.3") then
+    if not version_greater_equal(or_ver, "1.19.3") then
         use_openresty_1_17 = true
     end
 
