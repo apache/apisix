@@ -86,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 ## 接收 TLS over TCP
 
-APISIX 支持接收 TLS over TCP.
+APISIX 支持接收 TLS over TCP。
 
 首先，我们需要给对应的 TCP 地址启用 TLS：
 
