@@ -83,3 +83,35 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 例子中 APISIX 会把服务器地址为 `127.0.0.1`, 端口为 `2000` 代理到上游地址 `127.0.0.1:1995`。
 
 完整的匹配选项列表参见 [Admin API 的 Stream Route](./admin-api.md#stream-route)。
+
+## 接收 TLS over TCP
+
+APISIX 支持接收 TLS over TCP。
+
+首先，我们需要给对应的 TCP 地址启用 TLS：
+
+```yaml
+apisix:
+  stream_proxy: # TCP/UDP proxy
+    tcp: # TCP proxy address list
+      - addr: 9100
+        tls: true
+```
+
+接着，我们需要为给定的 SNI 配置证书。
+具体步骤参考 [Admin API 的 SSL](./admin-api.md#ssl)。
+
+然后，我们需要配置一个 route，匹配连接并代理到上游：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
