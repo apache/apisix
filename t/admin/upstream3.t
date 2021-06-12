@@ -60,4 +60,4 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":{}}}
+{"action":"get","count":"0","node":{"dir":true,"key":"/apisix/upstreams","nodes":{}}}

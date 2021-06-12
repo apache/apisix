@@ -17,6 +17,7 @@
 local core    = require("apisix.core")
 local ngx_time = ngx.time
 local tonumber = tonumber
+local tostring = tostring
 
 
 local _M = {}
@@ -63,9 +64,11 @@ function _M.fix_count(body, id)
     if body.count then
         if not id then
             -- remove the count of placeholder (init_dir)
-            body.count = tonumber(body.count) - 1
-        else
-            body.count = tonumber(body.count)
+            local count = tonumber(body.count) - 1
+            -- We used string type "count" long ago. I tried to change
+            -- it to a number, but people complained this breaks their
+            -- code. So I have to change it back.
+            body.count = tostring(count)
         end
     end
 end
