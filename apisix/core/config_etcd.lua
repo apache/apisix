@@ -148,7 +148,11 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
 
     if type(res.result) ~= "table" then
-        return nil, "failed to wait etcd dir"
+        err = "failed to wait etcd dir"
+        if res.error and res.error.message then
+            err = err .. ": " .. res.error.message
+        end
+        return nil, err
     end
     return etcd_apisix.watch_format(res)
 end
@@ -489,8 +493,8 @@ local get_etcd
 do
     local etcd_cli
 
-    function get_etcd(force)
-        if not force and etcd_cli ~= nil then
+    function get_etcd()
+        if etcd_cli ~= nil then
             return etcd_cli
         end
 
@@ -534,8 +538,8 @@ local function _automatic_fetch(premature, self)
     if not health_check.conf then
         local _, err = health_check.init({
             shm_name = "etcd_cluster_health_check",
-            fail_timeout = 5,
-            max_fails = 3,
+            fail_timeout = 30,
+            max_fails = 50,
         })
         if err then
             log.warn("fail to create health_check: " .. err)
@@ -558,16 +562,15 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                if string.find(err, "connection refused")
-                    or string.find(err, "Service Unavailable") then
+                while string.find(err, "connection refused")
+                    or string.find(err, "Service Unavailable") do
                     log.warn(err, ", ", tostring(self))
-                    local etcd_cli, err = get_etcd(true)
-                    if not etcd_cli then
-                        error("all etcd endpoints are unhealthy: " .. err)
-                    end
-                    self.etcd_cli = etcd_cli
-                    log.warn("changed to new etcd endpoint")
-                elseif string.find(err, "has no healthy etcd endpoint available") then
+                    i = i + 1
+                    ngx_sleep(0.05)
+                    local _
+                    _, err = sync_data(self)
+                end
+                if string.find(err, "has no healthy etcd endpoint available") then
                     log.warn(err, ", ", tostring(self))
                     local reconnected = false
                     while err and not reconnected do
@@ -575,7 +578,7 @@ local function _automatic_fetch(premature, self)
                         for _ = 0, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not string.find(err, "has no healthy etcd endpoint available") then
+                            if not err or not string.find(err, "has no healthy etcd endpoint available") then
                                 log.warn("reconnected to etcd")
                                 reconnected = true
                                 break
