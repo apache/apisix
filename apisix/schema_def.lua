@@ -645,13 +645,13 @@ _M.ssl = {
         key = private_key_schema,
         sni = {
             type = "string",
-            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            pattern = host_def_pat,
         },
         snis = {
             type = "array",
             items = {
                 type = "string",
-                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+                pattern = host_def_pat,
             },
             minItems = 1,
         },
