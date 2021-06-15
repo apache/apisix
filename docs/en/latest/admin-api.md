@@ -576,7 +576,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
-This feature requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
 **Config Example:**
 
