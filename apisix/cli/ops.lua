@@ -34,7 +34,6 @@ local type = type
 local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
-local popen = io.popen
 local execute = os.execute
 local table_insert = table.insert
 local getenv = os.getenv
