@@ -1,5 +1,5 @@
 ---
-title: ext-plugin-pre-req
+title: client-control
 ---
 
 <!--
@@ -34,7 +34,7 @@ title: ext-plugin-pre-req
 The `client-control` plugin dynamically controls the behavior of Nginx to
 handle the client request.
 
-This plugin requires APISIX running on the APISIX-OpenResty.
+This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
 
 ## Attributes
 
