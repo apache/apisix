@@ -35,7 +35,7 @@ if ok then
     set_upstream_tls_client_param = apisix_ngx_upstream.set_cert_and_key
 else
     set_upstream_tls_client_param = function ()
-        return nil, "need to build APISIX-Openresty to support upstream mTLS"
+        return nil, "need to build APISIX-OpenResty to support upstream mTLS"
     end
 end
 

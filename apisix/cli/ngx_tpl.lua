@@ -216,6 +216,10 @@ http {
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
     uninitialized_variable_warn off;
 
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
+    {% end %}
+
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
     open_file_cache  max=1000 inactive=60;

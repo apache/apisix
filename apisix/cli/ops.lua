@@ -393,6 +393,11 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = false
     end
 
+    local use_apisix_openresty = true
+    if or_info and not or_info:find("apisix-nginx-module", 1, true) then
+        use_apisix_openresty = false
+    end
+
     local enabled_plugins = {}
     for i, name in ipairs(yaml_conf.plugins) do
         enabled_plugins[name] = true
@@ -490,6 +495,7 @@ Please modify "admin_key" in conf/config.yaml .
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
         with_module_status = with_module_status,
+        use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,

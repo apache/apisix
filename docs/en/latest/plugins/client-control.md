@@ -1,5 +1,5 @@
 ---
-title: ext-plugin-pre-req
+title: client-control
 ---
 
 <!--
@@ -31,18 +31,16 @@ title: ext-plugin-pre-req
 
 ## Name
 
-The `ext-plugin-pre-req` runs specific external plugins in the plugin runner, before
-executing most of the builtin Lua plugins.
+The `client-control` plugin dynamically controls the behavior of Nginx to
+handle the client request.
 
-To know what is the plugin runner, see [external plugin](../external-plugin.md) section.
-
-The result of external plugins execution will affect the behavior of the current request.
+This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner with their configuration    |
+| max_body_size | integer        | optional    |              | >= 0 | dynamically set the `client_max_body_size` directive |
 
 ## How To Enable
 
@@ -53,10 +51,9 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 {
     "uri": "/index.html",
     "plugins": {
-        "ext-plugin-pre-req": {
-            "conf" : [
-                {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
-            ]
+        "client-control": {
+            "max_body_size" : 1
+        }
     },
     "upstream": {
         "type": "roundrobin",
@@ -72,11 +69,18 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 Use curl to access:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
-```
+curl -i http://127.0.0.1:9080/index.html -d '123'
 
-You will see the configured plugin runner will be hit and plugin `ext-plugin-A`
-is executed at that side.
+HTTP/1.1 413 Request Entity Too Large
+...
+<html>
+<head><title>413 Request Entity Too Large</title></head>
+<body>
+<center><h1>413 Request Entity Too Large</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
 
 ## Disable Plugin
 
