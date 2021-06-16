@@ -54,7 +54,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ## How To Enable
 
-The following is an example on how to enable the http-logger for a specific route. You could generate an mock HTTP server at [mockbin](http://mockbin.org/bin/create) to view the logs.
+The following is an example of how to enable the http-logger for a specific route. You could generate a mock HTTP server at [mockbin](http://mockbin.org/bin/create) to view the logs.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
