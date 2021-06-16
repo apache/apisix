@@ -31,7 +31,7 @@ external plugins.
 
 ## How does it work
 
-![external-plugin](../../../assets/images/external-plugin.png)
+![external-plugin](../../assets/images/external-plugin.png)
 
 When you configure a plugin runner in APISIX, APISIX will run the plugin runner
 as a subprocess. The process will belong to the same user of the APISIX
