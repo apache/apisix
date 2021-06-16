@@ -63,3 +63,20 @@ The plugin configuration is submitted as part of Route or Service and placed und
 Not all plugins have specific configuration items. For example, there is no specific configuration item under `prometheus`. In this case, an empty object identifier can be used.
 
 If a request is rejected by a plugin, there will be warn level log like `ip-restriction exits with http status code 403`.
+
+## Hot reload
+
+APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, and **update codes of plugins in disk**, you don't need to restart the service.
+
+If your APISIX node has the Admin API turned on, just send an HTTP request through admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+```
+
+Note: if you disable a plugin that has been configured as part of your rule (in the `plugins` field of `route`, etc.),
+then its execution will be skipped.
+
+### Hot reload in stand-alone mode
+
+For stand-alone mode, see plugin related section in [stand alone mode](../stand-alone.md).
