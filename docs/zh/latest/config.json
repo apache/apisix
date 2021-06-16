@@ -20,6 +20,10 @@
     },
     {
       "type": "doc",
+      "id": "getting-started"
+    },
+    {
+      "type": "doc",
       "id": "how-to-build"
     },
     {
@@ -127,10 +131,6 @@
         {
           "type": "doc",
           "id": "admin-api"
-        },
-        {
-          "type": "doc",
-          "id": "control-api"
         }
       ]
     },
@@ -143,12 +143,15 @@
       "label": "Others",
       "items": [
         {
-          "type": "doc",
-          "id": "health-check"
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery"
+          ]
         },
         {
           "type": "doc",
-          "id": "router-radixtree"
+          "id": "health-check"
         },
         {
           "type": "doc",
@@ -196,7 +199,15 @@
         },
         {
           "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
         }
       ]
     },
