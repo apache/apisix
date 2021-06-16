@@ -219,7 +219,19 @@
         },
         {
           "type": "doc",
+          "id": "aws"
+        },
+        {
+          "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
         }
       ]
     },
