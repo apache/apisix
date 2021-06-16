@@ -166,7 +166,7 @@ GET /t
                     },
                     "plugins": {
                         "client-control": {
-                            "max_body_size": 5
+                            "max_body_size": 0
                         }
                     }
             }]]
