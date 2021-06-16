@@ -970,5 +970,6 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | remote_addr      | 可选  | IP       |  客户端 IP 地址 | "127.0.0.1" |
 | server_addr      | 可选  | IP       | 服务端 IP 地址 | "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 服务端端口 | 9090  |
+| sni              | 可选  | Host     | 服务器名称指示| "test.com"  |
 
 [Back to TOC](#目录)

@@ -746,6 +746,11 @@ _M.stream_route = {
             description = "server port",
             type = "integer",
         },
+        sni = {
+            description = "server name indication",
+            type = "string",
+            pattern = host_def_pat,
+        },
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
