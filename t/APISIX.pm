@@ -208,6 +208,13 @@ my $grpc_location = <<_EOC_;
         }
 _EOC_
 
+my $a6_ngx_directives = "";
+if ($version =~ m/\/apisix-nginx-module/) {
+    $a6_ngx_directives = <<_EOC_;
+    apisix_delay_client_max_body_check on;
+_EOC_
+}
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
@@ -526,6 +533,8 @@ _EOC_
             }
         }
     }
+
+    $a6_ngx_directives
 
     server {
         listen 1983 ssl;
