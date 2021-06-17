@@ -171,6 +171,8 @@ function _M.match_and_set(api_ctx)
         end
     end
 
+    api_ctx.sni_rev = sni_rev
+
     local matched_ssl = api_ctx.matched_ssl
     core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
 

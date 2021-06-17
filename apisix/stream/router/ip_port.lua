@@ -17,18 +17,22 @@
 local core      = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local plugin_checker = require("apisix.plugin").stream_plugin_checker
+local router_new = require("apisix.utils.router").new
+local ngx_ssl = require("ngx.ssl")
+local ngx_lua_version = ngx.config.ngx_lua_version -- get the version of stream-lua-nginx-module
 local error     = error
-local ngx_exit  = ngx.exit
 local tonumber  = tonumber
+local ipairs = ipairs
+
+
 local user_routes
-
-
+local router_ver
+local tls_router
+local other_routes = {}
 local _M = {version = 0.1}
 
 
-local function match_opts(route, api_ctx)
-    local vars = api_ctx.var
-
+local function match_addrs(route, vars)
     -- todo: use resty-ipmatcher to support multiple ip address
     if route.value.remote_addr and
        route.value.remote_addr ~= vars.remote_addr then
@@ -50,24 +54,126 @@ local function match_opts(route, api_ctx)
 end
 
 
-function _M.match(api_ctx)
-    local routes = _M.routes()
-    if not routes then
-        core.log.info("not find any user stream route")
-        return ngx_exit(200)
-    end
-    core.log.info("stream routes: ", core.json.delay_encode(routes))
+local create_router
+do
+    local sni_to_items = {}
+    local tls_routes = {}
 
-    for _, route in config_util.iterate_values(routes) do
-        local hit = match_opts(route, api_ctx)
-        if hit then
-            api_ctx.matched_route = route
+    function create_router(items)
+        local tls_routes_idx = 1
+        local other_routes_idx = 1
+        core.table.clear(tls_routes)
+        core.table.clear(other_routes)
+        core.table.clear(sni_to_items)
+
+        for _, item in config_util.iterate_values(items) do
+            if item.value == nil then
+                goto CONTINUE
+            end
+
+            local route = item.value
+            if not route.sni then
+                other_routes[other_routes_idx] = item
+                other_routes_idx = other_routes_idx + 1
+                goto CONTINUE
+            end
+
+            local sni_rev = route.sni:reverse()
+            local stored = sni_to_items[sni_rev]
+            if stored then
+                core.table.insert(stored, item)
+                goto CONTINUE
+            end
+
+            sni_to_items[sni_rev] = {item}
+            tls_routes[tls_routes_idx] = {
+                paths = sni_rev,
+                filter_fun = function (vars, opts, ctx)
+                    local items = sni_to_items[sni_rev]
+                    for _, route in ipairs(items) do
+                        local hit = match_addrs(route, vars)
+                        if hit then
+                            ctx.matched_route = route
+                            return true
+                        end
+                    end
+                    return false
+                end,
+                handler = function (ctx, sni_rev)
+                    -- done in the filter_fun
+                end
+            }
+            tls_routes_idx = tls_routes_idx + 1
+
+            ::CONTINUE::
+        end
+
+        if #tls_routes > 0 then
+            local router, err = router_new(tls_routes)
+            if not router then
+                return err
+            end
+
+            tls_router = router
+        end
+
+        return nil
+    end
+end
+
+
+do
+    local match_opts = {}
+
+    function _M.match(api_ctx)
+        if router_ver ~= user_routes.conf_version then
+            local err = create_router(user_routes.values)
+            if err then
+                return false, "failed to create router: " .. err
+            end
+
+            router_ver = user_routes.conf_version
+        end
+
+        if ngx_lua_version < 9 then
+            -- be compatible with old OpenResty
+            local sni = ngx_ssl.server_name()
+            if sni then
+                local sni_rev = sni:reverse()
+                api_ctx.sni_rev = sni_rev
+            end
+        end
+
+        if api_ctx.sni_rev and tls_router then
+            local sni_rev = api_ctx.sni_rev
+
+            core.table.clear(match_opts)
+            match_opts.vars = api_ctx.var
+
+            local _, err = tls_router:dispatch(sni_rev, match_opts, api_ctx)
+            if err then
+                return false, "failed to match TLS router: " .. err
+            end
+        end
+
+        if api_ctx.matched_route then
+            -- unlike the matcher for the SSL, it is fine to let
+            -- '*.x.com' to match 'a.b.x.com' as we don't care about
+            -- the certificate
             return true
         end
-    end
 
-    core.log.info("not hit any route")
-    return true
+        for _, route in ipairs(other_routes) do
+            local hit = match_addrs(route, api_ctx.var)
+            if hit then
+                api_ctx.matched_route = route
+                return true
+            end
+        end
+
+        core.log.info("not hit any route")
+        return true
+    end
 end
 
 
