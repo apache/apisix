@@ -963,5 +963,6 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | remote_addr      | False  | IP       | client IP | "127.0.0.1"  |
 | server_addr      | False  | IP       | server IP | "127.0.0.1"  |
 | server_port      | False  | Integer  | server port | 9090  |
+| sni              | False  | Host     | server name indication | "test.com"  |
 
 [Back to TOC](#table-of-contents)

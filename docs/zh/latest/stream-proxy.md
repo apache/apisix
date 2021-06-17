@@ -115,3 +115,20 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
     }
 }'
 ```
+
+当连接为 TLS over TCP 时，我们可以通过 SNI 来匹配路由，比如：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "sni": "a.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+在这里，握手时发送 SNI `a.test.com` 的连接会被代理到 `127.0.0.1:5991`。

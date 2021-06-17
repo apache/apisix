@@ -832,7 +832,11 @@ function _M.stream_preread_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    router.router_stream.match(api_ctx)
+    local ok, err = router.router_stream.match(api_ctx)
+    if not ok then
+        core.log.error(err)
+        return ngx_exit(1)
+    end
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
