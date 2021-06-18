@@ -260,6 +260,10 @@ http {
     {% end %}
     {% end %}
 
+    {% if ssl.ssl_trusted_certificate ~= nil then %}
+    lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
+
     # http configuration snippet starts
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
@@ -439,10 +443,6 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
-
-        {% if ssl.ssl_trusted_certificate ~= nil then %}
-        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate      {* ssl.ssl_cert *};
