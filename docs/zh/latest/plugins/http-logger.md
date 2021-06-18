@@ -54,14 +54,14 @@ title: http-logger
 
 ## 如何开启
 
-这是有关如何为特定路由启用 http-logger 插件的示例。
+这是有关如何为特定路由启用 `http-logger` 插件的示例。你可以在 [mockbin](http://mockbin.org/bin/create) 生成一个模拟 HTTP 服务器来浏览生成的日志
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "http-logger": {
-                "uri": "http://127.0.0.1:80/postendpoint?param=1"
+                "uri": "http://mockbin.org/bin/:ID"
             }
        },
       "upstream": {
