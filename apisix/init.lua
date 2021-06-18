@@ -303,10 +303,8 @@ local function get_upstream_by_id(up_id)
 end
 
 
-function _M.http_access_phase()
-    local ngx_ctx = ngx.ctx
-
-    if ngx_ctx.api_ctx and ngx_ctx.api_ctx.ssl_client_verified then
+local function verify_tls_client(ctx)
+    if ctx and ctx.ssl_client_verified then
         local res = ngx_var.ssl_client_verify
         if res ~= "SUCCESS" then
             if res == "NONE" then
@@ -314,8 +312,20 @@ function _M.http_access_phase()
             else
                 core.log.error("clent certificate verification is not passed: ", res)
             end
-            return core.response.exit(400)
+
+            return false
         end
+    end
+
+    return true
+end
+
+
+function _M.http_access_phase()
+    local ngx_ctx = ngx.ctx
+
+    if not verify_tls_client(ngx_ctx.api_ctx) then
+        return core.response.exit(400)
     end
 
     -- always fetch table from the table pool, we don't need a reused api_ctx
@@ -824,6 +834,10 @@ function _M.stream_preread_phase()
 
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
+
+    if not verify_tls_client(ngx_ctx.api_ctx) then
+        return ngx_exit(1)
+    end
 
     if not api_ctx then
         api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
