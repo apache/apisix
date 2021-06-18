@@ -129,7 +129,13 @@ run: default
 	./bin/apisix start
 
 
-### stop:             Stop the apisix server
+### quit:             Stop the apisix server, exit gracefully
+.PHONY: quit
+quit: default
+	./bin/apisix quit
+
+
+### stop:             Stop the apisix server, exit immediately
 .PHONY: stop
 stop: default
 	./bin/apisix stop
