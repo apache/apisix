@@ -538,8 +538,9 @@ local function _automatic_fetch(premature, self)
     if not health_check.conf then
         local _, err = health_check.init({
             shm_name = "etcd_cluster_health_check",
-            fail_timeout = 30,
-            max_fails = 50,
+            fail_timeout = 10,
+            max_fails = 3,
+            retry = true,
         })
         if err then
             log.warn("fail to create health_check: " .. err)
@@ -562,16 +563,7 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                while string.find(err, "connection refused")
-                    or string.find(err, "Service Unavailable") do
-                    log.warn(err, ", ", tostring(self))
-                    i = i + 1
-                    ngx_sleep(0.05)
-                    local _
-                    _, err = sync_data(self)
-                end
                 if string.find(err, "has no healthy etcd endpoint available") then
-                    log.warn(err, ", ", tostring(self))
                     local reconnected = false
                     while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
