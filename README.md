@@ -98,6 +98,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Support [TTL](docs/en/latest/admin-api.md#route)
   - [Support priority](docs/en/latest/router-radixtree.md#3-match-priority)
   - [Support Batch Http Requests](docs/en/latest/plugins/batch-requests.md)
+  - [Support filtering route by GraphQL attributes](docs/en/latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes)
 
 - **Security**
 

@@ -218,15 +218,15 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
 
-### How to filter route by graphql attributes
+### How to filter route by GraphQL attributes
 
-APISIX supports filtering route by some attributes of graphql. Currently we support:
+APISIX supports filtering route by some attributes of GraphQL. Currently we support:
 
 * graphql_operation
 * graphql_name
 * graphql_root_fields
 
-For instance, with graphql like this:
+For instance, with GraphQL like this:
 
 ```graphql
 query getRepo {
@@ -264,7 +264,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-To prevent spending too much time reading invalid graphql request body, we only read the first 1 MiB
+To prevent spending too much time reading invalid GraphQL request body, we only read the first 1 MiB
 data from the request body. This limitation is configured via:
 
 ```yaml
@@ -273,4 +273,4 @@ graphql:
 
 ```
 
-If you need to pass a graphql body which is larger than the limitation, you can increase the value in `conf/config.yaml`.
+If you need to pass a GraphQL body which is larger than the limitation, you can increase the value in `conf/config.yaml`.

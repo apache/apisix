@@ -102,6 +102,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
   - [支持批量 Http 请求](plugins/batch-requests.md)
+  - [支持通过GraphQL属性过滤路由](../../en/latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes)
 
 - **安全防护**
 
