@@ -50,7 +50,6 @@ Apache APISIX 的技术架构如下图所示：
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 - **微信公众号**
    ![](../../assets/images/OA.jpg)
 - **微信视频号**
@@ -82,7 +81,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **全动态能力**
 
-  - [热更新和热插件](plugins.md): 无需重启服务，就可以持续更新配置和插件。
+  - [热更新和热插件](architecture-design/plugin.md): 无需重启服务，就可以持续更新配置和插件。
   - [代理请求重写](plugins/proxy-rewrite.md): 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
   - [输出内容重写](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
   - [Serverless](plugins/serverless.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
