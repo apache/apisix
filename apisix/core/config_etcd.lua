@@ -46,6 +46,7 @@ local health_check = require("resty.etcd.health_check")
 
 
 local is_http = ngx.config.subsystem == "http"
+local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
 local created_obj  = {}
 local loaded_configuration = {}
 
@@ -563,14 +564,14 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                if string.find(err, "has no healthy etcd endpoint available") then
+                if string.find(err, err_etcd_unhealthy_all) then
                     local reconnected = false
                     while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
                         for _ = 0, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not err or not string.find(err, "has no healthy etcd endpoint available") then
+                            if not err or not string.find(err, err_etcd_unhealthy_all) then
                                 log.warn("reconnected to etcd")
                                 reconnected = true
                                 break
