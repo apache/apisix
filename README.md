@@ -50,7 +50,6 @@ The technical architecture of Apache APISIX:
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -78,7 +77,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Full Dynamic**
 
-  - [Hot Updates And Hot Plugins](docs/en/latest/plugins.md): Continuously updates its configurations and plugins without restarts!
+  - [Hot Updates And Hot Plugins](docs/en/latest/architecture-design/plugin.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
   - [Serverless](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
