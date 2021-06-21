@@ -138,6 +138,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **高度可扩展**
   - [自定义插件](plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filter`，`body filter` 和 `log` 阶段。
+  - [插件可以用 Java/Go 编写](../../en/latest/external-plugin.md)
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
 
