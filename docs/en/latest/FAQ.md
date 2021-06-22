@@ -526,6 +526,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 ```
 
 Test request:
+
 ```shell
 $ curl http://127.0.0.1:9080/foo/get -i
 HTTP/1.1 200 OK
@@ -534,5 +535,4 @@ HTTP/1.1 200 OK
   ...
   "url": "http://127.0.0.1/get"
 }
-
 ```
