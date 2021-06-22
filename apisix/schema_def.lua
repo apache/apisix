@@ -620,7 +620,7 @@ _M.consumer = {
     type = "object",
     properties = {
         username = {
-            type = "string", minLength = 1, maxLength = 32,
+            type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
@@ -645,13 +645,13 @@ _M.ssl = {
         key = private_key_schema,
         sni = {
             type = "string",
-            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            pattern = host_def_pat,
         },
         snis = {
             type = "array",
             items = {
                 type = "string",
-                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+                pattern = host_def_pat,
             },
             minItems = 1,
         },
@@ -745,6 +745,11 @@ _M.stream_route = {
         server_port = {
             description = "server port",
             type = "integer",
+        },
+        sni = {
+            description = "server name indication",
+            type = "string",
+            pattern = host_def_pat,
         },
         upstream = upstream_schema,
         upstream_id = id_schema,

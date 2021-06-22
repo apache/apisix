@@ -18,7 +18,9 @@
 return [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
-
+{% if user and user ~= '' then %}
+user {* user *};
+{% end %}
 master_process on;
 
 worker_processes {* worker_processes *};
@@ -97,11 +99,20 @@ stream {
     }
 
     server {
-        {% for _, addr in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*addr*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
         {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if tcp_enable_ssl then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_certificate_by_lua_block {
+            apisix.stream_ssl_phase()
+        }
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
@@ -213,6 +224,11 @@ http {
     {% end %}
     {% end %}
 
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
+    {% end %}
+
+    access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
@@ -250,6 +266,10 @@ http {
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
+    {% end %}
+
+    {% if ssl.ssl_trusted_certificate ~= nil then %}
+    lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
 
     # http configuration snippet starts
@@ -295,6 +315,12 @@ http {
     init_worker_by_lua_block {
         apisix.http_init_worker()
     }
+
+    {% if not use_openresty_1_17 then %}
+    exit_worker_by_lua_block {
+        apisix.http_exit_worker()
+    }
+    {% end %}
 
     {% if enable_control then %}
     server {
@@ -425,10 +451,6 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
-
-        {% if ssl.ssl_trusted_certificate ~= nil then %}
-        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate      {* ssl.ssl_cert *};

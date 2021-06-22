@@ -27,6 +27,7 @@ local escape_uri = ngx.escape_uri
 local core       = require("apisix.core")
 local hmac       = require("resty.hmac")
 local consumer   = require("apisix.consumer")
+local plugin     = require("apisix.plugin")
 local ngx_decode_base64 = ngx.decode_base64
 
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
@@ -334,15 +335,14 @@ end
 
 local function get_params(ctx)
     local params = {}
-    local local_conf = core.config.local_conf()
     local access_key = ACCESS_KEY
     local signature_key = SIGNATURE_KEY
     local algorithm_key = ALGORITHM_KEY
     local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
 
-    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
-                                          "hmac-auth")
+
+    local attr = plugin.plugin_attr(plugin_name)
     if attr then
         access_key = attr.access_key or access_key
         signature_key = attr.signature_key or signature_key

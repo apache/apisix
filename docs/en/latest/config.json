@@ -2,11 +2,6 @@
   "version": 2.6,
   "sidebar": [
     {
-      "type": "link",
-      "label": "Apache APISIX",
-      "href" : "https://apisix.apache.org/docs/apisix/getting-started"
-    },
-    {
       "type": "category",
       "label": "Architecture Design",
       "items": [
@@ -94,7 +89,8 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
-            "plugins/request-id"
+            "plugins/request-id",
+            "plugins/client-control"
           ]
         },
         {
@@ -190,7 +186,7 @@
         },
         {
           "type": "doc",
-          "id": "https"
+          "id": "certificate"
         },
         {
           "type": "doc",
@@ -223,7 +219,19 @@
         },
         {
           "type": "doc",
+          "id": "aws"
+        },
+        {
+          "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
         }
       ]
     },

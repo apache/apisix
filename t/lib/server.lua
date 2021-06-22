@@ -31,6 +31,7 @@ end
 
 
 function _M.hello()
+    ngx.req.read_body()
     local s = "hello world"
     ngx.header['Content-Length'] = #s + 1
     ngx.say(s)

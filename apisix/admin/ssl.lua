@@ -106,6 +106,7 @@ function _M.get(id)
         res.body.node.value.key = nil
     end
 
+    utils.fix_count(res.body, id)
     return res.status, res.body
 end
 

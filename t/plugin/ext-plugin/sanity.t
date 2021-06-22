@@ -186,7 +186,11 @@ failed to connect to the unix socket
 ["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
-        return 200;
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
     }
 --- grep_error_log eval
 qr/LISTEN unix:\S+/
@@ -378,7 +382,84 @@ env MY_ENV_VAR=foo;
 ["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
-        return 200;
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
     }
 --- error_log
 MY_ENV_VAR foo
+
+
+
+=== TEST 14: bad conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-pre-req": {
+                            "conf": [
+                                {"value":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(message)
+            end
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-post-req": {
+                            "conf": [
+                                {"name":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.print(message)
+            end
+        }
+    }
+--- response_body
+{"error_msg":"failed to check the configuration of plugin ext-plugin-pre-req err: property \"conf\" validation failed: failed to validate item 1: property \"name\" is required"}
+
+{"error_msg":"failed to check the configuration of plugin ext-plugin-post-req err: property \"conf\" validation failed: failed to validate item 1: property \"value\" is required"}
+
+
+
+=== TEST 15: spawn runner which can't be terminated, ensure APISIX won't be blocked
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner_can_not_terminated.sh"]
+--- config
+    location /t {
+        return 200;
+    }
