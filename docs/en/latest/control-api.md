@@ -191,3 +191,10 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
     "src_type": "upstreams"
 }
 ```
+
+### POST /v1/gc
+
+Introduced since `v2.8`.
+
+Trigger a full GC in the http subsystem.
+Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
