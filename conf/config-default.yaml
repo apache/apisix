@@ -169,9 +169,6 @@ nginx_config:                     # config for render the template to generate n
 
   http:
     enable_access_log: true        # enable access log or not, default true
-    # access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
-    # access_log: "logs/access.log"
-    # access_log_format_escape: default       # allows setting json or default characters escaping in variables
     access_log:
       -
         log_type: "local"          # local disk log storage
@@ -179,10 +176,10 @@ nginx_config:                     # config for render the template to generate n
         log_format_name: "main_local"
         log_format_escape: "default"    # allows setting json or default characters escaping in variables
         log_path: "logs/access.log"     # disk storage path
-        log_buffer: 16384
-        log_flush: 3
+        log_buffer: 16384               # the buffer size write to log file, by default, 64K bytes
+        log_flush: 3                    # the expire time of buffer
       -
-        log_type: "syslog"         # send log to remote syslog 
+        log_type: "syslog"              # send log to remote syslog server
         log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
         log_format_name: "main_syslog"
         log_format_escape: "default"    # allows setting json or default characters escaping in variables
