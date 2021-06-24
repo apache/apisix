@@ -18,10 +18,11 @@ local core = require("apisix.core")
 local ext = require("apisix.plugins.ext-plugin.init")
 
 
+local name = "ext-plugin-post-req"
 local _M = {
     version = 0.1,
     priority = -3000,
-    name = "ext-plugin-post-req",
+    name = name,
     schema = ext.schema,
 }
 
@@ -32,7 +33,7 @@ end
 
 
 function _M.access(conf, ctx)
-    return ext.communicate(conf, ctx)
+    return ext.communicate(conf, ctx, name)
 end
 
 
