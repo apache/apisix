@@ -305,8 +305,8 @@ local rpc_handlers = {
         core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
         return token
     end,
-    function (conf, ctx, sock)
-        local token, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, rpc_call,
+    function (conf, ctx, sock, entry)
+        local token, err = core.lrucache.plugin_ctx(lrucache, ctx, entry, rpc_call,
                                                     constants.RPC_PREPARE_CONF, conf, ctx)
         if not token then
             return nil, err
@@ -498,7 +498,7 @@ local rpc_handlers = {
 }
 
 
-rpc_call = function (ty, conf, ctx)
+rpc_call = function (ty, conf, ctx, ...)
     local path = helper.get_path()
 
     local sock = socket_tcp()
@@ -508,7 +508,7 @@ rpc_call = function (ty, conf, ctx)
         return nil, "failed to connect to the unix socket " .. path .. ": " .. err
     end
 
-    local res, err, code, body = rpc_handlers[ty + 1](conf, ctx, sock)
+    local res, err, code, body = rpc_handlers[ty + 1](conf, ctx, sock, ...)
     if not res then
         sock:close()
         return nil, err
@@ -535,12 +535,12 @@ local function create_lrucache()
 end
 
 
-function _M.communicate(conf, ctx)
+function _M.communicate(conf, ctx, plugin_name)
     local ok, err, code, body
     local tries = 0
     while tries < 3 do
         tries = tries + 1
-        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx, plugin_name)
         if ok then
             if code then
                 return code, body
