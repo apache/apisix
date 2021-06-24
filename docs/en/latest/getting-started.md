@@ -21,7 +21,7 @@ title: Getting Started
 #
 -->
 
-## Getting Started
+## Getting Started {#apisix}
 
 This guide aims to get started with Apache APISIX, we will configure the service that will route to a public API, secured by an API key.
 
