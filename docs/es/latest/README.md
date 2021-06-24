@@ -235,7 +235,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
    La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](../../en/latest/getting-started.md).
 
-   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins.md).
+   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins).
 
 3. Admin API
 
