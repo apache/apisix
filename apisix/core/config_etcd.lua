@@ -539,7 +539,7 @@ local function _automatic_fetch(premature, self)
     if not health_check.conf then
         local _, err = health_check.init({
             shm_name = "etcd_cluster_health_check",
-            fail_timeout = 30,
+            fail_timeout = self.health_check_timeout,
             max_fails = 3,
             retry = true,
         })
@@ -630,6 +630,10 @@ function _M.new(key, opts)
     if not resync_delay or resync_delay < 0 then
         resync_delay = 5
     end
+    local health_check_timeout = etcd_conf.health_check_timeout
+    if not health_check_timeout or health_check_timeout < 0 then
+        health_check_timeout = 30
+    end
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
@@ -654,6 +658,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         resync_delay = resync_delay,
+        health_check_timeout = health_check_timeout,
         timeout = timeout,
         single_item = single_item,
         filter = filter_fun,

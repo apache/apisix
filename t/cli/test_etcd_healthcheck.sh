@@ -41,7 +41,7 @@ docker stop ${ETCD_NAME_1}
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
-    echo "failed: apisix got effect when one etcd node failed out of a cluster"
+    echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
     #exit 1
 fi
 
@@ -57,7 +57,7 @@ docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_N
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ $code -eq 200 ]; then
-    echo "failed: apisix not got effect when all etcd nodes fail"
+    echo "failed: apisix not got effect when all etcd nodes disconnected"
     #exit 1
 fi
 
