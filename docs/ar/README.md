@@ -238,7 +238,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
    يعد دليل البدء طريقة رائعة لتعلم أساسيات أبيسكس. ما عليك سوى اتباع الخطوات الواردة في  [البدء](docs/en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins.md).
+   Further, you can follow the documentation to try more [plugins](../en/latest/plugins).
 
 3. مدير API
 

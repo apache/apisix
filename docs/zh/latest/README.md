@@ -238,7 +238,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
    入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](getting-started.md)的步骤即可。
 
-   更进一步，你可以跟着文档来尝试更多的[插件](README.md#插件)。
+   更进一步，你可以跟着文档来尝试更多的[插件](plugins)。
 
 3. Admin API
 
