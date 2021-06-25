@@ -34,7 +34,7 @@ You can install Apache APISIX in a variety of ways, including source code packag
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
 ```
 
 ### Installation via Docker
@@ -50,15 +50,15 @@ See https://github.com/apache/apisix-helm-chart
 You need to download the Apache source release first:
 
 ```shell
-$ mkdir apisix-2.6
-$ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
-$ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
+$ mkdir apisix-2.7
+$ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+$ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apisix-2.6
+cd apisix-2.7
 make deps
 ```
 
