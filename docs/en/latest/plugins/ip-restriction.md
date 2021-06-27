@@ -70,6 +70,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+If you want to use a custom message, you can configure it in the plugin section.
+
+```shell
+"plugins": {
+    "ip-restriction": {
+        "whitelist": [
+            "127.0.0.1",
+            "113.74.26.106/24"
+        ],
+        "message": "Do you want to do something bad?"
+    }
+}
+```
+
 ## Test Plugin
 
 Requests from `127.0.0.1`:

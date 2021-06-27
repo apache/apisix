@@ -67,6 +67,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+如果你想使用自定义的message，可以在插件部分进行配置:
+
+```shell
+"plugins": {
+    "ip-restriction": {
+        "whitelist": [
+            "127.0.0.1",
+            "113.74.26.106/24"
+        ],
+        "message": "Do you want to do something bad?"
+    }
+}
+```
+
 ## 测试插件
 
 通过 `127.0.0.1` 访问：
