@@ -19,7 +19,6 @@ local upstream  = require("apisix.upstream")
 local ipmatcher = require("resty.ipmatcher")
 local bit       = require("bit")
 local ngx       = ngx
-local ngx_exit  = ngx.exit
 local str_byte  = string.byte
 local str_sub   = string.sub
 
@@ -127,40 +126,40 @@ function _M.preread(conf, ctx)
     local data, err = sock:peek(16)
     if not data then
         core.log.error("failed to read first 16 bytes: ", err)
-        return ngx_exit(1)
+        return 503
     end
 
     local res, err = parse_mqtt(data)
     if not res then
         core.log.error("failed to parse the first 16 bytes: ", err)
-        return ngx_exit(1)
+        return 503
     end
 
     if res.expect_len > #data then
         data, err = sock:peek(res.expect_len)
         if not data then
             core.log.error("failed to read ", res.expect_len, " bytes: ", err)
-            return ngx_exit(1)
+            return 503
         end
 
         res = parse_mqtt(data)
         if res.expect_len > #data then
             core.log.error("failed to parse mqtt request, expect len: ",
                            res.expect_len, " but got ", #data)
-            return ngx_exit(1)
+            return 503
         end
     end
 
     if res.protocol and res.protocol ~= conf.protocol_name then
         core.log.error("expect protocol name: ", conf.protocol_name,
                        ", but got ", res.protocol)
-        return ngx_exit(1)
+        return 503
     end
 
     if res.protocol_ver and res.protocol_ver ~= conf.protocol_level then
         core.log.error("expect protocol level: ", conf.protocol_level,
                        ", but got ", res.protocol_ver)
-        return ngx_exit(1)
+        return 503
     end
 
     core.log.info("mqtt client id: ", res.client_id)
@@ -179,7 +178,7 @@ function _M.preread(conf, ctx)
         local ip, err = core.resolver.parse_domain(host)
         if not ip then
             core.log.error("failed to parse host ", host, ", err: ", err)
-            return 500
+            return 503
         end
 
         host = ip
@@ -196,7 +195,7 @@ function _M.preread(conf, ctx)
     if not ok then
         core.log.error("failed to check schema ", core.json.delay_encode(up_conf),
                        ", err: ", err)
-        return 500
+        return 503
     end
 
     local matched_route = ctx.matched_route
