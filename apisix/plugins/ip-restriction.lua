@@ -36,6 +36,10 @@ local schema = {
                     items = {anyOf = core.schema.ip_def},
                     minItems = 1
                 },
+                message = {
+                    type = "string",
+                    default = "Your IP address is not allowed"
+                },
             },
             required = {"whitelist"},
             additionalProperties = false,
@@ -47,7 +51,11 @@ local schema = {
                     type = "array",
                     items = {anyOf = core.schema.ip_def},
                     minItems = 1
-                }
+                },
+                message = {
+                    type = "string",
+                    default = "Your IP address is not allowed"
+                },
             },
             required = {"blacklist"},
             additionalProperties = false,
@@ -154,7 +162,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return 403, { message = "Your IP address is not allowed" }
+        return 403, { message = conf.message }
     end
 end
 
