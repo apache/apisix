@@ -456,8 +456,8 @@ passed
                     }
                 })
 
-            if res.headers["X-Request-Id"] and res.headers["Custom-Header-Name"] and res.headers["X-Request-Id"] ~= res.headers["Custom-Header-Name"] then
-                ngx.say("X-Request-Id and Custom-Header-Name is different")
+            if res.headers["X-Request-Id"] ~= res.headers["Custom-Header-Name"] then
+                ngx.say("X-Request-Id and Custom-Header-Name are different")
             else
                 ngx.say("failed")
             end
@@ -466,7 +466,7 @@ passed
 --- request
 GET /t
 --- response_body
-X-Request-Id and Custom-Header-Name is different
+X-Request-Id and Custom-Header-Name are different
 --- no_error_log
 [error]
 
