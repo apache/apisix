@@ -41,9 +41,10 @@ in CIDR notation like 10.10.10.0/24 can be used.
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
 | whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
 | blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
+| message | string | optional    | Your IP address is not allowed. | [1, 64] | Message returned in case IP access is not allowed. |
 
-One of `whitelist` or `blacklist` must be specified, and they can not work
-together.
+One of `whitelist` or `blacklist` must be specified, and they can not work together.
+The message supports user-defined configuration.
 
 ## How To Enable
 
@@ -70,9 +71,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-If you want to use a custom message, you can configure it in the plugin section.
+Default returns `{"message":"Your IP address is not allowed"}` when unallowed IP access. If you want to use a custom message, you can configure it in the plugin section.
 
-```shell
+```json
 "plugins": {
     "ip-restriction": {
         "whitelist": [
