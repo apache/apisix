@@ -27,40 +27,29 @@ local lrucache  = core.lrucache.new({
 
 local schema = {
     type = "object",
-    oneOf = {
-        {
-            title = "whitelist",
-            properties = {
-                whitelist = {
-                    type = "array",
-                    items = {anyOf = core.schema.ip_def},
-                    minItems = 1
-                },
-                message = {
-                    type = "string",
-                    default = "Your IP address is not allowed"
-                },
-            },
-            required = {"whitelist"},
-            additionalProperties = false,
+    properties = {
+        message = {
+            type = "string",
+            minLength = 1,
+            maxLength = 64,
+            default = "Your IP address is not allowed"
         },
-        {
-            title = "blacklist",
-            properties = {
-                blacklist = {
-                    type = "array",
-                    items = {anyOf = core.schema.ip_def},
-                    minItems = 1
-                },
-                message = {
-                    type = "string",
-                    default = "Your IP address is not allowed"
-                },
-            },
-            required = {"blacklist"},
-            additionalProperties = false,
-        }
-    }
+        whitelist = {
+            type = "array",
+            items = {anyOf = core.schema.ip_def},
+            minItems = 1
+        },
+        blacklist = {
+            type = "array",
+            items = {anyOf = core.schema.ip_def},
+            minItems = 1
+        },
+    },
+    oneOf = {
+        {required = {"whitelist"}},
+        {required = {"blacklist"}},
+    },
+    additionalProperties = false,
 }
 
 
