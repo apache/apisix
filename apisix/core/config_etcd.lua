@@ -568,7 +568,7 @@ local function _automatic_fetch(premature, self)
                     local reconnected = false
                     while err and not reconnected do
                         local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
-                        for _ = 0, backoff_step, 1 do
+                        for _ = 1, backoff_step, 1 do
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
                             if not err or not string.find(err, err_etcd_unhealthy_all) then
@@ -632,7 +632,7 @@ function _M.new(key, opts)
     end
     local health_check_timeout = etcd_conf.health_check_timeout
     if not health_check_timeout or health_check_timeout < 0 then
-        health_check_timeout = 30
+        health_check_timeout = 10
     end
 
     local automatic = opts and opts.automatic

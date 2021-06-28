@@ -19,18 +19,20 @@
 
 . ./t/cli/common.sh
 
+# create 3 node etcd cluster in docker
+ETCD_NAME_0=etcd0
+ETCD_NAME_1=etcd1
+ETCD_NAME_2=etcd2
+HEALTH_CHECK_RETRY_TIMEOUT=10
+
 echo '
 etcd:
   host:
     - "http://127.0.0.1:23790"
     - "http://127.0.0.1:23791"
     - "http://127.0.0.1:23792"
+  health_check_timeout: '"$HEALTH_CHECK_RETRY_TIMEOUT"'
 ' > conf/config.yaml
-
-# create 3 node etcd cluster in docker
-ETCD_NAME_0=etcd0
-ETCD_NAME_1=etcd1
-ETCD_NAME_2=etcd2
 
 docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
@@ -62,6 +64,8 @@ make init && make run
 
 docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_NAME_2}
 
+sleep_till=$(date +%s -d "$DATE + $HEALTH_CHECK_RETRY_TIMEOUT second")
+
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ $code -eq 200 ]; then
     echo "failed: apisix not got effect when all etcd nodes disconnected"
@@ -69,6 +73,13 @@ if [ $code -eq 200 ]; then
 fi
 
 docker start ${ETCD_NAME_0} && docker start ${ETCD_NAME_1} && docker start ${ETCD_NAME_2}
+
+# sleep till etcd health check try to check again
+current_time=$(date +%s)
+sleep_seconds=$(( $sleep_till - $current_time ))
+if [ "$sleep_seconds" -gt 0 ]; then
+    sleep $sleep_seconds
+fi
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
