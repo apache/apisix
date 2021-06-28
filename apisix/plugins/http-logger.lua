@@ -24,7 +24,6 @@ local plugin          = require("apisix.plugin")
 
 local ngx      = ngx
 local tostring = tostring
-local pairs    = pairs
 local ipairs   = ipairs
 local timer_at = ngx.timer.at
 
@@ -170,7 +169,7 @@ function _M.log(conf, ctx)
 
     local entry
 
-    if metadata and metadata.value.log_format 
+    if metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0 then
         entry = log_util.get_custom_format_log(metadata.value.log_format)
     else
