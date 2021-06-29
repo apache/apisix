@@ -178,7 +178,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, floa
 
 func roughCompare(a float64, b float64) bool {
 	ratio := a / b
-	if ratio < 1.3 && ratio > 0.7 {
+	if ratio < 1.5 && ratio > 0.5 {
 		return true
 	}
 	return false
