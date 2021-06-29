@@ -85,7 +85,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// wait 1 seconds to let first route access returns
 	time.Sleep(1 * time.Second)
-	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
+	bandwidthBefore, durationBefore := getEgressBandwidthPerSecond(e, g)
 	bpsBefore := bandwidthBefore / durationBefore
 	g.Expect(bpsBefore).NotTo(BeZero())
 
@@ -116,7 +116,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
-	bandwidthAfter, durationAfter := getIngressBandwidthPerSecond(e, g)
+	bandwidthAfter, durationAfter := getEgressBandwidthPerSecond(e, g)
 	bpsAfter := bandwidthAfter / durationAfter
 	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
 		t.Logf("bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)

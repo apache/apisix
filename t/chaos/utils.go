@@ -86,7 +86,12 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Body: `{
 			 "uri": "/get",
 			 "plugins": {
-				 "prometheus": {}
+				 "prometheus": {},
+				 "limit-req": {
+					 "rate": 5,
+					 "burst": 100000,
+					 "key": "remote_addr"
+				 }
 			 },
 			 "upstream": {
 				 "nodes": {
@@ -158,8 +163,8 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 	return targetSlice[1]
 }
 
-func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
-	key := "apisix_bandwidth{type=\"ingress\","
+func getEgressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
+	key := "apisix_bandwidth{type=\"egress\","
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
