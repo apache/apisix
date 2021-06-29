@@ -91,7 +91,7 @@ hello, world
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
 | log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, it means to get `APISIX` variables or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
 
- Note that the metadata configuration is applied in global scope, which means it will take effect on all Route or Service which use http-logger plugin.
+ Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use http-logger plugin.
 
 **APISIX Variables**
 

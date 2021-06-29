@@ -48,9 +48,7 @@ local function gen_log_format(format)
     return log_format
 end
 
-local function get_custom_format_log(format)
-    local ctx = ngx.ctx.api_ctx
-
+local function get_custom_format_log(ctx, format)
     local log_format = lru_log_format(format or "", nil, gen_log_format, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do

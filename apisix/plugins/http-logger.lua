@@ -170,8 +170,9 @@ function _M.log(conf, ctx)
     local entry
 
     if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0 then
-        entry = log_util.get_custom_format_log(metadata.value.log_format)
+       and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     else
         entry = log_util.get_full_log(ngx, conf)
     end

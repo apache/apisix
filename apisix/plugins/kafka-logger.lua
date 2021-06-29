@@ -169,8 +169,9 @@ function _M.log(conf, ctx)
         local metadata = plugin.plugin_metadata(plugin_name)
         core.log.info("metadata: ", core.json.delay_encode(metadata))
         if metadata and metadata.value.log_format
-            and core.table.nkeys(metadata.value.log_format) > 0 then
-            entry = log_util.get_custom_format_log(metadata.value.log_format)
+          and core.table.nkeys(metadata.value.log_format) > 0
+        then
+            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
             core.log.info("custom log format entry: ", core.json.delay_encode(entry))
         else
             entry = log_util.get_full_log(ngx, conf)
