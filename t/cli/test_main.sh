@@ -680,3 +680,23 @@ if ! grep "variables_hash_max_size 1024;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the 'variables_hash_max_size 1024;' in nginx.conf"
+
+# test disk_path without quotes
+
+git checkout conf/config.yaml
+
+echo '
+apisix:
+  proxy_cache:
+    zones:
+      - disk_path: /tmp/disk_cache_one
+' > conf/config.yaml
+
+make init
+
+if ! grep "proxy_cache_path /tmp/disk_cache_one;" conf/nginx.conf > /dev/null; then
+    echo "failed: disk_path could not work without quotes"
+    exit 1
+fi
+
+echo "passed: disk_path could work without quotes"
