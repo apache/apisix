@@ -86,12 +86,7 @@ func setRoute(e *httpexpect.Expect, expectStatus int) {
 		Body: `{
 			 "uri": "/get",
 			 "plugins": {
-				 "prometheus": {},
-				 "limit-req": {
-					 "rate": 5,
-					 "burst": 100000,
-					 "key": "remote_addr"
-				 }
+				 "prometheus": {}
 			 },
 			 "upstream": {
 				 "nodes": {
