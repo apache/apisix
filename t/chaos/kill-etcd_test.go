@@ -79,12 +79,12 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	go func() {
 		for {
 			go getRoute(eSilent, http.StatusOK)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
-	// wait 3 seconds to let first route access returns
-	time.Sleep(3 * time.Second)
+	// wait 1 seconds to let first route access returns
+	time.Sleep(1 * time.Second)
 	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
 	bpsBefore := bandwidthBefore / durationBefore
 	g.Expect(bpsBefore).NotTo(BeZero())

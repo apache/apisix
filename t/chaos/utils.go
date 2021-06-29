@@ -167,7 +167,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, floa
 	// so need to calculate the duration
 	timeStart := time.Now()
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
@@ -178,7 +178,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, floa
 
 func roughCompare(a float64, b float64) bool {
 	ratio := a / b
-	if ratio < 1.5 && ratio > 0.5 {
+	if ratio < 1.3 && ratio > 0.7 {
 		return true
 	}
 	return false
