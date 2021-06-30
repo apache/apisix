@@ -566,9 +566,10 @@ local function _automatic_fetch(premature, self)
             if err then
                 if string.find(err, err_etcd_unhealthy_all) then
                     local reconnected = false
-                    while err and not reconnected do
-                        local backoff_duration, backoff_factor, backoff_step = 1, 2, 10
+                    while err and not reconnected and i <= 32 do
+                        local backoff_duration, backoff_factor, backoff_step = 1, 2, 6
                         for _ = 1, backoff_step do
+                            i = i + 1
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
                             if not err or not string.find(err, err_etcd_unhealthy_all) then
