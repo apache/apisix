@@ -138,7 +138,7 @@ title: kafka-logger
 1. 为特定路由启用 kafka-logger 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "kafka-logger": {
@@ -169,6 +169,42 @@ $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ...
 hello, world
+```
+
+## 插件元数据设置
+
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 对象方式声明日志格式。对 value 部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 http-logger 的 Route 或 Service 生效。 |
+
+**APISIX 变量**
+
+|       变量名      |           描述          |      使用示例    |
+|------------------|-------------------------|----------------|
+| route_id         | `route` 的 id           | $route_id      |
+| route_name       | `route` 的 name         | $route_name    |
+| service_id       | `service` 的 id         | $service_id    |
+| service_name     | `service` 的 name       | $service_name  |
+| consumer_name    | `consumer` 的 username  | $consumer_name |
+
+### 设置日志格式示例
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
 ## 禁用插件
