@@ -32,7 +32,7 @@ title: ext-plugin-pre-req
 ## Name
 
 The `ext-plugin-pre-req` runs specific external plugins in the plugin runner, before
-executing any builtin Lua plugins.
+executing most of the builtin Lua plugins.
 
 To know what is the plugin runner, see [external plugin](../external-plugin.md) section.
 

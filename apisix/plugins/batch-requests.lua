@@ -111,12 +111,11 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
     end
-    return true
+    return core.schema.check(schema, conf)
 end
 
 

@@ -40,7 +40,7 @@ Apache APISIX 的技术架构如下图所示：
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
 - QQ 群 - 578997126
-- [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
+- [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg) - 加入 `#apisix` 频道以便与成员交流。
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
 - **新手任务列表**
@@ -50,11 +50,10 @@ Apache APISIX 的技术架构如下图所示：
   - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [The Control-Plane for APISIX](https://github.com/apache/apisix-control-plane/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 - **微信公众号**
-   ![](../../assets/images/OA.jpg)
+   <br/>![](../../assets/images/OA.jpg)
 - **微信视频号**
-   ![](../../assets/images/MA.jpeg)
+   <br/>![](../../assets/images/MA.jpeg)
 
 ## 特性
 
@@ -78,11 +77,11 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - Proxy Protocol
   - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
   - HTTP(S) 反向代理
-  - [SSL](https.md)：动态加载 SSL 证书。
+  - [SSL](certificate.md)：动态加载 SSL 证书。
 
 - **全动态能力**
 
-  - [热更新和热插件](plugins.md): 无需重启服务，就可以持续更新配置和插件。
+  - [热更新和热插件](architecture-design/plugin.md): 无需重启服务，就可以持续更新配置和插件。
   - [代理请求重写](plugins/proxy-rewrite.md): 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
   - [输出内容重写](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
   - [Serverless](plugins/serverless.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
@@ -103,6 +102,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
   - [支持批量 Http 请求](plugins/batch-requests.md)
+  - [支持通过GraphQL属性过滤路由](../../en/latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes)
 
 - **安全防护**
 
@@ -138,6 +138,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **高度可扩展**
   - [自定义插件](plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filter`，`body filter` 和 `log` 阶段。
+  - [插件可以用 Java/Go 编写](../../en/latest/external-plugin.md)
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
 
@@ -157,9 +158,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 下载最新的源码发布包：
 
      ```shell
-     $ mkdir apisix-2.6
-     $ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
-     $ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
+     $ mkdir apisix-2.7
+     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
      ```
 
    - 安装运行时依赖的 Lua 库：
@@ -196,7 +197,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 安装 APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
    ```
 
    - 检查 APISIX 的版本号：
@@ -237,7 +238,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
    入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](getting-started.md)的步骤即可。
 
-   更进一步，你可以跟着文档来尝试更多的[插件](README.md#插件)。
+   更进一步，你可以跟着文档来尝试更多的[插件](plugins)。
 
 3. Admin API
 

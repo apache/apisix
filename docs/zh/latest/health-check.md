@@ -32,6 +32,7 @@ APISIX 的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-
 * 如果没有健康的节点，那么请求会继续发送给上游。
 * 如果 upstream 中只有一个节点，就不会有健康检查。
 因为该唯一节点无论是否健康，请求都会发送给上游，
+* 主动健康检查是必须的，这样不健康的节点才会恢复。
 
 下面是一个检查检查的例子：
 
@@ -87,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 监控检查的配置内容在`checks`中，`checks`包含两个类型：`active` 和 `passive`，详情如下
 
-* `active`: 要启动探活健康检查，需要在 upstream 配置中的 `checks.active` 添加如下配置项。
+* `active`: 要启动主动健康检查，需要在 upstream 配置中的 `checks.active` 添加如下配置项。
 
   * `active.timeout`: 主动健康检查 socket 超时时间（秒为单位），支持小数点。比如 `1.01` 代表 `1010` 毫秒，`2` 代表 `2000` 毫秒。
 

@@ -44,6 +44,7 @@ GET /t
 --- response_body
 done
 --- error_log
+loaded plugin and sort by priority: 22000 name: client-control
 loaded plugin and sort by priority: 12000 name: ext-plugin-pre-req
 loaded plugin and sort by priority: 11011 name: zipkin
 loaded plugin and sort by priority: 11010 name: request-id

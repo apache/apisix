@@ -34,7 +34,6 @@ local type = type
 local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
-local popen = io.popen
 local execute = os.execute
 local table_insert = table.insert
 local getenv = os.getenv
@@ -57,6 +56,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
@@ -64,7 +64,7 @@ version:    print the version of apisix
 end
 
 
-local function check_version(cur_ver_s, need_ver_s)
+local function version_greater_equal(cur_ver_s, need_ver_s)
     local cur_vers = util.split(cur_ver_s, [[.]])
     local need_vers = util.split(need_ver_s, [[.]])
     local len = max(#cur_vers, #need_vers)
@@ -190,6 +190,25 @@ local config_schema = {
                                     },
                                     {
                                         type = "string",
+                                    },
+                                    {
+                                        type = "object",
+                                        properties = {
+                                            addr = {
+                                                anyOf = {
+                                                    {
+                                                        type = "integer",
+                                                    },
+                                                    {
+                                                        type = "string",
+                                                    },
+                                                }
+                                            },
+                                            tls = {
+                                                type = "boolean",
+                                            }
+                                        },
+                                        required = {"addr"}
                                     },
                                 },
                             },
@@ -356,8 +375,13 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     local need_ver = "1.17.3"
-    if not check_version(or_ver, need_ver) then
+    if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
+    end
+
+    local use_openresty_1_17 = false
+    if not version_greater_equal(or_ver, "1.19.3") then
+        use_openresty_1_17 = true
     end
 
     local or_info = util.execute_cmd("openresty -V 2>&1")
@@ -367,6 +391,11 @@ Please modify "admin_key" in conf/config.yaml .
                      "your openresty, please check it out. Without this ",
                      "module, there will be fewer monitoring indicators.\n")
         with_module_status = false
+    end
+
+    local use_apisix_openresty = true
+    if or_info and not or_info:find("apisix-nginx-module", 1, true) then
+        use_apisix_openresty = false
     end
 
     local enabled_plugins = {}
@@ -429,6 +458,21 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
+    local tcp_enable_ssl
+    -- compatible with the original style which only has the addr
+    if yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
+        local tcp = yaml_conf.apisix.stream_proxy.tcp
+        for i, item in ipairs(tcp) do
+            if type(item) ~= "table" then
+                tcp[i] = {addr = item}
+            else
+                if item.tls then
+                    tcp_enable_ssl = true
+                end
+            end
+        end
+    end
+
     local dubbo_upstream_multiplex_count = 32
     if yaml_conf.plugin_attr and yaml_conf.plugin_attr["dubbo-proxy"] then
         local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
@@ -445,14 +489,17 @@ Please modify "admin_key" in conf/config.yaml .
 
     -- Using template.render
     local sys_conf = {
+        use_openresty_1_17 = use_openresty_1_17,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
         with_module_status = with_module_status,
+        use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
+        tcp_enable_ssl = tcp_enable_ssl,
     }
 
     if not yaml_conf.apisix then
@@ -630,11 +677,10 @@ local function start(env, ...)
     pid = tonumber(pid)
     if pid then
         local lsof_cmd = "lsof -p " .. pid
-        local hd = popen(lsof_cmd)
-        local res = hd:read("*a")
+        local res, err = util.execute_cmd(lsof_cmd)
         if not (res and res == "") then
             if not res then
-                print("failed to read the result of command: " .. lsof_cmd)
+                print(err)
             else
                 print("APISIX is running...")
             end
@@ -679,7 +725,7 @@ local function start(env, ...)
 end
 
 
-local function stop(env)
+local function cleanup()
     local local_conf_path = profile:yaml_path("config")
     local bak_exist = io_open(local_conf_path .. ".bak")
     if bak_exist then
@@ -692,6 +738,20 @@ local function stop(env)
             util.die("failed to mv original config file, error: ", err)
         end
     end
+end
+
+
+local function quit(env)
+    cleanup()
+
+    local cmd = env.openresty_args .. [[ -s quit]]
+    util.execute_cmd(cmd)
+end
+
+
+local function stop(env)
+    cleanup()
+
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)
 end
@@ -730,6 +790,7 @@ local action = {
     init_etcd = etcd.init,
     start = start,
     stop = stop,
+    quit = quit,
     restart = restart,
     reload = reload,
 }

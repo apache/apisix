@@ -97,6 +97,7 @@ function _M.get(consumer_name)
         return 500, {error_msg = err}
     end
 
+    utils.fix_count(res.body, consumer_name)
     return res.status, res.body
 end
 

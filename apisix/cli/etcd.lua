@@ -191,10 +191,21 @@ function _M.init(env, args)
         local version_url = host .. "/version"
         local errmsg
 
-        local res, err = request(version_url, yaml_conf)
-        -- In case of failure, request returns nil followed by an error message.
-        -- Else the first return value is the response body
-        -- and followed by the response status code.
+        local res, err
+        local retry_time = 0
+        while retry_time < 2 do
+            res, err = request(version_url, yaml_conf)
+            -- In case of failure, request returns nil followed by an error message.
+            -- Else the first return value is the response body
+            -- and followed by the response status code.
+            if res then
+                break
+            end
+            retry_time = retry_time + 1
+            print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
+                             version_url, err, retry_time))
+        end
+
         if not res then
             errmsg = str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err)
             util.die(errmsg)
@@ -233,18 +244,30 @@ function _M.init(env, args)
 
             local post_json_auth = dkjson.encode(json_auth)
             local response_body = {}
-            local res, err = request({
-                url = auth_url,
-                method = "POST",
-                source = ltn12.source.string(post_json_auth),
-                sink = ltn12.sink.table(response_body),
-                headers = {
-                    ["Content-Length"] = #post_json_auth
-                }
-            }, yaml_conf)
-            -- In case of failure, request returns nil followed by an error message.
-            -- Else the first return value is just the number 1
-            -- and followed by the response status code.
+
+            local res, err
+            local retry_time = 0
+            while retry_time < 2 do
+                res, err = request({
+                    url = auth_url,
+                    method = "POST",
+                    source = ltn12.source.string(post_json_auth),
+                    sink = ltn12.sink.table(response_body),
+                    headers = {
+                        ["Content-Length"] = #post_json_auth
+                    }
+                }, yaml_conf)
+                -- In case of failure, request returns nil followed by an error message.
+                -- Else the first return value is just the number 1
+                -- and followed by the response status code.
+                if res then
+                    break
+                end
+                retry_time = retry_time + 1
+                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
+                                 auth_url, err, retry_time))
+            end
+
             if not res then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
                 util.die(errmsg)
@@ -282,13 +305,24 @@ function _M.init(env, args)
                 headers["Authorization"] = auth_token
             end
 
-            local res, err = request({
-                url = put_url,
-                method = "POST",
-                source = ltn12.source.string(post_json),
-                sink = ltn12.sink.table(response_body),
-                headers = headers
-            }, yaml_conf)
+            local res, err
+            local retry_time = 0
+            while retry_time < 2 do
+                res, err = request({
+                    url = put_url,
+                    method = "POST",
+                    source = ltn12.source.string(post_json),
+                    sink = ltn12.sink.table(response_body),
+                    headers = headers
+                }, yaml_conf)
+                retry_time = retry_time + 1
+                if res then
+                    break
+                end
+                print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
+                                 put_url, err, retry_time))
+            end
+
             if not res then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", put_url, err)
                 util.die(errmsg)

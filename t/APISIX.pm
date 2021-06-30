@@ -208,6 +208,13 @@ my $grpc_location = <<_EOC_;
         }
 _EOC_
 
+my $a6_ngx_directives = "";
+if ($version =~ m/\/apisix-nginx-module/) {
+    $a6_ngx_directives = <<_EOC_;
+    apisix_delay_client_max_body_check on;
+_EOC_
+}
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
@@ -237,6 +244,52 @@ _EOC_
     # set default `timeout` to 5sec
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
+
+    my $stream_tls_request = $block->stream_tls_request;
+    if ($stream_tls_request) {
+        # generate a springboard to send tls stream request
+        $block->set_value("stream_conf_enable", 1);
+        $block->set_value("request", "GET /stream_tls_request");
+
+        my $sni = "nil";
+        if ($block->stream_sni) {
+            $sni = '"' . $block->stream_sni . '"';
+        }
+        chomp $stream_tls_request;
+
+        my $config = <<_EOC_;
+            location /stream_tls_request {
+                content_by_lua_block {
+                    local sock = ngx.socket.tcp()
+                    local ok, err = sock:connect("127.0.0.1", 2005)
+                    if not ok then
+                        ngx.say("failed to connect: ", err)
+                        return
+                    end
+
+                    local sess, err = sock:sslhandshake(nil, $sni, false)
+                    if not sess then
+                        ngx.say("failed to do SSL handshake: ", err)
+                        return
+                    end
+
+                    local bytes, err = sock:send("$stream_tls_request")
+                    if not bytes then
+                        ngx.say("send stream request error: ", err)
+                        return
+                    end
+                    local data, err = sock:receive("*a")
+                    if not data then
+                        sock:close()
+                        ngx.say("receive stream response error: ", err)
+                        return
+                    end
+                    ngx.print(data)
+                }
+            }
+_EOC_
+        $block->set_value("config", $config)
+    }
 
     my $stream_enable = $block->stream_enable;
     my $stream_conf_enable = $block->stream_conf_enable;
@@ -297,6 +350,15 @@ _EOC_
     }
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
+    listen 2005 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+    lua_ssl_trusted_certificate cert/apisix.crt;
+
+    ssl_certificate_by_lua_block {
+        apisix.stream_ssl_phase()
+    }
+
     preread_by_lua_block {
         -- wait for etcd sync
         ngx.sleep($wait_etcd_sync)
@@ -318,6 +380,10 @@ _EOC_
         $main_config .= <<_EOC_;
 stream {
 $stream_config
+    server {
+        listen 1985;
+        $stream_server_config
+    }
 }
 _EOC_
     }
@@ -398,7 +464,17 @@ _EOC_
         require("apisix").http_init_worker()
         $extra_init_worker_by_lua
     }
+_EOC_
 
+    if ($version !~ m/\/1.17.8/) {
+    $http_config .= <<_EOC_;
+    exit_worker_by_lua_block {
+        require("apisix").http_exit_worker()
+    }
+_EOC_
+    }
+
+    $http_config .= <<_EOC_;
     log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
 
     # fake server, only for test
@@ -457,6 +533,8 @@ _EOC_
             }
         }
     }
+
+    $a6_ngx_directives
 
     server {
         listen 1983 ssl;

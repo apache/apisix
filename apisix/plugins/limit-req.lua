@@ -36,6 +36,9 @@ local schema = {
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        nodelay = {
+            type = "boolean", default = false
+        },
     },
     required = {"rate", "burst", "key"}
 }
@@ -96,7 +99,7 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    if delay >= 0.001 then
+    if delay >= 0.001 and not conf.nodelay then
         sleep(delay)
     end
 end

@@ -501,3 +501,37 @@ $ acme.sh --renew --domain demo.domain
 ```
 
 详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
+
+## 如何在路径匹配时剪除请求路径前缀
+
+在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过插件 `proxy-rewrite` 实现。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/foo/*",
+    "plugins": {
+        "proxy-rewrite": {
+            "regex_uri": ["^/foo/(.*)","/$1"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+$ curl http://127.0.0.1:9080/foo/get -i
+HTTP/1.1 200 OK
+...
+{
+  ...
+  "url": "http://127.0.0.1/get"
+}
+```

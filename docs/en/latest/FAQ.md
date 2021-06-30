@@ -502,3 +502,37 @@ $ acme.sh --renew --domain demo.domain
 ```
 
 Blog https://juejin.cn/post/6965778290619449351 has detail setup.
+
+## How to strip route prefix for path matching
+
+To strip route prefix before forwarding to upstream, for example from `/foo/get` to `/get`, could be achieved through plugin `proxy-rewrite`.
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/foo/*",
+    "plugins": {
+        "proxy-rewrite": {
+            "regex_uri": ["^/foo/(.*)","/$1"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+Test request:
+
+```shell
+$ curl http://127.0.0.1:9080/foo/get -i
+HTTP/1.1 200 OK
+...
+{
+  ...
+  "url": "http://127.0.0.1/get"
+}
+```

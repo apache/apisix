@@ -31,7 +31,7 @@ external plugins.
 
 ## How does it work
 
-![external-plugin](../../../assets/images/external-plugin.png)
+![external-plugin](../../assets/images/external-plugin.png)
 
 When you configure a plugin runner in APISIX, APISIX will run the plugin runner
 as a subprocess. The process will belong to the same user of the APISIX
@@ -103,3 +103,14 @@ nginx_config:
   envs:
     - MY_ENV_VAR
 ```
+
+### APISIX terminates my runner with SIGKILL but not SIGTERM!
+
+Since `v2.7`, APISIX will stop the runner with SIGTERM when it is running on
+OpenResty 1.19+.
+
+However, APISIX needs to wait the runner to quit so that we can ensure the resource
+for the process group is freed.
+
+Therefore, we send SIGTERM first. And then after 1 second, if the runner is still
+running, we will send SIGKILL.

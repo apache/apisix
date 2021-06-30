@@ -18,7 +18,9 @@
 return [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
-
+{% if user and user ~= '' then %}
+user {* user *};
+{% end %}
 master_process on;
 
 worker_processes {* worker_processes *};
@@ -97,11 +99,20 @@ stream {
     }
 
     server {
-        {% for _, addr in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*addr*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
         {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if tcp_enable_ssl then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_certificate_by_lua_block {
+            apisix.stream_ssl_phase()
+        }
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
@@ -211,6 +222,9 @@ http {
     access_log syslog:server={* log_item.log_server *}:{* log_item.log_port *},{% if log_item.log_nohostname then %}nohostname,{% end %}{% if log_item.log_severity then %}severity={* log_item.log_severity *},{% end %}{% if log_item.log_facility then %}facility={* log_item.log_facility *},{% end %}tag={% if log_item.log_tag then %}{*log_item.log_tag*}{% else %}apisix{% end %} {* log_item.log_format_name *};
 
     {% end %}
+
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
     {% end %}
 
     {% end %}
@@ -250,6 +264,10 @@ http {
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
+    {% end %}
+
+    {% if ssl.ssl_trusted_certificate ~= nil then %}
+    lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
 
     # http configuration snippet starts
@@ -295,6 +313,12 @@ http {
     init_worker_by_lua_block {
         apisix.http_init_worker()
     }
+
+    {% if not use_openresty_1_17 then %}
+    exit_worker_by_lua_block {
+        apisix.http_exit_worker()
+    }
+    {% end %}
 
     {% if enable_control then %}
     server {
@@ -425,10 +449,6 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
-
-        {% if ssl.ssl_trusted_certificate ~= nil then %}
-        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate      {* ssl.ssl_cert *};
