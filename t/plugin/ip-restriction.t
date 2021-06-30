@@ -607,3 +607,171 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 26: set blacklist and user-defined message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "blacklist": [
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
+                                 ],
+                                 "message": "Do you want to do something bad?"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: hit route and ip cidr in the blacklist
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Do you want to do something bad?"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: hit route and ip in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 113.74.26.106
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Do you want to do something bad?"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: set whitelist and user-defined message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
+                                 ],
+                                 "message": "Do you want to do something bad?"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: hit route and ip not in the whitelist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Do you want to do something bad?"}
+--- error_log
+ip-restriction exits with http status code 403
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: Messages that do not reach the minimum range
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
+                                 ],
+                                 "message": ""
+                            }
+                        }
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/string too short, expected at least 1, got 0/
+--- no_error_log
+[error]
