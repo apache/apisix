@@ -299,6 +299,7 @@ _EOC_
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
+    lua_shared_dict stream-plugin-limit-conn 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
