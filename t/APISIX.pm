@@ -430,6 +430,7 @@ _EOC_
     lua_shared_dict discovery             1m;    # plugin authz-keycloak
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
+    lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
