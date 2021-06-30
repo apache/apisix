@@ -441,6 +441,7 @@ passed
 [error]
 
 
+
 === TEST 11: check for multiple request-ids in the response header are different
 --- config
     location /t {
@@ -469,4 +470,3 @@ GET /t
 X-Request-Id and Custom-Header-Name are different
 --- no_error_log
 [error]
-
