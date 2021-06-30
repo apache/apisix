@@ -31,7 +31,7 @@ local schema = {
         message = {
             type = "string",
             minLength = 1,
-            maxLength = 64,
+            maxLength = 1024,
             default = "Your IP address is not allowed"
         },
         whitelist = {

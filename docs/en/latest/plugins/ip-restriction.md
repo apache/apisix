@@ -41,10 +41,10 @@ in CIDR notation like 10.10.10.0/24 can be used.
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
 | whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
 | blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
-| message | string | optional    | Your IP address is not allowed. | [1, 64] | Message returned in case IP access is not allowed. |
+| message | string | optional    | Your IP address is not allowed. | [1, 1024] | Message returned in case IP access is not allowed. |
 
 One of `whitelist` or `blacklist` must be specified, and they can not work together.
-The message supports user-defined configuration.
+The message can be user-defined.
 
 ## How To Enable
 
