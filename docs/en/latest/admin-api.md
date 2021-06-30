@@ -557,6 +557,9 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details|
 |tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details|
+|keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details|
+|keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details|
+|keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details|
 
 `type` can be one of:
 
@@ -576,6 +579,10 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+
+`keepalive_pool` allows the upstream to have its separate connection pool.
+Its children fields, like `requests`, can be used to configure the upstream keepalive options.
 This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
 **Config Example:**

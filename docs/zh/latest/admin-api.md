@@ -563,6 +563,9 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | update_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | tls.client_cert    | 可选                               | https 证书           | 设置跟上游通信时的客户端证书，细节见下文                                                                          | |
 | tls.client_key	 | 可选                               | https 证书私钥           | 设置跟上游通信时的客户端私钥，细节见下文                                                                                                                                                                                                                                                                                                              | |
+|keepalive_pool.size  |可选| 辅助 | 动态设置 `keepalive` 指令，细节见下文|
+|keepalive_pool.idle_timeout  |可选| 辅助 | 动态设置 `keepalive_timeout` 指令，细节见下文|
+|keepalive_pool.requests  |可选| 辅助 | 动态设置 `keepalive_requests` 指令，细节见下文|
 
 `type` 可以是以下的一种：
 
@@ -581,6 +584,10 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+
+`keepalive_pool` 允许 upstream 对象有自己单独的连接池。
+它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
 这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
 
 **upstream 对象 json 配置内容：**
