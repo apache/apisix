@@ -24,6 +24,7 @@ local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
+local pl_stringx = require("pl.stringx")
 local jsonschema = require("jsonschema")
 
 local stderr = io.stderr
@@ -539,6 +540,29 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             sys_conf.control_server_addr = ip .. ":" .. port
+        end
+    end
+
+    -- check control port conflict when batch-requests is enabled
+    if enabled_plugins["batch-requests"] and yaml_conf.apisix.enable_control then
+        local split = pl_stringx.split
+        local ip_port = split(sys_conf.control_server_addr, ":")
+        local port = tonumber(ip_port[#ip_port])
+        if port == nil then
+            util.die("port not number, should not happen\n")
+        end
+
+        if type(yaml_conf.apisix.node_listen) == "number" then
+            if port == yaml_conf.apisix.node_listen then
+                util.die("control port conflict node_listen port when batch-requests is on\n")
+            end
+        elseif type(yaml_conf.apisix.node_listen) == "table" then
+            for _, value in ipairs(yaml_conf.apisix.node_listen) do
+                if type(value) == "table" and type(value.port) == "number"
+                        and value.port == port then
+                    util.die("control port conflict node_listen port when batch-requests is on\n")
+                end
+            end
         end
     end
 
