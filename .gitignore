@@ -71,6 +71,7 @@ ci/openwhisk-utilities/
 !/conf/config-default.yaml
 /conf/debug-*.yaml
 /build-cache/
+t/fuzzing/__pycache__/
 # release tar package
 *.tgz
 release/*
