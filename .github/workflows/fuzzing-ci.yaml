@@ -65,7 +65,7 @@ jobs:
 
     - name: install boofuzz
       run: |
-        pip install typing boofuzz
+        pip install -r $PWD/t/fuzzing/requirements.txt
 
     - name: run simpleroute test
       run: |

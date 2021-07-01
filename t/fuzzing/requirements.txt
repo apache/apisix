@@ -1,0 +1,3 @@
+typing==3.7.4.3
+# boofuzz 0.4.0 only supports Python 3.6+
+boofuzz==0.3.0
