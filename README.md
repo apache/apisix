@@ -147,7 +147,6 @@ APISIX Installed and tested in the following systems:
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-There are several ways to install the Apache Release version of APISIX.
 Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
