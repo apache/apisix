@@ -209,6 +209,7 @@ etcd:
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 30                     # 30 seconds
   #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
+  #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
   #user: root                     # root username for etcd
   #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
