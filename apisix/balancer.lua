@@ -19,6 +19,7 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local ipairs            = ipairs
+local enable_keepalive = balancer.enable_keepalive
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -253,6 +254,34 @@ end
 _M.pick_server = pick_server
 
 
+local set_current_peer
+do
+    local pool_opt = {}
+
+    function set_current_peer(server, ctx)
+        local up_conf = ctx.upstream_conf
+        local keepalive_pool = up_conf.keepalive_pool
+
+        if keepalive_pool and enable_keepalive then
+            local idle_timeout = keepalive_pool.idle_timeout
+            local size = keepalive_pool.size
+            local requests = keepalive_pool.requests
+
+            pool_opt.pool_size = size
+            local ok, err = balancer.set_current_peer(server.host, server.port,
+                                                      pool_opt)
+            if not ok then
+                return ok, err
+            end
+
+            return balancer.enable_keepalive(idle_timeout, requests)
+        end
+
+        return balancer.set_current_peer(server.host, server.port)
+    end
+end
+
+
 function _M.run(route, ctx)
     local server, err
 
@@ -283,7 +312,8 @@ function _M.run(route, ctx)
     end
 
     core.log.info("proxy request to ", server.host, ":", server.port)
-    local ok, err = balancer.set_current_peer(server.host, server.port)
+
+    local ok, err = set_current_peer(server, ctx)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
                        server.port, "] err: ", err)
