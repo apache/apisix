@@ -115,4 +115,16 @@ if grep "listen 127.0.0.1:9090;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
+echo '
+apisix:
+  node_listen: 9090
+  enable_control: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "control port conflict with node_listen port"; then
+    echo "failed: can't detect port conflict"
+    exit 1
+fi
+
 echo "pass: access control server"

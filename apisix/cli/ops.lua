@@ -407,8 +407,8 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
-    local control_port = 9090
-    local control_server_addr = ""
+    local control_port
+    local control_server_addr
     if yaml_conf.apisix.enable_control then
         if not yaml_conf.apisix.control then
             control_server_addr = "127.0.0.1:9090"
