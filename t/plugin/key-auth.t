@@ -350,7 +350,7 @@ passed
 
 
 
-=== TEST13: valid consumer
+=== TEST 13: valid consumer
 --- request
 GET /hello?auth=auth-one
 --- response_body
