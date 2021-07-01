@@ -144,95 +144,13 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ## 立刻开始
 
-### 编译和安装
+1. 安装
 
 APISIX 在以下操作系统中可顺利安装并做过测试：
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-有以下几种方式来安装 APISIX 的 Apache Release 版本:
-
-1. 源码编译（适用所有系统）
-
-   - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](install-dependencies.md)
-   - 下载最新的源码发布包：
-
-     ```shell
-     $ mkdir apisix-2.7
-     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
-     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
-     ```
-
-   - 安装运行时依赖的 Lua 库：
-
-     ```shell
-     $ make deps
-     ```
-
-   - 检查 APISIX 的版本号：
-
-     ```shell
-     $ ./bin/apisix version
-     ```
-
-   - 启动 APISIX:
-
-     ```shell
-     $ ./bin/apisix start
-     ```
-
-2. [Docker 镜像](https://hub.docker.com/r/apache/apisix)（适用所有系统）
-
-   默认会拉取最新的 Apache 发布包：
-
-   ```shell
-   $ docker pull apache/apisix
-   ```
-
-   Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/apisix-docker/tree/master/example)来启动一个测试集群。
-
-3. RPM 包（只适用于 CentOS 7）
-
-   - 安装依赖：OpenResty, etcd 和 OpenSSL develop library，参考[依赖安装文档](install-dependencies.md#centos-7)
-   - 安装 APISIX：
-
-   ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
-   ```
-
-   - 检查 APISIX 的版本号：
-
-     ```shell
-     $ apisix version
-     ```
-
-   - 启动 APISIX:
-
-     ```shell
-     $ apisix start
-     ```
-
-**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，并且 etcd 最低支持版本为 v3.4.0，如果有需要请进行升级。如果需要将数据迁移至 etcd v3，请按照 [etcd 迁移指南](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/) 进行迁移。
-
-### 针对开发者
-
-1. 对于开发者而言，可以使用最新的 master 分支来体验更多功能
-
-   - 源码编译
-
-   ```shell
-   $ git clone git@github.com:apache/apisix.git
-   $ cd apisix
-   $ make deps
-   ```
-
-   - Docker 镜像
-
-   ```shell
-   $ git clone https://github.com/apache/apisix-docker.git
-   $ cd apisix-docker
-   $ sudo docker build -f alpine-dev/Dockerfile .
-   ```
+请参考[安装文档](./how-to-build.md)。
 
 2. 入门指南
 
@@ -246,11 +164,10 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 4. 插件二次开发
 
-   可以参考[插件开发指南](plugin-develop.md)，以及[示例插件 echo](plugins/echo.md) 的文档和代码实现。
+   可以参考[插件开发指南](plugin-develop.md)，以及示例插件 `example-plugin` 的代码实现。
+   阅读[插件概念](architecture-design/plugin.md) 会帮助你学到更多关于插件的知识。
 
-   请注意，Apache APISIX 的插件新增、更新、删除等都是热加载的，不用重启服务。
-
-更多文档请参考 [Apache APISIX 文档索引](README.md)。
+更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/docs/apisix/getting-started/)。
 
 ## 性能测试
 
