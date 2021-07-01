@@ -148,6 +148,7 @@ if ($version =~ m/\/mod_dubbo/) {
     $dubbo_upstream = <<_EOC_;
     upstream apisix_dubbo_backend {
         server 0.0.0.1;
+
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -448,11 +449,12 @@ _EOC_
 
     upstream apisix_backend {
         server 0.0.0.1;
+
+        keepalive 32;
+
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
-
-        keepalive 32;
     }
 
     $dubbo_upstream
