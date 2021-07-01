@@ -158,7 +158,7 @@ local function run()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -228,7 +228,7 @@ local function run_stream()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
