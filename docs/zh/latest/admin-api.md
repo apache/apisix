@@ -623,9 +623,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 {
     "type":"roundrobin",
     "nodes":{
-        "127.0.0.1:80":1,
-        "127.0.0.2:80":2,
-        "foo.com:80":3
+        "39.97.63.215:80": 1
     }
 }'
 HTTP/1.1 201 Created
