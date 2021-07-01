@@ -27,9 +27,12 @@ The runtime environment for Apache APISIX requires Nginx and etcd.
 
 So before installation, please follow the different operating systems [install Dependencies](install-dependencies.md).
 
+The Docker / Helm Chart installation may already contain the required Nginx or etcd.
+Please refer to their own documentations.
+
 ## 2. Install Apache APISIX
 
-You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
+You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Helm Chart.
 
 ### Installation via RPM package (CentOS 7)
 
