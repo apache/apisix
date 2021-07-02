@@ -407,16 +407,53 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
+    local control_port
+    local control_server_addr
+    if yaml_conf.apisix.enable_control then
+        if not yaml_conf.apisix.control then
+            control_server_addr = "127.0.0.1:9090"
+        else
+            local ip = yaml_conf.apisix.control.ip
+            local port = tonumber(yaml_conf.apisix.control.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9090
+            end
+
+            control_server_addr = ip .. ":" .. port
+            control_port = port
+        end
+    end
+
     -- support multiple ports listen, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
+
+        if yaml_conf.apisix.node_listen == control_port then
+            util.die("control port conflicts with node_listen port\n")
+        end
+
         local node_listen = {{port = yaml_conf.apisix.node_listen}}
         yaml_conf.apisix.node_listen = node_listen
     elseif type(yaml_conf.apisix.node_listen) == "table" then
         local node_listen = {}
         for index, value in ipairs(yaml_conf.apisix.node_listen) do
             if type(value) == "number" then
+
+                if value == control_port then
+                    util.die("control port conflicts with node_listen port\n")
+                end
+
                 table_insert(node_listen, index, {port = value})
             elseif type(value) == "table" then
+
+                if type(value.port) == "number" and value.port == control_port then
+                    util.die("control port conflicts with node_listen port\n")
+                end
+
                 table_insert(node_listen, index, value)
             end
         end
@@ -500,6 +537,7 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         tcp_enable_ssl = tcp_enable_ssl,
+        control_server_addr = control_server_addr,
     }
 
     if not yaml_conf.apisix then
@@ -521,25 +559,6 @@ Please modify "admin_key" in conf/config.yaml .
     end
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
-    end
-
-    if yaml_conf.apisix.enable_control then
-        if not yaml_conf.apisix.control then
-            sys_conf.control_server_addr = "127.0.0.1:9090"
-        else
-            local ip = yaml_conf.apisix.control.ip
-            local port = tonumber(yaml_conf.apisix.control.port)
-
-            if ip == nil then
-                ip = "127.0.0.1"
-            end
-
-            if not port then
-                port = 9090
-            end
-
-            sys_conf.control_server_addr = ip .. ":" .. port
-        end
     end
 
     if yaml_conf.plugin_attr.prometheus then
