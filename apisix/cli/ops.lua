@@ -433,7 +433,7 @@ Please modify "admin_key" in conf/config.yaml .
     if type(yaml_conf.apisix.node_listen) == "number" then
 
         if yaml_conf.apisix.node_listen == control_port then
-            util.die("control port conflict with node_listen port\n")
+            util.die("control port conflicts with node_listen port\n")
         end
 
         local node_listen = {{port = yaml_conf.apisix.node_listen}}
@@ -444,14 +444,14 @@ Please modify "admin_key" in conf/config.yaml .
             if type(value) == "number" then
 
                 if value == control_port then
-                    util.die("control port conflict with node_listen port\n")
+                    util.die("control port conflicts with node_listen port\n")
                 end
 
                 table_insert(node_listen, index, {port = value})
             elseif type(value) == "table" then
 
                 if type(value.port) == "number" and value.port == control_port then
-                    util.die("control port conflict with node_listen port\n")
+                    util.die("control port conflicts with node_listen port\n")
                 end
 
                 table_insert(node_listen, index, value)

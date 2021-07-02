@@ -124,8 +124,8 @@ apisix:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "control port conflict with node_listen port"; then
-    echo "failed: can't detect port conflict"
+if ! echo "$out" | grep "control port conflicts with node_listen port"; then
+    echo "failed: can't detect port conflicts"
     exit 1
 fi
 
