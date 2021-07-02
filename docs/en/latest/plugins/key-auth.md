@@ -48,6 +48,7 @@ For route side:
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | header  | string | optional    | apikey        |       | the header we get the key from |
+| query   | string | optional    | apikey        |       | the querystring we get the key from, which priority is lower than header |
 
 ## How To Enable
 
