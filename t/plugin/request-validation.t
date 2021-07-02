@@ -204,43 +204,43 @@ hello1 world
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
             local data = {
-				plugins = {
-					["request-validation"] = {
-					header_schema = {
-						type = "object",
-						required = { "required_payload" },
-						properties = {
-						required_payload = {
-							type = "string"
-						},
-						boolean_payload = {
-							type = "boolean"
-						},
-						timeouts = {
-							type = "integer",
-							minimum = 1,
-							maximum = 254,
-							default = 3
-						},
-						req_headers = {
-							type = "array",
-							minItems = 1,
-							items = {
-							type = "string"
-							}
-						}
-						}
-					}
-					}
-				},
-				upstream = {
-					nodes = {
-					["127.0.0.1:1982"] = 1
-					},
-					type = "roundrobin"
-				},
-				uri = "/opentracing"
-			}
+                plugins = {
+                    ["request-validation"] = {
+                    header_schema = {
+                        type = "object",
+                        required = { "required_payload" },
+                        properties = {
+                        required_payload = {
+                            type = "string"
+                        },
+                        boolean_payload = {
+                            type = "boolean"
+                        },
+                        timeouts = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 3
+                        },
+                        req_headers = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                            type = "string"
+                            }
+                        }
+                        }
+                    }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                    ["127.0.0.1:1982"] = 1
+                    },
+                    type = "roundrobin"
+                },
+                uri = "/opentracing"
+            }
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  json.encode(data)

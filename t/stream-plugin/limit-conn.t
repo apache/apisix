@@ -68,6 +68,14 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("config", $config);
+
+    my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
+            ngx.sleep(0.2)
+            ngx.say("hello world")
+_EOC_
+    $block->set_value("stream_upstream_code", $stream_upstream_code);
 });
 
 run_tests;

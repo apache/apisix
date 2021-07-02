@@ -294,6 +294,12 @@ _EOC_
     my $stream_enable = $block->stream_enable;
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
+    my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
+            ngx.say("hello world")
+_EOC_
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
@@ -339,9 +345,7 @@ _EOC_
         listen 1995;
 
         content_by_lua_block {
-            local sock = ngx.req.socket()
-            local data = sock:receive("1")
-            ngx.say("hello world")
+            $stream_upstream_code
         }
     }
 _EOC_
@@ -517,20 +521,6 @@ _EOC_
 
             log_by_lua_block {
                 apisix.http_log_phase()
-            }
-        }
-
-        location = /v3/auth/authenticate {
-            content_by_lua_block {
-                ngx.log(ngx.WARN, "etcd auth failed!")
-            }
-        }
-
-        location  = /.well-known/openid-configuration {
-            content_by_lua_block {
-                local t = require("lib.test_admin")
-                local openid_data = t.read_file("t/plugin/openid-configuration.json")
-                ngx.say(openid_data)
             }
         }
     }
