@@ -27,32 +27,29 @@ local lrucache  = core.lrucache.new({
 
 local schema = {
     type = "object",
-    oneOf = {
-        {
-            title = "whitelist",
-            properties = {
-                whitelist = {
-                    type = "array",
-                    items = {anyOf = core.schema.ip_def},
-                    minItems = 1
-                },
-            },
-            required = {"whitelist"},
-            additionalProperties = false,
+    properties = {
+        message = {
+            type = "string",
+            minLength = 1,
+            maxLength = 1024,
+            default = "Your IP address is not allowed"
         },
-        {
-            title = "blacklist",
-            properties = {
-                blacklist = {
-                    type = "array",
-                    items = {anyOf = core.schema.ip_def},
-                    minItems = 1
-                }
-            },
-            required = {"blacklist"},
-            additionalProperties = false,
-        }
-    }
+        whitelist = {
+            type = "array",
+            items = {anyOf = core.schema.ip_def},
+            minItems = 1
+        },
+        blacklist = {
+            type = "array",
+            items = {anyOf = core.schema.ip_def},
+            minItems = 1
+        },
+    },
+    oneOf = {
+        {required = {"whitelist"}},
+        {required = {"blacklist"}},
+    },
+    additionalProperties = false,
 }
 
 
@@ -154,7 +151,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return 403, { message = "Your IP address is not allowed" }
+        return 403, { message = conf.message }
     end
 end
 
