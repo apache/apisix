@@ -119,6 +119,8 @@ echo '
 apisix:
   node_listen: 9090
   enable_control: true
+  control:
+    port: 9090
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
