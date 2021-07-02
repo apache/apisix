@@ -39,7 +39,7 @@ title: Admin API
 
 The Admin API is a group of APIs served for the Apache APISIX, we could pass parameters to APIs to control APISIX Nodes. To have a better understanding about how it works, please see [the architecture design](./architecture-design/apisix.md).
 
-When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](../../../conf/config.yaml) file.
+When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) file.
 
 The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `conf/config.yaml` file, which is the access token of the Admin API.
 
