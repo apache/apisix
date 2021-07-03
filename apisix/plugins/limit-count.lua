@@ -137,17 +137,17 @@ local function create_limit_obj(conf)
     core.log.info("create new limit-count plugin instance")
 
     if not conf.policy or conf.policy == "local" then
-        return limit_local_new("plugin-" .. plugin_name, conf.count,
+        return limit_local_new("plugin_limit_count", conf.count,
                                conf.time_window)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name,
+        return limit_redis_new("plugin_limit_count",
                                conf.count, conf.time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
+        return limit_redis_cluster_new("plugin_limit_count", conf.count,
                                        conf.time_window, conf)
     end
 
