@@ -39,6 +39,8 @@ apisix:
     udp: # UDP proxy address list
       - 9200
       - "127.0.0.1:9211"
+    lua_shared_dict:
+      lrucache_lock_stream: 10m
 ```
 
 ## How to set route?
