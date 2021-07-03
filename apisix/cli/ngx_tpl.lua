@@ -158,7 +158,7 @@ http {
     lua_shared_dict etcd_cluster_health_check {* http.lua_shared_dict.etcd_cluster_health_check *}; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
-    lua_shared_dict discovery {* http.lua_shared_dict.discovery *}; # cache for discovery metadata documents
+    lua_shared_dict discovery             {* http.lua_shared_dict.discovery *}; # cache for discovery metadata documents
 
     # for openid-connect plugin
     lua_shared_dict jwks                  {* http.lua_shared_dict.jwks *}; # cache for JWKs
