@@ -299,7 +299,7 @@ _EOC_
     $lua_deps_path
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache-lock-stream   10m;
+    lua_shared_dict lrucache_lock_stream   10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -414,22 +414,22 @@ _EOC_
     $http_config .= <<_EOC_;
     $lua_deps_path
 
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict plugin_limit_req     10m;
+    lua_shared_dict plugin_limit_count   10m;
+    lua_shared_dict plugin_limit_conn    10m;
+    lua_shared_dict prometheus_metrics   10m;
     lua_shared_dict internal_status      10m;
-    lua_shared_dict upstream-healthcheck 32m;
-    lua_shared_dict worker-events        10m;
-    lua_shared_dict lrucache-lock        10m;
+    lua_shared_dict upstream_healthcheck 32m;
+    lua_shared_dict worker_events        10m;
+    lua_shared_dict lrucache_lock        10m;
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict plugin_limit_count_redis_cluster_slot_lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
     lua_shared_dict access_tokens         1m;    # plugin authz-keycloak
     lua_shared_dict discovery             1m;    # plugin authz-keycloak
-    lua_shared_dict plugin-api-breaker   10m;
+    lua_shared_dict plugin_api_breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
     lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
 

@@ -141,12 +141,12 @@ end
 
 ```lua
 --No
-return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst, conf.default_conn_delay)
+return limit_conn_new("plugin_limit_conn", conf.conn, conf.burst, conf.default_conn_delay)
 ```
 
 ```lua
 --Yes
-return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
+return limit_conn_new("plugin_limit_conn", conf.conn, conf.burst,
                       conf.default_conn_delay)
 ```
 
@@ -158,20 +158,20 @@ return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
 
 ```lua
 --No
-return limit_conn_new("plugin-limit-conn" ..  "plugin-limit-conn" ..
-                      "plugin-limit-conn")
+return limit_conn_new("plugin_limit_conn" ..  "plugin_limit_conn" ..
+                      "plugin_limit_conn")
 ```
 
 ```lua
 --Yes
-return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
-                      .. "plugin-limit-conn")
+return limit_conn_new("plugin_limit_conn" .. "plugin_limit_conn"
+                      .. "plugin_limit_conn")
 ```
 
 ```lua
 --Yes
-return "param1", "plugin-limit-conn"
-                 .. "plugin-limit-conn")
+return "param1", "plugin_limit_conn"
+                 .. "plugin_limit_conn")
 ```
 
 ## 变量

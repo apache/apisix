@@ -45,7 +45,7 @@ local function new_redis_cluster(conf)
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password,
-        dict_name = "plugin-limit-count-redis-cluster-slot-lock",
+        dict_name = "plugin_limit_count_redis_cluster_slot_lock",
     }
 
     for i, conf_item in ipairs(conf.redis_cluster_nodes) do

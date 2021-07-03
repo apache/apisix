@@ -98,7 +98,7 @@ function _M.http_init_worker()
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
     local we = require("resty.worker.events")
-    local ok, err = we.configure({shm = "worker-events", interval = 0.1})
+    local ok, err = we.configure({shm = "worker_events", interval = 0.1})
     if not ok then
         error("failed to init worker event: " .. err)
     end

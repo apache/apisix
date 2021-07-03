@@ -24,7 +24,7 @@ local ngx = ngx
 local get_phase = ngx.get_phase
 
 
-local lock_shdict_name = "lrucache-lock"
+local lock_shdict_name = "lrucache_lock"
 if ngx.config.subsystem == "stream" then
     lock_shdict_name = lock_shdict_name .. "-" .. ngx.config.subsystem
 end

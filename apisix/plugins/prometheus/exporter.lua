@@ -74,7 +74,7 @@ function _M.init()
     -- We keep the old metric names for the compatibility.
 
     -- across all services
-    prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
+    prometheus = base_prometheus.init("prometheus_metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
             {"state"})
