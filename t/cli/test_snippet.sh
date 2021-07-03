@@ -29,6 +29,8 @@ apisix:
     stream_proxy:
         tcp:
             - 9100
+        lua_shared_dict:
+          lrucache_lock_stream: 10m
 nginx_config:
     main_configuration_snippet: |
         daemon on;

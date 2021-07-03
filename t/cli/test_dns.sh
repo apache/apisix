@@ -44,6 +44,8 @@ apisix:
   stream_proxy:
     tcp:
       - 9100
+    lua_shared_dict:
+      lrucache_lock_stream: 10m
   dns_resolver:
     - 127.0.0.1
     - "[::1]:5353"
@@ -65,6 +67,8 @@ apisix:
   stream_proxy:
     tcp:
       - 9100
+    lua_shared_dict:
+      lrucache_lock_stream: 10m
   dns_resolver:
     - 127.0.0.1
     - "::1"
