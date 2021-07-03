@@ -58,6 +58,8 @@ For example, the following configuration represents listening on the 9100 TCP po
     stream_proxy:                 # TCP/UDP proxy
       tcp:                        # TCP proxy port list
         - 9100
+      lua_shared_dict:
+        lrucache_lock_stream: 10m
     dns_resolver:
     ...
 ```
