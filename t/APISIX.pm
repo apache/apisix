@@ -148,6 +148,7 @@ if ($version =~ m/\/mod_dubbo/) {
     $dubbo_upstream = <<_EOC_;
     upstream apisix_dubbo_backend {
         server 0.0.0.1;
+
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -430,6 +431,7 @@ _EOC_
     lua_shared_dict discovery             1m;    # plugin authz-keycloak
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
+    lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -447,11 +449,12 @@ _EOC_
 
     upstream apisix_backend {
         server 0.0.0.1;
+
+        keepalive 32;
+
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
-
-        keepalive 32;
     }
 
     $dubbo_upstream

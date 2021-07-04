@@ -155,6 +155,7 @@ http {
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
     lua_shared_dict plugin-api-breaker   10m;
+    lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -271,14 +272,15 @@ http {
     # http configuration snippet ends
 
     upstream apisix_backend {
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
+        # we put the static configuration above so that we can override it in the Lua code
+
         server 0.0.0.1;
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
-
-        keepalive {* http.upstream.keepalive *};
-        keepalive_requests {* http.upstream.keepalive_requests *};
-        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -288,8 +290,12 @@ http {
             apisix.http_balancer_phase()
         }
 
+        # dynamical keepalive doesn't work with dubbo as the connection here
+        # is managed by ngx_multi_upstream_module
         multi {* dubbo_upstream_multiplex_count *};
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
     {% end %}
 

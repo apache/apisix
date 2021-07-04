@@ -141,95 +141,13 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 ## Get Started
 
-### Configure and Installation
+1. Installation
 
 APISIX Installed and tested in the following systems:
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-There are several ways to install the Apache Release version of APISIX:
-
-1. Source code compilation (applicable to all systems)
-
-   - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](docs/en/latest/install-dependencies.md)
-   - Download the latest source code release package:
-
-     ```shell
-     $ mkdir apisix-2.7
-     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
-     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
-     ```
-
-   - Install the dependencies：
-
-     ```shell
-     $ make deps
-     ```
-
-   - check version of APISIX:
-
-     ```shell
-     $ ./bin/apisix version
-     ```
-
-   - start APISIX:
-
-     ```shell
-     $ ./bin/apisix start
-     ```
-
-2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
-
-   By default, the latest Apache release package will be pulled:
-
-   ```shell
-   $ docker pull apache/apisix
-   ```
-
-   The Docker image does not include `etcd`; you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
-
-3. RPM package（only for CentOS 7）
-
-   - Installation runtime dependencies: OpenResty, etcd and OpenSSL develop library, refer to [install dependencies documentation](docs/en/latest/install-dependencies.md#centos-7)
-   - install APISIX：
-
-   ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
-   ```
-
-   - check the version of APISIX:
-
-     ```shell
-     $ apisix version
-     ```
-
-   - start APISIX:
-
-     ```shell
-     $ apisix start
-     ```
-
-**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, and the minimum etcd version supported is v3.4.0. Please update etcd when needed. If you need to migrate your data from etcd v2 to v3, please follow [etcd migration guide](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/).
-
-### For Developer
-
-1. For developers, you can use the latest master branch to experience more features
-
-   - build from source code
-
-   ```shell
-   $ git clone git@github.com:apache/apisix.git
-   $ cd apisix
-   $ make deps
-   ```
-
-   - Docker image
-
-   ```shell
-   $ git clone https://github.com/apache/apisix-docker.git
-   $ cd apisix-docker
-   $ sudo docker build -f alpine-dev/Dockerfile .
-   ```
+Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
 
@@ -239,15 +157,14 @@ There are several ways to install the Apache Release version of APISIX:
 
 3. Admin API
 
-   Apache APISIX provides [REST Admin API](docs/en/latest/admin-api.md) to dynamic control the Apache APISIX cluster.
+   Apache APISIX provides [REST Admin API](docs/en/latest/admin-api.md) to dynamically control the Apache APISIX cluster.
 
 4. Plugin development
 
-   You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and [sample plugin `echo`](docs/en/latest/plugins/echo.md) documentation and code implementation.
+   You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and sample plugin `example-plugin`'s code implementation.
+   Reading [plugin concept](docs/en/latest/architecture-design/plugin.md) would help you learn more about the plugin.
 
-   Please note that Apache APISIX plugins' added, updated, deleted, etc., are hot-loaded without restarting the service.
-
-For more documents, please refer to [Apache APISIX Document Index](README.md)
+For more documents, please refer to [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/)
 
 ## Benchmark
 

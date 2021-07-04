@@ -39,7 +39,7 @@ title: Admin API
 
 The Admin API is a group of APIs served for the Apache APISIX, we could pass parameters to APIs to control APISIX Nodes. To have a better understanding about how it works, please see [the architecture design](./architecture-design/apisix.md).
 
-When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](../../../conf/config.yaml) file.
+When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) file.
 
 The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `conf/config.yaml` file, which is the access token of the Admin API.
 
@@ -557,6 +557,9 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details|
 |tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details|
+|keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details|
+|keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details|
+|keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details|
 
 `type` can be one of:
 
@@ -576,6 +579,10 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+
+`keepalive_pool` allows the upstream to have its separate connection pool.
+Its children fields, like `requests`, can be used to configure the upstream keepalive options.
 This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
 
 **Config Example:**
@@ -611,9 +618,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 {
     "type":"roundrobin",
     "nodes":{
-        "127.0.0.1:80":1,
-        "127.0.0.2:80":2,
-        "foo.com:80":3
+        "39.97.63.215:80": 1
     }
 }'
 HTTP/1.1 201 Created
