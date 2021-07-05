@@ -731,97 +731,97 @@ nginx_config:
 make init
 
 if ! grep "internal_status      20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'internal_status      20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin_limit_req     20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin_limit_req     20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin_limit_count   20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin_limit_count   20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "prometheus_metrics   20m;" conf/nginx.conf > /dev/null; then
     echo "failed: 'prometheus_metrics   20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "plugin_limit_req      20m;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin_limit_req      20m;' not in nginx.conf"
+if ! grep "plugin_limit_conn    20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin_limit_conn    20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "plugin_limit_count   20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin_limit_count   20m' not in nginx.conf"
+if ! grep "upstream_healthcheck 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'upstream_healthcheck 20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "prometheus_metrics   20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'prometheus_metrics   20m' not in nginx.conf"
+if ! grep "worker_events        20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'worker_events        20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "plugin_limit_conn    20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin_limit_conn    20m' not in nginx.conf"
+if ! grep "lrucache_lock        20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'lrucache_lock        20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "upstream_healthcheck 20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'upstream_healthcheck 20m' not in nginx.conf"
+if ! grep "balancer_ewma        20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer_ewma        20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "worker_events        20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'worker_events        20m' not in nginx.conf"
+if ! grep "balancer_ewma_locks  20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer_ewma_locks  20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "lrucache_lock        20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'lrucache_lock        20m' not in nginx.conf"
+if ! grep "balancer_ewma_last_touched_at 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer_ewma_last_touched_at 20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "balancer_ewma        20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'balancer_ewma        20m' not in nginx.conf"
+if ! grep "plugin_limit_count_redis_cluster_slot_lock 2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin_limit_count_redis_cluster_slot_lock 2m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "balancer_ewma_locks  20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'balancer_ewma_locks  20m' not in nginx.conf"
+if ! grep "tracing_buffer       20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'tracing_buffer       20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "balancer_ewma_last_touched_at 20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'balancer_ewma_last_touched_at 20m' not in nginx.conf"
+if ! grep "plugin_api_breaker   20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin_api_breaker   20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "plugin_limit_count_redis_cluster_slot_lock 2m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin_limit_count_redis_cluster_slot_lock 2m' not in nginx.conf"
+if ! grep "etcd_cluster_health_check 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'etcd_cluster_health_check 20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "tracing_buffer       20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'tracing_buffer       20m' not in nginx.conf"
+if ! grep "discovery             2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'discovery             2m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "plugin_api_breaker   20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin_api_breaker   20m' not in nginx.conf"
+if ! grep "jwks                  2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'jwks                  2m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "etcd_cluster_health_check 20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'etcd_cluster_health_check 20m' not in nginx.conf"
+if ! grep "introspection        20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'introspection        20m;' not in nginx.conf"
     exit 1
 fi
 
-if ! grep "discovery             2m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'discovery             2m' not in nginx.conf"
-    exit 1
-fi
-
-if ! grep "jwks                  2m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'jwks                  2m' not in nginx.conf"
-    exit 1
-fi
-
-if ! grep "introspection        20m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'introspection        20m' not in nginx.conf"
-    exit 1
-fi
-
-if ! grep "access_tokens         2m" conf/nginx.conf > /dev/null; then
-    echo "failed: 'access_tokens         2m' not in nginx.conf"
+if ! grep "access_tokens         2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'access_tokens         2m;' not in nginx.conf"
     exit 1
 fi
 
