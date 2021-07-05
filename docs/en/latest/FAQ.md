@@ -25,33 +25,33 @@ title: FAQ
 
 There are new requirements for API gateways in the field of microservices: higher flexibility, higher performance requirements, and cloud native.
 
-## What are the differences between APISIX and other API gateways?
+## What are the differences between Apache APISIX and other API gateways?
 
-APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
+Apache APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
 
 This not only eliminates polling, makes the code more concise, but also makes configuration synchronization more real-time. At the same time, there will be no single point in the system, which is more usable.
 
-In addition, APISIX has dynamic routing and hot loading of plug-ins, which is especially suitable for API management under micro-service system.
+In addition, Apache APISIX has dynamic routing and hot loading of plug-ins, which is especially suitable for API management under micro-service system.
 
-## What's the performance of APISIX?
+## What's the performance of Apache APISIX?
 
-One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](benchmark.md)
+One of the goals of Apache APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](benchmark.md)
 
-APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
+Apache APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
-## Does APISIX have a console interface?
+## Does Apache APISIX have a user interface？
 
-Yes, APISIX has a powerful Dashboard. APISIX and [APISIX Dashboard](https://github.com/apache/apisix-dashboard) are independent projects, you can deploy [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to operate APISIX through the web interface.
+Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is an independent project apart from Apache APISIX. You can deploy Apache APISIX Dashboard to operate Apache APISIX through the user interface.
 
 ## Can I write my own plugin?
 
-Of course, APISIX provides flexible custom plugins for developers and businesses to write their own logic.
+Of course, Apache APISIX provides flexible custom plugins for developers and businesses to write their own logic.
 
 [How to write plugin](plugin-develop.md)
 
 ## Why we choose etcd as the configuration center?
 
-For the configuration center, configuration storage is only the most basic function, and APISIX also needs the following features:
+For the configuration center, configuration storage is only the most basic function, and Apache APISIX also needs the following features:
 
 1. Cluster
 2. Transactions
@@ -61,7 +61,7 @@ For the configuration center, configuration storage is only the most basic funct
 
 See more [etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart).
 
-## Why is it that installing APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
+## Why is it that installing Apache APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
 
 There are two possibilities when encountering slow luarocks:
 
@@ -80,7 +80,7 @@ LUAROCKS_SERVER=https://luarocks.cn make deps
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
 
-## How to support gray release via APISIX?
+## How to support gray release via Apache APISIX?
 
 An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in URL as a condition：
 
@@ -126,7 +126,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 
 Please refer to the [traffic-split.md](plugins/traffic-split.md) plugin documentation for usage examples.
 
-## How to redirect http to https via APISIX?
+## How to redirect http to https via Apache APISIX?
 
 An example, redirect `http://foo.com` to `https://foo.com`
 
@@ -213,7 +213,7 @@ Server: APISIX web server
 
 ## How to change the log level?
 
-The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
+The default log level for Apache APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
 
 Steps:
 
@@ -224,7 +224,7 @@ nginx_config:
   error_log_level: "info"
 ```
 
-2. Reload or restart APISIX
+2. Reload or restart Apache APISIX
 
 Now you can trace the info level log in logs/error.log.
 
@@ -233,9 +233,9 @@ Now you can trace the info level log in logs/error.log.
 The Apache APISIX plugin supports hot reloading.
 See the `Hot reload` section in [plugins](./plugins.md) for how to do that.
 
-## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
+## How to make Apache APISIX listen on multiple ports when handling HTTP or HTTPS requests?
 
-By default, APISIX only listens on port 9080 when handling HTTP requests. If you want APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
+By default, Apache APISIX only listens on port 9080 when handling HTTP requests. If you want Apache APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
 
 1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
 
@@ -258,24 +258,24 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
           - 9445
     ```
 
-2. Reload or restart APISIX
+2. Reload or restart Apache APISIX
 
-## How does APISIX use etcd to achieve millisecond-level configuration synchronization
+## How does Apache APISIX use etcd to achieve millisecond-level configuration synchronization
 
 etcd provides subscription functions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)).
 
-APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
+Apache APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
 
 * If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
-* If the monitoring directory has data updates: etcd will return the new subscribed data immediately (in milliseconds), and APISIX will update it to the memory cache.
+* If the monitoring directory has data updates: etcd will return the new subscribed data immediately (in milliseconds), and Apache APISIX will update it to the memory cache.
 
-With the help of etcd which incremental notification feature is millisecond-level, APISIX achieve millisecond-level of configuration synchronization.
+With the help of etcd which incremental notification feature is millisecond-level, Apache APISIX achieve millisecond-level of configuration synchronization.
 
-## How to customize the APISIX instance id?
+## How to customize the Apache APISIX instance id?
 
-By default, APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, APISIX will generate a `uuid` as the instance id.
+By default, Apache APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, Apache APISIX will generate a `uuid` as the instance id.
 
-If you want to specify a meaningful id to bind APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
+If you want to specify a meaningful id to bind Apache APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
 
     ```
     apisix:
@@ -284,7 +284,7 @@ If you want to specify a meaningful id to bind APISIX instance to your internal 
 
 ## Why there are a lot of "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" errors in error.log?
 
-First please make sure the network between APISIX and etcd cluster is not partitioned.
+First please make sure the network between Apache APISIX and etcd cluster is not partitioned.
 
 If the network is healthy, please check whether your etcd cluster enables the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/).  However, The default case for this feature is different when use command line options or configuration file to start etcd server.
 
@@ -315,7 +315,7 @@ Indeed this distinction was eliminated by etcd in their master branch, but not b
 
 ## How to set up high available Apache APISIX clusters?
 
-The high availability of APISIX can be divided into two parts:
+The high availability of Apache APISIX can be divided into two parts:
 
 1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
 
@@ -335,9 +335,9 @@ Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
 
-## How to access APISIX Dashboard through APISIX proxy
+## How to access Apache APISIX Dashboard through Apache APISIX proxy
 
-1. Keep the APISIX proxy port and Admin API port different(or disable Admin API). For example, do the following configuration in `conf/config.yaml`.
+1. Keep the Apache APISIX proxy port and Admin API port different(or disable Admin API). For example, do the following configuration in `conf/config.yaml`.
 
 The Admin API use a separate port 9180:
 
@@ -346,9 +346,9 @@ apisix:
   port_admin: 9180            # use a separate port
 ```
 
-2. Add proxy route of APISIX Dashboard:
+2. Add proxy route of Apache APISIX Dashboard:
 
-Note: The APISIX Dashboard service here is listening on `127.0.0.1:9000`.
+Note: The Apache APISIX Dashboard service here is listening on `127.0.0.1:9000`.
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -438,7 +438,7 @@ Note: There are security risks in using the default API token. It is recommended
 
 2. `X-API-KEY` can be modified.
 
-For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload APISIX.
+For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload Apache APISIX.
 
 ```yaml
 apisix:
@@ -484,7 +484,7 @@ apisix:
     - 0.0.0.0/0
 ```
 
-Restart or reload APISIX, all IPs can access the `Admin API`.
+Restart or reload Apache APISIX, all IPs can access the `Admin API`.
 
 **Note: You can use this method in a non-production environment to allow all clients from anywhere to access your `Apache APISIX` instances, but it is not safe to use it in a production environment. In production environment, please only authorize specific IP addresses or address ranges to access your instance.**
 
