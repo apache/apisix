@@ -297,7 +297,7 @@ local function get_upstream_by_id(up_id)
             end
         end
 
-        core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+        core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
         return upstream.dns_value or upstream.value
     end
 end
