@@ -39,8 +39,10 @@ title: ip-restriction
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
 | whitelist | array[string] | 可选   |        |        | 加入白名单的 IP 地址或 CIDR 范围 |
 | blacklist | array[string] | 可选   |        |        | 加入黑名单的 IP 地址或 CIDR 范围 |
+| message | string | 可选   | Your IP address is not allowed. | [1, 1024] | 在未允许的IP访问的情况下返回的信息 |
 
 只能单独启用白名单或黑名单，两个不能一起使用。
+`message`可以由用户自定义。
 
 ## 如何启用
 
@@ -65,6 +67,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
+
+当未允许的IP访问时，默认返回`{"message":"Your IP address is not allowed"}`。如果你想使用自定义的`message`，可以在插件部分进行配置:
+
+```json
+"plugins": {
+    "ip-restriction": {
+        "whitelist": [
+            "127.0.0.1",
+            "113.74.26.106/24"
+        ],
+        "message": "Do you want to do something bad?"
+    }
+}
 ```
 
 ## 测试插件

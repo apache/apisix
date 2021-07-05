@@ -24,17 +24,12 @@ local plugin          = require("apisix.plugin")
 
 local ngx      = ngx
 local tostring = tostring
-local pairs    = pairs
 local ipairs   = ipairs
-local str_byte = string.byte
 local timer_at = ngx.timer.at
 
 local plugin_name = "http-logger"
 local stale_timer_running = false
 local buffers = {}
-local lru_log_format = core.lrucache.new({
-    ttl = 300, count = 512
-})
 
 local schema = {
     type = "object",
@@ -59,14 +54,7 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = {
-            type = "object",
-            default = {
-                ["host"] = "$host",
-                ["@timestamp"] = "$time_iso8601",
-                ["client_ip"] = "$remote_addr",
-            },
-        },
+        log_format = log_util.metadata_schema_log_format,
     },
     additionalProperties = false,
 }
@@ -157,24 +145,6 @@ local function send_http_data(conf, log_message)
 end
 
 
-local function gen_log_format(metadata)
-    local log_format = {}
-    if metadata == nil then
-        return log_format
-    end
-
-    for k, var_name in pairs(metadata.value.log_format) do
-        if var_name:byte(1, 1) == str_byte("$") then
-            log_format[k] = {true, var_name:sub(2)}
-        else
-            log_format[k] = {false, var_name}
-        end
-    end
-    core.log.info("log_format: ", core.json.delay_encode(log_format))
-    return log_format
-end
-
-
 -- remove stale objects from the memory after timer expires
 local function remove_stale_objects(premature)
     if premature then
@@ -198,23 +168,11 @@ function _M.log(conf, ctx)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local entry
-    local log_format = lru_log_format(metadata or "", nil, gen_log_format,
-                                      metadata)
-    if core.table.nkeys(log_format) > 0 then
-        entry = core.table.new(0, core.table.nkeys(log_format))
-        for k, var_attr in pairs(log_format) do
-            if var_attr[1] then
-                entry[k] = ctx.var[var_attr[2]]
-            else
-                entry[k] = var_attr[2]
-            end
-        end
 
-        local matched_route = ctx.matched_route and ctx.matched_route.value
-        if matched_route then
-            entry.service_id = matched_route.service_id
-            entry.route_id = matched_route.id
-        end
+    if metadata and metadata.value.log_format
+       and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     else
         entry = log_util.get_full_log(ngx, conf)
     end
