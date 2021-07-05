@@ -96,6 +96,9 @@ apisix:
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
                                   #   more details.
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
+  stream:
+    lua_shared_dict:
+      lrucache_lock_stream: 10m
   #stream_proxy:                  # TCP/UDP proxy
   #  tcp:                         # TCP proxy port list
   #    - addr: 9100
@@ -104,8 +107,6 @@ apisix:
   #  udp:                         # UDP proxy port list
   #    - 9200
   #    - "127.0.0.1:9201"
-  #  lua_shared_dict:
-  #    lrucache_lock_stream: 10m
   #dns_resolver:                  # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
