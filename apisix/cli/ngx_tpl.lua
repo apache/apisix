@@ -272,15 +272,26 @@ http {
     # http configuration snippet ends
 
     upstream apisix_backend {
+        server 0.0.0.1;
+
+        {% if use_apisix_openresty then %}
         keepalive {* http.upstream.keepalive *};
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
         # we put the static configuration above so that we can override it in the Lua code
 
-        server 0.0.0.1;
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
+        {% else %}
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
+        {% end %}
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}

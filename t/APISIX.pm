@@ -449,12 +449,27 @@ _EOC_
 
     upstream apisix_backend {
         server 0.0.0.1;
+_EOC_
 
+    if ($version =~ m/\/apisix-nginx-module/) {
+    $http_config .= <<_EOC_;
         keepalive 32;
 
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
+_EOC_
+    } else {
+    $http_config .= <<_EOC_;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        keepalive 32;
+_EOC_
+    }
+
+    $http_config .= <<_EOC_;
     }
 
     $dubbo_upstream
