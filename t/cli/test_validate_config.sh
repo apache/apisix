@@ -59,8 +59,6 @@ apisix:
             - "localhost:9100"
         udp:
             - "127.0.0.1:9101"
-        lua_shared_dict:
-          lrucache_lock_stream: 10m
 ' > conf/config.yaml
 
 out=$(make run 2>&1 || echo "ouch")

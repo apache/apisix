@@ -26,8 +26,6 @@ apisix:
         tcp:
             - addr: 9100
               tls: true
-        lua_shared_dict:
-          lrucache_lock_stream: 10m
 nginx_config:
     stream_configuration_snippet: |
         server {
