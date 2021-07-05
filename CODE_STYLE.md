@@ -139,12 +139,12 @@ Each line cannot exceed 100 characters. If it exceeds, you need to wrap and alig
 
 ```lua
 --No
-return limit_conn_new("plugin_limit_conn", conf.conn, conf.burst, conf.default_conn_delay)
+return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst, conf.default_conn_delay)
 ```
 
 ```lua
 --Yes
-return limit_conn_new("plugin_limit_conn", conf.conn, conf.burst,
+return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
                       conf.default_conn_delay)
 ```
 
@@ -154,20 +154,20 @@ If it is a string stitching alignment, you need to put `..` in the next line:
 
 ```lua
 --No
-return limit_conn_new("plugin_limit_conn" ..  "plugin_limit_conn" ..
-                      "plugin_limit_conn")
+return limit_conn_new("plugin-limit-conn" ..  "plugin-limit-conn" ..
+                      "plugin-limit-conn")
 ```
 
 ```lua
 --Yes
-return limit_conn_new("plugin_limit_conn" .. "plugin_limit_conn"
-                      .. "plugin_limit_conn")
+return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
+                      .. "plugin-limit-conn")
 ```
 
 ```lua
 --Yes
-return "param1", "plugin_limit_conn"
-                 .. "plugin_limit_conn"
+return "param1", "plugin-limit-conn"
+                 .. "plugin-limit-conn"
 ```
 
 ## Variable

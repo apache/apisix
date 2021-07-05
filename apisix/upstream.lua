@@ -93,7 +93,7 @@ local function create_checker(upstream)
 
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
-        shm_name = "upstream_healthcheck",
+        shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
 

@@ -66,7 +66,7 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache_lock_stream   {* stream.lua_shared_dict.lrucache_lock_stream *};
+    lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
 
     {% if stream_proxy then %}
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
@@ -143,31 +143,31 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
-    lua_shared_dict internal_status      {* http.lua_shared_dict.internal_status *};
-    lua_shared_dict plugin_limit_req     {* http.lua_shared_dict.plugin_limit_req *};
-    lua_shared_dict plugin_limit_count   {* http.lua_shared_dict.plugin_limit_count *};
-    lua_shared_dict prometheus_metrics   {* http.lua_shared_dict.prometheus_metrics *};
-    lua_shared_dict plugin_limit_conn    {* http.lua_shared_dict.plugin_limit_conn *};
-    lua_shared_dict upstream_healthcheck {* http.lua_shared_dict.upstream_healthcheck *};
-    lua_shared_dict worker_events        {* http.lua_shared_dict.worker_events *};
-    lua_shared_dict lrucache_lock        {* http.lua_shared_dict.lrucache_lock *};
-    lua_shared_dict balancer_ewma        {* http.lua_shared_dict.balancer_ewma *};
-    lua_shared_dict balancer_ewma_locks  {* http.lua_shared_dict.balancer_ewma_locks *};
-    lua_shared_dict balancer_ewma_last_touched_at {* http.lua_shared_dict.balancer_ewma_last_touched_at *};
-    lua_shared_dict plugin_limit_count_redis_cluster_slot_lock {* http.lua_shared_dict.plugin_limit_count_redis_cluster_slot_lock *};
-    lua_shared_dict tracing_buffer       {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
-    lua_shared_dict plugin_api_breaker   {* http.lua_shared_dict.plugin_api_breaker *};
-    lua_shared_dict etcd_cluster_health_check {* http.lua_shared_dict.etcd_cluster_health_check *}; # etcd health check
+    lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
+    lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
+    lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
+    lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
+    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
+    lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
+    lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
+    lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
+    lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
+    lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    lua_shared_dict tracing-buffer {* http.lua_shared_dict["tracing-buffer"] *}; # plugin: skywalking
+    lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
+    lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
-    lua_shared_dict discovery             {* http.lua_shared_dict.discovery *}; # cache for discovery metadata documents
+    lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
 
     # for openid-connect plugin
-    lua_shared_dict jwks                  {* http.lua_shared_dict.jwks *}; # cache for JWKs
-    lua_shared_dict introspection        {* http.lua_shared_dict.introspection *}; # cache for JWT verification results
+    lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
+    lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
 
     # for authz-keycloak
-    lua_shared_dict access_tokens         {* http.lua_shared_dict.access_tokens *}; # cache for service account access tokens
+    lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
     # for custom shared dict
     {% if http.lua_shared_dicts then %}

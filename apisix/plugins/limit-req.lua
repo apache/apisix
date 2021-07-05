@@ -64,7 +64,7 @@ end
 
 local function create_limit_obj(conf)
     core.log.info("create new limit-req plugin instance")
-    return limit_req_new("plugin_limit_req", conf.rate, conf.burst)
+    return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
 end
 
 

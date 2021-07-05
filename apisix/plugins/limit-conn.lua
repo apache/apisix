@@ -60,7 +60,7 @@ end
 
 local function create_limit_obj(conf)
     core.log.info("create new limit-conn plugin instance")
-    return limit_conn_new("plugin_limit_conn", conf.conn, conf.burst,
+    return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
                           conf.default_conn_delay)
 end
 
