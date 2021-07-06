@@ -707,6 +707,7 @@ function _M.http_balancer_phase()
     end
 
     load_balancer.run(api_ctx.matched_route, api_ctx)
+    common_phase("balancer")
 end
 
 
@@ -917,6 +918,7 @@ function _M.stream_balancer_phase()
     end
 
     load_balancer.run(api_ctx.matched_route, api_ctx)
+    common_phase("balancer")
 end
 
 
