@@ -42,6 +42,8 @@ title: 安装依赖
 
 - 警告：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 openresty-openssl-devel，而不是 openresty-openssl111-devel。
 
+- OpenResty 是 APISIX 的一个依赖项，如果是第一次部署 APISIX 并且不需要使用 OpenResty 部署其他服务，可以在 OpenResty 安装完成后停止并禁用 OpenResty，这不会影响 APISIX 的正常工作，请根据自己的业务谨慎操作。例如 Ubuntu：`systemctl stop openresty && systemctl disable openresty`。
+
 ## CentOS 7
 
 ```shell
