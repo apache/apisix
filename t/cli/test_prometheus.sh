@@ -100,7 +100,7 @@ plugin_attr:
       port: ${{PORT}}
 ' > conf/config.yaml
 
-out=$(IP=127.0.0.1 PORT=9092 make init 2>&1 || true)
+out=$(IP=127.0.0.1 PORT=9090 make init 2>&1 || true)
 if ! echo "$out" | grep "node_listen port conflicts with control, prometheus, etc."; then
     echo "failed: can't detect port conflicts"
     exit 1
