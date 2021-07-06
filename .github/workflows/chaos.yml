@@ -36,14 +36,12 @@ jobs:
           kubectl get pods -n kube-system
           kubectl version
 
-      - name: Deploy Etcd Operator
+      - name: Deploy Etcd with Helm
         run: |
-          git clone https://github.com/api7/etcd-operator.git --depth 1 ~/etcd-operator
-          bash ~/etcd-operator/example/rbac/create_role.sh
-          kubectl create -f ~/etcd-operator/example/deployment.yaml
-          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd-operator "True" 30
-          kubectl create -f ~/etcd-operator/example/example-etcd-cluster.yaml
-          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready etcd "True True True" 30
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm install etcd bitnami/etcd --set replicaCount=3
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready app.kubernetes.io/instance=etcd "True True True" 30
 
 
       - name: Deploy APISIX
@@ -52,9 +50,9 @@ jobs:
           kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
-          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready apisix-gw "True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready app=apisix-gw "True" 30
           kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
-          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready httpbin "True" 30
+          bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready app=httpbin "True" 30
           bash ./t/chaos/utils/setup_chaos_utils.sh port_forward
 
       - name: Deploy Chaos mesh

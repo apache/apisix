@@ -50,7 +50,7 @@ func createEtcdKillChaos() *v1alpha1.PodChaos {
 		},
 		Spec: v1alpha1.PodChaosSpec{
 			Selector: v1alpha1.SelectorSpec{
-				LabelSelectors: map[string]string{"app": "etcd"},
+				LabelSelectors: map[string]string{"app.kubernetes.io/instance": "etcd"},
 			},
 			Action: v1alpha1.PodKillAction,
 			Mode:   v1alpha1.AllPodMode,

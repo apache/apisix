@@ -35,7 +35,7 @@ modify_config() {
   - ${DNS_IP}
 etcd:
   host:
-  - \"http://etcd-cluster-client.default.svc.cluster.local:2379\"
+  - \"http://etcd-headless.default.svc.cluster.local:2379\"
 plugin_attr:
   prometheus:
     enable_export_server: false
@@ -44,12 +44,12 @@ plugin_attr:
 }
 
 ensure_pods_ready() {
-    local app=$1
+    local label=$1
     local status=$2
     local retries=$3
 
     count=0
-    while [[ $(kubectl get pods -l app=${app} -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != ${status} ]];
+    while [[ $(kubectl get pods -l ${label} -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != ${status} ]];
     do
         echo "Waiting for pod running" && sleep 10;
 
