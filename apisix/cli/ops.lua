@@ -478,14 +478,16 @@ Please modify "admin_key" in conf/config.yaml .
             if type(value) == "number" then
 
                 if ports_to_check[value] ~= nil then
-                    util.die("node_listen port ", value, " conflicts with ", ports_to_check[value], "\n")
+                    util.die("node_listen port ", value, " conflicts with ",
+                            ports_to_check[value], "\n")
                 end
 
                 table_insert(node_listen, index, {port = value})
             elseif type(value) == "table" then
 
                 if type(value.port) == "number" and ports_to_check[value.port] ~= nil then
-                    util.die("node_listen port ", value.port, " conflicts with ", ports_to_check[value.port], "\n")
+                    util.die("node_listen port ", value.port, " conflicts with ",
+                            ports_to_check[value.port], "\n")
                 end
 
                 table_insert(node_listen, index, value)
