@@ -56,9 +56,10 @@ ensure_pods_ready() {
         ((count=count+1))
         if [ $count -gt ${retries} ]; then
             printf "Waiting for pod status running timeout\n"
-            kubectl describe pod -l app=${app}
+            kubectl get pods
+            kubectl describe pod -l ${label}
             printf "\n\n"
-            kubectl logs -l app=${app}
+            kubectl logs -l ${label}
             exit 1
         fi
     done
