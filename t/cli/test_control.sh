@@ -124,7 +124,26 @@ apisix:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "control port conflicts with node_listen port"; then
+if ! echo "$out" | grep "control port conflicts with node_listen, prometheus, etc."; then
+    echo "failed: can't detect port conflicts"
+    exit 1
+fi
+
+echo '
+apisix:
+  node_listen: 9091
+  enable_control: true
+  control:
+    port: 9090
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: "127.0.0.1"
+      port: 9090
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "prometheus port conflicts with control, node_listen, etc."; then
     echo "failed: can't detect port conflicts"
     exit 1
 fi

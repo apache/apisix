@@ -90,4 +90,20 @@ fi
 
 make stop
 
+echo '
+apisix:
+  node_listen: ${{PORT}}
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: ${{IP}}
+      port: ${{PORT}}
+' > conf/config.yaml
+
+out=$(IP=127.0.0.1 PORT=9092 make init 2>&1 || true)
+if ! echo "$out" | grep "node_listen port conflicts with control, prometheus, etc."; then
+    echo "failed: can't detect port conflicts"
+    exit 1
+fi
+
 echo "passed: should listen at previous prometheus address"
