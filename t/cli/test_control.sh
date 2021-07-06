@@ -81,12 +81,12 @@ echo '
 apisix:
   enable_control: true
   control:
-    port: 9091
+    port: 9092
 ' > conf/config.yaml
 
 make init
 
-if ! grep "listen 127.0.0.1:9091;" conf/nginx.conf > /dev/null; then
+if ! grep "listen 127.0.0.1:9092;" conf/nginx.conf > /dev/null; then
     echo "failed: customize address for control server"
     exit 1
 fi
@@ -94,7 +94,7 @@ fi
 make run
 
 sleep 0.1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9091/v1/schema)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/v1/schema)
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
@@ -131,15 +131,15 @@ fi
 
 echo '
 apisix:
-  node_listen: 9091
+  node_listen: 9080
   enable_control: true
   control:
-    port: 9090
+    port: 9091
 plugin_attr:
   prometheus:
     export_addr:
       ip: "127.0.0.1"
-      port: 9090
+      port: 9091
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
