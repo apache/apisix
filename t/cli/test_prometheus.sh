@@ -101,7 +101,7 @@ plugin_attr:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "prometheus port conflicts with control, node_listen, etc."; then
+if ! echo "$out" | grep "node_listen port conflicts with control, prometheus, etc."; then
     echo "failed: can't detect port conflicts"
     exit 1
 fi
