@@ -52,7 +52,7 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 | Name                    | Type          | Requirement | Default | Valid            | Description                                                                 |
 | ----------------------- | ------------- | ----------- | -------- | --------------- | --------------------------------------------------------------------------- |
 | break_response_code     | integer        | required |            | [200, ..., 599] | Return error code when unhealthy |
-| max_breaker_sec         | integer        | optional | 300        | >=60            | Maximum breaker time(seconds) |
+| max_breaker_sec         | integer        | optional | 300        | >=3             | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 3          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
 | healthy.http_statuses   | array[integer] | optional | {200}      | [200, ..., 499] | Status codes when healthy |
