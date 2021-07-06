@@ -27,7 +27,9 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/gavv/httpexpect/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/pkg/api/v1/pod"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/apache/apisix/t/chaos/utils"
@@ -42,7 +44,7 @@ var (
 	bpsAfter        float64
 )
 
-func createEtcdKillChaos() *v1alpha1.PodChaos {
+func getEtcdKillChaos() *v1alpha1.PodChaos {
 	return &v1alpha1.PodChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kill-etcd",
@@ -74,15 +76,8 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		t.Logf("restore test environment")
 
 		stopChan <- true
-		chaosList := &v1alpha1.PodChaosList{}
-		err := cliSet.CtrlCli.List(ctx, chaosList)
-		g.Expect(err).To(BeNil())
-		for _, chaos := range chaosList.Items {
-			cliSet.CtrlCli.Delete(ctx, &chaos)
-		}
-
+		cliSet.CtrlCli.Delete(ctx, getEtcdKillChaos().DeepCopy())
 		utils.DeleteRoute(e)
-		utils.RestartWithBash(g, utils.ReEtcdFunc)
 	}()
 
 	eSilent := httpexpect.WithConfig(httpexpect.Config{
@@ -135,7 +130,7 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 
 	// apply chaos to kill all etcd pods
 	t.Run("kill all etcd pods", func(t *testing.T) {
-		chaos := createEtcdKillChaos()
+		chaos := getEtcdKillChaos()
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(3 * time.Second)
@@ -162,5 +157,18 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 		t.Logf("duration before: %f, after: %f", durationBefore, durationAfter)
 		t.Logf("bps before: %f, after: %f", bpsBefore, bpsAfter)
 		g.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(BeTrue())
+	})
+
+	t.Run("wait till etcd return to normal", func(t *testing.T) {
+		listOption := client.MatchingLabels{"app.kubernetes.io/instance": "etcd"}
+		var etcdPod *v1.Pod
+		for i := 0; i < 5; i++ {
+			etcdPod = utils.GetPod(g, cliSet.CtrlCli, metav1.NamespaceDefault, listOption)
+			if pod.IsPodReady(etcdPod) {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
+		g.Expect(pod.IsPodReady(etcdPod)).To(BeTrue())
 	})
 }

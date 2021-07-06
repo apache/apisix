@@ -18,15 +18,10 @@
 package utils
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gavv/httpexpect/v2"
@@ -36,9 +31,6 @@ import (
 var (
 	token = "edd1c9f034335f136f87ad84b625c8f1"
 	Host  = "http://127.0.0.1:9080"
-
-	ReAPISIXFunc = "restart_apisix"
-	ReEtcdFunc   = "restart_etcd_and_apisix"
 )
 
 type httpTestCase struct {
@@ -196,39 +188,6 @@ func RoughCompare(a float64, b float64) bool {
 		return true
 	}
 	return false
-}
-
-func RestartWithBash(g *WithT, funcName string) {
-	cmd := exec.Command("bash", "../utils/setup_chaos_utils.sh", funcName)
-
-	stdoutIn, _ := cmd.StdoutPipe()
-	stderrIn, _ := cmd.StderrPipe()
-
-	var errStdout, errStderr error
-	var stdoutBuf, stderrBuf bytes.Buffer
-	stdout := io.MultiWriter(os.Stdout, &stdoutBuf)
-	stderr := io.MultiWriter(os.Stderr, &stderrBuf)
-
-	err := cmd.Start()
-	g.Expect(err).To(BeNil())
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errStdout = io.Copy(stdout, stdoutIn)
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errStderr = io.Copy(stderr, stderrIn)
-	}()
-	wg.Wait()
-
-	err = cmd.Wait()
-	g.Expect(err).To(BeNil())
-	g.Expect(errStdout).To(BeNil())
-	g.Expect(errStderr).To(BeNil())
 }
 
 type silentPrinter struct {

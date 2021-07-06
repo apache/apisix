@@ -34,7 +34,7 @@ import (
 	"github.com/apache/apisix/t/chaos/utils"
 )
 
-func createEtcdDelayChaos(delay int) *v1alpha1.NetworkChaos {
+func getEtcdDelayChaos(delay int) *v1alpha1.NetworkChaos {
 	return &v1alpha1.NetworkChaos{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "etcd-delay",
@@ -86,10 +86,8 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 			cliSet.CtrlCli.Delete(ctx, &chaos)
 		}
 
-		t.Log("########################################################################")
 		time.Sleep(3 * time.Minute)
 		utils.DeleteRoute(e)
-		utils.RestartWithBash(g, utils.ReAPISIXFunc)
 	}()
 
 	// check if everything works
@@ -111,7 +109,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 
 	// 30ms delay
 	t.Run("generate a 30ms delay between etcd and apisix", func(t *testing.T) {
-		chaos := createEtcdDelayChaos(30)
+		chaos := getEtcdDelayChaos(30)
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
@@ -131,7 +129,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 
 	// 300ms delay
 	t.Run("generate a 300ms delay between etcd and apisix", func(t *testing.T) {
-		chaos := createEtcdDelayChaos(300)
+		chaos := getEtcdDelayChaos(300)
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
@@ -151,7 +149,7 @@ func TestAPISIXDelayWhenAddEtcdDelay(t *testing.T) {
 
 	// 3s delay and cause error
 	t.Run("generate a 3s delay between etcd and apisix", func(t *testing.T) {
-		chaos := createEtcdDelayChaos(3000)
+		chaos := getEtcdDelayChaos(3000)
 		err := cliSet.CtrlCli.Create(ctx, chaos.DeepCopy())
 		g.Expect(err).To(BeNil())
 		time.Sleep(1 * time.Second)
