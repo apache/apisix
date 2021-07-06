@@ -413,10 +413,10 @@ Please modify "admin_key" in conf/config.yaml .
     if yaml_conf.apisix.enable_control then
         if not yaml_conf.apisix.control then
             if ports_to_check[9090] ~= nil then
-                util.die("control port conflicts with node_listen, prometheus, etc.\n")
+                util.die("control port 9090 conflicts with ", ports_to_check[9090], "\n")
             end
             control_server_addr = "127.0.0.1:9090"
-            ports_to_check[9090] = true
+            ports_to_check[9090] = "control"
         else
             local ip = yaml_conf.apisix.control.ip
             local port = tonumber(yaml_conf.apisix.control.port)
@@ -430,11 +430,11 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             if ports_to_check[port] ~= nil then
-                util.die("control port conflicts with node_listen, prometheus, etc.\n")
+                util.die("control port ", port, " conflicts with ", ports_to_check[port], "\n")
             end
 
             control_server_addr = ip .. ":" .. port
-            ports_to_check[port] = true
+            ports_to_check[port] = "control"
         end
     end
 
@@ -454,11 +454,11 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             if ports_to_check[port] ~= nil then
-                util.die("prometheus port conflicts with control, node_listen, etc.\n")
+                util.die("prometheus port ", port, " conflicts with ", ports_to_check[port], "\n")
             end
 
             prometheus_server_addr = ip .. ":" .. port
-            ports_to_check[port] = true
+            ports_to_check[port] = "prometheus"
         end
     end
 
@@ -466,7 +466,8 @@ Please modify "admin_key" in conf/config.yaml .
     if type(yaml_conf.apisix.node_listen) == "number" then
 
         if ports_to_check[yaml_conf.apisix.node_listen] ~= nil then
-            util.die("node_listen port conflicts with control, prometheus, etc.\n")
+            util.die("node_listen port ", yaml_conf.apisix.node_listen,
+                    " conflicts with ", ports_to_check[yaml_conf.apisix.node_listen], "\n")
         end
 
         local node_listen = {{port = yaml_conf.apisix.node_listen}}
@@ -477,14 +478,14 @@ Please modify "admin_key" in conf/config.yaml .
             if type(value) == "number" then
 
                 if ports_to_check[value] ~= nil then
-                    util.die("node_listen port conflicts with control, prometheus, etc.\n")
+                    util.die("node_listen port ", value, " conflicts with ", ports_to_check[value], "\n")
                 end
 
                 table_insert(node_listen, index, {port = value})
             elseif type(value) == "table" then
 
                 if type(value.port) == "number" and ports_to_check[value.port] ~= nil then
-                    util.die("node_listen port conflicts with control, prometheus, etc.\n")
+                    util.die("node_listen port ", value.port, " conflicts with ", ports_to_check[value.port], "\n")
                 end
 
                 table_insert(node_listen, index, value)
