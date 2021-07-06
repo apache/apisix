@@ -86,7 +86,7 @@ def run():
         s_string('{"a":"b"}', name="Body-Content-Value")
 
     session.connect(s_get("Request"))
-    session.fuzz()
+    session.fuzz(max_depth=1)
 
 if __name__ == "__main__":
     run_test(create_route,run)
