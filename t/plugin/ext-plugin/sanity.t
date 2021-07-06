@@ -81,8 +81,8 @@ __DATA__
                  [[{
                     "uri": "/hello",
                     "plugins": {
-                        "ext-plugin-pre-req": {},
-                        "ext-plugin-post-req": {}
+                        "ext-plugin-pre-req": {"a":"b"},
+                        "ext-plugin-post-req": {"c":"d"}
                     },
                     "upstream": {
                         "nodes": {
@@ -128,6 +128,10 @@ sending rpc type: 2 data length:
 receiving rpc type: 2 data length:
 sending rpc type: 2 data length:
 receiving rpc type: 2 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
 sending rpc type: 2 data length:
 receiving rpc type: 2 data length:
 sending rpc type: 2 data length:
@@ -186,7 +190,11 @@ failed to connect to the unix socket
 ["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
-        return 200;
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
     }
 --- grep_error_log eval
 qr/LISTEN unix:\S+/
@@ -244,6 +252,14 @@ hello world
 --- grep_error_log eval
 qr/(sending|receiving) rpc type: 1 data length:/
 --- grep_error_log_out
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
 sending rpc type: 1 data length:
 receiving rpc type: 1 data length:
 sending rpc type: 1 data length:
@@ -337,3 +353,125 @@ GET /hello
 --- error_code: 503
 --- error_log
 failed to receive RPC_PREPARE_CONF: bad request
+
+
+
+=== TEST 12: refresh token
+--- request
+GET /hello
+--- response_body
+hello world
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            if not package.loaded.count then
+                package.loaded.count = 1
+            else
+                package.loaded.count = package.loaded.count + 1
+            end
+
+            if package.loaded.count == 1 then
+                ext.go({no_token = true})
+            else
+                ext.go({with_conf = true})
+            end
+        }
+    }
+--- error_log
+refresh cache and try again
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: runner can access the environment variable
+--- main_config
+env MY_ENV_VAR=foo;
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "3600"]
+--- config
+    location /t {
+        access_by_lua_block {
+            -- ensure the runner is spawned before the request finishes
+            ngx.sleep(0.1)
+            ngx.exit(200)
+        }
+    }
+--- error_log
+MY_ENV_VAR foo
+
+
+
+=== TEST 14: bad conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-pre-req": {
+                            "conf": [
+                                {"value":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(message)
+            end
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ext-plugin-post-req": {
+                            "conf": [
+                                {"name":"bar"}
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.print(message)
+            end
+        }
+    }
+--- response_body
+{"error_msg":"failed to check the configuration of plugin ext-plugin-pre-req err: property \"conf\" validation failed: failed to validate item 1: property \"name\" is required"}
+
+{"error_msg":"failed to check the configuration of plugin ext-plugin-post-req err: property \"conf\" validation failed: failed to validate item 1: property \"value\" is required"}
+
+
+
+=== TEST 15: spawn runner which can't be terminated, ensure APISIX won't be blocked
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner_can_not_terminated.sh"]
+--- config
+    location /t {
+        return 200;
+    }

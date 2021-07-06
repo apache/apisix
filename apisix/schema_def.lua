@@ -111,6 +111,17 @@ local desc_def = {
 }
 
 
+local timeout_def = {
+    type = "object",
+    properties = {
+        connect = {type = "number", exclusiveMinimum = 0},
+        send = {type = "number", exclusiveMinimum = 0},
+        read = {type = "number", exclusiveMinimum = 0},
+    },
+    required = {"connect", "send", "read"},
+}
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -342,15 +353,7 @@ local upstream_schema = {
             type = "integer",
             minimum = 0,
         },
-        timeout = {
-            type = "object",
-            properties = {
-                connect = {type = "number", exclusiveMinimum = 0},
-                send = {type = "number", exclusiveMinimum = 0},
-                read = {type = "number", exclusiveMinimum = 0},
-            },
-            required = {"connect", "send", "read"},
-        },
+        timeout = timeout_def,
         tls = {
             type = "object",
             properties = {
@@ -358,6 +361,26 @@ local upstream_schema = {
                 client_key = private_key_schema,
             },
             required = {"client_cert", "client_key"},
+        },
+        keepalive_pool = {
+            type = "object",
+            properties = {
+                size = {
+                    type = "integer",
+                    default = 320,
+                    minimum = 1,
+                },
+                idle_timeout = {
+                    type = "number",
+                    default = 60,
+                    minimum = 0,
+                },
+                requests = {
+                    type = "integer",
+                    default = 1000,
+                    minimum = 1,
+                },
+            },
         },
         type = {
             description = "algorithms of load balancing",
@@ -394,6 +417,10 @@ local upstream_schema = {
             properties = {
                 namespace_id = {
                     description = "namespace id",
+                    type = "string",
+                },
+                group_name = {
+                    description = "group name",
                     type = "string",
                 },
             }
@@ -491,6 +518,7 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
+        timeout = timeout_def,
         vars = {
             type = "array",
         },
@@ -612,7 +640,7 @@ _M.consumer = {
     type = "object",
     properties = {
         username = {
-            type = "string", minLength = 1, maxLength = 32,
+            type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
@@ -637,13 +665,13 @@ _M.ssl = {
         key = private_key_schema,
         sni = {
             type = "string",
-            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            pattern = host_def_pat,
         },
         snis = {
             type = "array",
             items = {
                 type = "string",
-                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+                pattern = host_def_pat,
             },
             minItems = 1,
         },
@@ -737,6 +765,11 @@ _M.stream_route = {
         server_port = {
             description = "server port",
             type = "integer",
+        },
+        sni = {
+            description = "server name indication",
+            type = "string",
+            pattern = host_def_pat,
         },
         upstream = upstream_schema,
         upstream_id = id_schema,

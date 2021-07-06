@@ -18,6 +18,8 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
+local plugin = require("apisix.plugin")
+
 local math     = math
 local pairs    = pairs
 local type     = type
@@ -63,15 +65,27 @@ local schema = {
     required = {"broker_list", "kafka_topic"}
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+    additionalProperties = false,
+}
+
 local _M = {
     version = 0.1,
     priority = 403,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
 end
 
@@ -152,8 +166,17 @@ function _M.log(conf, ctx)
         -- core.log.info("origin entry: ", entry)
 
     else
-        entry = log_util.get_full_log(ngx, conf)
-        core.log.info("full log entry: ", core.json.delay_encode(entry))
+        local metadata = plugin.plugin_metadata(plugin_name)
+        core.log.info("metadata: ", core.json.delay_encode(metadata))
+        if metadata and metadata.value.log_format
+          and core.table.nkeys(metadata.value.log_format) > 0
+        then
+            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+            core.log.info("custom log format entry: ", core.json.delay_encode(entry))
+        else
+            entry = log_util.get_full_log(ngx, conf)
+            core.log.info("full log entry: ", core.json.delay_encode(entry))
+        end
     end
 
     if not stale_timer_running then

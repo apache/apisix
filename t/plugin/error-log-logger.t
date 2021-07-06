@@ -126,11 +126,15 @@ plugins:
                 }]]
                 )
 
+            -- ensure the request is rejected even this plugin doesn't
+            -- have check_schema method
+            ngx.status = code
             core.log.warn("this is a warning message for test.")
         }
     }
 --- request
 GET /tg
+--- error_code: 400
 --- response_body
 --- error_log eval
 qr/please set the correct plugin_metadata for error-log-logger/

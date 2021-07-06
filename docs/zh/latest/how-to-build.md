@@ -27,14 +27,17 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies.md)。
 
+通过 Docker / Helm Chart 安装时可能已经包含了所需的 Nginx 和 etcd。
+请参照各自对应的文档。
+
 ## 2. 安装 Apache APISIX
 
-你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
+你可以通过源码包、Docker、Helm Chart 等多种方式来安装 Apache APISIX。
 
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -50,15 +53,15 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisi
 你需要先下载 Apache Release 源码包：
 
 ```shell
-$ mkdir apisix-2.6
-$ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
-$ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
+$ mkdir apisix-2.7
+$ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+$ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
 ```
 
 安装运行时依赖的 Lua 库：
 
 ```
-cd apisix-2.6
+cd apisix-2.7
 make deps
 ```
 
@@ -73,26 +76,14 @@ $ make init
 # start APISIX server
 $ make run
 
-# stop APISIX server
+# stop APISIX server gracefully
+$ make quit
+
+# stop APISIX server immediately
 $ make stop
 
 # more actions find by `help`
 $ make help
-Makefile rules:
-
-    help:             Show Makefile rules
-    deps:             Installation dependencies
-    utils:            Installation tools
-    lint:             Lint Lua source code
-    init:             Initialize the runtime environment
-    run:              Start the apisix server
-    stop:             Stop the apisix server
-    verify:           Verify the configuration of apisix server
-    clean:            Remove generated files
-    reload:           Reload the apisix server
-    install:          Install the apisix (only for luarocks)
-    test:             Run the test case
-    license-check:    Check Lua source code for Apache License
 ```
 
 ## 4. 运行测试案例

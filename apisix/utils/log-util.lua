@@ -17,10 +17,56 @@
 local core = require("apisix.core")
 local ngx  = ngx
 local pairs = pairs
+local str_byte = string.byte
 local req_get_body_data = ngx.req.get_body_data
 
-local _M = {}
+local lru_log_format = core.lrucache.new({
+    ttl = 300, count = 512
+})
 
+local _M = {}
+_M.metadata_schema_log_format = {
+    type = "object",
+    default = {
+        ["host"] = "$host",
+        ["@timestamp"] = "$time_iso8601",
+        ["client_ip"] = "$remote_addr",
+    },
+}
+
+
+local function gen_log_format(format)
+    local log_format = {}
+    for k, var_name in pairs(format) do
+        if var_name:byte(1, 1) == str_byte("$") then
+            log_format[k] = {true, var_name:sub(2)}
+        else
+            log_format[k] = {false, var_name}
+        end
+    end
+    core.log.info("log_format: ", core.json.delay_encode(log_format))
+    return log_format
+end
+
+local function get_custom_format_log(ctx, format)
+    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+    local entry = core.table.new(0, core.table.nkeys(log_format))
+    for k, var_attr in pairs(log_format) do
+        if var_attr[1] then
+            entry[k] = ctx.var[var_attr[2]]
+        else
+            entry[k] = var_attr[2]
+        end
+    end
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        entry.service_id = matched_route.service_id
+        entry.route_id = matched_route.id
+    end
+    return entry
+end
+_M.get_custom_format_log = get_custom_format_log
 
 local function get_full_log(ngx, conf)
     local ctx = ngx.ctx.api_ctx

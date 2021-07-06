@@ -10,6 +10,10 @@ on:
     paths-ignore:
       - 'docs/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
@@ -57,7 +61,7 @@ jobs:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         env:
           cache-name: cache-deps
         with:
@@ -158,7 +162,7 @@ jobs:
 
       - name: Publish Artifact
         if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: ${{ steps.branch_env.outputs.fullname }}
           path: ${{ steps.branch_env.outputs.fullname }}

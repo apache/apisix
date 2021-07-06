@@ -134,6 +134,11 @@ function _M.http_init_worker()
 end
 
 
+function _M.http_exit_worker()
+    require("apisix.plugins.ext-plugin.init").exit_worker()
+end
+
+
 function _M.http_ssl_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -292,16 +297,14 @@ local function get_upstream_by_id(up_id)
             end
         end
 
-        core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+        core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
         return upstream.dns_value or upstream.value
     end
 end
 
 
-function _M.http_access_phase()
-    local ngx_ctx = ngx.ctx
-
-    if ngx_ctx.api_ctx and ngx_ctx.api_ctx.ssl_client_verified then
+local function verify_tls_client(ctx)
+    if ctx and ctx.ssl_client_verified then
         local res = ngx_var.ssl_client_verify
         if res ~= "SUCCESS" then
             if res == "NONE" then
@@ -309,8 +312,20 @@ function _M.http_access_phase()
             else
                 core.log.error("clent certificate verification is not passed: ", res)
             end
-            return core.response.exit(400)
+
+            return false
         end
+    end
+
+    return true
+end
+
+
+function _M.http_access_phase()
+    local ngx_ctx = ngx.ctx
+
+    if not verify_tls_client(ngx_ctx.api_ctx) then
+        return core.response.exit(400)
     end
 
     -- always fetch table from the table pool, we don't need a reused api_ctx
@@ -481,7 +496,10 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
-    ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         return ngx.exec("@grpc_pass")
@@ -493,15 +511,22 @@ function _M.http_access_phase()
 end
 
 
-function _M.dubbo_access_phase()
-    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
     ngx_var.ctx_ref = ''
+    return ctx
+end
+
+
+function _M.dubbo_access_phase()
+    ngx.ctx = fetch_ctx()
 end
 
 
 function _M.grpc_access_phase()
-    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
-    ngx_var.ctx_ref = ''
+    ngx.ctx = fetch_ctx()
 
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -543,7 +568,7 @@ end
 function _M.http_header_filter_phase()
     if ngx_var.ctx_ref ~= '' then
         -- prevent for the table leak
-        local stash_ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
+        local stash_ctx = fetch_ctx()
 
         -- internal redirect, so we should apply the ctx
         if ngx_var.from_error_page == "true" then
@@ -636,6 +661,16 @@ end
 
 
 function _M.http_log_phase()
+    if ngx_var.ctx_ref ~= '' then
+        -- prevent for the table leak
+        local stash_ctx = fetch_ctx()
+
+        -- internal redirect, so we should apply the ctx
+        if ngx_var.from_error_page == "true" then
+            ngx.ctx = stash_ctx
+        end
+    end
+
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
@@ -736,6 +771,25 @@ function _M.http_control()
 end
 
 
+function _M.stream_ssl_phase()
+    local ngx_ctx = ngx.ctx
+    local api_ctx = ngx_ctx.api_ctx
+
+    if api_ctx == nil then
+        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+        ngx_ctx.api_ctx = api_ctx
+    end
+
+    local ok, err = router.router_ssl.match_and_set(api_ctx)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        ngx_exit(-1)
+    end
+end
+
+
 function _M.stream_init(args)
     core.log.info("enter stream_init")
 
@@ -781,6 +835,10 @@ function _M.stream_preread_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
+    if not verify_tls_client(ngx_ctx.api_ctx) then
+        return ngx_exit(1)
+    end
+
     if not api_ctx then
         api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
         ngx_ctx.api_ctx = api_ctx
@@ -788,7 +846,11 @@ function _M.stream_preread_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    router.router_stream.match(api_ctx)
+    local ok, err = router.router_stream.match(api_ctx)
+    if not ok then
+        core.log.error(err)
+        return ngx_exit(1)
+    end
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
@@ -803,7 +865,21 @@ function _M.stream_preread_phase()
     if up_id then
         api_ctx.matched_upstream = get_upstream_by_id(up_id)
     else
-        api_ctx.matched_upstream = matched_route.value.upstream
+        if matched_route.has_domain then
+            local err
+            matched_route, err = parse_domain_in_route(matched_route)
+            if err then
+                core.log.error("failed to get resolved route: ", err)
+                return ngx_exit(1)
+            end
+
+            api_ctx.matched_route = matched_route
+        end
+
+        local route_val = matched_route.value
+        api_ctx.matched_upstream = (matched_route.dns_value and
+                                    matched_route.dns_value.upstream)
+                                   or route_val.upstream
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)

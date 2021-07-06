@@ -19,6 +19,7 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local ipairs            = ipairs
+local enable_keepalive = balancer.enable_keepalive
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -134,10 +135,19 @@ end
 
 
 -- set_balancer_opts will be called in balancer phase and before any tries
-local function set_balancer_opts(ctx)
+local function set_balancer_opts(route, ctx)
     local up_conf = ctx.upstream_conf
-    if up_conf.timeout then
-        local timeout = up_conf.timeout
+
+    -- If the matched route has timeout config, prefer to use the route config.
+    local timeout = nil
+    if route and route.value and route.value.timeout then
+        timeout = route.value.timeout
+    else
+        if up_conf.timeout then
+            timeout = up_conf.timeout
+        end
+    end
+    if timeout then
         local ok, err = set_timeouts(timeout.connect, timeout.send,
                                      timeout.read)
         if not ok then
@@ -244,6 +254,34 @@ end
 _M.pick_server = pick_server
 
 
+local set_current_peer
+do
+    local pool_opt = {}
+
+    function set_current_peer(server, ctx)
+        local up_conf = ctx.upstream_conf
+        local keepalive_pool = up_conf.keepalive_pool
+
+        if keepalive_pool and enable_keepalive then
+            local idle_timeout = keepalive_pool.idle_timeout
+            local size = keepalive_pool.size
+            local requests = keepalive_pool.requests
+
+            pool_opt.pool_size = size
+            local ok, err = balancer.set_current_peer(server.host, server.port,
+                                                      pool_opt)
+            if not ok then
+                return ok, err
+            end
+
+            return balancer.enable_keepalive(idle_timeout, requests)
+        end
+
+        return balancer.set_current_peer(server.host, server.port)
+    end
+end
+
+
 function _M.run(route, ctx)
     local server, err
 
@@ -252,7 +290,7 @@ function _M.run(route, ctx)
         server = ctx.picked_server
         ctx.picked_server = nil
 
-        set_balancer_opts(ctx)
+        set_balancer_opts(route, ctx)
 
     else
         -- retry
@@ -274,7 +312,8 @@ function _M.run(route, ctx)
     end
 
     core.log.info("proxy request to ", server.host, ":", server.port)
-    local ok, err = balancer.set_current_peer(server.host, server.port)
+
+    local ok, err = set_current_peer(server, ctx)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
                        server.port, "] err: ", err)

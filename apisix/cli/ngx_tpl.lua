@@ -18,7 +18,9 @@
 return [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
-
+{% if user and user ~= '' then %}
+user {* user *};
+{% end %}
 master_process on;
 
 worker_processes {* worker_processes *};
@@ -97,11 +99,20 @@ stream {
     }
 
     server {
-        {% for _, addr in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*addr*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
         {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if tcp_enable_ssl then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_certificate_by_lua_block {
+            apisix.stream_ssl_phase()
+        }
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
@@ -144,6 +155,7 @@ http {
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
     lua_shared_dict plugin-api-breaker   10m;
+    lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -205,6 +217,10 @@ http {
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
     uninitialized_variable_warn off;
 
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
+    {% end %}
+
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
     open_file_cache  max=1000 inactive=60;
@@ -213,11 +229,12 @@ http {
     client_header_timeout {* http.client_header_timeout *};
     client_body_timeout {* http.client_body_timeout *};
     send_timeout {* http.send_timeout *};
+    variables_hash_max_size {* http.variables_hash_max_size *};
 
     server_tokens off;
 
     include mime.types;
-    charset utf-8;
+    charset {* http.charset *};
 
     # error_page
     error_page 500 @50x.html;
@@ -227,6 +244,10 @@ http {
     {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
     {% elseif http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
+    {% end %}
+
+    {% if http.real_ip_recursive then %}
+    real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
     {% if real_ip_from then %}
@@ -240,6 +261,10 @@ http {
     {% end %}
     {% end %}
 
+    {% if ssl.ssl_trusted_certificate ~= nil then %}
+    lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
+
     # http configuration snippet starts
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
@@ -248,6 +273,17 @@ http {
 
     upstream apisix_backend {
         server 0.0.0.1;
+
+        {% if use_apisix_openresty then %}
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
+        # we put the static configuration above so that we can override it in the Lua code
+
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+        {% else %}
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -255,6 +291,7 @@ http {
         keepalive {* http.upstream.keepalive *};
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
+        {% end %}
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -264,8 +301,12 @@ http {
             apisix.http_balancer_phase()
         }
 
+        # dynamical keepalive doesn't work with dubbo as the connection here
+        # is managed by ngx_multi_upstream_module
         multi {* dubbo_upstream_multiplex_count *};
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
     {% end %}
 
@@ -283,6 +324,12 @@ http {
     init_worker_by_lua_block {
         apisix.http_init_worker()
     }
+
+    {% if not use_openresty_1_17 then %}
+    exit_worker_by_lua_block {
+        apisix.http_exit_worker()
+    }
+    {% end %}
 
     {% if enable_control then %}
     server {
@@ -413,10 +460,6 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
-
-        {% if ssl.ssl_trusted_certificate ~= nil then %}
-        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate      {* ssl.ssl_cert *};

@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.7.0](#270)
 - [2.6.0](#260)
 - [2.5.0](#250)
 - [2.4.0](#240)
@@ -41,6 +42,38 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.7.0
+
+- 修改 metadata_schema 校验方式，让它跟其他 schema 一致 [#4381](https://github.com/apache/apisix/pull/4381)
+- 移除 echo 插件的 auth_value 字段 [#4055](https://github.com/apache/apisix/pull/4055)
+- 更正 Admin API count 字段的计算，并把它的类型变成 integer [#4385](https://github.com/apache/apisix/pull/4385)
+
+### Core
+
+- :sunrise: TCP 代理支持客户端证书校验 [#4445](https://github.com/apache/apisix/pull/4445)
+- :sunrise: TCP 代理支持接收 TLS over TCP 连接 [#4409](https://github.com/apache/apisix/pull/4409)
+- :sunrise: TCP/UDP 代理上游配置支持用域名 [#4386](https://github.com/apache/apisix/pull/4386)
+- :sunrise: CLI 中封装 nginx quit 操作 [#4360](https://github.com/apache/apisix/pull/4360)
+- :sunrise: 允许在 route 配置上游超时时间 [#4340](https://github.com/apache/apisix/pull/4340)
+- :sunrise: Nacos 服务发现支持 group 参数 [#4325](https://github.com/apache/apisix/pull/4325)
+- :sunrise: Nacos 服务发现支持 namespace 参数 [#4313](https://github.com/apache/apisix/pull/4313)
+
+### Plugin
+
+- :sunrise: client-control 允许动态设置 client_max_body_size [#4423](https://github.com/apache/apisix/pull/4423)
+- :sunrise: ext-plugin 使用 SIGTERM 结束 runner [#4367](https://github.com/apache/apisix/pull/4367)
+- :sunrise: limit-req 增加 nodelay 参数 [#4395](https://github.com/apache/apisix/pull/4395)
+- :sunrise: mqtt-proxy 允许配置域名 [#4391](https://github.com/apache/apisix/pull/4391)
+- :sunrise: redirect 支持带上 query string [#4298](https://github.com/apache/apisix/pull/4298)
+
+### Bugfix
+
+- 修复客户端断开连接导致的内存泄漏 [#4405](https://github.com/apache/apisix/pull/4405)
+- 修复处理 etcd 响应时有一个地方没有检查 res.body.error 的问题 [#4371](https://github.com/apache/apisix/pull/4371)
+- 修复 ext-plugin 插件 token 过期后没有刷新 token 的问题 [#4345](https://github.com/apache/apisix/pull/4345)
+- 修复 ext-plugin 插件没有传递环境变量的问题 [#4349](https://github.com/apache/apisix/pull/4349)
+- 修复插件热加载时，插件可能不会重新加载的问题 [#4319](https://github.com/apache/apisix/pull/4319)
 
 ## 2.6.0
 

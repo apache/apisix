@@ -1,8 +1,5 @@
----
-title: Plugins
----
-
-<!--
+#!/usr/bin/env python
+# coding: utf-8
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -19,21 +16,26 @@ title: Plugins
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--->
+import sys
+# sudo pip install requests
+import requests
 
-## Hot reload
-
-APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, and **update codes of plugins in disk**, you don't need to restart the service.
-
-If your APISIX node has the Admin API turned on, just send an HTTP request through admin API:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-```
-
-Note: if you disable a plugin which has been configured as part of your rule (in the `plugins` field of `route`, etc.),
-the its execution will be skipped.
-
-### Hot reload in stand-alone mode
-
-For stand-alone mode, see plugin related section in [stand alone mode](stand-alone.md).
+# Usage: ./create-ssl.py t.crt t.key test.com
+if len(sys.argv) <= 3:
+    print("bad argument")
+    sys.exit(1)
+with open(sys.argv[1]) as f:
+    cert = f.read()
+with open(sys.argv[2]) as f:
+    key = f.read()
+sni = sys.argv[3]
+api_key = "edd1c9f034335f136f87ad84b625c8f1"
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json={
+    "cert": cert,
+    "key": key,
+    "snis": [sni],
+}, headers={
+    "X-API-KEY": api_key,
+})
+print(resp.status_code)
+print(resp.text)

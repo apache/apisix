@@ -17,6 +17,7 @@
 local require = require
 local core = require("apisix.core")
 local timers = require("apisix.timers")
+local plugin = require("apisix.plugin")
 
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
@@ -209,9 +210,7 @@ function _M.init()
         return
     end
 
-    local local_conf = core.config.local_conf()
-    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
-                                          plugin_name)
+    local attr = plugin.plugin_attr(plugin_name)
     local ok, err = core.schema.check(attr_schema, attr)
     if not ok then
         core.log.error("failed to check plugin_attr: ", err)

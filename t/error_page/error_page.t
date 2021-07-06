@@ -139,3 +139,50 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: set route which upstream is blocking
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/mysleep"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: client abort
+--- request
+GET /mysleep?seconds=3
+--- abort
+--- timeout: 0.5
+--- ignore_response
+--- grep_error_log eval
+qr/(stash|fetch) ngx ctx/
+--- grep_error_log_out
+stash ngx ctx
+fetch ngx ctx
