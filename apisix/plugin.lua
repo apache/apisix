@@ -622,6 +622,7 @@ end
 
 
 function _M.run_plugin(phase, plugins, api_ctx)
+    local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
     if not api_ctx then
         return
@@ -639,6 +640,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         for i = 1, #plugins, 2 do
             local phase_func = plugins[i][phase]
             if phase_func then
+                plugin_run = true
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
                     if is_http then
@@ -657,17 +659,18 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
             end
         end
-        return api_ctx
+        return api_ctx, plugin_run
     end
 
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         if phase_func then
+            plugin_run = true
             phase_func(plugins[i + 1], api_ctx)
         end
     end
 
-    return api_ctx
+    return api_ctx, plugin_run
 end
 
 
