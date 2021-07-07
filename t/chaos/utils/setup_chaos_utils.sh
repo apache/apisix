@@ -35,7 +35,7 @@ modify_config() {
   - ${DNS_IP}
 etcd:
   host:
-  - \"http://etcd-headless.default.svc.cluster.local:2379\"
+  - \"http://etcd.default.svc.cluster.local:2379\"
 plugin_attr:
   prometheus:
     enable_export_server: false

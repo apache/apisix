@@ -8,7 +8,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law or agreed to in writinsoftware
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gavv/httpexpect/v2"
-	. "github.com/onsi/gomega"
+	"github.com/gavv/httpexpect"
+	"github.com/onsi/gomega"
 )
 
 var (
@@ -145,7 +145,7 @@ func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
 }
 
 // get the first line which contains the key
-func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
+func getPrometheusMetric(e *httpexpect.Expect, key string) string {
 	resp := caseCheck(httpTestCase{
 		E:      e,
 		Method: http.MethodGet,
@@ -160,24 +160,24 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 		}
 	}
 	targetSlice := strings.Fields(targetLine)
-	g.Expect(len(targetSlice) == 2).To(BeTrue())
+	gomega.Ω(len(targetSlice)).Should(gomega.BeNumerically("==", 2))
 	return targetSlice[1]
 }
 
-func GetEgressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
+func GetEgressBandwidthPerSecond(e *httpexpect.Expect) (float64, float64) {
 	key := "apisix_bandwidth{type=\"egress\","
-	bandWidthString := getPrometheusMetric(e, g, key)
+	bandWidthString := getPrometheusMetric(e, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
-	g.Expect(err).To(BeNil())
+	gomega.Expect(err).To(gomega.BeNil())
 	// after etcd got killed, it would take longer time to get the metrics
 	// so need to calculate the duration
 	timeStart := time.Now()
 
 	time.Sleep(10 * time.Second)
-	bandWidthString = getPrometheusMetric(e, g, key)
+	bandWidthString = getPrometheusMetric(e, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
-	g.Expect(err).To(BeNil())
-	duration := time.Now().Sub(timeStart)
+	gomega.Expect(err).To(gomega.BeNil())
+	duration := time.Since(timeStart)
 
 	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }

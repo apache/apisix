@@ -44,7 +44,7 @@ jobs:
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
           helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm install etcd bitnami/etcd --set replicaCount=3
+          helm install etcd bitnami/etcd --set replicaCount=3 --set auth.rbac.enabled=false
           bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready app.kubernetes.io/instance=etcd "True True True" 30
 
 
@@ -65,4 +65,4 @@ jobs:
 
       - name: run test
         working-directory: ./t/chaos
-        run: go test -v -p 1 ./...
+        run: ginkgo -r --v --progress --trace
