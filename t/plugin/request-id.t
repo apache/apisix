@@ -585,6 +585,7 @@ GET /t
 [error]
 
 
+
 === TEST 16: wrong type
 --- config
     location /t {
