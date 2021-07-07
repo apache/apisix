@@ -68,7 +68,6 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
-
 ## Pre-requisites
 
 - Installed [Docker](https://www.docker.com/) and [Docker Compose component](https://docs.docker.com/compose/).
