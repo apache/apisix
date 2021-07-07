@@ -37,11 +37,13 @@ title: 快速入门指南
 
 请求 URL 由以下这些参数构成：
 
-- Protocol：即网络传输协议，这里使用的是最常见的HTTP协议。
-- Port：即端口，这里使用的 `80` 端口。
-- Host：即宿主机，这里的主机是 `httpbin.org`。
+- Protocol：即网络传输协议，示例中使用的是最常见的 `HTTP` 协议。
+- Port：即端口，示例中使用的 `80` 端口。
+- Host：即宿主机，示例中的主机是 `httpbin.org`。
 - Path：`/get`。
 - Query Parameters：即查询字符串，这里有两个字符串，分别是`foo1`和`foo2`。
+
+运行以下命令，发送请求：
 
 ```bash
 curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
@@ -147,7 +149,7 @@ Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](htt
 当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问后端服务：
 
 ```bash
-$ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
+curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
 ```
 
 这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
@@ -157,7 +159,7 @@ $ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "H
 读完上一节，我们知道必须为 `Route` 设置 `Upstream`。只需执行下面的命令即可创建一个后端服务：
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -196,6 +198,8 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 它从我们的后端服务（实际是 `httpbin.org`）返回数据，并且结果符合预期。
 
 ## 进阶操作
+
+本节提供了 Apache APISIX 的一些进阶操作技巧，包括：添加身份验证、为路由添加前缀、使用 APISIX Dashboard 以及常见问题排查。
 
 ### 添加身份验证
 
