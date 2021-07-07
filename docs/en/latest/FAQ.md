@@ -545,9 +545,10 @@ HTTP/1.1 200 OK
 # ...
 apisix:
   ssl:
-    ssl_trusted_certificate: /etc/ssl/certs/ca-certificates.crt
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
 # ...
 ```
+
 ref [@spacewander](https://github.com/spacewander)'s [issuecomment](https://github.com/apache/apisix/issues/4514#issuecomment-875377961) 
-> 1. this directive is between Nginx configuration and SSL relative stuff.
-> 2. when you try to connect TLS services with cosocket
+
+> when you try to connect TLS services with cosocket
