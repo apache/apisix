@@ -89,13 +89,20 @@ function fetch_api_router()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
+                if has_route_not_under_apisix then
+                    break
+                end
                 local typ_uri = type(route.uri)
                 if typ_uri == "string" then
-                    has_route_not_under_apisix =
-                        not core.string.has_prefix(route.uri, "/apisix/")
+                    if not core.string.has_prefix(route.uri, "/apisix/") then
+                        has_route_not_under_apisix = true
+                    end
                 else
                     for _, uri in ipairs(route.uri) do
-                        if not core.string.has_prefix(route.uri, "/apisix/") then
+                        if has_route_not_under_apisix then
+                            break
+                        end
+                        if not core.string.has_prefix(uri, "/apisix/") then
                             has_route_not_under_apisix = true
                         end
                     end
