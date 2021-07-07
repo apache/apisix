@@ -1,2 +1,0 @@
-mode: atomic
-github.com/apache/apisix/t/chaos/e2e.go:22.18,22.19 0 1
