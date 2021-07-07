@@ -726,6 +726,7 @@ passed
 === TEST 24: check plugin
 --- request
 GET /log_request
+--- skip_nginx: 4: < 1.19.3
 --- grep_error_log eval
 qr/(proxy request to \S+|x-serverless: [\d.]+)/
 --- grep_error_log_out
