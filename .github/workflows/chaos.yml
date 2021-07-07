@@ -61,11 +61,14 @@ jobs:
 
       - name: Deploy Chaos mesh
         run: |
-          curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
+          curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash
 
-      - name: Install Go dependencies
-        run: go get -t -v ./...
 
-      - name: run test
+      - name: Install ginkgo
+        run: |
+          go get -u github.com/onsi/ginkgo/ginkgo
+          sudo cp ~/go/bin/ginkgo /usr/local/bin
+
+      - name: Run test
         working-directory: ./t/chaos
         run: ginkgo -r --v --progress --trace
