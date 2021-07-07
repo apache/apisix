@@ -536,3 +536,18 @@ HTTP/1.1 200 OK
   "url": "http://127.0.0.1/get"
 }
 ```
+
+## How to fix `unable to get local issuer certificate` error
+
+`conf/config.yaml`
+
+```yaml
+# ...
+apisix:
+  ssl:
+    ssl_trusted_certificate: /etc/ssl/certs/ca-certificates.crt
+# ...
+```
+ref [@spacewander](https://github.com/spacewander)'s [issuecomment](https://github.com/apache/apisix/issues/4514#issuecomment-875377961) 
+> 1. this directive is between Nginx configuration and SSL relative stuff.
+> 2. when you try to connect TLS services with cosocket
