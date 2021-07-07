@@ -719,7 +719,7 @@ nginx_config:
       balancer-ewma-locks: 20m
       balancer-ewma-last-touched-at: 20m
       plugin-limit-count-redis-cluster-slot-lock: 2m
-      tracing-buffer: 20m
+      tracing_buffer: 20m
       plugin-api-breaker: 20m
       etcd-cluster-health-check: 20m
       discovery: 2m
@@ -790,8 +790,8 @@ if ! grep "plugin-limit-count-redis-cluster-slot-lock 2m;" conf/nginx.conf > /de
     exit 1
 fi
 
-if ! grep "tracing-buffer 20m;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'tracing-buffer 20m;' not in nginx.conf"
+if ! grep "tracing_buffer 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'tracing_buffer 20m;' not in nginx.conf"
     exit 1
 fi
 
