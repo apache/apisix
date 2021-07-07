@@ -114,7 +114,8 @@ local function gen_worker_number(max_number)
                     end
                     core.log.info("snowflake worker_number lease success.")
                 end
-                ngx.timer.every(attr.snowflake.worker_number_interval, handler, etcd_cli, res.body.ID)
+                ngx.timer.every(attr.snowflake.worker_number_interval,
+                    handler, etcd_cli, res.body.ID)
 
                 core.log.notice("snowflake worker_number: " .. id)
                 break
@@ -139,14 +140,16 @@ end
 
 local function next_id()
     if snowflake_init == nil then
-        local max_number = math_pow(2, (attr.snowflake.node_id_bits + attr.snowflake.datacenter_id_bits))
+        local max_number = math_pow(2, (attr.snowflake.node_id_bits +
+            attr.snowflake.datacenter_id_bits))
         worker_number = gen_worker_number(max_number)
         if worker_number == nil then
             return ""
         end
-        local worker_id, datacenter_id =
-            split_worker_number(worker_number, attr.snowflake.node_id_bits, attr.snowflake.datacenter_id_bits)
-        core.log.notice("snowflake init datacenter_id: " .. datacenter_id .. " worker_id: " .. worker_id)
+        local worker_id, datacenter_id = split_worker_number(worker_number,
+            attr.snowflake.node_id_bits, attr.snowflake.datacenter_id_bits)
+        core.log.notice("snowflake init datacenter_id: " ..
+            datacenter_id .. " worker_id: " .. worker_id)
         snowflake.init(
             worker_id,
             datacenter_id,
