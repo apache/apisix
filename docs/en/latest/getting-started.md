@@ -84,7 +84,7 @@ If you already have Apache APISIX installed, please skip Step 1, and go to [Step
 Thanks to Docker, we can start Apache APISIX and enable it by enabling [Admin API](./admin-api.md).
 
 ```bash
-# Download the Docker image of Apache APISIX 
+# Download the Docker image of Apache APISIX
 git clone https://github.com/apache/apisix-docker.git
 # Switch the current directory to the apisix-docker/example path
 cd apisix-docker/example
