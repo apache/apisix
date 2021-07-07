@@ -72,7 +72,7 @@ end
 local function gen_worker_number(max_number)
     if worker_number == nil then
         local etcd_cli, prefix = core.etcd.new()
-        local res, _ = etcd_cli:grant(attr.worker_number_ttl)
+        local res, _ = etcd_cli:grant(attr.snowflake.worker_number_ttl)
 
         local prefix = prefix .. "/plugins/request-id/snowflake/"
         local uuid = uuid.generate_v4()
@@ -114,7 +114,7 @@ local function gen_worker_number(max_number)
                     end
                     core.log.info("snowflake worker_number lease success.")
                 end
-                ngx.timer.every(attr.worker_number_interval, handler, etcd_cli, res.body.ID)
+                ngx.timer.every(attr.snowflake.worker_number_interval, handler, etcd_cli, res.body.ID)
 
                 core.log.notice("snowflake worker_number: " .. id)
                 break
@@ -139,22 +139,21 @@ end
 
 local function next_id()
     if snowflake_init == nil then
-        local max_number = math_pow(2, (attr.node_id_bits + attr.datacenter_id_bits))
+        local max_number = math_pow(2, (attr.snowflake.node_id_bits + attr.snowflake.datacenter_id_bits))
         worker_number = gen_worker_number(max_number)
         if worker_number == nil then
             return ""
         end
         local worker_id, datacenter_id =
-            split_worker_number(worker_number, attr.node_id_bits, attr.datacenter_id_bits)
-        core.log.notice("snowflake init datacenter_id: " .. datacenter_id ..
-                        " worker_id: " .. worker_id)
+            split_worker_number(worker_number, attr.snowflake.node_id_bits, attr.snowflake.datacenter_id_bits)
+        core.log.notice("snowflake init datacenter_id: " .. datacenter_id .. " worker_id: " .. worker_id)
         snowflake.init(
             worker_id,
             datacenter_id,
-            attr.snowflake_epoc,
-            attr.node_id_bits,
-            attr.datacenter_id_bits,
-            attr.sequence_bits
+            attr.snowflake.snowflake_epoc,
+            attr.snowflake.node_id_bits,
+            attr.snowflake.datacenter_id_bits,
+            attr.snowflake.sequence_bits
         )
         snowflake_init = true
     end
@@ -174,7 +173,7 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.include_in_response then
-        ctx.x_request_id = uuid_val
+        ctx["request-id-" .. conf.header_name] = uuid_val
     end
 end
 
@@ -185,19 +184,18 @@ function _M.header_filter(conf, ctx)
 
     local headers = ngx.resp.get_headers()
     if not headers[conf.header_name] then
-        core.response.set_header(conf.header_name, ctx.x_request_id)
+        core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end
 end
 
 function _M.init()
     local local_conf = core.config.local_conf()
-    local attr = core.table.try_read_attr(local_conf, "plugin_attr", plugin_name)
+    attr = core.table.try_read_attr(local_conf, "plugin_attr", plugin_name)
     local ok, err = core.schema.check(attr_schema, attr)
     if not ok then
         core.log.error("failed to check the plugin_attr[", plugin_name, "]", ": ", err)
         return
     end
-    attr = attr
     if attr.snowflake.enable then
         if process.type() == "worker" then
             ngx.timer.at(0, next_id)
