@@ -514,12 +514,12 @@ ok
 
 
 
-=== TEST 13: check to get snowflake_id interface
+=== TEST 13: check to get snowflake interface
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, err, id = t('/apisix/plugin/request_id/snowflake_id',
+            local code, err, id = t('/apisix/plugin/request_id/snowflake',
                 ngx.HTTP_GET
             )
             if code > 200 then
@@ -562,31 +562,7 @@ GET /t
 
 
 
-=== TEST 15: check to get snowflake interface
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, id = t('/apisix/plugin/request_id/snowflake',
-                ngx.HTTP_GET
-            )
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-            ngx.status = code
-        }
-    }
---- request
-GET /t
---- response_body
---- no_error_log
-[error]
-
-
-
-=== TEST 16: wrong type
+=== TEST 15: wrong type
 --- config
     location /t {
         content_by_lua_block {
@@ -608,7 +584,7 @@ done
 
 
 
-=== TEST 17: add plugin with algorithm snowflake (default uuid)
+=== TEST 16: add plugin with algorithm snowflake (default uuid)
 --- config
     location /t {
         content_by_lua_block {
@@ -665,7 +641,7 @@ passed
 
 
 
-=== TEST 18: check for snowflake id
+=== TEST 17: check for snowflake id
 --- config
     location /t {
         content_by_lua_block {
