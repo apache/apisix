@@ -549,6 +549,6 @@ apisix:
 # ...
 ```
 
-Ref [@spacewander](https://github.com/spacewander)'s [issuecomment](https://github.com/apache/apisix/issues/4514#issuecomment-875377961) 
 
-> when you try to connect TLS services with cosocket
+**Note:**
+- When you try to connect TLS services with cosocket should be set `apisix.ssl.ssl_trusted_certificate`
