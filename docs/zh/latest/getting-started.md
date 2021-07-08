@@ -122,9 +122,9 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
 
-我们可以创建一个 [Route](./architecture-design/route.md) 并与上游（通常也被称为[Upstream](./architecture-design/upstream.md)或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游中。
+我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为[Upstream](./architecture-design/upstream.md)或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
-因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游。以下代码是一个 Route 配置示例：
+因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码是一个 Route 配置示例：
 
 ```json
 {
@@ -140,13 +140,13 @@ Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](htt
 }
 ```
 
-这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游：
+这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游服务：
 
 - 请求的 HTTP 方法为 `GET`。
 - 请求头包含 `host` 字段，且它的值为 `example.com`。
 - 请求路径匹配 `/services/users/*`，`*` 意味着任意的子路径，例如 `/services/users/getAll?limit=10`。
 
-当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游：
+当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游服务：
 
 ```bash
 curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
@@ -154,9 +154,9 @@ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Hos
 
 这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
 
-### 创建上游（Upstream）
+### 创建上游服务（Upstream）
 
-读完上一节，我们知道必须为 `Route` 设置 `Upstream`。只需执行下面的命令即可创建一个上游：
+读完上一节，我们知道必须为 `Route` 设置 `Upstream`。只需执行下面的命令即可创建一个上游服务：
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -168,15 +168,15 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游目标（后端服务），其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
+我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游服务，其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
 
 :::note 注意
-创建上游实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游。
+创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
 :::
 
-### 绑定路由与上游
+### 绑定路由与上游服务
 
-我们刚刚创建了一个上游(引用我们的后端服务)，现在让我们为它绑定一个路由！
+我们刚刚创建了一个上游服务，现在让我们为它绑定一个路由！
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -189,13 +189,13 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 ## 第三步：验证
 
-我们已创建了路由与上游，并将它们进行了绑定。现在让我们访问 Apache APISIX 来测试这条路由：
+我们已创建了路由与上游服务，并将它们进行了绑定。现在让我们访问 Apache APISIX 来测试这条路由：
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-它从我们的上游（实际是 `httpbin.org`）返回数据，并且结果符合预期。
+它从我们的上游服务（实际是 `httpbin.org`）返回数据，并且结果符合预期。
 
 ## 进阶操作
 
@@ -203,9 +203,9 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 ### 添加身份验证
 
-我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
+我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
 
-现在我们希望只有特定的用户 `John` 可以访问这个上游，需要使用[消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
+现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用[消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
 
 首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥：
 

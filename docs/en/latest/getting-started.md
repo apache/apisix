@@ -122,9 +122,9 @@ Now we have a running instance of Apache APISIX! Next, let's create a Route.
 
 Apache APISIX provides users with a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](https://github.com/apache/apisix-dashboard). In this article, we use the Admin API to walk you through the procedures of creating a Route.
 
-We can create a [Route](./architecture-design/route.md) and connect it to an [Upstream](./architecture-design/upstream.md)(also known as the backend service). When a `Request` arrives at Apache APISIX, Apache APISIX knows which Upstream the request should be forwarded to.
+We can create a [Route](./architecture-design/route.md) and connect it to an Upstream service(also known as the [Upstream](./architecture-design/upstream.md)). When a `Request` arrives at Apache APISIX, Apache APISIX knows which Upstream the request should be forwarded to.
 
-Because we have configured matching rules for the Route object, Apache APISIX can forward the request to the corresponding Upstream. The following code is an example of a Route configuration:
+Because we have configured matching rules for the Route object, Apache APISIX can forward the request to the corresponding Upstream service. The following code is an example of a Route configuration:
 
 ```json
 {
@@ -140,13 +140,13 @@ Because we have configured matching rules for the Route object, Apache APISIX ca
 }
 ```
 
-This routing configuration means that all matching inbound requests will be forwarded to the Upstream `httpbin.org:80` when they meet **all** the rules listed below:
+This routing configuration means that all matching inbound requests will be forwarded to the Upstream service `httpbin.org:80` when they meet **all** the rules listed below:
 
 - The HTTP method of the request is `GET`.
 - The request header contains the `host` field, and its value is `example.com`.
 - The request path matches `/services/users/*`, `*` means any subpath, for example `/services/users/getAll?limit=10`.
 
-Once this route is created, we can access the back-end service using the address exposed by Apache APISIX.
+Once this route is created, we can access the Upstream service using the address exposed by Apache APISIX.
 
 ```bash
 curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
@@ -168,15 +168,15 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-We use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as our upstream target (Upstream) with an ID of `1`. For more information on the fields, see [Admin API](./admin-api.md).
+We use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as our upstream target (Upstream service) with an ID of `1`. For more information on the fields, see [Admin API](./admin-api.md).
 
 :::note Note
-Creating an upstream is not actually necessary, as we can use [Plugin](./architecture-design/plugin.md) to intercept the request and then respond directly. However, for the purposes of this guide, we assume that at least one upstream needs to be set up.
+Creating an Upstream service is not actually necessary, as we can use [Plugin](./architecture-design/plugin.md) to intercept the request and then respond directly. However, for the purposes of this guide, we assume that at least one Upstream service needs to be set up.
 :::
 
 ### Bind the Route to the Upstream
 
-We've just created an Upstream (referencing our backend service), now let's bind a Route for it!
+We've just created an Upstream service (referencing our backend service), now let's bind a Route for it!
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -189,13 +189,13 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 ## Step 3: Validation
 
-We have created the route and the Upstream and bound them. Now let's access Apache APISIX to test this route.
+We have created the route and the Upstream service and bound them. Now let's access Apache APISIX to test this route.
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-It returns data from our Upstream (actually `httpbin.org`) and the result is as expected.
+It returns data from our Upstream service (actually `httpbin.org`) and the result is as expected.
 
 ## Advanced Operations
 
@@ -203,9 +203,9 @@ This section provides some advanced operations such as adding authentication, pr
 
 ### Add Authentication
 
-The route we created in step 2 is public. Thus, **anyone** can access this Upstream as long as they know the address that Apache APISIX exposes to the outside world. This is unsafe, it creates certain security risks. In a practical application scenario, we need to add authentication to the route.
+The route we created in step 2 is public. Thus, **anyone** can access this Upstream service as long as they know the address that Apache APISIX exposes to the outside world. This is unsafe, it creates certain security risks. In a practical application scenario, we need to add authentication to the route.
 
-Now we want only a specific user `John` to have access to this Upstream, and we need to use [Consumer](./architecture-design/consumer.md) and [Plugin](./architecture-design/plugin.md) to implement authentication.
+Now we want only a specific user `John` to have access to this Upstream service, and we need to use [Consumer](./architecture-design/consumer.md) and [Plugin](./architecture-design/plugin.md) to implement authentication.
 
 First, let's use [key-auth](./plugins/key-auth.md) plugin to create a [Consumer](./architecture-design/consumer.md) `John`, we need to provide a specified key.
 
