@@ -26,7 +26,7 @@ local str_lower = string.lower
 
 local plugin_name = "batch-requests"
 
-local DEFAULT_URI = "/apisix/batch-requests"
+local default_uri = "/apisix/batch-requests"
 
 local attr_schema = {
     type = "object",
@@ -34,7 +34,7 @@ local attr_schema = {
         uri = {
             type = "string",
             description = "uri for batch-requests",
-            default = DEFAULT_URI
+            default = default_uri
         }
     },
     additionalProperties = false,
@@ -278,10 +278,10 @@ end
 
 
 function _M.api()
-    local uri = DEFAULT_URI
+    local uri = default_uri
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
-        uri = attr.uri or DEFAULT_URI
+        uri = attr.uri or default_uri
     end
     return {
         {
