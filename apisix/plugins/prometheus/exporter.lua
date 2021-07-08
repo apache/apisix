@@ -313,7 +313,7 @@ function _M.collect()
         if local_conf.etcd and local_conf.etcd.prefix then
             key = local_conf.etcd.prefix .. key
         end
-        
+
         local res, _ = config:getkey(key)
         if res and res.headers then
             clear_tab(key_values)
