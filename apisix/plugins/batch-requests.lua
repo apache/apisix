@@ -26,6 +26,20 @@ local str_lower = string.lower
 
 local plugin_name = "batch-requests"
 
+local DEFAULT_URI = "/apisix/batch-requests"
+
+local attr_schema = {
+    type = "object",
+    properties = {
+        uri = {
+            type = "string",
+            description = "uri for batch-requests",
+            default = DEFAULT_URI
+        }
+    },
+    additionalProperties = false,
+}
+
 local schema = {
     type = "object",
     additionalProperties = false,
@@ -108,6 +122,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,
+    attr_schema = attr_schema,
 }
 
 
@@ -263,10 +278,15 @@ end
 
 
 function _M.api()
+    local uri = DEFAULT_URI
+    local attr = plugin.plugin_attr(plugin_name)
+    if attr then
+        uri = attr.uri or DEFAULT_URI
+    end
     return {
         {
             methods = {"POST"},
-            uri = "/apisix/batch-requests",
+            uri = uri,
             handler = batch_requests,
         }
     }
