@@ -118,9 +118,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的 `uri`
 
-| 名称       | 类型   | 默认值                       | 描述           |
-| --------- | ------ | ---------------------------- | -------------- |
-| uri       | string | "/apisix/batch-requests"     | `batch-requests` 插件的自定义 uri    |
+| 名称       | 类型   | 必选项	| 默认值                       | 描述           |
+| --------- | ------ | ------ | ---------------------------- | -------------- |
+| uri       | string |  可选  |"/apisix/batch-requests"     | `batch-requests` 插件的自定义 uri    |
 
 配置示例:
 

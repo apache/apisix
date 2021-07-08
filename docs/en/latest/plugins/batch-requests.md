@@ -113,9 +113,9 @@ Response is `Array` of [HttpResponse](#httpresponse).
 
 We can change the default uri in the `plugin_attr` section of `conf/config.yaml`.
 
-| Name       | Type   | Default                      | Description                       |
-| ---------- | ------ | ---------------------------- | --------------------------------- |
-| uri        | string | "/apisix/batch-requests"     | uri to use with batch-requests plugin   |
+| Name       | Type   | Requirement | Default                      | Description                       |
+| ---------- | ------ |-------------| ---------------------------- | --------------------------------- |
+| uri        | string | optional    | "/apisix/batch-requests"     | uri to use with batch-requests plugin   |
 
 Here is an example:
 

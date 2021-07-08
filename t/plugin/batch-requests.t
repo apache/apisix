@@ -1026,7 +1026,7 @@ plugin_attr:
     batch-requests:
         uri: "/foo/bar"
 --- config
-    location = /aggregate {
+    location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
@@ -1057,7 +1057,7 @@ plugin_attr:
         }
     }
 --- request
-GET /aggregate
+GET /t
 --- error_code: 404
 --- no_error_log
 [error]
@@ -1137,7 +1137,7 @@ GET /aggregate
 --- yaml_config
 plugin_attr:
     x:
-      xyz: "/foo/bar"
+      uri: "/foo/bar"
 --- config
     location = /aggregate {
         content_by_lua_block {
