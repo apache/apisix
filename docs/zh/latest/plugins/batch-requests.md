@@ -129,6 +129,7 @@ plugin_attr:
   batch-requests:
     uri: "/api-gw/batch"
 ```
+
 ## 测试插件
 
 你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
