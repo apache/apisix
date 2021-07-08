@@ -1018,6 +1018,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 24: customize uri, not found
 --- yaml_config
 plugin_attr:
@@ -1059,6 +1061,8 @@ GET /aggregate
 --- error_code: 404
 --- no_error_log
 [error]
+
+
 
 === TEST 25: customize uri, found
 --- yaml_config
@@ -1127,6 +1131,8 @@ GET /aggregate
 --- no_error_log
 [error]
 
+
+
 === TEST 26: customize uri, missing plugin, use default
 --- yaml_config
 plugin_attr:
@@ -1168,6 +1174,8 @@ GET /aggregate
 --- error_code: 200
 --- no_error_log
 [error]
+
+
 
 === TEST 27: customize uri, missing attr, use default
 --- yaml_config
