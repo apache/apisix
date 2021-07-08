@@ -551,4 +551,5 @@ apisix:
 
 
 **Note:**
+
 - When you try to connect TLS services with cosocket should be set `apisix.ssl.ssl_trusted_certificate`
