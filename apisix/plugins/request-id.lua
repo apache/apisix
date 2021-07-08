@@ -207,18 +207,31 @@ function _M.init()
 end
 
 function _M.api()
-    return {
+    local api = {
         {
             methods = {"GET"},
             uri = "/apisix/plugin/request_id/uuid",
             handler = uuid
-        },
-        {
+        }
+    }
+
+    local local_conf = core.config.local_conf()
+    attr = core.table.try_read_attr(local_conf, "plugin_attr", plugin_name)
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("failed to check the plugin_attr[", plugin_name, "]", ": ", err)
+        return
+    end
+
+    if attr.snowflake.enable then
+        core.table.insert(api, {
             methods = {"GET"},
             uri = "/apisix/plugin/request_id/snowflake",
             handler = next_id
-        }
-    }
+        })
+    end
+
+    return  api
 end
 
 return _M
