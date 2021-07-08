@@ -23,7 +23,7 @@ local schema = {
     type = "object",
     properties = {
         header_name = {type = "string", default = "X-Request-Id"},
-        include_in_response = {type = "boolean", default = true}
+        include_in_response = {type = "boolean", default = false}
     }
 }
 
