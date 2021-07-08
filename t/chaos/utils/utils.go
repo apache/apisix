@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 )
 
@@ -182,6 +183,16 @@ func GetEgressBandwidthPerSecond(e *httpexpect.Expect) (float64, float64) {
 	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }
 
+func GetSilentHttpexpectClient() *httpexpect.Expect {
+	return httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  Host,
+		Reporter: httpexpect.NewAssertReporter(ginkgo.GinkgoT()),
+		Printers: []httpexpect.Printer{
+			newSilentPrinter(ginkgo.GinkgoT()),
+		},
+	})
+}
+
 func RoughCompare(a float64, b float64) bool {
 	ratio := a / b
 	if ratio < 1.3 && ratio > 0.7 {
@@ -194,7 +205,7 @@ type silentPrinter struct {
 	logger httpexpect.Logger
 }
 
-func NewSilentPrinter(logger httpexpect.Logger) silentPrinter {
+func newSilentPrinter(logger httpexpect.Logger) silentPrinter {
 	return silentPrinter{logger}
 }
 

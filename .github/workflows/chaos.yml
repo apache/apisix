@@ -19,7 +19,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: setup go
+      - name: Setup go
         uses: actions/setup-go@v2.1.3
         with:
           go-version: "1.14"
@@ -40,7 +40,7 @@ jobs:
           kubectl get pods -n kube-system
           kubectl version
 
-      - name: Deploy Etcd with Helm
+      - name: Deploy etcd with Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
           helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -59,12 +59,12 @@ jobs:
           bash ./t/chaos/utils/setup_chaos_utils.sh ensure_pods_ready app=httpbin "True" 30
           bash ./t/chaos/utils/setup_chaos_utils.sh port_forward
 
-      - name: Deploy Chaos mesh
+      - name: Deploy Chaos Mesh
         run: |
           curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash
 
 
-      - name: Install ginkgo
+      - name: Install Ginkgo
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
           sudo cp ~/go/bin/ginkgo /usr/local/bin

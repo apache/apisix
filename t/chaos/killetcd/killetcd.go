@@ -65,13 +65,7 @@ func getEtcdKillChaos() *v1alpha1.PodChaos {
 
 var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
-	eSilent := httpexpect.WithConfig(httpexpect.Config{
-		BaseURL:  utils.Host,
-		Reporter: httpexpect.NewAssertReporter(ginkgo.GinkgoT()),
-		Printers: []httpexpect.Printer{
-			utils.NewSilentPrinter(ginkgo.GinkgoT()),
-		},
-	})
+	eSilent := utils.GetSilentHttpexpectClient()
 
 	var cliSet *utils.ClientSet
 	var apisixPod *v1.Pod
@@ -162,9 +156,9 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	ginkgo.It("ingress bandwidth per second not change much", func() {
-		fmt.Fprintf(ginkgo.GinkgoWriter, "bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)
-		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f", durationBefore, durationAfter)
-		fmt.Fprintf(ginkgo.GinkgoWriter, "bps before: %f, after: %f", bpsBefore, bpsAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "bandwidth before: %f, after: %f\n", bandwidthBefore, bandwidthAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f\n", durationBefore, durationAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "bps before: %f, after: %f\n", bpsBefore, bpsAfter)
 		gomega.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(gomega.BeTrue())
 	})
 

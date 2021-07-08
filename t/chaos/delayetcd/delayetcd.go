@@ -72,6 +72,7 @@ func setRouteMultipleTimes(e *httpexpect.Expect, times int, status httpexpect.St
 var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 	ctx := context.Background()
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
+	eSilent := utils.GetSilentHttpexpectClient()
 
 	var cliSet *utils.ClientSet
 	var apisixPod *v1.Pod
@@ -97,7 +98,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 	// get default
 	ginkgo.It("get default apisix delay", func() {
 		timeStart := time.Now()
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
 		gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 15*time.Millisecond))
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
@@ -119,7 +120,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 			time.Sleep(1 * time.Second)
 		}()
 
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
 		gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 400*time.Millisecond))
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
@@ -141,7 +142,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 			time.Sleep(1 * time.Second)
 		}()
 
-		setDuration := setRouteMultipleTimes(e, 5, httpexpect.Status2xx)
+		setDuration := setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
 		gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 4*time.Second))
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
