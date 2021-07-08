@@ -548,6 +548,6 @@ apisix:
 # ... 忽略其余无关项
 ```
 
-参考 [@spacewander](https://github.com/spacewander)'s [的回复](https://github.com/apache/apisix/issues/4514#issuecomment-875377961) 
 
-> 尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`
+**注意:**
+尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`
