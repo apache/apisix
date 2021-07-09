@@ -43,7 +43,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.ehomepay.com.cn/" rel="nofollow">ehomepay 理房通</a>
 1. <a href="https://ezone.work/" rel="nofollow">eZone 简单一点科技</a>
 1. <a href="https://fansup.mobi/" rel="nofollow">fansup</a>
-1. <a href="https://game.qq.com/" rel="nofollow">game.qq.com 腾讯游戏</a>
+1. <a href="https://game.qq.com/" rel="nofollow">Tencent Game 腾讯游戏</a>
 1. <a href="http://haieruplus.com/" rel="nofollow">haieruplus 海尔优家</a>
 1. <a href="http://www.hellowin.cn/" rel="nofollow">hellowin 好洛维</a>
 1. <a href="https://www.hellotalk.com/" rel="nofollow">HelloTalk, Inc.</a>
