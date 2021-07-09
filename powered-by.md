@@ -82,7 +82,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.zihao.biz/" rel="nofollow">紫豪网络</a>
 1. <a href="https://www.zuzuche.com/" rel="nofollow">zuzuche 租租车</a>
 1. <a href="https://www.zybang.com/" rel="nofollow">zybang 作业帮</a>
-1. <a href="http://zhi20.com/" rel="nofollow">中食安泓(广东)健康产业有限公司</a>
+1. <a href="http://zhi20.com/" rel="nofollow">中食安泓（广东）健康产业有限公司</a>
 1. <a href="https://appadvice.com/app/e5-8c-bb-e6-82-a3-e5-ae-a2-e6-9c-8d/1502073770" rel="nofollow">上海泽怡信息科技</a>
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
