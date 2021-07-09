@@ -356,7 +356,11 @@ end
 
 function _M.mysleep()
     ngx.sleep(tonumber(ngx.var.arg_seconds))
-    ngx.say(ngx.var.arg_seconds)
+    if ngx.var.arg_abort then
+        ngx.exit(ngx.ERROR)
+    else
+        ngx.say(ngx.var.arg_seconds)
+    end
 end
 
 
@@ -415,15 +419,6 @@ end
 
 function _M.server_error()
     error("500 Internal Server Error")
-end
-
-function _M.retry_error()
-    local sleep = ngx.var.http_x_test_sleep
-    if sleep ~= nil then
-        ngx.sleep(tonumber(sleep))
-    end
-
-    ngx.exit(ngx.ERROR)
 end
 
 return _M
