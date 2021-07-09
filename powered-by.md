@@ -58,7 +58,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.ke.com/" rel="nofollow">ke.com 贝壳找房</a>
 1. <a href="https://www.meizu.com/" rel="nofollow">Meizu 魅族</a>
 1. <a href="https://www.mingyuanyun.com/" rel="nofollow">明源云客</a>
-1. <a href="https://www.meicai.cn/#/" rel="nofollow">美菜网</a>
+1. <a href="https://www.meicai.cn/" rel="nofollow">美菜网</a>
 1. <a href="http://www.163.com" rel="nofollow">Netease 网易</a>
 1. <a href="https://www.jpl.nasa.gov" rel="nofollow">NASA JPL 美国国家航空航天局 喷气推进实验室</a>
 1. <a href="https://www.purcotton.com/" rel="nofollow">Purcotton 深圳全棉时代科技有限公司</a>
