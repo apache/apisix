@@ -27,7 +27,7 @@ or providing commercial products including APISIX.
 Users are encouraged to add themselves to this page, [issue](https://github.com/apache/apisix/issues/487) and PR are welcomed.
 
 1. <a href="http://aimiaobi.com/" rel="nofollow">aimiaobi 妙笔 AI</a>
-1. <a href="http://www.augurit.com/" rel="nofollow">奥格科技股份有限公司</a>
+1. <a href="http://www.augurit.com/" rel="nofollow">AUGUR 奥格科技股份有限公司</a>
 1. <a href="https://cloud.aispeech.com/" rel="nofollow">aispeech 思必驰信息科技股份有限公司</a>
 1. <a href="http://www.cunw.com.cn/" rel="nofollow">cunw 湖南新云网</a>
 1. <a href="https://www.chaolian360.com/" rel="nofollow">chaolian 超链云商</a>
