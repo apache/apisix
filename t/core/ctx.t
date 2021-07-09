@@ -84,7 +84,7 @@ GET /t?a=aaa
 --- response_body
 cookie_host: nil
 --- no_error_log
-[error]
+failed to fetch cookie value by key
 
 
 
