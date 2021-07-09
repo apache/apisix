@@ -353,6 +353,10 @@ local upstream_schema = {
             type = "integer",
             minimum = 0,
         },
+        retry_timeout = {
+            type = "integer",
+            minimum = 0,
+        },
         timeout = timeout_def,
         tls = {
             type = "object",

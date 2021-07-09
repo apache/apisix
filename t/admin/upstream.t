@@ -1978,3 +1978,35 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 57: retry_timeout is -1 (INVALID)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/a-b-c-ABC_0123',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8090": 1
+                    },
+                    "retry_timeout": -1,
+                    "type": "roundrobin"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"retry_timeout\" validation failed: expected -1 to be greater than 0"}
+--- no_error_log
+[error]

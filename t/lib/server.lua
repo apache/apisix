@@ -417,5 +417,13 @@ function _M.server_error()
     error("500 Internal Server Error")
 end
 
+function _M.retry_error()
+    local sleep = ngx.var.http_x_test_sleep
+    if sleep ~= nil then
+        ngx.sleep(tonumber(sleep))
+    end
+
+    ngx.exit(ngx.ERROR)
+end
 
 return _M
