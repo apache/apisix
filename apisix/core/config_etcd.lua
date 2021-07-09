@@ -71,11 +71,6 @@ local function getkey(etcd_cli, key)
         return nil, "not inited"
     end
 
-    local local_conf, _ = config_local.local_conf()
-    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
-        key = local_conf.etcd.prefix .. key
-    end
-
     local res, err = etcd_cli:readdir(key)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
@@ -489,6 +484,11 @@ end
 function _M.getkey(self, key)
     if not self.running then
         return nil, "stopped"
+    end
+
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
     end
 
     return getkey(self.etcd_cli, key)

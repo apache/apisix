@@ -308,7 +308,8 @@ function _M.collect()
                            "processing metrics endpoint: ", err)
         end
 
-        local res, _ = config:getkey("/routes/")
+        -- use phantom key to get etcd index
+        local res, _ = config:getkey("/phantomkey")
         if res and res.headers then
             clear_tab(key_values)
             -- global max
