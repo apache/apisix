@@ -111,7 +111,11 @@ end
 do
     local var_methods = {
         method = ngx.req.get_method,
-        cookie = function () return ck:new() end
+        cookie = function ()
+            if ngx.var.http_cookie then
+                return ck:new()
+            end
+        end
     }
 
     local ngx_var_names = {
@@ -153,7 +157,7 @@ do
                 if cookie then
                     local err
                     val, err = cookie:get(sub_str(key, 8))
-                    if not val then
+                    if err then
                         log.warn("failed to fetch cookie value by key: ",
                                  key, " error: ", err)
                     end
