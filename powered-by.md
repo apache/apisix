@@ -52,7 +52,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.huya.com/" rel="nofollow">虎牙</a>
 1. <a href="http://www.hys.cn/" rel="nofollow">好医生集团</a>
 1. <a href="https://www.ihomefnt.com/" rel="nofollow">ihomefnt 艾佳生活</a>
-1. <a href="https://en.intsig.com/" rel="nofollow">intsig 上海合合信息科技股份有限公司</a>
+1. <a href="https://www.intsig.com/" rel="nofollow">intsig 上海合合信息科技股份有限公司</a>
 1. <a href="https://www.jiandanxinli.com/" rel="nofollow">jiandanxinli 简单心理</a>
 1. <a href="https://jr.ly.com/" rel="nofollow">jr.ly 同程金服</a>
 1. <a href="https://www.ke.com/" rel="nofollow">ke.com 贝壳找房</a>
