@@ -38,7 +38,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.dataoke.com/" rel="nofollow">dataoke 大淘客</a>
 1. <a href="https://www.didachuxing.com/" rel="nofollow">嘀嗒出行</a>
 1. <a href="http://dusto.cn/" rel="nofollow">dusto.cn 浙江大东鞋业有限公司</a>
-1. <a href="http://dian.so/" rel="nofollow">dian.so 小电科技</a>
+1. <a href="http://dian.so/" rel="nofollow">Dian 小电科技</a>
 1. <a href="https://www.efactory-project.eu/" rel="nofollow">eFactory</a>
 1. <a href="https://www.ehomepay.com.cn/" rel="nofollow">ehomepay 理房通</a>
 1. <a href="https://ezone.work/" rel="nofollow">eZone 简单一点科技</a>
