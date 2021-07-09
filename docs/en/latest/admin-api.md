@@ -597,7 +597,7 @@ This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-bu
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    # is the same as "nodes": { {"host": "host", "port": 80, "weight": 100} },
+    # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
     "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
