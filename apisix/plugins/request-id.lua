@@ -21,6 +21,7 @@ local core = require("apisix.core")
 local snowflake = require("snowflake")
 local uuid = require("resty.jit-uuid")
 local process = require("ngx.process")
+local timers = require("apisix.timers")
 local tostring = tostring
 local math_pow = math.pow
 
@@ -75,13 +76,12 @@ end
 local function gen_worker_number(max_number)
     if worker_number == nil then
         local etcd_cli, prefix = core.etcd.new()
-        local res, _ = etcd_cli:grant(attr.snowflake.worker_number_ttl)
-
         local prefix = prefix .. "/plugins/request-id/snowflake/"
         local uuid = uuid.generate_v4()
         local id = 1
         while (id <= max_number) do
             ::continue::
+            local res, _ = etcd_cli:grant(attr.snowflake.worker_number_ttl)
             local _, err1 = etcd_cli:setnx(prefix .. tostring(id), uuid)
             local res2, err2 = etcd_cli:get(prefix .. tostring(id))
 
@@ -108,19 +108,28 @@ local function gen_worker_number(max_number)
                     goto continue
                 end
 
-                local handler = function(premature, etcd_cli, lease_id)
+                local lease_id = res.body.ID
+                local start_at = ngx.time()
+                local handler = function()
+                    local now = ngx.time()
+                    if now - start_at < attr.snowflake.worker_number_interval then
+                        return
+                    end
+                    
                     local _, err4 = etcd_cli:keepalive(lease_id)
                     if err4 then
                         snowflake_inited = nil
                         worker_number = nil
-                        core.log.error("snowflake worker_number lease faild.")
+                        core.log.error("snowflake worker_number: " .. id .." lease faild.")
                     end
-                    core.log.info("snowflake worker_number lease success.")
+                    start_at = now
+                    core.log.info("snowflake worker_number: " .. id .." lease success.")
                 end
-                ngx.timer.every(attr.snowflake.worker_number_interval,
-                    handler, etcd_cli, res.body.ID)
 
-                core.log.notice("snowflake worker_number: " .. id)
+                timers.register_timer("plugin#request-id", handler)
+                core.log.info("timer created to lease snowflake algorithm worker number, interval: ",
+                    attr.snowflake.worker_number_interval)
+                core.log.notice("lease snowflake worker_number: " .. id)
                 break
             end
         end
@@ -224,6 +233,7 @@ function _M.init()
         end
     end
 end
+
 
 function _M.api()
     local api = {
