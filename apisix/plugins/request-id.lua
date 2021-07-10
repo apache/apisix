@@ -115,7 +115,7 @@ local function gen_worker_number(max_number)
                     if now - start_at < attr.snowflake.worker_number_interval then
                         return
                     end
-                    
+
                     local _, err4 = etcd_cli:keepalive(lease_id)
                     if err4 then
                         snowflake_inited = nil
@@ -127,7 +127,8 @@ local function gen_worker_number(max_number)
                 end
 
                 timers.register_timer("plugin#request-id", handler)
-                core.log.info("timer created to lease snowflake algorithm worker number, interval: ",
+                core.log.info(
+                    "timer created to lease snowflake algorithm worker number, interval: ",
                     attr.snowflake.worker_number_interval)
                 core.log.notice("lease snowflake worker_number: " .. id)
                 break
@@ -234,33 +235,5 @@ function _M.init()
     end
 end
 
-
-function _M.api()
-    local api = {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/request_id/uuid",
-            handler = uuid
-        }
-    }
-
-    local local_conf = core.config.local_conf()
-    attr = core.table.try_read_attr(local_conf, "plugin_attr", plugin_name)
-    local ok, err = core.schema.check(attr_schema, attr)
-    if not ok then
-        core.log.error("failed to check the plugin_attr[", plugin_name, "]", ": ", err)
-        return
-    end
-
-    if attr.snowflake.enable then
-        core.table.insert(api, {
-            methods = {"GET"},
-            uri = "/apisix/plugin/request_id/snowflake",
-            handler = next_id
-        })
-    end
-
-    return  api
-end
 
 return _M

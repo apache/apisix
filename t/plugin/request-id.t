@@ -483,8 +483,8 @@ plugin_attr:
             enable: true
             snowflake_epoc: 1609459200000
             node_id_bits: 5
-            sequence_bits: 5
-            datacenter_id_bits: 10
+            datacenter_id_bits: 5
+            sequence_bits: 10
             worker_number_ttl: 30
             worker_number_interval: 10
 --- config
@@ -514,62 +514,7 @@ ok
 
 
 
-=== TEST 13: check to get snowflake interface
---- yaml_config
-plugins:
-    - request-id
-plugin_attr:
-    request-id:
-        snowflake:
-            enable: true
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, id = t('/apisix/plugin/request_id/snowflake',
-                ngx.HTTP_GET
-            )
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-            ngx.status = code
-        }
-    }
---- request
-GET /t
---- response_body
---- no_error_log
-[error]
-
-
-
-=== TEST 14: check to get uuid interface
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, id = t('/apisix/plugin/request_id/uuid',
-                ngx.HTTP_GET
-            )
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-            ngx.status = code
-        }
-    }
---- request
-GET /t
---- response_body
---- no_error_log
-[error]
-
-
-
-=== TEST 15: wrong type
+=== TEST 13: wrong type
 --- config
     location /t {
         content_by_lua_block {
@@ -591,7 +536,7 @@ done
 
 
 
-=== TEST 16: add plugin with algorithm snowflake (default uuid)
+=== TEST 14: add plugin with algorithm snowflake (default uuid)
 --- config
     location /t {
         content_by_lua_block {
@@ -648,7 +593,7 @@ passed
 
 
 
-=== TEST 17: check for snowflake id
+=== TEST 15: check for snowflake id
 --- yaml_config
 plugins:
     - request-id
@@ -701,24 +646,5 @@ GET /t
 --- wait: 5
 --- response_body
 true
---- no_error_log
-[error]
-
-
-
-=== TEST 18: check to get snowflake interface
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, id = t('/apisix/plugin/request_id/snowflake',
-                ngx.HTTP_GET
-            )
-            ngx.status = code
-        }
-    }
---- request
-GET /t
---- error_code: 404
 --- no_error_log
 [error]

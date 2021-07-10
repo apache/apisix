@@ -321,7 +321,7 @@ plugin_attr:
       enable: false
       snowflake_epoc: 1609459200000
       node_id_bits: 5
-      sequence_bits: 5
-      datacenter_id_bits: 10
+      datacenter_id_bits: 5
+      sequence_bits: 10
       worker_number_ttl: 30
       worker_number_interval: 10
