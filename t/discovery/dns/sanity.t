@@ -285,6 +285,8 @@ qr/proxy request to \S+/
 proxy request to 127.0.0.1:1979
 proxy request to 127.0.0.2:1980
 
+
+
 === TEST 14: Stream Discovery
 --- yaml_config
 apisix:
@@ -294,10 +296,11 @@ apisix:
     enable_resolv_search_option: false
     stream_proxy:
         tcp:
-            - addr: 1985
-discovery:                        # service discovery center
+         - addr: 1985
+discovery:
     dns:
-        servers: "127.0.0.1:1053"
+        servers:
+         - "127.0.0.1:1053"
 --- apisix_yaml
 stream_routes:
     - id: 1
