@@ -41,6 +41,16 @@ apisix:
       - "127.0.0.1:9211"
 ```
 
+If you need to enable both HTTP and stream proxy, set the `only` to false:
+
+```yaml
+apisix:
+  stream_proxy: # TCP/UDP proxy
+    only: false
+    tcp: # TCP proxy address list
+      - 9100
+```
+
 ## How to set route?
 
 Here is a mini example:
