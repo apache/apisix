@@ -19,7 +19,6 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-log_level("debug");
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -73,8 +72,6 @@ plugin_attr:
             ngx.status = 200
         }
     }
---- request
-GET /t
 --- error_code: 404
 --- no_error_log
 [error]
