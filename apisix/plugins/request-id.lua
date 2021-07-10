@@ -27,7 +27,7 @@ local math_pow = math.pow
 local plugin_name = "request-id"
 
 local worker_number = nil
-local snowflake_init = nil
+local snowflake_inited = nil
 
 local attr = nil
 
@@ -65,10 +65,13 @@ local _M = {
     schema = schema
 }
 
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+
+-- Generates the current process worker number
 local function gen_worker_number(max_number)
     if worker_number == nil then
         local etcd_cli, prefix = core.etcd.new()
@@ -108,7 +111,7 @@ local function gen_worker_number(max_number)
                 local handler = function(premature, etcd_cli, lease_id)
                     local _, err4 = etcd_cli:keepalive(lease_id)
                     if err4 then
-                        snowflake_init = nil
+                        snowflake_inited = nil
                         worker_number = nil
                         core.log.error("snowflake worker_number lease faild.")
                     end
@@ -130,6 +133,8 @@ local function gen_worker_number(max_number)
     return worker_number
 end
 
+
+-- Split 'Worker Number' into 'Worker ID' and 'datacenter ID'
 local function split_worker_number(worker_number, node_id_bits, datacenter_id_bits)
     local num = bit.tobit(worker_number)
     local worker_id = bit.band(num, math_pow(2, node_id_bits) - 1) + 1
@@ -138,8 +143,10 @@ local function split_worker_number(worker_number, node_id_bits, datacenter_id_bi
     return worker_id, datacenter_id
 end
 
-local function next_id()
-    if snowflake_init == nil then
+
+-- Initialize the snowflake algorithm
+local function snowflake_init()
+    if snowflake_inited == nil then
         local max_number = math_pow(2, (attr.snowflake.node_id_bits +
             attr.snowflake.datacenter_id_bits))
         worker_number = gen_worker_number(max_number)
@@ -158,19 +165,31 @@ local function next_id()
             attr.snowflake.datacenter_id_bits,
             attr.snowflake.sequence_bits
         )
-        snowflake_init = true
+        snowflake_inited = true
+    end
+end
+
+
+-- generate snowflake id
+local function next_id()
+    if snowflake_inited == nil then
+        snowflake_init()
     end
     return snowflake:next_id()
 end
 
+
+local function get_request_id(algorithm)
+    if algorithm == "uuid" then
+        return uuid()
+    end
+    return next_id()
+end
+
+
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
-    local uuid_val
-    if conf.algorithm == "uuid" then
-        uuid_val = uuid()
-    else
-        uuid_val = next_id()
-    end
+    local uuid_val = get_request_id(conf.algorithm)
     if not headers[conf.header_name] then
         core.request.set_header(ctx, conf.header_name, uuid_val)
     end
@@ -201,7 +220,7 @@ function _M.init()
     end
     if attr.snowflake.enable then
         if process.type() == "worker" then
-            ngx.timer.at(0, next_id)
+            ngx.timer.at(0, snowflake_init)
         end
     end
 end
