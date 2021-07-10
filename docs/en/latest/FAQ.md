@@ -536,3 +536,19 @@ HTTP/1.1 200 OK
   "url": "http://127.0.0.1/get"
 }
 ```
+
+## How to fix `unable to get local issuer certificate` error
+
+`conf/config.yaml`
+
+```yaml
+# ...
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
+# ...
+```
+
+**Note:**
+
+- Whenever trying to connect TLS services with cosocket, you should set `apisix.ssl.ssl_trusted_certificate`

@@ -445,7 +445,6 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
-    additionalProperties = false,
 }
 
 -- TODO: add more nginx variable support

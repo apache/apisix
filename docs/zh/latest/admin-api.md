@@ -602,7 +602,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
         "read":15,
     },
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + 端口`
-    # 等价于 "nodes": { {"host":"host", "port":80, "weight": 100} },
+    # 等价于 "nodes": [ {"host":"host", "port":80, "weight": 100} ],
     "type":"roundrobin",
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",

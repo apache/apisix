@@ -83,8 +83,8 @@ arg_a: aaa
 GET /t?a=aaa
 --- response_body
 cookie_host: nil
---- error_log
-failed to fetch cookie value by key: cookie_host error: no cookie found in the current request
+--- no_error_log
+failed to fetch cookie value by key
 
 
 
