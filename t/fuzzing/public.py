@@ -18,7 +18,7 @@
 import subprocess
 import os
 import psutil
-from boofuzz import *
+from boofuzz import FuzzLoggerText, Session, TCPSocketConnection, Target
 
 def cur_dir():
     return os.path.split(os.path.realpath(__file__))[0]
