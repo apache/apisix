@@ -96,9 +96,6 @@ apisix:
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
                                   #   more details.
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
-  stream:
-    lua_shared_dict:
-      lrucache-lock-stream: 10m
   #stream_proxy:                  # TCP/UDP proxy
   #  tcp:                         # TCP proxy port list
   #    - addr: 9100
@@ -148,6 +145,10 @@ nginx_config:                     # config for render the template to generate n
   #envs:                          # allow to get a list of environment variables
   #  - TEST_ENV
 
+  stream:
+    lua_shared_dict:
+      lrucache-lock-stream: 10m
+  
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations
   # don't conflict with APISIX.
