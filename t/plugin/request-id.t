@@ -482,8 +482,7 @@ plugin_attr:
         snowflake:
             enable: true
             snowflake_epoc: 1609459200000
-            node_id_bits: 5
-            datacenter_id_bits: 5
+            data_machine_bits: 10
             sequence_bits: 10
             worker_number_ttl: 30
             worker_number_interval: 10
@@ -648,3 +647,91 @@ GET /t
 true
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: check for delta_offset 1000 milliseconds
+--- yaml_config
+plugins:
+    - request-id
+plugin_attr:
+    request-id:
+        snowflake:
+            enable: true
+            snowflake_epoc: 1609459200000
+            data_machine_bits: 12
+            sequence_bits: 10
+            worker_number_ttl: 30
+            worker_number_interval: 10
+            delta_offset: 1000
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = {}
+            local ids = {}
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function()
+                    local httpc = http.new()
+                    local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+                    local res, err = httpc:request_uri(uri,
+                        {
+                            method = "GET",
+                            headers = {
+                                ["Content-Type"] = "application/json",
+                            }
+                        }
+                    )
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    local id = res.headers["X-Request-Id"]
+                    if not id then
+                        return -- ignore if the data is not synced yet.
+                    end
+                    if ids[id] == true then
+                        ngx.say("ids not unique")
+                        return
+                    end
+                    ids[id] = true
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
+            end
+            ngx.say("true")
+        }
+    }
+--- request
+GET /t
+--- wait: 5
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: wrong delta_offset
+--- yaml_config
+plugins:
+    - request-id
+plugin_attr:
+    request-id:
+        snowflake:
+            enable: true
+            delta_offset: 1001
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log
+ailed to check the plugin_attr[request-id]: property "snowflake" validation failed: property "delta_offset" validation failed: matches none of the enum values

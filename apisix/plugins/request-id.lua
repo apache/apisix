@@ -24,6 +24,8 @@ local process = require("ngx.process")
 local timers = require("apisix.timers")
 local tostring = tostring
 local math_pow = math.pow
+local math_ceil = math.ceil
+local math_floor = math.floor
 
 local plugin_name = "request-id"
 
@@ -49,9 +51,9 @@ local attr_schema = {
             properties = {
                 enable = {type = "boolean"},
                 snowflake_epoc = {type = "integer", minimum = 1, default = 1609459200000},
-                node_id_bits = {type = "integer", minimum = 1, default = 5},
+                data_machine_bits = {type = "integer", minimum = 1, default = 12},
                 sequence_bits = {type = "integer", minimum = 1, default = 10},
-                datacenter_id_bits = {type = "integer", minimum = 1, default = 5},
+                delta_offset = {type = "integer", default = 1, enum = {1, 10, 100, 1000}},
                 worker_number_ttl = {type = "integer", minimum = 1, default = 30},
                 worker_number_interval = {type = "integer", minimum = 1, default = 10}
             }
@@ -157,23 +159,28 @@ end
 -- Initialize the snowflake algorithm
 local function snowflake_init()
     if snowflake_inited == nil then
-        local max_number = math_pow(2, (attr.snowflake.node_id_bits +
-            attr.snowflake.datacenter_id_bits))
+        local max_number = math_pow(2, (attr.snowflake.data_machine_bits))
+        local datacenter_id_bits = math_floor(attr.snowflake.data_machine_bits / 2)
+        local node_id_bits = math_ceil(attr.snowflake.data_machine_bits / 2)
         worker_number = gen_worker_number(max_number)
         if worker_number == nil then
             return ""
         end
+
         local worker_id, datacenter_id = split_worker_number(worker_number,
-            attr.snowflake.node_id_bits, attr.snowflake.datacenter_id_bits)
-        core.log.notice("snowflake init datacenter_id: " ..
+            node_id_bits, datacenter_id_bits)
+
+        -- core.log.error(datacenter_id_bits, datacenter_id, node_id_bits, worker_id)
+        core.log.info("snowflake init datacenter_id: " ..
             datacenter_id .. " worker_id: " .. worker_id)
         snowflake.init(
-            worker_id,
             datacenter_id,
+            worker_id,
             attr.snowflake.snowflake_epoc,
-            attr.snowflake.node_id_bits,
-            attr.snowflake.datacenter_id_bits,
-            attr.snowflake.sequence_bits
+            node_id_bits,
+            datacenter_id_bits,
+            attr.snowflake.sequence_bits,
+            attr.delta_offset
         )
         snowflake_inited = true
     end
