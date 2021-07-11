@@ -148,7 +148,7 @@ nginx_config:                     # config for render the template to generate n
   stream:
     lua_shared_dict:
       lrucache-lock-stream: 10m
-  
+
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations
   # don't conflict with APISIX.
