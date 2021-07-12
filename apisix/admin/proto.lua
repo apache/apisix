@@ -169,7 +169,8 @@ function _M.delete(id)
     if services_ver and services then
         for _, service in ipairs(services) do
             if type(service) == "table" and service.value and service.value.plugins then
-                local ret, err = check_proto_used(service.value.plugins, id, "service", service.value.id)
+                local ret, err = check_proto_used(service.value.plugins, id,
+                                                "service", service.value.id)
                 if not ret then
                     return 400, err
                 end
