@@ -71,6 +71,7 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
+            "plugins/bot-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction"
           ]
