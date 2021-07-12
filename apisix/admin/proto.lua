@@ -119,16 +119,16 @@ end
 
 local function check_proto_used(plugins, deleting, ptype, pid)
 
-    core.log.info("check_proto_used plugins: ", core.json.delay_encode(plugins, true))
-    core.log.info("check_proto_used deleting: ", deleting)
-    core.log.info("check_proto_used ptype: ", ptype)
-    core.log.info("check_proto_used pid: ", pid)
+    --core.log.info("check_proto_used plugins: ", core.json.delay_encode(plugins, true))
+    --core.log.info("check_proto_used deleting: ", deleting)
+    --core.log.info("check_proto_used ptype: ", ptype)
+    --core.log.info("check_proto_used pid: ", pid)
 
     if plugins then
         if type(plugins) == "table" and plugins["grpc-transcode"]
            and plugins["grpc-transcode"].proto_id
            and tostring(plugins["grpc-transcode"].proto_id) == deleting then
-            --core.log.info("check_proto_used 此协议正在使用: ", core.json.delay_encode(plugins, true))
+            --  core.log.info("check_proto_used proto is used: ", core.json.delay_encode(plugins, true))
             return false, {error_msg = "can not delete this proto,"
                                      .. ptype .. " [" .. pid
                                      .. "] is still using it now"}
@@ -152,10 +152,10 @@ function _M.delete(id)
         for _, route in ipairs(routes) do
             core.log.info("proto delete route item: ", core.json.delay_encode(route, true))
             if type(route) == "table" and route.value and route.value.plugins then
-                   local ret, err = check_proto_used(route.value.plugins, id, "route",route.value.id)
-                   if not ret then
-                        return 400, err
-                    end
+                local ret, err = check_proto_used(route.value.plugins, id, "route",route.value.id)
+                if not ret then
+                    return 400, err
+                end
             end
         end
     end
