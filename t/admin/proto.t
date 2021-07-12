@@ -53,27 +53,21 @@ __DATA__
                 }]],
                 [[
                     {
-                        "node": {
-                            "value": {
-                                "create_time": 1625845753,
-                                "update_time": 1625845753,
-                                "content": "syntax = \"proto3\";\npackage proto;\nmessage HelloRequest{\n  string name = 1;\n    }\n\nmessage HelloResponse{\n  int32 code = 1;\n  string msg = 2;\n    }\n    // The greeting service definition.\nservice Hello {\n        // Sends a greeting\n  rpc SayHi (HelloRequest) returns (HelloResponse){}\n    }"
-                            }
-                        },
                         "action": "create"
                     }
                 ]]
                 )
 
-            if code ~= 201 then
+            if code ~= 200 then
                 ngx.status = code
-                ngx.say(message)
+                ngx.say("[push error] code: ", code, " message: ", message)
                 return
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/proto/" + 1)
+            ngx.say("[push] id: ", id)
             local res = assert(etcd.get('/proto/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
