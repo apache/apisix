@@ -57,7 +57,7 @@ env {*name*};
 {% end %}
 {% end %}
 
-{% if stream then %}
+{% if stream_proxy then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
@@ -68,7 +68,6 @@ stream {
 
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
 
-    {% if stream_proxy then %}
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
     resolver_timeout {*resolver_timeout*};
 
@@ -130,7 +129,6 @@ stream {
             apisix.stream_log_phase()
         }
     }
-    {% end %}
 }
 {% end %}
 

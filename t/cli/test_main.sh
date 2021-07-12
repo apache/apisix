@@ -685,6 +685,15 @@ echo "passed: found the 'variables_hash_max_size 1024;' in nginx.conf"
 git checkout conf/config.yaml
 
 echo '
+apisix:
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls: true
+      - addr: "127.0.0.1:9101"
+    udp:
+      - 9200
+      - "127.0.0.1:9201"
 nginx_config:
   stream:
     lua_shared_dict:
