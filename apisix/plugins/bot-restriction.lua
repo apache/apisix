@@ -17,6 +17,7 @@
 local ipairs = ipairs
 local core = require("apisix.core")
 local stringx = require('pl.stringx')
+local type = type
 local str_strip = stringx.strip
 local re_find = ngx.re.find
 
