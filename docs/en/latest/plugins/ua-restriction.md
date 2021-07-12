@@ -1,5 +1,5 @@
 ---
-title: bot-restriction
+title: ua-restriction
 ---
 
 <!--
@@ -31,25 +31,23 @@ title: bot-restriction
 
 ## Name
 
-The `bot-restriction` can restrict access to a Service or a Route by either
-`whitelisting` or `blacklisting` or `most well-known` bots.
+The `ua-restriction` can restrict access to a Service or a Route by either `allowlist` or `denylist` `User-Agent`.
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default | Valid | Description                              |
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| whitelist | array[string] | optional    |         |       | List of User-Agent of whitelist. |
-| blacklist | array[string] | optional    |         |       | List of User-Agent of blacklist. |
+| allowlist | array[string] | optional    |         |       | List of User-Agent of allowlist. |
+| denylist | array[string] | optional    |         |       | List of User-Agent of denylist. |
 | message | string | optional             | Not allowed. | [1, 1024] | Message of deny reason. |
 
-Any of `whitelist` or `blacklist` can be optional, and can work together in this order:
-whitelist->blacklist->default well-known User-Agent list.
+Any of `allowlist` or `denylist` can be optional, and can work together in this order: allowlist->denylist
 
 The message can be user-defined.
 
 ## How To Enable
 
-Creates a route or service object, and enable plugin `bot-restriction`.
+Creates a route or service object, and enable plugin `ua-restriction`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -62,12 +60,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "plugins": {
-        "bot-restriction": {
-             "whitelist": [
+        "ua-restriction": {
+             "allowlist": [
                  "my-bot1",
                  "(Baiduspider)/(\\d+)\\.(\\d+)"
              ],
-             "blacklist": [
+             "denylist": [
                  "my-bot2",
                  "(Twitterspider)/(\\d+)\\.(\\d+)"
              ]
@@ -80,8 +78,8 @@ Default returns `{"message":"Not allowed"}` when rejected. If you want to use a 
 
 ```json
 "plugins": {
-    "bot-restriction": {
-        "blacklist": [
+    "ua-restriction": {
+        "denylist": [
             "my-bot2",
             "(Twitterspider)/(\\d+)\\.(\\d+)"
         ],
@@ -109,7 +107,7 @@ HTTP/1.1 403 Forbidden
 
 ## Disable Plugin
 
-When you want to disable the `bot-restriction` plugin, it is very simple,
+When you want to disable the `ua-restriction` plugin, it is very simple,
 you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
@@ -127,4 +125,4 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-The `bot-restriction` plugin has been disabled now. It works for other plugins.
+The `ua-restriction` plugin has been disabled now. It works for other plugins.

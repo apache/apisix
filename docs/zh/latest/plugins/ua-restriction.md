@@ -1,5 +1,5 @@
 ---
-title: bot-restriction
+title: ua-restriction
 ---
 
 <!--
@@ -31,21 +31,21 @@ title: bot-restriction
 
 ## 名字
 
-`bot-restriction` 可以通过以下方式限制对服务或接口的访问，可以将指定 User-Agent 列入白名单或黑名单，同时此插件也将对常见的爬虫 UA 进行了检查。
+`ua-restriction` 可以通过以下方式限制对服务或接口的访问，可以将指定 `User-Agent` 列入白名单或黑名单。
 
 ## 属性
 
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 可选   |        |        | 加入白名单的 User-Agent |
-| blacklist | array[string] | 可选   |        |        | 加入黑名单的 User-Agent |
+| allowlist | array[string] | 可选   |        |        | 加入白名单的 User-Agent |
+| denylist | array[string] | 可选   |        |        | 加入黑名单的 User-Agent |
 | message | string | 可选   | Not allowed. | [1, 1024] | 在未允许的 User-Agent 访问的情况下返回的信息 |
 
-白名单或黑名单可以同时启用，此插件对 User-Agent 的检查先后顺序依次如下：白名单、黑名单、内置的场景爬虫 User-Agent。 `message`可以由用户自定义。
+白名单或黑名单可以同时启用，此插件对 User-Agent 的检查先后顺序依次如下：白名单、黑名单。`message`可以由用户自定义。
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `bot-restriction` 插件:
+下面是一个示例，在指定的 route 上开启了 `ua-restriction` 插件:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -58,12 +58,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "plugins": {
-        "bot-restriction": {
-             "whitelist": [
+        "ua-restriction": {
+             "allowlist": [
                  "my-bot1",
                  "(Baiduspider)/(\\d+)\\.(\\d+)"
              ],
-             "blacklist": [
+             "denylist": [
                  "my-bot2",
                  "(Twitterspider)/(\\d+)\\.(\\d+)"
              ]
@@ -76,8 +76,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ```json
 "plugins": {
-    "bot-restriction": {
-        "blacklist": [
+    "ua-restriction": {
+        "denylist": [
             "my-bot2",
             "(Twitterspider)/(\\d+)\\.(\\d+)"
         ],
@@ -104,7 +104,7 @@ HTTP/1.1 403 Forbidden
 
 ## 禁用插件
 
-当你想去掉 `bot-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 `ua-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
@@ -120,4 +120,4 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-现在就已移除 `bot-restriction` 插件，其它插件的开启和移除也类似。
+现在就已移除 `ua-restriction` 插件，其它插件的开启和移除也类似。

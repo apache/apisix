@@ -42,7 +42,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.bot-restriction")
+            local plugin = require("apisix.plugins.ua-restriction")
             local ok, err = plugin.check_schema({})
             if not ok then
                 ngx.say(err)
@@ -51,21 +51,22 @@ __DATA__
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
---- error_code: 200
+--- response_body_like eval
+qr/object matches none of the requireds/
 
 
 
-=== TEST 2: set whitelist, blacklist and user-defined message
+=== TEST 2: set allowlist, denylist and user-defined message
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.bot-restriction")
+            local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-               whitelist = {
+               allowlist = {
                     "my-bot1",
                     "my-bot2"
                },
-               blacklist = {
+               denylist = {
                     "my-bot1",
                     "my-bot2"
                },
@@ -80,17 +81,17 @@ __DATA__
         }
     }
 --- response_body
-{"blacklist":["my-bot1","my-bot2"],"message":"User-Agent Forbidden","whitelist":["my-bot1","my-bot2"]}
+{"allowlist":["my-bot1","my-bot2"],"denylist":["my-bot1","my-bot2"],"message":"User-Agent Forbidden"}
 
 
 
-=== TEST 3: whitelist not array
+=== TEST 3: allowlist not array
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.bot-restriction")
+            local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-                whitelist = "my-bot1",
+                allowlist = "my-bot1",
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -101,18 +102,18 @@ __DATA__
         }
     }
 --- response_body
-property "whitelist" validation failed: wrong type: expected array, got string
+property "allowlist" validation failed: wrong type: expected array, got string
 done
 
 
 
-=== TEST 4: blacklist not array
+=== TEST 4: denylist not array
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.bot-restriction")
+            local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-                blacklist = 100,
+                denylist = 100,
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -123,7 +124,7 @@ done
         }
     }
 --- response_body
-property "blacklist" validation failed: wrong type: expected array, got number
+property "denylist" validation failed: wrong type: expected array, got number
 done
 
 
@@ -132,7 +133,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.bot-restriction")
+            local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
                 message = 100,
             }
@@ -150,7 +151,7 @@ done
 
 
 
-=== TEST 6: set blacklist
+=== TEST 6: set denylist
 --- config
     location /t {
         content_by_lua_block {
@@ -166,8 +167,8 @@ done
                             }
                         },
                         "plugins": {
-                            "bot-restriction": {
-                                 "blacklist": [
+                            "ua-restriction": {
+                                 "denylist": [
                                      "my-bot1",
                                      "(Baiduspider)/(\\d+)\\.(\\d+)"
                                  ]
@@ -187,8 +188,7 @@ passed
 
 
 
-=== TEST 7: hit route and user-agent in blacklist
-
+=== TEST 7: hit route and user-agent in denylist
 --- request
 GET /hello
 --- more_headers
@@ -197,19 +197,17 @@ User-Agent:my-bot1
 
 
 
-=== TEST 8: hit route and user-agent in blacklist with multiple
-
+=== TEST 8: hit route and user-agent in denylist with multiple
 --- request
 GET /hello
 --- more_headers
 User-Agent:my-bot1
-User-Agent:my-bot1
---- error_code: 200
+User-Agent:my-bot2
+--- error_code: 403
 
 
 
-=== TEST 9: hit route and user-agent match blacklist regex
-
+=== TEST 9: hit route and user-agent match denylist regex
 --- request
 GET /hello
 --- more_headers
@@ -218,8 +216,7 @@ User-Agent:Baiduspider/3.0
 
 
 
-=== TEST 10: hit route and user-agent not in blacklist
-
+=== TEST 10: hit route and user-agent not in denylist
 --- request
 GET /hello
 --- more_headers
@@ -228,8 +225,7 @@ User-Agent:foo/bar
 
 
 
-=== TEST 11: set whitelist
-
+=== TEST 11: set allowlist
 --- config
     location /t {
         content_by_lua_block {
@@ -245,8 +241,8 @@ User-Agent:foo/bar
                             }
                         },
                         "plugins": {
-                            "bot-restriction": {
-                                 "whitelist": [
+                            "ua-restriction": {
+                                 "allowlist": [
                                      "my-bot1",
                                      "(Baiduspider)/(\\d+)\\.(\\d+)"
                                  ]
@@ -266,8 +262,7 @@ passed
 
 
 
-=== TEST 12: hit route and user-agent in whitelist
-
+=== TEST 12: hit route and user-agent in allowlist
 --- request
 GET /hello
 --- more_headers
@@ -276,8 +271,7 @@ User-Agent:my-bot1
 
 
 
-=== TEST 13: hit route and user-agent match whitelist regex
-
+=== TEST 13: hit route and user-agent match allowlist regex
 --- request
 GET /hello
 --- more_headers
@@ -286,8 +280,7 @@ User-Agent:Baiduspider/3.0
 
 
 
-=== TEST 14: hit route and user-agent not in whitelist
-
+=== TEST 14: hit route and user-agent not in allowlist
 --- request
 GET /hello
 --- more_headers
@@ -296,7 +289,7 @@ User-Agent:foo/bar
 
 
 
-=== TEST 15: set rules to default
+=== TEST 15: set config: user-agent in both allowlist and denylist
 --- config
     location /t {
         content_by_lua_block {
@@ -312,55 +305,12 @@ User-Agent:foo/bar
                             }
                         },
                         "plugins": {
-                            "bot-restriction": {
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 16: hit route and user-agent in default list
-
---- request
-GET /hello
---- more_headers
-User-Agent:Twitterbot/1.0
---- error_code: 403
-
-
-
-=== TEST 17: set config: user-agent in both whitelist and blacklist
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "bot-restriction": {
-                                 "whitelist": [
+                            "ua-restriction": {
+                                 "allowlist": [
                                      "foo/bar",
                                      "(Baiduspider)/(\\d+)\\.(\\d+)"
                                  ],
-                                 "blacklist": [
+                                 "denylist": [
                                      "foo/bar",
                                      "(Baiduspider)/(\\d+)\\.(\\d+)"
                                  ]
@@ -380,8 +330,7 @@ passed
 
 
 
-=== TEST 18: hit route and user-agent in both whitelist and blacklist, part 1
-
+=== TEST 16: hit route and user-agent in both allowlist and denylist, part 1
 --- request
 GET /hello
 --- more_headers
@@ -390,8 +339,7 @@ User-Agent:foo/bar
 
 
 
-=== TEST 19: hit route and user-agent in both whitelist and blacklist, part 2
-
+=== TEST 17: hit route and user-agent in both allowlist and denylist, part 2
 --- request
 GET /hello
 --- more_headers
@@ -400,7 +348,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 20: set config: user-agent in both whitelist and default deny list
+=== TEST 18: message that do not reach the minimum range
 --- config
     location /t {
         content_by_lua_block {
@@ -416,53 +364,7 @@ User-Agent:Baiduspider/1.0
                             }
                         },
                         "plugins": {
-                            "bot-restriction": {
-                                 "whitelist": [
-                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
-                                 ]
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 21: hit route and user-agent in both whitelist and default deny list
-
---- request
-GET /hello
---- more_headers
-User-Agent:Baiduspider/1.0
---- error_code: 200
-
-
-
-=== TEST 22: message that do not reach the minimum range
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "bot-restriction": {
+                            "ua-restriction": {
                                  "message": ""
                             }
                         }
@@ -477,7 +379,7 @@ qr/string too short, expected at least 1, got 0/
 
 
 
-=== TEST 23: exceeds the maximum limit of message
+=== TEST 19: exceeds the maximum limit of message
 --- config
     location /t {
         content_by_lua_block {
@@ -493,7 +395,10 @@ qr/string too short, expected at least 1, got 0/
                     }
                 },
                 plugins = {
-                    ["bot-restriction"] = {
+                    ["ua-restriction"] = {
+                        denylist = {
+                           "my-bot1",
+                        },
                         message = ("-1Aa#"):rep(205)
                     }
                 }
@@ -512,7 +417,7 @@ qr/string too long, expected at most 1024, got 1025/
 
 
 
-=== TEST 24: set custom message
+=== TEST 20: set custom message
 --- config
     location /t {
         content_by_lua_block {
@@ -528,8 +433,11 @@ qr/string too long, expected at most 1024, got 1025/
                             }
                         },
                         "plugins": {
-                            "bot-restriction": {
-                                 "message": "Do you want to do something bad?"
+                            "ua-restriction": {
+                                "denylist": [
+                                    "(Baiduspider)/(\\d+)\\.(\\d+)"
+                                ],
+                                "message": "Do you want to do something bad?"
                             }
                         }
                 }]]
@@ -547,18 +455,18 @@ passed
 
 
 
-=== TEST 25: test custom message
+=== TEST 21: test custom message
 --- request
 GET /hello
 --- more_headers
-User-Agent:Twitterbot/1.0
+User-Agent:Baiduspider/1.0
 --- error_code: 403
 --- response_body
 {"message":"Do you want to do something bad?"}
 
 
 
-=== TEST 26: test remove bot-restriction part 1
+=== TEST 22: test remove ua-restriction part 1, enable
 --- config
     location /enable {
         content_by_lua_block {
@@ -574,9 +482,12 @@ User-Agent:Twitterbot/1.0
                             }
                         },
                         "plugins": {
-                        "bot-restriction": {
+                            "ua-restriction": {
+                                "denylist": [
+                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
+                                ]
+                            }
                         }
-                    }
                 }]]
                 )
 
@@ -592,16 +503,16 @@ GET /enable
 
 
 
-=== TEST 27: test remove bot-restriction part 2
+=== TEST 23: test remove ua-restriction part 2
 --- request
 GET /hello
 --- more_headers
-User-Agent:Twitterbot/1.0
+User-Agent:Baiduspider/1.0
 --- error_code: 403
 
 
 
-=== TEST 28: test remove bot-restriction part 3, remove plugin
+=== TEST 24: test remove ua-restriction part 3, remove plugin
 --- config
     location /disable {
         content_by_lua_block {
@@ -633,17 +544,17 @@ GET /disable
 
 
 
-=== TEST 29: test remove bot-restriction part 4, check bot User-Agent
+=== TEST 25: test remove ua-restriction part 4, check spider User-Agent
 --- request
 GET /hello
 --- more_headers
-User-Agent:Twitterbot/1.0
+User-Agent:Baiduspider/1.0
 --- response_body
 hello world
 
 
 
-=== TEST 30: set disable=true
+=== TEST 26: set disable=true
 --- config
     location /t {
         content_by_lua_block {
@@ -653,8 +564,8 @@ hello world
                 [[{
                     "uri": "/hello",
                     "plugins": {
-                        "bot-restriction": {
-                            "blacklist": [
+                        "ua-restriction": {
+                            "denylist": [
                                 "foo"
                             ],
                             "disable": true
