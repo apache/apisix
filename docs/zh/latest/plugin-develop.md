@@ -58,7 +58,7 @@ nginx_config:
 
 ## 插件命名与配置
 
-给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config-default.yaml__ 文件中添加上你的插件名。例如 example-plugin 这个插件，
+给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 example-plugin 这个插件，
 需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/example-plugin.lua__ 文件中可以看到：
 
 ```lua
