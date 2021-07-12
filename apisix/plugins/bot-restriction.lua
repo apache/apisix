@@ -52,7 +52,7 @@ local plugin_name = "bot-restriction"
 
 local _M = {
     version = 0.1,
-    priority = 3000,
+    priority = 2999,
     name = plugin_name,
     schema = schema,
 }
@@ -156,14 +156,14 @@ function _M.check_schema(conf)
     return true
 end
 
-function _M.access(conf, _)
-    local headers = ngx.req.get_headers()
-    local user_agent = headers["user-agent"]
-    -- ignore multiple instances of request headers
-    if type(user_agent) == "table" then
+function _M.access(conf, ctx)
+    local user_agent = core.request.header(ctx, "User-Agent")
+
+    if not user_agent then
         return
     end
-    if not user_agent then
+    -- ignore multiple instances of request headers
+    if type(user_agent) == "table" then
         return
     end
     local match, err = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
