@@ -167,10 +167,7 @@ function _M.access(conf, ctx)
     if type(user_agent) == "table" then
         return
     end
-    local match, err = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
-    if err then
-        return
-    end
+    local match = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
 
     if match > MATCH_ALLOW then
         return 403, { message = conf.message }
