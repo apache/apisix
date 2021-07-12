@@ -134,7 +134,7 @@ local function check_proto_used(plugins, deleting, ptype, pid)
                                      .. "] is still using it now"}
         end
     end
-    return true,"ok"
+    return true
 end
 
 function _M.delete(id)
