@@ -221,18 +221,12 @@ GET /t
                 }]]
                 )
 
-            if code ~= 200 then
-                ngx.status = code
-                ngx.say("[delete proto] code: ", code, " message: ", message)
-                return
-            end
-
-            ngx.say("[delete proto] code: ", code, " message: ", message)
+            ngx.say("[delete proto] code: ", code)
         }
     }
 --- request
 GET /t
 --- response_body
-[delete proto] code: 400 message: {"error_msg":"can not delete this proto,route [2] is still using it now"}
+[delete proto] code: 400
 --- no_error_log
 [error]
