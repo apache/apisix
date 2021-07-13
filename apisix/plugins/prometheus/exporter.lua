@@ -308,7 +308,9 @@ function _M.collect()
                            "processing metrics endpoint: ", err)
         end
 
-        -- use phantom key to get etcd index
+        -- Because request any key from etcd will return the "X-Etcd-Index".
+        -- A non-existed key is preferred because it doesn't return too much data.
+        -- So use phantom key to get etcd index.
         local res, _ = config:getkey("/phantomkey")
         if res and res.headers then
             clear_tab(key_values)
