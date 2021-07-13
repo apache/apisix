@@ -66,7 +66,7 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache-lock-stream   10m;
+    lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
     resolver_timeout {*resolver_timeout*};
@@ -141,30 +141,31 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
-    lua_shared_dict internal_status      10m;
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict upstream-healthcheck 10m;
-    lua_shared_dict worker-events        10m;
-    lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict balancer_ewma        10m;
-    lua_shared_dict balancer_ewma_locks  10m;
-    lua_shared_dict balancer_ewma_last_touched_at 10m;
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-    lua_shared_dict tracing_buffer       10m; # plugin: skywalking
-    lua_shared_dict plugin-api-breaker   10m;
+    lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
+    lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
+    lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
+    lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
+    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
+    lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
+    lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
+    lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
+    lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
+    lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
+    lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
+    lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
-    lua_shared_dict discovery             1m; # cache for discovery metadata documents
+    lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
 
     # for openid-connect plugin
-    lua_shared_dict jwks                  1m; # cache for JWKs
-    lua_shared_dict introspection        10m; # cache for JWT verification results
+    lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
+    lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
 
     # for authz-keycloak
-    lua_shared_dict access_tokens         1m; # cache for service account access tokens
+    lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
@@ -272,6 +273,17 @@ http {
 
     upstream apisix_backend {
         server 0.0.0.1;
+
+        {% if use_apisix_openresty then %}
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
+        # we put the static configuration above so that we can override it in the Lua code
+
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+        {% else %}
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -279,6 +291,7 @@ http {
         keepalive {* http.upstream.keepalive *};
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
+        {% end %}
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -288,8 +301,12 @@ http {
             apisix.http_balancer_phase()
         }
 
+        # dynamical keepalive doesn't work with dubbo as the connection here
+        # is managed by ngx_multi_upstream_module
         multi {* dubbo_upstream_multiplex_count *};
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
     {% end %}
 

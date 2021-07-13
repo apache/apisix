@@ -155,9 +155,9 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
-     $ mkdir apisix-2.6
-     $ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
-     $ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
+     $ mkdir apisix-2.7
+     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
      ```
 
    - Instalar las dependencias：
@@ -194,7 +194,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Instalar APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
    ```
 
    - Chequear versión de APISIX:
@@ -235,7 +235,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
    La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](../../en/latest/getting-started.md).
 
-   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins.md).
+   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins).
 
 3. Admin API
 
