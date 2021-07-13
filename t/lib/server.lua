@@ -370,7 +370,7 @@ end
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
-    action = string.gsub(action, "[/\\.]", "_")
+    action = string.gsub(action, "[/\\.-]", "_")
     if not action or not _M[action] then
         return ngx.exit(404)
     end
@@ -415,6 +415,18 @@ end
 
 function _M.server_error()
     error("500 Internal Server Error")
+end
+
+
+function _M.v3_auth_authenticate()
+    ngx.log(ngx.WARN, "etcd auth failed!")
+end
+
+
+function _M._well_known_openid_configuration()
+    local t = require("lib.test_admin")
+    local openid_data = t.read_file("t/plugin/openid-configuration.json")
+    ngx.say(openid_data)
 end
 
 
