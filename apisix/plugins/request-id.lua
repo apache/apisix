@@ -83,7 +83,11 @@ local function gen_data_machine(max_number)
         local id = 1
         while (id <= max_number) do
             ::continue::
-            local res, _ = etcd_cli:grant(attr.snowflake.data_machine_ttl)
+            local res, err = etcd_cli:grant(attr.snowflake.data_machine_ttl)
+            if err then
+                core.log.error("Etcd grant failure, err: ".. err)
+            end
+
             local _, err1 = etcd_cli:setnx(prefix .. tostring(id), uuid)
             local res2, err2 = etcd_cli:get(prefix .. tostring(id))
 
