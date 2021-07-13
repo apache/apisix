@@ -693,7 +693,7 @@ apisix:
 
 make init
 
-if ! grep "proxy_cache_path /tmp/disk_cache_one;" conf/nginx.conf > /dev/null; then
+if ! grep "proxy_cache_path /tmp/disk_cache_one" conf/nginx.conf > /dev/null; then
     echo "failed: disk_path could not work without quotes"
     exit 1
 fi
@@ -721,12 +721,6 @@ nginx_config:
 
 make init
 
-if ! grep "proxy_cache_path /tmp/disk_cache_one;" conf/nginx.conf > /dev/null; then
-    echo "failed: disk_path could not work without quotes"
-    exit 1
-fi
-
-echo "passed: disk_path could work without quotes"
 if ! grep "lrucache-lock-stream 20m;" conf/nginx.conf > /dev/null; then
     echo "failed: 'lrucache-lock-stream 20m;' not in nginx.conf"
     exit 1
