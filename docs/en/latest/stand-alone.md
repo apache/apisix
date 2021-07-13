@@ -32,19 +32,17 @@ The routing rules in the `conf/apisix.yaml` file are loaded into memory immediat
 
 *Note*: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes, it is a hot update.
 
-To enable Stand-alone model, we can set `apisix.config_center` to `yaml` in file `conf/config.yaml`.
+Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
+
+To enable Stand-alone mode, we can set `apisix.config_center` to `yaml` and disable Admin API in file `conf/config.yaml`.
 
 Refer to the example below:
 
 ```yaml
 apisix:
-  # ...
-  config_center: yaml   # etcd: use etcd to store the config value
-                        # yaml: fetch the config value from local yaml file
-                        # `/your_path/conf/apisix.yaml`
+  enable_admin: false
+  config_center: yaml
 ```
-
-In addition, since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
 
 ### How to configure rules
 
