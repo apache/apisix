@@ -158,8 +158,8 @@ func getPrometheusMetric(e *httpexpect.Expect, g *WithT, key string) string {
 	return targetSlice[1]
 }
 
-func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
-	key := "apisix_bandwidth{type=\"ingress\","
+func getEgressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, float64) {
+	key := "apisix_bandwidth{type=\"egress\","
 	bandWidthString := getPrometheusMetric(e, g, key)
 	bandWidthStart, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())
@@ -167,7 +167,7 @@ func getIngressBandwidthPerSecond(e *httpexpect.Expect, g *WithT) (float64, floa
 	// so need to calculate the duration
 	timeStart := time.Now()
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	bandWidthString = getPrometheusMetric(e, g, key)
 	bandWidthEnd, err := strconv.ParseFloat(bandWidthString, 64)
 	g.Expect(err).To(BeNil())

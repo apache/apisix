@@ -362,6 +362,26 @@ local upstream_schema = {
             },
             required = {"client_cert", "client_key"},
         },
+        keepalive_pool = {
+            type = "object",
+            properties = {
+                size = {
+                    type = "integer",
+                    default = 320,
+                    minimum = 1,
+                },
+                idle_timeout = {
+                    type = "number",
+                    default = 60,
+                    minimum = 0,
+                },
+                requests = {
+                    type = "integer",
+                    default = 1000,
+                    minimum = 1,
+                },
+            },
+        },
         type = {
             description = "algorithms of load balancing",
             type = "string",
@@ -425,7 +445,6 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
-    additionalProperties = false,
 }
 
 -- TODO: add more nginx variable support

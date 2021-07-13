@@ -19,7 +19,7 @@ local core = require("apisix.core")
 local sleep = core.sleep
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
-    shdict_name = "stream-" .. shdict_name
+    shdict_name = shdict_name .. "-stream"
 end
 
 

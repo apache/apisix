@@ -44,9 +44,9 @@ etcd:
 --- request
 GET /t
 --- grep_error_log eval
-qr{failed to fetch data from etcd: connection refused,  etcd key: .*routes}
+qr{connection refused}
 --- grep_error_log_out eval
-qr/(failed to fetch data from etcd: connection refused,  etcd key: .*routes\n){1,}/
+qr/(connection refused){1,}/
 
 
 
@@ -68,9 +68,9 @@ etcd:
 --- request
 GET /t
 --- grep_error_log chop
-failed to fetch data from etcd: handshake failed
+handshake failed
 --- grep_error_log_out eval
-qr/(failed to fetch data from etcd: handshake failed){1,}/
+qr/(handshake failed){1,}/
 
 
 
@@ -92,9 +92,9 @@ etcd:
 --- request
 GET /t
 --- grep_error_log chop
-failed to fetch data from etcd: closed
+closed
 --- grep_error_log_out eval
-qr/(failed to fetch data from etcd: closed){1,}/
+qr/(closed){1,}/
 
 
 
@@ -116,9 +116,9 @@ etcd:
 --- request
 GET /t
 --- grep_error_log chop
-failed to fetch data from etcd: 18: self signed certificate
+18: self signed certificate
 --- grep_error_log_out eval
-qr/(failed to fetch data from etcd: 18: self signed certificate){1,}/
+qr/(18: self signed certificate){1,}/
 
 
 

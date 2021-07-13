@@ -407,16 +407,89 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
+    local ports_to_check = {}
+
+    local control_server_addr
+    if yaml_conf.apisix.enable_control then
+        if not yaml_conf.apisix.control then
+            if ports_to_check[9090] ~= nil then
+                util.die("control port 9090 conflicts with ", ports_to_check[9090], "\n")
+            end
+            control_server_addr = "127.0.0.1:9090"
+            ports_to_check[9090] = "control"
+        else
+            local ip = yaml_conf.apisix.control.ip
+            local port = tonumber(yaml_conf.apisix.control.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9090
+            end
+
+            if ports_to_check[port] ~= nil then
+                util.die("control port ", port, " conflicts with ", ports_to_check[port], "\n")
+            end
+
+            control_server_addr = ip .. ":" .. port
+            ports_to_check[port] = "control"
+        end
+    end
+
+    local prometheus_server_addr
+    if yaml_conf.plugin_attr.prometheus then
+        local prometheus = yaml_conf.plugin_attr.prometheus
+        if prometheus.enable_export_server then
+            local ip = prometheus.export_addr.ip
+            local port = tonumber(prometheus.export_addr.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9091
+            end
+
+            if ports_to_check[port] ~= nil then
+                util.die("prometheus port ", port, " conflicts with ", ports_to_check[port], "\n")
+            end
+
+            prometheus_server_addr = ip .. ":" .. port
+            ports_to_check[port] = "prometheus"
+        end
+    end
+
     -- support multiple ports listen, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
+
+        if ports_to_check[yaml_conf.apisix.node_listen] ~= nil then
+            util.die("node_listen port ", yaml_conf.apisix.node_listen,
+                    " conflicts with ", ports_to_check[yaml_conf.apisix.node_listen], "\n")
+        end
+
         local node_listen = {{port = yaml_conf.apisix.node_listen}}
         yaml_conf.apisix.node_listen = node_listen
     elseif type(yaml_conf.apisix.node_listen) == "table" then
         local node_listen = {}
         for index, value in ipairs(yaml_conf.apisix.node_listen) do
             if type(value) == "number" then
+
+                if ports_to_check[value] ~= nil then
+                    util.die("node_listen port ", value, " conflicts with ",
+                        ports_to_check[value], "\n")
+                end
+
                 table_insert(node_listen, index, {port = value})
             elseif type(value) == "table" then
+
+                if type(value.port) == "number" and ports_to_check[value.port] ~= nil then
+                    util.die("node_listen port ", value.port, " conflicts with ",
+                        ports_to_check[value.port], "\n")
+                end
+
                 table_insert(node_listen, index, value)
             end
         end
@@ -500,6 +573,8 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         tcp_enable_ssl = tcp_enable_ssl,
+        control_server_addr = control_server_addr,
+        prometheus_server_addr = prometheus_server_addr,
     }
 
     if not yaml_conf.apisix then
@@ -523,42 +598,6 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf[k] = v
     end
 
-    if yaml_conf.apisix.enable_control then
-        if not yaml_conf.apisix.control then
-            sys_conf.control_server_addr = "127.0.0.1:9090"
-        else
-            local ip = yaml_conf.apisix.control.ip
-            local port = tonumber(yaml_conf.apisix.control.port)
-
-            if ip == nil then
-                ip = "127.0.0.1"
-            end
-
-            if not port then
-                port = 9090
-            end
-
-            sys_conf.control_server_addr = ip .. ":" .. port
-        end
-    end
-
-    if yaml_conf.plugin_attr.prometheus then
-        local prometheus = yaml_conf.plugin_attr.prometheus
-        if prometheus.enable_export_server then
-            local ip = prometheus.export_addr.ip
-            local port = tonumber(prometheus.export_addr.port)
-
-            if ip == nil then
-                ip = "127.0.0.1"
-            end
-
-            if not port then
-                port = 9091
-            end
-
-            sys_conf.prometheus_server_addr = ip .. ":" .. port
-        end
-    end
 
     local wrn = sys_conf["worker_rlimit_nofile"]
     local wc = sys_conf["event"]["worker_connections"]
