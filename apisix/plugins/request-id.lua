@@ -74,7 +74,7 @@ function _M.check_schema(conf)
 end
 
 
--- Generates the current process worker number
+-- Generates the current process data machine
 local function gen_data_machine(max_number)
     if data_machine == nil then
         local etcd_cli, prefix = core.etcd.new()
@@ -134,7 +134,7 @@ local function gen_data_machine(max_number)
 
                 timers.register_timer("plugin#request-id", handler)
                 core.log.info(
-                    "timer created to lease snowflake algorithm worker number, interval: ",
+                    "timer created to lease snowflake algorithm data_machine, interval: ",
                     attr.snowflake.data_machine_interval)
                 core.log.notice("lease snowflake data_machine: " .. id)
                 break
