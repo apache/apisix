@@ -104,7 +104,7 @@ plugin_attr:
 | data_machine_interval     | integer  | 可选 | 10             |  | `etcd` 中 `data_machine` 续约间隔时间（单位： 秒）|
 
 - snowflake_epoc 默认起始时间为 `2021-01-01T00:00:00Z`, 按默认配置可以支持 `69年` 大约可以使用到 `2090-09-07 15:47:35Z`
-- data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterIDd的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程,  
+- data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterIDd的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程。
 - sequence_bits 默认占 `10 bits`, 每个进程每秒最多生成 `1024` 个ID
 - delta_offset 时间戳增量偏移 (单位: 毫秒) [`delta_offset=1` 每毫秒, `delta_offset=10` 每10毫秒, `delta_offset=100` 每100毫秒, `delta_offset=1000` 每1秒`]
 
