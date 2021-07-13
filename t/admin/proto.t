@@ -26,14 +26,14 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: post proto + delete
+=== TEST 1: put proto (id:1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, message, res = t('/apisix/admin/proto',
-                 ngx.HTTP_POST,
+            local code, message = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";
                             package proto;
@@ -53,41 +53,186 @@ __DATA__
                 }]],
                 [[
                     {
-                        "action": "create"
+                        "action": "set"
                     }
                 ]]
                 )
 
             if code ~= 200 then
                 ngx.status = code
-                ngx.say("[push error] code: ", code, " message: ", message)
+                ngx.say("[put proto] code: ", code, " message: ", message)
                 return
             end
 
-            ngx.say("[push] code: ", code, " message: ", message)
+            ngx.say("[put proto] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[put proto] code: 200 message: passed
+--- no_error_log
+[error]
 
-            local id = string.sub(res.node.key, #"/apisix/proto/" + 1)
-            ngx.say("[push] id: ", id)
-            local res = assert(etcd.get('/proto/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
 
-            code, message = t('/apisix/admin/proto/' .. id,
+
+=== TEST 2: delete proto(id:1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/proto/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
                     "action": "delete"
                 }]]
                 )
-            ngx.say("[delete] code: ", code, " message: ", message)
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say("[delete proto] code: ", code, " message: ", message)
+                return
+            end
+
+            ngx.say("[delete proto] code: ", code, " message: ", message)
         }
     }
 --- request
 GET /t
 --- response_body
-[push] code: 200 message: passed
-[delete] code: 200 message: passed
+[delete proto] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+=== TEST 3: put proto (id:2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/proto/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "content": "syntax = \"proto3\";
+                            package proto;
+                            message HelloRequest{
+                            string name = 1;
+                                }
+
+                            message HelloResponse{
+                            int32 code = 1;
+                            string msg = 2;
+                                }
+                                // The greeting service definition.
+                            service Hello {
+                                    // Sends a greeting
+                            rpc SayHi (HelloRequest) returns (HelloResponse){}
+                                }"
+                }]],
+                [[
+                    {
+                        "action": "set"
+                    }
+                ]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say("[put proto] code: ", code, " message: ", message)
+                return
+            end
+
+            ngx.say("[put proto] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[put proto] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: route refer proto(proto id 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "grpc-transcode": {
+                            "disable": false,
+                            "method": "SayHi",
+                            "proto_id": 2,
+                            "service": "proto.Hello"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/grpc/sayhi",
+                        "name": "hi-grpc"
+                }]],
+                [[{
+                    "action": "set"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say("[route refer proto] code: ", code, " message: ", message)
+                return
+            end
+
+            ngx.say("[route refer proto] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[route refer proto] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: delete proto(proto id 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/proto/2',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{
+                    "action": "delete"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say("[delete proto] code: ", code, " message: ", message)
+                return
+            end
+
+            ngx.say("[delete proto] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete proto] code: 400 message: {"error_msg":"can not delete this proto,route [2] is still using it now"}
 --- no_error_log
 [error]
