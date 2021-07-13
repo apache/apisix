@@ -72,7 +72,6 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ......
 ```
 
-
 ### 使用 snowflake 算法
 
 > 支持使用 snowflake 算法来生成ID。
@@ -91,6 +90,7 @@ plugin_attr:
       data_machine_ttl: 30
       data_machine_interval: 10
 ```
+
 #### 配置参数
 
 | 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
