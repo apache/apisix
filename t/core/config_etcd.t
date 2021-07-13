@@ -260,6 +260,8 @@ etcd auth failed
 etcd auth failed
 etcd auth failed
 
+
+
 === TEST 8: ensure add prefix automatically for _M.getkey
 apisix:
   node_listen: 1984
