@@ -29,7 +29,7 @@ local math_floor = math.floor
 
 local plugin_name = "request-id"
 
-local worker_number = nil
+local data_machine = nil
 local snowflake_inited = nil
 
 local attr = nil
@@ -54,8 +54,8 @@ local attr_schema = {
                 data_machine_bits = {type = "integer", minimum = 1, default = 12},
                 sequence_bits = {type = "integer", minimum = 1, default = 10},
                 delta_offset = {type = "integer", default = 1, enum = {1, 10, 100, 1000}},
-                worker_number_ttl = {type = "integer", minimum = 1, default = 30},
-                worker_number_interval = {type = "integer", minimum = 1, default = 10}
+                data_machine_ttl = {type = "integer", minimum = 1, default = 30},
+                data_machine_interval = {type = "integer", minimum = 1, default = 10}
             }
         }
     }
@@ -75,23 +75,23 @@ end
 
 
 -- Generates the current process worker number
-local function gen_worker_number(max_number)
-    if worker_number == nil then
+local function gen_data_machine(max_number)
+    if data_machine == nil then
         local etcd_cli, prefix = core.etcd.new()
         local prefix = prefix .. "/plugins/request-id/snowflake/"
         local uuid = uuid.generate_v4()
         local id = 1
         while (id <= max_number) do
             ::continue::
-            local res, _ = etcd_cli:grant(attr.snowflake.worker_number_ttl)
+            local res, _ = etcd_cli:grant(attr.snowflake.data_machine_ttl)
             local _, err1 = etcd_cli:setnx(prefix .. tostring(id), uuid)
             local res2, err2 = etcd_cli:get(prefix .. tostring(id))
 
             if err1 or err2 or res2.body.kvs[1].value ~= uuid then
-                core.log.notice("worker_number " .. id .. " is not available")
+                core.log.notice("data_machine " .. id .. " is not available")
                 id = id + 1
             else
-                worker_number = id
+                data_machine = id
 
                 local _, err3 =
                     etcd_cli:set(
@@ -106,7 +106,7 @@ local function gen_worker_number(max_number)
                 if err3 then
                     id = id + 1
                     etcd_cli:delete(prefix .. tostring(id))
-                    core.log.error("set worker_number " .. id .. " lease error: " .. err3)
+                    core.log.error("set data_machine " .. id .. " lease error: " .. err3)
                     goto continue
                 end
 
@@ -114,41 +114,41 @@ local function gen_worker_number(max_number)
                 local start_at = ngx.time()
                 local handler = function()
                     local now = ngx.time()
-                    if now - start_at < attr.snowflake.worker_number_interval then
+                    if now - start_at < attr.snowflake.data_machine_interval then
                         return
                     end
 
                     local _, err4 = etcd_cli:keepalive(lease_id)
                     if err4 then
                         snowflake_inited = nil
-                        worker_number = nil
-                        core.log.error("snowflake worker_number: " .. id .." lease faild.")
+                        data_machine = nil
+                        core.log.error("snowflake data_machine: " .. id .." lease faild.")
                     end
                     start_at = now
-                    core.log.info("snowflake worker_number: " .. id .." lease success.")
+                    core.log.info("snowflake data_machine: " .. id .." lease success.")
                 end
 
                 timers.register_timer("plugin#request-id", handler)
                 core.log.info(
                     "timer created to lease snowflake algorithm worker number, interval: ",
-                    attr.snowflake.worker_number_interval)
-                core.log.notice("lease snowflake worker_number: " .. id)
+                    attr.snowflake.data_machine_interval)
+                core.log.notice("lease snowflake data_machine: " .. id)
                 break
             end
         end
 
-        if worker_number == nil then
-            core.log.error("No worker_number is not available")
+        if data_machine == nil then
+            core.log.error("No data_machine is not available")
             return nil
         end
     end
-    return worker_number
+    return data_machine
 end
 
 
--- Split 'Worker Number' into 'Worker ID' and 'datacenter ID'
-local function split_worker_number(worker_number, node_id_bits, datacenter_id_bits)
-    local num = bit.tobit(worker_number)
+-- Split 'Data Machine' into 'Worker ID' and 'datacenter ID'
+local function split_data_machine(data_machine, node_id_bits, datacenter_id_bits)
+    local num = bit.tobit(data_machine)
     local worker_id = bit.band(num, math_pow(2, node_id_bits) - 1) + 1
     num = bit.rshift(num, node_id_bits)
     local datacenter_id = bit.band(num, math_pow(2, datacenter_id_bits) - 1) + 1
@@ -162,12 +162,12 @@ local function snowflake_init()
         local max_number = math_pow(2, (attr.snowflake.data_machine_bits))
         local datacenter_id_bits = math_floor(attr.snowflake.data_machine_bits / 2)
         local node_id_bits = math_ceil(attr.snowflake.data_machine_bits / 2)
-        worker_number = gen_worker_number(max_number)
-        if worker_number == nil then
+        data_machine = gen_data_machine(max_number)
+        if data_machine == nil then
             return ""
         end
 
-        local worker_id, datacenter_id = split_worker_number(worker_number,
+        local worker_id, datacenter_id = split_data_machine(data_machine,
             node_id_bits, datacenter_id_bits)
 
         -- core.log.error(datacenter_id_bits, datacenter_id, node_id_bits, worker_id)

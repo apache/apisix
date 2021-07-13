@@ -323,6 +323,6 @@ plugin_attr:
       data_machine_bits: 12           # data machine bit
       sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
       delta_offset: 1                 # timestamp delta offset (unit: milliseconds)
-      worker_number_ttl: 30           # live time for worker number in etcd (unit: second)
-      worker_number_interval: 10      # lease renewal interval in etcd (unit: second)
+      data_machine_ttl: 30            # live time for data_machine in etcd (unit: second)
+      data_machine_interval: 10       # lease renewal interval in etcd (unit: second)
 

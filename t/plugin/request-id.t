@@ -484,8 +484,8 @@ plugin_attr:
             snowflake_epoc: 1609459200000
             data_machine_bits: 10
             sequence_bits: 10
-            worker_number_ttl: 30
-            worker_number_interval: 10
+            data_machine_ttl: 30
+            data_machine_interval: 10
 --- config
 location /t {
     content_by_lua_block {
@@ -661,8 +661,8 @@ plugin_attr:
             snowflake_epoc: 1609459200000
             data_machine_bits: 12
             sequence_bits: 10
-            worker_number_ttl: 30
-            worker_number_interval: 10
+            data_machine_ttl: 30
+            data_machine_interval: 10
             delta_offset: 1000
 --- config
     location /t {

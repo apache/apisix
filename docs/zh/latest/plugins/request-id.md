@@ -88,8 +88,8 @@ plugin_attr:
       snowflake_epoc: 1609459200000
       data_machine_bits: 12
       sequence_bits: 10
-      worker_number_ttl: 30
-      worker_number_interval: 10
+      data_machine_ttl: 30
+      data_machine_interval: 10
 ```
 #### 配置参数
 
@@ -100,8 +100,8 @@ plugin_attr:
 | data_machine_bits          | integer  | 可选 | 12             |  | 数据机器位`datacenterId` + `workerId`（1 << node_id_bits） |
 | sequence_bits              | integer  | 可选 | 10             |  | 每个节点每毫秒内最多产生ID数量 （1 << sequence_bits） |
 | delta_offset               | integer  | 可选 | 1              |  | 时间戳增量偏移（单位： 毫秒） |
-| worker_number_ttl          | integer  | 可选 | 30             |  | `etcd` 中 `worker_number` 注册有效时间（单位： 秒）|
-| worker_number_interval     | integer  | 可选 | 10             |  | `etcd` 中 `worker_number` 续约间隔时间（单位： 秒）|
+| data_machine_ttl          | integer  | 可选 | 30             |  | `etcd` 中 `data_machine` 注册有效时间（单位： 秒）|
+| data_machine_interval     | integer  | 可选 | 10             |  | `etcd` 中 `data_machine` 续约间隔时间（单位： 秒）|
 
 - snowflake_epoc 默认起始时间为 `2021-01-01T00:00:00Z`, 按默认配置可以支持 `69年` 大约可以使用到 `2090-09-07 15:47:35Z`
 - data_machine_bits 默认占 `12 bits` 最多支持 `4096` 个进程
