@@ -680,3 +680,158 @@ if ! grep "variables_hash_max_size 1024;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the 'variables_hash_max_size 1024;' in nginx.conf"
+
+# check the stream lua_shared_dict lrucache_lock value
+git checkout conf/config.yaml
+
+echo '
+apisix:
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls: true
+      - addr: "127.0.0.1:9101"
+    udp:
+      - 9200
+      - "127.0.0.1:9201"
+nginx_config:
+  stream:
+    lua_shared_dict:
+      lrucache-lock-stream: 20m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lrucache-lock-stream 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'lrucache-lock-stream 20m;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the 'lrucache-lock-stream 20m;' in nginx.conf"
+
+# check the http lua_shared_dict variables value
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dict:
+      internal-status: 20m
+      plugin-limit-req: 20m
+      plugin-limit-count: 20m
+      prometheus-metrics: 20m
+      plugin-limit-conn: 20m
+      upstream-healthcheck: 20m
+      worker-events: 20m
+      lrucache-lock: 20m
+      balancer-ewma: 20m
+      balancer-ewma-locks: 20m
+      balancer-ewma-last-touched-at: 20m
+      plugin-limit-count-redis-cluster-slot-lock: 2m
+      tracing_buffer: 20m
+      plugin-api-breaker: 20m
+      etcd-cluster-health-check: 20m
+      discovery: 2m
+      jwks: 2m
+      introspection: 20m
+      access-tokens: 2m
+' > conf/config.yaml
+
+make init
+
+if ! grep "internal-status 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'internal-status 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-limit-req 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-limit-req 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-limit-count 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-limit-count 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "prometheus-metrics 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'prometheus-metrics 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-limit-conn 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-limit-conn 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "upstream-healthcheck 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'upstream-healthcheck 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "worker-events 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'worker-events 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "lrucache-lock 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'lrucache-lock 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "balancer-ewma 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer-ewma 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "balancer-ewma-locks 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer-ewma-locks 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "balancer-ewma-last-touched-at 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'balancer-ewma-last-touched-at 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-limit-count-redis-cluster-slot-lock 2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-limit-count-redis-cluster-slot-lock 2m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "tracing_buffer 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'tracing_buffer 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-api-breaker 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-api-breaker 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "etcd-cluster-health-check 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'etcd-cluster-health-check 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "discovery 2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'discovery 2m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "jwks 2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'jwks 2m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "introspection 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'introspection 20m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "access-tokens 2m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'access-tokens 2m;' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found the http lua_shared_dict related parameter in nginx.conf"

@@ -535,3 +535,18 @@ HTTP/1.1 200 OK
   "url": "http://127.0.0.1/get"
 }
 ```
+
+## 如何解决 `unable to get local issuer certificate` 错误
+
+修改 `conf/config.yaml`
+
+```yaml
+# ... 忽略其余无关项
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
+# ... 忽略其余无关项
+```
+
+**注意:**
+尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`
