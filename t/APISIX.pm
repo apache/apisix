@@ -295,11 +295,18 @@ _EOC_
     my $stream_enable = $block->stream_enable;
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
+    my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
+            ngx.say("hello world")
+_EOC_
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream 10m;
+    lua_shared_dict plugin-limit-conn-stream 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -339,9 +346,7 @@ _EOC_
         listen 1995;
 
         content_by_lua_block {
-            local sock = ngx.req.socket()
-            local data = sock:receive("1")
-            ngx.say("hello world")
+            $stream_upstream_code
         }
     }
 _EOC_
@@ -534,20 +539,6 @@ _EOC_
 
             log_by_lua_block {
                 apisix.http_log_phase()
-            }
-        }
-
-        location = /v3/auth/authenticate {
-            content_by_lua_block {
-                ngx.log(ngx.WARN, "etcd auth failed!")
-            }
-        }
-
-        location  = /.well-known/openid-configuration {
-            content_by_lua_block {
-                ngx.say([[
-{"issuer":"https://samples.auth0.com/","authorization_endpoint":"https://samples.auth0.com/authorize","token_endpoint":"https://samples.auth0.com/oauth/token","device_authorization_endpoint":"https://samples.auth0.com/oauth/device/code","userinfo_endpoint":"https://samples.auth0.com/userinfo","mfa_challenge_endpoint":"https://samples.auth0.com/mfa/challenge","jwks_uri":"https://samples.auth0.com/.well-known/jwks.json","registration_endpoint":"https://samples.auth0.com/oidc/register","revocation_endpoint":"https://samples.auth0.com/oauth/revoke","scopes_supported":["openid","profile","offline_access","name","given_name","family_name","nickname","email","email_verified","picture","created_at","identities","phone","address"],"response_types_supported":["code","token","id_token","code token","code id_token","token id_token","code token id_token"],"code_challenge_methods_supported":["S256","plain"],"response_modes_supported":["query","fragment","form_post"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["HS256","RS256"],"token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post"],"claims_supported":["aud","auth_time","created_at","email","email_verified","exp","family_name","given_name","iat","identities","iss","name","nickname","phone_number","picture","sub"],"request_uri_parameter_supported":false}
-                ]])
             }
         }
     }
