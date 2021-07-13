@@ -149,9 +149,9 @@ end
 -- Split 'Data Machine' into 'Worker ID' and 'datacenter ID'
 local function split_data_machine(data_machine, node_id_bits, datacenter_id_bits)
     local num = bit.tobit(data_machine)
-    local worker_id = bit.band(num, math_pow(2, node_id_bits) - 1) + 1
+    local worker_id = bit.band(num, math_pow(2, node_id_bits) - 1)
     num = bit.rshift(num, node_id_bits)
-    local datacenter_id = bit.band(num, math_pow(2, datacenter_id_bits) - 1) + 1
+    local datacenter_id = bit.band(num, math_pow(2, datacenter_id_bits) - 1)
     return worker_id, datacenter_id
 end
 
@@ -170,7 +170,6 @@ local function snowflake_init()
         local worker_id, datacenter_id = split_data_machine(data_machine,
             node_id_bits, datacenter_id_bits)
 
-        -- core.log.error(datacenter_id_bits, datacenter_id, node_id_bits, worker_id)
         core.log.info("snowflake init datacenter_id: " ..
             datacenter_id .. " worker_id: " .. worker_id)
         snowflake.init(
