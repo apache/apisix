@@ -145,6 +145,10 @@ nginx_config:                     # config for render the template to generate n
   #envs:                          # allow to get a list of environment variables
   #  - TEST_ENV
 
+  stream:
+    lua_shared_dict:
+      lrucache-lock-stream: 10m
+
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations
   # don't conflict with APISIX.
@@ -201,6 +205,27 @@ nginx_config:                     # config for render the template to generate n
     charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field, see
                                    # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
     variables_hash_max_size: 2048  # Sets the maximum size of the variables hash table.
+
+    lua_shared_dict:
+      internal-status: 10m
+      plugin-limit-req: 10m
+      plugin-limit-count: 10m
+      prometheus-metrics: 10m
+      plugin-limit-conn: 10m
+      upstream-healthcheck: 10m
+      worker-events: 10m
+      lrucache-lock: 10m
+      balancer-ewma: 10m
+      balancer-ewma-locks: 10m
+      balancer-ewma-last-touched-at: 10m
+      plugin-limit-count-redis-cluster-slot-lock: 1m
+      tracing_buffer: 10m
+      plugin-api-breaker: 10m
+      etcd-cluster-health-check: 10m
+      discovery: 1m
+      jwks: 1m
+      introspection: 10m
+      access-tokens: 1m
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
