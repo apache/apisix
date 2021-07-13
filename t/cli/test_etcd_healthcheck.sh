@@ -25,7 +25,9 @@ ETCD_NAME_1=etcd1
 ETCD_NAME_2=etcd2
 HEALTH_CHECK_RETRY_TIMEOUT=10
 
-git checkout logs/error.log
+if [ -z "logs/error.log" ]; then
+    git checkout logs/error.log
+fi
 
 echo '
 etcd:
