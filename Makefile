@@ -215,6 +215,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-conn
+	$(INSTALL) apisix/plugins/limit-conn/*.lua $(INST_LUADIR)/apisix/plugins/limit-conn/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
 	$(INSTALL) apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/plugins/limit-count/
 
