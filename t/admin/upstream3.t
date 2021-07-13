@@ -91,5 +91,3 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"retry_timeout\" validation failed: expected -1 to be greater than 0"}
---- no_error_log
-[error]
