@@ -51,7 +51,7 @@ local attr_schema = {
             properties = {
                 enable = {type = "boolean"},
                 snowflake_epoc = {type = "integer", minimum = 1, default = 1609459200000},
-                data_machine_bits = {type = "integer", minimum = 1, default = 12},
+                data_machine_bits = {type = "integer", minimum = 1, maximum = 31, default = 12},
                 sequence_bits = {type = "integer", minimum = 1, default = 10},
                 delta_offset = {type = "integer", default = 1, enum = {1, 10, 100, 1000}},
                 data_machine_ttl = {type = "integer", minimum = 1, default = 30},
