@@ -486,6 +486,11 @@ function _M.getkey(self, key)
         return nil, "stopped"
     end
 
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
+    end
+
     return getkey(self.etcd_cli, key)
 end
 
