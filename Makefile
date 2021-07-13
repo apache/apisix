@@ -21,11 +21,13 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
+UNAME_MACHINE ?= $(shell uname -m)
 OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS ?= luarocks
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
+HOMEBREW_PREFIX ?= /usr/local
 
 # OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
 ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
@@ -33,12 +35,15 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(UNAME), Darwin)
-LUAROCKS=luarocks --lua-dir=/usr/local/opt/lua@5.1
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl
+ifeq ($(UNAME_MACHINE), arm64)
+	HOMEBREW_PREFIX=/opt/homebrew
 endif
-ifeq ($(shell test -d /usr/local/opt/openresty-openssl111 && echo yes), yes)
-	OPENSSL_PREFIX=/usr/local/opt/openresty-openssl111
+LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl
+endif
+ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo yes), yes)
+	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl111
 endif
 endif
 
@@ -129,7 +134,13 @@ run: default
 	./bin/apisix start
 
 
-### stop:             Stop the apisix server
+### quit:             Stop the apisix server, exit gracefully
+.PHONY: quit
+quit: default
+	./bin/apisix quit
+
+
+### stop:             Stop the apisix server, exit immediately
 .PHONY: stop
 stop: default
 	./bin/apisix stop
@@ -204,6 +215,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-conn
+	$(INSTALL) apisix/plugins/limit-conn/*.lua $(INST_LUADIR)/apisix/plugins/limit-conn/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
 	$(INSTALL) apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/plugins/limit-count/
 
@@ -236,6 +250,7 @@ install: default
 
 
 ### test:             Run the test case
+.PHONY: test
 test:
 	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
@@ -249,8 +264,8 @@ ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
 
+.PHONY: release-src
 release-src: compress-tar
-
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
 
@@ -259,6 +274,7 @@ release-src: compress-tar
 	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
 	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
 
+.PHONY: compress-tar
 compress-tar:
 	tar -zcvf $(RELEASE_SRC).tgz \
 	./apisix \

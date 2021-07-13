@@ -16,7 +16,7 @@
 #
 BEGIN {
     if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
+        $SkipReason = "unavailable for the check leak tests";
 
     } else {
         $ENV{TEST_NGINX_USE_HUP} = 1;

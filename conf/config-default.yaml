@@ -28,18 +28,16 @@ apisix:
   enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
   config_center: etcd              # etcd: use etcd to store the config value
-                                   # yamllint disable rule:comments-indentation
                                    # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 
-  # proxy_protocol:                # Proxy Protocol configuration
-  # listen_http_port: 9181         # The port with proxy protocol for http, it differs from node_listen and port_admin.
+  #proxy_protocol:                 # Proxy Protocol configuration
+  #listen_http_port: 9181          # The port with proxy protocol for http, it differs from node_listen and port_admin.
                                    # This port can only receive http request with proxy protocol, but node_listen & port_admin
                                    # can only receive http request. If you enable proxy protocol, you must use this port to
                                    # receive http request with proxy protocol
-  # listen_https_port: 9182        # The port with proxy protocol for https
-  # enable_tcp_pp: true            # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
-  # enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
-                                   # yamllint enable rule:comments-indentation
+  #listen_https_port: 9182         # The port with proxy protocol for https
+  #enable_tcp_pp: true             # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
+  #enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
   enable_server_tokens: true       # Whether the APISIX version number should be shown in Server header.
                                    # It's enabled by default.
 
@@ -54,19 +52,19 @@ apisix:
                                    # which cache to use by name in the admin api
         memory_size: 50m           # The size of shared memory, it's used to store the cache index
         disk_size: 1G              # The size of disk, it's used to store the cache data
-        disk_path: "/tmp/disk_cache_one"  # The path to store the cache data
-        cache_levels: "1:2"        # The hierarchy levels of a cache
-    #  - name: disk_cache_two
-    #    memory_size: 50m
-    #    disk_size: 1G
-    #    disk_path: "/tmp/disk_cache_two"
-    #    cache_levels: "1:2"
+        disk_path: /tmp/disk_cache_one  # The path to store the cache data
+        cache_levels: 1:2        # The hierarchy levels of a cache
+      #- name: disk_cache_two
+      #  memory_size: 50m
+      #  disk_size: 1G
+      #  disk_path: "/tmp/disk_cache_two"
+      #  cache_levels: "1:2"
 
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
-  #   - "::/64"
-  # port_admin: 9180            # use a separate port
-  # https_admin: true           # enable HTTPS when use a separate port for Admin API.
+    #- "::/64"
+  #port_admin: 9180             # use a separate port
+  #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
     admin_ssl_cert: ""          # Path of your self-signed server side cert.
@@ -79,12 +77,12 @@ apisix:
   # require any authentication.
   admin_key:
     -
-      name: "admin"
+      name: admin
       key: edd1c9f034335f136f87ad84b625c8f1
       role: admin                 # admin: manage all configuration data
                                   # viewer: only can view configuration data
     -
-      name: "viewer"
+      name: viewer
       key: 4054f7cf07e344346cd3f287985e76a2
       role: viewer
 
@@ -92,58 +90,65 @@ apisix:
   global_rule_skip_internal_api: true    # does not run global rule in internal apis
                                          # api that path starts with "/apisix" is considered to be internal api
   router:
-    http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
+    http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
                                   # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
                                   #   more details.
-    ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
-  # stream_proxy:                 # TCP/UDP proxy
-  #   tcp:                        # TCP proxy port list
-  #     - 9100
-  #     - "127.0.0.1:9101"
-  #   udp:                        # UDP proxy port list
-  #     - 9200
-  #     - "127.0.0.1:9201"
-  # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
+    ssl: radixtree_sni          # radixtree_sni: match route by SNI(base on radixtree)
+  #stream_proxy:                  # TCP/UDP proxy
+  #  tcp:                         # TCP proxy port list
+  #    - addr: 9100
+  #      tls: true
+  #    - addr: "127.0.0.1:9101"
+  #  udp:                         # UDP proxy port list
+  #    - 9200
+  #    - "127.0.0.1:9201"
+  #dns_resolver:                  # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
-  # dns_resolver_valid: 30        # if given, override the TTL of the valid records. The unit is second.
+  #dns_resolver_valid: 30         # if given, override the TTL of the valid records. The unit is second.
   resolver_timeout: 5             # resolver timeout
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
     enable_http2: true
     listen_port: 9443
-    # ssl_trusted_certificate: /path/to/ca-cert # Specifies a file path with trusted CA certificates in the PEM format
+    #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
-    ssl_protocols: "TLSv1.2 TLSv1.3"
-    ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+    ssl_protocols: TLSv1.2 TLSv1.3
+    ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
                                             #  ref: https://github.com/mozilla/server-side-tls/issues/135
-    key_encrypt_salt: "edd1c9f0985e76a2"    #  If not set, will save origin ssl key into etcd.
+    key_encrypt_salt: edd1c9f0985e76a2      #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
   enable_control: true
-  # control:
-  #   ip: "127.0.0.1"
-  #   port: 9090
+  #control:
+  #  ip: 127.0.0.1
+  #  port: 9090
   disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
 
 nginx_config:                     # config for render the template to generate nginx.conf
-  error_log: "logs/error.log"
-  error_log_level: "warn"         # warn,error
-  worker_processes: auto          # one worker will get best performance, you can use "auto", but remember it is just work well only on physical machine
-                                  # no more than 8 workers, otherwise competition between workers will consume a lot of resources
-                                  # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
+  #user: root                     # specifies the execution user of the worker process.
+                                  # the "user" directive makes sense only if the master process runs with super-user privileges.
+                                  # if you're not root user,the default is current user.
+  error_log: logs/error.log
+  error_log_level:  warn          # warn,error
+  worker_processes: auto          # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
   event:
     worker_connections: 10620
-  # envs:                         # allow to get a list of environment variables
+  #envs:                          # allow to get a list of environment variables
   #  - TEST_ENV
+
+  stream:
+    lua_shared_dict:
+      lrucache-lock-stream: 10m
+      plugin-limit-conn-stream: 10m
 
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations
@@ -169,7 +174,7 @@ nginx_config:                     # config for render the template to generate n
 
   http:
     enable_access_log: true        # enable access log or not, default true
-    access_log: "logs/access.log"
+    access_log: logs/access.log
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     access_log_format_escape: default       # allows setting json or default characters escaping in variables
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
@@ -181,107 +186,143 @@ nginx_config:                     # config for render the template to generate n
 
     send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
     underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
-    real_ip_header: "X-Real-IP"    # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+    real_ip_header: X-Real-IP      # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+    real_ip_recursive: "off"       # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_recursive
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
-      - 'unix:'
-    # lua_shared_dicts:            # add custom shared cache to nginx.conf
+      - "unix:"
+    #lua_shared_dicts:             # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
     # when establishing a connection with the proxied HTTPS server.
     proxy_ssl_server_name: true
+    upstream:
+      keepalive: 320               # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
+                                   # When this number is exceeded, the least recently used connections are closed.
+      keepalive_requests: 1000     # Sets the maximum number of requests that can be served through one keepalive connection.
+                                   # After the maximum number of requests is made, the connection is closed.
+      keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
+    charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field, see
+                                   # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
+    variables_hash_max_size: 2048  # Sets the maximum size of the variables hash table.
+
+    lua_shared_dict:
+      internal-status: 10m
+      plugin-limit-req: 10m
+      plugin-limit-count: 10m
+      prometheus-metrics: 10m
+      plugin-limit-conn: 10m
+      upstream-healthcheck: 10m
+      worker-events: 10m
+      lrucache-lock: 10m
+      balancer-ewma: 10m
+      balancer-ewma-locks: 10m
+      balancer-ewma-last-touched-at: 10m
+      plugin-limit-count-redis-cluster-slot-lock: 1m
+      tracing_buffer: 10m
+      plugin-api-breaker: 10m
+      etcd-cluster-health-check: 10m
+      discovery: 1m
+      jwks: 1m
+      introspection: 10m
+      access-tokens: 1m
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
-                                  # e.g. "https://127.0.0.1:2379".
-  prefix: "/apisix"               # apisix configurations prefix
+    - http://127.0.0.1:2379       # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
+                                  # e.g. https://127.0.0.1:2379.
+  prefix: /apisix                 # apisix configurations prefix
   timeout: 30                     # 30 seconds
-  # resync_delay: 5               # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
-  # user: root                    # root username for etcd
-  # password: 5tHkHhYkjr6cQY      # root password for etcd
+  #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
+  #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
+  #user: root                     # root username for etcd
+  #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
     # To enable etcd client certificate you need to build APISIX-Openresty, see
     # http://apisix.apache.org/docs/apisix/how-to-build#6-build-openresty-for-apisix
-    # cert: /path/to/cert         # path of certificate used by the etcd client
-    # key: /path/to/key           # path of key used by the etcd client
+    #cert: /path/to/cert          # path of certificate used by the etcd client
+    #key: /path/to/key            # path of key used by the etcd client
 
     verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
 
-# discovery:                      # service discovery center
-#   dns:
-#     resolver:
-#       - "127.0.0.1:8600"        # use the real address of your dns server
-#   eureka:
-#     host:                       # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-#       - "http://127.0.0.1:8761"
-#     prefix: "/eureka/"
-#     fetch_interval: 30          # default 30s
-#     weight: 100                 # default weight for node
-#     timeout:
-#       connect: 2000             # default 2000ms
-#       send: 2000                # default 2000ms
-#       read: 5000                # default 5000ms
+#discovery:                       # service discovery center
+#  dns:
+#    servers:
+#      - 127.0.0.1:8600           # use the real address of your dns server
+#  eureka:
+#    host:                        # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+#      - http://127.0.0.1:8761
+#    prefix: /eureka/
+#    fetch_interval: 30           # default 30s
+#    weight: 100                  # default weight for node
+#    timeout:
+#      connect: 2000              # default 2000ms
+#      send: 2000                 # default 2000ms
+#      read: 5000                 # default 5000ms
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
 
-# ext-plugin:
-  # cmd: ["ls", "-l"]
+#ext-plugin:
+  #cmd: ["ls", "-l"]
 
-plugins:                          # plugin list (sorted in alphabetical order)
-  - api-breaker
-  - authz-keycloak
-  - basic-auth
-  - batch-requests
-  - consumer-restriction
-  - cors
-  # - dubbo-proxy
-  - echo
-  # - error-log-logger
-  # - example-plugin
-  - ext-plugin-pre-req
-  - ext-plugin-post-req
-  - fault-injection
-  - grpc-transcode
-  - hmac-auth
-  - http-logger
-  - ip-restriction
-  - jwt-auth
-  - kafka-logger
-  - key-auth
-  - limit-conn
-  - limit-count
-  - limit-req
-  # - log-rotate
-  # - node-status
-  - openid-connect
-  - prometheus
-  - proxy-cache
-  - proxy-mirror
-  - proxy-rewrite
-  - redirect
-  - referer-restriction
-  - request-id
-  - request-validation
-  - response-rewrite
-  - serverless-post-function
-  - serverless-pre-function
-  # - skywalking
-  - sls-logger
-  - syslog
-  - tcp-logger
-  - udp-logger
-  - uri-blocker
-  - wolf-rbac
-  - zipkin
-  - server-info
-  - traffic-split
+plugins:                          # plugin list (sorted by priority)
+  - client-control                 # priority: 22000
+  - ext-plugin-pre-req             # priority: 12000
+  - zipkin                         # priority: 11011
+  - request-id                     # priority: 11010
+  - fault-injection                # priority: 11000
+  - serverless-pre-function        # priority: 10000
+  - batch-requests                 # priority: 4010
+  - cors                           # priority: 4000
+  - ip-restriction                 # priority: 3000
+  - referer-restriction            # priority: 2990
+  - uri-blocker                    # priority: 2900
+  - request-validation             # priority: 2800
+  - openid-connect                 # priority: 2599
+  - wolf-rbac                      # priority: 2555
+  - hmac-auth                      # priority: 2530
+  - basic-auth                     # priority: 2520
+  - jwt-auth                       # priority: 2510
+  - key-auth                       # priority: 2500
+  - consumer-restriction           # priority: 2400
+  - authz-keycloak                 # priority: 2000
+  #- error-log-logger              # priority: 1091
+  - proxy-mirror                   # priority: 1010
+  - proxy-cache                    # priority: 1009
+  - proxy-rewrite                  # priority: 1008
+  - api-breaker                    # priority: 1005
+  - limit-conn                     # priority: 1003
+  - limit-count                    # priority: 1002
+  - limit-req                      # priority: 1001
+  #- node-status                   # priority: 1000
+  - server-info                    # priority: 990
+  - traffic-split                  # priority: 966
+  - redirect                       # priority: 900
+  - response-rewrite               # priority: 899
+  #- dubbo-proxy                   # priority: 507
+  - grpc-transcode                 # priority: 506
+  - prometheus                     # priority: 500
+  - echo                           # priority: 412
+  - http-logger                    # priority: 410
+  - sls-logger                     # priority: 406
+  - tcp-logger                     # priority: 405
+  - kafka-logger                   # priority: 403
+  - syslog                         # priority: 401
+  - udp-logger                     # priority: 400
+  #- log-rotate                    # priority: 100
+  # <- recommend to use priority (0, 100) for your custom plugins
+  - example-plugin                 # priority: 0
+  #- skywalking                    # priority: -1100
+  - serverless-post-function       # priority: -2000
+  - ext-plugin-post-req            # priority: -3000
 
-stream_plugins:
-  - mqtt-proxy
+stream_plugins: # sorted by priority
+  - limit-conn                     # priority: 1003
+  - mqtt-proxy                     # priority: 1000
+  # <- recommend to use priority (0, 100) for your custom plugins
 
 plugin_attr:
   log-rotate:
@@ -289,13 +330,13 @@ plugin_attr:
     max_kept: 168     # max number of log files will be kept
   skywalking:
     service_name: APISIX
-    service_instance_name: "APISIX Instance Name"
+    service_instance_name: APISIX Instance Name
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
     enable_export_server: true
     export_addr:
-      ip: "127.0.0.1"
+      ip: 127.0.0.1
       port: 9091
   server-info:
     report_interval: 60  # server info report interval (unit: second)

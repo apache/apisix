@@ -20,6 +20,7 @@ local require = require
 local core    = require("apisix.core")
 local api_router = require("apisix.api_router")
 
+local injected_mark = "injected metadata_schema"
 local _M = {
 }
 
@@ -50,15 +51,14 @@ local function check_conf(plugin_name, conf)
         return nil, {error_msg = "missing configurations"}
     end
 
-    local schema = plugin_object.metadata_schema or {
-        type = "object",
-        properties = {},
-    }
-    if not schema.properties then
-        schema.properties = {
-            additionalProperties = false,
+    if not plugin_object.metadata_schema then
+        plugin_object.metadata_schema = {
+            type = "object",
+            ['$comment'] = injected_mark,
+            properties = {},
         }
     end
+    local schema = plugin_object.metadata_schema
 
     -- inject interceptors schema to each plugins
     if schema.properties.interceptors
@@ -70,7 +70,17 @@ local function check_conf(plugin_name, conf)
 
     core.log.info("schema: ", core.json.delay_encode(schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(schema, conf)
+
+    local ok, err
+    if schema['$comment'] == injected_mark
+      -- check_schema is not required. If missing, fallback to check schema directly
+      or not plugin_object.check_schema
+    then
+        ok, err = core.schema.check(schema, conf)
+    else
+        ok, err = plugin_object.check_schema(conf, core.schema.TYPE_METADATA)
+    end
+
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end

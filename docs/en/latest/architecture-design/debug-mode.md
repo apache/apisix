@@ -41,7 +41,7 @@ Server: openresty
 hello world
 ```
 
-If the information can be delivered via HTTP response header, for example, the plugin is in stream
+If the information can not be delivered via HTTP response header, for example, the plugin is in stream
 subsystem, the information will be logged in the error log with `warn` level.
 
 ### Advanced Debug Mode

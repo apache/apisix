@@ -1,5 +1,5 @@
 ---
-title: 插件
+title: ext-plugin-post-req
 ---
 
 <!--
@@ -21,19 +21,9 @@ title: 插件
 #
 -->
 
-## 热加载
+`ext-plugin-post-req` is almost the same as `ext-plugin-pre-req`.
 
-APISIX 的插件是热加载的，不管你是新增、删除还是修改插件，都不需要重启服务。
+The only difference is that it runs after executing builtin Lua plugins and
+before proxying to the upstream.
 
-只需要通过 admin API 发送一个 HTTP 请求即可：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-```
-
-注意：如果你已经在路由规则里配置了某个插件（比如在 `route` 的 `plugins` 字段里面添加了它），然后
-禁用了该插件，在执行路由规则的时候会跳过这个插件。
-
-## stand-alone 模式下的热加载
-
-参考 [stand alone 模式](stand-alone.md) 文档里关于配置插件的内容。
+See the documentation of [ext-plugin-pre-req](./ext-plugin-pre-req.md) for how to configure it.

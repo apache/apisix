@@ -68,7 +68,7 @@ function _M.put(id, conf)
 
     local key = "/plugin_configs/" .. id
 
-    local ok, err = utils.inject_conf_with_prev_conf("route", key, conf)
+    local ok, err = utils.inject_conf_with_prev_conf("plugin_config", key, conf)
     if not ok then
         return 500, {error_msg = err}
     end
@@ -94,6 +94,7 @@ function _M.get(id)
         return 500, {error_msg = err}
     end
 
+    utils.fix_count(res.body, id)
     return res.status, res.body
 end
 

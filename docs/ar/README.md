@@ -79,7 +79,7 @@
   - بروتوكول الوكيل
   - الوكيل  Dubbo: Dubbo يعتمد على  Tengine.
   - HTTP(S)	وكيل إعادة التوجيه
-  - [SSL](docs/en/latest/https.md): تحميل شهادة SSL ديناميكيًا.
+  - [SSL](docs/en/latest/certificate.md): تحميل شهادة SSL ديناميكيًا.
 
 - **ديناميكية كاملة**
 
@@ -158,9 +158,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - قم بتنزيل أحدث حزمة إصدار لشفرة المصدر:
 
      ```shell
-     $ mkdir apisix-2.5
-     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
-     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
+     $ mkdir apisix-2.7
+     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
      ```
 
    - تثبيت التبعيات ：
@@ -197,7 +197,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - تثبيت أبيسكس：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
    ```
 
    - تحقق من إصدار أبيسكس:
@@ -238,7 +238,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
    يعد دليل البدء طريقة رائعة لتعلم أساسيات أبيسكس. ما عليك سوى اتباع الخطوات الواردة في  [البدء](docs/en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins.md).
+   Further, you can follow the documentation to try more [plugins](../en/latest/plugins).
 
 3. مدير API
 

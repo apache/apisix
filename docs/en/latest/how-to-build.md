@@ -27,31 +27,42 @@ The runtime environment for Apache APISIX requires Nginx and etcd.
 
 So before installation, please follow the different operating systems [install Dependencies](install-dependencies.md).
 
+The Docker / Helm Chart installation may already contain the required Nginx or etcd.
+Please refer to their own documentations.
+
 ## 2. Install Apache APISIX
 
-You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
+You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Helm Chart.
+
+### Installation via RPM package (CentOS 7)
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+```
+
+### Installation via Docker
+
+See https://hub.docker.com/r/apache/apisix
+
+### Installation via Helm Chart
+
+See https://github.com/apache/apisix-helm-chart
 
 ### Installation via source release
 
 You need to download the Apache source release first:
 
 ```shell
-$ mkdir apisix-2.5
-$ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
-$ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
+$ mkdir apisix-2.7
+$ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+$ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apisix-2.5
+cd apisix-2.7
 make deps
-```
-
-### Installation via RPM package (CentOS 7)
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
 ## 3. Manage (start/stop) APISIX Server
@@ -66,26 +77,14 @@ $ make init
 # start APISIX server
 $ make run
 
-# stop APISIX server
+# stop APISIX server gracefully
+$ make quit
+
+# stop APISIX server immediately
 $ make stop
 
 # more actions find by `help`
 $ make help
-Makefile rules:
-
-    help:             Show Makefile rules
-    deps:             Installation dependencies
-    utils:            Installation tools
-    lint:             Lint Lua source code
-    init:             Initialize the runtime environment
-    run:              Start the apisix server
-    stop:             Stop the apisix server
-    verify:           Verify the configuration of apisix server
-    clean:            Remove generated files
-    reload:           Reload the apisix server
-    install:          Install the apisix (only for luarocks)
-    test:             Run the test case
-    license-check:    Check Lua source code for Apache License
 ```
 
 Environment variable can be used to configure APISIX. Please take a look at `conf/config.yaml` to
@@ -100,6 +99,8 @@ see how to do it.
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+    * Some tests depend on external services and modified system configuration. If you want to setup a local CI environment,
+      you can refer to `ci/linux_openresty_common_runner.sh`.
 
 ### Troubleshoot Testing
 
@@ -157,3 +158,15 @@ Content-Type: text/html
 Some features require you to build OpenResty with extra Nginx modules.
 If you need those features, you can build OpenResty with
 [this build script](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh).
+
+## 7. Add systemd unit file for APISIX
+
+If you install APISIX with rpm package, the unit file is installed automatically, and you could directly do
+
+```
+$ systemctl start apisix
+$ systemctl stop apisix
+$ systemctl enable apisix
+```
+
+If installed in other methods, you could refer to [the unit file template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service), modify if needed, and place it as `/usr/lib/systemd/system/apisix.service`.

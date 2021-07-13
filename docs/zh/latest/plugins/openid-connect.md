@@ -124,9 +124,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "bearer_only":true,
             "realm":"master",
             "token_signing_alg_values_expected":"RS256",
-            "public_key":"-----BEGIN CERTIFICATE-----
+            "public_key":"-----BEGIN PUBLIC KEY-----
             {public_key}
-            -----END CERTIFICATE-----"
+            -----END PUBLIC KEY-----"
         }
     },
     "upstream":{

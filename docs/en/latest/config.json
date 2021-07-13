@@ -1,11 +1,6 @@
 {
-  "version": 2.5,
+  "version": 2.7,
   "sidebar": [
-    {
-      "type": "link",
-      "label": "Apache APISIX",
-      "href" : "https://apisix.apache.org/docs/apisix/getting-started"
-    },
     {
       "type": "category",
       "label": "Architecture Design",
@@ -43,7 +38,9 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
-            "plugins/server-info"
+            "plugins/server-info",
+            "plugins/ext-plugin-pre-req",
+            "plugins/ext-plugin-post-req"
           ]
         },
         {
@@ -92,7 +89,8 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
-            "plugins/request-id"
+            "plugins/request-id",
+            "plugins/client-control"
           ]
         },
         {
@@ -188,7 +186,7 @@
         },
         {
           "type": "doc",
-          "id": "https"
+          "id": "certificate"
         },
         {
           "type": "doc",
@@ -208,6 +206,10 @@
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
           "id": "plugin-interceptors"
         },
         {
@@ -217,7 +219,19 @@
         },
         {
           "type": "doc",
+          "id": "aws"
+        },
+        {
+          "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
         }
       ]
     },

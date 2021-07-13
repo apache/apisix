@@ -307,6 +307,11 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 }
 ```
 
+```yml
+# etcd.conf.yml
+enable-grpc-gateway: true
+```
+
 事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
 
 ## 如何创建高可用的 Apache APISIX 集群？
@@ -467,3 +472,81 @@ HTTP/1.1 200 OK
 ```
 
 路由创建成功，表示 `X-API-KEY` 修改生效。
+
+## 如何允许所有 IP 访问 Admin API
+
+Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`，如果你想允许所有的 IP 访问，那么你只需在 `conf/config.yaml` 配置文件中添加如下的配置。
+
+```yaml
+apisix:
+  allow_admin:
+    - 0.0.0.0/0
+```
+
+重启或 reload APISIX，所有 IP 便可以访问 `Admin API`。
+
+**注意：您可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问您的 `Apache APISIX` 实例，但是在生产环境中使用它并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问您的实例。**
+
+## 基于 acme.sh 自动更新 apisix ssl 证书
+
+```bash
+$ curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
+
+$ chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
+
+$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "~/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
+
+$ acme.sh --renew --domain demo.domain
+
+```
+
+详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
+
+## 如何在路径匹配时剪除请求路径前缀
+
+在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过插件 `proxy-rewrite` 实现。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/foo/*",
+    "plugins": {
+        "proxy-rewrite": {
+            "regex_uri": ["^/foo/(.*)","/$1"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+$ curl http://127.0.0.1:9080/foo/get -i
+HTTP/1.1 200 OK
+...
+{
+  ...
+  "url": "http://127.0.0.1/get"
+}
+```
+
+## 如何解决 `unable to get local issuer certificate` 错误
+
+修改 `conf/config.yaml`
+
+```yaml
+# ... 忽略其余无关项
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
+# ... 忽略其余无关项
+```
+
+**注意:**
+尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`

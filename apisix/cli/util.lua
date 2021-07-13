@@ -29,7 +29,7 @@ local _M = {}
 
 -- Note: The `execute_cmd` return value will have a line break at the end,
 -- it is recommended to use the `trim` function to handle the return value.
-function _M.execute_cmd(cmd)
+local function execute_cmd(cmd)
     local t, err = popen(cmd)
     if not t then
         return nil, "failed to execute command: "
@@ -45,6 +45,14 @@ function _M.execute_cmd(cmd)
     end
 
     return data
+end
+_M.execute_cmd = execute_cmd
+
+
+-- For commands which stdout would be always be empty,
+-- forward stderr to stdout to get the error msg
+function _M.execute_cmd_with_error(cmd)
+    return execute_cmd(cmd .. " 2>&1")
 end
 
 

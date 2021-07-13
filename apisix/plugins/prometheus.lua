@@ -16,6 +16,7 @@
 --
 local ngx = ngx
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local exporter = require("apisix.plugins.prometheus.exporter")
 
 
@@ -54,9 +55,7 @@ end
 
 local function get_api(called_by_api_router)
     local export_uri = default_export_uri
-    local local_conf = core.config.local_conf()
-    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
-                                          plugin_name)
+    local attr = plugin.plugin_attr(plugin_name)
     if attr and attr.export_uri then
         export_uri = attr.export_uri
     end

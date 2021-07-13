@@ -19,7 +19,7 @@
 
 import subprocess
 from public import initfuzz, run_test
-from boofuzz import *
+from boofuzz import s_block, s_delim, s_get, s_group, s_initialize, s_size, s_static, s_string
 
 def create_route():
     command = '''curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -86,7 +86,7 @@ def run():
         s_string('{"a":"b"}', name="Body-Content-Value")
 
     session.connect(s_get("Request"))
-    session.fuzz()
+    session.fuzz(max_depth=1)
 
 if __name__ == "__main__":
     run_test(create_route,run)

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require = require
+require("resty.dns.resolver") -- preload dns resolver to prevent recursive patch
 local ipmatcher = require("resty.ipmatcher")
 local socket = require("socket")
 local unix_socket = require("socket.unix")
@@ -22,9 +23,9 @@ local ssl = require("ssl")
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
+local original_udp = ngx.socket.udp
 local concat_tab = table.concat
 local new_tab = require("table.new")
-local expr = require("resty.expr.v1")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
@@ -80,6 +81,43 @@ do
         end
 
         sock.connect = new_tcp_sock_connect
+        return sock
+    end
+end
+
+
+local patch_udp_socket
+do
+    local old_udp_sock_setpeername
+
+    local function new_udp_sock_setpeername(sock, host, port)
+        local core_str = require("apisix.core.string")
+        local resolver = require("apisix.core.resolver")
+
+        if host then
+            if core_str.has_prefix(host, "unix:") then
+                return old_udp_sock_setpeername(sock, host)
+            end
+
+            if not ipmatcher.parse_ipv4(host) and not ipmatcher.parse_ipv6(host) then
+                local err
+                host, err = resolver.parse_domain(host)
+                if not host then
+                    return nil, "failed to parse domain: " .. err
+                end
+            end
+        end
+
+        return old_udp_sock_setpeername(sock, host, port)
+    end
+
+
+    function patch_udp_socket(sock)
+        if not old_udp_sock_setpeername then
+            old_udp_sock_setpeername = sock.setpeername
+        end
+
+        sock.setpeername = new_udp_sock_setpeername
         return sock
     end
 end
@@ -268,27 +306,6 @@ local function luasocket_tcp()
 end
 
 
-local patched_expr_new
-do
-    local function eval_empty_rule(self, ctx, ...)
-        return true
-    end
-
-
-    local mt = {__index = {eval = eval_empty_rule}}
-    local old_expr_new = expr.new
-
-
-    function patched_expr_new(rule)
-        if #rule == 0 then
-            return setmetatable({}, mt)
-        end
-
-        return old_expr_new(rule)
-    end
-end
-
-
 function _M.patch()
     -- make linter happy
     -- luacheck: ignore
@@ -301,7 +318,9 @@ function _M.patch()
         return luasocket_tcp()
     end
 
-    expr.new = patched_expr_new
+    ngx_socket.udp = function ()
+        return patch_udp_socket(original_udp())
+    end
 end
 
 

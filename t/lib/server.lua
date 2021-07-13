@@ -31,6 +31,7 @@ end
 
 
 function _M.hello()
+    ngx.req.read_body()
     local s = "hello world"
     ngx.header['Content-Length'] = #s + 1
     ngx.say(s)
@@ -94,7 +95,20 @@ function _M.plugin_proxy_rewrite_args()
     table.sort(keys)
 
     for _, key in ipairs(keys) do
-        ngx.say(key, ": ", args[key])
+        if type(args[key]) == "table" then
+            ngx.say(key, ": ", table.concat(args[key], ','))
+        else
+            ngx.say(key, ": ", args[key])
+        end
+    end
+end
+
+
+function _M.specific_status()
+    local status = ngx.var.http_x_test_upstream_status
+    if status ~= nil then
+        ngx.status = status
+        ngx.say("upstream status: ", status)
     end
 end
 
@@ -121,6 +135,13 @@ function _M.ewma()
 end
 
 
+local builtin_hdr_ignore_list = {
+    ["x-forwarded-for"] = true,
+    ["x-forwarded-proto"] = true,
+    ["x-forwarded-host"] = true,
+    ["x-forwarded-port"] = true,
+}
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
@@ -128,7 +149,9 @@ function _M.uri()
 
     local keys = {}
     for k in pairs(headers) do
-        table.insert(keys, k)
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
     end
     table.sort(keys)
 
@@ -347,7 +370,7 @@ end
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
-    action = string.gsub(action, "[/\\.]", "_")
+    action = string.gsub(action, "[/\\.-]", "_")
     if not action or not _M[action] then
         return ngx.exit(404)
     end
@@ -392,6 +415,18 @@ end
 
 function _M.server_error()
     error("500 Internal Server Error")
+end
+
+
+function _M.v3_auth_authenticate()
+    ngx.log(ngx.WARN, "etcd auth failed!")
+end
+
+
+function _M._well_known_openid_configuration()
+    local t = require("lib.test_admin")
+    local openid_data = t.read_file("t/plugin/openid-configuration.json")
+    ngx.say(openid_data)
 end
 
 

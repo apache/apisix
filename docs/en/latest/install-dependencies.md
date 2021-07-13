@@ -42,6 +42,8 @@ title: Install Dependencies
 
 - WARNING: If you are using OpenResty which is older than `1.17.8`, please installing openresty-openss-devel instead of openresty-openssl111-devel.
 
+- OpenResty is a dependency of APISIX. If it is your first time to deploy APISIX and you don't need to use OpenResty to deploy other services, you can stop and disable OpenResty after installation since it will not affect the normal work of APISIX. Please operate carefully according to your service. For example in Ubuntu: `systemctl stop openresty && systemctl disable openresty`.
+
 ## CentOS 7
 
 ```shell
@@ -105,7 +107,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl openresty-openssl111-dev
+sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -

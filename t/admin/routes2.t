@@ -650,3 +650,40 @@ GET /t
 {"error_msg":"failed to fetch plugin config info by plugin config id [not_found], response code: 404"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: valid route with timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "timeout": {
+                            "connect": 3,
+                            "send": 3,
+                            "read": 3
+                        },
+                        "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

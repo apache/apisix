@@ -79,13 +79,13 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	go func() {
 		for {
 			go getRoute(eSilent, http.StatusOK)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
 	// wait 1 seconds to let first route access returns
 	time.Sleep(1 * time.Second)
-	bandwidthBefore, durationBefore := getIngressBandwidthPerSecond(e, g)
+	bandwidthBefore, durationBefore := getEgressBandwidthPerSecond(e, g)
 	bpsBefore := bandwidthBefore / durationBefore
 	g.Expect(bpsBefore).NotTo(BeZero())
 
@@ -93,7 +93,8 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	apisixPod := getPod(g, cliSet.ctrlCli, metav1.NamespaceDefault, listOption)
 
 	t.Run("error log not contains etcd error", func(t *testing.T) {
-		errorLog := execInPod(g, cliSet.kubeCli, apisixPod, "cat logs/error.log")
+		errorLog, err := log(apisixPod, cliSet.kubeCli)
+		g.Expect(err).To(BeNil())
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeFalse())
 	})
 
@@ -110,11 +111,12 @@ func TestGetSuccessWhenEtcdKilled(t *testing.T) {
 	testPrometheusEtcdMetric(e, 0)
 
 	t.Run("error log contains etcd error", func(t *testing.T) {
-		errorLog := execInPod(g, cliSet.kubeCli, apisixPod, "cat logs/error.log")
+		errorLog, err := log(apisixPod, cliSet.kubeCli)
+		g.Expect(err).To(BeNil())
 		g.Expect(strings.Contains(errorLog, "failed to fetch data from etcd")).To(BeTrue())
 	})
 
-	bandwidthAfter, durationAfter := getIngressBandwidthPerSecond(e, g)
+	bandwidthAfter, durationAfter := getEgressBandwidthPerSecond(e, g)
 	bpsAfter := bandwidthAfter / durationAfter
 	t.Run("ingress bandwidth per second not change much", func(t *testing.T) {
 		t.Logf("bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)

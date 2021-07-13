@@ -27,31 +27,42 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies.md)。
 
+通过 Docker / Helm Chart 安装时可能已经包含了所需的 Nginx 和 etcd。
+请参照各自对应的文档。
+
 ## 2. 安装 Apache APISIX
 
-你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
+你可以通过源码包、Docker、Helm Chart 等多种方式来安装 Apache APISIX。
+
+### 通过 RPM 包安装（CentOS 7）
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+```
+
+### 通过 Docker 安装
+
+见 https://hub.docker.com/r/apache/apisix
+
+### 通过 Helm Chart 安装
+
+见 https://github.com/apache/apisix-helm-chart
 
 ### 通过源码包安装
 
 你需要先下载 Apache Release 源码包：
 
 ```shell
-$ mkdir apisix-2.5
-$ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
-$ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
+$ mkdir apisix-2.7
+$ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+$ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
 ```
 
 安装运行时依赖的 Lua 库：
 
 ```
-cd apisix-2.5
+cd apisix-2.7
 make deps
-```
-
-### 通过 RPM 包安装（CentOS 7）
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
@@ -65,26 +76,14 @@ $ make init
 # start APISIX server
 $ make run
 
-# stop APISIX server
+# stop APISIX server gracefully
+$ make quit
+
+# stop APISIX server immediately
 $ make stop
 
 # more actions find by `help`
 $ make help
-Makefile rules:
-
-    help:             Show Makefile rules
-    deps:             Installation dependencies
-    utils:            Installation tools
-    lint:             Lint Lua source code
-    init:             Initialize the runtime environment
-    run:              Start the apisix server
-    stop:             Stop the apisix server
-    verify:           Verify the configuration of apisix server
-    clean:            Remove generated files
-    reload:           Reload the apisix server
-    install:          Install the apisix (only for luarocks)
-    test:             Run the test case
-    license-check:    Check Lua source code for Apache License
 ```
 
 ## 4. 运行测试案例
@@ -96,6 +95,7 @@ Makefile rules:
     * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
     * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+    * 部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，可以参考 `ci/linux_openresty_common_runner.sh`。
 
 ### 疑难排解测试
 
@@ -152,3 +152,15 @@ Content-Type: text/html
 有些功能需要你引入额外的 Nginx 模块到 OpenResty 当中。
 如果你需要这些功能，你可以用[这个脚本](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh)
 构建 OpenResty。
+
+## 7. 为 APISIX 添加 systemd 配置文件
+
+如果通过 rpm 包安装 APISIX，配置文件已经自动安装到位，你可以直接运行
+
+```
+$ systemctl start apisix
+$ systemctl stop apisix
+$ systemctl enable apisix
+```
+
+如果通过其他方法安装，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service`。
