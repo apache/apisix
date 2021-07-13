@@ -61,7 +61,6 @@ local function get_request_parameter(ctx)
         return ctx.request_parameter
     end
 
-
     local request_parameter = {};
     local in_parameter = "app_id";
 
