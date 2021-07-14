@@ -108,7 +108,7 @@ GET /t
 
 
 
-=== TEST 3: put proto (id:2)
+=== TEST 3: put proto (id:2) + route refer proto(proto id 2) + delete proto(proto id 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -145,26 +145,10 @@ GET /t
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
             end
-
             ngx.say("[put proto] code: ", code, " message: ", message)
-        }
-    }
---- request
-GET /t
---- response_body
-[put proto] code: 200 message: passed
---- no_error_log
-[error]
 
 
-
-=== TEST 4: route refer proto(proto id 2)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
-            local code, message = t('/apisix/admin/routes/2',
+            code, message = t('/apisix/admin/routes/2',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -195,26 +179,10 @@ GET /t
                 ngx.say("[route refer proto] code: ", code, " message: ", message)
                 return
             end
-
             ngx.say("[route refer proto] code: ", code, " message: ", message)
-        }
-    }
---- request
-GET /t
---- response_body
-[route refer proto] code: 200 message: passed
---- no_error_log
-[error]
 
 
-
-=== TEST 5: delete proto(proto id 2)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
-            local code, message = t('/apisix/admin/proto/2',
+            code, message = t('/apisix/admin/proto/2',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -228,6 +196,8 @@ GET /t
 --- request
 GET /t
 --- response_body
+[put proto] code: 200 message: passed
+[route refer proto] code: 200 message: passed
 [delete proto] code: 400
 --- no_error_log
 [error]
