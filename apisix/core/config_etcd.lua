@@ -486,6 +486,11 @@ function _M.getkey(self, key)
         return nil, "stopped"
     end
 
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
+    end
+
     return getkey(self.etcd_cli, key)
 end
 
@@ -538,7 +543,7 @@ local function _automatic_fetch(premature, self)
 
     if not health_check.conf then
         local _, err = health_check.init({
-            shm_name = "etcd_cluster_health_check",
+            shm_name = "etcd-cluster-health-check",
             fail_timeout = self.health_check_timeout,
             max_fails = 3,
             retry = true,

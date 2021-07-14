@@ -356,7 +356,11 @@ end
 
 function _M.mysleep()
     ngx.sleep(tonumber(ngx.var.arg_seconds))
-    ngx.say(ngx.var.arg_seconds)
+    if ngx.var.arg_abort then
+        ngx.exit(ngx.ERROR)
+    else
+        ngx.say(ngx.var.arg_seconds)
+    end
 end
 
 
@@ -365,18 +369,6 @@ local function print_uri()
 end
 for i = 1, 100 do
     _M["print_uri_" .. i] = print_uri
-end
-
-
-function _M.go()
-    local action = string.sub(ngx.var.uri, 2)
-    action = string.gsub(action, "[/\\.]", "_")
-    if not action or not _M[action] then
-        return ngx.exit(404)
-    end
-
-    inject_headers()
-    return _M[action]()
 end
 
 
@@ -431,6 +423,31 @@ function _M.log_request()
     for _, key in ipairs(keys) do
         ngx.log(ngx.WARN, key, ": ", headers[key])
     end
+end
+
+
+function _M.v3_auth_authenticate()
+    ngx.log(ngx.WARN, "etcd auth failed!")
+end
+
+
+function _M._well_known_openid_configuration()
+    local t = require("lib.test_admin")
+    local openid_data = t.read_file("t/plugin/openid-configuration.json")
+    ngx.say(openid_data)
+end
+
+
+-- Please add your fake upstream above
+function _M.go()
+    local action = string.sub(ngx.var.uri, 2)
+    action = string.gsub(action, "[/\\.-]", "_")
+    if not action or not _M[action] then
+        return ngx.exit(404)
+    end
+
+    inject_headers()
+    return _M[action]()
 end
 
 
