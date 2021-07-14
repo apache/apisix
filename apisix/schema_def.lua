@@ -353,6 +353,10 @@ local upstream_schema = {
             type = "integer",
             minimum = 0,
         },
+        retry_timeout = {
+            type = "integer",
+            minimum = 0,
+        },
         timeout = timeout_def,
         tls = {
             type = "object",
@@ -445,7 +449,6 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
-    additionalProperties = false,
 }
 
 -- TODO: add more nginx variable support

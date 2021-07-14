@@ -23,6 +23,7 @@ local enable_keepalive = balancer.enable_keepalive
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
+local ngx_now          = ngx.now
 
 
 local module_name = "balancer"
@@ -161,6 +162,9 @@ local function set_balancer_opts(route, ctx)
     end
 
     if retries > 0 then
+        if up_conf.retry_timeout and up_conf.retry_timeout > 0 then
+            ctx.proxy_retry_deadline = ngx_now() + up_conf.retry_timeout
+        end
         local ok, err = set_more_tries(retries)
         if not ok then
             core.log.error("could not set upstream retries: ", err)
@@ -293,6 +297,10 @@ function _M.run(route, ctx)
         set_balancer_opts(route, ctx)
 
     else
+        if ctx.proxy_retry_deadline and ctx.proxy_retry_deadline < ngx_now() then
+            core.log.error("proxy retry timeout, retry count: ", ctx.balancer_try_count or 0)
+            return core.response.exit(502)
+        end
         -- retry
         server, err = pick_server(route, ctx)
         if not server then
