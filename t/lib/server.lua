@@ -397,6 +397,22 @@ function _M.server_error()
 end
 
 
+function _M.log_request()
+    ngx.log(ngx.WARN, "uri: ", ngx.var.uri)
+    local headers = ngx.req.get_headers()
+
+    local keys = {}
+    for k in pairs(headers) do
+        table.insert(keys, k)
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        ngx.log(ngx.WARN, key, ": ", headers[key])
+    end
+end
+
+
 function _M.v3_auth_authenticate()
     ngx.log(ngx.WARN, "etcd auth failed!")
 end

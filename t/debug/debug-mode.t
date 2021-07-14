@@ -236,7 +236,7 @@ passed
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_headers
-Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite
+Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite, response-rewrite
 --- response_body
 yes
 --- error_log
