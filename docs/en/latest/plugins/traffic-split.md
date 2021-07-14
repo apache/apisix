@@ -59,7 +59,7 @@ Note: The ratio between each upstream may not so accurate since the drawback of 
 | weighted_upstreams.weight      | integer       | optional    | weight = 1   |  | The traffic is divided according to the `weight` value, and the roundrobin algorithm is used to divide multiple `weight`. |
 
 Currently, in the configuration of `weighted_upstreams.upstream`, the unsupported fields are:
-service_name, discovery_type, checks, retries, desc, scheme, labels, create_time and update_time. But you can use `weighted_upstreams.upstream_id` to bind the `upstream` object to achieve their functions.
+service_name, discovery_type, checks, retries, retry_timeout, desc, scheme, labels, create_time and update_time. But you can use `weighted_upstreams.upstream_id` to bind the `upstream` object to achieve their functions.
 
 The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plugin will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
 
