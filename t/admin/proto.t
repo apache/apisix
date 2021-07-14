@@ -107,6 +107,7 @@ GET /t
 [error]
 
 
+
 === TEST 3: put proto (id:2)
 --- config
     location /t {
