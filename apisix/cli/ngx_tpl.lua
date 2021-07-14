@@ -133,6 +133,7 @@ stream {
 }
 {% end %}
 
+{% if not (stream_proxy and stream_proxy.only ~= false) then %}
 http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
@@ -693,4 +694,5 @@ http {
     {% end %}
     # http end configuration snippet ends
 }
+{% end %}
 ]=]

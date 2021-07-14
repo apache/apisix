@@ -572,7 +572,7 @@ passed
 
 
 
-=== TEST 27: add a route 4 to redirect /sleep1
+=== TEST 27: add a route 4 to redirect /mysleep?seconds=1
 --- config
     location /t {
         content_by_lua_block {
@@ -581,7 +581,7 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                     "service_id": 3,
-                    "uri": "/sleep1"
+                    "uri": "/mysleep"
                 }]]
                 )
 
@@ -600,9 +600,9 @@ passed
 
 
 
-=== TEST 28: request from client to /sleep1 ( all hit)
+=== TEST 28: request from client to /mysleep?seconds=1 ( all hit)
 --- pipelined_requests eval
-["GET /sleep1", "GET /sleep1", "GET /sleep1"]
+["GET /mysleep?seconds=1", "GET /mysleep?seconds=1", "GET /mysleep?seconds=1"]
 --- error_code eval
 [200, 200, 200]
 --- no_error_log
