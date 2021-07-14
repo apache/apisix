@@ -259,3 +259,45 @@ etcd auth failed
 etcd auth failed
 etcd auth failed
 etcd auth failed
+
+
+
+=== TEST 8: ensure add prefix automatically for _M.getkey
+apisix:
+  node_listen: 1984
+  admin_key: null
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  tls:
+    verify: false
+  prefix: "/apisix"
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local config = core.config.new()
+            local res = config:getkey("/routes/")
+            if res and res.status == 200 and res.body
+               and res.body.node and res.body.node.key == "/apisix/routes" then
+                ngx.say("passed")
+              else
+                ngx.say("failed")
+            end
+
+            local res = config:getkey("/phantomkey")
+            if res and res.status == 404 then
+                ngx.say("passed")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+passed
+--- no_error_log
+[error]

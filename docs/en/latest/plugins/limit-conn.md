@@ -45,6 +45,8 @@ Limiting request concurrency plugin.
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete. It is a security consideration that is not open in the plugin.**
 
+When used in the stream proxy, only `remote_addr` and `server_addr` can be used as key. And `rejected_code` is meaningless.
+
 ## How To Enable
 
 Here's an example, enable the limit-conn plugin on the specified route:

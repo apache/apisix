@@ -35,6 +35,8 @@ title: limit-conn
 
 **注：key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
 
+在 stream 代理中使用该插件时，只有 `remote_addr` 和 `server_addr` 可以被用作 key。另外设置 `rejected_code` 毫无意义。
+
 #### 如何启用
 
 下面是一个示例，在指定的 route 上开启了 limit-conn 插件:
