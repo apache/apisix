@@ -92,7 +92,7 @@ method "http_init" in the file __apisix/init.lua__, and you may need to add some
 configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
 existing plugin mechanism, **we do not recommend this unless you have a complete grasp of the code**.
 
-## name and config
+## name, priority and the others
 
 Determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the example-plugin plugin,
 you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
@@ -157,9 +157,25 @@ $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 ```
 
+There are other fields in the `_M` which affect the plugin's behavior.
+
+```lua
+local _M = {
+    ...
+    type = 'auth',
+    run_policy = 'prefer_route',
+}
+```
+
+`run_policy` field can be used to control the behavior of the plugin execution.
+When this field set to `prefer_route`, and the plugin has been configured both
+in the global and at the route level, only the route level one will take effect.
+
+`type` field is required to be set to `auth` if your plugin needs to work with consumer. See the section below.
+
 ## schema and check
 
-Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
+Write [JSON Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
 configuration data:
 
 ```json
