@@ -97,6 +97,7 @@ apisix:
                                   #   more details.
     ssl: radixtree_sni          # radixtree_sni: match route by SNI(base on radixtree)
   #stream_proxy:                  # TCP/UDP proxy
+  #  only: true                   # use stream proxy only, don't enable HTTP stuff
   #  tcp:                         # TCP proxy port list
   #    - addr: 9100
   #      tls: true

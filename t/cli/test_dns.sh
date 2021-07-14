@@ -53,7 +53,7 @@ apisix:
 make init
 
 count=$(grep -c "resolver 127.0.0.1 \[::1\]:5353 valid=30;" conf/nginx.conf)
-if [ "$count" -ne 2 ]; then
+if [ "$count" -ne 1 ]; then
     echo "failed: dns_resolver_valid doesn't take effect"
     exit 1
 fi
@@ -74,7 +74,7 @@ apisix:
 make init
 
 count=$(grep -c "resolver 127.0.0.1 \[::1\] \[::2\];" conf/nginx.conf)
-if [ "$count" -ne 2 ]; then
+if [ "$count" -ne 1 ]; then
     echo "failed: can't handle IPv6 resolver w/o bracket"
     exit 1
 fi
