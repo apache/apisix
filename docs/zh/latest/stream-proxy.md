@@ -40,6 +40,16 @@ apisix:
       - "127.0.0.1:9211"
 ```
 
+如果你需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
+
+```yaml
+apisix:
+  stream_proxy: # TCP/UDP proxy
+    only: false
+    tcp: # TCP proxy address list
+      - 9100
+```
+
 ## 如何设置 route ?
 
 简例如下:
