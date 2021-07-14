@@ -783,3 +783,55 @@ GET /log_request
 --- error_code: 403
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: ensure balancer phase run correct time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "balancer",
+                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'run balancer phase with ', ctx.balancer_ip) end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.2:1979": 100000,
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "chash",
+                        "key": "remote_addr"
+                    },
+                    "uri": "/log_request"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: check plugin
+--- request
+GET /log_request
+--- grep_error_log eval
+qr/(run balancer phase with [\d.]+)/
+--- grep_error_log_out
+run balancer phase with 127.0.0.2
+run balancer phase with 127.0.0.1

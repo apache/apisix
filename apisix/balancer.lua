@@ -309,8 +309,6 @@ function _M.run(route, ctx, plugin_funcs)
             return core.response.exit(502)
         end
 
-        plugin_funcs("balancer")
-
         local pass_host = ctx.pass_host
         if pass_host == "node" and balancer.recreate_request then
             local host = server.domain or server.host
