@@ -356,7 +356,11 @@ end
 
 function _M.mysleep()
     ngx.sleep(tonumber(ngx.var.arg_seconds))
-    ngx.say(ngx.var.arg_seconds)
+    if ngx.var.arg_abort then
+        ngx.exit(ngx.ERROR)
+    else
+        ngx.say(ngx.var.arg_seconds)
+    end
 end
 
 
