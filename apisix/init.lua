@@ -556,11 +556,10 @@ local function common_phase(phase_name)
 
     if api_ctx.script_obj then
         script.run(phase_name, api_ctx)
-    else
-        plugin.run_plugin(phase_name, nil, api_ctx)
+        return api_ctx, true
     end
 
-    return api_ctx
+    return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
 
@@ -711,7 +710,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 
@@ -921,7 +920,7 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 

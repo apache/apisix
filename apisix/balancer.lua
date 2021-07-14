@@ -286,8 +286,9 @@ do
 end
 
 
-function _M.run(route, ctx)
+function _M.run(route, ctx, plugin_funcs)
     local server, err
+    local header_changed
 
     if ctx.picked_server then
         -- use the server picked in the access phase
@@ -314,9 +315,16 @@ function _M.run(route, ctx)
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
                 ctx.var.upstream_host = host
-                balancer.recreate_request()
+                header_changed = true
             end
         end
+
+    end
+
+    local _, run = plugin_funcs("balancer")
+    -- always recreate request as the request may be changed by plugins
+    if (run or header_changed) and balancer.recreate_request then
+        balancer.recreate_request()
     end
 
     core.log.info("proxy request to ", server.host, ":", server.port)
