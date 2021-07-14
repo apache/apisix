@@ -94,7 +94,7 @@ existing plugin mechanism, **we do not recommend this unless you have a complete
 
 ## name and config
 
-Determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the example-plugin plugin,
+Determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the example-plugin plugin,
 you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
 duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
 
@@ -110,9 +110,9 @@ local _M = {
 }
 ```
 
-Note : The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
+Note: The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
 
-in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+In the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
 ```yaml
 plugins:                          # plugin list
@@ -134,7 +134,7 @@ plugins:                          # plugin list
   ...
 ```
 
-Note : the order of the plugins is not related to the order of execution.
+Note: the order of the plugins is not related to the order of execution.
 
 To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
 
