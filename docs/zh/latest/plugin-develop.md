@@ -56,7 +56,7 @@ nginx_config:
 可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
 插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 
-## 插件命名与配置
+## 插件命名，优先级和其他
 
 给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 example-plugin 这个插件，
 需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/example-plugin.lua__ 文件中可以看到：
@@ -106,9 +106,23 @@ $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 ```
 
+`_M` 中还有其他字段会影响到插件的行为。
+
+```lua
+local _M = {
+    ...
+    type = 'auth',
+    run_policy = 'prefer_route',
+}
+```
+
+`run_policy` 字段可以用来控制插件执行。当这个字段设置成 `prefer_route` 时，且该插件同时配置在全局和路由级别，那么只有路由级别的配置生效。
+
+如果你的插件需要跟 `consumer` 一起使用，需要把 `type` 设置成 `auth`。详情见下文。
+
 ## 配置描述与校验
 
-定义插件的配置项，以及对应的 [Json Schema](https://json-schema.org) 描述，并完成对 json 的校验，这样方便对配置的数据规
+定义插件的配置项，以及对应的 [JSON Schema](https://json-schema.org) 描述，并完成对 JSON 的校验，这样方便对配置的数据规
 格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 example-plugin 插件为例，看看他的配置数据：
 
 ```json

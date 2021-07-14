@@ -300,8 +300,8 @@ local function trace_plugins_info_for_debug(plugins)
 end
 
 
-function _M.filter(user_route, plugins)
-    local user_plugin_conf = user_route.value.plugins
+function _M.filter(conf, plugins, route_conf)
+    local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         trace_plugins_info_for_debug(nil)
@@ -310,14 +310,24 @@ function _M.filter(user_route, plugins)
         return plugins or core.empty_tab
     end
 
+    local route_plugin_conf = route_conf and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" and not plugin_conf.disable then
+            if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
+                local plugin_conf_in_route = route_plugin_conf[name]
+                if plugin_conf_in_route and not plugin_conf_in_route.disable then
+                    goto continue
+                end
+            end
+
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
+
+            ::continue::
         end
     end
 
@@ -684,13 +694,14 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = global_rules.values
+        local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
             api_ctx.conf_version = global_rule.modifiedIndex
             api_ctx.conf_id = global_rule.value.id
 
             core.table.clear(plugins)
-            plugins = _M.filter(global_rule, plugins)
+            plugins = _M.filter(global_rule, plugins, route)
             if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
