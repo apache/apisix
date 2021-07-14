@@ -19,41 +19,37 @@
 
 . ./t/cli/common.sh
 
-# check tls over tcp proxy
+echo "
+apisix:
+    stream_proxy:
+        tcp:
+            - addr: 9100
+" > conf/config.yaml
+
+make init
+
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 1 ]; then
+    echo "failed: failed to enable stream proxy only by default"
+    exit 1
+fi
+
+echo "passed: enable stream proxy only by default"
+
 echo "
 apisix:
     stream_proxy:
         only: false
         tcp:
             - addr: 9100
-              tls: true
-nginx_config:
-    stream_configuration_snippet: |
-        server {
-            listen 9101;
-            return \"OK FROM UPSTREAM\";
-        }
-
 " > conf/config.yaml
 
-make run
-sleep 0.1
+make init
 
- ./utils/create-ssl.py t/certs/mtls_server.crt t/certs/mtls_server.key test.com
-
-curl -k -i http://127.0.0.1:9080/apisix/admin/stream_routes/1  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
-    '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
-
-sleep 0.1
-if ! echo -e 'mmm' | \
-    openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
-        -ign_eof | \
-    grep 'OK FROM UPSTREAM';
-then
-    echo "failed: should proxy tls over tcp"
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 2 ]; then
+    echo "failed: failed to enable stream proxy and http proxy"
     exit 1
 fi
 
-make stop
-echo "passed: proxy tls over tcp"
+echo "passed: enable stream proxy and http proxy"
