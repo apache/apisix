@@ -52,11 +52,6 @@ function _M.hello1()
 end
 
 
-function _M.hello_()
-    ngx.say("hello world")
-end
-
-
 -- Fake endpoint, needed for testing authz-keycloak plugin.
 function _M.course_foo()
     ngx.say("course foo")
@@ -118,12 +113,6 @@ function _M.status()
 end
 
 
-function _M.sleep1()
-    ngx.sleep(1)
-    ngx.say("ok")
-end
-
-
 function _M.ewma()
     if ngx.var.server_port == "1981"
        or ngx.var.server_port == "1982" then
@@ -143,7 +132,6 @@ local builtin_hdr_ignore_list = {
 }
 
 function _M.uri()
-    -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
     local headers = ngx.req.get_headers()
 
@@ -164,7 +152,6 @@ _M.uri_plugin_proxy_rewrite_args = _M.uri
 
 
 function _M.old_uri()
-    -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
     local headers = ngx.req.get_headers()
 
@@ -372,18 +359,6 @@ for i = 1, 100 do
 end
 
 
-function _M.go()
-    local action = string.sub(ngx.var.uri, 2)
-    action = string.gsub(action, "[/\\.-]", "_")
-    if not action or not _M[action] then
-        return ngx.exit(404)
-    end
-
-    inject_headers()
-    return _M[action]()
-end
-
-
 function _M.headers()
     local args = ngx.req.get_uri_args()
     for name, val in pairs(args) do
@@ -431,6 +406,19 @@ function _M._well_known_openid_configuration()
     local t = require("lib.test_admin")
     local openid_data = t.read_file("t/plugin/openid-configuration.json")
     ngx.say(openid_data)
+end
+
+
+-- Please add your fake upstream above
+function _M.go()
+    local action = string.sub(ngx.var.uri, 2)
+    action = string.gsub(action, "[/\\.-]", "_")
+    if not action or not _M[action] then
+        return ngx.exit(404)
+    end
+
+    inject_headers()
+    return _M[action]()
 end
 
 
