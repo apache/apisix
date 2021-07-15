@@ -299,7 +299,9 @@ function _M.run(route, ctx, plugin_funcs)
 
     else
         if ctx.proxy_retry_deadline and ctx.proxy_retry_deadline < ngx_now() then
-            core.log.error("proxy retry timeout, retry count: ", ctx.balancer_try_count or 0)
+            -- retry count is (try count - 1)
+            core.log.error("proxy retry timeout, retry count: ", (ctx.balancer_try_count or 1) - 1,
+                           ", deadline: ", ctx.proxy_retry_deadline, " now: ", ngx_now())
             return core.response.exit(502)
         end
         -- retry
