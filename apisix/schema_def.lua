@@ -354,7 +354,7 @@ local upstream_schema = {
             minimum = 0,
         },
         retry_timeout = {
-            type = "integer",
+            type = "number",
             minimum = 0,
         },
         timeout = timeout_def,
