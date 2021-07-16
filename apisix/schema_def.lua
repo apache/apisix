@@ -337,7 +337,7 @@ _M.discovery_nodes = {
         type = "object",
         properties = {
             host = {
-                description = "host or ip",
+                description = "domain or ip",
             },
             port = {
                 description = "port of node",

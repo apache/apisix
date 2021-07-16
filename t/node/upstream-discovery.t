@@ -362,4 +362,4 @@ routes:
 --- response_body
 503
 --- error_log
-invalid nodes format:
+invalid nodes format: failed to validate item 1: property "weight" validation failed: wrong type: expected integer, got string
