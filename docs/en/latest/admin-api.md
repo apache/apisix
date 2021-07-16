@@ -536,7 +536,7 @@ Return response from etcd currently.
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|Name            |Optional|Description|Example
+|Name            |Optional|Description|Example|
 |----------------|--------|-----------|-----------|
 |type            |required|the balancer algorithm||
 |nodes           |required, can't be used with `service_name` |Hash table or array. If it is a hash table, the key of the internal element is the upstream machine address list, the format is `Address + (optional) Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. The value is the weight of node. If it is an array, each item is a hash table with key `host`/`weight` and optional `port`/`priority`. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |`192.168.1.100:80`|
