@@ -73,6 +73,7 @@ ci/openwhisk-utilities/
 /build-cache/
 t/fuzzing/__pycache__/
 boofuzz-results/
+*.pyc
 # release tar package
 *.tgz
 release/*
