@@ -100,6 +100,7 @@ function _M.decrease(conf, ctx)
     end
 
     core.tablepool.release("plugin#limit-conn", limit_conn)
+    ctx.limit_conn = nil
     return
 end
 
