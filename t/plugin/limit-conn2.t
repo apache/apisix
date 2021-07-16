@@ -107,3 +107,74 @@ GET /mysleep?seconds=0.1
 request latency is 0.1
 --- response_body
 0.1
+
+
+
+=== TEST 3: set both global and route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: hit route
+--- log_level: debug
+--- request
+GET /hello
+--- grep_error_log eval
+qr/request latency is/
+--- grep_error_log_out
+request latency is
+request latency is
