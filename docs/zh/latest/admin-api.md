@@ -322,7 +322,7 @@ HTTP/1.1 200 OK
 | upstream         | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |                                                  |
 | upstream_id      | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md)   |                                                  |
 | name             | 可选                               | 辅助     | 标识服务名称。                                                         | 测试svc                                            |
-| desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 | hello world                                                 |
+| desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 | 测试 svc                                                 |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                   | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 可选                               | 辅助     | 是否启用 `websocket`(boolean), 缺省 `false`.                           |                                                  |
 | create_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
