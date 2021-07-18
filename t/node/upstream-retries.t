@@ -285,7 +285,7 @@ proxy request to 127.0.0.1:1/
                                 "127.0.0.1:1982": 100
                             },
                             "retries": 10,
-                            "retry_timeout": 2,
+                            "retry_timeout": 0.15,
                             "type": "roundrobin"
                         },
                         "uri": "/mysleep"
@@ -299,7 +299,7 @@ proxy request to 127.0.0.1:1/
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/mysleep?abort=true&seconds=1"
+                        .. "/mysleep?abort=true&seconds=0.1"
             local res, err = httpc:request_uri(uri)
             if not res then
                 ngx.say(err)
@@ -312,5 +312,5 @@ proxy request to 127.0.0.1:1/
 --- request
 GET /t
 --- error_code: 502
---- error_log eval
-qr/proxy retry timeout, retry count: 2/
+--- error_log
+proxy retry timeout, retry count: 1
