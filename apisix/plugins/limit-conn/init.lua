@@ -83,14 +83,14 @@ function _M.decrease(conf, ctx)
         local delay = limit_conn[i + 2]
 
         local latency
-        if not conf.delay_strict_mode then
+        if not conf.only_use_default_delay then
             if ctx.proxy_passed then
                 latency = ctx.var.upstream_response_time
             else
                 latency = ctx.var.request_time - delay
             end
-            core.log.debug("request latency is ", latency) -- for test
         end
+        core.log.debug("request latency is ", latency) -- for test
 
         local conn, err = lim:leaving(key, latency)
         if not conn then
