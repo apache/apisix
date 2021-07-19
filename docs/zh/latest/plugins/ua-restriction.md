@@ -39,7 +39,7 @@ title: ua-restriction
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
 | allowlist | array[string] | 可选   |        |        | 加入白名单的 User-Agent |
 | denylist | array[string] | 可选   |        |        | 加入黑名单的 User-Agent |
-| message | string | 可选   | Not allowed. | [1, 1024] | 在未允许的 User-Agent 访问的情况下返回的信息 |
+| message | string | 可选   | Not allowed. | 长度限制：[1, 1024] | 在未允许的 User-Agent 访问的情况下返回的信息 |
 
 白名单或黑名单可以同时启用，此插件对 User-Agent 的检查先后顺序依次如下：白名单、黑名单。`message`可以由用户自定义。
 

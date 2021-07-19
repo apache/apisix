@@ -39,7 +39,7 @@ The `ua-restriction` can restrict access to a Service or a Route by either `allo
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
 | allowlist | array[string] | optional    |         |       | List of User-Agent of allowlist. |
 | denylist | array[string] | optional    |         |       | List of User-Agent of denylist. |
-| message | string | optional             | Not allowed. | [1, 1024] | Message of deny reason. |
+| message | string | optional             | Not allowed. | length range: [1, 1024] | Message of deny reason. |
 
 Any of `allowlist` or `denylist` can be optional, and can work together in this order: allowlist->denylist
 

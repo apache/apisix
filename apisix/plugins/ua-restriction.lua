@@ -49,7 +49,6 @@ local schema = {
         {required = {"allowlist"}},
         {required = {"denylist"}},
     },
-    minProperties = 1,
     additionalProperties = false,
 }
 
