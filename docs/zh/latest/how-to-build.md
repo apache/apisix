@@ -29,15 +29,7 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 
 ## 步骤2：安装 Apache APISIX
 
-你可以通过 Docker、Helm Chart、源码包、RPM 包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
-
-### 通过 Docker 安装
-
-详情请参考：[使用 Docker 安装 Apache APISIX](https://hub.docker.com/r/apache/apisix)。
-
-### 通过 Helm Chart 安装
-
-详情请参考：[使用 Helm Chart 安装 Apache APISIX](https://github.com/apache/apisix-helm-chart)。
+你可以通过 RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 包安装（CentOS 7）
 
@@ -46,6 +38,14 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 ```shell
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
 ```
+
+### 通过 Docker 安装
+
+详情请参考：[使用 Docker 安装 Apache APISIX](https://hub.docker.com/r/apache/apisix)。
+
+### 通过 Helm Chart 安装
+
+详情请参考：[使用 Helm Chart 安装 Apache APISIX](https://github.com/apache/apisix-helm-chart)。
 
 ### 通过源码包安装
 
