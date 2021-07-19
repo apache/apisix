@@ -29,7 +29,23 @@ Before installing Apache APISIX, please install dependencies according to the op
 
 ## Step 2: Install Apache APISIX
 
-You can install Apache APISIX via source release packages, RPM package, Docker and Helm Chart. Please choose one from the following options.
+You can install Apache APISIX via RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
+
+### Installation via RPM Package(CentOS 7)
+
+This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
+
+```shell
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+```
+
+### Installation via Docker
+
+Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
+
+### Installation via Helm Chart
+
+Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/apache/apisix-helm-chart).
 
 ### Installation via Source Release Package
 
@@ -61,22 +77,6 @@ You can install Apache APISIX via source release packages, RPM package, Docker a
   # Create dependencies
   make deps
   ```
-
-### Installation via RPM Package(CentOS 7)
-
-This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
-
-```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
-```
-
-### Installation via Docker
-
-Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
-
-### Installation via Helm Chart
-
-Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/apache/apisix-helm-chart).
 
 ## Step 3: Manage Apache APISIX Server
 
