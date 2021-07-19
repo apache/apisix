@@ -553,7 +553,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.||
 |upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.||
 |scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.||
-|labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|{"version":"v2","build":"16","env":"production"}|
+|labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details||
