@@ -38,6 +38,7 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req"
