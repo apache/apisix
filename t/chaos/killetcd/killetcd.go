@@ -127,7 +127,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
 		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(errorLog).ShouldNot(gomega.ContainSubstring("failed to fetch data from etcd"))
+		gomega.Ω(errorLog).ShouldNot(gomega.ContainSubstring("no healthy etcd endpoint available"))
 	})
 
 	// apply chaos to kill all etcd pods
@@ -152,7 +152,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
 		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(errorLog).Should(gomega.ContainSubstring("failed to fetch data from etcd"))
+		gomega.Ω(errorLog).Should(gomega.ContainSubstring("no healthy etcd endpoint available"))
 	})
 
 	ginkgo.It("ingress bandwidth per second not change much", func() {
