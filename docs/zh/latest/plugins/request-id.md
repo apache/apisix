@@ -72,7 +72,7 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ......
 ```
 
-### 使用 snowflake 算法
+### 使用 snowflake 算法生成ID
 
 > 支持使用 snowflake 算法来生成ID。
 > 在决定使用snowflake时，请优先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息。否则可能会导致生成重复ID。
@@ -97,16 +97,15 @@ plugin_attr:
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | enable                     | boolean  | 可选 | false          |  | 当设置为true时， 启用snowflake算法。      |
 | snowflake_epoc             | integer  | 可选 | 1609459200000  |  | 起始时间戳（单位： 毫秒）       |
-| data_machine_bits          | integer  | 可选 | 12             |  | 数据机器位`datacenterId` + `workerId`（1 << node_id_bits） |
-| sequence_bits              | integer  | 可选 | 10             |  | 每个节点每毫秒内最多产生ID数量 （1 << sequence_bits） |
-| delta_offset               | integer  | 可选 | 1              |  | 时间戳增量偏移（单位： 毫秒） |
-| data_machine_ttl          | integer  | 可选 | 30             |  | `etcd` 中 `data_machine` 注册有效时间（单位： 秒）|
-| data_machine_interval     | integer  | 可选 | 10             |  | `etcd` 中 `data_machine` 续约间隔时间（单位： 秒）|
+| data_machine_bits          | integer  | 可选 | 12             |  | 最多支持机器（进程）数量 `1 << data_machine_bits` |
+| sequence_bits              | integer  | 可选 | 10             |  | 每个节点每毫秒内最多产生ID数量 `1 << sequence_bits` |
+| data_machine_ttl           | integer  | 可选 | 30             |  | `etcd` 中 `data_machine` 注册有效时间（单位： 秒）|
+| data_machine_interval      | integer  | 可选 | 10             |  | `etcd` 中 `data_machine` 续约间隔时间（单位： 秒）|
 
 - snowflake_epoc 默认起始时间为 `2021-01-01T00:00:00Z`, 按默认配置可以支持 `69年` 大约可以使用到 `2090-09-07 15:47:35Z`
 - data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterIDd的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程。
 - sequence_bits 默认占 `10 bits`, 每个进程每秒最多生成 `1024` 个ID
-- delta_offset 时间戳增量偏移 (单位: 毫秒) [`delta_offset=1` 每毫秒, `delta_offset=10` 每10毫秒, `delta_offset=100` 每100毫秒, `delta_offset=1000` 每1秒`]
+
 
 #### 配置示例
 
@@ -128,46 +127,9 @@ plugin_attr:
       sequence_bits: 12
 ```
 
-- [sonyflake](https://github.com/sony/sonyflake)
-
-> - 39 bit 为时间戳，精确到 `10ms` 大约可以使用174年。
-> - 16 bit 做为机器号， 可同时支持 `65536` 个进程运行。
-> - 8 bit 做为序列号，每10毫最大生成256个，1秒最多生成25600个。
-
-```yaml
-plugin_attr:
-  request-id:
-    snowflake:
-      enable: true
-      snowflake_epoc: 1413817200000
-      data_machine_bits: 16
-      sequence_bits: 8
-      delta_offset: 10
-```
-
-- [baidu UidGenerator](https://github.com/baidu/uid-generator)
-
-不支持 Double RingBuffer
-
-> - delta seconds (28 bits)
-> - 当前时间，相对于时间基点"2016-05-20"的增量值，单位：秒，最多可支持约8.7年
-> - worker id (22 bits) 机器id，最多可支持约420w次机器启动。内置实现为在启动时由数据库分配，默认分配策略为用后即弃，后续可提供复用策略。
-> - sequence (13 bits) 每秒下的并发序列，13 bits可支持每秒8192个并发。
-
-```yaml
-plugin_attr:
-  request-id:
-    snowflake:
-      enable: true
-      snowflake_epoc: 1463644800000
-      data_machine_bits: 22
-      sequence_bits: 13
-      delta_offset: 1000
-```
-
 ## 禁用插件
 
-在路由 `plugins` 配置块中删除 `request-id 配置，即可禁用该插件，无需重启 APISIX。
+在路由 `plugins` 配置块中删除 `request-id 配置，reload 即可禁用该插件，无需重启 APISIX。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
