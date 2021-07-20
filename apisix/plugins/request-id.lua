@@ -245,5 +245,8 @@ function _M.init()
     end
 end
 
+function _M.destroy()
+    timers.unregister_timer("plugin#request-id")
+end
 
 return _M
