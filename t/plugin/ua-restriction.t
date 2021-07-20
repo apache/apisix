@@ -466,7 +466,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 22: test remove ua-restriction, enable(part 1)
+=== TEST 22: test remove ua-restriction, add denylist(part 1)
 --- config
     location /enable {
         content_by_lua_block {
