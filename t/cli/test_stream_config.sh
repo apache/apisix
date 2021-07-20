@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,44 +17,39 @@
 # limitations under the License.
 #
 
-master_process on;
-worker_processes 1;
-worker_cpu_affinity auto;
-error_log logs/error.log error;
-pid logs/nginx.pid;
-worker_rlimit_nofile 20480;
+. ./t/cli/common.sh
 
-events {
-    accept_mutex off;
-    worker_connections 10620;
-}
+echo "
+apisix:
+    stream_proxy:
+        tcp:
+            - addr: 9100
+" > conf/config.yaml
 
-worker_shutdown_timeout 1;
+make init
 
-http {
-    lua_socket_log_errors off;
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 1 ]; then
+    echo "failed: failed to enable stream proxy only by default"
+    exit 1
+fi
 
-    resolver ipv6=off local=on;
+echo "passed: enable stream proxy only by default"
 
-    access_log off;
-    server_tokens off;
-    more_clear_headers Server;
-    keepalive_requests 10000;
-    tcp_nodelay on;
+echo "
+apisix:
+    stream_proxy:
+        only: false
+        tcp:
+            - addr: 9100
+" > conf/config.yaml
 
-    server {
-        listen 6666 reuseport;
-        location / {
-            content_by_lua_block {
-                ngx.say("cur time: ", ngx.time())
-            }
-        }
+make init
 
-        location /client_abort {
-            content_by_lua_block {
-                ngx.sleep(tonumber(ngx.var.arg_seconds or 1))
-            }
-        }
-    }
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 2 ]; then
+    echo "failed: failed to enable stream proxy and http proxy"
+    exit 1
+fi
 
-}
+echo "passed: enable stream proxy and http proxy"

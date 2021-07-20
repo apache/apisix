@@ -502,7 +502,7 @@ rpc_call = function (ty, conf, ctx, ...)
     local path = helper.get_path()
 
     local sock = socket_tcp()
-    sock:settimeouts(1000, 5000, 5000)
+    sock:settimeouts(1000, 60000, 60000)
     local ok, err = sock:connect(path)
     if not ok then
         return nil, "failed to connect to the unix socket " .. path .. ": " .. err

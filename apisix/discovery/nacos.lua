@@ -42,7 +42,7 @@ local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local events
 local events_list
 
-local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@]+$]]
+local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@%]+$]]
 local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
 local schema = {
     type = 'object',

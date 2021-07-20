@@ -109,6 +109,22 @@ Response is `Array` of [HttpResponse](#httpresponse).
 | body    | string  | http response body    |
 | headers | object  | http response headers |
 
+## How to specify custom uri
+
+We can change the default uri in the `plugin_attr` section of `conf/config.yaml`.
+
+| Name       | Type   | Requirement | Default                      | Description                       |
+| ---------- | ------ |-------------| ---------------------------- | --------------------------------- |
+| uri        | string | optional    | "/apisix/batch-requests"     | uri to use with batch-requests plugin   |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  batch-requests:
+    uri: "/api-gw/batch"
+```
+
 ## Test Plugin
 
 You can pass your request detail to batch API( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
