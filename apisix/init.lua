@@ -321,6 +321,23 @@ local function verify_tls_client(ctx)
 end
 
 
+local function common_phase(phase_name)
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+
+    if api_ctx.script_obj then
+        script.run(phase_name, api_ctx)
+        return api_ctx, true
+    end
+
+    return plugin.run_plugin(phase_name, nil, api_ctx)
+end
+
+
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
@@ -501,6 +518,9 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
+    -- run the balancer phase in access phase first to avoid always reinit request
+    common_phase("balancer")
+
     local ref = ctxdump.stash_ngx_ctx()
     core.log.info("stash ngx ctx: ", ref)
     ngx_var.ctx_ref = ref
@@ -543,23 +563,6 @@ function _M.grpc_access_phase()
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
     end
-end
-
-
-local function common_phase(phase_name)
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
-
-    if api_ctx.script_obj then
-        script.run(phase_name, api_ctx)
-        return api_ctx, true
-    end
-
-    return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
 
@@ -909,6 +912,9 @@ function _M.stream_preread_phase()
     end
 
     api_ctx.picked_server = server
+
+    -- run the balancer phase in preread phase first to avoid always reinit request
+    common_phase("balancer")
 end
 
 
