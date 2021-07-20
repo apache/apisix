@@ -330,7 +330,7 @@ passed
 
 
 
-=== TEST 16: hit route and user-agent in both allowlist and denylist, part 1
+=== TEST 16: hit route and user-agent in both allowlist and denylist, pass(part 1)
 --- request
 GET /hello
 --- more_headers
@@ -339,7 +339,7 @@ User-Agent:foo/bar
 
 
 
-=== TEST 17: hit route and user-agent in both allowlist and denylist, part 2
+=== TEST 17: hit route and user-agent in both allowlist and denylist, pass(part 2)
 --- request
 GET /hello
 --- more_headers
