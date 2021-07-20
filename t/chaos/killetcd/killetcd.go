@@ -140,7 +140,6 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 	// fail to set route since etcd is all killed
 	// while get route could still succeed
-
 	ginkgo.It("get stats after kill etcd", func() {
 		timeStart := time.Now()
 		utils.SetRoute(e, httpexpect.Status5xx)

@@ -1,3 +1,6 @@
 [submodule "t/toolkit"]
 	path = t/toolkit
 	url = https://github.com/api7/test-toolkit.git
+[submodule ".github/actions/action-tmate"]
+	path = .github/actions/action-tmate
+	url = https://github.com/mxschmitt/action-tmate
