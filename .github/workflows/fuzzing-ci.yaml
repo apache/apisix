@@ -78,3 +78,7 @@ jobs:
     - name: run vars route test
       run: |
         python $PWD/t/fuzzing/vars_route_test.py
+
+    - name: run client abort test
+      run: |
+        python $PWD/t/fuzzing/client_abort.py

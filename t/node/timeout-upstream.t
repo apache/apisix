@@ -46,7 +46,7 @@ __DATA__
                                 "read": 0.5
                             }
                         },
-                        "uri": "/sleep1"
+                        "uri": "/mysleep"
                 }]]
                 )
 
@@ -67,7 +67,7 @@ passed
 
 === TEST 2: hit routes (timeout)
 --- request
-GET /sleep1
+GET /mysleep?seconds=1
 --- error_code: 504
 --- response_body eval
 qr/504 Gateway Time-out/
@@ -101,7 +101,7 @@ timed out) while reading response header from upstream
                                 "read": 2
                             }
                         },
-                        "uri": "/sleep1"
+                        "uri": "/mysleep"
                 }]]
                 )
 
@@ -122,7 +122,7 @@ passed
 
 === TEST 4: hit routes (timeout)
 --- request
-GET /sleep1
+GET /mysleep?seconds=1
 --- error_code: 504
 --- response_body eval
 qr/504 Gateway Time-out/

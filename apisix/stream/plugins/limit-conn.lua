@@ -25,12 +25,9 @@ local schema = {
         conn = {type = "integer", exclusiveMinimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
-        key = {type = "string",
-            enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for", "consumer_name"},
-        },
-        rejected_code = {
-            type = "integer", minimum = 200, maximum = 599, default = 503
+        key = {
+            type = "string",
+            enum = {"remote_addr", "server_addr"}
         },
     },
     required = {"conn", "burst", "default_conn_delay", "key"}
@@ -49,7 +46,7 @@ function _M.check_schema(conf)
 end
 
 
-function _M.access(conf, ctx)
+function _M.preread(conf, ctx)
     return limit_conn.increase(conf, ctx)
 end
 

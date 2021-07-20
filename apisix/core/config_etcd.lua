@@ -47,6 +47,10 @@ local health_check = require("resty.etcd.health_check")
 
 local is_http = ngx.config.subsystem == "http"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
+local health_check_shm_name = "etcd-cluster-health-check"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
 local created_obj  = {}
 local loaded_configuration = {}
 
@@ -486,6 +490,11 @@ function _M.getkey(self, key)
         return nil, "stopped"
     end
 
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
+    end
+
     return getkey(self.etcd_cli, key)
 end
 
@@ -538,7 +547,7 @@ local function _automatic_fetch(premature, self)
 
     if not health_check.conf then
         local _, err = health_check.init({
-            shm_name = "etcd_cluster_health_check",
+            shm_name = health_check_shm_name,
             fail_timeout = self.health_check_timeout,
             max_fails = 3,
             retry = true,
