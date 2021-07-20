@@ -170,4 +170,18 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		gomega.Ω(errorLog).Should(gomega.ContainSubstring("error"))
 	})
+
+	ginkgo.It("wait till etcd return to normal", func() {
+		for i := 0; i < 6; i++ {
+			resp := utils.SetRouteIgnoreError(e)
+			if resp.Raw().StatusCode == 200 {
+				break
+			}
+			if i != 5 {
+				time.Sleep(5 * time.Second)
+			} else {
+				gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", 200))
+			}
+		}
+	})
 })

@@ -30,8 +30,20 @@ import (
 )
 
 var (
-	token = "edd1c9f034335f136f87ad84b625c8f1"
-	Host  = "http://127.0.0.1:9080"
+	token        = "edd1c9f034335f136f87ad84b625c8f1"
+	Host         = "http://127.0.0.1:9080"
+	setRouteBody = `{
+		"uri": "/get",
+		"plugins": {
+			"prometheus": {}
+		},
+		"upstream": {
+			"nodes": {
+				"httpbin.default.svc.cluster.local:8000": 1
+			},
+			"type": "roundrobin"
+		}
+	}`
 )
 
 type httpTestCase struct {
@@ -40,6 +52,7 @@ type httpTestCase struct {
 	Path              string
 	Body              string
 	Headers           map[string]string
+	IgnoreError       bool
 	ExpectStatus      int
 	ExpectBody        string
 	ExpectStatusRange httpexpect.StatusRange
@@ -70,6 +83,10 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	}
 
 	resp := req.Expect()
+	if tc.IgnoreError {
+		return resp
+	}
+
 	if tc.ExpectStatus != 0 {
 		resp.Status(tc.ExpectStatus)
 	}
@@ -85,30 +102,30 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	return resp
 }
 
-func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) {
-	caseCheck(httpTestCase{
-		E:       e,
-		Method:  http.MethodPut,
-		Path:    "/apisix/admin/routes/1",
-		Headers: map[string]string{"X-API-KEY": token},
-		Body: `{
-			 "uri": "/get",
-			 "plugins": {
-				 "prometheus": {}
-			 },
-			 "upstream": {
-				 "nodes": {
-					 "httpbin.default.svc.cluster.local:8000": 1
-				 },
-				 "type": "roundrobin"
-			 }
-		 }`,
+func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:                 e,
+		Method:            http.MethodPut,
+		Path:              "/apisix/admin/routes/1",
+		Headers:           map[string]string{"X-API-KEY": token},
+		Body:              setRouteBody,
 		ExpectStatusRange: expectStatusRange,
 	})
 }
 
-func GetRoute(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func SetRouteIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodPut,
+		Path:        "/apisix/admin/routes/1",
+		Headers:     map[string]string{"X-API-KEY": token},
+		Body:        setRouteBody,
+		IgnoreError: true,
+	})
+}
+
+func GetRoute(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/get",
@@ -116,8 +133,8 @@ func GetRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func GetRouteList(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func GetRouteList(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/apisix/admin/routes",
@@ -127,8 +144,8 @@ func GetRouteList(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func DeleteRoute(e *httpexpect.Expect) {
-	caseCheck(httpTestCase{
+func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:       e,
 		Method:  http.MethodDelete,
 		Path:    "/apisix/admin/routes/1",
