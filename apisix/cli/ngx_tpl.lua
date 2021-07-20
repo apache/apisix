@@ -192,7 +192,7 @@ http {
     }
     {% end %}
 
-    {% if enabled_plugins["error-log-logger"] then %}
+    {% if enabled_plugins["error-log-logger"] or enabled_plugins["error-log-skywalking-logger"] then %}
         lua_capture_error_log  10m;
     {% end %}
 
