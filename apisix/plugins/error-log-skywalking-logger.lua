@@ -38,11 +38,10 @@ local metadata_schema = {
     type = "object",
     properties = {
         endpoint = schema_def.uri,
-        service = {type = "string", default = "APISIX"},
-        service_instance = {type="string", default = "APISIX Service Instance"},
+        service_name = {type = "string", default = "APISIX"},
+        service_instance_name = {type="string", default = "APISIX Service Instance"},
         timeout = {type = "integer", minimum = 1, default = 3},
         keepalive = {type = "integer", minimum = 1, default = 30},
-        name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
         batch_max_size = {type = "integer", minimum = 0, default = 1000},
@@ -130,8 +129,8 @@ local function send_http_data(log_message)
     local entries = {}
     for i = 1, #log_message, 1 do
         local content = {
-            service = config.service,
-            serviceInstance = config.service_instance,
+            service = config.service_name,
+            serviceInstance = config.service_instance_name,
             endpoint = "",
             body = {
                 text = {
@@ -139,7 +138,7 @@ local function send_http_data(log_message)
                 }
            }
         }
-	    table.insert(entries, content)
+        table.insert(entries, content)
     end
 
     local httpc_res, httpc_err = httpc:request({
@@ -197,6 +196,10 @@ local function process()
             return
         end
 
+        if config.service_instance_name == "$hostname" then
+           config.service_instance_name = core.utils.gethostname()
+        end
+
     end
 
     local entries = {}
@@ -221,7 +224,6 @@ local function process()
     end
 
     local config_bat = {
-        name = config.name,
         retry_delay = config.retry_delay,
         batch_max_size = config.batch_max_size,
         max_retry_count = config.max_retry_count,
