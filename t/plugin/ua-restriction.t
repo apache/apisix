@@ -466,7 +466,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 22: test remove ua-restriction part 1, enable
+=== TEST 22: test remove ua-restriction, enable(part 1)
 --- config
     location /enable {
         content_by_lua_block {
@@ -503,7 +503,7 @@ GET /enable
 
 
 
-=== TEST 23: test remove ua-restriction part 2
+=== TEST 23: test remove ua-restriction, fail(part 2)
 --- request
 GET /hello
 --- more_headers
@@ -512,7 +512,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 24: test remove ua-restriction part 3, remove plugin
+=== TEST 24: test remove ua-restriction, remove plugin(part 3)
 --- config
     location /disable {
         content_by_lua_block {
@@ -544,7 +544,7 @@ GET /disable
 
 
 
-=== TEST 25: test remove ua-restriction part 4, check spider User-Agent
+=== TEST 25: test remove ua-restriction, check spider User-Agent(part 4)
 --- request
 GET /hello
 --- more_headers
