@@ -72,7 +72,6 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ......
 ```
 
-
 ### Use the snowflake algorithm to generate an ID
 
 > supports using the Snowflake algorithm to generate ID.
@@ -106,7 +105,6 @@ plugin_attr:
 - `snowflake_epoc` default start time is  `2021-01-01T00:00:00Z`, and it can support `69 year` approximately to `2090-09-0715:47:35Z` according to the default configuration
 - `data_machine_bits` corresponds to the set of workIDs and datacEnteridd in the snowflake definition. The plug-in aslocates a unique ID to each process. Maximum number of supported processes is `pow(2, data_machine_bits)`. The default number of `12 bits` is up to `4096`.
 - `sequence_bits` defaults to `10 bits` and each process generates up to `1024` ID per second
-
 
 #### example
 

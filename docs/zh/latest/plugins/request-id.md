@@ -106,7 +106,6 @@ plugin_attr:
 - data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterIDd的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程。
 - sequence_bits 默认占 `10 bits`, 每个进程每秒最多生成 `1024` 个ID
 
-
 #### 配置示例
 
 > snowflake 支持灵活配置来满足各式各样的需求
