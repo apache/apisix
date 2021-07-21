@@ -31,12 +31,13 @@ title: ua-restriction
 
 ## 名字
 
-`ua-restriction` 可以通过以下方式限制对服务或接口的访问，可以将指定 `User-Agent` 列入白名单或黑名单。
+`ua-restriction` 可以通过将指定 `User-Agent` 列入白名单或黑名单的方式来限制对服务或接口的访问。
 
 ## 属性
 
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
+| bypass_missing  | boolean       | 可选    | false   |       | User-Agent 不存在时是否绕过检查 |
 | allowlist | array[string] | 可选   |        |        | 加入白名单的 User-Agent |
 | denylist | array[string] | 可选   |        |        | 加入黑名单的 User-Agent |
 | message | string | 可选   | Not allowed. | 长度限制：[1, 1024] | 在未允许的 User-Agent 访问的情况下返回的信息 |
@@ -59,6 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     },
     "plugins": {
         "ua-restriction": {
+            "bypass_missing": true,
              "allowlist": [
                  "my-bot1",
                  "(Baiduspider)/(\\d+)\\.(\\d+)"

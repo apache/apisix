@@ -31,14 +31,15 @@ title: ua-restriction
 
 ## Name
 
-The `ua-restriction` can restrict access to a Service or a Route by either `allowlist` or `denylist` `User-Agent`.
+The `ua-restriction` can restrict access to a Service or a Route by `allowlist` and `denylist` `User-Agent` header.
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default | Valid | Description                              |
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| allowlist | array[string] | optional    |         |       | List of User-Agent of allowlist. |
-| denylist | array[string] | optional    |         |       | List of User-Agent of denylist. |
+| bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the User-Agent header is missing |
+| allowlist | array[string] | optional    |         |       | A list of allowed User-Agent headers. |
+| denylist | array[string] | optional    |         |       | A list of denied User-Agent headers. |
 | message | string | optional             | Not allowed. | length range: [1, 1024] | Message of deny reason. |
 
 Any of `allowlist` or `denylist` can be optional, and can work together in this order: allowlist->denylist
@@ -61,6 +62,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     },
     "plugins": {
         "ua-restriction": {
+             "bypass_missing": true,
              "allowlist": [
                  "my-bot1",
                  "(Baiduspider)/(\\d+)\\.(\\d+)"
@@ -98,7 +100,7 @@ HTTP/1.1 200 OK
 ...
 ```
 
-Requests from bot User-Agent:
+Requests with the bot User-Agent:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'

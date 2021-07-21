@@ -30,11 +30,9 @@ local lrucache_useragent = core.lrucache.new({ ttl = 300, count = 4096 })
 local schema = {
     type = "object",
     properties = {
-        message = {
-            type = "string",
-            minLength = 1,
-            maxLength = 1024,
-            default = "Not allowed"
+        bypass_missing = {
+            type = "boolean",
+            default = false,
         },
         allowlist = {
             type = "array",
@@ -44,10 +42,12 @@ local schema = {
             type = "array",
             minItems = 1
         },
-    },
-    anyOf = {
-        {required = {"allowlist"}},
-        {required = {"denylist"}},
+        message = {
+            type = "string",
+            minLength = 1,
+            maxLength = 1024,
+            default = "Not allowed"
+        },
     },
     additionalProperties = false,
 }
@@ -96,7 +96,11 @@ function _M.access(conf, ctx)
     local user_agent = core.request.header(ctx, "User-Agent")
 
     if not user_agent then
-        return
+        if conf.bypass_missing then
+            return
+        else
+            return 403, { message = conf.message }
+        end
     end
     local match = MATCH_NONE
     if type(user_agent) == "table" then
