@@ -288,7 +288,6 @@ end
 
 function _M.run(route, ctx, plugin_funcs)
     local server, err
-    local header_changed
 
     if ctx.picked_server then
         -- use the server picked in the access phase
@@ -299,7 +298,9 @@ function _M.run(route, ctx, plugin_funcs)
 
     else
         if ctx.proxy_retry_deadline and ctx.proxy_retry_deadline < ngx_now() then
-            core.log.error("proxy retry timeout, retry count: ", ctx.balancer_try_count or 0)
+            -- retry count is (try count - 1)
+            core.log.error("proxy retry timeout, retry count: ", (ctx.balancer_try_count or 1) - 1,
+                           ", deadline: ", ctx.proxy_retry_deadline, " now: ", ngx_now())
             return core.response.exit(502)
         end
         -- retry
@@ -309,6 +310,7 @@ function _M.run(route, ctx, plugin_funcs)
             return core.response.exit(502)
         end
 
+        local header_changed
         local pass_host = ctx.pass_host
         if pass_host == "node" and balancer.recreate_request then
             local host = server.domain or server.host
@@ -319,12 +321,11 @@ function _M.run(route, ctx, plugin_funcs)
             end
         end
 
-    end
-
-    local _, run = plugin_funcs("balancer")
-    -- always recreate request as the request may be changed by plugins
-    if (run or header_changed) and balancer.recreate_request then
-        balancer.recreate_request()
+        local _, run = plugin_funcs("balancer")
+        -- always recreate request as the request may be changed by plugins
+        if (run or header_changed) and balancer.recreate_request then
+            balancer.recreate_request()
+        end
     end
 
     core.log.info("proxy request to ", server.host, ":", server.port)

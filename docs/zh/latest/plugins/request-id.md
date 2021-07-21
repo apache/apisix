@@ -38,7 +38,7 @@ title: request-id
 | 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name         | string  | 可选 | "X-Request-Id" |        | Request ID header name         |
-| include_in_response | boolean | 可选 | false          |        | 是否需要在返回头中包含该唯一ID |
+| include_in_response | boolean | 可选 | true          |        | 是否需要在返回头中包含该唯一ID |
 
 ## 如何启用
 

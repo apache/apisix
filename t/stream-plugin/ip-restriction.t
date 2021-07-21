@@ -14,16 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the check leak tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -35,10 +25,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!$block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
@@ -48,7 +34,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: limit-conn with retry upstream, set upstream
+=== TEST 1: blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -57,10 +43,8 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "127.0.0.2:1": 1,
-                        "127.0.0.1:1980": 1
+                        "127.0.0.1:1995": 1
                     },
-                    "retries": 2,
                     "type": "roundrobin"
                 }]]
                 )
@@ -71,17 +55,14 @@ __DATA__
                 return
             end
 
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/stream_routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/mysleep",
                     "plugins": {
-                        "limit-conn": {
-                            "conn": 1,
-                            "burst": 0,
-                            "default_conn_delay": 0.3,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
+                        "ip-restriction": {
+                                "blacklist": [
+                                    "127.0.0.0/24"
+                                ]
                         }
                     },
                     "upstream_id": "1"
@@ -94,67 +75,38 @@ __DATA__
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
 
 
-=== TEST 2: hit route
---- log_level: debug
---- request
-GET /mysleep?seconds=0.1
+=== TEST 2: hit
+--- stream_enable
+--- stream_request eval
+mmm
 --- error_log
-request latency is 0.1
---- response_body
-0.1
+Connection reset by peer
 
 
 
-=== TEST 3: set both global and route
+=== TEST 3: whitelist
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "limit-conn": {
-                            "conn": 1,
-                            "burst": 0,
-                            "default_conn_delay": 0.3,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/stream_routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/hello",
                     "plugins": {
-                        "limit-conn": {
-                            "conn": 1,
-                            "burst": 0,
-                            "default_conn_delay": 0.3,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
+                        "ip-restriction": {
+                                "whitelist": [
+                                    "127.0.0.0/24"
+                                ]
                         }
                     },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
+                    "upstream_id": "1"
                 }]]
                 )
 
@@ -164,17 +116,46 @@ request latency is 0.1
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
 
 
-=== TEST 4: hit route
---- log_level: debug
+=== TEST 4: hit
+--- stream_enable
+--- stream_request eval
+mmm
+--- stream_response
+hello world
+
+
+
+=== TEST 5: validate schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "ip-restriction": {
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
 --- request
-GET /hello
---- grep_error_log eval
-qr/request latency is/
---- grep_error_log_out
-request latency is
-request latency is
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of stream plugin [ip-restriction]: value should match only one schema, but matches none"}

@@ -155,7 +155,4 @@ brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git
 
 # 开启 etcd server
 brew services start etcd
-
-# 为 etcd 服务启用 TLS
-etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
 ```
