@@ -150,7 +150,7 @@ apisix:
 --- request
 GET /t
 --- response_body
-301
+200
 
 
 
@@ -180,8 +180,7 @@ apisix:
     }
 --- stream_request eval
 m
---- stream_response: 301
-
+--- stream_response: 200
 --- no_error_log
 [error]
 
