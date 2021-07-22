@@ -149,7 +149,7 @@ local function send_to_tcp_server(data)
             .. "] port[" .. tostring(tcp_config.port) .. "] err: " .. err
     end
 
-    sock:setkeepalive(tcp_config.keepalive * 1000)
+    sock:setkeepalive(config.keepalive * 1000)
     return true
 end
 
@@ -182,7 +182,7 @@ local function send_to_skywalking(log_message)
         {
             method = "POST",
             body = core.json.encode(entries),
-            keepalive_timeout = config.skywalking.keepalive * 1000,
+            keepalive_timeout = config.keepalive * 1000,
             headers = {
                 ["Content-Type"] = "application/json",
             }

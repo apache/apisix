@@ -121,7 +121,7 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    tcp: {
+                    "tcp": {
                         "port": 1999,
                         "inactive_timeout": 1
                     }
@@ -159,7 +159,7 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    tcp: {
+                    "tcp": {
                         "host": "127.0.0.1",
                         "port": 1999,
                         "inactive_timeout": 1
@@ -194,7 +194,7 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    tcp: {
+                    "tcp": {
                         "host": "127.0.0.1",
                         "port": 1999,
                         "inactive_timeout": 1
@@ -304,7 +304,7 @@ plugins:
                 [[{
                     "plugins": {
                         "error-log-logger": {
-                            tcp: {
+                            "tcp": {
                                 "host": "127.0.0.1",
                                 "port": 1999,
                                 "inactive_timeout": 1

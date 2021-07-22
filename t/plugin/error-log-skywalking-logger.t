@@ -80,7 +80,7 @@ done
 --- request
 GET /t
 --- response_body
-property "skywalking.endpoint_addr" is required
+property "skywalking" validation failed: property "endpoint_addr" is required
 done
 --- no_error_log
 [error]
@@ -152,7 +152,7 @@ plugins:
     }
 --- request
 GET /tg
---- error_code: 400
+--- error_code: 201
 --- response_body
 --- error_log eval
 qr/please set the correct plugin_metadata for error-log-logger/
@@ -175,8 +175,8 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    type: "SKYWALKING",
-                    skywalking: {
+                    "type": "SKYWALKING",
+                    "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1988/log",
                         "inactive_timeout": 1
                     }
@@ -190,7 +190,7 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed to process entries: failed to connect to skywalking\[http://127.0.0.1:1988/log\] connection refused, context: ngx.timer/
+qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed to process entries: error while sending data to skywalking\[http:\/\/127.0.0.1:1988\/log\] connection refused, context: ngx.timer/
 --- wait: 3
 
 
@@ -210,8 +210,8 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    type: "SKYWALKING",
-                    skywalking: {
+                    "type": "SKYWALKING",
+                    "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log",
                         "inactive_timeout": 1
                     }
@@ -296,8 +296,8 @@ plugins:
                 [[{
                     "plugins": {
                         "error-log-logger": {
-                            type: "SKYWALKING",
-                            skywalking: {
+                            "type": "SKYWALKING",
+                            "skywalking": {
                                 "endpoint_addr": "http://127.0.0.1:1982/log",
                                 "inactive_timeout": 1
                             }
