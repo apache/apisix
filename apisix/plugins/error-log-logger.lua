@@ -20,6 +20,8 @@ local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
+local http = require("resty.http")
+local url = require("net.url")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -36,23 +38,40 @@ local lrucache = core.lrucache.new({
 local metadata_schema = {
     type = "object",
     properties = {
-        host = schema_def.host_def,
-        port = {type = "integer", minimum = 0},
-        tls = {type = "boolean", default = false},
-        tls_server_name = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default = 3},
-        keepalive = {type = "integer", minimum = 1, default = 30},
+        type = {type = "string", default = "TCP", enum = {"TCP", "SKYWALKING"}},
+        tcp = {
+            type = "object",
+            properties = {
+                host = schema_def.host_def,
+                port = {type = "integer", minimum = 0},
+                tls = {type = "boolean", default = false},
+                tls_server_name = {type = "string"},
+                keepalive = {type = "integer", minimum = 1, default = 30},
+            },
+	    required = {"host", "port"}
+        },
+        skywalking = {
+            type = "object",
+            properties = {
+                endpoint_addr = schema_def.uri,
+                service_name = {type = "string", default = "APISIX"},
+                service_instance_name = {type="string", default = "APISIX Service Instance"},
+            },
+	    required = {"endpoint_addr"}
+        },
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
+        timeout = {type = "integer", minimum = 1, default = 3},
         batch_max_size = {type = "integer", minimum = 0, default = 1000},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 3},
     },
-    required = {"host", "port"}
 }
+
+
 local schema = {
     type = "object",
 }
@@ -85,7 +104,15 @@ local _M = {
 }
 
 
-local function send_to_server(data)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+    return core.schema.check(schema, conf)
+end
+
+
+local function send_to_tcp_server(data)
     local sock, soc_err = tcp()
 
     if not sock then
@@ -94,30 +121,106 @@ local function send_to_server(data)
 
     sock:settimeout(config.timeout * 1000)
 
-    local ok, err = sock:connect(config.host, config.port)
+    local tcp_config = config.tcp
+    local ok, err = sock:connect(tcp_config.host, tcp_config.port)
     if not ok then
-        return false, "failed to connect the TCP server: host[" .. config.host
-            .. "] port[" .. tostring(config.port) .. "] err: " .. err
+        return false, "failed to connect the TCP server: host[" .. tcp_config.host
+            .. "] port[" .. tostring(tcp_config.port) .. "] err: " .. err
     end
 
-    if config.tls then
-        ok, err = sock:sslhandshake(false, config.tls_server_name, false)
+    if tcp_config.tls then
+        ok, err = sock:sslhandshake(false, tcp_config.tls_server_name, false)
         if not ok then
             sock:close()
             return false, "failed to perform TLS handshake to TCP server: host["
-                .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
+                .. tcp_config.host .. "] port[" .. tostring(tcp_config.port) .. "] err: " .. err
         end
     end
 
     local bytes, err = sock:send(data)
     if not bytes then
         sock:close()
-        return false, "failed to send data to TCP server: host[" .. config.host
-            .. "] port[" .. tostring(config.port) .. "] err: " .. err
+        return false, "failed to send data to TCP server: host[" .. tcp_config.host
+            .. "] port[" .. tostring(tcp_config.port) .. "] err: " .. err
     end
 
-    sock:setkeepalive(config.keepalive * 1000)
+    sock:setkeepalive(tcp_config.keepalive * 1000)
     return true
+end
+
+
+local function send_to_skywalking(log_message)
+    local err_msg
+    local res = true
+    local url_decoded = url.parse(config.skywalking.endpoint_addr)
+    local host = url_decoded.host
+    local port = url_decoded.port
+
+    core.log.info("sending a batch logs to ", config.skywalking.endpoint_addr)
+
+    if ((not port) and url_decoded.scheme == "https") then
+        port = 443
+    elseif not port then
+        port = 80
+    end
+
+    local httpc = http.new()
+    httpc:set_timeout(config.timeout * 1000)
+    local ok, err = httpc:connect(host, port)
+
+    if not ok then
+        return false, "failed to connect to host[" .. host .. "] port["
+            .. tostring(port) .. "] " .. err
+    end
+
+    if url_decoded.scheme == "https" then
+        ok, err = httpc:ssl_handshake(true, host, false)
+        if not ok then
+            return nil, "failed to perform SSL with host[" .. host .. "] "
+                .. "port[" .. tostring(port) .. "] " .. err
+        end
+    end
+
+    local entries = {}
+    for i = 1, #log_message, 2 do
+        local content = {
+            service = config.skywalking.service_name,
+            serviceInstance = config.skywalking.service_instance_name,
+            endpoint = "",
+            body = {
+                text = {
+                    text = log_message[i]
+                }
+           }
+        }
+        table.insert(entries, content)
+    end
+
+    local httpc_res, httpc_err = httpc:request({
+        method = "POST",
+        path = url_decoded.path,
+        query = url_decoded.query,
+        body = core.json.encode(entries),
+        headers = {
+            ["Host"] = url_decoded.host,
+            ["Content-Type"] = "application/json",
+        }
+    })
+
+    if not httpc_res then
+        return false, "error while sending data to [" .. host .. "] port["
+            .. tostring(port) .. "] " .. httpc_err
+    end
+
+    -- some error occurred in the server
+    if httpc_res.status >= 400 then
+        res =  false
+        err_msg = "server returned status code[" .. httpc_res.status .. "] host["
+            .. host .. "] port[" .. tostring(port) .. "] "
+            .. "body[" .. httpc_res:read_body() .. "]"
+    end
+
+    return res, err_msg
 end
 
 
@@ -131,6 +234,15 @@ local function update_filter(value)
     end
 
     return value
+end
+
+
+local function send(data)
+    if config.type == "TCP" then
+	    return send_to_tcp_server(data)
+    else
+	    return send_to_skywalking(data)
+    end
 end
 
 
@@ -180,7 +292,7 @@ local function process()
     }
 
     local err
-    log_buffer, err = batch_processor:new(send_to_server, config_bat)
+    log_buffer, err = batch_processor:new(send, config_bat)
 
     if not log_buffer then
         core.log.warn("error when creating the batch processor: ", err)
