@@ -48,7 +48,7 @@ local metadata_schema = {
                 tls_server_name = {type = "string"},
                 keepalive = {type = "integer", minimum = 1, default = 30},
             },
-	    required = {"host", "port"}
+            required = {"host", "port"}
         },
         skywalking = {
             type = "object",
@@ -57,7 +57,7 @@ local metadata_schema = {
                 service_name = {type = "string", default = "APISIX"},
                 service_instance_name = {type="string", default = "APISIX Service Instance"},
             },
-	    required = {"endpoint_addr"}
+            required = {"endpoint_addr"}
         },
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
@@ -152,34 +152,10 @@ end
 local function send_to_skywalking(log_message)
     local err_msg
     local res = true
-    local url_decoded = url.parse(config.skywalking.endpoint_addr)
-    local host = url_decoded.host
-    local port = url_decoded.port
-
     core.log.info("sending a batch logs to ", config.skywalking.endpoint_addr)
-
-    if ((not port) and url_decoded.scheme == "https") then
-        port = 443
-    elseif not port then
-        port = 80
-    end
 
     local httpc = http.new()
     httpc:set_timeout(config.timeout * 1000)
-    local ok, err = httpc:connect(host, port)
-
-    if not ok then
-        return false, "failed to connect to host[" .. host .. "] port["
-            .. tostring(port) .. "] " .. err
-    end
-
-    if url_decoded.scheme == "https" then
-        ok, err = httpc:ssl_handshake(true, host, false)
-        if not ok then
-            return nil, "failed to perform SSL with host[" .. host .. "] "
-                .. "port[" .. tostring(port) .. "] " .. err
-        end
-    end
 
     local entries = {}
     for i = 1, #log_message, 2 do
@@ -196,28 +172,28 @@ local function send_to_skywalking(log_message)
         table.insert(entries, content)
     end
 
-    local httpc_res, httpc_err = httpc:request({
-        method = "POST",
-        path = url_decoded.path,
-        query = url_decoded.query,
-        body = core.json.encode(entries),
-        headers = {
-            ["Host"] = url_decoded.host,
-            ["Content-Type"] = "application/json",
+    local httpc_res, httpc_err = httpc:request_uri(
+        config.skywalking.endpoint_addr,
+        {
+            method = "POST",
+            body = core.json.encode(entries),
+            headers = {
+                ["Content-Type"] = "application/json",
+            }
         }
-    })
+    )
 
     if not httpc_res then
-        return false, "error while sending data to [" .. host .. "] port["
-            .. tostring(port) .. "] " .. httpc_err
+        return false, "error while sending data to [" .. config.skywalking.endpoint
+            .. "] " .. httpc_err
     end
 
     -- some error occurred in the server
     if httpc_res.status >= 400 then
         res =  false
-        err_msg = "server returned status code[" .. httpc_res.status .. "] host["
-            .. host .. "] port[" .. tostring(port) .. "] "
-            .. "body[" .. httpc_res:read_body() .. "]"
+        err_msg = "server returned status code[" .. httpc_res.status
+            .. "] uri[" .. config.skywalking.endpoint_addr
+            .. "] body[" .. httpc_res:read_body() .. "]"
     end
 
     return res, err_msg
@@ -239,10 +215,9 @@ end
 
 local function send(data)
     if config.type == "TCP" then
-	    return send_to_tcp_server(data)
-    else
-	    return send_to_skywalking(data)
+        return send_to_tcp_server(data)
     end
+    return send_to_skywalking(data)
 end
 
 
