@@ -86,6 +86,7 @@ local function gen_data_machine(max_number)
             local res, err = etcd_cli:grant(attr.snowflake.data_machine_ttl)
             if err then
                 core.log.error("Etcd grant failure, err: ".. err)
+                goto continue
             end
 
             local _, err1 = etcd_cli:setnx(prefix .. tostring(id), uuid)
