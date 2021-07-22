@@ -186,28 +186,6 @@ request latency is
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "limit-conn": {
-                            "conn": 1,
-                            "burst": 0,
-                            "default_conn_delay": 0.3,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -247,7 +225,6 @@ passed
 --- request
 GET /hello1
 --- grep_error_log eval
-qr/request latency is/
+qr/request latency is nil/
 --- grep_error_log_out
-request latency is
-request latency is
+request latency is nil
