@@ -95,8 +95,14 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
-		utils.GetRouteList(e, http.StatusOK)
-		time.Sleep(1 * time.Second)
+		for range [5]int{} {
+			resp := utils.GetRouteIgnoreError(e)
+			if resp.Raw().StatusCode == http.StatusOK {
+				break
+			} else {
+				time.Sleep(1 * time.Second)
+			}
+		}
 		utils.GetRoute(e, http.StatusOK)
 		utils.TestPrometheusEtcdMetric(e, 1)
 	})
