@@ -301,6 +301,7 @@ plugins:                          # plugin list (sorted by priority)
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
+  - gzip                           # priority: 995
   - server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
