@@ -16,60 +16,78 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    my $stream_single_server = <<_EOC_;
-    # fake server, only for test
-    server {
-        listen 1999;
-
-        content_by_lua_block {
-            local exiting = ngx.worker.exiting
-            local sock, err = ngx.req.socket(true)
-            if not sock then
-                ngx.log(ngx.WARN, "socket error:", err)
-                return
-            end
-
-            sock:settimeout(30 * 1000)
-            while(not exiting())
-            do
-                local data, err =  sock:receive()
-                if (data) then
-                    ngx.log(ngx.INFO, "[Server] receive data:", data)
-                else
-                    if err ~= "timeout" then
-                        ngx.log(ngx.WARN, "socket error:", err)
-                        return
-                    end
-                end
-            end
-
-        }
-    }
-_EOC_
-
-    $block->set_value("stream_config", $stream_single_server);
-
-    my $stream_default_server = <<_EOC_;
-	    content_by_lua_block {
-	    	ngx.log(ngx.INFO, "a stream server")
-	    }
-_EOC_
-
-    $block->set_value("stream_server_config", $stream_default_server);
-});
-
 run_tests;
 
 __DATA__
 
-=== TEST 1: not enable the plugin
+=== TEST 1: test schema checker
+--- config
+    location /t {
+        content_by_lua_block {
+        local core = require("apisix.core")
+            local plugin = require("apisix.plugins.error-log-logger")
+            local ok, err = plugin.check_schema(
+                {
+                    type = "SKYWALKING",
+                    skywalking = {
+                        endpoint_addr = "http://127.0.0.1"
+                    }
+                },
+                core.schema.TYPE_METADATA
+            )
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: test schema checker, missing required field
+--- config
+    location /t {
+        content_by_lua_block {
+        local core = require("apisix.core")
+            local plugin = require("apisix.plugins.error-log-logger")
+            local ok, err = plugin.check_schema(
+                {
+                    type = "SKYWALKING",
+                    skywalking = {
+                        service = "APISIX"
+                    }
+                },
+                core.schema.TYPE_METADATA
+            )
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "skywalking.endpoint_addr" is required
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: not enable the plugin
 --- config
     location /tg {
         content_by_lua_block {
@@ -86,7 +104,7 @@ error-log-logger
 
 
 
-=== TEST 2: enable the plugin, but not init the metadata
+=== TEST 4: enable the plugin, but not init the metadata
 --- yaml_config
 plugins:
   - error-log-logger
@@ -106,7 +124,7 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 3: set a wrong metadata
+=== TEST 5: set a wrong metadata
 --- yaml_config
 apisix:
     enable_admin: true
@@ -121,10 +139,8 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    tcp: {
-                        "port": 1999,
-                        "inactive_timeout": 1
-                    }
+                    "port": 1999,
+                    "inactive_timeout": 1
                 }]]
                 )
 
@@ -144,7 +160,7 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 4: test unreachable server
+=== TEST 6: test unreachable server
 --- yaml_config
 apisix:
     enable_admin: true
@@ -159,44 +175,9 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    tcp: {
-                        "host": "127.0.0.1",
-                        "port": 1999,
-                        "inactive_timeout": 1
-                    }
-                }]]
-                )
-            ngx.sleep(2)
-            core.log.warn("this is a warning message for test.")
-        }
-    }
---- request
-GET /tg
---- response_body
---- no_error_log eval
-qr/\[Server\] receive data:.*this is a warning message for test./
---- wait: 3
-
-
-
-=== TEST 5: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
---- config
-    location /tg {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
-                ngx.HTTP_PUT,
-                [[{
-                    tcp: {
-                        "host": "127.0.0.1",
-                        "port": 1999,
+                    type: "SKYWALKING",
+                    skywalking: {
+                        "endpoint_addr": "http://127.0.0.1:1988/log",
                         "inactive_timeout": 1
                     }
                 }]]
@@ -209,12 +190,44 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/\[Server\] receive data:.*this is a warning message for test./
---- wait: 5
+qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed to process entries: failed to connect to skywalking\[http://127.0.0.1:1988/log\] connection refused, context: ngx.timer/
+--- wait: 3
 
 
 
-=== TEST 6: log an error level message
+=== TEST 7: put plugin metadata
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    type: "SKYWALKING",
+                    skywalking: {
+                        "endpoint_addr": "http://127.0.0.1:1982/log",
+                        "inactive_timeout": 1
+                    }
+                }]]
+                )
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: log an error level message
 --- yaml_config
 plugins:
   - error-log-logger
@@ -230,33 +243,12 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/\[Server\] receive data:.*this is an error message for test./
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
 --- wait: 5
 
 
 
-=== TEST 7: log an info level message
---- yaml_config
-plugins:
-  - error-log-logger
---- config
-    location /tg {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            ngx.sleep(2)
-            core.log.info("this is an info message for test.")
-        }
-    }
---- request
-GET /tg
---- response_body
---- no_error_log eval
-qr/\[Server\] receive data:.*this is an info message for test./
---- wait: 5
-
-
-
-=== TEST 8: delete metadata for the plugin, recover to the default
+=== TEST 9: delete metadata for the plugin, recover to the default
 --- yaml_config
 apisix:
     enable_admin: true
@@ -287,7 +279,7 @@ passed
 
 
 
-=== TEST 9: want to reload the plugin by route
+=== TEST 10: want to reload the plugin by route
 --- yaml_config
 apisix:
     enable_admin: true
@@ -304,9 +296,9 @@ plugins:
                 [[{
                     "plugins": {
                         "error-log-logger": {
-                            tcp: {
-                                "host": "127.0.0.1",
-                                "port": 1999,
+                            type: "SKYWALKING",
+                            skywalking: {
+                                "endpoint_addr": "http://127.0.0.1:1982/log",
                                 "inactive_timeout": 1
                             }
                         }
@@ -335,7 +327,7 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 10: delete the route
+=== TEST 11: delete the route
 --- yaml_config
 apisix:
     enable_admin: true

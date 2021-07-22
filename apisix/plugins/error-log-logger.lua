@@ -21,7 +21,6 @@ local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local http = require("resty.http")
-local url = require("net.url")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -46,7 +45,6 @@ local metadata_schema = {
                 port = {type = "integer", minimum = 0},
                 tls = {type = "boolean", default = false},
                 tls_server_name = {type = "string"},
-                keepalive = {type = "integer", minimum = 1, default = 30},
             },
             required = {"host", "port"}
         },
@@ -59,10 +57,17 @@ local metadata_schema = {
             },
             required = {"endpoint_addr"}
         },
+        host = {schema_def.host_def, description = "Deprecated, use `tcp.host` instead."},
+        port = {type = "integer", minimum = 0, description = "Deprecated, use `tcp.port` instead."},
+        tls = {type = "boolean", default = false,
+                description = "Deprecated, use `tcp.tls` instead."},
+        tls_server_name = {type = "string",
+                description = "Deprecated, use `tcp.tls_server_name` instead."},
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
         timeout = {type = "integer", minimum = 1, default = 3},
+        keepalive = {type = "integer", minimum = 1, default = 30},
         batch_max_size = {type = "integer", minimum = 0, default = 1000},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
@@ -177,6 +182,7 @@ local function send_to_skywalking(log_message)
         {
             method = "POST",
             body = core.json.encode(entries),
+            keepalive_timeout = config.skywalking.keepalive * 1000,
             headers = {
                 ["Content-Type"] = "application/json",
             }
@@ -184,15 +190,15 @@ local function send_to_skywalking(log_message)
     )
 
     if not httpc_res then
-        return false, "error while sending data to [" .. config.skywalking.endpoint
-            .. "] " .. httpc_err
+        return false, "error while sending data to skywalking["
+            .. config.skywalking.endpoint_addr .. "] " .. httpc_err
     end
 
     -- some error occurred in the server
     if httpc_res.status >= 400 then
         res =  false
         err_msg = "server returned status code[" .. httpc_res.status
-            .. "] uri[" .. config.skywalking.endpoint_addr
+            .. "] skywalking[" .. config.skywalking.endpoint_addr
             .. "] body[" .. httpc_res:read_body() .. "]"
     end
 
