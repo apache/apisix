@@ -376,7 +376,7 @@ function _M.echo()
     for k, v in pairs(hdrs) do
         ngx.header[k] = v
     end
-    ngx.say(ngx.req.get_body_data() or "")
+    ngx.print(ngx.req.get_body_data() or "")
 end
 
 
