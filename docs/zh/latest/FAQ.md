@@ -549,4 +549,170 @@ apisix:
 ```
 
 **注意:**
-尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`
+尝试使用 cosocket 连接任何 TLS 服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
+
+## 用 APISIX 代理静态文件，如何配置路由
+
+用 nginx 代理静态文件，常用配置示例：
+
+```nginx
+location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
+...
+}
+```
+
+在 nginx.conf 中，这个配置表示匹配 url 的后缀是 js, css 等的请求。转换成 APISIX 的路由配置，需要使用 APISIX 的正则匹配，示例：
+
+```json
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", ".(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$"]
+    ]
+}
+```
+
+## 如何解决 `module 'resty.worker.events' not found` 错误
+
+把 APISIX 安装在了 `/root` 目录下会导致这个问题，即使用 root 用户启动也无法避免。因为 worker 进程属于 nobody 用户，无权访问 `/root` 目录下的文件。需要移动 APISIX 的安装目录，推荐安装在 `/usr/local` 目录下。
+
+## 如何在 APISIX 中获取真实的客户端 IP
+
+首这个功能依赖于 Nginx 的 [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) 模块，在 [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) 脚本中涵盖了 Real IP 模块。
+
+Real IP 模块中有 3 个配置
+- set_real_ip_from： 定义受信任的地址，这些已知地址会发送正确的替换地址。
+- real_ip_header： 定义请求头字段，其值将被用来替换客户端地址。
+- real_ip_recursive： 如果禁用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为 real_ip_header 指令定义的请求标头字段中发送的最后一个地址。
+
+下面结合具体场景介绍这三个指令如何使用。
+
+1. Client -> APISIX -> Upstream
+
+在 Client 直连 APISIX 场景下，不需要作特殊配置，APISIX 可以自动获取真实的 Client IP。
+
+2. Client -> Nginx -> APISIX -> Upstream
+
+这种场景下，APISIX 与 Client 之间有 Nginx 做反向代理。如果 APISIX 不做任何配置，那么获取到的 Client IP 是 Nginx 的 IP，而不是真实的 Client 的 IP。
+
+为了解决这个问题，Nginx 需要传递 Client IP，配置示例：
+
+```nginx
+location / {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_pass   http://$APISIX_IP:port;
+}
+```
+
+其中 `$remote_addr` 变量获取的是真实的 Client IP，用 `proxy_set_header` 指令把 Client IP 设置在请求的 `X-Real-IP` header 中，并向后传递给 APISIX。 `$APISIX_IP` 是指真实环境中的 APISIX 的 IP。
+
+APISIX 的 `config.yaml` 配置示例：
+
+```yaml
+nginx_config:
+  http:
+    real_ip_from:
+      - $Nginx_IP
+```
+
+上面配置的 `$Nginx_IP` 是指真实环境中的 Nginx 的 IP。该配置在 APISIX 生成的 `nginx.conf` 中如下：
+
+```nginx
+location /get {
+    real_ip_header X-Real-IP;
+    real_ip_recursive off;
+    set_real_ip_from $Nginx_IP;
+}
+```
+
+其中 `real_ip_from` 对应的是 Real IP 模块设置的 `set_real_ip_from`，`config.yaml` 中虽然没有 `real_ip_recursive` 和 `real_ip_header`，但是在 `config-default.yaml` 中设置了缺省值。
+
+`real_ip_header X-Real-IP;` 表示 Client IP 在 `X-Real-IP` 这个 header 中，与 Nginx 配置中的 `proxy_set_header X-Real-IP $remote_addr;` 契合。
+
+`set_real_ip_from` 表示配置的 `$Nginx_IP` 是信任服务器的 IP。在寻找真实的 Client IP 的时候，在搜索范围内把 `$Nginx_IP` 剔除掉，因为对于 APISIX 来说，这个 IP 确定是可信任的服务器 IP，不可能是 Client IP。`set_real_ip_from` 可以配置成 CIDR 的格式，即网段，例如 0.0.0.0/24。
+
+
+3. Client -> Nginx1 -> Nginx2 -> APISIX -> Upstream
+
+这种场景是指 APISIX 与 Client 之间有多个 Nginx 做反向代理。
+
+Nginx1 配置示例：
+
+```nginx
+location /get {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_pass   http://$Nginx2_IP:port;
+}
+```
+
+Nginx2 配置示例：
+
+```nginx
+location /get {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_pass   http://$APISIX_IP:port;
+}
+```
+
+配置中使用了 `X-Forwarded-For`，它的用途是获取真实的代理路径。代理服务开启了 `X-Forwarded-For` 设置后，每次经过代理转发都会在 `X-Forwarded-For` 这个 header 的末尾追加当前代理服务的 IP。格式是 client, proxy1, proxy2, 以逗号隔开。
+
+所以经过 Nginx1 和 Nginx2 的代理，APISIX 获得的 "X-Forwarded-For" 是 "Client IP, $Nginx1_IP, $Nginx2_IP" 这样的代理路径。
+
+APISIX 的 `config.yaml` 配置示例：
+
+```yaml
+nginx_config:
+  http:
+    real_ip_from:
+      - $Nginx1_IP
+      - $Nginx2_IP
+    real_ip_header: "X-Forwarded-For"
+    real_ip_recursive: "on"
+```
+
+`real_ip_from` 的配置表示 `$Nginx1_IP` 和 `$Nginx2_IP` 都是可信服务器的 IP。可以这样理解： Client 和 APISIX 之间有多少层代理服务，这些代理服务的 IP 都需要设置在 `real_ip_from` 中。确保 APISIX 不会把搜索范围内出现的 IP 误认为是 Client IP。
+
+`real_ip_header` 使用了 `X-Forwarded-For`，不用 `config-default.yaml` 的缺省值。
+
+当 `real_ip_recursive` 为 on 时，APISIX 会在 `X-Forwarded-For` 的值中从右往左搜索，剔除掉信任服务器的 IP，把最先搜索到的 IP 作为真实的 Client IP。
+
+当请求到达 APISIX 时，`X-Forwarded-For` 的值是 "Client IP, $Nginx1_IP, $Nginx2_IP"。由于 `$Nginx1_IP` 和 `$Nginx2_IP` 都是可信服务器的 IP，所以 APISIX 会继续往左查询，发现 `Client IP` 不是可信服务器的 IP，就判断为真实的 Client IP。
+
+最后，在其他更复杂的场景中，比如 APISIX 与 Client 之间有 CDN，LB 等，需要理解 Real IP 模块的工作方式，并在 APISIX 中进行相应的配置。
+
+## APISIX 支持使用 etcd 作为服务注册与发现中心吗
+
+APISIX 支持使用 etcd 进行服务发现，etcd 官方实现中没有服务发现 API，因此，唯一方法是自己实现服务注册的框架。这也是 APISIX 采用的方式。
+
+当通过 APISIX 的 admin api 或通过其他方式将 `myAPIProvider` 配置放入 etcd 时，示例：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/myAPIProvider  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "type":"roundrobin",
+    "nodes":{
+        "39.97.63.215:80": 1
+    }
+}'
+```
+
+就是服务注册了，在 APISIX 的路由配置中，可以直接使用 `myAPIProvider` 作为上游，示例：
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/get",
+  "upstream_id": "myAPIProvider"
+}'
+```
+
+## 在 Grafana 面板中收集不同 APISIX 实例的指标
+
+APISIX 在 prometheus 插件[暴露的指标](./plugins/prometheus.md#可有的指标)中支持 hostname，例如
+
+```shell
+apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
+```
+
+因此，不同的 APISIX 实例设置不同的 hostname，在 Grafana 面板中即可加以区分。
+
