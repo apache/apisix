@@ -246,7 +246,9 @@ function _M.init()
 end
 
 function _M.destroy()
-    timers.unregister_timer("plugin#request-id")
+    if snowflake_inited then
+        timers.unregister_timer("plugin#request-id")
+    end
 end
 
 return _M
