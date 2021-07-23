@@ -716,3 +716,170 @@ apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
 
 因此，不同的 APISIX 实例设置不同的 hostname，在 Grafana 面板中即可加以区分。
 
+## roundrobin 负载策略不准确，节点调度并没有完全按照权重来进行
+
+如果不开启健康检查，那么 roundrobin 负载策略是按照权重比调度节点。如果开启了上游健康检查，APISIX 会先剔除掉不健康的节点，然后根据 roundrobin 负载策略调度节点。所有的负载均衡策略都遵循这个规则。
+
+这是一则错误使用上游健康检查导致负载不均衡的例子：
+
+使用默认的被动健康检查配置，并且主动健康检查配置中的探测端点 `http_path` 配了错误的 url，导致主动健康检查根据 `http_path` 探测，发现探测端点返回的 HTTP 状态码是 404，于是标记所有上游节点的状态为不健康。这时健康检查会降级为默认的权重模式，roundrobin 按照权重比调度节点。
+
+如果有请求被代理到了上游节点，并且上游节点返回 HTTP 状态码是 200，触发被动健康检查将此节点又标记为健康，APISIX 会把请求都调度到这个健康的节点，同时再次激活主动健康检查，主动健康检查并根据错误的 `http_path` 再次进行探测并收到 404 HTTP 状态码，又将此上游节点标记为不健康。如此反复，导致节点调度不均衡。
+
+## APISIX 实例存活状态的七层探测端点如何配置
+
+使用 [node-status](./plugins/node-status.md) 或者 [server-info](./plugins/server-info.md) 插件，它们的插件接口都可以作为探测端点。
+
+## 如何开启路由上的 mTLS 连接
+
+这个问题可以整理归类为：Client 与 APISIX 之间，Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd 之间分别如何配置 mTLS 连接。
+
+路由上的 mTLS 连接即 Client 与 APISIX 之间使用 mTLS 连接。
+
+开启 mTLS 协议的前置准备有：CA 证书，以及由这个 CA 证书签发的客户端证书，客户端密钥，服务端证书，服务端密钥。以下示例中使用 APISIX 用于测试用例的相关证书文件。
+
+1. 上传证书
+
+APISIX 提供了动态上传证书的接口，你也可以在 APISIX-Dashboard 中上传证书。为了直观，我用测试用例的方式上传 ssl 证书,示例：
+
+```perl
+=== TEST 1: set ssl(sni: admin.apisix.dev)
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/mtls_server.crt")
+        local ssl_key =  t.read_file("t/certs/mtls_server.key")
+        local ssl_cacert = t.read_file("t/certs/mtls_ca.crt")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "admin.apisix.dev", client = {ca = ssl_cacert, depth = 5}}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "admin.apisix.dev"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+```
+
+注意：要设置将用于客户端证书校验的 CA 证书以及客户端证书校验的深度，即 `client.ca` 和 `client.depth`。另外需要说明：mtls_ca.crt 这个证书签署的 SNI 是 `admin.apisix.dev`。
+
+2. 设置路由
+
+示例：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/get",
+    "hosts": ["admin.apisix.dev"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+在路由上，指定了 hosts 属性是 `admin.apisix.dev`。APISIX 会根据请求携带的域名， 查询域名对应的 SNI 关联的 CA 证书，服务器证书和服务器密钥。这个过程相当于绑定路由和证书。
+
+3. 测试
+
+```shell
+curl --cert /usr/local/apisix/t/certs/mtls_client.crt --key /usr/local/apisix/t/certs/mtls_client.key --cacert /usr/local/apisix/t/certs/mtls_ca.crt --resolve 'admin.apisix.dev:9443:127.0.0.1' https://admin.apisix.dev:9443/get -vvv
+
+* Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
+* Hostname admin.apisix.dev was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to admin.apisix.dev (127.0.0.1) port 9443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /usr/local/apisix/t/certs/mtls_ca.crt
+  CApath: none
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Request CERT (13):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Certificate (11):
+* TLSv1.3 (OUT), TLS handshake, CERT verify (15):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: C=cn; ST=GuangDong; O=api7; L=ZhuHai; CN=admin.apisix.dev
+*  start date: Jun 20 13:14:34 2020 GMT
+*  expire date: Jun 18 13:14:34 2030 GMT
+*  common name: admin.apisix.dev (matched)
+*  issuer: C=cn; ST=GuangDong; L=ZhuHai; O=api7; OU=ops; CN=ca.apisix.dev
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0xaaaad8ffadd0)
+> GET /get HTTP/2
+> Host: admin.apisix.dev:9443
+> user-agent: curl/7.71.1
+> accept: */*
+> 
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+< HTTP/2 200 
+< content-type: application/json
+< content-length: 320
+< date: Tue, 06 Jul 2021 15:40:14 GMT
+< access-control-allow-origin: *
+< access-control-allow-credentials: true
+< server: APISIX/2.7
+< 
+{
+  "args": {}, 
+  "headers": {
+    "Accept": "*/*", 
+    "Host": "admin.apisix.dev", 
+    "User-Agent": "curl/7.71.1", 
+    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6", 
+    "X-Forwarded-Host": "admin.apisix.dev"
+  }, 
+  "origin": "127.0.0.1, 49.70.187.161", 
+  "url": "http://admin.apisix.dev/get"
+}
+* Connection #0 to host admin.apisix.dev left intact
+```
+
+`curl` 命令指定了 CA 证书，客户端证书，客户端密钥，由于是本地测试，所以用 `--resolve` 指令所以把 `admin.apisix.dev` 指向 `127.0.0.1`，成功触发请求。
+
+从 TLS 握手的过程可以看到，Client 与 APISIX 之间进行了证书校验，完成 mTLS 协议处理的过程。从响应中可以看到，APISIX 完成了请求代理转发。
+
+Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd 之间分别如何配置 mTLS 连接，可以参考 [mtls](./mtls.md)。
+
+## APISIX 代理四层协议并使用 tls 功能
+
+参考 [接收 TLS over TCP](./stream-proxy.md#接收-tls-over-tcp)，需要说明的是，在四层协议上，目前只支持 APISIX 作为 server 去卸载 tls 证书，不支持 APISIX 作为 client 去访问开启 tls 的上游。
+
