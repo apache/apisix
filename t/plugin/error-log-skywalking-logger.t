@@ -177,9 +177,9 @@ plugins:
                 [[{
                     "type": "SKYWALKING",
                     "skywalking": {
-                        "endpoint_addr": "http://127.0.0.1:1988/log",
-                        "inactive_timeout": 1
-                    }
+                        "endpoint_addr": "http://127.0.0.1:1988/log"
+                    },
+                    "inactive_timeout": 1
                 }]]
                 )
             ngx.sleep(2)
@@ -212,9 +212,9 @@ plugins:
                 [[{
                     "type": "SKYWALKING",
                     "skywalking": {
-                        "endpoint_addr": "http://127.0.0.1:1982/log",
-                        "inactive_timeout": 1
-                    }
+                        "endpoint_addr": "http://127.0.0.1:1982/log"
+                    },
+                    "inactive_timeout": 1
                 }]]
                 )
         }
@@ -244,7 +244,7 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
---- wait: 5
+--- wait: 15
 
 
 
@@ -298,9 +298,9 @@ plugins:
                         "error-log-logger": {
                             "type": "SKYWALKING",
                             "skywalking": {
-                                "endpoint_addr": "http://127.0.0.1:1982/log",
-                                "inactive_timeout": 1
-                            }
+                                "endpoint_addr": "http://127.0.0.1:1982/log"
+                            },
+                            "inactive_timeout": 1
                         }
                     },
                     "upstream": {
