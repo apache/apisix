@@ -94,8 +94,8 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	ginkgo.It("check if everything works", func() {
-		utils.SetRoute(e, httpexpect.Status2xx)
 		for range [5]int{} {
+			utils.SetRoute(e, httpexpect.Status2xx)
 			resp := utils.GetRouteIgnoreError(e)
 			if resp.Raw().StatusCode == http.StatusOK {
 				break
