@@ -552,3 +552,185 @@ apisix:
 **Note:**
 
 - Whenever trying to connect TLS services with cosocket, you should set `apisix.ssl.ssl_trusted_certificate`
+
+An example, if using Nacos as a service discovery in APISIX, Nacos has TLS protocol enabled, i.e. Nacos configuration `host` starts with `https://`, so you need to configure `apisix.ssl.ssl_trusted_certificate` and use the same CA certificate as Nacos.
+
+## Proxy static files with APISIX, how to configure routes
+
+Proxy static files with Nginx, for example:
+
+```nginx
+location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
+...
+}
+```
+
+In `nginx.conf`, this means matching requests with js, css, etc. as a suffix. This configuration can be converted into a route with regular matching for APISIX, for example:
+
+```json
+{
+    "uri": "/*",
+    "vars": [
+        ["uri", "~~", ".(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$"]
+    ]
+}
+```
+
+## How to fix `module 'resty.worker.events' not found` error
+
+Installing APISIX under the `/root` directory causes this problem. Because the worker process is run by nobody, it does not have access to the files in the `/root` directory. You need to move the APISIX installation directory, and it is recommended to install it in the `/usr/local` directory.
+
+## How to get the real Client IP in APISIX
+
+This feature relies on the [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) module of Nginx, which is covered in the [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) script.
+
+There are 3 directives in the Real IP module
+- set_real_ip_from
+- real_ip_header
+- real_ip_recursive
+
+The following describes how to use these three directives in the specific scenario.
+
+1. Client -> APISIX -> Upstream
+
+When the Client connects directly to APISIX, no special configuration is needed, APISIX can automatically get the real Client IP.
+
+2. Client -> Nginx -> APISIX -> Upstream
+
+When using Nginx as a reverse proxy between APISIX and a Client, if you do not configure APISIX for Real IP, the Client IP that APISIX gets is the IP of Nginx, not the real Client IP.
+
+To fix this problem, Nginx needs to pass the Client IP, for example:
+
+```nginx
+location / {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_pass   http://$APISIX_IP:port;
+}
+```
+
+The `proxy_set_header` directive sets the `$remote_addr` variable in the `X-Real-IP` header of the current request (the `$remote_addr` variable gets the real Client IP) and passes it to APISIX. The `$APISIX_IP` means the APISIX IP in real environment.
+
+Configure in `config.yaml` of APISIX, for example:
+
+```yaml
+nginx_config:
+  http:
+    real_ip_from:
+      - $Nginx_IP
+```
+
+`$Nginx_IP` is the IP of Nginx in the real environment. This configuration transformed by APISIX to `nginx.conf` as
+
+```nginx
+location /get {
+    real_ip_header X-Real-IP;
+    real_ip_recursive off;
+    set_real_ip_from $Nginx_IP;
+}
+```
+
+`real_ip_from` corresponds to `set_real_ip_from` in the Real IP module, `real_ip_recursive` and `real_ip_header` directives have default values in `config-default.yaml`.
+
+`real_ip_header X-Real-IP;` means that the Client IP is in the `X-Real-IP` header, which matches the `proxy_set_header X-Real-IP $remote_addr;` in the Nginx configuration.
+
+`set_real_ip_from` means that `$Nginx_IP` is the IP of the trusted server. APISIX excludes `$Nginx_IP` from the search for the real Client IP. Because for APISIX, this IP is a known trusted server IP and cannot be a Client IP. set_real_ip_from` can be configured in CIDR format, such as 0.0.0.0/24.
+
+3. Client -> Nginx1 -> Nginx2 -> APISIX -> Upstream
+
+When using multiple Nginx as a reverse proxy between APISIX and Client, configuration of Nginx1, for example:
+
+```nginx
+location /get {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_pass   http://$Nginx2_IP:port;
+}
+```
+
+configuration of Nginx2, for example:
+
+```nginx
+location /get {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_pass   http://$APISIX_IP:port;
+}
+```
+
+The configuration uses `X-Forwarded-For`, which is used to get the real proxy path. When `X-Forwarded-For` is enabled for a proxy service, the IP of the current proxy service will be appended to the end of the `X-Forwarded-For` header of each request. The format is client, proxy1, proxy2, separated by commas.
+
+So after the Nginx1 and Nginx2 proxies, APISIX gets "X-Forwarded-For" as a proxy path like "Client IP, $Nginx1_IP, $Nginx2_IP".
+
+Configure in `config.yaml` of APISIX, for example:
+
+```yaml
+nginx_config:
+  http:
+    real_ip_from:
+      - $Nginx1_IP
+      - $Nginx2_IP
+    real_ip_header: "X-Forwarded-For"
+    real_ip_recursive: "on"
+```
+
+The configuration of `real_ip_from` means that both `$Nginx1_IP` and `$Nginx2_IP` are IPs of trusted servers. How many proxy services there are between Client and APISIX, and the IPs of these proxy services need to be set in `real_ip_from`. This ensures that APISIX does not mistake IPs that appear in the search scope for Client IPs.
+
+`real_ip_header` uses `X-Forwarded-For` and does not use the default value of `config-default.yaml`.
+
+When `real_ip_recursive` is on, APISIX will search the value of `X-Forwarded-For` from right to left, exclude the IPs of the trusted servers, and use the first searched IP as the real Client IP.
+
+When the request arrives at APISIX, the value of `X-Forwarded-For` is `Client IP, $Nginx1_IP, $Nginx2_IP`. Since both `$Nginx1_IP` and `$Nginx2_IP` are IPs of trusted servers, APISIX will continue to look to the left and find that `Client IP` is not the IP of any trusted servers, and determine that it is the real Client IP.
+
+Finally, in other more complex scenarios, such as having a CDN, LB, etc. between APISIX and Client, it is necessary to understand how the Real IP module works and configure it accordingly in APISIX.
+
+## Does APISIX support the use of etcd as a service registration and discovery center
+
+APISIX supports service discovery using etcd. There is no service discovery API in the official implementation of etcd, so the only way to let APISIX to discover services is to implement your own framework for service registration. This is also the way used by APISIX.
+
+When `myAPIProvider` is set into etcd via APISIX's admin api or via other ways, for example:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/myAPIProvider  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "type":"roundrobin",
+    "nodes":{
+        "39.97.63.215:80": 1
+    }
+}'
+```
+
+This is the service registration. In the route configuration of APISIX, you can use `myAPIProvider` directly as the upstream, for example:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/get",
+  "upstream_id": "myAPIProvider"
+}'
+```
+
+## Collect metrics for different APISIX instances in the Grafana panel
+
+APISIX supports hostname in the prometheus plugin [exposed metrics](./plugins/prometheus.md#available-metrics) supports hostname, for example:
+
+```shell
+apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
+```
+
+Therefore, different APISIX instances have different hostnames, which can be distinguished in the Grafana panel.
+
+## roundrobin load policy is not accurate, node scheduling does not follow the weights
+
+If disabled the health check, then the roundrobin load policy schedules nodes according to the weight ratio. If enabled upstream health check, APISIX will first exclude unhealthy nodes and then schedule nodes according to the roundrobin load policy. All load balancing policies follow this rule.
+
+This is an example of a load imbalance caused by the incorrect use of upstream health checks:
+
+Used the default passive health check configuration, and the probe endpoint `http_path` in the active health check is the wrong, causing the active health check to probe based on `http_path` and find that the HTTP status code returned by the probe endpoint is 404, and mark the status of all upstream nodes as unhealthy. APISIX would ignore the health status of the nodes and schedules the nodes according to the load policy.
+
+If a request is proxied to the upstream node, and the upstream node returns an HTTP status code of 200, this triggered the passive health check and mark this node as healthy again, APISIX schedules all requests to this healthy node and activates the active health check again. At the same time, APISIX activated the active health check again and probes again based on the wrong `http_path`, then get 404 HTTP status code and mark this upstream node as unhealthy again. This is repeated, resulting in unbalanced node scheduling.
+
+## How to Configure Layer 7 Probe Endpoints for APISIX Instance Survival Status
+
+Use [node-status](./plugins/node-status.md) or [server-info](./plugins/server-info.md) plugins, both of which have plugin API that can be used as probe endpoints.
+
+## How to open an mTLS connection on a route
+
+This question can be extended to how to configure mTLS connections between Client and APISIX, between Control Plane and APISIX, between APISIX and Upstream, and between APISIX and etcd。

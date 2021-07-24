@@ -551,11 +551,11 @@ apisix:
 **注意:**
 尝试使用 cosocket 连接任何 TLS 服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
 
-举例：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议，填写的 Nacos 的 `host` 是 https:// 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且和 Nacos 使用的 CA 证书相同。
+举例：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议， 即 Nacos 配置的 `host` 是 `https://` 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
 
 ## 用 APISIX 代理静态文件，如何配置路由
 
-用 nginx 代理静态文件，常用配置示例：
+用 nginx 代理静态文件，示例：
 
 ```nginx
 location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
@@ -563,7 +563,7 @@ location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
 }
 ```
 
-在 nginx.conf 中，这个配置表示匹配 url 的后缀是 js, css 等的请求。转换成 APISIX 的路由配置，需要使用 APISIX 的正则匹配，示例：
+在 `nginx.conf` 中，表示匹配以 js, css 等为后缀的请求。这段配置可以转换成 APISIX 的带有正则匹配的路由，示例：
 
 ```json
 {
@@ -576,28 +576,28 @@ location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
 
 ## 如何解决 `module 'resty.worker.events' not found` 错误
 
-把 APISIX 安装在了 `/root` 目录下会导致这个问题，即使用 root 用户启动也无法避免。因为 worker 进程属于 nobody 用户，无权访问 `/root` 目录下的文件。需要移动 APISIX 的安装目录，推荐安装在 `/usr/local` 目录下。
+在 `/root` 目录下安装 APISIX 会导致这个问题。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。需要移动 APISIX 安装目录，推荐安装在 `/usr/local` 目录下。
 
 ## 如何在 APISIX 中获取真实的客户端 IP
 
-首这个功能依赖于 Nginx 的 [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) 模块，在 [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) 脚本中涵盖了 Real IP 模块。
+这个功能依赖于 Nginx 的 [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) 模块，在 [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) 脚本中涵盖了 Real IP 模块。
 
-Real IP 模块中有 3 个配置
-- set_real_ip_from： 定义受信任的地址，这些已知地址会发送正确的替换地址。
-- real_ip_header： 定义请求头字段，其值将被用来替换客户端地址。
-- real_ip_recursive： 如果禁用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为 real_ip_header 指令定义的请求标头字段中发送的最后一个地址。
+Real IP 模块中有 3 个指令
+- set_real_ip_from
+- real_ip_header
+- real_ip_recursive
 
 下面结合具体场景介绍这三个指令如何使用。
 
 1. Client -> APISIX -> Upstream
 
-在 Client 直连 APISIX 场景下，不需要作特殊配置，APISIX 可以自动获取真实的 Client IP。
+Client 直连 APISIX 时，不需要作特殊配置，APISIX 可以自动获取真实的 Client IP。
 
 2. Client -> Nginx -> APISIX -> Upstream
 
-这种场景下，APISIX 与 Client 之间有 Nginx 做反向代理。如果 APISIX 不做任何配置，那么获取到的 Client IP 是 Nginx 的 IP，而不是真实的 Client 的 IP。
+当用 Nginx 在 APISIX 和 Client 之间做反向代理时，如果没有对 APISIX 做 Real IP 相关的配置，那么 APISIX 获取到的 Client IP 是 Nginx 的 IP，而不是真实的 Client IP。
 
-为了解决这个问题，Nginx 需要传递 Client IP，配置示例：
+为了解决这个问题，Nginx 需要传递 Client IP，示例：
 
 ```nginx
 location / {
@@ -606,9 +606,9 @@ location / {
 }
 ```
 
-其中 `$remote_addr` 变量获取的是真实的 Client IP，用 `proxy_set_header` 指令把 Client IP 设置在请求的 `X-Real-IP` header 中，并向后传递给 APISIX。 `$APISIX_IP` 是指真实环境中的 APISIX 的 IP。
+`proxy_set_header` 指令把 `$remote_addr` 变量设置在当前请求的 `X-Real-IP` header 中 (`$remote_addr` 变量获取的是真实的 Client IP)，并传递给 APISIX。 `$APISIX_IP` 意指真实环境中的 APISIX 的 IP。
 
-APISIX 的 `config.yaml` 配置示例：
+APISIX 的 `config.yaml` 示例：
 
 ```yaml
 nginx_config:
@@ -617,7 +617,7 @@ nginx_config:
       - $Nginx_IP
 ```
 
-上面配置的 `$Nginx_IP` 是指真实环境中的 Nginx 的 IP。该配置在 APISIX 生成的 `nginx.conf` 中如下：
+`$Nginx_IP` 是指真实环境中的 Nginx 的 IP。这段配置被 APISIX 转换成 `nginx.conf` 后如下：
 
 ```nginx
 location /get {
@@ -627,18 +627,15 @@ location /get {
 }
 ```
 
-其中 `real_ip_from` 对应的是 Real IP 模块设置的 `set_real_ip_from`，`config.yaml` 中虽然没有 `real_ip_recursive` 和 `real_ip_header`，但是在 `config-default.yaml` 中设置了缺省值。
+`real_ip_from` 对应的是 Real IP 模块的 `set_real_ip_from` 指令，`real_ip_recursive` 和 `real_ip_header` 指令在 `config-default.yaml` 中设置了缺省值。
 
 `real_ip_header X-Real-IP;` 表示 Client IP 在 `X-Real-IP` 这个 header 中，与 Nginx 配置中的 `proxy_set_header X-Real-IP $remote_addr;` 契合。
 
-`set_real_ip_from` 表示配置的 `$Nginx_IP` 是信任服务器的 IP。在寻找真实的 Client IP 的时候，在搜索范围内把 `$Nginx_IP` 剔除掉，因为对于 APISIX 来说，这个 IP 确定是可信任的服务器 IP，不可能是 Client IP。`set_real_ip_from` 可以配置成 CIDR 的格式，即网段，例如 0.0.0.0/24。
-
+`set_real_ip_from` 表示 `$Nginx_IP` 是信任服务器的 IP。APISIX 在搜索真实的 Client IP 的范围内,剔除掉 `$Nginx_IP`。因为对于 APISIX 来说，这个 IP 是已知的可信任的服务器 IP，不可能是 Client IP。`set_real_ip_from` 可以配置成 CIDR 的格式，例如 0.0.0.0/24。
 
 3. Client -> Nginx1 -> Nginx2 -> APISIX -> Upstream
 
-这种场景是指 APISIX 与 Client 之间有多个 Nginx 做反向代理。
-
-Nginx1 配置示例：
+当用多个 Nginx 在 APISIX 和 Client 之间做反向代理时，Nginx1 的配置，示例：
 
 ```nginx
 location /get {
@@ -647,7 +644,7 @@ location /get {
 }
 ```
 
-Nginx2 配置示例：
+Nginx2 的配置，示例：
 
 ```nginx
 location /get {
@@ -656,11 +653,11 @@ location /get {
 }
 ```
 
-配置中使用了 `X-Forwarded-For`，它的用途是获取真实的代理路径。代理服务开启了 `X-Forwarded-For` 设置后，每次经过代理转发都会在 `X-Forwarded-For` 这个 header 的末尾追加当前代理服务的 IP。格式是 client, proxy1, proxy2, 以逗号隔开。
+配置中使用了 `X-Forwarded-For`，它的用途是获取真实的代理路径。代理服务开启了 `X-Forwarded-For` 设置后，当前代理服务的IP将被附加到每个请求的`X-Forwarded-For`头的末尾。格式是 client, proxy1, proxy2, 以逗号隔开。
 
 所以经过 Nginx1 和 Nginx2 的代理，APISIX 获得的 "X-Forwarded-For" 是 "Client IP, $Nginx1_IP, $Nginx2_IP" 这样的代理路径。
 
-APISIX 的 `config.yaml` 配置示例：
+APISIX 的 `config.yaml` 示例：
 
 ```yaml
 nginx_config:
@@ -672,7 +669,7 @@ nginx_config:
     real_ip_recursive: "on"
 ```
 
-`real_ip_from` 的配置表示 `$Nginx1_IP` 和 `$Nginx2_IP` 都是可信服务器的 IP。可以这样理解： Client 和 APISIX 之间有多少层代理服务，这些代理服务的 IP 都需要设置在 `real_ip_from` 中。确保 APISIX 不会把搜索范围内出现的 IP 误认为是 Client IP。
+`real_ip_from` 的配置表示 `$Nginx1_IP` 和 `$Nginx2_IP` 都是可信服务器的 IP。Client 和 APISIX 之间有多少代理服务，这些代理服务的 IP 都需要设置在 `real_ip_from` 中。确保 APISIX 不会把搜索范围内出现的 IP 误认为是 Client IP。
 
 `real_ip_header` 使用了 `X-Forwarded-For`，不用 `config-default.yaml` 的缺省值。
 
@@ -698,7 +695,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/myAPIProvider  -H 'X-API-KEY
 }'
 ```
 
-就是服务注册了，在 APISIX 的路由配置中，可以直接使用 `myAPIProvider` 作为上游，示例：
+这就是服务注册了，在 APISIX 的路由配置中，可以直接使用 `myAPIProvider` 作为上游，示例：
 
 ```shell
 $ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -718,15 +715,15 @@ apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
 
 因此，不同的 APISIX 实例设置不同的 hostname，在 Grafana 面板中即可加以区分。
 
-## roundrobin 负载策略不准确，节点调度并没有完全按照权重来进行
+## roundrobin 负载策略不准确，节点调度并没有按照权重来进行
 
 如果不开启健康检查，那么 roundrobin 负载策略是按照权重比调度节点。如果开启了上游健康检查，APISIX 会先剔除掉不健康的节点，然后根据 roundrobin 负载策略调度节点。所有的负载均衡策略都遵循这个规则。
 
 这是一则错误使用上游健康检查导致负载不均衡的例子：
 
-使用默认的被动健康检查配置，并且主动健康检查配置中的探测端点 `http_path` 配了错误的 url，导致主动健康检查根据 `http_path` 探测，发现探测端点返回的 HTTP 状态码是 404，于是标记所有上游节点的状态为不健康。这时会忽略节点的健康状态，roundrobin 按照权重比调度节点。
+使用默认的被动健康检查配置，并且主动健康检查配置中的探测端点 `http_path` 配置了错误的 url，导致主动健康检查根据 `http_path` 探测，发现探测端点返回的 HTTP 状态码是 404，于是标记所有上游节点的状态为不健康。APISIX 将会忽略节点的健康状态，按照负载策略调度节点。
 
-如果有请求被代理到了上游节点，并且上游节点返回 HTTP 状态码是 200，触发被动健康检查将此节点又标记为健康，APISIX 会把请求都调度到这个健康的节点，同时再次激活主动健康检查，主动健康检查并根据错误的 `http_path` 再次进行探测并收到 404 HTTP 状态码，又将此上游节点标记为不健康。如此反复，导致节点调度不均衡。
+如果有请求被代理到了上游节点，并且上游节点返回 HTTP 状态码是 200，触发被动健康检查将此节点又标记为健康，APISIX 会把请求都调度到这个健康的节点，同时再次激活主动健康检查并根据错误的 `http_path` 再次进行探测并收到 404 HTTP 状态码，又将此上游节点标记为不健康。如此反复，导致节点调度不均衡。
 
 ## APISIX 实例存活状态的七层探测端点如何配置
 
