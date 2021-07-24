@@ -32,6 +32,7 @@ title: proxy-mirror
 | host | string | 必须   |        |        | 指定镜像服务地址，例如：http://127.0.0.1:9797（地址中需要包含 schema ：http或https，不能包含 URI 部分） |
 
 如果您想设置镜像速率，可以在`conf/config.yaml`文件中进行配置：
+
 ```yaml
 proxy_mirror:                   # Proxy mirror 配置, 可查看 http://nginx.org/en/docs/http/ngx_http_limit_req_module.html
     limit_size: 10m             # 共享内存区域
