@@ -209,7 +209,7 @@ Content-Type: text/plain
 {"node":{...},"action":"get"}
 ```
 
-At this point, if the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, for example, we know that the correct key is `abcdefghabcdefgh`, but we enter an incorrect key, such as `wrong- key`, as shown below.
+At this point, if the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, for example, we know that the correct key is `abcdefghabcdefgh`, but we enter an incorrect key, such as `wrong-key`, as shown below.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i
