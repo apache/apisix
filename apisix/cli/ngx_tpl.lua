@@ -681,7 +681,7 @@ http {
             limit_req zone=proxy_mirror_limit;
             {% end %}
             {% end %}
-            
+
             if ($upstream_mirror_host = "") {
                 return 200;
             }
