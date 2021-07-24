@@ -310,10 +310,10 @@ function _M.push(key, value, ttl)
     -- manually add suffix
     local index = res.body.header.revision
     index = string.format("%020d", index)
-    
+
     -- set the basic id attribute
     value.id = index
-    
+
     res, err = set(key .. "/" .. index, value, ttl)
     if not res then
         return nil, err
