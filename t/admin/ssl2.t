@@ -65,6 +65,7 @@ __DATA__
             res.node.value.update_time = nil
             res.node.value.cert = ""
             res.node.value.key = ""
+            res.node.value.id = nil
             ngx.say(json.encode(res))
         }
     }
