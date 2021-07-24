@@ -31,6 +31,15 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 | ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
 | host | string | optional    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
 
+If you want to set the mirror rate, can configure it in the in the `conf/config.yaml` file:
+```yaml
+proxy_mirror:                   # Proxy mirror configuration, see http://nginx.org/en/docs/http/ngx_http_limit_req_module.html
+    limit_size: 10m             # the shared memory zone
+    rate: 5r/s                  # defined rate
+    burst: 10                   # the maximum burst size of requests
+    delay_parameter: nodelay    # nodelay | delay=number
+```
+
 ### Examples
 
 #### Enable the plugin

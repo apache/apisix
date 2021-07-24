@@ -60,6 +60,12 @@ apisix:
       #  disk_path: "/tmp/disk_cache_two"
       #  cache_levels: "1:2"
 
+  # proxy_mirror:                 # Proxy mirror configuration
+  #   limit_size: 10m             # the shared memory zone
+  #   rate: 5r/s                  # defined rate
+  #   burst: 10                   # the maximum burst size of requests
+  #   delay_parameter: nodelay    # nodelay | delay=number, see http://nginx.org/en/docs/http/ngx_http_limit_req_module.html
+
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
     #- "::/64"

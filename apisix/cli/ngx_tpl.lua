@@ -181,6 +181,10 @@ http {
     {% end %}
     {% end %}
 
+    {% if proxy_mirror then %}
+    limit_req_zone $binary_remote_addr zone=proxy_mirror_limit:{* proxy_mirror.limit_size *} rate={* proxy_mirror.rate *};
+    {% end %}
+
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
@@ -670,7 +674,14 @@ http {
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
-
+            {% if proxy_mirror then %}
+            {% if proxy_mirror.burst then %}
+            limit_req zone=proxy_mirror_limit burst={* proxy_mirror.burst *} {* proxy_mirror.delay_parameter *};
+            {% else %}
+            limit_req zone=proxy_mirror_limit;
+            {% end %}
+            {% end %}
+            
             if ($upstream_mirror_host = "") {
                 return 200;
             }
