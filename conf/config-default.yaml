@@ -304,6 +304,7 @@ plugins:                          # plugin list (sorted by priority)
   - gzip                           # priority: 995
   - server-info                    # priority: 990
   - traffic-split                  # priority: 966
+  - header-based-routing           # priority: 965
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
   #- dubbo-proxy                   # priority: 507

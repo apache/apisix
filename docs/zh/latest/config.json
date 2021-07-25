@@ -88,6 +88,7 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/header-based-routing",
             "plugins/request-id"
           ]
         },
