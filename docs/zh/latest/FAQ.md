@@ -653,7 +653,7 @@ location /get {
 }
 ```
 
-配置中使用了 `X-Forwarded-For`，它的用途是获取真实的代理路径。代理服务开启了 `X-Forwarded-For` 设置后，当前代理服务的IP将被附加到每个请求的`X-Forwarded-For`头的末尾。格式是 client, proxy1, proxy2, 以逗号隔开。
+配置中使用了 `X-Forwarded-For`，它的用途是获取真实的代理路径。代理服务开启了 `X-Forwarded-For` 设置后，当前代理服务的IP将被附加到每个请求的 `X-Forwarded-For` 的末尾。格式是 client, proxy1, proxy2, 以逗号隔开。
 
 所以经过 Nginx1 和 Nginx2 的代理，APISIX 获得的 "X-Forwarded-For" 是 "Client IP, $Nginx1_IP, $Nginx2_IP" 这样的代理路径。
 
@@ -707,7 +707,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f03433
 
 ## 在 Grafana 面板中收集不同 APISIX 实例的指标
 
-APISIX 在 prometheus 插件[暴露的指标](./plugins/prometheus.md#可有的指标)中支持 hostname，例如
+APISIX 在 prometheus 插件 [暴露的指标](./plugins/prometheus.md#可有的指标) 中支持 hostname，例如
 
 ```shell
 apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
@@ -731,7 +731,7 @@ apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
 
 ## 如何开启路由上的 mTLS 连接
 
-这个问题可以整理归类为：Client 与 APISIX 之间，Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd 之间分别如何配置 mTLS 连接。
+这个问题可以扩展为：Client 与 APISIX 之间，Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd 之间分别如何配置 mTLS 连接。
 
 路由上的 mTLS 连接即 Client 与 APISIX 之间使用 mTLS 连接。
 

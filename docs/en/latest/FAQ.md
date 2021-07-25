@@ -655,7 +655,7 @@ location /get {
 }
 ```
 
-The configuration uses `X-Forwarded-For`, which is used to get the real proxy path. When `X-Forwarded-For` is enabled for a proxy service, the IP of the current proxy service will be appended to the end of the `X-Forwarded-For` header of each request. The format is client, proxy1, proxy2, separated by commas.
+The configuration uses `X-Forwarded-For`, which is used to get the real proxy path. When `X-Forwarded-For` is enabled for a proxy service, the IP of the current proxy service will be appended to the end of the `X-Forwarded-For` of each request. The format is client, proxy1, proxy2, separated by commas.
 
 So after the Nginx1 and Nginx2 proxies, APISIX gets "X-Forwarded-For" as a proxy path like "Client IP, $Nginx1_IP, $Nginx2_IP".
 
