@@ -735,7 +735,7 @@ apisix_node_info{hostname="apisix-deployment-588bc684bb-zmz2q"} 1
 
 路由上的 mTLS 连接即 Client 与 APISIX 之间使用 mTLS 连接。
 
-开启 mTLS 协议的前置准备有：CA 证书，以及由这个 CA 证书签发的客户端证书，客户端密钥，服务端证书，服务端密钥。以下示例中使用 APISIX 用于测试用例的相关证书文件。
+开启 mTLS 协议的前置准备有：CA 证书，客户端证书，客户端密钥，服务端证书，服务端密钥。以下示例中使用 APISIX 用于测试用例的相关证书文件。
 
 1. 上传证书
 
@@ -780,7 +780,7 @@ passed
 [error]
 ```
 
-注意：要设置将用于客户端证书校验的 CA 证书以及客户端证书校验的深度，即 `client.ca` 和 `client.depth`。另外需要说明：mtls_ca.crt 这个证书签署的 SNI 是 `admin.apisix.dev`。
+注意：需要设置用于客户端证书校验的 CA 证书以及证书深度，即 `client.ca` 和 `client.depth`。另外需要说明：mtls_ca.crt 这个证书签署的 SNI 是 `admin.apisix.dev`。
 
 2. 设置路由
 
@@ -800,7 +800,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-在路由上，指定了 hosts 属性是 `admin.apisix.dev`。APISIX 会根据请求携带的域名， 查询域名对应的 SNI 关联的 CA 证书，服务器证书和服务器密钥。这个过程相当于绑定路由和证书。
+在路由上，指定了 hosts 属性是 `admin.apisix.dev`。APISIX 会根据请求携带的域名， 查询关联的 SNI 和 CA 证书，服务器证书和服务器密钥。这个过程相当于绑定路由和证书。
 
 3. 测试
 
@@ -878,9 +878,9 @@ curl --cert /usr/local/apisix/t/certs/mtls_client.crt --key /usr/local/apisix/t/
 
 Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd 之间分别如何配置 mTLS 连接，可以参考 [mtls](./mtls.md)。
 
-## APISIX 代理四层协议并使用 tls 功能
+## APISIX 接收 TLS over TCP
 
-参考 [接收 TLS over TCP](./stream-proxy.md#接收-tls-over-tcp)，需要说明的是，在四层协议上，目前只支持 APISIX 作为 server 去卸载 tls 证书，不支持 APISIX 作为 client 去访问开启 tls 的上游。
+参考 [接收 TLS over TCP](./stream-proxy.md#接收-tls-over-tcp)，需要说明的是，在 TCP 协议上，目前 APISIX 只支持作为 server 去卸载 tls 证书，不支持作为 client 去访问开启 tls 的上游。
 
 ## 被动健康检查与和重试有什么关系
 
@@ -890,40 +890,41 @@ Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd �
 
 `plugin_metadata` 是插件的元数据，所有插件实例共享。在编写插件时，如果有部分插件属性，属于所有插件实例共享，修改对所有插件实例生效，那么放在 `plugin_metadata` 合适。
 
-`plugin-configs` 是指多个插件实例的组合，如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin config，并绑定到对应的路由上。
+`plugin-configs` 是指多个插件实例的组合，如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
 
 `plugin_metadata` 和 `plugin-configs` 的区别在于：
  - 插件实例作用范围：`plugin_metadata` 作用于该插件的所有实例。`plugin-configs` 作用于其下配置的插件实例。
  - 绑定主体作用范围：`plugin_metadata` 作用于这个插件的所有实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
 
-## 在路由里面配置 `limit-req` 插件，然后在 `consumer` 里面也配置了 `limit-req` 插件，两份配置属性不同，效果是什么
+## 同时在路由和消费者上配置 `limit-req` 插件，两份配置属性不同，效果是什么
 
-只有 `consumer` 中配置的 `limit-req` 属性会生效。并且大部分插件遵循的都是这个规则。
+只有消费者上的 `limit-req` 插件会生效。大部分插件都遵循这个规则。
 
-## prometheus 插件配置的环境变量 `INTRANET_IP` 该如何使用？
+## prometheus 插件配置的环境变量 `INTRANET_IP` 该如何使用
 
-`INTRANET_IP` 使用场景举例：比如 APISIX 部署在内网某台服务器上，这台服务器上有几个 NIC，每个 NIC 上都有 IP。`INTRANET_IP` 用于选择其中一个 IP 暴露。这样只有在内网同一个网段上的其他服务可以访问，不在同一个内网网段的服务都无法访问。
+`INTRANET_IP` 使用场景举例：APISIX 部署在内网内的某台服务器，这台服务器上有几个 NIC，每个 NIC 上都有 IP。`INTRANET_IP` 用于选择其中一个 IP 暴露。这样只有在内网内同一个网段中的其他服务可以访问，不在同一个内网网段的服务都无法访问。
 
 ## 如何使用插件热更新功能
 
 这个功能在 APISIX v2.7 上得到了完善，可以实时更新运行状态的插件。步骤如下：
+
 1. 在路由上配置插件，插件生效；
-2. 实时修改插件源码；
-3. 调用 [`/apisix/admin/plugins/reload`](./architecture-design/plugin.md#热加载) 接口更新插件；
+2. 修改运行中的插件的源码；
+3. 使用 [`/apisix/admin/plugins/reload`](./architecture-design/plugin.md#热加载) 接口更新插件；
 
 **注意：这个操作会实时生效，如果是生产环境，一定要保证修改的插件代码是正确的。**
 
 ## `config.yaml` 和 `config-default.yaml` 是什么关系
 
-`config-default.yaml` 是 APISIX 的默认配置文件。用户可以参考 `config-default.yaml` 中的配置项，在 `config.yaml` 中进行相应的自定义修改。`config.yaml` 中的配置项会覆盖 `config-default.yaml` 中的同名配置项。
+`config-default.yaml` 是 APISIX 的默认配置文件。用户可以参考 `config-default.yaml` 中的配置项，在 `config.yaml` 中进行自定义修改。`config.yaml` 中的配置项会覆盖 `config-default.yaml` 中的同名配置项。
 
 注意：在 `config.yaml` 中配置了 `plugins`， 会覆盖 `config-default.yaml` 里面的所有 `plugins`，这样可以禁用某些插件。
 
-## 在 `error.log` 中发现很多 HTTP 状态码为 499 的日志，如何处理
+## 在 `error.log` 中发现了 HTTP 状态码为 499 的日志，如何处理
 
-499 是 Nginx 自身定义的 HTTP 状态码，表示客户端主动断开连接，通过 [`proxy_ignore_client_abort`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ignore_client_abort) 指令控制。
+Nginx 定义了 499 HTTP 状态码，表示客户端主动断开连接，通过 [`proxy_ignore_client_abort`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ignore_client_abort) 指令控制。
 
-在 APISIX 中，可以通过 [自定义 Nginx 配置](./customize-nginx-configuration.md) 来打开 `proxy_ignore_client_abort`，表示忽略客户端中断的异常，一直等着代理服务执行返回。示例:
+在 APISIX 中，可以通过 [自定义 Nginx 配置](./customize-nginx-configuration.md) 来打开 `proxy_ignore_client_abort`，表示 APISIX 忽略客户端中断的异常，不会提前中断与上游的连接，一直等待上游响应。示例:
 
 ```yaml
 nginx_config:
@@ -931,11 +932,9 @@ nginx_config:
     proxy_ignore_client_abort on;
 ```
 
-## 在 error.log 中 发现 upstream response is buffered to a temporary file 日志，如何处理
+## 在 error.log 中 发现了 `upstream response is buffered to a temporary file` 日志，如何处理
 
-这是因为 Nginx 上游模块默认有一个非零的临时文件大小配置，通过 [`proxy_max_temp_file_size`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_max_temp_file_size) 指令控制。
-
-当内存 buf 在请求中用完时，数据将被保存到文件中。
+这是因为 Nginx 上游模块默认有一个非零的临时文件大小配置，通过 [`proxy_max_temp_file_size`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_max_temp_file_size) 指令控制。当内存 buf 在请求中用完时，数据将被保存到文件中。
 
 在 APISIX 中可以通过 [自定义 Nginx 配置](./customize-nginx-configuration.md) 来调整 `proxy_max_temp_file_size` 大小，示例
 
@@ -945,8 +944,8 @@ nginx_config:
     proxy_max_temp_file_size 2G;
 ```
 
-## `body_filter` 阶段为什么执行两次
+## 为什么 `body_filter` 阶段会执行多次
 
-Nginx 的 `output filter` 在一个请求中可能被多次调用，因为响应体可能被分块传递。因此， `body_filter` 中的 Lua 代码也可能在一个 HTTP 请求的生命周期内运行多次。更多信息请参考 [body_filter_by_lua](https://github.com/openresty/lua-nginx-module#body_filter_by_lua)。
+在一个请求中，由于响应体可能被分块传递，Nginx 的 `output filter` 可能被多次调用。因此， `body_filter` 中的 Lua 代码也可能在一个 HTTP 请求的生命周期内运行多次。更多信息请参考 [body_filter_by_lua](https://github.com/openresty/lua-nginx-module#body_filter_by_lua)。
 
-关于如何获取完整的响应体内容，你可以参考 [grpc-transcode](https://github.com/apache/apisix/blob/master/apisix/plugins/grpc-transcode/response.lua) 插件的相关代码实现。
+关于如何获取完整的响应体内容，你可以参考 [grpc-transcode](https://github.com/apache/apisix/blob/master/apisix/plugins/grpc-transcode/response.lua) 插件的代码。

@@ -734,3 +734,223 @@ Use [node-status](./plugins/node-status.md) or [server-info](./plugins/server-in
 ## How to open an mTLS connection on a route
 
 This question can be extended to how to configure mTLS connections between Client and APISIX, between Control Plane and APISIX, between APISIX and Upstream, and between APISIX and etcd。
+
+The mTLS connection on the route is the mTLS connection between the Client and APISIX.
+
+The pre-requisites for enabling the mTLS protocol are: CA certificate, client certificate, client key, server certificate, and server key. The below example uses the certificate file from APISIX for the test case.
+
+1. Upload certificates
+
+APISIX provides an API to upload certificates dynamically, you can also upload certificates in APISIX-Dashboard. For visualization, I use a test case to upload ssl certificate, example.
+
+```perl
+=== TEST 1: set ssl(sni: admin.apisix.dev)
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/mtls_server.crt")
+        local ssl_key =  t.read_file("t/certs/mtls_server.key")
+        local ssl_cacert = t.read_file("t/certs/mtls_ca.crt")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "admin.apisix.dev", client = {ca = ssl_cacert, depth = 5}}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "admin.apisix.dev"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+```
+
+Note: You need to set the CA certificate and the certificate depth for client certificate verification, i.e. `client.ca` and `client.depth`. Also note: mtls_ca.crt is signed by the SNI `admin.apisix.dev`.
+
+2. Set Route
+
+for example:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/get",
+    "hosts": ["admin.apisix.dev"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+On the route, the hosts attribute is specified as `admin.apisix.dev`. APISIX will query the associated SNI CA certificate, server certificate and server key according to the domain name by the request. This process is equivalent to binding the route and the certificate.
+
+3. Test
+
+```shell
+curl --cert /usr/local/apisix/t/certs/mtls_client.crt --key /usr/local/apisix/t/certs/mtls_client.key --cacert /usr/local/apisix/t/certs/mtls_ca.crt --resolve 'admin.apisix.dev:9443:127.0.0.1' https://admin.apisix.dev:9443/get -vvv
+
+* Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
+* Hostname admin.apisix.dev was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to admin.apisix.dev (127.0.0.1) port 9443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /usr/local/apisix/t/certs/mtls_ca.crt
+  CApath: none
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Request CERT (13):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Certificate (11):
+* TLSv1.3 (OUT), TLS handshake, CERT verify (15):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: C=cn; ST=GuangDong; O=api7; L=ZhuHai; CN=admin.apisix.dev
+*  start date: Jun 20 13:14:34 2020 GMT
+*  expire date: Jun 18 13:14:34 2030 GMT
+*  common name: admin.apisix.dev (matched)
+*  issuer: C=cn; ST=GuangDong; L=ZhuHai; O=api7; OU=ops; CN=ca.apisix.dev
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0xaaaad8ffadd0)
+> GET /get HTTP/2
+> Host: admin.apisix.dev:9443
+> user-agent: curl/7.71.1
+> accept: */*
+> 
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+< HTTP/2 200 
+< content-type: application/json
+< content-length: 320
+< date: Tue, 06 Jul 2021 15:40:14 GMT
+< access-control-allow-origin: *
+< access-control-allow-credentials: true
+< server: APISIX/2.7
+< 
+{
+  "args": {}, 
+  "headers": {
+    "Accept": "*/*", 
+    "Host": "admin.apisix.dev", 
+    "User-Agent": "curl/7.71.1", 
+    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6", 
+    "X-Forwarded-Host": "admin.apisix.dev"
+  }, 
+  "origin": "127.0.0.1, 49.70.187.161", 
+  "url": "http://admin.apisix.dev/get"
+}
+* Connection #0 to host admin.apisix.dev left intact
+```
+
+The `curl` command specifies the CA certificate, client certificate, and client key. Since this is a local test, the `--resolve` command is used so that `admin.apisix.dev` is pointed to `127.0.0.1` and triggered the request successfully.
+
+From the TLS handshake process, we can see that a certificate verification is performed between Client and APISIX to complete the process of mTLS protocol processing. From the response, we can see that APISIX has completed the request proxy forwarding.
+
+How to configure the mTLS connection between Control Plane and APISIX, between APISIX and Upstream, and between APISIX and etcd, respectively, can be found in [mtls](./mtls.md).
+
+## APISIX accept TLS over TCP
+
+Refer to [Accept TLS over TCP](./stream-proxy.md#accept-tls-over-tcp), it should be noted that on the TCP protocol, at present, APISIX only supports to uninstall tls certificate as server and does not support to access the upstream with tls enabled as client.
+
+## What is the relationship between passive health checks and retry
+
+If the retry fails, APISIX will report the retry node failure information to the passive health check.
+
+## What is the difference between `plugin_metadata` and `plugin-configs`
+
+`plugin_metadata` is the metadata of the plugin, which is shared by all plugin instances. When writing a plugin, if there are some plugin properties that are shared by all plugin instances and the changes take effect for all plugin instances, then it is appropriate to put them in `plugin_metadata`.
+
+`plugin-configigs` is a collection of multiple plugin instances. If you want to reuse a common set of plugin configurations, you can extract them into a Plugin Config and bind them to the corresponding routes.
+
+The difference between `plugin_metadata` and `plugin-configs`:
+
+- Plugin instance scope: `plugin_metadata` works on all instances of this plugin. `plugin-configs` works on the plugin instances configured under it.
+- Binding entities: `plugin_metadata` take effect on the entities bound to all instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
+
+## Configure the `limit-req` plugin on both the Route and the Consumer, with different properties for the two configurations, what is the effect
+
+Only the `limit-req` plugin on Consumer will take effect. Most plugins follow this rule.
+
+## How to use the environment variable `INTRANET_IP` configured by the prometheus plugin
+
+`INTRANET_IP` Usage Scenario Example: If APISIX is deployed on a server within the intranet, there are several NICs on this server, each with an IP. `INTRANET_IP` is used to select one of the IPs to be exposed. This way, only other services in the same network segment within the intranet can access it, and no services not in the same intranet segment can access it.
+
+## How to use the plugin hot reload
+
+This feature has been improved on APISIX v2.7 to update the code of the plugin in real time. The steps are as below:
+
+1. Configuring the plugin on the route and the plugin taking effect;
+2. Modification of the source code of the running plugin;
+3. Use [`/apisix/admin/plugins/reload`](./architecture-design/plugin.md#hot-reload) API to update the plugin;
+
+**Note: This operation will take effect in real time. If it is a production environment, make sure that the modified plugin code is correct.**
+
+## What is the relationship between `config.yaml` and `config-default.yaml`
+
+`config-default.yaml` is the default configuration file for APISIX. Users can refer to the configuration items in `config-default.yaml` and make custom changes in `config.yaml`. The configuration items in `config.yaml` will override the configuration items of the same name in `config-default.yaml`.
+
+Note: Configuring `plugins` in `config.yaml` will override all `plugins` in `config-default.yaml`, which can disable some plugins.
+
+## How to fix the log with HTTP status code 499 was found in `error.log`
+
+Nginx defines 499 HTTP status codes that means client closes the connection without waiting for a response, controlled by the [`proxy_ignore_client_abort`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ignore_client_abort) command.
+
+In APISIX, you can turn on `proxy_ignore_client_abort` via [customize Nginx configuration](./customize-nginx-configuration.md), which means that APISIX ignores client abort exceptions, does not break the connection to the upstream earlier, and always waits for the upstream response.
+
+for example:
+
+```yaml
+nginx_config:
+  http_server_configuration_snippet: |
+    proxy_ignore_client_abort on;
+```
+
+## How to fix the log with `upstream response is buffered to a temporary file` was found in `error.log`
+
+This is because the Nginx upstream module has a non-zero temporary file size configuration by default, controlled by the [`proxy_max_temp_file_size`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_max_temp_file_size) directive. When the memory buf runs out in a request, and then saved the data to a file.
+
+In APISIX, you can adjust the size of the `proxy_max_temp_file_size` via [customize Nginx configuration](./customize-nginx-configuration.md), for example:
+
+```yaml
+nginx_config:
+  http_server_configuration_snippet: |
+    proxy_max_temp_file_size 2G;
+```
+
+## Why does the `body_filter` phase execute many times
+
+Nginx `output filter` may be called many times during a request, as the response body may be passed in chunks. Therefore, the Lua code in `body_filter` may also be run many times during the lifetime of an HTTP request. See [body_filter_by_lua](https://github.com/openresty/lua-nginx-module#body_filter_by_lua) for more information.
+
+You can refer to the code of the [grpc-transcode](https://github.com/apache/apisix/blob/master/apisix/plugins/grpc-transcode/response.lua) plugin for more information on how to get the full content of the response body.
