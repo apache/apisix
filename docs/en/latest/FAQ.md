@@ -552,3 +552,20 @@ apisix:
 **Note:**
 
 - Whenever trying to connect TLS services with cosocket, you should set `apisix.ssl.ssl_trusted_certificate`
+
+As an example, if using Nacos as a service discovery in APISIX, Nacos has TLS protocol enabled, i.e. Nacos configuration `host` starts with `https://`, so you need to configure `apisix.ssl.ssl_trusted_certificate` and use the same CA certificate as Nacos.
+
+## How to fix `module 'resty.worker.events' not found` error
+
+Installing APISIX under the `/root` directory causes this problem. Because the worker process is run by the user `nobody`, it does not have enough permissions to access the files in the `/root` directory. You need to change the APISIX installation directory, and it is recommended to install it in the `/usr/local` directory.
+
+## What is the difference between `plugin_metadata` and `plugin-configs`
+
+`plugin_metadata` is the metadata of the plugin, which is shared by all plugin instances. When writing a plugin, if there are some plugin properties that are shared by all plugin instances and the changes take effect for all plugin instances, then it is appropriate to put them in `plugin_metadata`.
+
+`plugin-configigs` is a collection of multiple plugin instances. If you want to reuse a common set of plugin configurations, you can extract them into a Plugin Config and bind them to the corresponding routes.
+
+The difference between `plugin_metadata` and `plugin-configs`:
+
+- Plugin instance scope: `plugin_metadata` works on all instances of this plugin. `plugin-configs` works on the plugin instances configured under it.
+- Binding entities: `plugin_metadata` take effect on the entities bound to all instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.

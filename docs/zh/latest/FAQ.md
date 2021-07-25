@@ -549,4 +549,21 @@ apisix:
 ```
 
 **注意:**
-尝试使用 cosocket 连接任何TLS服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`
+尝试使用 cosocket 连接任何 TLS 服务时，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
+
+举例：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议， 即 Nacos 配置的 `host` 是 `https://` 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
+
+## 如何解决 `module 'resty.worker.events' not found` 错误
+
+在 `/root` 目录下安装 APISIX 会导致这个问题。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。需要移动 APISIX 安装目录，推荐安装在 `/usr/local` 目录下。
+
+## `plugin_metadata` 和 `plugin-configs` 有什么区别
+
+`plugin_metadata` 是插件的元数据，所有插件实例共享。在编写插件时，如果有部分插件属性，属于所有插件实例共享，修改对所有插件实例生效，那么放在 `plugin_metadata` 合适。
+
+`plugin-configs` 是指多个插件实例的组合，如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
+
+`plugin_metadata` 和 `plugin-configs` 的区别在于：
+
+ - 插件实例作用范围：`plugin_metadata` 作用于该插件的所有实例。`plugin-configs` 作用于其下配置的插件实例。
+ - 绑定主体作用范围：`plugin_metadata` 作用于这个插件的所有实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
