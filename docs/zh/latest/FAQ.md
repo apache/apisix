@@ -583,6 +583,7 @@ location ~* .(js|css|flash|media|jpg|png|gif|ico|vbs|json|txt)$ {
 这个功能依赖于 Nginx 的 [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) 模块，在 [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) 脚本中涵盖了 Real IP 模块。
 
 Real IP 模块中有 3 个指令
+
 - set_real_ip_from
 - real_ip_header
 - real_ip_recursive
