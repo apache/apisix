@@ -82,7 +82,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		listOption := client.MatchingLabels{"app": "apisix-gw"}
 		apisixPods, err := utils.GetPods(cliSet.CtrlCli, metav1.NamespaceDefault, listOption)
 		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(len(apisixPods)).Should(gomega.BeNumerically(">", 0))
+		gomega.Ω(len(apisixPods)).Should(gomega.BeNumerically("<", 0))
 		apisixPod = &apisixPods[0]
 	})
 
