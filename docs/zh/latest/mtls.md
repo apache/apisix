@@ -75,12 +75,12 @@ etcd:
     key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
-还要设置 CA 证书。
+如果 APISIX 不信任 etcd server 使用的 CA 证书，我们需要设置 CA 证书。
 
 ```yaml
 apisix:
   ssl:
-    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd client
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
 ```
 
 ## 保护路由
