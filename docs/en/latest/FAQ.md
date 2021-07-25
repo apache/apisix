@@ -585,6 +585,7 @@ Installing APISIX under the `/root` directory causes this problem. Because the w
 This feature relies on the [Real IP](http://nginx.org/en/docs/http/ngx_http_realip_module.html) module of Nginx, which is covered in the [APISIX-OpenResty](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh) script.
 
 There are 3 directives in the Real IP module
+
 - set_real_ip_from
 - real_ip_header
 - real_ip_recursive
@@ -846,29 +847,29 @@ curl --cert /usr/local/apisix/t/certs/mtls_client.crt --key /usr/local/apisix/t/
 > Host: admin.apisix.dev:9443
 > user-agent: curl/7.71.1
 > accept: */*
-> 
+>
 * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
 * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
 * old SSL session ID is stale, removing
 * Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
-< HTTP/2 200 
+< HTTP/2 200
 < content-type: application/json
 < content-length: 320
 < date: Tue, 06 Jul 2021 15:40:14 GMT
 < access-control-allow-origin: *
 < access-control-allow-credentials: true
 < server: APISIX/2.7
-< 
+<
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "admin.apisix.dev", 
-    "User-Agent": "curl/7.71.1", 
-    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6", 
+    "Accept": "*/*",
+    "Host": "admin.apisix.dev",
+    "User-Agent": "curl/7.71.1",
+    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6",
     "X-Forwarded-Host": "admin.apisix.dev"
-  }, 
-  "origin": "127.0.0.1, 49.70.187.161", 
+  },
+  "origin": "127.0.0.1, 49.70.187.161",
   "url": "http://admin.apisix.dev/get"
 }
 * Connection #0 to host admin.apisix.dev left intact

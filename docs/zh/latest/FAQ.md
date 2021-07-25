@@ -844,29 +844,29 @@ curl --cert /usr/local/apisix/t/certs/mtls_client.crt --key /usr/local/apisix/t/
 > Host: admin.apisix.dev:9443
 > user-agent: curl/7.71.1
 > accept: */*
-> 
+>
 * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
 * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
 * old SSL session ID is stale, removing
 * Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
-< HTTP/2 200 
+< HTTP/2 200
 < content-type: application/json
 < content-length: 320
 < date: Tue, 06 Jul 2021 15:40:14 GMT
 < access-control-allow-origin: *
 < access-control-allow-credentials: true
 < server: APISIX/2.7
-< 
+<
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "admin.apisix.dev", 
-    "User-Agent": "curl/7.71.1", 
-    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6", 
+    "Accept": "*/*",
+    "Host": "admin.apisix.dev",
+    "User-Agent": "curl/7.71.1",
+    "X-Amzn-Trace-Id": "Root=1-60e4795e-4dd03a271242afe233d53ef6",
     "X-Forwarded-Host": "admin.apisix.dev"
-  }, 
-  "origin": "127.0.0.1, 49.70.187.161", 
+  },
+  "origin": "127.0.0.1, 49.70.187.161",
   "url": "http://admin.apisix.dev/get"
 }
 * Connection #0 to host admin.apisix.dev left intact
@@ -893,6 +893,7 @@ Control Plane 与 APISIX 之间，APISIX 与 Upstream 之间，APISIX 与 etcd �
 `plugin-configs` 是指多个插件实例的组合，如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
 
 `plugin_metadata` 和 `plugin-configs` 的区别在于：
+
  - 插件实例作用范围：`plugin_metadata` 作用于该插件的所有实例。`plugin-configs` 作用于其下配置的插件实例。
  - 绑定主体作用范围：`plugin_metadata` 作用于这个插件的所有实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
 
