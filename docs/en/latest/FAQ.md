@@ -569,3 +569,5 @@ The difference between `plugin-metadata` and `plugin-configs`:
 
 - Plugin instance scope: `plugin-metadata` works on all instances of this plugin. `plugin-configs` works on the plugin instances configured under it.
 - Binding entities: `plugin-metadata` take effect on the entities bound to all instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
+
+Note: plugin instances are plugins that are currently enabled

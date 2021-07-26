@@ -568,3 +568,5 @@ apisix:
 
  - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有实例。`plugin-configs` 作用于其下配置的插件实例。
  - 绑定主体作用范围：`plugin-metadata` 作用于这个插件的所有实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
+
+备注：插件实例是指当前正在启用的插件
