@@ -197,9 +197,9 @@ local function send_to_skywalking(log_message)
     -- some error occurred in the server
     if httpc_res.status >= 400 then
         res =  false
-        err_msg = "server returned status code[" .. httpc_res.status
-            .. "] skywalking[" .. config.skywalking.endpoint_addr
-            .. "] body[" .. httpc_res:read_body() .. "]"
+        err_msg = string.format(
+            "server returned status code[%d] skywalking[%s] body[%s]",
+            httpc_res.status, tcp_config.endpoint_addr, httpc_res:read_body)
     end
 
     return res, err_msg
@@ -220,7 +220,7 @@ end
 
 
 local function send(data)
-    if config.type == "TCP" then
+    if config.tcp then
         return send_to_tcp_server(data)
     end
     return send_to_skywalking(data)
