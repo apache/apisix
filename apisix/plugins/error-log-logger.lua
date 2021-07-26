@@ -199,7 +199,10 @@ local function send_to_skywalking(log_message)
         res =  false
         err_msg = string.format(
             "server returned status code[%s] skywalking[%s] body[%s]",
-            httpc_res.status, tcp_config.endpoint_addr, httpc_res:read_body())
+            httpc_res.status,
+            config.skywalking.endpoint_addr.endpoint_addr,
+            httpc_res:read_body()
+        )
     end
 
     return res, err_msg
