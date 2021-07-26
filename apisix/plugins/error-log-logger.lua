@@ -74,6 +74,10 @@ local metadata_schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 3},
     },
+    oneOf = {
+        {required = {"skywalking"}},
+        {required = {"tcp"}}
+    }
 }
 
 
@@ -164,6 +168,9 @@ local function send_to_skywalking(log_message)
 
     local entries = {}
     for i = 1, #log_message, 2 do
+        if not log_message[i] then
+            core.log.warn("------------------ : " .. tostring(i))
+        end
         local content = {
             service = config.skywalking.service_name,
             serviceInstance = config.skywalking.service_instance_name,

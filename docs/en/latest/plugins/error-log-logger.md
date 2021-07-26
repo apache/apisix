@@ -43,7 +43,6 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 | Name                             | Type    | Requirement | Default                        | Valid   | Description                                                                               |
 | -------------------------------- | ------- | ----------- | ------------------------------ | ------- | ----------------------------------------------------------------------------------------- |
-| type                             | string  | optional    | TCP                            | [TCP,SKYWALKING] | The type of Receiver server.                                                     |
 | tcp.host                         | string  | required    |                                |         | IP address or the Hostname of the TCP server.                                             |
 | tcp.port                         | integer | required    |                                | [0,...] | Target upstream port.                                                                     |
 | tcp.tls                          | boolean | optional    | false                          |         | Control whether to perform SSL verification.                                              |

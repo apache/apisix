@@ -162,7 +162,7 @@ plugins:
                     "tcp": {
                         "host": "127.0.0.1",
                         "port": 1999
-                    }
+                    },
                     "inactive_timeout": 1
                 }]]
                 )
@@ -197,7 +197,7 @@ plugins:
                     "tcp": {
                         "host": "127.0.0.1",
                         "port": 1999
-                    }
+                    },
                     "inactive_timeout": 1
                 }]]
                 )
@@ -307,7 +307,7 @@ plugins:
                             "tcp": {
                                 "host": "127.0.0.1",
                                 "port": 1999
-                            }
+                            },
                             "inactive_timeout": 1
                         }
                     },

@@ -32,7 +32,6 @@ __DATA__
             local plugin = require("apisix.plugins.error-log-logger")
             local ok, err = plugin.check_schema(
                 {
-                    type = "SKYWALKING",
                     skywalking = {
                         endpoint_addr = "http://127.0.0.1"
                     }
@@ -63,7 +62,6 @@ done
             local plugin = require("apisix.plugins.error-log-logger")
             local ok, err = plugin.check_schema(
                 {
-                    type = "SKYWALKING",
                     skywalking = {
                         service = "APISIX"
                     }
@@ -102,7 +100,6 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    "type": "SKYWALKING",
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1988/log"
                     },
@@ -137,7 +134,6 @@ plugins:
             local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
                 ngx.HTTP_PUT,
                 [[{
-                    "type": "SKYWALKING",
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log"
                     },
@@ -170,8 +166,8 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test\..*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
---- wait: 3
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+--- wait: 5
 
 
 
