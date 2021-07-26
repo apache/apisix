@@ -65,7 +65,7 @@ local plugin_name = "route-by-header"
 
 local _M = {
     version = 0.1,
-    priority = 2999,
+    priority = 965,
     name = plugin_name,
     schema = schema,
 }
