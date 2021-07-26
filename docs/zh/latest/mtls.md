@@ -66,7 +66,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### 如何配置
 
-你需要构建 [APISIX-Openresty](./how-to-build.md#6-为-apisix-构建-openresty)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
+你需要构建 [APISIX-Openresty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
 ```yaml
 etcd:
@@ -146,7 +146,7 @@ curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX
 
 在配置 upstream 资源时，可以使用参数 `tls.client_cert` 和 `tls.client_key` 来配置 APISIX 用于与上游进行通讯时使用的证书。可参考 [Upstream API 文档](./admin-api.md#upstream)。
 
-该功能需要 APISIX 运行在 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty) 上。
+该功能需要 APISIX 运行在 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty) 上。
 
 下面是一个与配置 SSL 时相似的 Python 脚本，可为一个已存在的 upstream 资源配置双向认证。如果需要，可修改 API 地址和API Key。
 
