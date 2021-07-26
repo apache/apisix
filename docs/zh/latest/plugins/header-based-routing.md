@@ -139,6 +139,7 @@ $ curl http://127.0.0.1:9080/index.html --header 'header1: value1'
 ```
 
 ### prefix 前缀匹配模式
+
 用户传入 Header 值 `header2=1prefix_foo` 时，满足完全前缀模式 prefix，此时会选择 my_upstream_2 作为上游 upstream
 
 ```shell
@@ -147,6 +148,7 @@ $ curl http://127.0.0.1:9080/index.html --header 'header2: 1prefix_foo'
 ```
 
 ### regex 正则匹配模式
+
 用户传入 Header 值 `header3=Twitterbot/1.1` 时，满足完全正则匹配模式 regex，此时会选择 my_upstream_3 作为上游 upstream
 
 ```shell
