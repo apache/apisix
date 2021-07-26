@@ -420,7 +420,7 @@ The above test case represents a simple scenario. Most scenarios will require mu
 
 Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
 
-Refer the following [document](how-to-build.md#4-test) to setup the testing framework.
+Refer the following [document](how-to-build.md#Step-4-Run-Test-Cases) to setup the testing framework.
 
 ### Attach the test-nginx execution process:
 
