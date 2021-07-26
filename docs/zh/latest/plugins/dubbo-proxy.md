@@ -37,7 +37,7 @@ title: dubbo-proxy
 
 ## 要求
 
-如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#6-build-openresty-for-apisix)。
+如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 在 `APISIX` 中为了实现使从 `http` 代理到 `dubbo`，我们在`Tengine` 的 `mod_dubbo` 基础上对 `dubbo` 模块做了改进。 所有的修改已经提交给 `Tengine`，但是还未合并到最新的 `release` 版本中(Tengine-2.3.2) 。所以目前 `Tengine` 自身是不支持此特性的。
 
 ## 运行时属性
