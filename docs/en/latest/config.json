@@ -38,6 +38,7 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req"
@@ -73,6 +74,7 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
+            "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction"
           ]

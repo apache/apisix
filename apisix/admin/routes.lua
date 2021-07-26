@@ -214,9 +214,8 @@ function _M.post(id, conf, sub_path, args)
     end
 
     local key = "/routes"
-    -- core.log.info("key: ", key)
     utils.inject_timestamp(conf)
-    local res, err = core.etcd.push("/routes", conf, args.ttl)
+    local res, err = core.etcd.push(key, conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "] to etcd: ", err)
         return 500, {error_msg = err}

@@ -258,34 +258,43 @@ _EOC_
         }
         chomp $stream_tls_request;
 
+        my $repeat = "1";
+        if (defined $block->stream_session_reuse) {
+            $repeat = "2";
+        }
+
         my $config = <<_EOC_;
             location /stream_tls_request {
                 content_by_lua_block {
-                    local sock = ngx.socket.tcp()
-                    local ok, err = sock:connect("127.0.0.1", 2005)
-                    if not ok then
-                        ngx.say("failed to connect: ", err)
-                        return
-                    end
+                    local sess
+                    for _ = 1, $repeat do
+                        local sock = ngx.socket.tcp()
+                        local ok, err = sock:connect("127.0.0.1", 2005)
+                        if not ok then
+                            ngx.say("failed to connect: ", err)
+                            return
+                        end
 
-                    local sess, err = sock:sslhandshake(nil, $sni, false)
-                    if not sess then
-                        ngx.say("failed to do SSL handshake: ", err)
-                        return
-                    end
+                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        if not sess then
+                            ngx.say("failed to do SSL handshake: ", err)
+                            return
+                        end
 
-                    local bytes, err = sock:send("$stream_tls_request")
-                    if not bytes then
-                        ngx.say("send stream request error: ", err)
-                        return
-                    end
-                    local data, err = sock:receive("*a")
-                    if not data then
+                        local bytes, err = sock:send("$stream_tls_request")
+                        if not bytes then
+                            ngx.say("send stream request error: ", err)
+                            return
+                        end
+                        local data, err = sock:receive("*a")
+                        if not data then
+                            sock:close()
+                            ngx.say("receive stream response error: ", err)
+                            return
+                        end
+                        ngx.print(data)
                         sock:close()
-                        ngx.say("receive stream response error: ", err)
-                        return
                     end
-                    ngx.print(data)
                 }
             }
 _EOC_
@@ -295,11 +304,18 @@ _EOC_
     my $stream_enable = $block->stream_enable;
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
+    my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
+            ngx.say("hello world")
+_EOC_
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache-lock-stream   10m;
+    lua_shared_dict lrucache-lock-stream 10m;
+    lua_shared_dict plugin-limit-conn-stream 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -339,9 +355,7 @@ _EOC_
         listen 1995;
 
         content_by_lua_block {
-            local sock = ngx.req.socket()
-            local data = sock:receive("1")
-            ngx.say("hello world")
+            $stream_upstream_code
         }
     }
 _EOC_
@@ -414,24 +428,24 @@ _EOC_
     $http_config .= <<_EOC_;
     $lua_deps_path
 
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict internal_status      10m;
+    lua_shared_dict plugin-limit-req 10m;
+    lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-conn 10m;
+    lua_shared_dict prometheus-metrics 10m;
+    lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
-    lua_shared_dict worker-events        10m;
-    lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict balancer_ewma         1m;
-    lua_shared_dict balancer_ewma_locks   1m;
-    lua_shared_dict balancer_ewma_last_touched_at  1m;
+    lua_shared_dict worker-events 10m;
+    lua_shared_dict lrucache-lock 10m;
+    lua_shared_dict balancer-ewma 1m;
+    lua_shared_dict balancer-ewma-locks 1m;
+    lua_shared_dict balancer-ewma-last-touched-at 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-    lua_shared_dict tracing_buffer       10m;    # plugin skywalking
-    lua_shared_dict access_tokens         1m;    # plugin authz-keycloak
-    lua_shared_dict discovery             1m;    # plugin authz-keycloak
-    lua_shared_dict plugin-api-breaker   10m;
-    lua_capture_error_log                 1m;    # plugin error-log-logger
-    lua_shared_dict etcd_cluster_health_check 10m; # etcd health check
+    lua_shared_dict tracing_buffer 10m;    # plugin skywalking
+    lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
+    lua_shared_dict discovery 1m;    # plugin authz-keycloak
+    lua_shared_dict plugin-api-breaker 10m;
+    lua_capture_error_log 1m;    # plugin error-log-logger
+    lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -534,20 +548,6 @@ _EOC_
 
             log_by_lua_block {
                 apisix.http_log_phase()
-            }
-        }
-
-        location = /v3/auth/authenticate {
-            content_by_lua_block {
-                ngx.log(ngx.WARN, "etcd auth failed!")
-            }
-        }
-
-        location  = /.well-known/openid-configuration {
-            content_by_lua_block {
-                ngx.say([[
-{"issuer":"https://samples.auth0.com/","authorization_endpoint":"https://samples.auth0.com/authorize","token_endpoint":"https://samples.auth0.com/oauth/token","device_authorization_endpoint":"https://samples.auth0.com/oauth/device/code","userinfo_endpoint":"https://samples.auth0.com/userinfo","mfa_challenge_endpoint":"https://samples.auth0.com/mfa/challenge","jwks_uri":"https://samples.auth0.com/.well-known/jwks.json","registration_endpoint":"https://samples.auth0.com/oidc/register","revocation_endpoint":"https://samples.auth0.com/oauth/revoke","scopes_supported":["openid","profile","offline_access","name","given_name","family_name","nickname","email","email_verified","picture","created_at","identities","phone","address"],"response_types_supported":["code","token","id_token","code token","code id_token","token id_token","code token id_token"],"code_challenge_methods_supported":["S256","plain"],"response_modes_supported":["query","fragment","form_post"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["HS256","RS256"],"token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post"],"claims_supported":["aud","auth_time","created_at","email","email_verified","exp","family_name","given_name","iat","identities","iss","name","nickname","phone_number","picture","sub"],"request_uri_parameter_supported":false}
-                ]])
             }
         }
     }

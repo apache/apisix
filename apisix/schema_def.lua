@@ -331,6 +331,37 @@ local nodes_schema = {
         }
     }
 }
+_M.discovery_nodes = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            host = {
+                description = "domain or ip",
+            },
+            port = {
+                description = "port of node",
+                type = "integer",
+                minimum = 1,
+            },
+            weight = {
+                description = "weight of node",
+                type = "integer",
+                minimum = 0,
+            },
+            priority = {
+                description = "priority of node",
+                type = "integer",
+            },
+            metadata = {
+                description = "metadata of node",
+                type = "object",
+            }
+        },
+        -- nodes from DNS discovery may not contain port
+        required = {"host", "weight"},
+    },
+}
 
 
 local certificate_scheme = {
@@ -351,6 +382,10 @@ local upstream_schema = {
         nodes = nodes_schema,
         retries = {
             type = "integer",
+            minimum = 0,
+        },
+        retry_timeout = {
+            type = "number",
             minimum = 0,
         },
         timeout = timeout_def,
@@ -385,7 +420,6 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin", "ewma", "least_conn"}
         },
         checks = health_checker,
         hash_on = {
@@ -445,7 +479,6 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
-    additionalProperties = false,
 }
 
 -- TODO: add more nginx variable support

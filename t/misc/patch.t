@@ -139,7 +139,7 @@ apisix:
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
-            local res, err = httpc:request_uri("http://apisix")
+            local res, err = httpc:request_uri("http://apisix", {headers={Host="apisix.apache.org"}})
             if not res then
                 ngx.log(ngx.ERR, err)
                 return
@@ -150,7 +150,7 @@ apisix:
 --- request
 GET /t
 --- response_body
-301
+200
 
 
 
@@ -171,7 +171,7 @@ apisix:
         end
         local http = require("resty.http")
         local httpc = http.new()
-        local res, err = httpc:request_uri("http://apisix")
+        local res, err = httpc:request_uri("http://apisix", {headers={Host="apisix.apache.org"}})
         if not res then
             ngx.log(ngx.ERR, err)
             return ngx.exit(-1)
@@ -180,8 +180,7 @@ apisix:
     }
 --- stream_request eval
 m
---- stream_response: 301
-
+--- stream_response: 200
 --- no_error_log
 [error]
 
