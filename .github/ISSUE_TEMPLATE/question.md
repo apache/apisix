@@ -1,6 +1,6 @@
 ---
 name: Questions
-about: Questions and answers indirectly related to APISIX
+about: Questions and answers about APISIX
 labels: question
 ---
 
