@@ -586,11 +586,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 **upstream 对象 json 配置内容：**
 
