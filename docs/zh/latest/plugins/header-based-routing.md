@@ -57,7 +57,6 @@ title: header-based-routing
 - my_upstream_3(127.0.0.1:1983)
 - my_upstream_4(127.0.0.1:1984)
 
-
 下面是一个示例，在指定的 route 上开启了 `header-based-routing` 插件:
 
 ```shell
@@ -166,7 +165,6 @@ $ curl http://127.0.0.1:9080/index.html --header 'header4: foo'
 ```
 
 当用户传入的 Header 没有满足任何一个条件时，会选择此 Router 默认的上游 upstream
-
 
 ## 禁用插件
 
