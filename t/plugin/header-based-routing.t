@@ -324,7 +324,6 @@ passed
 
 
 
-
 === TEST 10: test exact header match
 --- config
     location /t {
@@ -411,8 +410,6 @@ header1:value2
 --- error_code: 200
 --- response_body chomp
 1981
-
-
 
 
 
@@ -549,7 +546,6 @@ passed
 
 
 
-
 === TEST 21: should hit default upstream
 --- request
 GET /server_port
@@ -567,7 +563,6 @@ header3:Twitterbotfoo
 --- error_code: 200
 --- response_body chomp
 1980
-
 
 
 
@@ -636,7 +631,6 @@ passed
 
 
 
-
 === TEST 26: should hit default upstream
 --- request
 GET /server_port
@@ -657,7 +651,6 @@ header44:foo
 
 
 
-
 === TEST 28: should hit exists match upstream
 --- request
 GET /server_port
@@ -666,6 +659,7 @@ header4:foo
 --- error_code: 200
 --- response_body chomp
 1982
+
 
 
 === TEST 29: set disable=true
