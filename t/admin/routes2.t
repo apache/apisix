@@ -197,6 +197,8 @@ GET /t
             res.node.key = nil
             res.node.value.create_time = nil
             res.node.value.update_time = nil
+            assert(res.node.value.id ~= nil)
+            res.node.value.id = nil
             ngx.say(json.encode(res))
         }
     }
