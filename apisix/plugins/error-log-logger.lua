@@ -51,7 +51,7 @@ local metadata_schema = {
         skywalking = {
             type = "object",
             properties = {
-                endpoint_addr = schema_def.uri,
+                endpoint_addr = {schema_def.uri, default = "http://127.0.0.1:12900/v3/logs"},
                 service_name = {type = "string", default = "APISIX"},
                 service_instance_name = {type="string", default = "APISIX Service Instance"},
             },
@@ -198,8 +198,8 @@ local function send_to_skywalking(log_message)
     if httpc_res.status >= 400 then
         res =  false
         err_msg = string.format(
-            "server returned status code[%d] skywalking[%s] body[%s]",
-            httpc_res.status, tcp_config.endpoint_addr, httpc_res:read_body)
+            "server returned status code[%s] skywalking[%s] body[%s]",
+            httpc_res.status, tcp_config.endpoint_addr, httpc_res:read_body())
     end
 
     return res, err_msg
