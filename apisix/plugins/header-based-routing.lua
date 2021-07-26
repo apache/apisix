@@ -125,7 +125,6 @@ local function find(list, func)
 end
 
 local function get_upstream_id_by_name(upstreams, upstream_name)
-    --core.log.error("enter find.........", upstream_name)
     local target_upstream = find(upstreams, function(item)
         return item.value ~= nil and item.value.name == upstream_name
     end)
