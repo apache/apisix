@@ -560,13 +560,12 @@ apisix:
 
 ## `plugin-metadata` 和 `plugin-configs` 有什么区别
 
-`plugin-metadata` 是插件的元数据，所有插件实例共享。在编写插件时，如果有部分插件属性，属于所有插件实例共享，修改对所有插件实例生效，那么放在 `plugin-metadata` 合适。
+`plugin-metadata` 是插件的元数据，由插件的所有配置实例共享。在编写插件时，如果有一些属性变化需要对该插件的所有配置实例生效，那么放在 `plugin-metadata` 合适。
 
-`plugin-configs` 是指多个插件实例的组合，如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
+`plugin-configs` 是指多个不同插件的配置实例的组合，如果你想要复用一组通用的插件配置实例，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
 
 `plugin-metadata` 和 `plugin-configs` 的区别在于：
 
- - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有实例。`plugin-configs` 作用于其下配置的插件实例。
- - 绑定主体作用范围：`plugin-metadata` 作用于这个插件的所有实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
+ - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的的插件配置实例。
+ - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
 
-备注：插件实例是指当前正在启用的插件

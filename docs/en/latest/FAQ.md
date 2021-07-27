@@ -561,13 +561,11 @@ Installing APISIX under the `/root` directory causes this problem. Because the w
 
 ## What is the difference between `plugin-metadata` and `plugin-configs`
 
-`plugin-metadata` is the metadata of the plugin, which is shared by all plugin instances. When writing a plugin, if there are some plugin properties that are shared by all plugin instances and the changes take effect for all plugin instances, then it is appropriate to put them in `plugin-metadata`.
+`plugin-metadata` is the metadata of the plugin, which is shared by all configuration instances of the plugin. When writing a plugin. If there are some property changes that need to take effect for all configuration instances of the plugin, then it is appropriate to put them in `plugin-metadata`.
 
-`plugin-configs` is a collection of multiple plugin instances. If you want to reuse a common set of plugin configurations, you can extract them into a Plugin Config and bind them to the corresponding routes.
+`plugin-configs` is a collection of configuration instances of multiple different plugins. If you want to reuse a common set of plugin configuration instances, you can extract them into a Plugin Config and bind them to the corresponding routes.
 
 The difference between `plugin-metadata` and `plugin-configs`:
 
-- Plugin instance scope: `plugin-metadata` works on all instances of this plugin. `plugin-configs` works on the plugin instances configured under it.
-- Binding entities: `plugin-metadata` take effect on the entities bound to all instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
-
-Note: plugin instances are plugins that are currently enabled
+- Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
+- Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
