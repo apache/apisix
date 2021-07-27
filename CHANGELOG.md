@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.8.0](#280)
 - [2.7.0](#270)
 - [2.6.0](#260)
 - [2.5.0](#250)
@@ -42,6 +43,39 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.8.0
+
+### Change
+
+- change: enable stream proxy only by default [#4580](https://github.com/apache/apisix/pull/4580)
+
+### Core
+
+- :sunrise: feat: allow user-defined balancer with metadata in node [#4605](https://github.com/apache/apisix/pull/4605)
+- :sunrise: feat: Add option retry_timeout that like nginx's proxy_next_upstream_timeout [#4574](https://github.com/apache/apisix/pull/4574)
+- :sunrise: feat: enable balancer phase for plugins [#4549](https://github.com/apache/apisix/pull/4549)
+- :sunrise: feat: allow setting separate keepalive pool [#4506](https://github.com/apache/apisix/pull/4506)
+- :sunrise: feat: enable etcd health-check [#4191](https://github.com/apache/apisix/pull/4191)
+
+### Plugin
+
+- :sunrise: feat: add gzip plugin [#4640](https://github.com/apache/apisix/pull/4640)
+- :sunrise: feat(plugin): Add new plugin ua-restriction for bot spider restriction [#4587](https://github.com/apache/apisix/pull/4587)
+- :sunrise: feat(stream): add ip-restriction [#4602](https://github.com/apache/apisix/pull/4602)
+- :sunrise: feat(stream): add limit-conn [#4515](https://github.com/apache/apisix/pull/4515)
+- :sunrise: feat: increase ext-plugin timeout to 60s [#4557](https://github.com/apache/apisix/pull/4557)
+- :sunrise: feat(key-auth): supporting key-auth plugin to get key from query string [#4490](https://github.com/apache/apisix/pull/4490)
+- :sunrise: feat(kafka-logger): support for specified the log formats via admin API. [#4483](https://github.com/apache/apisix/pull/4483)
+
+### Bugfix
+
+- fix(stream): sni router is broken when session reuses [#4607](https://github.com/apache/apisix/pull/4607)
+- fix: the limit-conn plugin cannot effectively intercept requests in special scenarios [#4585](https://github.com/apache/apisix/pull/4585)
+- fix: ref check while deleting proto via Admin API [#4575](https://github.com/apache/apisix/pull/4575)
+- fix(skywalking): handle conflict between global rule and route [#4589](https://github.com/apache/apisix/pull/4589)
+- fix: `ctx.var.cookie_*` cookie not found log [#4564](https://github.com/apache/apisix/pull/4564)
+- fix(request-id): we can use different ids with the same request [#4479](https://github.com/apache/apisix/pull/4479)
 
 ## 2.7.0
 
