@@ -170,7 +170,7 @@ do
                 local m, err = ngx_re_match(args, "(^|&)" .. arg_key .. "=([^&]*)(&|$)", "jo")
                 if err then
                     log.warn("failed to fetch arg value by key: ",
-                            key, " error: ", err)
+                             key, " error: ", err)
                 end
                 if m then
                     val = m[2]
