@@ -508,33 +508,8 @@ do
             return etcd_cli
         end
 
-        local local_conf, err = config_local.local_conf()
-        if not local_conf then
-            return nil, err
-        end
-
-        local etcd_conf = clone_tab(local_conf.etcd)
-        etcd_conf.http_host = etcd_conf.host
-        etcd_conf.host = nil
-        etcd_conf.prefix = nil
-        etcd_conf.protocol = "v3"
-        etcd_conf.api_prefix = "/v3"
-
-        -- default to verify etcd cluster certificate
-        etcd_conf.ssl_verify = true
-        if etcd_conf.tls then
-            if etcd_conf.tls.verify == false then
-                etcd_conf.ssl_verify = false
-            end
-
-            if etcd_conf.tls.cert then
-                etcd_conf.ssl_cert_path = etcd_conf.tls.cert
-                etcd_conf.ssl_key_path = etcd_conf.tls.key
-            end
-        end
-
         local err
-        etcd_cli, err = etcd.new(etcd_conf)
+        etcd_cli, _, err = etcd_apisix.new()
         return etcd_cli, err
     end
 end
