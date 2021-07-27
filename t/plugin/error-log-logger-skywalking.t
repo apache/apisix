@@ -119,7 +119,7 @@ qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed 
 
 
 
-=== TEST 4: put plugin metadata
+=== TEST 4: put plugin metadata and log an error level message
 --- yaml_config
 apisix:
     enable_admin: true
@@ -137,27 +137,10 @@ plugins:
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log"
                     },
+                    "batch_max_size": 5,
                     "inactive_timeout": 1
                 }]]
                 )
-        }
-    }
---- request
-GET /tg
---- response_body
---- no_error_log
-[error]
-
-
-
-=== TEST 5: log an error level message
---- yaml_config
-plugins:
-  - error-log-logger
---- config
-    location /tg {
-        content_by_lua_block {
-            local core = require("apisix.core")
             ngx.sleep(2)
             core.log.error("this is an error message for test.")
         }
@@ -171,7 +154,66 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 
-=== TEST 6: delete metadata for the plugin, recover to the default
+=== TEST 5: log an warn level message
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.sleep(2)
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+--- wait: 5
+
+
+
+=== TEST 6: log an info level message
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "skywalking": {
+                        "endpoint_addr": "http://127.0.0.1:1982/log"
+                    },
+                    "batch_max_size": 5,
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.info("this is an info message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+--- wait: 5
+
+
+
+=== TEST 7: delete metadata for the plugin, recover to the default
 --- yaml_config
 apisix:
     enable_admin: true

@@ -76,7 +76,9 @@ local metadata_schema = {
     },
     oneOf = {
         {required = {"skywalking"}},
-        {required = {"tcp"}}
+        {required = {"tcp"}},
+        -- for compatible with old schema
+        {required = {"host", "port"}}
     }
 }
 
@@ -168,9 +170,6 @@ local function send_to_skywalking(log_message)
 
     local entries = {}
     for i = 1, #log_message, 2 do
-        if not log_message[i] then
-            core.log.warn("------------------ : " .. tostring(i))
-        end
         local content = {
             service = config.skywalking.service_name,
             serviceInstance = config.skywalking.service_instance_name,
@@ -230,10 +229,10 @@ end
 
 
 local function send(data)
-    if config.tcp then
-        return send_to_tcp_server(data)
+    if config.skywalking then
+        return send_to_skywalking(data)
     end
-    return send_to_skywalking(data)
+    return send_to_tcp_server(data)
 end
 
 
@@ -249,7 +248,19 @@ local function process()
             core.log.warn("set log filter failed for ", err)
             return
         end
-
+        if not config.tcp then
+            config.tcp = {
+                host = config.host,
+                port =  config.port,
+                tls = config.tls,
+                tls_server_name = config.tls_server_name
+            }
+            core.log.warn(
+                string.format("The schema is out of date. Please update to the new configuration, "
+                    .. "for example: {\"tcp\": {\"host\": \"%s\", \"port\": \"%s\"}}",
+                    config.host, config.port
+                ))
+        end
     end
 
     local entries = {}

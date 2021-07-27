@@ -287,7 +287,113 @@ passed
 
 
 
-=== TEST 9: want to reload the plugin by route
+=== TEST 9: log a warn level message (schema compatibility testing)
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "port": 1999,
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/\[Server\] receive data:.*this is a warning message for test./
+--- wait: 5
+
+
+
+=== TEST 10: log an error level message (schema compatibility testing)
+--- yaml_config
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.sleep(2)
+            core.log.error("this is an error message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/\[Server\] receive data:.*this is an error message for test./
+--- wait: 5
+
+
+
+=== TEST 11: log an info level message (schema compatibility testing)
+--- yaml_config
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.sleep(2)
+            core.log.info("this is an info message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/\[Server\] receive data:.*this is an info message for test./
+--- wait: 5
+
+
+
+=== TEST 12: delete metadata for the plugin, recover to the default (schema compatibility testing)
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /tg
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: want to reload the plugin by route
 --- yaml_config
 apisix:
     enable_admin: true
@@ -335,7 +441,7 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 10: delete the route
+=== TEST 14: delete the route
 --- yaml_config
 apisix:
     enable_admin: true
