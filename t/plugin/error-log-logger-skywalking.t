@@ -136,11 +136,11 @@ plugins:
                 ngx.HTTP_PUT,
                 [[{
                     "skywalking": {
-                        "endpoint_addr": "http://127.0.0.1:1982/log"
+                        "endpoint_addr": "http://127.0.0.1:1982/log",
+                        "service_instance_name": "instance"
                     },
-                    "batch_max_size": 30,
-                    "inactive_timeout": 1,
-                    "level": "ERROR"
+                    "batch_max_size": 15,
+                    "inactive_timeout": 1
                 }]]
                 )
             ngx.sleep(2)
@@ -151,7 +151,7 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
 --- wait: 5
 
 
@@ -167,19 +167,6 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
-                ngx.HTTP_PUT,
-                [[{
-                    "skywalking": {
-                        "endpoint_addr": "http://127.0.0.1:1982/log"
-                    },
-                    "batch_max_size": 30,
-                    "inactive_timeout": 1,
-                    "level": "WARN"
-                }]]
-                )
-            ngx.sleep(2)
             core.log.warn("this is a warning message for test.")
         }
     }
@@ -187,7 +174,7 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
 --- wait: 5
 
 
@@ -210,7 +197,7 @@ plugins:
 GET /tg
 --- response_body
 --- no_error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"APISIX Service Instance\".*/
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
 --- wait: 5
 
 
