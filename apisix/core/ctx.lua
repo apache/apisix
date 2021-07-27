@@ -166,7 +166,7 @@ do
 
             elseif core_str.has_prefix(key, "arg_") then
                 local args = t.args
-                local arg_key = sub_str(key, 5);
+                local arg_key = sub_str(key, 5)
                 local m, err = ngx_re_match(args, "(^|&)" .. arg_key .. "=([^&]*)(&|$)", "jo")
                 if err then
                     log.warn("failed to fetch arg value by key: ",
