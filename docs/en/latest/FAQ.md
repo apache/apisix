@@ -551,4 +551,21 @@ apisix:
 
 **Note:**
 
-- Whenever trying to connect TLS services with cosocket, you should set `apisix.ssl.ssl_trusted_certificate`
+- Whenever trying to connect TLS services with cosocket, if APISIX does not trust the peer's TLS service certificate, you should set `apisix.ssl.ssl_trusted_certificate`
+
+As an example, if using Nacos as a service discovery in APISIX, Nacos has TLS protocol enabled, i.e. Nacos configuration `host` starts with `https://`, so you need to configure `apisix.ssl.ssl_trusted_certificate` and use the same CA certificate as Nacos.
+
+## How to fix `module 'resty.worker.events' not found` error
+
+Installing APISIX under the `/root` directory causes this problem. Because the worker process is run by the user `nobody`, it does not have enough permissions to access the files in the `/root` directory. You need to change the APISIX installation directory, and it is recommended to install it in the `/usr/local` directory.
+
+## What is the difference between `plugin-metadata` and `plugin-configs`
+
+`plugin-metadata` is the metadata of the plugin, which is shared by all configuration instances of the plugin. When writing a plugin. If there are some property changes that need to take effect for all configuration instances of the plugin, then it is appropriate to put them in `plugin-metadata`.
+
+`plugin-configs` is a collection of configuration instances of multiple different plugins. If you want to reuse a common set of plugin configuration instances, you can extract them into a Plugin Config and bind them to the corresponding routes.
+
+The difference between `plugin-metadata` and `plugin-configs`:
+
+- Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
+- Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
