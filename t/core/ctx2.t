@@ -136,3 +136,39 @@ qr/balancer_ip: 127.0.0.1|balancer_port: 1980/
 --- grep_error_log_out
 balancer_ip: 127.0.0.1
 balancer_port: 1980
+
+
+
+=== TEST 5: support dash in the args
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+        }
+    }
+--- request
+GET /t?a-b=aaa
+--- response_body
+arg_a-b: aaa
+
+
+
+=== TEST 6: support dash in the args(Multi args with the same name, only fetch the first one)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+        }
+    }
+--- request
+GET /t?a-b=aaa&a-b=bbb
+--- response_body
+arg_a-b: aaa

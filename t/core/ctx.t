@@ -1008,23 +1008,3 @@ GET /hello
 hello world
 --- error_log eval
 qr/request log: \{"route_id":"1","route_name":"my_route","service_id":"1","service_name":"my_service"\}/
-
-
-
-=== TEST 36: support dash in the args
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
-        }
-    }
---- request
-GET /t?a-b=aaa
---- response_body
-arg_a-b: aaa
---- no_error_log
-[error]
