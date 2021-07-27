@@ -36,7 +36,7 @@ You can install Apache APISIX via RPM package, Docker, Helm Chart, and source re
 This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
 ```
 
 ### Installation via Docker
@@ -49,16 +49,16 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ### Installation via Source Release Package
 
-1. Create a directory named `apisix-2.7`.
+1. Create a directory named `apisix-2.8`.
 
   ```shell
-  mkdir apisix-2.7
+  mkdir apisix-2.8
   ```
 
 2. Download Apache APISIX Release source package.
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
+  wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
   ```
 
   You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
@@ -66,14 +66,14 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 3. Unzip the Apache APISIX Release source package.
 
   ```shell
-  tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
+  tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
   ```
 
 4. Install the runtime dependent Lua libraries.
 
   ```shell
-  # Switch to the apisix-2.7 directory
-  cd apisix-2.7
+  # Switch to the apisix-2.8 directory
+  cd apisix-2.8
   # Create dependencies
   make deps
   ```
