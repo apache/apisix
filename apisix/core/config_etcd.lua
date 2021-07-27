@@ -21,9 +21,7 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
-local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
-local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -509,7 +507,7 @@ do
         end
 
         local err
-        etcd_cli, _, err = etcd_apisix.new()
+        etcd_cli, err = etcd_apisix.new()
         return etcd_cli, err
     end
 end
