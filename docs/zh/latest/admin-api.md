@@ -39,7 +39,7 @@ title: Admin API
 
 Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [architecture-design](./architecture-design/apisix.md) 中的文档。
 
-启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](../../../conf/config.yaml) 文件来改变默认监听的端口。
+启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 文件来改变默认监听的端口。
 
 在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
 
@@ -586,11 +586,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 **upstream 对象 json 配置内容：**
 
