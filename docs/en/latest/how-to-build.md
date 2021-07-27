@@ -151,6 +151,16 @@ make help
 
   - Or you can specify the NGINX binary path by running this command: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`.
 
+  <!--
+  #
+  #    In addition to the basic Markdown syntax, we use remark-admonitions
+  #    alongside MDX to add support for admonitions. Admonitions are wrapped
+  #    by a set of 3 colons.
+  #    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+  #    for more detail.
+  #
+  -->
+
   :::note Note
   Some of the tests rely on external services and system configuration modification. For a complete test environment build, you can refer to `ci/linux_openresty_common_runner.sh`.
   :::
