@@ -75,7 +75,7 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ### Use the snowflake algorithm to generate an ID
 
 > supports using the Snowflake algorithm to generate ID.
-> read the documentation first before deciding to use snowflake. Because once the configuration information is enabled, you cannot arbitrarily adjust the configuration information. Failure to do so may result in duplicate ID being generated.
+> read the documentation first before deciding to use snowflake. Because once the configuration information is enabled, you can not arbitrarily adjust the configuration information. Failure to do so may result in duplicate ID being generated.
 
 The Snowflake algorithm is not enabled by default and needs to be configured in 'conf/config.yaml'.
 
@@ -97,10 +97,10 @@ plugin_attr:
 | ------------------- | ------- | ------------- | -------------- | ------- | ------------------------------ |
 | enable                     | boolean  | required   | false          |  | When set it to true, enable the snowflake algorithm.  |
 | snowflake_epoc             | integer  | required   | 1609459200000  |  | Start timestamp (in milliseconds)       |
-| data_machine_bits          | integer  | deprecated | 12             |  | Maximum number of supported machines (processes) `1 << data_machine_bits` |
-| sequence_bits              | integer  | deprecated | 10             |  | Maximum number of generated ID per millisecond per node `1 << sequence_bits` |
-| data_machine_ttl           | integer  | deprecated | 30             |  | Valid time of registration of 'data_machine' in 'etcd' (unit: seconds) |
-| data_machine_interval      | integer  | deprecated | 10             |  | Time between 'data_machine' renewal in 'etcd' (unit: seconds) |
+| data_machine_bits          | integer  | optional   | 12             |  | Maximum number of supported machines (processes) `1 << data_machine_bits` |
+| sequence_bits              | integer  | optional   | 10             |  | Maximum number of generated ID per millisecond per node `1 << sequence_bits` |
+| data_machine_ttl           | integer  | optional   | 30             |  | Valid time of registration of 'data_machine' in 'etcd' (unit: seconds) |
+| data_machine_interval      | integer  | optional   | 10             |  | Time between 'data_machine' renewal in 'etcd' (unit: seconds) |
 
 - `snowflake_epoc` default start time is  `2021-01-01T00:00:00Z`, and it can support `69 year` approximately to `2090-09-0715:47:35Z` according to the default configuration
 - `data_machine_bits` corresponds to the set of workIDs and datacEnteridd in the snowflake definition. The plug-in aslocates a unique ID to each process. Maximum number of supported processes is `pow(2, data_machine_bits)`. The default number of `12 bits` is up to `4096`.
