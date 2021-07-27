@@ -127,10 +127,8 @@ function _M.post(id, conf)
     end
 
     local key = "/stream_routes"
-
     utils.inject_timestamp(conf)
-
-    local res, err = core.etcd.push("/stream_routes", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post stream route[", key, "]: ", err)
         return 500, {error_msg = err}

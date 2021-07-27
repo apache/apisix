@@ -68,6 +68,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
     attr_schema = attr_schema,
+    run_policy = "prefer_route",
 }
 
 

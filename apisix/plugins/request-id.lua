@@ -88,6 +88,7 @@ local function gen_data_machine(max_number)
             if err then
                 id = id + 1
                 core.log.error("Etcd grant failure, err: ".. err)
+                goto continue
             end
 
             local _, err1 = etcd_cli:setnx(prefix .. tostring(id), uuid)
@@ -248,7 +249,9 @@ function _M.init()
 end
 
 function _M.destroy()
-    timers.unregister_timer("plugin#request-id")
+    if snowflake_inited then
+        timers.unregister_timer("plugin#request-id")
+    end
 end
 
 return _M
