@@ -21,6 +21,7 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 run_tests;
+worker_connections(1024);
 
 __DATA__
 
@@ -137,7 +138,7 @@ plugins:
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log"
                     },
-                    "batch_max_size": 10,
+                    "batch_max_size": 30,
                     "inactive_timeout": 1,
                     "level": "ERROR"
                 }]]
@@ -173,7 +174,7 @@ plugins:
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log"
                     },
-                    "batch_max_size": 10,
+                    "batch_max_size": 30,
                     "inactive_timeout": 1,
                     "level": "WARN"
                 }]]
