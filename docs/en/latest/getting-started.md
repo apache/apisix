@@ -76,6 +76,16 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 - We use the [curl](https://curl.se/docs/manpage.html) command for API testing. You can also use other tools such as [Postman](https://www.postman.com/) for testing.
 
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
+
 :::note Note
 If you already have Apache APISIX installed, please skip Step 1, and go to [Step 2](getting-started.md#step-2-create-a-route) directly.
 :::
@@ -171,6 +181,16 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 ```
 
 We use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as our upstream target (Upstream service) with an ID of `1`. For more information on the fields, see [Admin API](./admin-api.md).
+
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
 :::note Note
 Creating an Upstream service is not actually necessary, as we can use [Plugin](./architecture-design/plugin.md) to intercept the request and then respond directly. However, for the purposes of this guide, we assume that at least one Upstream service needs to be set up.
@@ -274,6 +294,16 @@ curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H
 Apache APISIX provides a [Dashboard](https://github.com/apache/apisix-dashboard) to make our operation more intuitive and easier.
 
 ![Dashboard](../../assets/images/dashboard.jpeg)
+
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
 :::note Note
 APISIX Dashboard is an experimental feature for now.
