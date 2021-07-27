@@ -137,8 +137,9 @@ plugins:
                     "skywalking": {
                         "endpoint_addr": "http://127.0.0.1:1982/log"
                     },
-                    "batch_max_size": 5,
-                    "inactive_timeout": 1
+                    "batch_max_size": 10,
+                    "inactive_timeout": 1,
+                    "level": "ERROR"
                 }]]
                 )
             ngx.sleep(2)
@@ -165,6 +166,18 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "skywalking": {
+                        "endpoint_addr": "http://127.0.0.1:1982/log"
+                    },
+                    "batch_max_size": 10,
+                    "inactive_timeout": 1,
+                    "level": "WARN"
+                }]]
+                )
             ngx.sleep(2)
             core.log.warn("this is a warning message for test.")
         }
@@ -189,18 +202,6 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
-                ngx.HTTP_PUT,
-                [[{
-                    "skywalking": {
-                        "endpoint_addr": "http://127.0.0.1:1982/log"
-                    },
-                    "batch_max_size": 5,
-                    "inactive_timeout": 1
-                }]]
-                )
-            ngx.sleep(2)
             core.log.info("this is an info message for test.")
         }
     }

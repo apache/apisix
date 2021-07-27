@@ -50,10 +50,10 @@ title: error-log-logger
 | skywalking.endpoint_addr         | string  | 必须   | http://127.0.0.1:12900/v3/logs |                  | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800             |
 | skywalking.service_name          | string  | 可选   | APISIX                         |                  | skywalking 上报的 service 名称                                            |
 | skywalking.service_instance_name | String  | 可选   | APISIX Instance Name           |                  | skywalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
-| host                             | string  | 可选   |                                |                  | (`弃用`) TCP 服务的IP地址或主机名                                           |
-| port                             | integer | 可选   |                                | [0,...]          | (`弃用`) Target upstream port                                            |
-| tls                              | boolean | 可选   | false                          |                  | (`弃用`) 用于控制是否执行SSL验证                                             |
-| tls_server_name                  | string  | 可选   |                                |                  | (`弃用`) TLS 服务名称标记                                                  |
+| host                             | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.host`) TCP 服务的IP地址或主机名                           |
+| port                             | integer | 可选   |                                | [0,...]          | (`弃用`，替换成`tcp.port`) 目标端口                                         |
+| tls                              | boolean | 可选   | false                          |                  | (`弃用`，替换成`tcp.tls`) 用于控制是否执行SSL验证                             |
+| tls_server_name                  | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.tls_server_name`) TLS 服务名称标记                       |
 | timeout                          | integer | 可选   | 3                              | [1,...]          | 连接和发送数据超时间（以秒为单位）                                             |
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）                                        |
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |

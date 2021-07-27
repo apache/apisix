@@ -41,28 +41,27 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Attributes
 
-| Name                             | Type    | Requirement | Default                        | Valid   | Description                                                                               |
-| -------------------------------- | ------- | ----------- | ------------------------------ | ------- | ----------------------------------------------------------------------------------------- |
-| tcp.host                         | string  | required    |                                |         | IP address or the Hostname of the TCP server.                                             |
-| tcp.port                         | integer | required    |                                | [0,...] | Target upstream port.                                                                     |
-| tcp.tls                          | boolean | optional    | false                          |         | Control whether to perform SSL verification.                                              |
-| tcp.tls_server_name              | string  | optional    |                                |         | The server name for the new TLS extension  SNI.                                           |
-| skywalking.endpoint_addr         | string  | required    | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                          |
-| skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                      |
-| skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly.|
-| timeout                          | integer | optional    | 3                              | [1,...] | (`Deprecated`) Timeout for the upstream to connect and send, unit: second.                |
-| host                             | string  | optional    |                                |         | IP address or the Hostname of the TCP server.                                             |
-| port                             | integer | optional    |                                | [0,...] | (`Deprecated`) Target upstream port.                                                      |
-| tls                              | boolean | optional    | false                          |         | (`Deprecated`) Control whether to perform SSL verification.                               |
-| tls_server_name                  | string  | optional    |                                |         | (`Deprecated`) The server name for the new TLS extension SNI.                             |
-| timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                               |
-| keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                        |
+| Name                             | Type    | Requirement | Default                        | Valid   | Description                                                                                          |
+| -------------------------------- | ------- | ----------- | ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| tcp.host                         | string  | required    |                                |         | IP address or the Hostname of the TCP server.                                                        |
+| tcp.port                         | integer | required    |                                | [0,...] | Target upstream port.                                                                                |
+| tcp.tls                          | boolean | optional    | false                          |         | Control whether to perform SSL verification.                                                         |
+| tcp.tls_server_name              | string  | optional    |                                |         | The server name for the new TLS extension  SNI.                                                      |
+| skywalking.endpoint_addr         | string  | required    | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
+| skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                                 |
+| skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
+| host                             | string  | optional    |                                |         | (`Deprecated`, replaced with `tcp.host`) IP address or the Hostname of the TCP server.               |
+| port                             | integer | optional    |                                | [0,...] | (`Deprecated`, replaced with `tcp.port`) Target upstream port.                                       |
+| tls                              | boolean | optional    | false                          |         | (`Deprecated`, replaced with `tcp.tls`) Control whether to perform SSL verification.                 |
+| tls_server_name                  | string  | optional    |                                |         | (`Deprecated`, replaced with `tcp.tls_server_name`) The server name for the new TLS extension SNI.   |
+| timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
+| keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
-| batch_max_size                   | integer | optional    | 1000                           | [1,...] | Max size of each batch.                                                                   |
-| inactive_timeout                 | integer | optional    | 3                              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive.                       |
-| buffer_duration                  | integer | optional    | 60                             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed. |
-| max_retry_count                  | integer | optional    | 0                              | [0,...] | Maximum number of retries before removing from the processing pipe line.                  |
-| retry_delay                      | integer | optional    | 1                              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.         |
+| batch_max_size                   | integer | optional    | 1000                           | [1,...] | Max size of each batch.                                                                              |
+| inactive_timeout                 | integer | optional    | 3                              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive.                                  |
+| buffer_duration                  | integer | optional    | 60                             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.            |
+| max_retry_count                  | integer | optional    | 0                              | [0,...] | Maximum number of retries before removing from the processing pipe line.                             |
+| retry_delay                      | integer | optional    | 1                              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.                    |
 
 ## How To Enable And Disable
 
