@@ -20,8 +20,8 @@ log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
+worker_connections(128);
 run_tests;
-worker_connections(1024);
 
 __DATA__
 
