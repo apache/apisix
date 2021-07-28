@@ -96,8 +96,8 @@ plugin_attr:
 
 | Name                | Type    | Requirement   | Default        |  Valid  | Description                    |
 | ------------------- | ------- | ------------- | -------------- | ------- | ------------------------------ |
-| enable                     | boolean  | required   | false          |  | When set it to true, enable the snowflake algorithm.  |
-| snowflake_epoc             | integer  | required   | 1609459200000  |  | Start timestamp (in milliseconds)       |
+| enable                     | boolean  | optional   | false          |  | When set it to true, enable the snowflake algorithm.  |
+| snowflake_epoc             | integer  | optional   | 1609459200000  |  | Start timestamp (in milliseconds)       |
 | data_machine_bits          | integer  | optional   | 12             |  | Maximum number of supported machines (processes) `1 << data_machine_bits` |
 | sequence_bits              | integer  | optional   | 10             |  | Maximum number of generated ID per millisecond per node `1 << sequence_bits` |
 | data_machine_ttl           | integer  | optional   | 30             |  | Valid time of registration of 'data_machine' in 'etcd' (unit: seconds) |

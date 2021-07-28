@@ -56,8 +56,7 @@ local attr_schema = {
                 delta_offset = {type = "integer", default = 1, enum = {1, 10, 100, 1000}},
                 data_machine_ttl = {type = "integer", minimum = 1, default = 30},
                 data_machine_interval = {type = "integer", minimum = 1, default = 10}
-            },
-            required = {"enable", "snowflake_epoc"}
+            }
         }
     }
 }
