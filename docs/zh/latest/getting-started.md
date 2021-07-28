@@ -74,6 +74,16 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 - 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/)等，进行测试。
 
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
+
 :::note 说明
 如果您已经安装了 Apache APISIX，请直接阅读 [第二步](getting-started.md#第二步：创建路由)
 :::
@@ -169,6 +179,16 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 ```
 
 我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游服务，其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
+
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
 :::note 注意
 创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
@@ -272,6 +292,16 @@ curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H
 Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashboard)，让我们的操作更直观更轻松。
 
 ![Dashboard](../../assets/images/dashboard.jpeg)
+
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
 :::note 注意
 APISIX Dashboard 目前仍然是一个实验性功能。
