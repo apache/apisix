@@ -75,6 +75,14 @@ etcd:
     key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
+If APISIX does not trust the CA certificate that used by etcd server, we need to set up the CA certificate.
+
+```yaml
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
+```
+
 ## Protect Route
 
 ### Why use it
