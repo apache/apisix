@@ -77,5 +77,4 @@ jobs:
       - name: Set up tmate session
         if: ${{ failure() }}
         uses: ./.github/actions/action-tmate
-        with:
-          timeout-minutes: 15
+        timeout-minutes: 15
