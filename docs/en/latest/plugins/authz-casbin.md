@@ -1,0 +1,225 @@
+---
+title: authz-casbin
+---
+
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+## Summary
+
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**Metadata**](#metadata)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**API**](#api)
+- [**Disable Plugin**](#disable-plugin)
+- [**Examples**](#examples)
+
+## Name
+
+`authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models. 
+
+For detailed documentation on how to create model and policy, refer [Casbin](https://casbin.org/docs/en/supported-models).
+
+## Attributes
+
+| Name        | Type   | Requirement | Default | Valid | Description                                                  |
+| ----------- | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| model_path  | string | required    |         |       | The path of the Casbin model configuration file.             |
+| policy_path | string | required    |         |       | The path of the Casbin policy file.                          |
+| username    | string | required    |         |       | The header you will be using in request to pass the username (subject). |
+
+**NOTE**: You must either specify both the `model_path` and `policy_path` in plugin config or specify both the `model` and `policy` in the plugin metadata for the schema to be valid.
+
+## Metadata
+
+| Name        | Type   | Requirement | Default | Valid | Description                                                            |
+| ----------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------- |
+| model       | string | required    |         |       | The Casbin model configuration in text format.                         |
+| policy      | string | required    |         |       | The Casbin policy in text format.                                      |
+
+
+## How To Enable
+
+You can enable the plugin on any route either by using the model/policy file paths or directly using the model/policy text.
+
+### By using file paths
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "authz-casbin": {
+            "model_path": "/path/to/model.conf",
+            "policy_path": "/path/to/policy.csv",
+            "username": "user"
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/*"
+}'
+```
+This will create a Casbin enforcer from the model and policy files at your first request.
+
+
+### By using model/policy text
+
+First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+"model": "[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
+
+"policy": "p, *, /, GET
+p, admin, *, *
+g, alice, admin"
+}'
+```
+
+Then add this plugin on a route by sending the following request. Note, there is no requirement for model/policy file paths now.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "authz-casbin": {
+            "username": "user"
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/*"
+}'
+```
+
+## Test Plugin
+
+We defined the example model as:
+
+```conf
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)
+```
+
+And the example policy as:
+
+```conf
+p, *, /, GET
+p, admin, *, *
+g, alice, admin
+```
+
+This means that anyone can access the homepage (`/`) using `GET` request method while only users with admin permissions can access other pages and use other request methods.
+
+For example, here anyone can access the homepage with the GET request method and the request proceeds normally:
+
+```shell
+curl -i http://127.0.0.1:9080/ -X GET
+```
+
+If some unauthorized user `bob` tries to access any other page, they will get a 403 error:
+
+```shell
+curl -i http://127.0.0.1:9080/res -H 'user: bob' -X GET
+HTTP/1.1 403 Forbidden
+```
+
+But someone with admin permissions like `alice`can access it:
+
+```shell
+curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
+```
+
+
+## API
+
+You can use the API to get, add or remove policies. For example to add a policy:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/plugin/authz-casbin/add -X POST \
+-H "type: p" \
+-H "subject: bob" \
+-H "object: /res" \
+-H "action: GET"
+```
+
+This will give `bob` the permission to access `/res` using a `GET` request.
+
+**NOTE**: You may need to use [interceptors](../plugin-interceptors.md) to protect the API which is at `/apisix/plugin/authz-casbin/`.
+
+
+## Disable Plugin
+
+Remove the corresponding json configuration in the plugin configuration to disable the `authz-casbin` plugin. 
+APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+
+```shell
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+{
+    "methods": ["GET"],
+    "uri": "/*",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+## Examples
+
+Checkout examples for model and policy conguration [here](https://github.com/casbin/lua-casbin/tree/master/examples).
