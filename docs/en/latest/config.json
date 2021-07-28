@@ -232,6 +232,13 @@
           "id": "debug-function"
         },
         {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/testing-framework"
+          ]
+        },
+        {
           "type": "doc",
           "id": "profile"
         }
