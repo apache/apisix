@@ -262,7 +262,7 @@ Now when we access the route created in step 2, an **Unauthorized Error** will b
 The correct way to access that route is to add a `Header` named `apikey` with the correct key, as shown in the code below:
 
 ```bash
-curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
+curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "apikey: key-of-john"
 ```
 
 ### Prefixing a Route
