@@ -33,7 +33,7 @@ Here, we briefly describe how to do simple testing based on this framework.
 
 ## Test file
 
-you need to write test cases in the t/ directory, in a corresponding `.t` file. Note that a single test file should not exceed 800 lines, and if it is too long, it needs to be divided by a suffix. For example:
+you need to write test cases in the t/ directory, in a corresponding `.t` file. Note that a single test file should not exceed `800` lines, and if it is too long, it needs to be divided by a suffix. For example:
 
 ```
 t/
