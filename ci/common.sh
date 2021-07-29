@@ -18,7 +18,7 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export OPENRESTY_PREFIX="/opt/homebrew/Cellar/openresty-debug/"
     export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 }
