@@ -38,10 +38,6 @@ discovery:
   nacos:
     host:
       - "http://${username}:${password}@${host1}:${port1}"
-    authorization:
-      type: "basic_auth"  # default basic_auth
-      access_key: ""      # default empty
-      secret_key: ""      # default empty
     prefix: "/nacos/v1/"
     fetch_interval: 30    # default 30 sec
     weight: 100           # default 100
@@ -58,19 +54,6 @@ discovery:
   nacos:
     host:
       - "http://192.168.33.1:8848"
-```
-
-Using [AliCloud MSE Nacos](https://cn.aliyun.com/product/aliware/mse) authentication please refer to this configuration:
-
-```yaml
-discovery:
-  nacos:
-    host:
-      - "http://192.168.33.1:8848"
-    authorization:
-      type: "aliyun_ram"  # aliyun mse nacos ram
-      access_key: ""      # aliyun access key
-      secret_key: ""      # aliyun access secret
 ```
 
 ### Upstream setting
