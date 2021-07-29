@@ -57,6 +57,19 @@ local schema = {
                 maxLength = 100,
             },
         },
+        authorization= {
+            type = 'object',
+            properties = {
+                type = {type = 'string', default = 'basic_auth'},
+                access_key = {type = 'string', default = ''},
+                secret_key = {type = 'string', default = ''},
+            },
+            default = {
+                type = 'basic_auth',
+                access_key = '',
+                secret_key = '',
+            }
+        },
         fetch_interval = {type = 'integer', minimum = 1, default = 30},
         prefix = {
             type = 'string',
@@ -92,14 +105,59 @@ local function discovery_nacos_callback(data, event, source, pid)
                ", application: ", core.json.encode(applications, true))
 end
 
-local function request(request_uri, path, body, method, basic_auth)
+local function get_aliyun_ram_sign_headers(param_values, access_key, secret_key)
+    if not param_values then
+        return {}
+    end
+
+    local namespace_id = param_values['namespace_id']
+    local group_name = param_values['group_name']
+    local time_ngx = ngx.utctime()
+    local time_change = string.gsub(time_ngx, " ", "T")
+    local time_utc = table.concat({time_change, "Z"})
+    local headers = {}
+    headers['Spas-AccessKey'] = access_key
+    headers['Timestamp'] = time_utc
+
+    if secret_key then
+        local resource
+        if namespace_id and group_name then
+            resource = namespace_id .. '+' .. group_name
+        else
+            resource = group_name
+        end
+
+        if resource then
+            resource = resource .. '+' .. time_utc
+        else
+            resource = time_utc
+        end
+
+        local sign_result = ngx.encode_base64(
+                                ngx.hmac_sha1(secret_key, resource))
+        headers['Spas-Signature'] = sign_result
+    end
+
+
+    return headers
+end
+
+local function request(request_uri, path, body, method, sign_table)
     local url = request_uri .. path
     log.info('request url:', url)
     local headers = {}
     headers['Accept'] = 'application/json'
 
-    if basic_auth then
-        headers['Authorization'] = basic_auth
+    if sign_table then
+        local auth_type = sign_table['authorization_type']
+        if auth_type == 'aliyun_ram' then
+            local access_key = sign_table['access_key']
+            local secret_key = sign_table['secret_key']
+            local sign_headers = get_aliyun_ram_sign_headers(sign_table, access_key, secret_key)
+            for index, value in ipairs(sign_headers) do
+                headers[index] = value
+            end
+        end
     end
 
     if body and 'table' == type(body) then
@@ -141,23 +199,20 @@ local function request(request_uri, path, body, method, basic_auth)
     return data
 end
 
-
-local function get_url(request_uri, path)
-    return request(request_uri, path, nil, 'GET', nil)
+local function get_url(request_uri, path, sign_table)
+    return request(request_uri, path, nil, 'GET', sign_table)
 end
-
 
 local function post_url(request_uri, path, body)
     return request(request_uri, path, body, 'POST', nil)
 end
-
 
 local function get_token_param(base_uri, username, password)
     if not username or not password then
         return ''
     end
 
-    local args = { username = username, password = password}
+    local args = { username = username, password = password }
     local data, err = post_url(base_uri, auth_path .. '?' .. ngx.encode_args(args), nil)
     if err then
         log.error('nacos login fail:', username, ' ', password, ' desc:', err)
@@ -186,21 +241,27 @@ end
 
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
+    local authorization_type = local_conf.discovery.nacos.authorization.type
+    local username, password, access_key ,secret_key
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local auth_idx = str_find(url, '@')
-    local username, password
-    if auth_idx then
-        local protocol_idx = str_find(url, '://')
-        local protocol = string_sub(url, 1, protocol_idx + 2)
-        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local arr = ngx_re.split(user_and_password, ':')
-        if #arr == 2 then
-            username = arr[1]
-            password = arr[2]
+    if authorization_type == 'basic_auth' then
+        local auth_idx = str_find(url, '@')
+        if auth_idx then
+            local protocol_idx = str_find(url, '://')
+            local protocol = string_sub(url, 1, protocol_idx + 2)
+            local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+            local arr = ngx_re.split(user_and_password, ':')
+            if #arr == 2 then
+                username = arr[1]
+                password = arr[2]
+            end
+            local other = string_sub(url, auth_idx + 1)
+            url = protocol .. other
         end
-        local other = string_sub(url, auth_idx + 1)
-        url = protocol .. other
+    elseif authorization_type == 'aliyun_ram_auth' then
+         access_key = local_conf.discovery.nacos.authorization.access_key
+         secret_key = local_conf.discovery.nacos.authorization.secret_key
     end
 
     if local_conf.discovery.nacos.prefix then
@@ -211,7 +272,7 @@ local function get_base_uri()
         url = url .. '/'
     end
 
-    return url, username, password
+    return url, username, password, access_key, secret_key, authorization_type
 end
 
 
@@ -278,8 +339,11 @@ local function fetch_full_registry(premature)
     end
 
     local up_apps = {}
-    local base_uri, username, password = get_base_uri()
-    local token_param, err = get_token_param(base_uri, username, password)
+    local base_uri, username, password, access_key, secret_key, authorization_type = get_base_uri()
+    local token_param, err
+    if authorization_type then
+        token_param, err = get_token_param(base_uri, username, password)
+    end
     if err then
         log.error('get_token_param error:', err)
         if not applications then
@@ -293,12 +357,27 @@ local function fetch_full_registry(premature)
         applications = up_apps
         return
     end
-    local data, err
+    local data
     for _, service_info in ipairs(infos) do
-        local namespace_param = get_namespace_param(service_info.namespace_id)
-        local group_name_param = get_group_name_param(service_info.group_name)
-        data, err = get_url(base_uri, instance_list_path .. service_info.service_name
-                            .. token_param .. namespace_param .. group_name_param)
+        local namespace_id = service_info.namespace_id
+        local group_name = service_info.group_name
+        local service_name = service_info.service_name
+        local namespace_param = get_namespace_param(namespace_id)
+        local group_name_param = get_group_name_param(group_name)
+        if not authorization_type then
+            local sign_table = {
+                namespace_id = namespace_id,
+                group_name = group_name,
+                authorization_type = authorization_type,
+                access_key = access_key,
+                secret_key = secret_key
+            }
+            data, err = get_url(base_uri, instance_list_path .. service_name
+                         .. namespace_param .. group_name_param, sign_table)
+        else
+            data, err = get_url(base_uri, instance_list_path .. service_name
+                         .. token_param .. namespace_param .. group_name_param, nil)
+        end
         if err then
             log.error('get_url:', instance_list_path, ' err:', err)
             if not applications then
@@ -308,10 +387,10 @@ local function fetch_full_registry(premature)
         end
 
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[service_info.service_name]
+            local nodes = up_apps[service_name]
             if not nodes then
                 nodes = {}
-                up_apps[service_info.service_name] = nodes
+                up_apps[service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
