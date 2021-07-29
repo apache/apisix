@@ -221,7 +221,7 @@ hash_on: header
 chash_key: "custom-one"
 ```
 
-The default log level is info, but you can get the debug level log with `-- log_level: debug`.
+The default log level is `info`, but you can get the debug level log with `-- log_level: debug`.
 
 ## Upstream
 
