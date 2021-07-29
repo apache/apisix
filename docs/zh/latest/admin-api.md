@@ -39,7 +39,7 @@ title: Admin API
 
 Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [architecture-design](./architecture-design/apisix.md) 中的文档。
 
-启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](../../../conf/config.yaml) 文件来改变默认监听的端口。
+启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 文件来改变默认监听的端口。
 
 在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
 
@@ -83,7 +83,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 | service_id       | 可选                               | Service  | 绑定的 Service 配置，详见 [Service](architecture-design/service.md)                                                                                                                                                                                                                                                                                        |                                                      |
 | plugin_config_id | 可选，无法跟 script 一起配置          | Plugin   | 绑定的 Plugin config 配置，详见 [Plugin config](architecture-design/plugin-config.md)                                                                                                                                                                                                                                                                      |                                                      |
 | name             | 可选                               | 辅助     | 标识路由名称                                                                                                                                                                                                                                                                                                                                               | route-xxxx                                           |
-| desc             | 可选                               | 辅助     | 标识描述、使用场景等。                                                                                                                                                                                                                                                                                                                                     | 客户 xxxx                                            |
+| desc             | 可选                               | 辅助     | 标识描述、使用场景等。                                                                                                                                                                                                                                                                                                                                     | 路由 xxxx                                            |
 | host             | 可选，不能与 `hosts` 一起使用         | 匹配规则 | 当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。                                                                                                                                                                                                                                                                                             | "foo.com"                                            |
 | hosts            | 可选，不能与 `host` 一起使用          | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。                                                                                                                                                                                                                                                                                   | {"foo.com", "\*.bar.com"}                            |
 | remote_addr      | 可选，不能与 `remote_addrs` 一起使用  | 匹配规则 | 客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。                                                                                                                                                                                   | "192.168.1.0/24"                                     |
@@ -321,7 +321,7 @@ HTTP/1.1 200 OK
 | plugins          | 可选                               | Plugin   | 详见 [Plugin](architecture-design/plugin.md)                           |                                                  |
 | upstream         | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |                                                  |
 | upstream_id      | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md)   |                                                  |
-| name             | 可选                               | 辅助     | 标识服务名称。                                                         |                                                  |
+| name             | 可选                               | 辅助     | 标识服务名称。                                                         |                                             |
 | desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 |                                                  |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                   | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 可选                               | 辅助     | 是否启用 `websocket`(boolean), 缺省 `false`.                           |                                                  |
@@ -544,13 +544,14 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 | 名字           | 可选项                             | 类型           | 说明                                                                                                                                                                                                                                                                                                                                                        | 示例                                             |
 | -------------- | ---------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| type           | 必需                               | 枚举           |                                                                                                                                                                                                                                                                                                                                                             | 负载均衡算法                                     |     |
+| type           | 必需                               | 枚举           | 负载均衡算法                                                                                                                                                                                                                                                                                                                                                            |                                      |     |
 | nodes          | 必需，不能和 `service_name` 一起用 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 + （可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。                                        | `192.168.1.100:80`                               |
 | service_name   | 必需，不能和 `nodes` 一起用        | string         | 服务发现时使用的服务名，见[集成服务发现注册中心](./discovery.md)                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 必需，如果设置了 `service_name`    | string         | 服务发现类型，见[集成服务发现注册中心](./discovery.md)                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
 | key            | 条件必需                           | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html) |                                                  |
 | checks         | 可选                               | health_checker | 配置健康检查的参数，详细可参考[health-check](health-check.md)                                                                                                                                                                                                                                                                                               |                                                  |
 | retries        | 可选                               | 整型           | 使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端可用的 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制。                                                                                                                                                                                                 |                                                  |
+| retry_timeout  | 可选                               | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。`0` 代表不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 可选                               | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间                                                                                                                                                                                                                                                                                                                      |                                                  |
 | hash_on        | 可选                               | 辅助           | `hash_on` 支持的类型有 `vars`（Nginx 内置变量），`header`（自定义 header），`cookie`，`consumer`，默认值为 `vars`                                                                                                                                                                                                                                           |
 | name           | 可选                               | 辅助           | 标识上游服务名称、使用场景等。                                                                                                                                                                                                                                                                                                                              |                                                  |
@@ -573,6 +574,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `chash`: 一致性哈希
 - `ewma`: 选择延迟最小的节点，计算细节参考 https://en.wikipedia.org/wiki/EWMA_chart
 - `least_conn`: 选择 `(active_conn + 1) / weight` 最小的节点。注意这里的 `active connection` 概念跟 Nginx 的相同：它是当前正在被请求使用的连接。
+- 用户自定义的 balancer，需要可以通过 `require("apisix.balancer.your_balancer")` 来加载。
 
 `hash_on` 比较复杂，这里专门说明下：
 
@@ -584,11 +586,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#6-为-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
 
 **upstream 对象 json 配置内容：**
 

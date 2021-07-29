@@ -82,7 +82,6 @@ hello world
 --- request
 GET /hello/
 --- yaml_config eval: $::yaml_config
---- response_body
-hello world
+--- error_code: 404
 --- no_error_log
 [error]

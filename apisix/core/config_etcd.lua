@@ -21,9 +21,7 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
-local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
-local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -47,6 +45,10 @@ local health_check = require("resty.etcd.health_check")
 
 local is_http = ngx.config.subsystem == "http"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
+local health_check_shm_name = "etcd-cluster-health-check"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
 local created_obj  = {}
 local loaded_configuration = {}
 
@@ -486,6 +488,11 @@ function _M.getkey(self, key)
         return nil, "stopped"
     end
 
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
+    end
+
     return getkey(self.etcd_cli, key)
 end
 
@@ -499,33 +506,8 @@ do
             return etcd_cli
         end
 
-        local local_conf, err = config_local.local_conf()
-        if not local_conf then
-            return nil, err
-        end
-
-        local etcd_conf = clone_tab(local_conf.etcd)
-        etcd_conf.http_host = etcd_conf.host
-        etcd_conf.host = nil
-        etcd_conf.prefix = nil
-        etcd_conf.protocol = "v3"
-        etcd_conf.api_prefix = "/v3"
-
-        -- default to verify etcd cluster certificate
-        etcd_conf.ssl_verify = true
-        if etcd_conf.tls then
-            if etcd_conf.tls.verify == false then
-                etcd_conf.ssl_verify = false
-            end
-
-            if etcd_conf.tls.cert then
-                etcd_conf.ssl_cert_path = etcd_conf.tls.cert
-                etcd_conf.ssl_key_path = etcd_conf.tls.key
-            end
-        end
-
         local err
-        etcd_cli, err = etcd.new(etcd_conf)
+        etcd_cli, err = etcd_apisix.new()
         return etcd_cli, err
     end
 end
@@ -538,7 +520,7 @@ local function _automatic_fetch(premature, self)
 
     if not health_check.conf then
         local _, err = health_check.init({
-            shm_name = "etcd-cluster-health-check",
+            shm_name = health_check_shm_name,
             fail_timeout = self.health_check_timeout,
             max_fails = 3,
             retry = true,

@@ -23,6 +23,7 @@ local enable_keepalive = balancer.enable_keepalive
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
+local ngx_now          = ngx.now
 
 
 local module_name = "balancer"
@@ -161,6 +162,9 @@ local function set_balancer_opts(route, ctx)
     end
 
     if retries > 0 then
+        if up_conf.retry_timeout and up_conf.retry_timeout > 0 then
+            ctx.proxy_retry_deadline = ngx_now() + up_conf.retry_timeout
+        end
         local ok, err = set_more_tries(retries)
         if not ok then
             core.log.error("could not set upstream retries: ", err)
@@ -282,7 +286,7 @@ do
 end
 
 
-function _M.run(route, ctx)
+function _M.run(route, ctx, plugin_funcs)
     local server, err
 
     if ctx.picked_server then
@@ -293,6 +297,12 @@ function _M.run(route, ctx)
         set_balancer_opts(route, ctx)
 
     else
+        if ctx.proxy_retry_deadline and ctx.proxy_retry_deadline < ngx_now() then
+            -- retry count is (try count - 1)
+            core.log.error("proxy retry timeout, retry count: ", (ctx.balancer_try_count or 1) - 1,
+                           ", deadline: ", ctx.proxy_retry_deadline, " now: ", ngx_now())
+            return core.response.exit(502)
+        end
         -- retry
         server, err = pick_server(route, ctx)
         if not server then
@@ -300,14 +310,21 @@ function _M.run(route, ctx)
             return core.response.exit(502)
         end
 
+        local header_changed
         local pass_host = ctx.pass_host
         if pass_host == "node" and balancer.recreate_request then
             local host = server.domain or server.host
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
                 ctx.var.upstream_host = host
-                balancer.recreate_request()
+                header_changed = true
             end
+        end
+
+        local _, run = plugin_funcs("balancer")
+        -- always recreate request as the request may be changed by plugins
+        if (run or header_changed) and balancer.recreate_request then
+            balancer.recreate_request()
         end
     end
 

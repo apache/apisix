@@ -15,8 +15,10 @@
 # limitations under the License.
 #
 
+import http.client
 import subprocess
 import os
+from functools import wraps
 from pathlib import Path
 import psutil
 from boofuzz import FuzzLoggerText, Session, TCPSocketConnection, Target
@@ -62,6 +64,56 @@ def initfuzz():
         keep_web_open=False,
     )
     return session
+
+def sum_memory():
+    pmap = {}
+    for p in check_process():
+        proc = psutil.Process(p)
+        pmap[proc] = proc.memory_full_info()
+    return sum(m.rss for m in pmap.values())
+
+def get_linear_regression_sloped(samples):
+    n = len(samples)
+    avg_x = (n + 1) / 2
+    avg_y = sum(samples) / n
+    avg_xy = sum([(i + 1) * v for i, v in enumerate(samples)]) / n
+    avg_x2 = sum([i * i for i in range(1, n + 1)]) / n
+    denom = avg_x2 - avg_x * avg_x
+    if denom == 0:
+        return None
+    return (avg_xy - avg_x * avg_y) / denom
+
+def gc():
+    conn = http.client.HTTPConnection("127.0.0.1", port=9090)
+    conn.request("POST", "/v1/gc")
+    conn.close()
+
+def check_leak(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        leak_count = 100
+
+        samples = []
+        for i in range(leak_count):
+            f(*args, **kwds)
+            gc()
+            samples.append(sum_memory())
+        count = 0
+        for i in range(1, leak_count):
+            if samples[i - 1] < samples[i]:
+                count += 1
+        print(samples)
+        sloped = get_linear_regression_sloped(samples)
+        print(sloped)
+        print(count / leak_count)
+
+        if os.environ.get("CI"): # CI is not stable
+            return
+
+        if sloped > 1000 and (count / leak_count) > 0.1:
+            raise AssertionError("memory leak")
+
+    return wrapper
 
 def run_test(create_route, run):
     # before test

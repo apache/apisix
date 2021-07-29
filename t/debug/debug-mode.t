@@ -71,6 +71,7 @@ loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
 loaded plugin and sort by priority: 1001 name: limit-req
+loaded plugin and sort by priority: 995 name: gzip
 loaded plugin and sort by priority: 990 name: server-info
 loaded plugin and sort by priority: 966 name: traffic-split
 loaded plugin and sort by priority: 900 name: redirect
@@ -236,7 +237,7 @@ passed
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_headers
-Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite
+Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite, response-rewrite
 --- response_body
 yes
 --- error_log
