@@ -60,12 +60,12 @@ local schema = {
         authentication= {
             type = 'object',
             properties = {
-                type = {type = 'string', default = 'basic_auth'},
+                type = {type = 'string', default = 'default'},
                 access_key = {type = 'string', default = ''},
                 secret_key = {type = 'string', default = ''},
             },
             default = {
-                type = 'basic_auth',
+                type = 'default',
                 access_key = '',
                 secret_key = '',
             }
