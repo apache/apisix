@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
+local ngx = ngx
 
-return [=[
-<!DOCTYPE html>
+
+local _M = {}
+local page_500 = [[<!DOCTYPE html>
 <html>
 <head>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
@@ -35,5 +38,13 @@ return [=[
 <p>You can report issue to <a href="https://github.com/apache/apisix/issues">APISIX</a></p>
 <p><em>Faithfully yours, <a href="https://apisix.apache.org/">APISIX</a>.</em></p>
 </body>
-</html>
-]=]
+</html>]]
+
+
+function _M.handle_500()
+    core.response.set_header("Content-Type", "text/html")
+    ngx.say(page_500)
+end
+
+
+return _M

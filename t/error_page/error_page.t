@@ -118,7 +118,19 @@ upstream status: 500
 
 
 
-=== TEST 7: delete route(id: 1)
+=== TEST 7: test apisix with internal error code 500, method isn't GET or HEAD
+--- request
+POST /hello
+123
+--- more_headers
+X-Test-Status: 500
+--- error_code: 500
+--- response_body_like
+.*apisix.apache.org.*
+
+
+
+=== TEST 8: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -142,7 +154,7 @@ GET /t
 
 
 
-=== TEST 8: set route which upstream is blocking
+=== TEST 9: set route which upstream is blocking
 --- config
     location /t {
         content_by_lua_block {
@@ -175,7 +187,7 @@ passed
 
 
 
-=== TEST 9: client abort
+=== TEST 10: client abort
 --- request
 GET /mysleep?seconds=3
 --- abort
