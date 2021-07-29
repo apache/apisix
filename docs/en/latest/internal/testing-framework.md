@@ -25,7 +25,7 @@ APISIX uses a testing framework based on our fork of test-nginx: https://github.
 For details, you can check the documentation of this project.
 
 If you want to test the CLI behavior of APISIX (`./bin/apisix`),
-you need to write a shell script in the t/cli directory to test it. You can refer to the existing test scripts.
+you need to write a shell script in the t/cli directory to test it. You can refer to the existing test scripts for more details.
 
 If you want to test the others, you need to write test code based on the framework.
 
