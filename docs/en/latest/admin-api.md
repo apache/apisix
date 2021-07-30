@@ -557,7 +557,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details||
-|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details||
+|tls.client_key  |optional| Set the client private key when connecting to TLS upstream, see below for more details||
 |keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details||
 |keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details||
 |keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details||
