@@ -147,13 +147,13 @@ balancer_port: 1980
             local ctx = {}
             core.ctx.set_vars_meta(ctx)
 
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+            ngx.say("uri_args_a-b: ", ctx.var["uri_args_a-b"])
         }
     }
 --- request
 GET /t?a-b=aaa
 --- response_body
-arg_a-b: aaa
+uri_args_a-b: aaa
 
 
 
@@ -165,10 +165,10 @@ arg_a-b: aaa
             local ctx = {}
             core.ctx.set_vars_meta(ctx)
 
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+            ngx.say("uri_args_a-b: ", ctx.var["uri_args_a-b"])
         }
     }
 --- request
 GET /t?a-b=aaa&a-b=bbb
 --- response_body
-arg_a-b: aaa
+uri_args_a-b: aaa

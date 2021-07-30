@@ -28,7 +28,6 @@ local setmetatable = setmetatable
 local sub_str      = string.sub
 local ngx          = ngx
 local ngx_var      = ngx.var
-local ngx_re_match = ngx.re.match
 local re_gsub      = ngx.re.gsub
 local ipairs       = ipairs
 local type         = type
@@ -164,16 +163,15 @@ do
                     end
                 end
 
-            elseif core_str.has_prefix(key, "arg_") then
-                local args = t.args
-                local arg_key = sub_str(key, 5)
-                local m, err = ngx_re_match(args, "(^|&)" .. arg_key .. "=([^&]*)(&|$)", "jo")
-                if err then
-                    log.warn("failed to fetch arg value by key: ",
-                             key, " error: ", err)
-                end
-                if m then
-                    val = m[2]
+            elseif core_str.has_prefix(key, "uri_args_") then
+                local arg_key = sub_str(key, 10)
+                local args = ngx.req.get_uri_args()[arg_key]
+                if args then
+                    if type(args) == "table" then
+                        val = args[1]
+                    else
+                        val = args
+                    end
                 end
 
             elseif core_str.has_prefix(key, "http_") then
