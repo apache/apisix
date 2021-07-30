@@ -118,6 +118,8 @@ apisix:
     #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
+    #loose_sni: true                        # Use not strict sni specification.
+                                            # If set loose_sni with true,When the https request doesn't hava servername, will falling back to fake certificate.
     ssl_protocols: TLSv1.2 TLSv1.3
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.

@@ -28,13 +28,22 @@ local str_gsub         = string.gsub
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
+local local_conf, err = require("apisix.core.config_local").local_conf()
 
+if not local_conf then
+    error("failed to parse yaml config: " .. err)
+end
+
+local loose_sni = false
+
+if local_conf.apisix.ssl.loose_sni then
+    loose_sni = true
+end
 
 local _M = {
     version = 0.1,
     server_name = ngx_ssl.server_name,
 }
-
 
 local function create_router(ssl_items)
     local ssl_items = ssl_items or {}
@@ -133,6 +142,12 @@ function _M.match_and_set(api_ctx)
         local advise = "please check if the client requests via IP or uses an outdated protocol" ..
                        ". If you need to report an issue, " ..
                        "provide a packet capture file of the TLS handshake."
+
+        if loose_sni then
+            core.log.error("failed to find SNI: ", (err or advise), ", falling back to fake certificate.")
+            return true
+        end
+
         return false, "failed to find SNI: " .. (err or advise)
     end
 
@@ -141,6 +156,10 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
+        if loose_sni then
+            core.log.error("failed to find any SSL certificate by SNI: ", sni, ", falling back to fake certificate.")
+            return true
+        end
         core.log.error("failed to find any SSL certificate by SNI: ", sni)
         return false
     end
