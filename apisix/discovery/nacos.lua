@@ -115,9 +115,10 @@ local function get_aliyun_ram_sign_headers(param_values, access_key, secret_key)
     local time_ngx = ngx.utctime()
     local time_change = string.gsub(time_ngx, " ", "T")
     local time_utc = time_change .. 'Z'
-    local headers = {}
-    headers['Spas-AccessKey'] = access_key
-    headers['Timestamp'] = time_utc
+    local headers = {
+        ['Spas-AccessKey'] = access_key,
+        ['Timestamp'] = time_utc
+    }
 
     if secret_key then
         local resource
