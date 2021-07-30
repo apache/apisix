@@ -173,7 +173,9 @@ GET /t?a-b=aaa&a-b=bbb
 --- response_body
 arg_a-b: aaa
 
-=== TEST 6: support dash in the args(arg is missing)
+
+
+=== TEST 7: support dash in the args(arg is missing)
 --- config
     location /t {
         content_by_lua_block {
