@@ -28,13 +28,12 @@ title: authz-casbin
 - [**Metadata**](#metadata)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
-- [**API**](#api)
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
 
 ## Name
 
-`authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models. 
+`authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models.
 
 For detailed documentation on how to create model and policy, refer [Casbin](https://casbin.org/docs/en/supported-models).
 
@@ -86,7 +85,7 @@ This will create a Casbin enforcer from the model and policy files at your first
 
 ### By using model/policy text
 
-First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API.
+First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API. You can also update the model/policy this way, the plugin will automatically update with this configuration.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
@@ -183,26 +182,9 @@ curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 ```
 
 
-## API
-
-You can use the API to get, add or remove policies. For example to add a policy:
-
-```shell
-curl -i http://127.0.0.1:9080/apisix/plugin/authz-casbin/add -X POST \
--H "type: p" \
--H "subject: bob" \
--H "object: /res" \
--H "action: GET"
-```
-
-This will give `bob` the permission to access `/res` using a `GET` request.
-
-**NOTE**: You may need to use [interceptors](../plugin-interceptors.md) to protect the API which is at `/apisix/plugin/authz-casbin/`.
-
-
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `authz-casbin` plugin. 
+Remove the corresponding json configuration in the plugin configuration to disable the `authz-casbin` plugin.
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
