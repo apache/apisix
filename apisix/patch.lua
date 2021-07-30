@@ -47,6 +47,64 @@ local function get_local_conf()
 end
 
 
+local function tlshandshake(self, options)
+    local reused_session = options.reused_session
+    local server_name = options.server_name
+    local verify = options.verify
+    local send_status_req = options.ocsp_status_req
+
+    if reused_session then
+        log(WARN, "reused_session is not supported yet")
+    end
+
+    if send_status_req then
+        log(WARN, "send_status_req is not supported yet")
+    end
+
+    local params = {
+        mode = "client",
+        protocol = "any",
+        verify = verify and "peer" or "none",
+        certificate = options.client_cert_path,
+        key = options.client_priv_key_path,
+        options = {
+            "all",
+            "no_sslv2",
+            "no_sslv3",
+            "no_tlsv1"
+        }
+    }
+
+    local local_conf, err = get_local_conf()
+    if not local_conf then
+        return nil, err
+    end
+
+    local apisix_ssl = local_conf.apisix.ssl
+    if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+        params.cafile = apisix_ssl.ssl_trusted_certificate
+    end
+
+    local sec_sock, err = ssl.wrap(self.sock, params)
+    if not sec_sock then
+        return false, err
+    end
+
+    if server_name then
+        sec_sock:sni(server_name)
+    end
+
+    local success
+    success, err = sec_sock:dohandshake()
+    if not success then
+        return false, err
+    end
+
+    self.sock = sec_sock
+    return true
+end
+
+
 local patch_tcp_socket
 do
     local old_tcp_sock_connect
@@ -81,6 +139,15 @@ do
         end
 
         sock.connect = new_tcp_sock_connect
+        sock.tlshandshake = tlshandshake
+        sock.sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
+            return self:tlshandshake({
+                reused_session = reused_session,
+                server_name = server_name,
+                verify = verify,
+                ocsp_status_req = send_status_req,
+            })
+        end
         return sock
     end
 end
@@ -209,62 +276,7 @@ local luasocket_wrapper = {
         return self.sock:settimeout(time)
     end,
 
-    tlshandshake = function (self, options)
-        local reused_session = options.reused_session
-        local server_name = options.server_name
-        local verify = options.verify
-        local send_status_req = options.ocsp_status_req
-
-        if reused_session then
-            log(WARN, "reused_session is not supported yet")
-        end
-
-        if send_status_req then
-            log(WARN, "send_status_req is not supported yet")
-        end
-
-        local params = {
-            mode = "client",
-            protocol = "any",
-            verify = verify and "peer" or "none",
-            certificate = options.client_cert_path,
-            key = options.client_priv_key_path,
-            options = {
-                "all",
-                "no_sslv2",
-                "no_sslv3",
-                "no_tlsv1"
-            }
-        }
-
-        local local_conf, err = get_local_conf()
-        if not local_conf then
-            return nil, err
-        end
-
-        local apisix_ssl = local_conf.apisix.ssl
-        if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
-            params.cafile = apisix_ssl.ssl_trusted_certificate
-        end
-
-        local sec_sock, err = ssl.wrap(self.sock, params)
-        if not sec_sock then
-            return false, err
-        end
-
-        if server_name then
-            sec_sock:sni(server_name)
-        end
-
-        local success
-        success, err = sec_sock:dohandshake()
-        if not success then
-            return false, err
-        end
-
-        self.sock = sec_sock
-        return true
-    end,
+    tlshandshake = tlshandshake,
 
     sslhandshake = function (self, reused_session, server_name, verify, send_status_req)
         return self:tlshandshake({
