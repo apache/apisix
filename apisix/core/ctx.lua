@@ -163,9 +163,9 @@ do
                     end
                 end
 
-            elseif core_str.has_prefix(key, "uri_args_") then
-                local arg_key = sub_str(key, 10)
-                local args = ngx.req.get_uri_args()[arg_key]
+            elseif core_str.has_prefix(key, "arg_") then
+                local arg_key = sub_str(key, 5)
+                local args = request.get_uri_args(ngx.ctx)[arg_key]
                 if args then
                     if type(args) == "table" then
                         val = args[1]

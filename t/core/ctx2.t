@@ -147,13 +147,13 @@ balancer_port: 1980
             local ctx = {}
             core.ctx.set_vars_meta(ctx)
 
-            ngx.say("uri_args_a-b: ", ctx.var["uri_args_a-b"])
+            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
         }
     }
 --- request
 GET /t?a-b=aaa
 --- response_body
-uri_args_a-b: aaa
+arg_a-b: aaa
 
 
 
@@ -165,10 +165,26 @@ uri_args_a-b: aaa
             local ctx = {}
             core.ctx.set_vars_meta(ctx)
 
-            ngx.say("uri_args_a-b: ", ctx.var["uri_args_a-b"])
+            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
         }
     }
 --- request
 GET /t?a-b=aaa&a-b=bbb
 --- response_body
-uri_args_a-b: aaa
+arg_a-b: aaa
+
+=== TEST 6: support dash in the args(arg is missing)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+arg_a-b: nil
