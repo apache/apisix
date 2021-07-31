@@ -94,16 +94,18 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	ginkgo.It("check if everything works", func() {
-		for range [5]int{} {
-			utils.SetRoute(e, httpexpect.Status2xx)
-			resp := utils.GetRouteIgnoreError(e)
-			if resp.Raw().StatusCode == http.StatusOK {
-				break
-			} else {
-				time.Sleep(1 * time.Second)
-			}
+		timeStart := time.Now()
+		utils.SetRoute(e, httpexpect.Status2xx)
+		resp := utils.GetRouteListIgnoreError(e)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "route list: %v", resp.Body())
+		resp = utils.GetRouteIgnoreError(e)
+		if resp.Raw().StatusCode != http.StatusOK {
+			errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
+			gomega.Expect(err).To(gomega.BeNil())
+			fmt.Fprintf(ginkgo.GinkgoWriter, "error log: %s", errorLog)
+			fmt.Fprintf(ginkgo.GinkgoWriter, "route: %v", resp.Body())
+			gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
 		}
-		utils.GetRoute(e, http.StatusOK)
 		utils.TestPrometheusEtcdMetric(e, 1)
 	})
 

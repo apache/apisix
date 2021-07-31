@@ -140,6 +140,16 @@ func GetRouteList(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
 	})
 }
 
+func GetRouteListIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodGet,
+		Path:        "/apisix/admin/routes",
+		Headers:     map[string]string{"X-API-KEY": token},
+		IgnoreError: true,
+	})
+}
+
 func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
 	return caseCheck(httpTestCase{
 		E:       e,
