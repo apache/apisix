@@ -97,14 +97,19 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 		var resp *httpexpect.Response
+
+		resp = utils.GetRouteIgnoreError(e)
 		// let's see how long should we wait for apisix to perform normally
-		for i := range [60]int{} {
-			resp = utils.GetRouteIgnoreError(e)
-			fmt.Fprintln(ginkgo.GinkgoWriter, i)
-			if resp.Raw().StatusCode == http.StatusOK {
-				break
-			} else {
-				time.Sleep(10 * time.Second)
+		if resp.Raw().StatusCode != http.StatusOK {
+			for i := range [60]int{} {
+				timeWait := fmt.Sprintf("wait for %ds\n", i*10)
+				fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
+				resp = utils.GetRouteIgnoreError(e)
+				if resp.Raw().StatusCode == http.StatusOK {
+					gomega.Expect(false).Should(gomega.BeTrue())
+				} else {
+					time.Sleep(10 * time.Second)
+				}
 			}
 		}
 		gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
