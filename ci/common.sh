@@ -31,4 +31,4 @@ create_lua_deps() {
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 }
 
-GRPC_SERVER_EXAMPLE_VER=20210417
+GRPC_SERVER_EXAMPLE_VER=20210730
