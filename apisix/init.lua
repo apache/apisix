@@ -518,8 +518,8 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
-    -- run the balancer phase in access phase first to avoid always reinit request
-    common_phase("balancer")
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
 
     local ref = ctxdump.stash_ngx_ctx()
     core.log.info("stash ngx ctx: ", ref)
@@ -913,8 +913,8 @@ function _M.stream_preread_phase()
 
     api_ctx.picked_server = server
 
-    -- run the balancer phase in preread phase first to avoid always reinit request
-    common_phase("balancer")
+    -- run the before_proxy method in preread phase first to avoid always reinit request
+    common_phase("before_proxy")
 end
 
 

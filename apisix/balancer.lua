@@ -321,7 +321,7 @@ function _M.run(route, ctx, plugin_funcs)
             end
         end
 
-        local _, run = plugin_funcs("balancer")
+        local _, run = plugin_funcs("before_proxy")
         -- always recreate request as the request may be changed by plugins
         if (run or header_changed) and balancer.recreate_request then
             balancer.recreate_request()

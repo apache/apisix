@@ -197,6 +197,8 @@ GET /t
             assert(create_time ~= nil, "create_time is nil")
             local update_time = ret.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
+            id = ret.body.node.value.id
+            assert(id ~= nil, "id is nil")
 
             code, message = t('/apisix/admin/stream_routes/' .. id,
                 ngx.HTTP_DELETE,
@@ -445,6 +447,8 @@ GET /t
             res.node.key = nil
             res.node.value.create_time = nil
             res.node.value.update_time = nil
+            assert(res.node.value.id ~= nil)
+            res.node.value.id = nil
             ngx.say(json.encode(res))
         }
     }
