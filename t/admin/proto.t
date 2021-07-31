@@ -181,6 +181,7 @@ GET /t
             end
             ngx.say("[route refer proto] code: ", code, " message: ", message)
 
+            ngx.sleep(0.1) -- ensure reference is synced from etcd
 
             code, message = t('/apisix/admin/proto/2',
                  ngx.HTTP_DELETE,
