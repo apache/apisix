@@ -69,7 +69,8 @@ local function parse_graphql(ctx)
 end
 
 
-local function get_parsed_graphql(ctx)
+local function get_parsed_graphql()
+    local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
         return ctx._graphql
     end
@@ -171,7 +172,7 @@ do
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
-                val = get_parsed_graphql(t)[key]
+                val = get_parsed_graphql()[key]
 
             elseif key == "route_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
