@@ -99,7 +99,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		var resp *httpexpect.Response
 
 		resp = utils.GetRouteIgnoreError(e)
-		// wait 1s seems enough, but wait for 60s could make sure nothing goes wrong
+		// wait 1s seems not enough, wait some more time to make sure nothing goes wrong
 		if resp.Raw().StatusCode != http.StatusOK {
 			for i := range [60]int{} {
 				timeWait := fmt.Sprintf("wait for %ds\n", i)
@@ -107,6 +107,8 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 				resp = utils.GetRouteIgnoreError(e)
 				if resp.Raw().StatusCode != http.StatusOK {
 					time.Sleep(time.Second)
+				} else {
+					break
 				}
 			}
 		}
