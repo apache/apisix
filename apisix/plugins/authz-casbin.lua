@@ -20,8 +20,9 @@ local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local get_headers     = ngx.req.get_headers
-
-local casbin_enforcer
+local lrucache        = core.lrucache.new({
+    ttl = 300, count = 32
+})
 
 local plugin_name = "authz-casbin"
 
@@ -56,22 +57,14 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
-        local ok, err = core.schema.check(metadata_schema, conf)
-        if ok then
-            casbin_enforcer = nil
-            return true
-        else
-            return false, err
-        end
+        return core.schema.check(metadata_schema, conf)
     end
     local ok, err = core.schema.check(schema, conf)
     if ok then
-        casbin_enforcer = nil
         return true
     else
         local metadata = plugin.plugin_metadata(plugin_name)
         if metadata and metadata.value.model and metadata.value.policy and conf.username then
-            casbin_enforcer = nil
             return true
         end
     end
@@ -79,7 +72,10 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function new_enforcer(model_path, policy_path)
+local function new_enforcer(conf)
+    local model_path = conf.model_path
+    local policy_path = conf.policy_path
+
     local e
 
     if model_path and policy_path then
@@ -88,7 +84,7 @@ local function new_enforcer(model_path, policy_path)
     end
 
     local metadata = plugin.plugin_metadata(plugin_name)
-    if metadata and metadata.value.model and metadata.value.policy then
+    if metadata and metadata.value.model and metadata.value.policy and not e then
         local model = metadata.value.model
         local policy = metadata.value.policy
         e = casbin:newEnforcerFromText(model, policy)
@@ -101,9 +97,9 @@ end
 
 function _M.rewrite(conf)
     -- creates an enforcer when request sent for the first time
-    if not casbin_enforcer then
-        casbin_enforcer = new_enforcer(conf.model_path, conf.policy_path)
-    end
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local casbin_enforcer = lrucache(plugin_name, metadata.modifiedIndex, new_enforcer, conf)
 
     local path = ngx.var.request_uri
     local method = ngx.var.request_method
