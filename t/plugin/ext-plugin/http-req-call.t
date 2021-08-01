@@ -124,7 +124,28 @@ X-Req: bar
 
 
 
-=== TEST 3: check input
+=== TEST 3: stop without setting status code
+--- request
+GET /hello
+--- response_body chomp
+cat
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({stop = true, stop_no_code = true})
+        }
+    }
+--- error_code: 200
+--- response_headers
+X-Resp: foo
+X-Req: bar
+
+
+
+=== TEST 4: check input
 --- request
 PUT /hello?xx=y&xx=z&&y=&&z
 --- more_headers
@@ -143,7 +164,7 @@ X-Resp: cat
 
 
 
-=== TEST 4: check input (ipv6)
+=== TEST 5: check input (ipv6)
 --- config
 location /t {
     content_by_lua_block {
@@ -164,7 +185,7 @@ location /t {
 
 
 
-=== TEST 5: rewrite
+=== TEST 6: rewrite
 --- request
 GET /hello
 --- more_headers
@@ -188,7 +209,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 6: rewrite host
+=== TEST 7: rewrite host
 --- request
 GET /hello
 --- extra_stream_config
@@ -207,7 +228,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 7: rewrite args
+=== TEST 8: rewrite args
 --- request
 GET /hello?c=foo&d=bar
 --- extra_stream_config
@@ -226,7 +247,7 @@ c: bar
 
 
 
-=== TEST 8: proxy-rewrite + rewrite host
+=== TEST 9: proxy-rewrite + rewrite host
 --- config
     location /t {
         content_by_lua_block {
@@ -267,7 +288,7 @@ passed
 
 
 
-=== TEST 9: hit
+=== TEST 10: hit
 --- request
 GET /hello
 --- extra_stream_config
@@ -286,7 +307,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 10: proxy-rewrite + rewrite path
+=== TEST 11: proxy-rewrite + rewrite path
 --- config
     location /t {
         content_by_lua_block {
@@ -327,7 +348,7 @@ passed
 
 
 
-=== TEST 11: hit
+=== TEST 12: hit
 --- request
 GET /hello
 --- extra_stream_config
@@ -346,7 +367,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 12: proxy-rewrite + rewrite path with args
+=== TEST 13: proxy-rewrite + rewrite path with args
 --- config
     location /t {
         content_by_lua_block {
@@ -387,7 +408,7 @@ passed
 
 
 
-=== TEST 13: hit
+=== TEST 14: hit
 --- request
 GET /hello
 --- extra_stream_config
@@ -407,7 +428,7 @@ x: z
 
 
 
-=== TEST 14: rewrite args only
+=== TEST 15: rewrite args only
 --- config
     location /t {
         content_by_lua_block {
@@ -445,7 +466,7 @@ passed
 
 
 
-=== TEST 15: hit
+=== TEST 16: hit
 --- request
 GET /plugin_proxy_rewrite_args
 --- extra_stream_config
@@ -464,7 +485,7 @@ c: bar
 
 
 
-=== TEST 16: rewrite, bad path
+=== TEST 17: rewrite, bad path
 --- config
     location /t {
         content_by_lua_block {
@@ -502,7 +523,7 @@ passed
 
 
 
-=== TEST 17: hit
+=== TEST 18: hit
 --- request
 GET /hello
 --- extra_stream_config
