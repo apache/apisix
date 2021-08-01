@@ -136,3 +136,55 @@ qr/balancer_ip: 127.0.0.1|balancer_port: 1980/
 --- grep_error_log_out
 balancer_ip: 127.0.0.1
 balancer_port: 1980
+
+
+
+=== TEST 5: parsed graphql is cached under ctx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["POST"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "header_filter",
+                                "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'find ctx._graphql: ', ctx._graphql ~= nil) end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "vars": [["graphql_name", "==", "repo"]]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: hit
+--- request
+POST /hello
+query repo {
+    owner {
+        name
+    }
+}
+--- response_body
+hello world
+--- error_log
+find ctx._graphql: true
