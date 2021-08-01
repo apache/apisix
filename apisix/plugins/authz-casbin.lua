@@ -64,7 +64,7 @@ function _M.check_schema(conf, schema_type)
         return true
     else
         local metadata = plugin.plugin_metadata(plugin_name)
-        if metadata and metadata.value.model and metadata.value.policy and conf.username then
+        if metadata and metadata.value and conf.username then
             return true
         end
     end
