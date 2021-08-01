@@ -325,7 +325,6 @@ hello world
 
 
 
-
 === TEST 13: disable authz-casbin by Admin API
 --- config
     location /t {

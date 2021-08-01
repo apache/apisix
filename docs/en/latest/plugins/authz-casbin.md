@@ -54,7 +54,6 @@ For detailed documentation on how to create model and policy, refer [Casbin](htt
 | model       | string | required    |         |       | The Casbin model configuration in text format.                         |
 | policy      | string | required    |         |       | The Casbin policy in text format.                                      |
 
-
 ## How To Enable
 
 You can enable the plugin on any route either by using the model/policy file paths or directly using the model/policy text.
@@ -80,8 +79,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/*"
 }'
 ```
-This will create a Casbin enforcer from the model and policy files at your first request.
 
+This will create a Casbin enforcer from the model and policy files at your first request.
 
 ### By using model/policy text
 
@@ -180,7 +179,6 @@ But someone with admin permissions like `alice`can access it:
 ```shell
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 ```
-
 
 ## Disable Plugin
 
