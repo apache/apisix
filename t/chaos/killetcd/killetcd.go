@@ -94,6 +94,8 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	ginkgo.It("check if everything works", func() {
+		timeStart := time.Now()
+
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 		var resp *httpexpect.Response
@@ -101,14 +103,17 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		resp = utils.GetRouteIgnoreError(e)
 		// let's see how long should we wait for apisix to perform normally
 		if resp.Raw().StatusCode != http.StatusOK {
-			for i := range [60]int{} {
-				timeWait := fmt.Sprintf("wait for %ds\n", i*10)
+			for i := range [600]int{} {
+				timeWait := fmt.Sprintf("wait for %ds\n", i)
 				fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
 				resp = utils.GetRouteIgnoreError(e)
 				if resp.Raw().StatusCode == http.StatusOK {
+					errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
+					gomega.Expect(err).Should(gomega.BeNil())
+					fmt.Fprint(ginkgo.GinkgoWriter, errorLog)
 					gomega.Expect(false).Should(gomega.BeTrue())
 				} else {
-					time.Sleep(10 * time.Second)
+					time.Sleep(time.Second)
 				}
 			}
 		}

@@ -33,6 +33,8 @@ modify_config() {
     DNS_IP=$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o 'jsonpath={..spec.clusterIP}')
     echo "dns_resolver:
   - ${DNS_IP}
+nginx_config:
+  error_log_level: debug
 etcd:
   host:
   - \"http://etcd.default.svc.cluster.local:2379\"
