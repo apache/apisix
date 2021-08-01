@@ -124,29 +124,6 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-casbin")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/authz-casbin',
-                ngx.HTTP_PUT,
-                [[{
-                    "model": "[request_definition]
-                    r = sub, obj, act
-
-                    [policy_definition]
-                    p = sub, obj, act
-
-                    [role_definition]
-                    g = _, _
-
-                    [policy_effect]
-                    e = some(where (p.eft == allow))
-
-                    [matchers]
-                    m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
-
-                    "policy": "p, *, /, GET
-                    p, admin, *, *
-                    g, alice, admin"
-                }]]
-                )
 
             local conf = {
                 username = "user"
@@ -325,7 +302,73 @@ hello world
 
 
 
-=== TEST 13: disable authz-casbin by Admin API
+=== TEST 13: enable authz-casbin using model/policy files
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "authz-casbin": {
+                            "model_path": "t/plugin/authz-casbin/model.conf",
+                            "policy_path": "t/plugin/authz-casbin/policy.csv",
+                            "username" : "user"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: authorized user as per policy
+--- request
+GET /hello
+--- more_headers
+user: alice
+--- error_code: 200
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: unauthorized user as per policy
+--- request
+GET /hello
+--- more_headers
+user: bob
+--- error_code: 403
+--- response_body
+{"message":"Access Denied"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: disable authz-casbin by Admin API
 --- config
     location /t {
         content_by_lua_block {

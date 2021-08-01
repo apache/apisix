@@ -106,11 +106,7 @@ function _M.rewrite(conf)
     local username = get_headers()[conf.username]
     if not username then username = "anonymous" end
 
-    if path and method and username then
-        if not casbin_enforcer:enforce(username, path, method) then
-            return 403, {message = "Access Denied"}
-        end
-    else
+    if not casbin_enforcer:enforce(username, path, method) then
         return 403, {message = "Access Denied"}
     end
 end
