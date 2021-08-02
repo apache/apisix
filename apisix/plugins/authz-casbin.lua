@@ -20,9 +20,6 @@ local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local get_headers     = ngx.req.get_headers
-local lrucache        = core.lrucache.new({
-    ttl = 300, count = 32
-})
 
 local plugin_name = "authz-casbin"
 
