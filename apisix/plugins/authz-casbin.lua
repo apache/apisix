@@ -93,7 +93,7 @@ local function new_enforcer(conf, modifiedIndex)
 end
 
 
-function _M.rewrite(conf)
+function _M.rewrite(conf, ctx)
     -- creates an enforcer when request sent for the first time
     local metadata = plugin.plugin_metadata(plugin_name)
     if (not conf.casbin_enforcer) or
@@ -101,8 +101,8 @@ function _M.rewrite(conf)
         new_enforcer(conf, metadata.modifiedIndex)
     end
 
-    local path = ngx.var.request_uri
-    local method = ngx.var.request_method
+    local path = ctx.var.uri
+    local method = ctx.var.method
     local username = get_headers()[conf.username]
     if not username then username = "anonymous" end
 
