@@ -104,11 +104,8 @@ function _M.post(id, conf)
     end
 
     local key = "/proto"
-
     utils.inject_timestamp(conf)
-
-    -- core.log.info("key: ", key)
-    local res, err = core.etcd.push("/proto", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post proto[", key, "]: ", err)
         return 500, {error_msg = err}

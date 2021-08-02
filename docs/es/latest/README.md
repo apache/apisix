@@ -155,9 +155,9 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
-     $ mkdir apisix-2.7
-     $ wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
-     $ tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
+     $ mkdir apisix-2.8
+     $ wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
+     $ tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
      ```
 
    - Instalar las dependencias：
@@ -194,7 +194,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Instalar APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
    ```
 
    - Chequear versión de APISIX:
@@ -310,6 +310,7 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 ## Historias de Usuarios
 
+- [Sina Weibo: the road to customization of Sina Weibo API gateway based on Apache APISIX(Chinese)](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
 - [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)

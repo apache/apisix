@@ -37,7 +37,7 @@ dubbo-proxy plugin allows you proxy HTTP request to [**dubbo**](http://dubbo.apa
 
 ## Requirement
 
-If you are using OpenResty, you need to build it with dubbo support, see [how to build](../how-to-build.md#6-build-openresty-for-apisix)
+If you are using OpenResty, you need to build it with dubbo support, see [how to build](../how-to-build.md#step-6-build-openresty-for-apache-apisix)
 
 To make http2dubbo work in APISIX, we enhance the dubbo module based on Tengine's `mod_dubbo`. The modifications are contributed back to Tengine, but they are not included in the latest release version (Tengine-2.3.2) yet. So Tengine itself is unsupported.
 
