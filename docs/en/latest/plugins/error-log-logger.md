@@ -118,10 +118,8 @@ Step: update the attributes of the plugin
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-  "type": "SKYWALKING",
   "skywalking": {
-    "host": "127.0.0.1",
-    "port": 1999
+    "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
   },
   "inactive_timeout": 1
 }'

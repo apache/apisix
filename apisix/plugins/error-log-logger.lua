@@ -36,7 +36,6 @@ local lrucache = core.lrucache.new({
 local metadata_schema = {
     type = "object",
     properties = {
-        type = {type = "string", default = "TCP", enum = {"TCP", "SKYWALKING"}},
         tcp = {
             type = "object",
             properties = {
@@ -247,7 +246,7 @@ local function process()
             core.log.warn("set log filter failed for ", err)
             return
         end
-        if not config.tcp then
+        if not (config.tcp or config.skywalking) then
             config.tcp = {
                 host = config.host,
                 port =  config.port,

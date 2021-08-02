@@ -443,7 +443,7 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 10: avoid sending stale error log
+=== TEST 14: avoid sending stale error log
 --- yaml_config
 apisix:
     enable_admin: true
@@ -482,7 +482,7 @@ qr/\[Server\] receive data:.*this is an error message for test./
 
 
 
-=== TEST 11: delete the route
+=== TEST 15: delete the route
 --- yaml_config
 apisix:
     enable_admin: true
