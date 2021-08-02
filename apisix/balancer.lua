@@ -140,7 +140,7 @@ local function set_balancer_opts(route, ctx)
     local up_conf = ctx.upstream_conf
 
     -- If the matched route has timeout config, prefer to use the route config.
-    local timeout = nil
+    local timeout
     if route and route.value and route.value.timeout then
         timeout = route.value.timeout
     else
