@@ -185,7 +185,7 @@ function _M.go(case)
             local vec = builder:EndVector(len)
 
             http_req_call_stop.Start(builder)
-            if case.stop_no_code ~= true then
+            if case.check_default_status ~= true then
                 http_req_call_stop.AddStatus(builder, 405)
             end
             http_req_call_stop.AddBody(builder, b)

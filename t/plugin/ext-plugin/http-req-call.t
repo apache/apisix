@@ -531,10 +531,9 @@ cat
 
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
-            ext.go({stop = true, stop_no_code = true})
+            ext.go({stop = true, check_default_status = true})
         }
     }
---- error_code: 200
 --- response_headers
 X-Resp: foo
 X-Req: bar
