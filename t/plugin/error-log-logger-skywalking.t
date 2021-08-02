@@ -55,38 +55,7 @@ done
 
 
 
-=== TEST 2: test schema checker, missing required field
---- config
-    location /t {
-        content_by_lua_block {
-        local core = require("apisix.core")
-            local plugin = require("apisix.plugins.error-log-logger")
-            local ok, err = plugin.check_schema(
-                {
-                    skywalking = {
-                        service = "APISIX"
-                    }
-                },
-                core.schema.TYPE_METADATA
-            )
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-property "skywalking" validation failed: property "endpoint_addr" is required
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 3: test unreachable server
+=== TEST 2: test unreachable server
 --- yaml_config
 apisix:
     enable_admin: true
@@ -120,7 +89,7 @@ qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed 
 
 
 
-=== TEST 4: put plugin metadata and log an error level message
+=== TEST 3: put plugin metadata and log an error level message
 --- yaml_config
 apisix:
     enable_admin: true
@@ -156,7 +125,7 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 
-=== TEST 5: log an warn level message
+=== TEST 4: log an warn level message
 --- yaml_config
 apisix:
     enable_admin: true
@@ -175,6 +144,30 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- wait: 5
+
+
+
+=== TEST 5: log some messages
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            core.log.error("this is an error message for test.")
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*\},\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\}.*/
 --- wait: 5
 
 

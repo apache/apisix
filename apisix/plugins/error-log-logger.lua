@@ -27,7 +27,8 @@ local schema_def = core.schema
 local ngx = ngx
 local tcp = ngx.socket.tcp
 local tostring = tostring
-local ipairs  = ipairs
+local ipairs = ipairs
+local string = require("string")
 local lrucache = core.lrucache.new({
     ttl = 300, count = 32
 })
@@ -53,7 +54,6 @@ local metadata_schema = {
                 service_name = {type = "string", default = "APISIX"},
                 service_instance_name = {type="string", default = "APISIX Service Instance"},
             },
-            required = {"endpoint_addr"}
         },
         host = {schema_def.host_def, description = "Deprecated, use `tcp.host` instead."},
         port = {type = "integer", minimum = 0, description = "Deprecated, use `tcp.port` instead."},
