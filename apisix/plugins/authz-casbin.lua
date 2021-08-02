@@ -72,7 +72,7 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function new_enforcer(conf)
+local function new_enforcer(conf, modifiedIndex)
     local model_path = conf.model_path
     local policy_path = conf.policy_path
 
@@ -80,7 +80,7 @@ local function new_enforcer(conf)
 
     if model_path and policy_path then
         e = casbin:new(model_path, policy_path)
-        e.type = "file"
+        conf.type = "file"
     end
 
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -88,25 +88,28 @@ local function new_enforcer(conf)
         local model = metadata.value.model
         local policy = metadata.value.policy
         e = casbin:newEnforcerFromText(model, policy)
-        e.type = "metadata"
+        conf.type = "metadata"
+        conf.modifiedIndex = modifiedIndex
     end
 
-    return e
+    conf.casbin_enforcer = e
 end
 
 
 function _M.rewrite(conf)
     -- creates an enforcer when request sent for the first time
-
     local metadata = plugin.plugin_metadata(plugin_name)
-    local casbin_enforcer = lrucache(plugin_name, metadata.modifiedIndex, new_enforcer, conf)
+    if (not conf.casbin_enforcer) or
+    (conf.type == "metadata" and conf.modifiedIndex ~= metadata.modifiedIndex) then
+        new_enforcer(conf, metadata.modifiedIndex)
+    end
 
     local path = ngx.var.request_uri
     local method = ngx.var.request_method
     local username = get_headers()[conf.username]
     if not username then username = "anonymous" end
 
-    if not casbin_enforcer:enforce(username, path, method) then
+    if not conf.casbin_enforcer:enforce(username, path, method) then
         return 403, {message = "Access Denied"}
     end
 end
