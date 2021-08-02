@@ -29,45 +29,14 @@ Before installing Apache APISIX, please install dependencies according to the op
 
 ## Step 2: Install Apache APISIX
 
-You can install Apache APISIX via source release packages, RPM package, Docker and Helm Chart. Please choose one from the following options.
-
-### Installation via Source Release Package
-
-1. Create a directory named `apisix-2.7`.
-
-  ```shell
-  mkdir apisix-2.7
-  ```
-
-2. Download Apache APISIX Release source package.
-
-  ```shell
-  wget https://downloads.apache.org/apisix/2.7/apache-apisix-2.7-src.tgz
-  ```
-
-  You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
-
-3. Unzip the Apache APISIX Release source package.
-
-  ```shell
-  tar zxvf apache-apisix-2.7-src.tgz -C apisix-2.7
-  ```
-
-4. Install the runtime dependent Lua libraries.
-
-  ```shell
-  # Switch to the apisix-2.7 directory
-  cd apisix-2.7
-  # Create dependencies
-  make deps
-  ```
+You can install Apache APISIX via RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
 
 ### Installation via RPM Package(CentOS 7)
 
 This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.7/apisix-2.7-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
 ```
 
 ### Installation via Docker
@@ -77,6 +46,37 @@ Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r
 ### Installation via Helm Chart
 
 Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/apache/apisix-helm-chart).
+
+### Installation via Source Release Package
+
+1. Create a directory named `apisix-2.8`.
+
+  ```shell
+  mkdir apisix-2.8
+  ```
+
+2. Download Apache APISIX Release source package.
+
+  ```shell
+  wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
+  ```
+
+  You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
+
+3. Unzip the Apache APISIX Release source package.
+
+  ```shell
+  tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
+  ```
+
+4. Install the runtime dependent Lua libraries.
+
+  ```shell
+  # Switch to the apisix-2.8 directory
+  cd apisix-2.8
+  # Create dependencies
+  make deps
+  ```
 
 ## Step 3: Manage Apache APISIX Server
 
@@ -151,6 +151,16 @@ make help
 
   - Or you can specify the NGINX binary path by running this command: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`.
 
+  <!--
+  #
+  #    In addition to the basic Markdown syntax, we use remark-admonitions
+  #    alongside MDX to add support for admonitions. Admonitions are wrapped
+  #    by a set of 3 colons.
+  #    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+  #    for more detail.
+  #
+  -->
+
   :::note Note
   Some of the tests rely on external services and system configuration modification. For a complete test environment build, you can refer to `ci/linux_openresty_common_runner.sh`.
   :::
@@ -209,7 +219,7 @@ Content-Type: text/plain
 {"node":{...},"action":"get"}
 ```
 
-At this point, if the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, for example, we know that the correct key is `abcdefghabcdefgh`, but we enter an incorrect key, such as `wrong- key`, as shown below.
+At this point, if the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, for example, we know that the correct key is `abcdefghabcdefgh`, but we enter an incorrect key, such as `wrong-key`, as shown below.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i

@@ -127,9 +127,8 @@ function _M.post(id, conf)
     end
 
     local key = "/ssl"
-    -- core.log.info("key: ", key)
     utils.inject_timestamp(conf)
-    local res, err = core.etcd.push("/ssl", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post ssl[", key, "]: ", err)
         return 500, {error_msg = err}

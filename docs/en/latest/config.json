@@ -1,5 +1,5 @@
 {
-  "version": 2.7,
+  "version": 2.8,
   "sidebar": [
     {
       "type": "category",
@@ -38,6 +38,7 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req"
@@ -73,6 +74,7 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
+            "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction"
           ]
@@ -228,6 +230,13 @@
         {
           "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/testing-framework"
+          ]
         },
         {
           "type": "doc",
