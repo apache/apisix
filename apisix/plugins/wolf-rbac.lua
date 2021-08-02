@@ -298,8 +298,8 @@ function _M.rewrite(conf, ctx)
     core.log.info(" check_url_permission(", core.json.delay_encode(perm_item),
                   ") res: ",core.json.delay_encode(res))
 
-    local username = nil
-    local nickname = nil
+    local username
+    local nickname
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
         ctx.userInfo = userInfo
