@@ -25,7 +25,6 @@ local table = core.table
 local schema_def = core.schema
 local ngx = ngx
 local tcp = ngx.socket.tcp
-local string = string
 local tostring = tostring
 local ipairs  = ipairs
 local lrucache = core.lrucache.new({
@@ -122,12 +121,12 @@ end
 
 
 local function update_filter(value)
-    local level = log_level[string.upper(value.level)]
+    local level = log_level[value.level]
     local status, err = errlog.set_filter_level(level)
     if not status then
         return nil, "failed to set filter level by ngx.errlog, the error is :" .. err
     else
-        core.log.debug("set the filter_level to ", config.level)
+        core.log.notice("set the filter_level to ", value.level)
     end
 
     return value
@@ -149,12 +148,17 @@ local function process()
 
     end
 
+    local err_level = log_level[metadata.value.level]
     local entries = {}
     local logs = errlog.get_logs(9)
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
-            table.insert(entries, logs[i + 2])
-            table.insert(entries, "\n")
+            -- There will be some stale error logs after the filter level changed.
+            -- We should avoid reporting them.
+            if logs[i] <= err_level then
+                table.insert(entries, logs[i + 2])
+                table.insert(entries, "\n")
+            end
         end
         logs = errlog.get_logs(9)
     end
