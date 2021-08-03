@@ -41,7 +41,8 @@ def collect_fn(entries, topic):
                 collect_fn(entries, item)
 
 def check_category(root):
-    with open(root + "config.json") as f:
+    index = root + "config.json"
+    with open(index) as f:
         entries = []
 
         data = json.load(f)
@@ -50,18 +51,19 @@ def check_category(root):
         for e in entries:
             fn = root + e + EXT
             if not path.exists(fn):
-                print("Entry %s in the sidebar can't be found" % fn)
+                print("Entry %s in the sidebar can't be found. Please remove it from %s."
+                        % (fn, index))
                 return False
 
-        deny_list = ["examples/plugins-hmac-auth-generate-signature", "config", "README"]
-        entries.extend(deny_list)
+        ignore_list = ["examples/plugins-hmac-auth-generate-signature", "config", "README"]
+        entries.extend(ignore_list)
         existed_files = []
         for parent, dirs, files in os.walk(root):
             for fn in files:
                 existed_files.append(path.join(parent[len(root):], path.splitext(fn)[0]))
         for fn in existed_files:
             if fn not in entries:
-                print("File %s%s%s is not indexed" % (root, fn, EXT))
+                print("File %s%s%s is not indexed. Please add it to %s." % (root, fn, EXT, index))
                 return False
         return True
 
