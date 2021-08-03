@@ -125,7 +125,7 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 
-=== TEST 4: log an warn level message
+=== TEST 4: log a warn level message
 --- yaml_config
 apisix:
     enable_admin: true

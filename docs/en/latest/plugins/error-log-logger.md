@@ -47,7 +47,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | tcp.port                         | integer | required    |                                | [0,...] | Target upstream port.                                                                                |
 | tcp.tls                          | boolean | optional    | false                          |         | Control whether to perform SSL verification.                                                         |
 | tcp.tls_server_name              | string  | optional    |                                |         | The server name for the new TLS extension  SNI.                                                      |
-| skywalking.endpoint_addr         | string  | required    | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
+| skywalking.endpoint_addr         | string  | optional   | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
 | skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                                 |
 | skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
 | host                             | string  | optional    |                                |         | (`Deprecated`, replaced with `tcp.host`) IP address or the Hostname of the TCP server.               |

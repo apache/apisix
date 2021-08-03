@@ -47,7 +47,7 @@ title: error-log-logger
 | tcp.port                         | integer | 必须   |                                | [0,...]          | 目标端口                                                                  |
 | tcp.tls                          | boolean | 可选   | false                          |                  | 用于控制是否执行SSL验证                                                     |
 | tcp.tls_server_name              | string  | 可选   |                                |                  | TLS 服务名称标记                                                          |
-| skywalking.endpoint_addr         | string  | 必须   | http://127.0.0.1:12900/v3/logs |                  | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800             |
+| skywalking.endpoint_addr         | string  | 可选   | http://127.0.0.1:12900/v3/logs |                  | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800             |
 | skywalking.service_name          | string  | 可选   | APISIX                         |                  | skywalking 上报的 service 名称                                            |
 | skywalking.service_instance_name | String  | 可选   | APISIX Instance Name           |                  | skywalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
 | host                             | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.host`) TCP 服务的IP地址或主机名                           |
