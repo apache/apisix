@@ -164,7 +164,7 @@ done
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/*"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -323,7 +323,7 @@ hello world
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/*"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -383,7 +383,7 @@ user: bob
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/*"
+                    "uri": "/hello"
                 }]]
                 )
 
