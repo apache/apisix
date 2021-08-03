@@ -191,7 +191,7 @@ find ctx._graphql: true
 
 
 
-=== TEST 5: support dash in the args
+=== TEST 7: support dash in the args
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +218,7 @@ find ctx._graphql: true
 
 
 
-=== TEST 6: check (support dash in the args)
+=== TEST 8: check (support dash in the args)
 --- request
 GET /hello?a-b=ab
 --- response_body
@@ -226,7 +226,7 @@ hello world
 
 
 
-=== TEST 7: support dash in the args(Multi args with the same name, only fetch the first one)
+=== TEST 9: support dash in the args(Multi args with the same name, only fetch the first one)
 --- request
 GET /hello?a-b=ab&a-b=ccc
 --- response_body
@@ -234,7 +234,7 @@ hello world
 
 
 
-=== TEST 8: support dash in the args(arg is missing)
+=== TEST 10: support dash in the args(arg is missing)
 --- request
 GET /hello
 --- error_code: 404
