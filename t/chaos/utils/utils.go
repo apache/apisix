@@ -39,6 +39,7 @@ type httpTestCase struct {
 	Path              string
 	Body              string
 	Headers           map[string]string
+	IgnoreError       bool
 	ExpectStatus      int
 	ExpectBody        string
 	ExpectStatusRange httpexpect.StatusRange
@@ -69,6 +70,10 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	}
 
 	resp := req.Expect()
+	if tc.IgnoreError {
+		return resp
+	}
+
 	if tc.ExpectStatus != 0 {
 		resp.Status(tc.ExpectStatus)
 	}
@@ -84,30 +89,30 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	return resp
 }
 
-func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) {
-	caseCheck(httpTestCase{
+func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:       e,
 		Method:  http.MethodPut,
 		Path:    "/apisix/admin/routes/1",
 		Headers: map[string]string{"X-API-KEY": token},
 		Body: `{
-			 "uri": "/get",
-			 "plugins": {
-				 "prometheus": {}
-			 },
-			 "upstream": {
-				 "nodes": {
-					 "httpbin.default.svc.cluster.local:8000": 1
-				 },
-				 "type": "roundrobin"
-			 }
-		 }`,
+			"uri": "/get",
+			"plugins": {
+				"prometheus": {}
+			},
+			"upstream": {
+				"nodes": {
+					"httpbin.default.svc.cluster.local:8000": 1
+				},
+				"type": "roundrobin"
+			}
+		}`,
 		ExpectStatusRange: expectStatusRange,
 	})
 }
 
-func GetRoute(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func GetRoute(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/get",
@@ -115,8 +120,17 @@ func GetRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func GetRouteList(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func GetRouteIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodGet,
+		Path:        "/get",
+		IgnoreError: true,
+	})
+}
+
+func GetRouteList(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/apisix/admin/routes",
@@ -126,8 +140,8 @@ func GetRouteList(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func DeleteRoute(e *httpexpect.Expect) {
-	caseCheck(httpTestCase{
+func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:       e,
 		Method:  http.MethodDelete,
 		Path:    "/apisix/admin/routes/1",
@@ -135,8 +149,8 @@ func DeleteRoute(e *httpexpect.Expect) {
 	})
 }
 
-func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
-	caseCheck(httpTestCase{
+func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:          e,
 		Method:     http.MethodGet,
 		Path:       "/apisix/prometheus/metrics",
