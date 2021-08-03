@@ -62,7 +62,7 @@ function _M.increase(conf, ctx)
             ctx.limit_conn = core.tablepool.fetch("plugin#limit-conn", 0, 6)
         end
 
-        core.table.insert_tail(ctx.limit_conn, lim, key, delay)
+        core.table.insert_tail(ctx.limit_conn, lim, key, delay, conf.only_use_default_delay)
     end
 
     if delay >= 0.001 then
@@ -77,18 +77,20 @@ function _M.decrease(conf, ctx)
         return
     end
 
-    for i = 1, #limit_conn, 3 do
+    for i = 1, #limit_conn, 4 do
         local lim = limit_conn[i]
         local key = limit_conn[i + 1]
         local delay = limit_conn[i + 2]
+        local use_delay =  limit_conn[i + 3]
 
         local latency
-        if ctx.proxy_passed then
-            latency = ctx.var.upstream_response_time
-        else
-            latency = ctx.var.request_time - delay
+        if not use_delay then
+            if ctx.proxy_passed then
+                latency = ctx.var.upstream_response_time
+            else
+                latency = ctx.var.request_time - delay
+            end
         end
-
         core.log.debug("request latency is ", latency) -- for test
 
         local conn, err = lim:leaving(key, latency)

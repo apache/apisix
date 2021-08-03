@@ -431,7 +431,12 @@ local rpc_handlers = {
                 end
                 body = ffi_str(body, len)
             end
-            return true, nil, stop:Status(), body
+            local code = stop:Status()
+            -- avoid using 0 as the default http status code
+            if code == 0 then
+                 code = 200
+            end
+            return true, nil, code, body
         end
 
         if action_type == http_req_call_action.Rewrite then

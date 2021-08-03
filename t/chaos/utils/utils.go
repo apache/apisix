@@ -133,6 +133,15 @@ func GetRoute(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
 	})
 }
 
+func GetRouteIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodGet,
+		Path:        "/get",
+		IgnoreError: true,
+	})
+}
+
 func GetRouteList(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
 	return caseCheck(httpTestCase{
 		E:            e,
@@ -153,8 +162,8 @@ func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
 	})
 }
 
-func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
-	caseCheck(httpTestCase{
+func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:          e,
 		Method:     http.MethodGet,
 		Path:       "/apisix/prometheus/metrics",

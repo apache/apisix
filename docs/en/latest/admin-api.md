@@ -568,6 +568,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 * `chash`: consistent hash
 * `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
 * `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
+* user-defined balancer which can be loaed via `require("apisix.balancer.your_balancer")`.
 
 `hash_on` can be set to different types:
 
@@ -580,11 +581,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 `keepalive_pool` allows the upstream to have its separate connection pool.
 Its children fields, like `requests`, can be used to configure the upstream keepalive options.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 **Config Example:**
 
