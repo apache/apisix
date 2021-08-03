@@ -144,10 +144,14 @@ balancer_port: 1980
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+            core.ctx.set_vars_meta(api_ctx)
+            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
         }
     }
 --- request
@@ -162,10 +166,14 @@ arg_a-b: aaa
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+            core.ctx.set_vars_meta(api_ctx)
+            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
         }
     }
 --- request
@@ -180,10 +188,14 @@ arg_a-b: aaa
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("arg_a-b: ", ctx.var["arg_a-b"])
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+            core.ctx.set_vars_meta(api_ctx)
+            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
         }
     }
 --- request
