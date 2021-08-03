@@ -106,8 +106,7 @@ function _M.rewrite(conf, ctx)
 
     local path = ctx.var.uri
     local method = ctx.var.method
-    local username = get_headers()[conf.username]
-    if not username then username = "anonymous" end
+    local username = get_headers()[conf.username] or "anonymous"
 
     if conf.casbin_enforcer then
         if not conf.casbin_enforcer:enforce(username, path, method) then
