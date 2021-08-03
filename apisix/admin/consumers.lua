@@ -72,13 +72,13 @@ function _M.put(_, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -94,7 +94,7 @@ function _M.get(consumer_name)
     local res, err = core.etcd.get(key, not consumer_name)
     if not res then
         core.log.error("failed to get consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     utils.fix_count(res.body, consumer_name)
@@ -116,7 +116,7 @@ function _M.delete(consumer_name)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
