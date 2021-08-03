@@ -66,7 +66,7 @@ dependencies = {
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
-    "ext-plugin-proto = 0.1.1",
+    "ext-plugin-proto = 0.2.1",
 }
 
 build = {
