@@ -75,6 +75,13 @@ function _M.go(case)
                 assert(pc:ConfLength() == 0)
             end
 
+            if case.expect_key_pattern then
+                local m = ngx.re.find(pc:Key(), case.expect_key_pattern, "jo")
+                assert(m ~= nil, pc:Key())
+            else
+                assert(pc:Key() ~= "")
+            end
+
             prepare_conf_resp.Start(builder)
             prepare_conf_resp.AddConfToken(builder, 233)
             local req = prepare_conf_req.End(builder)
