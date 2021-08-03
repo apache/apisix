@@ -279,7 +279,7 @@ local function post_reload_plugins()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(500, err)
+        core.response.exit(503, err)
     end
 
     core.response.exit(200, "done")
