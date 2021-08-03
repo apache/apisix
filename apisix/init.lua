@@ -754,6 +754,7 @@ function _M.http_admin()
         router = admin_init.get()
     end
 
+    core.response.set_header("Server", ver_header)
     -- add cors rsp header
     cors_admin()
 
