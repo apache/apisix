@@ -143,62 +143,48 @@ balancer_port: 1980
 --- config
     location /t {
         content_by_lua_block {
-            local core = require("apisix.core")
-            local ngx_ctx = ngx.ctx
-            local api_ctx = ngx_ctx.api_ctx
-            if api_ctx == nil then
-                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-                ngx_ctx.api_ctx = api_ctx
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "vars": [["arg_a-b", "==", "ab"]]
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
             end
-            core.ctx.set_vars_meta(api_ctx)
-            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
+            ngx.say(body)
         }
     }
+
+
+
+=== TEST 6: check (support dash in the args)
 --- request
-GET /t?a-b=aaa
+GET /hello?a-b=ab
 --- response_body
-arg_a-b: aaa
+hello world
 
 
 
-=== TEST 6: support dash in the args(Multi args with the same name, only fetch the first one)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ngx_ctx = ngx.ctx
-            local api_ctx = ngx_ctx.api_ctx
-            if api_ctx == nil then
-                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-                ngx_ctx.api_ctx = api_ctx
-            end
-            core.ctx.set_vars_meta(api_ctx)
-            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
-        }
-    }
+=== TEST 7: support dash in the args(Multi args with the same name, only fetch the first one)
 --- request
-GET /t?a-b=aaa&a-b=bbb
+GET /hello?a-b=ab&a-b=ccc
 --- response_body
-arg_a-b: aaa
+hello world
 
 
 
-=== TEST 7: support dash in the args(arg is missing)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ngx_ctx = ngx.ctx
-            local api_ctx = ngx_ctx.api_ctx
-            if api_ctx == nil then
-                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-                ngx_ctx.api_ctx = api_ctx
-            end
-            core.ctx.set_vars_meta(api_ctx)
-            ngx.say("arg_a-b: ", api_ctx.var["arg_a-b"])
-        }
-    }
+=== TEST 8: support dash in the args(arg is missing)
 --- request
-GET /t
+GET /hello
+--- error_code: 404
 --- response_body
-arg_a-b: nil
+{"error_msg":"404 Route Not Found"}
