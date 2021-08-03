@@ -59,14 +59,14 @@ dependencies = {
     "binaryheap = 0.4",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.3.0",
+    "lua-resty-expr = 1.3.1",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
     "luasocket = 3.0rc1-2",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
-    "ext-plugin-proto = 0.1.1",
+    "ext-plugin-proto = 0.2.1",
     "casbin = 1.26.0",
 }
 

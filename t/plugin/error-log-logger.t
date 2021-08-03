@@ -327,7 +327,44 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 
-=== TEST 10: delete the route
+=== TEST 10: avoid sending stale error log
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            core.log.warn("this is a warning message for test.")
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "port": 1999,
+                    "level": "ERROR",
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.error("this is an error message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/\[Server\] receive data:.*this is a warning message for test./
+--- error_log eval
+qr/\[Server\] receive data:.*this is an error message for test./
+--- wait: 5
+
+
+
+=== TEST 11: delete the route
 --- yaml_config
 apisix:
     enable_admin: true

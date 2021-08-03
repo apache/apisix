@@ -590,7 +590,7 @@ _EOC_
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
     my $ipv6_listen_conf = '';
     if (defined $block->listen_ipv6) {
-        $ipv6_listen_conf = "listen \[::1\]:12345;"
+        $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
     my $config = $block->config // '';
