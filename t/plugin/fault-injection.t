@@ -912,7 +912,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid operator '!='
+rule should be wrapped inside brackets
 done
 --- error_log eval
 qr/failed to create vars expression:.*/

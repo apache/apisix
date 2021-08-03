@@ -1,5 +1,5 @@
 {
-  "version": 2.7,
+  "version": 2.8,
   "sidebar": [
     {
       "type": "category",
@@ -230,6 +230,13 @@
         {
           "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/testing-framework"
+          ]
         },
         {
           "type": "doc",

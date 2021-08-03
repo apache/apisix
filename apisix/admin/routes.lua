@@ -177,13 +177,13 @@ function _M.put(id, conf, sub_path, args)
 
     local ok, err = utils.inject_conf_with_prev_conf("route", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "] to etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -199,7 +199,7 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get route[", key, "] from etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     utils.fix_count(res.body, id)
@@ -218,7 +218,7 @@ function _M.post(id, conf, sub_path, args)
     local res, err = core.etcd.push(key, conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "] to etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -235,7 +235,7 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete route[", key, "] in etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -265,7 +265,7 @@ function _M.patch(id, conf, sub_path, args)
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get route [", key, "] in etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     if res_old.status ~= 200 then
@@ -299,7 +299,7 @@ function _M.patch(id, conf, sub_path, args)
     local res, err = core.etcd.atomic_set(key, node_value, args.ttl, modified_index)
     if not res then
         core.log.error("failed to set new route[", key, "] to etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

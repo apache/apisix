@@ -221,22 +221,22 @@ function _M.set_by_route(route, api_ctx)
 
     local up_conf = api_ctx.matched_upstream
     if not up_conf then
-        return 500, "missing upstream configuration in Route or Service"
+        return 503, "missing upstream configuration in Route or Service"
     end
     -- core.log.info("up_conf: ", core.json.delay_encode(up_conf, true))
 
     if up_conf.service_name then
         if not discovery then
-            return 500, "discovery is uninitialized"
+            return 503, "discovery is uninitialized"
         end
         if not up_conf.discovery_type then
-            return 500, "discovery server need appoint"
+            return 503, "discovery server need appoint"
         end
 
         local dis = discovery[up_conf.discovery_type]
         if not dis then
             local err = "discovery " .. up_conf.discovery_type .. " is uninitialized"
-            return 500, err
+            return 503, err
         end
 
         local new_nodes, err = dis.nodes(up_conf.service_name)

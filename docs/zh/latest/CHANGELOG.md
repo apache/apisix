@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.8.0](#280)
 - [2.7.0](#270)
 - [2.6.0](#260)
 - [2.5.0](#250)
@@ -43,7 +44,42 @@ title: CHANGELOG
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.8.0
+
+### Change
+
+- 如果启用 stream proxy，默认将不再一并启用 HTTP proxy 功能 [#4580](https://github.com/apache/apisix/pull/4580)
+
+### Core
+
+- :sunrise: 允许用户自定义 balancer [#4605](https://github.com/apache/apisix/pull/4605)
+- :sunrise: upstream 中添加 retry_timeout，类似于 Nginx 的 proxy_next_upstream_timeout [#4574](https://github.com/apache/apisix/pull/4574)
+- :sunrise: 允许在 balancer_by_lua 中运行插件 [#4549](https://github.com/apache/apisix/pull/4549)
+- :sunrise: 允许给 upstream 指定单独的连接池 [#4506](https://github.com/apache/apisix/pull/4506)
+- :sunrise: etcd 连接开启健康检查 [#4191](https://github.com/apache/apisix/pull/4191)
+
+### Plugin
+
+- :sunrise: 增加 gzip 插件 [#4640](https://github.com/apache/apisix/pull/4640)
+- :sunrise: 增加 ua-restriction 插件来拒绝爬虫请求 [#4587](https://github.com/apache/apisix/pull/4587)
+- :sunrise: stream 模块增加 ip-restriction 插件 [#4602](https://github.com/apache/apisix/pull/4602)
+- :sunrise: stream 模块增加 limit-conn 插件 [#4515](https://github.com/apache/apisix/pull/4515)
+- :sunrise: 将 ext-plugin 的超时提升到 60s [#4557](https://github.com/apache/apisix/pull/4557)
+- :sunrise: key-auth 支持从 query string 中获取 key [#4490](https://github.com/apache/apisix/pull/4490)
+- :sunrise: kafka-logger 支持通过 admin API 设置日志格式 [#4483](https://github.com/apache/apisix/pull/4483)
+
+### Bugfix
+
+- 修复 stream proxy 的 SNI router 在 session 复用中不可用的问题 [#4607](https://github.com/apache/apisix/pull/4607)
+- 修复 limit-conn 同时在全局和 route 中指定会出错的问题 [#4585](https://github.com/apache/apisix/pull/4585)
+- 修复 Admin API 中检查 proto 引用关系的错误 [#4575](https://github.com/apache/apisix/pull/4575)
+- 修复 skywalking 同时在全局和 route 中指定会出错的问题 [#4589](https://github.com/apache/apisix/pull/4589)
+- 调用 `ctx.var.cookie_*` 时如果没有找到 cookie 不再报错 [#4564](https://github.com/apache/apisix/pull/4564)
+- 修复 request-id 同时在全局和 route 中指定会出错的问题 [#4479](https://github.com/apache/apisix/pull/4479)
+
 ## 2.7.0
+
+### Change
 
 - 修改 metadata_schema 校验方式，让它跟其他 schema 一致 [#4381](https://github.com/apache/apisix/pull/4381)
 - 移除 echo 插件的 auth_value 字段 [#4055](https://github.com/apache/apisix/pull/4055)

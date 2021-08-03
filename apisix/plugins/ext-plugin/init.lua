@@ -254,8 +254,10 @@ end
 local rpc_call
 local rpc_handlers = {
     nil,
-    function (conf, ctx, sock)
+    function (conf, ctx, sock, unique_key)
         builder:Clear()
+
+        local key = builder:CreateString(unique_key)
 
         local conf_vec
         if conf.conf then
@@ -278,6 +280,7 @@ local rpc_handlers = {
         end
 
         prepare_conf_req.Start(builder)
+        prepare_conf_req.AddKey(builder, key)
         if conf_vec then
             prepare_conf_req.AddConf(builder, conf_vec)
         end
@@ -306,8 +309,10 @@ local rpc_handlers = {
         return token
     end,
     function (conf, ctx, sock, entry)
+        local lrucache_id = core.lrucache.plugin_ctx_id(ctx, entry)
         local token, err = core.lrucache.plugin_ctx(lrucache, ctx, entry, rpc_call,
-                                                    constants.RPC_PREPARE_CONF, conf, ctx)
+                                                    constants.RPC_PREPARE_CONF, conf, ctx,
+                                                    lrucache_id)
         if not token then
             return nil, err
         end
@@ -431,7 +436,12 @@ local rpc_handlers = {
                 end
                 body = ffi_str(body, len)
             end
-            return true, nil, stop:Status(), body
+            local code = stop:Status()
+            -- avoid using 0 as the default http status code
+            if code == 0 then
+                 code = 200
+            end
+            return true, nil, code, body
         end
 
         if action_type == http_req_call_action.Rewrite then
