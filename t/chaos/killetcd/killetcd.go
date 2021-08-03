@@ -88,11 +88,11 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		resp := utils.SetRouteIgnoreError(e)
 		if resp.Raw().StatusCode != http.StatusOK {
 			for i := range [60]int{} {
-				timeWait := fmt.Sprintf("wait for %ds\n", i)
+				timeWait := fmt.Sprintf("wait for %ds\n", i*5)
 				fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
 				resp = utils.SetRouteIgnoreError(e)
 				if resp.Raw().StatusCode != http.StatusOK {
-					time.Sleep(time.Second)
+					time.Sleep(5 * time.Second)
 				} else {
 					break
 				}
