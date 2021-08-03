@@ -91,9 +91,28 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		utils.DeleteRoute(e)
 	})
 
-	// check if everything works
-	utils.SetRoute(e, http.StatusCreated)
-	utils.GetRouteList(e, http.StatusOK)
+	ginkgo.It("check if everything works", func() {
+		utils.SetRoute(e, httpexpect.Status2xx)
+		utils.GetRouteList(e, http.StatusOK)
+		var resp *httpexpect.Response
+
+		resp = utils.GetRouteIgnoreError(e)
+		// wait 1s seems not enough, wait some more time to make sure nothing goes wrong
+		if resp.Raw().StatusCode != http.StatusOK {
+			for i := range [60]int{} {
+				timeWait := fmt.Sprintf("wait for %ds\n", i)
+				fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
+				resp = utils.GetRouteIgnoreError(e)
+				if resp.Raw().StatusCode != http.StatusOK {
+					time.Sleep(time.Second)
+				} else {
+					break
+				}
+			}
+		}
+		gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
+		utils.TestPrometheusEtcdMetric(e, 1)
+	})
 
 	// get default
 	ginkgo.It("get default apisix delay", func() {
