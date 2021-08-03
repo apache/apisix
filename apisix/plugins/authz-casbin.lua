@@ -68,37 +68,40 @@ function _M.check_schema(conf, schema_type)
     return false, err
 end
 
+local casbin_enforcer
 
-local function new_enforcer(conf, modifiedIndex)
+local function new_enforcer_if_need(conf)
     local model_path = conf.model_path
     local policy_path = conf.policy_path
 
-    local e
-
     if model_path and policy_path then
-        e = casbin:new(model_path, policy_path)
-        conf.type = "file"
+        if not conf.casbin_enforcer then
+            conf.casbin_enforcer = casbin:new(model_path, policy_path)
+        end
+        return true
     end
 
     local metadata = plugin.plugin_metadata(plugin_name)
-    if metadata and metadata.value.model and metadata.value.policy and not e then
-        local model = metadata.value.model
-        local policy = metadata.value.policy
-        e = casbin:newEnforcerFromText(model, policy)
-        conf.type = "metadata"
-        conf.modifiedIndex = modifiedIndex
+    if not (metadata and metadata.value.model and metadata.value.policy) then
+        return nil, "not enough configuration to create enforcer"
     end
 
-    conf.casbin_enforcer = e
+    local modifiedIndex = metadata.modifiedIndex
+    if not casbin_enforcer or casbin_enforcer.modifiedIndex ~= modifiedIndex then
+        local model = metadata.value.model
+        local policy = metadata.value.policy
+        casbin_enforcer = casbin:newEnforcerFromText(model, policy)
+        casbin_enforcer.modifiedIndex = modifiedIndex
+    end
+    return true
 end
 
 
 function _M.rewrite(conf, ctx)
     -- creates an enforcer when request sent for the first time
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if (not conf.casbin_enforcer) or
-    (conf.type == "metadata" and conf.modifiedIndex ~= metadata.modifiedIndex) then
-        new_enforcer(conf, metadata.modifiedIndex)
+    local ok, err = new_enforcer_if_need(conf)
+    if not ok then
+        return 503, {message = err}
     end
 
     local path = ctx.var.uri
@@ -106,10 +109,17 @@ function _M.rewrite(conf, ctx)
     local username = get_headers()[conf.username]
     if not username then username = "anonymous" end
 
-    if not conf.casbin_enforcer:enforce(username, path, method) then
-        return 403, {message = "Access Denied"}
+    if conf.casbin_enforcer then
+        if not conf.casbin_enforcer:enforce(username, path, method) then
+            return 403, {message = "Access Denied"}
+        end
+    else
+        if not casbin_enforcer:enforce(username, path, method) then
+            return 403, {message = "Access Denied"}
+        end
     end
 end
+
 
 
 return _M
