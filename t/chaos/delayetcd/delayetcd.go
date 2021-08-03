@@ -94,9 +94,8 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
-		var resp *httpexpect.Response
 
-		resp = utils.GetRouteIgnoreError(e)
+		resp := utils.GetRouteIgnoreError(e)
 		// wait 1s seems not enough, wait some more time to make sure nothing goes wrong
 		if resp.Raw().StatusCode != http.StatusOK {
 			for i := range [60]int{} {
