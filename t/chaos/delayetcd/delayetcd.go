@@ -65,8 +65,18 @@ func setRouteMultipleTimes(e *httpexpect.Expect, times int, status httpexpect.St
 		timeList = append(timeList, time.Since(timeLast).String())
 		timeLast = time.Now()
 	}
-	fmt.Fprintf(ginkgo.GinkgoWriter, "takes %v separately", timeList)
+	fmt.Fprintf(ginkgo.GinkgoWriter, "takes %v separately\n", timeList)
 	return time.Since(now) / time.Duration(times)
+}
+
+func setRouteMultipleTimesIgnoreError(e *httpexpect.Expect, times int) (time.Duration, int) {
+	now := time.Now()
+	var resp *httpexpect.Response
+	for i := 0; i < times; i++ {
+		resp = utils.SetRouteIgnoreError(e)
+	}
+	// use status code of the last time is enough to show the accessibility of apisix
+	return time.Since(now) / time.Duration(times), resp.Raw().StatusCode
 }
 
 func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, chaos *v1alpha1.NetworkChaos) {
@@ -75,14 +85,16 @@ func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, ch
 	time.Sleep(1 * time.Second)
 
 	var setDuration time.Duration
+	var statusCode int
 	for range [10]int{} {
-		setDuration = setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
-		if setDuration < 15*time.Millisecond {
+		setDuration, statusCode = setRouteMultipleTimesIgnoreError(eSilent, 5)
+		if setDuration < 15*time.Millisecond && statusCode == http.StatusOK {
 			break
 		}
 		time.Sleep(5 * time.Second)
 	}
 	gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 15*time.Millisecond))
+	gomega.Ω(statusCode).Should(gomega.BeNumerically("==", http.StatusOK))
 }
 
 var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
