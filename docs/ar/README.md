@@ -317,7 +317,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 - [منصة المصنع الأوروبي: API بوابة أمان – بوابة أمان API - باستخدام أبيسكس في منصة أي فاكتوري](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: كيفية إنشاء بوابة استنادًا إلى أباتشي أبيسكس (صيني)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-- [360: ممارسة أباتشي أبيسكس في منصة OPS(صيني)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+- [360: ممارسة أباتشي أبيسكس في منصة OPS(صيني)](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
 - [هلوتوك: استكشاف العولمة على أساس OpenResty و أباتشي أبيسكس(صيني)](https://www.upyun.com/opentalk/447.html)
 - [سحابة تينسنت:لماذا تختار أباتشي أبيسكس لتنفيذ وحدة تحكم الدخول k8s؟  (صيني)](https://www.upyun.com/opentalk/448.html)
 - [aispeech:لماذا نقوم بإنشاء وحدة تحكم دخول k8s جديدة؟  (صيني)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
