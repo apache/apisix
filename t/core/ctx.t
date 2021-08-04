@@ -46,29 +46,7 @@ server_port: 1984
 
 
 
-=== TEST 2: http header + arg
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("http_host: ", ctx.var["http_host"])
-            ngx.say("arg_a: ", ctx.var["arg_a"])
-        }
-    }
---- request
-GET /t?a=aaa
---- response_body
-http_host: localhost
-arg_a: aaa
---- no_error_log
-[error]
-
-
-
-=== TEST 3: cookie + no cookie
+=== TEST 2: cookie + no cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -88,7 +66,7 @@ failed to fetch cookie value by key
 
 
 
-=== TEST 4: cookie
+=== TEST 3: cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -122,7 +100,7 @@ cookie with .: 4
 
 
 
-=== TEST 5: key is nil
+=== TEST 4: key is nil
 --- config
     location /t {
         content_by_lua_block {
@@ -143,7 +121,7 @@ invalid argument, expect string value
 
 
 
-=== TEST 6: key is number
+=== TEST 5: key is number
 --- config
     location /t {
         content_by_lua_block {
@@ -164,7 +142,7 @@ invalid argument, expect string value
 
 
 
-=== TEST 7: add route and get `route_id`
+=== TEST 6: add route and get `route_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -204,7 +182,7 @@ passed
 
 
 
-=== TEST 8: `url` exist and `route_id` is 1
+=== TEST 7: `url` exist and `route_id` is 1
 --- request
 GET /hello
 --- response_body
@@ -216,7 +194,7 @@ route_id: 1
 
 
 
-=== TEST 9: create a service and `service_id` is 1
+=== TEST 8: create a service and `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -250,7 +228,7 @@ passed
 
 
 
-=== TEST 10: the route object not bind any service object
+=== TEST 9: the route object not bind any service object
 --- config
     location /t {
         content_by_lua_block {
@@ -288,7 +266,7 @@ passed
 
 
 
-=== TEST 11: service_id is empty
+=== TEST 10: service_id is empty
 --- request
 GET /hello
 --- response_body
@@ -300,7 +278,7 @@ service_id: empty route_id
 
 
 
-=== TEST 12: update route and binding service_id
+=== TEST 11: update route and binding service_id
 --- config
     location /t {
         content_by_lua_block {
@@ -339,7 +317,7 @@ passed
 
 
 
-=== TEST 13: service_id is 1
+=== TEST 12: service_id is 1
 --- request
 GET /hello
 --- response_body
@@ -351,7 +329,7 @@ service_id: 1
 
 
 
-=== TEST 14: create consumer and bind key-auth plugin
+=== TEST 13: create consumer and bind key-auth plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -383,7 +361,7 @@ passed
 
 
 
-=== TEST 15: create route and consumer_name is consumer_jack
+=== TEST 14: create route and consumer_name is consumer_jack
 --- config
     location /t {
         content_by_lua_block {
@@ -424,7 +402,7 @@ passed
 
 
 
-=== TEST 16: consumer_name is `consumer_jack`
+=== TEST 15: consumer_name is `consumer_jack`
 --- request
 GET /hello
 --- more_headers
@@ -438,7 +416,7 @@ consumer_name: consumer_jack
 
 
 
-=== TEST 17: update the route, and the consumer_name is nil
+=== TEST 16: update the route, and the consumer_name is nil
 --- config
     location /t {
         content_by_lua_block {
@@ -478,7 +456,7 @@ passed
 
 
 
-=== TEST 18: consumer_name is empty
+=== TEST 17: consumer_name is empty
 --- request
 GET /hello
 --- response_body
@@ -490,7 +468,7 @@ consumer_name: consumer_name is nil
 
 
 
-=== TEST 19: create route and consumer_name is consumer_jack
+=== TEST 18: create route and consumer_name is consumer_jack
 --- config
     location /t {
         content_by_lua_block {
@@ -531,7 +509,7 @@ passed
 
 
 
-=== TEST 20: consumer_name is `consumer_jack`
+=== TEST 19: consumer_name is `consumer_jack`
 --- request
 GET /hello
 --- more_headers
@@ -545,7 +523,7 @@ consumer_name: consumer_jack
 
 
 
-=== TEST 21: update the route, and the consumer_name is nil
+=== TEST 20: update the route, and the consumer_name is nil
 --- config
     location /t {
         content_by_lua_block {
@@ -585,7 +563,7 @@ passed
 
 
 
-=== TEST 22: consumer_name is nil
+=== TEST 21: consumer_name is nil
 --- request
 GET /hello
 --- response_body
@@ -597,7 +575,7 @@ consumer_name: consumer_name is nil
 
 
 
-=== TEST 23: add plugin metadata `service_name`
+=== TEST 22: add plugin metadata `service_name`
 --- config
     location /t {
         content_by_lua_block {
@@ -634,7 +612,7 @@ passed
 
 
 
-=== TEST 24: add `http-logger` plugin on service
+=== TEST 23: add `http-logger` plugin on service
 --- config
     location /t {
         content_by_lua_block {
@@ -677,7 +655,7 @@ passed
 
 
 
-=== TEST 25: route binding service and concat_method is json
+=== TEST 24: route binding service and concat_method is json
 --- config
     location /t {
         content_by_lua_block {
@@ -711,7 +689,7 @@ passed
 
 
 
-=== TEST 26: hit route and report http logger
+=== TEST 25: hit route and report http logger
 --- request
 GET /hello
 --- response_body
@@ -721,7 +699,7 @@ qr/request log: \{"route_id":"1","service_id":"1","service_name":"ctx_var-suppor
 
 
 
-=== TEST 27: log_format is configured with `service_name`, but there is no matching service
+=== TEST 26: log_format is configured with `service_name`, but there is no matching service
 --- config
     location /t {
         content_by_lua_block {
@@ -764,7 +742,7 @@ passed
 
 
 
-=== TEST 28: hit route but there is no matching service
+=== TEST 27: hit route but there is no matching service
 --- request
 GET /hello
 --- response_body
@@ -774,7 +752,7 @@ qr/request log: \{"route_id":"1"\}/
 
 
 
-=== TEST 29: add plugin metadata `route_name`
+=== TEST 28: add plugin metadata `route_name`
 --- config
     location /t {
         content_by_lua_block {
@@ -811,7 +789,7 @@ passed
 
 
 
-=== TEST 30: sanity, batch_max_size=1 and concat_method is json
+=== TEST 29: sanity, batch_max_size=1 and concat_method is json
 --- config
     location /t {
         content_by_lua_block {
@@ -855,7 +833,7 @@ passed
 
 
 
-=== TEST 31: hit route and report http logger
+=== TEST 30: hit route and report http logger
 --- request
 GET /hello
 --- response_body
@@ -865,7 +843,7 @@ qr/request log: \{"route_id":"1","route_name":"ctx_var-support-route_name"\}/
 
 
 
-=== TEST 32: missing `name` field, batch_max_size=1 and concat_method is json
+=== TEST 31: missing `name` field, batch_max_size=1 and concat_method is json
 --- config
     location /t {
         content_by_lua_block {
@@ -908,7 +886,7 @@ passed
 
 
 
-=== TEST 33: hit route and report http logger
+=== TEST 32: hit route and report http logger
 --- request
 GET /hello
 --- response_body
@@ -918,7 +896,7 @@ qr/request log: \{"route_id":"1"\}/
 
 
 
-=== TEST 34: add metadata, service and route, and the service is bound to the route
+=== TEST 33: add metadata, service and route, and the service is bound to the route
 --- config
     location /t {
         content_by_lua_block {
@@ -1001,7 +979,7 @@ passed
 
 
 
-=== TEST 35: hit route and route_name and service_name are different
+=== TEST 34: hit route and route_name and service_name are different
 --- request
 GET /hello
 --- response_body
