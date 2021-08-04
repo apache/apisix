@@ -80,18 +80,12 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	stopChan := make(chan bool)
-	defer ginkgo.It("restore test environment", func() {
-		stopChan <- true
-		cliSet.CtrlCli.Delete(context.Background(), getEtcdKillChaos())
-		utils.CheckMethodSucceed(e, http.MethodPut, 5)
-		utils.DeleteRoute(e)
-	})
 
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 
-		utils.CheckMethodSucceed(e, http.MethodGet, 1)
+		utils.WaitUntilMethodSucceed(e, http.MethodGet, 1)
 		utils.TestPrometheusEtcdMetric(e, 1)
 	})
 
@@ -159,5 +153,12 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f\n", durationBefore, durationAfter)
 		fmt.Fprintf(ginkgo.GinkgoWriter, "bps before: %f, after: %f\n", bpsBefore, bpsAfter)
 		gomega.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(gomega.BeTrue())
+	})
+
+	ginkgo.It("restore test environment", func() {
+		stopChan <- true
+		cliSet.CtrlCli.Delete(context.Background(), getEtcdKillChaos())
+		utils.WaitUntilMethodSucceed(e, http.MethodPut, 5)
+		utils.DeleteRoute(e)
 	})
 })

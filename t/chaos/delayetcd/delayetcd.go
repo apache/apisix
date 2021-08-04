@@ -69,6 +69,22 @@ func setRouteMultipleTimes(e *httpexpect.Expect, times int, status httpexpect.St
 	return time.Since(now) / time.Duration(times)
 }
 
+func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, chaos *v1alpha1.NetworkChaos) {
+	err := cliSet.CtrlCli.Delete(context.Background(), chaos)
+	gomega.Expect(err).To(gomega.BeNil())
+	time.Sleep(1 * time.Second)
+
+	var setDuration time.Duration
+	for range [10]int{} {
+		setDuration = setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
+		if setDuration < 15*time.Millisecond {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 15*time.Millisecond))
+}
+
 var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 	ctx := context.Background()
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
@@ -87,15 +103,11 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		apisixPod = &apisixPods[0]
 	})
 
-	defer ginkgo.It("restore test environment", func() {
-		utils.DeleteRoute(e)
-	})
-
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 
-		utils.CheckMethodSucceed(e, http.MethodGet, 1)
+		utils.WaitUntilMethodSucceed(e, http.MethodGet, 1)
 		utils.TestPrometheusEtcdMetric(e, 1)
 	})
 
@@ -118,11 +130,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		time.Sleep(1 * time.Second)
 
-		defer func() {
-			err = cliSet.CtrlCli.Delete(ctx, chaos)
-			gomega.Expect(err).To(gomega.BeNil())
-			time.Sleep(1 * time.Second)
-		}()
+		defer deleteChaosAndCheck(eSilent, cliSet, chaos)
 
 		setDuration := setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
 		gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 400*time.Millisecond))
@@ -140,11 +148,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		time.Sleep(1 * time.Second)
 
-		defer func() {
-			err = cliSet.CtrlCli.Delete(ctx, chaos)
-			gomega.Expect(err).To(gomega.BeNil())
-			time.Sleep(1 * time.Second)
-		}()
+		defer deleteChaosAndCheck(eSilent, cliSet, chaos)
 
 		setDuration := setRouteMultipleTimes(eSilent, 5, httpexpect.Status2xx)
 		gomega.Ω(setDuration).Should(gomega.BeNumerically("<", 4*time.Second))
@@ -162,11 +166,7 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		gomega.Expect(err).To(gomega.BeNil())
 		time.Sleep(1 * time.Second)
 
-		defer func() {
-			err = cliSet.CtrlCli.Delete(ctx, chaos)
-			gomega.Expect(err).To(gomega.BeNil())
-			time.Sleep(1 * time.Second)
-		}()
+		defer deleteChaosAndCheck(eSilent, cliSet, chaos)
 
 		_ = setRouteMultipleTimes(e, 2, httpexpect.Status5xx)
 
@@ -175,17 +175,8 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		gomega.Ω(errorLog).Should(gomega.ContainSubstring("error"))
 	})
 
-	ginkgo.It("wait till etcd return to normal", func() {
-		for i := 0; i < 6; i++ {
-			resp := utils.SetRouteIgnoreError(e)
-			if resp.Raw().StatusCode == 200 {
-				break
-			}
-			if i != 5 {
-				time.Sleep(5 * time.Second)
-			} else {
-				gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", 200))
-			}
-		}
+	ginkgo.It("restore test environment", func() {
+		utils.WaitUntilMethodSucceed(e, http.MethodPut, 5)
+		utils.DeleteRoute(e)
 	})
 })

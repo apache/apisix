@@ -223,7 +223,7 @@ func GetSilentHttpexpectClient() *httpexpect.Expect {
 	})
 }
 
-func CheckMethodSucceed(e *httpexpect.Expect, method string, interval int) {
+func WaitUntilMethodSucceed(e *httpexpect.Expect, method string, interval int) {
 	f, ok := ignoreErrorFuncMap[method]
 	gomega.Expect(ok).To(gomega.BeTrue())
 	resp := f(e)
