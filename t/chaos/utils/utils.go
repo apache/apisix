@@ -44,6 +44,10 @@ var (
 			"type": "roundrobin"
 		}
 	}`
+	ignoreErrorFuncMap = map[string]func(e *httpexpect.Expect) *httpexpect.Response{
+		http.MethodGet: GetRouteIgnoreError,
+		http.MethodPut: SetRouteIgnoreError,
+	}
 )
 
 type httpTestCase struct {
@@ -217,6 +221,25 @@ func GetSilentHttpexpectClient() *httpexpect.Expect {
 			newSilentPrinter(ginkgo.GinkgoT()),
 		},
 	})
+}
+
+func CheckMethodSucceed(e *httpexpect.Expect, method string, interval int) {
+	f, ok := ignoreErrorFuncMap[method]
+	gomega.Expect(ok).To(gomega.BeTrue())
+	resp := f(e)
+	if resp.Raw().StatusCode != http.StatusOK {
+		for i := range [60]int{} {
+			timeWait := fmt.Sprintf("wait for %ds\n", i*interval)
+			fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
+			resp = f(e)
+			if resp.Raw().StatusCode != http.StatusOK {
+				time.Sleep(5 * time.Second)
+			} else {
+				break
+			}
+		}
+	}
+	gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
 }
 
 func RoughCompare(a float64, b float64) bool {
