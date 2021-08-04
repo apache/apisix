@@ -70,7 +70,7 @@ done
 --- request
 GET /t
 --- response_body
-object matches none of the requireds: ["model_path","policy_path","username"] or ["model","policy","username"]
+value should match only one schema, but matches none
 --- no_error_log
 [error]
 

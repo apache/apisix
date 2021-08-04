@@ -32,7 +32,7 @@ local schema = {
         policy = { type = "string" },
         username = { type = "string"}
     },
-    anyOf = {
+    oneOf = {
         {required = {"model_path", "policy_path", "username"}},
         {required = {"model", "policy", "username"}}
     },
