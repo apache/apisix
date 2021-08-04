@@ -28,9 +28,14 @@ local schema = {
     properties = {
         model_path = { type = "string" },
         policy_path = { type = "string" },
+        model = { type = "string" },
+        policy = { type = "string" },
         username = { type = "string"}
     },
-    required = {"model_path", "policy_path", "username"},
+    anyOf = {
+        {required = {"model_path", "policy_path", "username"}},
+        {required = {"model", "policy", "username"}}
+    },
     additionalProperties = false
 }
 
@@ -71,12 +76,20 @@ end
 local casbin_enforcer
 
 local function new_enforcer_if_need(conf)
-    local model_path = conf.model_path
-    local policy_path = conf.policy_path
-
-    if model_path and policy_path then
+    if conf.model_path and conf.policy_path then
+        local model_path = conf.model_path
+        local policy_path = conf.policy_path
         if not conf.casbin_enforcer then
             conf.casbin_enforcer = casbin:new(model_path, policy_path)
+        end
+        return true
+    end
+
+    if conf.model and conf.policy then
+        local model = conf.model
+        local policy = conf.policy
+        if not conf.casbin_enforcer then
+            conf.casbin_enforcer = casbin:newEnforcerFromText(model, policy)
         end
         return true
     end

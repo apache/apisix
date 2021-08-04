@@ -43,9 +43,11 @@ For detailed documentation on how to create model and policy, refer [Casbin](htt
 | ----------- | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | model_path  | string | required    |         |       | The path of the Casbin model configuration file.             |
 | policy_path | string | required    |         |       | The path of the Casbin policy file.                          |
+| model       | string | required    |         |       | The Casbin model configuration in text format.               |
+| policy      | string | required    |         |       | The Casbin policy in text format.                            |
 | username    | string | required    |         |       | The header you will be using in request to pass the username (subject). |
 
-**NOTE**: You must either specify both the `model_path` and `policy_path` in plugin config or specify both the `model` and `policy` in the plugin metadata for the schema to be valid.
+**NOTE**: You must either specify `model_path`, `policy_path` and `username` in plugin config or specify `model`, `policy` and `username` in the plugin config for the configuration to be valid. Or if you wish to use a global Casbin configuration, you can first specify `model` and `policy` in the plugin metadata and only `username` in the plugin configuration, all routes will use the plugin metadata configuration in this way.
 
 ## Metadata
 
@@ -84,7 +86,48 @@ This will create a Casbin enforcer from the model and policy files at your first
 
 ### By using model/policy text
 
-First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API. You can also update the model/policy this way, the plugin will automatically update with this configuration.
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "authz-casbin": {
+            "model": "[request_definition]
+            r = sub, obj, act
+
+            [policy_definition]
+            p = sub, obj, act
+
+            [role_definition]
+            g = _, _
+
+            [policy_effect]
+            e = some(where (p.eft == allow))
+
+            [matchers]
+            m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
+
+            "policy": "p, *, /, GET
+            p, admin, *, *
+            g, alice, admin",
+
+            "username": "user"
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/*"
+}'
+```
+
+This will create a Casbin enforcer from the model and policy text at your first request.
+
+### By using model/policy text using plugin metadata
+
+First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API. All routes configured in this way will use a single Casbin enforcer with plugin metadata configuration. You can also update the model/policy this way, the plugin will automatically update itself with the updated configuration.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
@@ -110,7 +153,7 @@ g, alice, admin"
 }'
 ```
 
-Then add this plugin on a route by sending the following request. Note, there is no requirement for model/policy file paths now.
+Then add this plugin on a route by sending the following request. Note, there is no requirement for model/policy now.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

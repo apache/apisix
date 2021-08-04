@@ -70,7 +70,7 @@ done
 --- request
 GET /t
 --- response_body
-property "username" is required
+object matches none of the requireds: ["model_path","policy_path","username"] or ["model","policy","username"]
 --- no_error_log
 [error]
 
@@ -368,7 +368,90 @@ user: bob
 
 
 
-=== TEST 16: disable authz-casbin by Admin API
+=== TEST 16: enable authz-casbin using model/policy text
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "authz-casbin": {
+                            "model": "
+                            [request_definition]
+                            r = sub, obj, act
+
+                            [policy_definition]
+                            p = sub, obj, act
+
+                            [role_definition]
+                            g = _, _
+
+                            [policy_effect]
+                            e = some(where (p.eft == allow))
+
+                            [matchers]
+                            m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
+                            "policy": "
+                            p, *, /, GET
+                            p, admin, *, *
+                            g, jack, admin",
+                            "username" : "user"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: authorized user as per policy
+--- request
+GET /hello
+--- more_headers
+user: jack
+--- error_code: 200
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: unauthorized user as per policy
+--- request
+GET /hello
+--- more_headers
+user: bob
+--- error_code: 403
+--- response_body
+{"message":"Access Denied"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: disable authz-casbin by Admin API
 --- config
     location /t {
         content_by_lua_block {
