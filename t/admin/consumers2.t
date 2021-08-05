@@ -151,3 +151,25 @@ __DATA__
     }
 --- response_body
 {"action":"get","count":0,"node":{"dir":true,"key":"/apisix/consumers","nodes":{}}}
+
+
+
+=== TEST 5: mismatched username, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/consumers/jack1',
+                ngx.HTTP_PUT,
+                [[{
+                     "username":"jack"
+                }]]
+            )
+
+            ngx.print(message)
+        }
+    }
+--- response_body
+{"error_msg":"wrong username"}
