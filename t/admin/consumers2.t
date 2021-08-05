@@ -168,15 +168,8 @@ __DATA__
                 }]]
             )
 
-            ngx.status = code
-            if code >= 300 and code ~= 400 then
-                ngx.say(message)
-                return
-            end
-
             ngx.print(message)
         }
     }
---- error_code: 400
 --- response_body
 {"error_msg":"wrong username"}
