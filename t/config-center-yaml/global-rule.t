@@ -122,7 +122,7 @@ global_rules:
         id: 1
         plugins:
             cors:
-                allow_origins: "a.com,b.com"
+                allow_origins: "http://a.com,http://b.com"
 #END
 --- request
 GET /apisix/prometheus/metrics
