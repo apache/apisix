@@ -173,7 +173,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**NOTE**: The model/policy file paths have a higher precedence, hence if the model/policy file paths are present in the configuration the plugin will use the files accordingly.
+**NOTE**: The plugin route configuration has a higher precedence than the plugin metadata configuration. Hence if the model/policy configuration is present in the plugin route config, the plugin will use that instead of the metadata config.
 
 ## Test Plugin
 
