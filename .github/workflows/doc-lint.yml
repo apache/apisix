@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v2.3.1
+        uses: actions/setup-node@v2.3.2
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
