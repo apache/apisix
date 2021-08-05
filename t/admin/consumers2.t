@@ -174,7 +174,7 @@ __DATA__
                 return
             end
 
-            ngx.say(res)
+            ngx.say(message)
         }
     }
 --- error_code: 400
