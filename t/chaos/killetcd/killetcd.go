@@ -29,7 +29,6 @@ import (
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/api/v1/pod"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/apache/apisix/t/chaos/utils"
@@ -65,13 +64,7 @@ func getEtcdKillChaos() *v1alpha1.PodChaos {
 
 var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
-	eSilent := httpexpect.WithConfig(httpexpect.Config{
-		BaseURL:  utils.Host,
-		Reporter: httpexpect.NewAssertReporter(ginkgo.GinkgoT()),
-		Printers: []httpexpect.Printer{
-			utils.NewSilentPrinter(ginkgo.GinkgoT()),
-		},
-	})
+	eSilent := utils.GetSilentHttpexpectClient()
 
 	var cliSet *utils.ClientSet
 	var apisixPod *v1.Pod
@@ -87,32 +80,12 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	stopChan := make(chan bool)
-	defer ginkgo.It("restore test environment", func() {
-		stopChan <- true
-		cliSet.CtrlCli.Delete(context.Background(), getEtcdKillChaos())
-		utils.DeleteRoute(e)
-	})
 
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
-		var resp *httpexpect.Response
 
-		resp = utils.GetRouteIgnoreError(e)
-		// wait 1s seems not enough, wait some more time to make sure nothing goes wrong
-		if resp.Raw().StatusCode != http.StatusOK {
-			for i := range [60]int{} {
-				timeWait := fmt.Sprintf("wait for %ds\n", i)
-				fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
-				resp = utils.GetRouteIgnoreError(e)
-				if resp.Raw().StatusCode != http.StatusOK {
-					time.Sleep(time.Second)
-				} else {
-					break
-				}
-			}
-		}
-		gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
+		utils.WaitUntilMethodSucceed(e, http.MethodGet, 1)
 		utils.TestPrometheusEtcdMetric(e, 1)
 	})
 
@@ -176,30 +149,16 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	})
 
 	ginkgo.It("ingress bandwidth per second not change much", func() {
-		fmt.Fprintf(ginkgo.GinkgoWriter, "bandwidth before: %f, after: %f", bandwidthBefore, bandwidthAfter)
-		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f", durationBefore, durationAfter)
-		fmt.Fprintf(ginkgo.GinkgoWriter, "bps before: %f, after: %f", bpsBefore, bpsAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "bandwidth before: %f, after: %f\n", bandwidthBefore, bandwidthAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f\n", durationBefore, durationAfter)
+		fmt.Fprintf(ginkgo.GinkgoWriter, "bps before: %f, after: %f\n", bpsBefore, bpsAfter)
 		gomega.Expect(utils.RoughCompare(bpsBefore, bpsAfter)).To(gomega.BeTrue())
 	})
 
-	ginkgo.It("wait till etcd return to normal", func() {
-		listOption := client.MatchingLabels{"app.kubernetes.io/instance": "etcd"}
-		var etcdPod []v1.Pod
-		successCount := 0
-		for i := 0; i < 6; i++ {
-			etcdPods, err := utils.GetPods(cliSet.CtrlCli, metav1.NamespaceDefault, listOption)
-			gomega.Expect(err).To(gomega.BeNil())
-			for _, p := range etcdPods {
-				if pod.IsPodReady(&p) {
-					successCount++
-				}
-			}
-			if successCount == len(etcdPod) {
-				break
-			}
-			time.Sleep(5 * time.Second)
-			successCount = 0
-		}
-		gomega.Ω(successCount).Should(gomega.BeNumerically("==", len(etcdPod)))
+	ginkgo.It("restore test environment", func() {
+		stopChan <- true
+		cliSet.CtrlCli.Delete(context.Background(), getEtcdKillChaos())
+		utils.WaitUntilMethodSucceed(e, http.MethodPut, 5)
+		utils.DeleteRoute(e)
 	})
 })
