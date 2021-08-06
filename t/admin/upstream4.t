@@ -560,3 +560,35 @@ passed
     }
 --- response_body
 [delete] code: 200 message: passed
+
+
+
+=== TEST 17: patch upstream with sub_path, the data is number
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {},
+                    "type": "roundrobin"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local code, message = t('/apisix/admin/upstreams/1/retries',
+                 ngx.HTTP_PATCH,
+                 json.encode(1)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(message)
+        }
+    }
