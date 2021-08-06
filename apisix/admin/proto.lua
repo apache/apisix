@@ -20,6 +20,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
+local compile_proto = require("apisix.plugins.grpc-transcode.proto").compile_proto
 local tostring = tostring
 
 
@@ -51,6 +52,11 @@ local function check_conf(id, conf, need_id)
     local ok, err = core.schema.check(core.schema.proto, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    local ok, err = compile_proto(conf.content)
+    if not ok then
+        return nil, {error_msg = "invalid content: " .. err}
     end
 
     return need_id and id or true
