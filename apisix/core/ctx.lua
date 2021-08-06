@@ -160,7 +160,7 @@ do
                     val, err = cookie:get(sub_str(key, 8))
                     if err then
                         log.warn("failed to fetch cookie value by key: ",
-                                key, " error: ", err)
+                                 key, " error: ", err)
                     end
                 end
 
