@@ -285,6 +285,7 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
+  - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
