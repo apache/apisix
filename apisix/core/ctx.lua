@@ -164,6 +164,17 @@ do
                     end
                 end
 
+            elseif core_str.has_prefix(key, "arg_") then
+                local arg_key = sub_str(key, 5)
+                local args = request.get_uri_args()[arg_key]
+                if args then
+                    if type(args) == "table" then
+                        val = args[1]
+                    else
+                        val = args
+                    end
+                end
+
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
