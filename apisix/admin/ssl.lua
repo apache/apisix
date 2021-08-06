@@ -203,6 +203,7 @@ function _M.patch(id, conf, sub_path)
         if code then
             return code, err
         end
+        utils.inject_timestamp(node_value, nil, true)
     else
         if conf.key then
             conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
@@ -215,10 +216,8 @@ function _M.patch(id, conf, sub_path)
         end
 
         node_value = core.table.merge(node_value, conf);
+        utils.inject_timestamp(node_value, nil, conf)
     end
-
-
-    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new ssl conf: ", core.json.delay_encode(node_value, true))
 
