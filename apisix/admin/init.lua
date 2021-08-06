@@ -119,6 +119,7 @@ end
 local function run()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -185,6 +186,7 @@ end
 local function run_stream()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
@@ -255,6 +257,7 @@ end
 local function get_plugins_list()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -270,6 +273,7 @@ end
 local function post_reload_plugins()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
