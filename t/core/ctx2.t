@@ -188,3 +188,55 @@ query repo {
 hello world
 --- error_log
 find ctx._graphql: true
+
+
+
+=== TEST 7: support dash in the args
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "vars": [["arg_a-b", "==", "ab"]]
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 8: check (support dash in the args)
+--- request
+GET /hello?a-b=ab
+--- response_body
+hello world
+
+
+
+=== TEST 9: support dash in the args(Multi args with the same name, only fetch the first one)
+--- request
+GET /hello?a-b=ab&a-b=ccc
+--- response_body
+hello world
+
+
+
+=== TEST 10: support dash in the args(arg is missing)
+--- request
+GET /hello
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
