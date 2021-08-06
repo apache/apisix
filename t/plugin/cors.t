@@ -30,7 +30,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.cors")
             local ok, err = plugin.check_schema({
-                allow_origins = '',
+                allow_origins = 'http://test.com',
                 allow_methods = '',
                 allow_headers = '',
                 expose_headers = '',
@@ -59,7 +59,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.cors")
             local ok, err = plugin.check_schema({
-                allow_origins = '',
+                allow_origins = 'http://test.com',
                 allow_methods = '',
                 allow_headers = '',
                 expose_headers = '',
