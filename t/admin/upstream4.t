@@ -560,3 +560,46 @@ passed
     }
 --- response_body
 [delete] code: 200 message: passed
+
+
+
+=== TEST 17: patch upstream with sub_path, the data is number
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {},
+                    "type": "roundrobin"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            local id = 1
+            local res = assert(etcd.get('/upstreams/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            local prev_update_time = res.body.node.value.update_time
+            ngx.sleep(1)
+
+            local code, message = t('/apisix/admin/upstreams/1/retries',
+                 ngx.HTTP_PATCH,
+                 json.encode(1)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(message)
+            local res = assert(etcd.get('/upstreams/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= update_time, "update_time should be changed")
+        }
+    }

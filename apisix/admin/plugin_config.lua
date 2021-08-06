@@ -148,13 +148,13 @@ function _M.patch(id, conf, sub_path)
         if code then
             return code, err
         end
+        utils.inject_timestamp(node_value, nil, true)
     else
         node_value = core.table.merge(node_value, conf);
+        utils.inject_timestamp(node_value, nil, conf)
     end
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
-
-    utils.inject_timestamp(node_value, nil, conf)
 
     local ok, err = check_conf(id, node_value, true)
     if not ok then
