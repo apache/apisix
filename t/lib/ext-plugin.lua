@@ -75,6 +75,13 @@ function _M.go(case)
                 assert(pc:ConfLength() == 0)
             end
 
+            if case.expect_key_pattern then
+                local m = ngx.re.find(pc:Key(), case.expect_key_pattern, "jo")
+                assert(m ~= nil, pc:Key())
+            else
+                assert(pc:Key() ~= "")
+            end
+
             prepare_conf_resp.Start(builder)
             prepare_conf_resp.AddConfToken(builder, 233)
             local req = prepare_conf_req.End(builder)
@@ -185,7 +192,9 @@ function _M.go(case)
             local vec = builder:EndVector(len)
 
             http_req_call_stop.Start(builder)
-            http_req_call_stop.AddStatus(builder, 405)
+            if case.check_default_status ~= true then
+                http_req_call_stop.AddStatus(builder, 405)
+            end
             http_req_call_stop.AddBody(builder, b)
             http_req_call_stop.AddHeaders(builder, vec)
             local action = http_req_call_stop.End(builder)

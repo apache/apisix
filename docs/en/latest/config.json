@@ -1,5 +1,5 @@
 {
-  "version": 2.7,
+  "version": 2.8,
   "sidebar": [
     {
       "type": "category",
@@ -64,7 +64,8 @@
             "plugins/authz-keycloak",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
-            "plugins/hmac-auth"
+            "plugins/hmac-auth",
+            "plugins/authz-casbin"
           ]
         },
         {
@@ -230,6 +231,13 @@
         {
           "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/testing-framework"
+          ]
         },
         {
           "type": "doc",

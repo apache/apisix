@@ -100,7 +100,8 @@ function _M.map_message(field, default_values)
     local sub, err
     local request_table = get_request_table()
     for name, _, field_type in pb.fields(field) do
-        if field_type:sub(1, 1) == "." then
+        local _, _, ty = pb.type(field_type)
+        if ty ~= "enum" and field_type:sub(1, 1) == "." then
             sub, err = _M.map_message(field_type, default_values)
             if err then
                 return nil, err

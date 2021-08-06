@@ -328,7 +328,7 @@ hello world
 
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
-            ext.go({with_conf = true})
+            ext.go({with_conf = true, expect_key_pattern = [[^route#1#ext-plugin-pre-req#]]})
         }
     }
 --- error_log eval
@@ -474,4 +474,98 @@ MY_ENV_VAR foo
 --- config
     location /t {
         return 200;
+    }
+
+
+
+=== TEST 16: prepare conf with global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(message)
+                return
+            end
+
+            local code, message, res = t.test('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "ext-plugin-post-req": {
+                            "conf": [
+                                {"name":"foo", "value":"bar"},
+                                {"name":"cat", "value":"dog"}
+                            ]
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: hit
+--- request
+GET /hello
+--- response_body
+hello world
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({with_conf = true, expect_key_pattern = [[^global_rule#1#ext-plugin-post-req#]]})
+        }
+    }
+--- error_log eval
+qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: clean global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+        }
     }

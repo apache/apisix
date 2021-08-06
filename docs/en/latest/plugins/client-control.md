@@ -34,7 +34,7 @@ title: client-control
 The `client-control` plugin dynamically controls the behavior of Nginx to
 handle the client request.
 
-This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#6-build-openresty-for-apisix).
+This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 ## Attributes
 
