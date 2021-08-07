@@ -49,7 +49,8 @@ local schema = {
             type = "string",
             enum = {"local", "redis", "redis-cluster"},
             default = "local",
-        }
+        },
+        enable_degradation = {type = "boolean", default = false}
     },
     required = {"count", "time_window"},
     dependencies = {
@@ -160,7 +161,11 @@ function _M.access(conf, ctx)
     local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
-        return 500
+        if conf.enable_degradation then
+            return
+        else
+            return 500
+        end
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
@@ -174,7 +179,11 @@ function _M.access(conf, ctx)
         end
 
         core.log.error("failed to limit req: ", err)
-        return 500, {error_msg = "failed to limit count: " .. err}
+        if conf.enable_degradation then
+            return
+        else
+            return 500, {error_msg = "failed to limit count: " .. err}
+        end
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count,
