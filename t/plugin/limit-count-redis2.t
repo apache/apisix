@@ -235,3 +235,13 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: enable degradation switch for TEST 6
+--- request
+GET /hello
+--- error_code eval
+200
+--- no_error_log
+[error]

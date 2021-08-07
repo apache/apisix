@@ -380,7 +380,7 @@ code: 503
 
 
 
-=== TEST 10: set route, four redis nodes, no one is valid
+=== TEST 10: set route, four redis nodes, no one is valid, with enable degradation switch
 --- config
     location /t {
         content_by_lua_block {
@@ -424,5 +424,15 @@ code: 503
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: enable degradation switch for TEST 10
+--- request
+GET /hello
+--- error_code eval
+200
 --- no_error_log
 [error]
