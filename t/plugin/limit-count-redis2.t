@@ -191,7 +191,7 @@ passed
 
 
 
-=== TEST 5: set route, with redis host and wrong port and right database and enable degradation switch
+=== TEST 6: set route, with redis host but wrong port, with enable degradation switch
 --- config
     location /t {
         content_by_lua_block {
