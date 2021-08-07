@@ -243,5 +243,5 @@ passed
 GET /hello
 --- error_code eval
 200
---- no_error_log
-[error]
+--- response_body
+passed
