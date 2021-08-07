@@ -188,3 +188,50 @@ passed
 [200, 200, 503, 503]
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: set route, with redis host and wrong port and right database and enable degradation switch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "enable_degradation": true,
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 16379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
