@@ -303,10 +303,6 @@ Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashb
 #
 -->
 
-:::note 注意
-APISIX Dashboard 目前仍然是一个实验性功能。
-:::
-
 ### 常见问题排查
 
 - 确保所需的所有端口（**默认的 9080/9443/2379**）未被其他系统/进程使用。

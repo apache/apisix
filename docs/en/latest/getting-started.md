@@ -305,10 +305,6 @@ Apache APISIX provides a [Dashboard](https://github.com/apache/apisix-dashboard)
 #
 -->
 
-:::note Note
-APISIX Dashboard is an experimental feature for now.
-:::
-
 ### Troubleshooting
 
 - Make sure that all required ports (**default 9080/9443/2379**) are not used by other systems or processes.
