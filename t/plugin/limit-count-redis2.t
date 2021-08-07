@@ -207,7 +207,7 @@ passed
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis",
-                            "enable_degradation": true,
+                            "degradation": true,
                             "redis_host": "127.0.0.1",
                             "redis_port": 16379,
                             "redis_database": 1,

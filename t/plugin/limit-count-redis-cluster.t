@@ -395,7 +395,7 @@ code: 503
                             "time_window": 60,
                             "key": "http_x_real_ip",
                             "policy": "redis-cluster",
-                            "enable_degradation": true,
+                            "degradation": true,
                             "redis_cluster_nodes": [
                                 "127.0.0.1:8001",
                                 "127.0.0.1:8002",

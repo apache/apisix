@@ -39,7 +39,7 @@ local schema = {
         nodelay = {
             type = "boolean", default = false
         },
-        enable_degradation = {type = "boolean", default = false}
+        degradation = {type = "boolean", default = false}
     },
     required = {"rate", "burst", "key"}
 }
@@ -74,7 +74,7 @@ function _M.access(conf, ctx)
                                               create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
-        if conf.enable_degradation then
+        if conf.degradation then
             return
         else
             return 500
@@ -101,7 +101,7 @@ function _M.access(conf, ctx)
         end
 
         core.log.error("failed to limit req: ", err)
-        if conf.enable_degradation then
+        if conf.degradation then
             return
         else
             return 500
