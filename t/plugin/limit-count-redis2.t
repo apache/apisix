@@ -244,4 +244,4 @@ GET /hello
 --- error_code eval
 200
 --- response_body
-passed
+hello world
