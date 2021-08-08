@@ -59,9 +59,8 @@ function _M.increase(conf, ctx)
         core.log.error("failed to limit req: ", err)
         if conf.degradation then
             return
-        else
-            return 500
         end
+        return 500
     end
 
     if lim:is_committed() then

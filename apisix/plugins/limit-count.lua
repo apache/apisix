@@ -163,9 +163,8 @@ function _M.access(conf, ctx)
         core.log.error("failed to fetch limit.count object: ", err)
         if conf.degradation then
             return
-        else
-            return 500
         end
+        return 500
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
@@ -181,9 +180,8 @@ function _M.access(conf, ctx)
         core.log.error("failed to limit req: ", err)
         if conf.degradation then
             return
-        else
-            return 500, {error_msg = "failed to limit count: " .. err}
         end
+        return 500, {error_msg = "failed to limit count: " .. err}
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count,

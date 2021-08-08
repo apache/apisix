@@ -76,9 +76,8 @@ function _M.access(conf, ctx)
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
         if conf.degradation then
             return
-        else
-            return 500
         end
+        return 500
     end
 
     local key
@@ -103,9 +102,8 @@ function _M.access(conf, ctx)
         core.log.error("failed to limit req: ", err)
         if conf.degradation then
             return
-        else
-            return 500
         end
+        return 500
     end
 
     if delay >= 0.001 and not conf.nodelay then
