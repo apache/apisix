@@ -1243,7 +1243,7 @@ done
                             "default_conn_delay": 0.3,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "allow_degradation": "true"
+                            "allow_degradation": true
                         }
                     },
                     "upstream": {
