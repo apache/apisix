@@ -43,9 +43,8 @@ function _M.increase(conf, ctx)
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
         if conf.degradation then
             return
-        else
-            return 500
         end
+        return 500
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
