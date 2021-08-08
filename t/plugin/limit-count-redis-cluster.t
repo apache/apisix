@@ -395,7 +395,7 @@ code: 503
                             "time_window": 60,
                             "key": "http_x_real_ip",
                             "policy": "redis-cluster",
-                            "degradation": true,
+                            "allow_degradation": true,
                             "redis_cluster_nodes": [
                                 "127.0.0.1:8001",
                                 "127.0.0.1:8002",
@@ -432,7 +432,5 @@ passed
 === TEST 11: enable degradation switch for TEST 10
 --- request
 GET /hello
---- error_code eval
-200
 --- response_body
 hello world

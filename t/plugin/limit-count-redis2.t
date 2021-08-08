@@ -207,7 +207,7 @@ passed
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis",
-                            "degradation": true,
+                            "allow_degradation": true,
                             "redis_host": "127.0.0.1",
                             "redis_port": 16379,
                             "redis_database": 1,
@@ -241,7 +241,5 @@ passed
 === TEST 7: enable degradation switch for TEST 6
 --- request
 GET /hello
---- error_code eval
-200
 --- response_body
 hello world
