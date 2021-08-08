@@ -53,7 +53,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | public_key                         | string  | 可选   |                       |         | 验证令牌的公钥                                 |
 | token_signing_alg_values_expected  | string  | 可选   |                       |         | 用于对令牌进行签名的算法                       |
 | set_access_token_header              | boolean | 可选    | true               |         | 在请求头设置访问令牌                        |
-| access_token_in_authorization_header | boolean | 可选    | false              |         | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization` ，否则将使用请求头参数 `X-Access-Token`。|
+| access_token_in_authorization_header | boolean | 可选    | false              |         | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。|
 | set_id_token_header                  | boolean | 可选    | true               |         | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`    |
 | set_userinfo_header                  | boolean | 可选    | true               |         | 是否将用户信息对象设置到请求头参数 `X-Userinfo`    |
 
