@@ -1650,7 +1650,7 @@ passed
 
 
 
-=== TEST 50: verify: valid blacklist `service_id`
+=== TEST 50: verify: valid blacklist `route_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -1731,7 +1731,7 @@ passed
 
 
 
-=== TEST 50: delete: `service_id` is 1
+=== TEST 52: delete: `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -1751,7 +1751,7 @@ passed
 
 
 
-=== TEST 51: delete: `service_id` is 2
+=== TEST 53: delete: `service_id` is 2
 --- config
     location /t {
         content_by_lua_block {
