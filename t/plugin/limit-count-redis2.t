@@ -243,3 +243,58 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 8: set route, with don't show limit quota header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "show_limit_quota_header": false,
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: don't show limit quota header for TEST 8
+--- request
+GET /hello
+--- raw_response_headers_unlike eval
+qr/X-RateLimit-Limit/
