@@ -226,7 +226,8 @@ close: 1 nil}
                 me = "David",
             }
             for _, case in ipairs(cases) do
-                ngx.say("res:", resolve_var(case, ctx))
+                local res = resolve_var(case, ctx)
+                ngx.say("res:", res)
             end
         }
     }
