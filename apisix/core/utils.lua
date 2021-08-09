@@ -257,6 +257,7 @@ _M.sleep = sleep
 local resolve_var
 do
     local _ctx
+    local n_resolved
     local pat = [[(?<!\\)\$\{?(\w+)\}?]]
 
     local function resolve(m)
@@ -264,17 +265,19 @@ do
         if v == nil then
             return ""
         end
+        n_resolved = n_resolved + 1
         return tostring(v)
     end
 
     function resolve_var(tpl, ctx)
+        n_resolved = 0
         if not tpl then
-            return tpl
+            return tpl, nil, n_resolved
         end
 
         local from = core_str.find(tpl, "$")
         if not from then
-            return tpl
+            return tpl, nil, n_resolved
         end
 
         -- avoid creating temporary function
@@ -285,7 +288,7 @@ do
             return nil, err
         end
 
-        return res
+        return res, nil, n_resolved
     end
 end
 -- Resolve ngx.var in the given string
