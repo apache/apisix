@@ -68,6 +68,7 @@ dependencies = {
     "penlight = 1.9.2-1",
     "ext-plugin-proto = 0.2.1",
     "casbin = 1.26.0",
+    "api7-snowflake = 2.0-1",
 }
 
 build = {
