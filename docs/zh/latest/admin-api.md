@@ -328,7 +328,7 @@ HTTP/1.1 200 OK
 | create_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 | update_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 
-serivce 对象 json 配置内容：
+service 对象 json 配置内容：
 
 ```shell
 {

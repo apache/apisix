@@ -50,7 +50,8 @@ local schema = {
             enum = {"local", "redis", "redis-cluster"},
             default = "local",
         },
-        allow_degradation = {type = "boolean", default = false}
+        allow_degradation = {type = "boolean", default = false},
+        show_limit_quota_header = {type = "boolean", default = true}
     },
     required = {"count", "time_window"},
     dependencies = {
@@ -184,8 +185,10 @@ function _M.access(conf, ctx)
         return 500, {error_msg = "failed to limit count: " .. err}
     end
 
-    core.response.set_header("X-RateLimit-Limit", conf.count,
-                             "X-RateLimit-Remaining", remaining)
+    if conf.show_limit_quota_header then
+        core.response.set_header("X-RateLimit-Limit", conf.count,
+            "X-RateLimit-Remaining", remaining)
+    end
 end
 
 

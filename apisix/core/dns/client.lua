@@ -125,7 +125,7 @@ function _M.resolve(self, domain, selector)
         return table.deepcopy(answer)
     end
 
-    return nil, "unsupport DNS answer"
+    return nil, "unsupported DNS answer"
 end
 
 
