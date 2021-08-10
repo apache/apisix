@@ -48,7 +48,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: log rotate, enable log file compression
+=== TEST 1: log rotate, with enable log file compression
 --- config
     location /t {
         content_by_lua_block {
@@ -81,7 +81,7 @@ __DATA__
 
 
 
-=== TEST 2: in current log, enable log file compression
+=== TEST 2: in current log, with enable log file compression
 --- config
     location /t {
         content_by_lua_block {
