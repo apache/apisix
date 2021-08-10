@@ -63,9 +63,11 @@ __DATA__
                 end
 
                 if string.match(file_name, "__error.log.tar.gz$") then
-                    local cmd = string.format("cd %s && tar -zxf %s", ngx.config.prefix() .. "/logs/", file_name)
+                    local file_path = ngx.config.prefix() .. "/logs/"
+                    local cmd = string.format("cd %s && tar -zxf %s", file_path, file_name)
                     os.execute(cmd)
-                    local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. string.sub(file_name, 0, string.len(file_name) - 7), "r"))
+                    local open_file_name = string.sub(file_name, 0, string.len(file_name) - 7)
+                    local f = assert(io.open(file_path .. open_file_name, "r"))
                     local content = f:read("*all")
                     f:close()
                     local index = string.find(content, "start xxxxxx")
@@ -104,5 +106,6 @@ done
 [error]
 --- error_log
 start xxxxxx
+
 
 
