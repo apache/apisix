@@ -63,17 +63,7 @@ __DATA__
                 end
 
                 if string.match(file_name, "__error.log.tar.gz$") then
-                    local file_path = ngx.config.prefix() .. "/logs/"
-                    local cmd = string.format("cd %s && tar -zxf %s", file_path, file_name)
-                    os.execute(cmd)
-                    local open_file_name = string.sub(file_name, 0, string.len(file_name) - 7)
-                    local f = assert(io.open(file_path .. open_file_name, "r"))
-                    local content = f:read("*all")
-                    f:close()
-                    local index = string.find(content, "start xxxxxx")
-                    if index then
-                        has_split_error_file = true
-                    end
+                    has_split_error_file = true
                 end
             end
 
@@ -106,5 +96,3 @@ done
 [error]
 --- error_log
 start xxxxxx
-
-
