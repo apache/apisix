@@ -128,7 +128,8 @@ local function rotate_file(date_str, file_type)
             log_dir, compression_filename, new_filename)
         core.log.info(cmd)
         ok = os.execute(cmd)
-        core.log.info("compress file from ", new_filename, " to ", compression_filename, " res:", ok)
+        core.log.info("compress file from ", new_filename, " to ", compression_filename,
+            " res:", ok)
 
         if ok then
             ok = os.remove(file_path)
