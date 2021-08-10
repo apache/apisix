@@ -185,7 +185,7 @@ function _M.access(conf, ctx)
         return 500, {error_msg = "failed to limit count: " .. err}
     end
 
-    if conf.show_limit_quota_header == nil or conf.show_limit_quota_header then
+    if conf.show_limit_quota_header then
         core.response.set_header("X-RateLimit-Limit", conf.count,
             "X-RateLimit-Remaining", remaining)
     end
