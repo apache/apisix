@@ -400,7 +400,7 @@ x-real-ip: 127.0.0.1
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -418,7 +418,7 @@ x-real-ip: 127.0.0.1
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"encode_uri_params":{"title":"Whether to escape the uri parameter","default":true,"type":"boolean"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"encode_uri_params":{"title":"Whether to escape the uri parameter","default":true,"type":"boolean"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -436,7 +436,7 @@ x-real-ip: 127.0.0.1
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code

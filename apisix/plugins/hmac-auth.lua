@@ -45,7 +45,6 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {},
-    additionalProperties = false,
 }
 
 local consumer_schema = {
@@ -83,7 +82,6 @@ local consumer_schema = {
         }
     },
     required = {"access_key", "secret_key"},
-    additionalProperties = false,
 }
 
 local _M = {

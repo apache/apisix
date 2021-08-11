@@ -38,7 +38,6 @@ local metadata_schema = {
         skey = {type = "string"},
     },
     required = {"ikey", "skey"},
-    additionalProperties = false,
 }
 
 local plugin_name = "example-plugin"

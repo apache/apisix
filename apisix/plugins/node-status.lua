@@ -25,7 +25,6 @@ local ipairs = ipairs
 
 local schema = {
     type = "object",
-    additionalProperties = false,
 }
 
 
