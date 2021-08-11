@@ -76,17 +76,7 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key
-    if conf.key == "consumer_name" then
-        if not ctx.consumer_name then
-            core.log.error("consumer not found.")
-            return 500, { message = "Consumer not found."}
-        end
-        key = ctx.consumer_name .. ctx.conf_type .. ctx.conf_version
-
-    else
-        key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
-    end
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
