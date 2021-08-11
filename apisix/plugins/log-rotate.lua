@@ -127,7 +127,7 @@ local function rotate_file(date_str, file_type)
         local compression_filename = new_filename .. COMPRESSION_FILE_SUFFIX
         local cmd = string.format("cd %s && tar -zcf %s %s",
             log_dir, compression_filename, new_filename)
-        core.log.info(cmd)
+        core.log.info("log file compress command: " .. cmd)
         local ok, stdout, stderr, reason, status = shell.run(cmd)
         core.log.info("compress log file from ", new_filename, " to ", compression_filename,
             " res:", ok)
