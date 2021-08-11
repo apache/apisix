@@ -20,6 +20,7 @@ local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local signal = require("resty.signal")
+local shell = require("resty.shell")
 local ngx = ngx
 local lfs = require("lfs")
 local io = io
@@ -127,7 +128,7 @@ local function rotate_file(date_str, file_type)
         local cmd = string.format("cd %s && tar -zcf %s %s",
             log_dir, compression_filename, new_filename)
         core.log.info(cmd)
-        ok = os.execute(cmd)
+        ok = shell.run(cmd)
         core.log.info("compress file from ", new_filename, " to ", compression_filename,
             " res:", ok)
 
