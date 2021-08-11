@@ -52,10 +52,13 @@ qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
                 {addr = "127.0.0.1:90", host = "127.0.0.1", port = 90},
                 {addr = "www.test.com", host = "www.test.com"},
                 {addr = "www.test.com:90", host = "www.test.com", port = 90},
+                {addr = "localhost", host = "localhost"},
+                {addr = "localhost:90", host = "localhost", port = 90},
                 {addr = "[127.0.0.1:90", host = "[127.0.0.1:90"},
                 {addr = "[::1]", host = "[::1]"},
                 {addr = "[::1]:1234", host = "[::1]", port = 1234},
                 {addr = "[::1234:1234]:12345", host = "[::1234:1234]", port = 12345},
+                {addr = "::1", host = "::1"},
             }
             for _, case in ipairs(cases) do
                 local host, port = parse_addr(case.addr)
