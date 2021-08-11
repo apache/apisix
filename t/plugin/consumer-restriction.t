@@ -1537,16 +1537,14 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time = ngx.time
+        local ngx_time = ngx.time()
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
-
         local secret_key = "my-secret-key"
-        local timestamp = ngx_time()
-        local gmt = ngx_http_time(timestamp)
+        local gmt = ngx_http_time(ngx_time)
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
