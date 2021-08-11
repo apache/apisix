@@ -38,7 +38,7 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 
 |Name       |   Type      | Requirement  | Default       | Valid                           | Description                                                                                                                         |
 |-----------|-------------|--------------|---------------|---------------------------------|--------------------------------------------------------------------------------------------------------------------                 |
-| type      | string      | optional     | consumer_name | ["consumer_name", "service_id"] | According to different objects, corresponding restrictions, support `consumer_name`, `service_id`.                 |
+| type      | string      | optional     | consumer_name | ["consumer_name", "service_id", "route_id"] | According to different objects, corresponding restrictions, support `consumer_name`, `service_id`, `route_id`.                 |
 | whitelist | array[string] | required   |               |                                 | Grant full access to all users specified in the provided list , **has the priority over `allowed_by_methods`** |
 | blacklist | array[string] | required   |               |                                 | Reject connection to all users specified in the provided list , **has the priority over `whitelist`** |
 | rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
