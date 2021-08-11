@@ -128,13 +128,16 @@ local function rotate_file(date_str, file_type)
         local cmd = string.format("cd %s && tar -zcf %s %s",
             log_dir, compression_filename, new_filename)
         core.log.info(cmd)
-        ok = shell.run(cmd)
-        core.log.info("compress file from ", new_filename, " to ", compression_filename,
+        local ok, stdout, stderr, reason, status = shell.run(cmd)
+        core.log.info("compress log file from ", new_filename, " to ", compression_filename,
             " res:", ok)
 
         if ok then
             ok = os.remove(file_path)
-            core.log.warn("remove uncompressed error file: ", file_path, " ret: ", ok)
+            core.log.warn("remove uncompressed log file: ", file_path, " ret: ", ok)
+        else
+            core.log.error("failed to compress log file: ", new_filename, " ret: ", ok,
+                " stdout: ", stdout, " stderr: ", stderr, " reason: ", reason, " status: ", status)
         end
     end
 
