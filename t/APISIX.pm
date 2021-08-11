@@ -89,7 +89,6 @@ my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
 my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
 my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
-my $test_50x_html = read_file("t/error_page/50x.html");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -258,34 +257,43 @@ _EOC_
         }
         chomp $stream_tls_request;
 
+        my $repeat = "1";
+        if (defined $block->stream_session_reuse) {
+            $repeat = "2";
+        }
+
         my $config = <<_EOC_;
             location /stream_tls_request {
                 content_by_lua_block {
-                    local sock = ngx.socket.tcp()
-                    local ok, err = sock:connect("127.0.0.1", 2005)
-                    if not ok then
-                        ngx.say("failed to connect: ", err)
-                        return
-                    end
+                    local sess
+                    for _ = 1, $repeat do
+                        local sock = ngx.socket.tcp()
+                        local ok, err = sock:connect("127.0.0.1", 2005)
+                        if not ok then
+                            ngx.say("failed to connect: ", err)
+                            return
+                        end
 
-                    local sess, err = sock:sslhandshake(nil, $sni, false)
-                    if not sess then
-                        ngx.say("failed to do SSL handshake: ", err)
-                        return
-                    end
+                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        if not sess then
+                            ngx.say("failed to do SSL handshake: ", err)
+                            return
+                        end
 
-                    local bytes, err = sock:send("$stream_tls_request")
-                    if not bytes then
-                        ngx.say("send stream request error: ", err)
-                        return
-                    end
-                    local data, err = sock:receive("*a")
-                    if not data then
+                        local bytes, err = sock:send("$stream_tls_request")
+                        if not bytes then
+                            ngx.say("send stream request error: ", err)
+                            return
+                        end
+                        local data, err = sock:receive("*a")
+                        if not data then
+                            sock:close()
+                            ngx.say("receive stream response error: ", err)
+                            return
+                        end
+                        ngx.print(data)
                         sock:close()
-                        ngx.say("receive stream response error: ", err)
-                        return
                     end
-                    ngx.print(data)
                 }
             }
 _EOC_
@@ -532,7 +540,9 @@ _EOC_
 
         location \@50x.html {
             set \$from_error_page 'true';
-            try_files /50x.html \$uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -580,7 +590,7 @@ _EOC_
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
     my $ipv6_listen_conf = '';
     if (defined $block->listen_ipv6) {
-        $ipv6_listen_conf = "listen \[::1\]:12345;"
+        $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
     my $config = $block->config // '';
@@ -618,7 +628,9 @@ _EOC_
 
         location \@50x.html {
             set \$from_error_page 'true';
-            try_files /50x.html \$uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -765,8 +777,6 @@ $ssl_ecc_key
 $test2_crt
 >>> ../conf/cert/test2.key
 $test2_key
->>> 50x.html
-$test_50x_html
 $user_apisix_yaml
 _EOC_
 

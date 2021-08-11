@@ -178,3 +178,53 @@ qr/request latency is/
 --- grep_error_log_out
 request latency is
 request latency is
+
+
+
+=== TEST 5: set only_use_default_delay option to true in specific route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello1",
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "only_use_default_delay": true,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: hit route
+--- log_level: debug
+--- request
+GET /hello1
+--- grep_error_log eval
+qr/request latency is nil/
+--- grep_error_log_out
+request latency is nil

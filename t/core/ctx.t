@@ -46,7 +46,7 @@ server_port: 1984
 
 
 
-=== TEST 2: http header + arg
+=== TEST 2: http header
 --- config
     location /t {
         content_by_lua_block {
@@ -55,14 +55,12 @@ server_port: 1984
             core.ctx.set_vars_meta(ctx)
 
             ngx.say("http_host: ", ctx.var["http_host"])
-            ngx.say("arg_a: ", ctx.var["arg_a"])
         }
     }
 --- request
-GET /t?a=aaa
+GET /t
 --- response_body
 http_host: localhost
-arg_a: aaa
 --- no_error_log
 [error]
 

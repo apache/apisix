@@ -25,12 +25,29 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 )
 
 var (
-	token = "edd1c9f034335f136f87ad84b625c8f1"
-	Host  = "http://127.0.0.1:9080"
+	token        = "edd1c9f034335f136f87ad84b625c8f1"
+	Host         = "http://127.0.0.1:9080"
+	setRouteBody = `{
+		"uri": "/get",
+		"plugins": {
+			"prometheus": {}
+		},
+		"upstream": {
+			"nodes": {
+				"httpbin.default.svc.cluster.local:8000": 1
+			},
+			"type": "roundrobin"
+		}
+	}`
+	ignoreErrorFuncMap = map[string]func(e *httpexpect.Expect) *httpexpect.Response{
+		http.MethodGet: GetRouteIgnoreError,
+		http.MethodPut: SetRouteIgnoreError,
+	}
 )
 
 type httpTestCase struct {
@@ -39,6 +56,7 @@ type httpTestCase struct {
 	Path              string
 	Body              string
 	Headers           map[string]string
+	IgnoreError       bool
 	ExpectStatus      int
 	ExpectBody        string
 	ExpectStatusRange httpexpect.StatusRange
@@ -69,6 +87,10 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	}
 
 	resp := req.Expect()
+	if tc.IgnoreError {
+		return resp
+	}
+
 	if tc.ExpectStatus != 0 {
 		resp.Status(tc.ExpectStatus)
 	}
@@ -84,30 +106,30 @@ func caseCheck(tc httpTestCase) *httpexpect.Response {
 	return resp
 }
 
-func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) {
-	caseCheck(httpTestCase{
-		E:       e,
-		Method:  http.MethodPut,
-		Path:    "/apisix/admin/routes/1",
-		Headers: map[string]string{"X-API-KEY": token},
-		Body: `{
-			 "uri": "/get",
-			 "plugins": {
-				 "prometheus": {}
-			 },
-			 "upstream": {
-				 "nodes": {
-					 "httpbin.default.svc.cluster.local:8000": 1
-				 },
-				 "type": "roundrobin"
-			 }
-		 }`,
+func SetRoute(e *httpexpect.Expect, expectStatusRange httpexpect.StatusRange) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:                 e,
+		Method:            http.MethodPut,
+		Path:              "/apisix/admin/routes/1",
+		Headers:           map[string]string{"X-API-KEY": token},
+		Body:              setRouteBody,
 		ExpectStatusRange: expectStatusRange,
 	})
 }
 
-func GetRoute(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func SetRouteIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodPut,
+		Path:        "/apisix/admin/routes/1",
+		Headers:     map[string]string{"X-API-KEY": token},
+		Body:        setRouteBody,
+		IgnoreError: true,
+	})
+}
+
+func GetRoute(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/get",
@@ -115,8 +137,17 @@ func GetRoute(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func GetRouteList(e *httpexpect.Expect, expectStatus int) {
-	caseCheck(httpTestCase{
+func GetRouteIgnoreError(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:           e,
+		Method:      http.MethodGet,
+		Path:        "/get",
+		IgnoreError: true,
+	})
+}
+
+func GetRouteList(e *httpexpect.Expect, expectStatus int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:            e,
 		Method:       http.MethodGet,
 		Path:         "/apisix/admin/routes",
@@ -126,8 +157,8 @@ func GetRouteList(e *httpexpect.Expect, expectStatus int) {
 	})
 }
 
-func DeleteRoute(e *httpexpect.Expect) {
-	caseCheck(httpTestCase{
+func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:       e,
 		Method:  http.MethodDelete,
 		Path:    "/apisix/admin/routes/1",
@@ -135,8 +166,8 @@ func DeleteRoute(e *httpexpect.Expect) {
 	})
 }
 
-func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) {
-	caseCheck(httpTestCase{
+func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) *httpexpect.Response {
+	return caseCheck(httpTestCase{
 		E:          e,
 		Method:     http.MethodGet,
 		Path:       "/apisix/prometheus/metrics",
@@ -182,6 +213,35 @@ func GetEgressBandwidthPerSecond(e *httpexpect.Expect) (float64, float64) {
 	return bandWidthEnd - bandWidthStart, duration.Seconds()
 }
 
+func GetSilentHttpexpectClient() *httpexpect.Expect {
+	return httpexpect.WithConfig(httpexpect.Config{
+		BaseURL:  Host,
+		Reporter: httpexpect.NewAssertReporter(ginkgo.GinkgoT()),
+		Printers: []httpexpect.Printer{
+			newSilentPrinter(ginkgo.GinkgoT()),
+		},
+	})
+}
+
+func WaitUntilMethodSucceed(e *httpexpect.Expect, method string, interval int) {
+	f, ok := ignoreErrorFuncMap[method]
+	gomega.Expect(ok).To(gomega.BeTrue())
+	resp := f(e)
+	if resp.Raw().StatusCode != http.StatusOK {
+		for i := range [60]int{} {
+			timeWait := fmt.Sprintf("wait for %ds\n", i*interval)
+			fmt.Fprint(ginkgo.GinkgoWriter, timeWait)
+			resp = f(e)
+			if resp.Raw().StatusCode != http.StatusOK {
+				time.Sleep(5 * time.Second)
+			} else {
+				break
+			}
+		}
+	}
+	gomega.Ω(resp.Raw().StatusCode).Should(gomega.BeNumerically("==", http.StatusOK))
+}
+
 func RoughCompare(a float64, b float64) bool {
 	ratio := a / b
 	if ratio < 1.3 && ratio > 0.7 {
@@ -194,7 +254,7 @@ type silentPrinter struct {
 	logger httpexpect.Logger
 }
 
-func NewSilentPrinter(logger httpexpect.Logger) silentPrinter {
+func newSilentPrinter(logger httpexpect.Logger) silentPrinter {
 	return silentPrinter{logger}
 }
 

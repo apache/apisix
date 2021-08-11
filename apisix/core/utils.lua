@@ -136,13 +136,31 @@ local function rfind_char(s, ch, idx)
 end
 
 
+local function _parse_ipv4_or_host(addr)
+    local pos = rfind_char(addr, ":", #addr - 1)
+    if not pos then
+        return addr, nil
+    end
+
+    local host = sub_str(addr, 1, pos - 1)
+    local port = sub_str(addr, pos + 1)
+    return host, tonumber(port)
+end
+
+
+local function _parse_ipv6_without_port(addr)
+    return addr
+end
+
+
 -- parse_addr parses 'addr' into the host and the port parts. If the 'addr'
--- doesn't have a port, nil is used to return. For malformed 'addr', the entire
--- 'addr' is returned as the host part. For IPv6 literal host, like [::1],
--- the square brackets will be kept.
+-- doesn't have a port, nil is used to return.
+-- For IPv6 literal host with brackets, like [::1], the square brackets will be kept.
+-- For malformed 'addr', the returned value can be anything. This method doesn't validate
+-- if the input is valid.
 function _M.parse_addr(addr)
     if str_byte(addr, 1) == str_byte("[") then
-        -- IPv6 format
+        -- IPv6 format, with brackets, maybe with port
         local right_bracket = str_byte("]")
         local len = #addr
         if str_byte(addr, len) == right_bracket then
@@ -162,15 +180,29 @@ function _M.parse_addr(addr)
         end
 
     else
-        -- IPv4 format
-        local pos = rfind_char(addr, ":", #addr - 1)
-        if not pos then
-            return addr, nil
+        -- When we reach here, the input can be:
+        -- 1. IPv4
+        -- 2. IPv4, with port
+        -- 3. IPv6, like "2001:db8::68" or "::ffff:192.0.2.1"
+        -- 4. Malformed input
+        -- 5. Host, like "test.com" or "localhost"
+        -- 6. Host with port
+        local colon = str_byte(":")
+        local colon_counter = 0
+        local dot = str_byte(".")
+        for i = 1, #addr do
+            local ch = str_byte(addr, i, i)
+            if ch == dot then
+                return _parse_ipv4_or_host(addr)
+            elseif ch == colon then
+                colon_counter = colon_counter + 1
+                if colon_counter == 2 then
+                    return _parse_ipv6_without_port(addr)
+                end
+            end
         end
 
-        local host = sub_str(addr, 1, pos - 1)
-        local port = sub_str(addr, pos + 1)
-        return host, tonumber(port)
+        return _parse_ipv4_or_host(addr)
     end
 end
 
@@ -257,6 +289,7 @@ _M.sleep = sleep
 local resolve_var
 do
     local _ctx
+    local n_resolved
     local pat = [[(?<!\\)\$\{?(\w+)\}?]]
 
     local function resolve(m)
@@ -264,17 +297,19 @@ do
         if v == nil then
             return ""
         end
+        n_resolved = n_resolved + 1
         return tostring(v)
     end
 
     function resolve_var(tpl, ctx)
+        n_resolved = 0
         if not tpl then
-            return tpl
+            return tpl, nil, n_resolved
         end
 
         local from = core_str.find(tpl, "$")
         if not from then
-            return tpl
+            return tpl, nil, n_resolved
         end
 
         -- avoid creating temporary function
@@ -285,7 +320,7 @@ do
             return nil, err
         end
 
-        return res
+        return res, nil, n_resolved
     end
 end
 -- Resolve ngx.var in the given string

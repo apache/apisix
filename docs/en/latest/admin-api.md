@@ -89,8 +89,8 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 | script           | False                                    | Script      | See [Script](architecture-design/script.md) for more                                                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | upstream         | False                                    | Upstream    | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                           |                                                      |
 | upstream_id      | False                                    | Upstream    | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                                      |                                                      |
-| service_id       | False                                    | Service     | Binded Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
-| plugin_config_id | False, can't be used with `script`       | Plugin      | Binded plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
+| service_id       | False                                    | Service     | Bound Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
+| plugin_config_id | False, can't be used with `script`       | Plugin      | Bound plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
 | labels           | False                                    | Match Rules | Key/value pairs to specify attributes                                                                                                                                                                                                                                                                                                                                                                                              | {"version":"v2","build":"16","env":"production"}     |
 | timeout          | False                                    | Auxiliary   | Set the upstream timeout for connecting, sending and receiving messages of the route. This option will overwrite the [timeout](#upstream) option which set in upstream configuration.                                                                                                                                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | False                                    | Auxiliary   | enable `websocket`(boolean), default `false`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                      |
@@ -557,7 +557,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details||
-|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details||
+|tls.client_key  |optional| Set the client private key when connecting to TLS upstream, see below for more details||
 |keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details||
 |keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details||
 |keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details||
@@ -568,7 +568,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 * `chash`: consistent hash
 * `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
 * `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
-* user-defined balancer which can be loaed via `require("apisix.balancer.your_balancer")`.
+* user-defined balancer which can be loaded via `require("apisix.balancer.your_balancer")`.
 
 `hash_on` can be set to different types:
 
@@ -581,11 +581,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 `keepalive_pool` allows the upstream to have its separate connection pool.
 Its children fields, like `requests`, can be used to configure the upstream keepalive options.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 **Config Example:**
 
@@ -768,7 +768,7 @@ For example:
 ```
 
 Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
-Therefore it is the backup of `127.0.0.1`.
+Therefore, it is the backup of `127.0.0.1`.
 
 ### Response Parameters
 

@@ -25,6 +25,7 @@ local schema = {
         conn = {type = "integer", exclusiveMinimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
+        only_use_default_delay = {type = "boolean", default = false},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for", "consumer_name"},
@@ -32,6 +33,7 @@ local schema = {
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        allow_degradation = {type = "boolean", default = false}
     },
     required = {"conn", "burst", "default_conn_delay", "key"}
 }

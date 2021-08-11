@@ -41,8 +41,12 @@ local script = [=[
 function _M.new(plugin_name, limit, window, conf)
     assert(limit > 0 and window > 0)
 
-    local self = {limit = limit, window = window, conf = conf,
-                  plugin_name = plugin_name}
+    local self = {
+        limit = limit,
+        window = window,
+        conf = conf,
+        plugin_name = plugin_name,
+    }
     return setmetatable(self, mt)
 end
 

@@ -18,6 +18,7 @@
 package e2e
 
 import (
+	_ "github.com/apache/apisix/t/chaos/delayetcd"
 	_ "github.com/apache/apisix/t/chaos/killetcd"
 )
 
