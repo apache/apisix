@@ -34,7 +34,7 @@ When the number of log files exceeds the remaining number, the old files are aut
 | -------- | ------- | ----------- | ------- | ----- | -------------------------------------------------------------------------------------------------------------------- |
 | interval | integer | required    | 60 * 60 |       | How often to rotate the log in seconds                                                                               |
 | max_kept | integer | required    | 24 * 7  |       | How many historical logs can be kept at most. When this number is exceeded, old files will be deleted automatically. |
-| enable_compression | boolean | optional    | false |       | Whether to enable log file compression.                                                                               |
+| enable_compression | boolean | optional    | false |       | Whether to enable log file compression. This feature requires `tar` installed.                                                                              |
 
 After this plug-in is enabled, the log file will be automatically rotated according to the configuration.
 For example, the following example is a sample based on `interval: 10` and `max_kept: 10`.

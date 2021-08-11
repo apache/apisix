@@ -74,8 +74,6 @@ __DATA__
             end
         }
     }
---- error_code eval
-[200]
 --- no_error_log
 [error]
 
