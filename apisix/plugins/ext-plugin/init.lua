@@ -42,7 +42,6 @@ local band = bit.band
 local lshift = bit.lshift
 local rshift = bit.rshift
 local ffi = require("ffi")
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 local socket_tcp = ngx.socket.tcp
 local worker_id = ngx.worker.id
@@ -430,11 +429,7 @@ local rpc_handlers = {
             local len = stop:BodyLength()
             if len > 0 then
                 -- TODO: support empty body
-                body = ffi_new("unsigned char[?]", len)
-                for i = 1, len do
-                    body[i - 1] = stop:Body(i)
-                end
-                body = ffi_str(body, len)
+                body = stop:BodyAsString()
             end
             local code = stop:Status()
             -- avoid using 0 as the default http status code
