@@ -99,7 +99,7 @@ plugin_attr:
     log-rotate:
         interval: 3600    # rotate interval (unit: second)
         max_kept: 168     # max number of log files will be kept
-        enable_compression: false    # enable log file compression or not, default false
+        enable_compression: false    # enable log file compression(gzip) or not, default false
 ```
 
 #### Disable plugin
