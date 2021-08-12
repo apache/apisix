@@ -271,6 +271,7 @@ graphql:
   #cmd: ["ls", "-l"]
 
 plugins:                          # plugin list (sorted by priority)
+  - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011

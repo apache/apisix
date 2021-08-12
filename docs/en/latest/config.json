@@ -39,6 +39,7 @@
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
+            "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req"
