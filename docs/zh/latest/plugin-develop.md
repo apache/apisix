@@ -173,7 +173,6 @@ local metadata_schema = {
         skey = {type = "string"},
     },
     required = {"ikey", "skey"},
-    additionalProperties = false,
 }
 
 local plugin_name = "example-plugin"
@@ -214,7 +213,6 @@ local _M = {
 ```lua
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         key = {type = "string"},
     },

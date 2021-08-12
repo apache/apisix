@@ -227,7 +227,6 @@ local metadata_schema = {
         skey = {type = "string"},
     },
     required = {"ikey", "skey"},
-    additionalProperties = false,
 }
 
 local plugin_name = "example-plugin"
@@ -268,7 +267,6 @@ To validate the configuration, the plugin uses a schema like this:
 ```lua
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         key = {type = "string"},
     },

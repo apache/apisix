@@ -36,7 +36,6 @@ local schema = {
         {required = {"model_path", "policy_path", "username"}},
         {required = {"model", "policy", "username"}}
     },
-    additionalProperties = false
 }
 
 local metadata_schema = {
@@ -46,7 +45,6 @@ local metadata_schema = {
         policy = {type = "string"},
     },
     required = {"model", "policy"},
-    additionalProperties = false
 }
 
 local _M = {
