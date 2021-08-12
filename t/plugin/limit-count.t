@@ -1371,3 +1371,63 @@ GET /t
 qr/property \"time_window\" validation failed: expected 0 to be strictly greater than 0/
 --- no_error_log
 [error]
+
+
+
+=== TEST 43: set route, with rejected_msg
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 600,
+                            "rejected_code": 503,
+                            "rejected_msg": "Requests are too frequent, please try again later.",
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: rejected_msg, request normal
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 45: rejected_msg, request frequent
+--- request
+GET /hello
+--- error_code eval
+503
+--- response_body
+{"error_msg":"Requests are too frequent, please try again later."}

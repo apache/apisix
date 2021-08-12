@@ -38,7 +38,7 @@ local schema = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
         rejected_msg = {
-            type = "string"
+            type = "string", minLength = 1
         },
         nodelay = {
             type = "boolean", default = false
@@ -100,7 +100,7 @@ function _M.access(conf, ctx)
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            if conf.rejected_msg and str_len(conf.rejected_msg) > 0 then
+            if conf.rejected_msg then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
             return conf.rejected_code

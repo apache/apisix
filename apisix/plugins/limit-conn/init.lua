@@ -54,7 +54,7 @@ function _M.increase(conf, ctx)
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            if conf.rejected_msg and str_len(conf.rejected_msg) > 0 then
+            if conf.rejected_msg then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
             return conf.rejected_code or 503
