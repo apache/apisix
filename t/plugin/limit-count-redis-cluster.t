@@ -434,3 +434,70 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 12: set route, with rejected_msg
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 600,
+                            "key": "http_x_real_ip",
+                            "rejected_msg": "Requests are too frequent, please try again later.",
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:8001",
+                                "127.0.0.1:8002",
+                                "127.0.0.1:8003",
+                                "127.0.0.1:8004"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: rejected_msg for TEST 12, request normal
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 14: rejected_msg for TEST 12, request frequent
+--- request
+GET /hello
+--- error_code eval
+503
+--- response_body
+{"error_msg":"Requests are too frequent, please try again later."}
