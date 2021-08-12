@@ -16,7 +16,6 @@
 --
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
-local str_len = string.len
 local plugin_name = "limit-req"
 local sleep = core.sleep
 

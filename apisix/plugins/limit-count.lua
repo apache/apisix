@@ -16,7 +16,6 @@
 --
 local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
-local str_len = string.len
 local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new

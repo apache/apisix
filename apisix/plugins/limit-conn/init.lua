@@ -16,7 +16,6 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
-local str_len = string.len
 local sleep = core.sleep
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
