@@ -265,13 +265,9 @@ request latency is nil
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
---- no_error_log
-[error]
 
 
 
@@ -309,10 +305,6 @@ GET /t
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
---- no_error_log
-[error]
