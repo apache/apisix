@@ -16,6 +16,7 @@
 --
 local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
+local str_len = string.len
 local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
@@ -178,7 +179,7 @@ function _M.access(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            if conf.rejected_msg and string.len(conf.rejected_msg) > 0 then
+            if conf.rejected_msg and str_len(conf.rejected_msg) > 0 then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
             return conf.rejected_code
