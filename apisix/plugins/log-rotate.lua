@@ -20,6 +20,7 @@ local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local signal = require("resty.signal")
+local shell = require("resty.shell")
 local ngx = ngx
 local lfs = require("lfs")
 local io = io
@@ -33,6 +34,9 @@ local local_conf
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
+local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
+local enable_compression = false
+
 local schema = {
     type = "object",
     properties = {},
@@ -106,7 +110,8 @@ local function rotate_file(date_str, file_type)
     core.log.info("rotate log_dir:", log_dir)
     core.log.info("rotate filename:", filename)
 
-    local file_path = log_dir .. date_str .. "__" .. filename
+    local new_filename = date_str .. "__" .. filename
+    local file_path = log_dir .. new_filename
     if file_exists(file_path) then
         core.log.info("file exist: ", file_path)
         return false
@@ -116,6 +121,25 @@ local function rotate_file(date_str, file_type)
     local ok, msg = os.rename(file_path_org, file_path)
     core.log.info("move file from ", file_path_org, " to ", file_path,
                   " res:", ok, " msg:", msg)
+
+    if ok and enable_compression then
+        local compression_filename = new_filename .. COMPRESSION_FILE_SUFFIX
+        local cmd = string.format("cd %s && tar -zcf %s %s",
+            log_dir, compression_filename, new_filename)
+        core.log.info("log file compress command: " .. cmd)
+        local ok, stdout, stderr, reason, status = shell.run(cmd)
+        core.log.info("compress log file from ", new_filename, " to ", compression_filename,
+            " res:", ok)
+
+        if ok then
+            ok = os.remove(file_path)
+            core.log.warn("remove uncompressed log file: ", file_path, " ret: ", ok)
+        else
+            core.log.error("failed to compress log file: ", new_filename, " ret: ", ok,
+                " stdout: ", stdout, " stderr: ", stderr, " reason: ", reason, " status: ", status)
+        end
+    end
+
     return true
 end
 
@@ -133,6 +157,11 @@ local function scan_log_folder()
     local log_dir, access_name = get_log_path_info("access.log")
     local _, error_name = get_log_path_info("error.log")
 
+    if enable_compression then
+        access_name = access_name .. COMPRESSION_FILE_SUFFIX
+        error_name = error_name .. COMPRESSION_FILE_SUFFIX
+    end
+
     for file in lfs.dir(log_dir) do
         local n = get_last_index(file, "__")
         if n ~= nil then
@@ -147,7 +176,7 @@ local function scan_log_folder()
 
     table.sort(t.access, tab_sort)
     table.sort(t.error, tab_sort)
-    return t
+    return t, log_dir
 end
 
 
@@ -158,6 +187,7 @@ local function rotate()
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
+        enable_compression = attr.enable_compression or enable_compression
     end
 
     core.log.info("rotate interval:", interval)
@@ -182,13 +212,11 @@ local function rotate()
                   process.get_master_pid(), "] for reopening log file")
     local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
     if not ok then
-        core.log.error("failed to send USER1 signal for reopening log file: ",
-                       err)
+        core.log.error("failed to send USER1 signal for reopening log file: ", err)
     end
 
     -- clean the oldest file
-    local log_list = scan_log_folder()
-    local log_dir, _ = get_log_path_info("access.log")
+    local log_list, log_dir = scan_log_folder()
     for i = max_kept + 1, #log_list.error do
         local path = log_dir .. log_list.error[i]
         local ok = os.remove(path)
