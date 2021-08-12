@@ -49,7 +49,6 @@ local schema = {
         {required = {"whitelist"}},
         {required = {"blacklist"}},
     },
-    additionalProperties = false,
 }
 
 

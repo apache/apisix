@@ -36,7 +36,6 @@ local schema = {
         },
     },
     required = {"whitelist"},
-    additionalProperties = false,
 }
 
 

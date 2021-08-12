@@ -26,7 +26,6 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         header = {
             type = "string",
@@ -41,7 +40,6 @@ local schema = {
 
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         key = {type = "string"},
     },

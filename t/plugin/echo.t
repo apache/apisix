@@ -270,35 +270,7 @@ GET /t
 
 
 
-=== TEST 8:  additional property
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.echo")
-            local ok, err = plugin.check_schema({
-                before_body = "body before",
-                body = "body to attach",
-                after_body = "body to attach",
-                invalid_att = "invalid",
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- request
-GET /t
---- response_body
-additional properties forbidden, found invalid_att
---- no_error_log
-[error]
-
-
-
-=== TEST 9: set body with chunked upstream
+=== TEST 8: set body with chunked upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -336,7 +308,7 @@ passed
 
 
 
-=== TEST 10: access
+=== TEST 9: access
 --- request
 GET /hello_chunked
 --- response_body chomp
@@ -346,7 +318,7 @@ hello upstream
 
 
 
-=== TEST 11: add before/after body with chunked upstream
+=== TEST 10: add before/after body with chunked upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -385,7 +357,7 @@ passed
 
 
 
-=== TEST 12: access
+=== TEST 11: access
 --- request
 GET /hello_chunked
 --- response_body chomp

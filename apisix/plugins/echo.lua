@@ -47,7 +47,6 @@ local schema = {
         {required = {"after_body"}}
     },
     minProperties = 1,
-    additionalProperties = false,
 }
 
 local plugin_name = "echo"
