@@ -37,12 +37,10 @@ local attr_schema = {
             default = default_uri
         }
     },
-    additionalProperties = false,
 }
 
 local schema = {
     type = "object",
-    additionalProperties = false,
 }
 
 local default_max_body_size = 1024 * 1024 -- 1MiB
@@ -56,7 +54,6 @@ local metadata_schema = {
             default = default_max_body_size,
         },
     },
-    additionalProperties = false,
 }
 
 local method_schema = core.table.clone(core.schema.method_schema)

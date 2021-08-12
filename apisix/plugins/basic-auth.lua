@@ -31,7 +31,6 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {},
-    additionalProperties = false,
 }
 
 local consumer_schema = {
@@ -42,7 +41,6 @@ local consumer_schema = {
         password = { type = "string" },
     },
     required = {"username", "password"},
-    additionalProperties = false,
 }
 
 local plugin_name = "basic-auth"

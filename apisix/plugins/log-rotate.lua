@@ -36,7 +36,6 @@ local MAX_KEPT = 24 * 7     -- max number of log files will be kept
 local schema = {
     type = "object",
     properties = {},
-    additionalProperties = false,
 }
 
 
