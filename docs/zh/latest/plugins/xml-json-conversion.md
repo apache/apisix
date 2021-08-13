@@ -30,7 +30,6 @@ title: xml-json-conversion
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-
 ## 名称
 
 xml-json-conversion 插件意在将request body中的xml数据转换成json输出,或者将json数据转换成xml数据输出
