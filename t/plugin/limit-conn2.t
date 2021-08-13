@@ -228,3 +228,83 @@ GET /hello1
 qr/request latency is nil/
 --- grep_error_log_out
 request latency is nil
+
+
+
+=== TEST 7: invalid route: wrong rejected_msg type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": true
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
+
+
+
+=== TEST 8: invalid route: wrong rejected_msg length
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": ""
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
