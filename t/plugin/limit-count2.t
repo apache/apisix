@@ -30,6 +30,20 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -67,8 +81,6 @@ __DATA__
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
@@ -108,8 +120,6 @@ GET /t
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
@@ -149,12 +159,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
