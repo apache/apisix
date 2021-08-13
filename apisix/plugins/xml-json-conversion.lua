@@ -20,6 +20,9 @@ local core    = require("apisix.core")
 local xml2lua = require("xml2lua")
 local handler = require("xmlhandler.tree")
 local cjson   = require('cjson.safe')
+local assert  = assert
+local io      = io
+local string  = string
 
 local metadata_schema = {
     type = "object",
@@ -108,6 +111,7 @@ local function get_json()
     if nil == request_body then
         return 401, {message = "Invalid request body"}
     end
+
     if request_header["Content-Type"] == "application/json" then
         if string.find(request_header["Accept"], "text/xml") == nil then
             return 401, {message = "Operation not supported"}
