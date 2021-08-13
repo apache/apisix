@@ -21,17 +21,26 @@ local req_http_version = ngx.req.http_version
 local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
+local type = type
 
 
 local schema = {
     type = "object",
     properties = {
         types = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-                minLength = 1,
+            anyOf = {
+                {
+                    type = "array",
+                    minItem = 1,
+                    items = {
+                        type = "string",
+                        minLength = 1,
+                    },
+                },
+                {
+                    type = "string",
+                    minLength = 1,
+                }
             },
             default = {"text/html"}
         },
@@ -110,10 +119,16 @@ function _M.header_filter(conf, ctx)
     end
 
     local matched = false
-    for _, ty in ipairs(types) do
-        if content_type == ty then
+    if type(types) == "table" then
+        for _, ty in ipairs(types) do
+            if content_type == ty then
+                matched = true
+                break
+            end
+        end
+    else
+        if content_type == types or types == "*" then
             matched = true
-            break
         end
     end
     if not matched then
