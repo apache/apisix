@@ -30,7 +30,6 @@ title: xml-json-conversion
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## name
 
 xml-json-conversion plugin convert xml data from request body to json response, and vice versa
