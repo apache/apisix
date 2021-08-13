@@ -345,6 +345,7 @@ plugins:                          # plugin list (sorted by priority)
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
+  - xml-json-conversion            # priority: 9
   #- skywalking                    # priority: -1100
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
