@@ -35,7 +35,7 @@ The `real-ip` plugin dynamically changes the client's IP and port seen by APISIX
 
 It works like Nginx's `ngx_http_realip_module`, but is more flexible.
 
-This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+**This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
 
 ## Attributes
 
