@@ -6,8 +6,8 @@ body:
       value: |
         The more information you fill in, the better we can help you.
 
-        - Please use English for public channel.
-        - Encourage the use of words rather than pictures to describe errors.
+        - Please use English on public channel.
+        - Encourage using words rather than pictures to describe errors.
         - Encourage pre-searching with keywords in the issue.
 
   - type: textarea
