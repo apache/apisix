@@ -44,6 +44,7 @@ title: limit-count
 | time_window         | integer | 必须                               |               | time_window > 0                                                                                         | 时间窗口的大小（以秒为单位），超过这个时间就会重置                                                                                                                                                                                                                                                                                                                                                                    |
 | key                 | string  | 可选                               | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | 用来做请求计数的有效值。<br />例如，可以使用主机名（或服务器区域）作为关键字，以便限制每个主机名规定时间内的请求次数。我们也可以使用客户端地址作为关键字，这样我们就可以避免单个客户端规定时间内多次的连接我们的服务。<br />当前接受的 key 有："remote_addr"（客户端 IP 地址）, "server_addr"（服务端 IP 地址）, 请求头中的"X-Forwarded-For" 或 "X-Real-IP", "consumer_name"（consumer 的 username）, "service_id" 。 |
 | rejected_code       | integer | 可选                               | 503           | [200,...,599]                                                                                           | 当请求超过阈值被拒绝时，返回的 HTTP 状态码                                                                                                                                                                                                                                                                                                                                                                            |
+| rejected_msg       | string | 可选                                |            | 非空                                                                                           | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
 | policy              | string  | 可选                               | "local"       | ["local", "redis", "redis-cluster"]                                                                     | 用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地，默认选项) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速)；以及`redis-cluster`，跟 redis 功能一样，只是使用 redis 集群方式。                                                                                                                                                        |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限流插件功能临时不可用时（例如，Redis 超时）是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 | show_limit_quota_header              | boolean  | 可选                                | true       |                                                                     | 是否在响应头中显示 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining` （限制的总请求数和剩余还可以发送的请求数），默认值是 true。 |
@@ -187,6 +188,18 @@ Server: APISIX web server
 <hr><center>openresty</center>
 </body>
 </html>
+```
+
+同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."` ，当你第三次访问的时候，就会收到如下的响应体：
+
+```shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Content-Type: text/html
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"Requests are too frequent, please try again later."}
 ```
 
 这就表示 `limit count` 插件生效了。
