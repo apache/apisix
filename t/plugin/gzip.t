@@ -436,7 +436,7 @@ POST /echo
 012345678
 --- more_headers
 Accept-Encoding: gzip
-Content-Type: text/html
+Content-Type: video/3gpp
 --- response_headers
 Content-Encoding: gzip
 

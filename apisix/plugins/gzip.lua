@@ -38,8 +38,7 @@ local schema = {
                     },
                 },
                 {
-                    type = "string",
-                    minLength = 1,
+                    enum = {"*"}
                 }
             },
             default = {"text/html"}
@@ -127,9 +126,7 @@ function _M.header_filter(conf, ctx)
             end
         end
     else
-        if content_type == types or types == "*" then
-            matched = true
-        end
+        matched = true
     end
     if not matched then
         return

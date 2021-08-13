@@ -39,7 +39,7 @@ This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step
 
 | Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
 | --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| types          | array[string]/string | optional    |  ["text/html"] |          | dynamically set the `gzip_types` directive |
+| types          | array[string] or "*" | optional    |  ["text/html"] |          | dynamically set the `gzip_types` directive, special value `"*"` matches any MIME type |
 | min_length     | integer              | optional    |  20            | >= 1     | dynamically set the `gzip_min_length` directive |
 | comp_level     | integer              | optional    |  1             | [1, 9]   | dynamically set the `gzip_comp_level` directive |
 | http_version   | number               | optional    |  1.1           | 1.1, 1.0 | dynamically set the `gzip_http_version` directive |
