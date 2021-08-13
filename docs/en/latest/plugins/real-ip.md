@@ -43,6 +43,8 @@ This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | source      | string        | required    |            | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`| dynamically set the client's IP and port in APISIX's view, according to the value of variable. If the value doesn't contain a port, the client's port won't be changed. |
 
+If the remote address comes from `source` is missing or invalid, this plugin will just let it go and don't change the client address.
+
 ## How To Enable
 
 Here's an example, enable this plugin on the specified route:
