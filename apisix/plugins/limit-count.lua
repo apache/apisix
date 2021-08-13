@@ -45,6 +45,9 @@ local schema = {
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        rejected_msg = {
+            type = "string", minLength = 1
+        },
         policy = {
             type = "string",
             enum = {"local", "redis", "redis-cluster"},
@@ -175,6 +178,9 @@ function _M.access(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
+            if conf.rejected_msg then
+                return conf.rejected_code, { error_msg = conf.rejected_msg }
+            end
             return conf.rejected_code
         end
 

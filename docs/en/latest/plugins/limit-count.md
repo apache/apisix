@@ -41,6 +41,7 @@ Limit request rate by a fixed number of requests in a given time window.
 | time_window         | integer | required                    |               | time_window > 0                                                                                         | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                              |
 | key                 | string  | optional                                | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br /> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                   |
 | rejected_code       | integer | optional                                | 503           | [200,...,599]                                                                                           | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                             |
+| rejected_msg       | string | optional                                |            | non-empty                                                                                           | The response body returned when the request exceeds the threshold is rejected.                                                                                                                                                                                                             |
 | policy              | string  | optional                                | "local"       | ["local", "redis", "redis-cluster"]                                                                     | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node), `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit), and `redis-cluster` which works the same as `redis` but with redis cluster. |
 | allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-count function is temporarily unavailable(e.g. redis timeout). Allow requests to continue when the value is set to true, default false. |
 | show_limit_quota_header              | boolean  | optional                                | true       |                                                                     | Whether show `X-RateLimit-Limit` and `X-RateLimit-Remaining` (which mean the total number of requests and the remaining number of requests that can be sent) in the response header, default true. |
@@ -183,6 +184,18 @@ Server: APISIX web server
 <hr><center>openresty</center>
 </body>
 </html>
+```
+
+At the same time, if you set the property `rejected_msg` to `"Requests are too frequent, please try again later."` , when you visit for the third time, you will receive a response body like below:
+
+```shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Content-Type: text/html
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"Requests are too frequent, please try again later."}
 ```
 
 This means that the `limit count` plugin is in effect.

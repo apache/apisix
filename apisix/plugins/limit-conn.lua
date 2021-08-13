@@ -33,6 +33,9 @@ local schema = {
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        rejected_msg = {
+            type = "string", minLength = 1
+        },
         allow_degradation = {type = "boolean", default = false}
     },
     required = {"conn", "burst", "default_conn_delay", "key"}
