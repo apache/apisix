@@ -38,7 +38,7 @@ __DATA__
 GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
-first plugin: "client-control"
+first plugin: "real-ip"
 
 
 
