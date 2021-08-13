@@ -280,7 +280,6 @@ local health_checker = {
             }
         }
     },
-    additionalProperties = false,
     anyOf = {
         {required = {"active"}},
         {required = {"active", "passive"}},
@@ -642,7 +641,6 @@ _M.route = {
             {required = {"script", "plugin_config_id"}},
         }
     },
-    additionalProperties = false,
 }
 
 
@@ -665,7 +663,6 @@ _M.service = {
         },
 
     },
-    additionalProperties = false,
 }
 
 
@@ -683,7 +680,6 @@ _M.consumer = {
         desc = desc_def,
     },
     required = {"username"},
-    additionalProperties = false,
 }
 
 
@@ -748,7 +744,6 @@ _M.ssl = {
         {required = {"sni", "key", "cert"}},
         {required = {"snis", "key", "cert"}}
     },
-    additionalProperties = false,
 }
 
 
@@ -765,7 +760,6 @@ _M.proto = {
         }
     },
     required = {"content"},
-    additionalProperties = false,
 }
 
 
@@ -778,7 +772,6 @@ _M.global_rule = {
         update_time = timestamp_def
     },
     required = {"plugins"},
-    additionalProperties = false,
 }
 
 
@@ -823,7 +816,6 @@ _M.plugins = {
             stream = {
                 type = "boolean"
             },
-            additionalProperties = false,
         },
         required = {"name"}
     }
@@ -841,7 +833,6 @@ _M.plugin_config = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
-    additionalProperties = false,
 }
 
 

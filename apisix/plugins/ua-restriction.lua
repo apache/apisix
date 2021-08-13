@@ -49,7 +49,6 @@ local schema = {
             default = "Not allowed"
         },
     },
-    additionalProperties = false,
 }
 
 local plugin_name = "ua-restriction"

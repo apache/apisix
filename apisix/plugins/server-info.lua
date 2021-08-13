@@ -31,7 +31,6 @@ local default_report_ttl = 7200
 
 local schema = {
     type = "object",
-    additionalProperties = false,
 }
 local attr_schema = {
     type = "object",

@@ -70,7 +70,6 @@ local metadata_schema = {
     properties = {
         log_format = log_util.metadata_schema_log_format,
     },
-    additionalProperties = false,
 }
 
 local _M = {
