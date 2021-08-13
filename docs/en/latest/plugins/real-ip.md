@@ -1,5 +1,5 @@
 ---
-title: client-control
+title: real-ip
 ---
 
 <!--
@@ -31,8 +31,9 @@ title: client-control
 
 ## Name
 
-The `client-control` plugin dynamically controls the behavior of Nginx to
-handle the client request.
+The `real-ip` plugin dynamically changes the client's IP and port seen by APISIX.
+
+It works like Nginx's `ngx_http_realip_module`, but is more flexible.
 
 **This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
 
@@ -40,7 +41,9 @@ handle the client request.
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| max_body_size | integer        | optional    |              | >= 0 | dynamically set the `client_max_body_size` directive |
+| source      | string        | required    |            | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`| dynamically set the client's IP and port in APISIX's view, according to the value of variable. If the value doesn't contain a port, the client's port won't be changed. |
+
+If the remote address comes from `source` is missing or invalid, this plugin will just let it go and don't change the client address.
 
 ## How To Enable
 
@@ -51,14 +54,20 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 {
     "uri": "/index.html",
     "plugins": {
-        "client-control": {
-            "max_body_size" : 1
+        "real-ip": {
+            "source": "arg_realip"
+        },
+        "response-rewrite": {
+            "headers": {
+                "remote_addr": "$remote_addr",
+                "remote_port": "$remote_port"
+            }
         }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -69,23 +78,16 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 Use curl to access:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html -d '123'
-
-HTTP/1.1 413 Request Entity Too Large
+curl 'http://127.0.0.1:9080/index.html?realip=1.2.3.4:9080' -I
 ...
-<html>
-<head><title>413 Request Entity Too Large</title></head>
-<body>
-<center><h1>413 Request Entity Too Large</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
+remote-addr: 1.2.3.4
+remote-port: 9080
 ```
 
 ## Disable Plugin
 
 When you want to disable this plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
+you can delete the corresponding JSON configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
@@ -95,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
