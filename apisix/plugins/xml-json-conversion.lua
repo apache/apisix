@@ -15,13 +15,10 @@
 -- limitations under the License.
 --
 
-local ngx     = ngx
 local core    = require("apisix.core")
 local xml2lua = require("xml2lua")
 local handler = require("xmlhandler.tree")
 local cjson   = require('cjson.safe')
-local assert  = assert
-local io      = io
 local string  = string
 
 local metadata_schema = {
@@ -50,13 +47,6 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-local function getFile(file_name)
-    local f = assert(io.open(file_name, 'r'))
-    local string = f:read("*all")
-    f:close()
-    return string
-end
-
 local function xml2json(xml_data)
     local convertHandler = handler:new()
     local parser = xml2lua.parser(convertHandler)
@@ -69,55 +59,58 @@ local function json2xml(table_data)
 end
 
 function _M.access(conf, ctx)
-    local request_header = ngx.req.get_headers()
-    ngx.req.read_body()
-    local request_body = ngx.req.get_body_data()
-    if nil == request_body then
-        local file_name = ngx.req.get_body_file()
-        if file_name then
-            request_body = getFile(file_name)
-        end
+    local request_header = core.request.headers()
+    local req_body, err = core.request.get_body()
+    if err or req_body == nil or req_body == '' then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
     if request_header["Content-Type"] == "application/json" then
         if string.find(request_header["Accept"], "text/xml") == nil then
             return 401, {message = "Operation not supported"}
         end
-        return json2xml(request_body)
+        local data, _ = core.json.decode(req_body)
+        if not data then
+            core.log.error("invalid request body: ", req_body, " err: ", err)
+            return 400, {error_msg = "invalid request body: " .. err,
+                         req_body = req_body}
+        end
+        return json2xml(req_body)
     elseif request_header["Content-Type"] == "text/xml" then
         if string.find(request_header["Accept"], "application/json") == nil then
             return 401, {message = "Operation not supported"}
         end
-        return xml2json(request_body)
+        return xml2json(req_body)
     else
         return 401, {message = "Operation not supported"}
     end
 end
 
 local function get_json()
-    local request_header = ngx.req.get_headers()
-    ngx.req.read_body()
-    local request_body = ngx.req.get_body_data()
-    if nil == request_body then
-        local file_name = ngx.req.get_body_file()
-        if file_name then
-            request_body = getFile(file_name)
-        end
-    end
-    if nil == request_body then
-        return 401, {message = "Invalid request body"}
+    local request_header = core.request.headers()
+    local req_body, err = core.request.get_body()
+    if err or req_body == nil or req_body == '' then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
     if request_header["Content-Type"] == "application/json" then
         if string.find(request_header["Accept"], "text/xml") == nil then
             return 401, {message = "Operation not supported"}
         end
-        return json2xml(request_body)
+        local data, _ = core.json.decode(req_body)
+        if not data then
+            core.log.error("invalid request body: ", req_body, " err: ", err)
+            return 400, {error_msg = "invalid request body: " .. err,
+                         req_body = req_body}
+        end
+        return json2xml(req_body)
     elseif request_header["Content-Type"] == "text/xml" then
         if string.find(request_header["Accept"], "application/json") == nil then
             return 401, {message = "Operation not supported"}
         end
-        return xml2json(request_body)
+        return xml2json(req_body)
     else
         return 401, {message = "Operation not supported"}
     end
