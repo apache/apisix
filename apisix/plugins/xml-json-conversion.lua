@@ -69,9 +69,6 @@ local function json2xml(table_data)
 end
 
 function _M.access(conf, ctx)
-    core.log.warn("\n||||||| ctx ,", core.json.encode(ctx, true))
-    core.log.warn("\n||||||| conf ,", core.json.encode(conf, true))
-
     local request_header = ngx.req.get_headers()
     ngx.req.read_body()
     local request_body = ngx.req.get_body_data()
@@ -82,7 +79,6 @@ function _M.access(conf, ctx)
         end
     end
 
-    core.log.warn("------- request_body : ", request_body)
     if request_header["Content-Type"] == "application/json" then
         if string.find(request_header["Accept"], "text/xml") == nil then
             return 401, {message = "Operation not supported"}
