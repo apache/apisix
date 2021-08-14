@@ -21,7 +21,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Bug report without steps to reproduce will be ignored or closed.
+      description: Bug report without environment information will be ignored or closed.
       value: |
         - apisix version (cmd: `apisix version`):
         - OS (cmd: `uname -a`):
