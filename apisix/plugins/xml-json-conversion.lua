@@ -99,10 +99,10 @@ local function get_json()
         if string.find(request_header["Accept"], "text/xml") == nil then
             return 401, {message = "Operation not supported"}
         end
-        local data, _ = core.json.decode(req_body)
+        local data, decode_err = core.json.decode(req_body)
         if not data then
-            core.log.error("invalid request body: ", req_body, " err: ", err)
-            return 400, {error_msg = "invalid request body: " .. err,
+            core.log.error("invalid request body: ", req_body, " err: ", decode_err)
+            return 400, {error_msg = "invalid request body: " .. decode_err,
                          req_body = req_body}
         end
         return json2xml(req_body)
