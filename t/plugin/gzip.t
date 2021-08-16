@@ -395,7 +395,54 @@ Content-Encoding: gzip
 
 
 
-=== TEST 15: vary
+=== TEST 15: match all types
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "gzip": {
+                            "types": "*"
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 16: hit
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip
+Content-Type: video/3gpp
+--- response_headers
+Content-Encoding: gzip
+
+
+
+=== TEST 17: vary
 --- config
     location /t {
         content_by_lua_block {
@@ -429,7 +476,7 @@ passed
 
 
 
-=== TEST 16: hit
+=== TEST 18: hit
 --- request
 POST /echo
 0123456789

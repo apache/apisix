@@ -1,0 +1,63 @@
+name: "Bug report"
+description: Create a report to help us improve
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The more information you fill in, the better we can help you.
+
+        - Please use English on public channel.
+        - Encourage using words rather than pictures to describe errors.
+        - Encourage pre-searching with keywords in the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue description
+      description: Provide a clear and concise description of what you're running into.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Bug report without environment information will be ignored or closed.
+      value: |
+        - apisix version (cmd: `apisix version`):
+        - OS (cmd: `uname -a`):
+        - OpenResty / Nginx version (cmd: `nginx -V` or `openresty -V`):
+        - etcd version, if have (cmd: run `curl http://127.0.0.1:9090/v1/server_info` to get the info from server-info API):
+        - apisix-dashboard version, if have:
+        - luarocks version, if the issue is about installation (cmd: `luarocks --version`):
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Bug report without steps to reproduce will be ignored or closed.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What's the actual result? (including assertion message & call stack if applicable).
+    validations:
+      required: true
+  - type: textarea
+    id: Error
+    attributes:
+      label: Error log
+      description: You can adjust the [error log level](https://github.com/apache/apisix/blob/617c325628f33961be67f61f0fa8002afc370e42/docs/en/latest/FAQ.md#how-to-change-the-log-level) and paste more related error.log.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What's the expected result?
