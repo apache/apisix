@@ -21,7 +21,7 @@ title: Customize Nginx configuration
 #
 -->
 
-The Nginx configuration used by APISIX is generated via the template file `apisix/ngx_tpl.lua` and the options from `conf/config-default.yaml` / `conf/config.yaml`.
+The Nginx configuration used by APISIX is generated via the template file `apisix/cli/ngx_tpl.lua` and the options from `conf/config-default.yaml` / `conf/config.yaml`.
 
 You can take a look at the generated Nginx configuration in `conf/nginx.conf` after running `./bin/apisix start`.
 
