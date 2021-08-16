@@ -184,7 +184,7 @@ function _M.access(conf, ctx)
             return conf.rejected_code
         end
 
-        core.log.error("failed to limit req: ", err)
+        core.log.error("failed to limit count: ", err)
         if conf.allow_degradation then
             return
         end
