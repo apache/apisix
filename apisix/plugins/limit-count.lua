@@ -188,7 +188,7 @@ function _M.access(conf, ctx)
         if conf.allow_degradation then
             return
         end
-        return 500, {error_msg = "failed to limit count: " .. err}
+        return 500
     end
 
     if conf.show_limit_quota_header then

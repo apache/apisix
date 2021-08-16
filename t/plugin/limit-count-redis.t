@@ -380,8 +380,6 @@ GET /t
 GET /hello_new
 --- error_code eval
 500
---- response_body
-{"error_msg":"failed to limit count: ERR invalid password"}
 --- error_log
 failed to limit req: ERR invalid password
 
