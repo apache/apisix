@@ -21,12 +21,6 @@ local handler = require("xmlhandler.tree")
 local cjson   = require('cjson.safe')
 local string  = string
 
-local metadata_schema = {
-    type = "object",
-    properties = {},
-    additionalProperties = false,
-}
-
 local schema = {
     type = "object",
     properties = {},
@@ -40,7 +34,6 @@ local _M = {
     priority = 90,
     name = plugin_name,
     schema = schema,
-    metadata_schema = metadata_schema,
 }
 
 function _M.check_schema(conf)
