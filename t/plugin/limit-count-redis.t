@@ -363,7 +363,7 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.print(body)
+            ngx.print(code)
         }
     }
 --- request
