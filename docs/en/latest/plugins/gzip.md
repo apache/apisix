@@ -37,15 +37,15 @@ The `gzip` plugin dynamically set the gzip behavior of Nginx.
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| types | array        | optional    |  ["text/html"]            | | dynamically set the `gzip_types` directive |
-| min_length | integer        | optional    |  20            | >= 1 | dynamically set the `gzip_min_length` directive |
-| comp_level | integer        | optional    |  1            | [1, 9] | dynamically set the `gzip_comp_level` directive |
-| http_version | number        | optional    |  1.1            | 1.1, 1.0 | dynamically set the `gzip_http_version` directive |
-| buffers.number | integer        | optional    |  32            | >= 1 | dynamically set the `gzip_buffers` directive |
-| buffers.size | integer        | optional    |  4096            | >= 1 | dynamically set the `gzip_buffers` directive |
-| vary | boolean        | optional    |  false            | | dynamically set the `gzip_vary` directive |
+| Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
+| --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| types          | array[string] or "*" | optional    |  ["text/html"] |          | dynamically set the `gzip_types` directive, special value `"*"` matches any MIME type |
+| min_length     | integer              | optional    |  20            | >= 1     | dynamically set the `gzip_min_length` directive |
+| comp_level     | integer              | optional    |  1             | [1, 9]   | dynamically set the `gzip_comp_level` directive |
+| http_version   | number               | optional    |  1.1           | 1.1, 1.0 | dynamically set the `gzip_http_version` directive |
+| buffers.number | integer              | optional    |  32            | >= 1     | dynamically set the `gzip_buffers` directive |
+| buffers.size   | integer              | optional    |  4096          | >= 1     | dynamically set the `gzip_buffers` directive |
+| vary | boolean                        | optional    |  false         |          | dynamically set the `gzip_vary` directive |
 
 ## How To Enable
 
