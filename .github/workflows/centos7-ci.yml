@@ -49,7 +49,7 @@ jobs:
         sudo gem install --no-document fpm
         git clone https://github.com/api7/apisix-build-tools.git
         cd apisix-build-tools
-        make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION}
+        make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7
         cd ..
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
@@ -100,7 +100,7 @@ jobs:
     - name: Install rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
-        docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.x86_64.rpm"
+        docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
         # Dependencies are attached with rpm, so revert `make deps`
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
@@ -114,4 +114,4 @@ jobs:
       uses: actions/upload-artifact@v2.2.4
       with:
         name: "rpm"
-        path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.x86_64.rpm"
+        path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
