@@ -389,7 +389,7 @@ failed to limit count: ERR invalid password
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
 --- error_code eval
-[500, '', '', '']
+[500, 404, 404, 500]
 
 
 
