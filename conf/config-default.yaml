@@ -141,6 +141,10 @@ nginx_config:                     # config for render the template to generate n
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
+
+  #max_pending_timers: 1024       # increase it if you see "too many pending timers" error
+  #max_running_timers: 256        # increase it if you see "lua_max_running_timers are not enough" error
+
   event:
     worker_connections: 10620
   #envs:                          # allow to get a list of environment variables

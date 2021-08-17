@@ -66,6 +66,13 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
@@ -147,6 +154,13 @@ http {
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
+
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
     lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
