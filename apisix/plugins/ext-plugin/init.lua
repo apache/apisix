@@ -269,7 +269,7 @@ local function handle_extra_info(ctx, input)
         var_req:Init(info.bytes, info.pos)
 
         local var_name = var_req:Name()
-        res = tostring(ctx.var[var_name])
+        res = ctx.var[var_name]
     else
         return nil, "unsupported info type: " .. info_type
     end
@@ -279,6 +279,8 @@ local function handle_extra_info(ctx, input)
 
     local packed_res
     if res then
+        -- ensure to pass the res in string type 
+        res = tostring(res)
         packed_res = builder:CreateByteVector(res)
     end
     extra_info_resp.Start(builder)
