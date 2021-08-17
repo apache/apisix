@@ -188,7 +188,7 @@ function _M.access(conf, ctx)
         if conf.allow_degradation then
             return
         end
-        return 500
+        return 500, {error_msg = "..."}
     end
 
     if conf.show_limit_quota_header then
