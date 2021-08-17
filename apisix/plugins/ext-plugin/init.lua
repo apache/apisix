@@ -279,7 +279,7 @@ local function handle_extra_info(ctx, input)
 
     local packed_res
     if res then
-        -- ensure to pass the res in string type 
+        -- ensure to pass the res in string type
         res = tostring(res)
         packed_res = builder:CreateByteVector(res)
     end
