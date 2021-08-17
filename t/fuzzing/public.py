@@ -88,29 +88,35 @@ def gc():
     conn.request("POST", "/v1/gc")
     conn.close()
 
+def leak_count():
+    return int(os.environ.get("APISIX_FUZZING_LEAK_COUNT") or 100)
+
+LEAK_COUNT = leak_count()
+
 def check_leak(f):
     @wraps(f)
     def wrapper(*args, **kwds):
-        leak_count = 100
+        global LEAK_COUNT
 
         samples = []
-        for i in range(leak_count):
+        for i in range(LEAK_COUNT):
             f(*args, **kwds)
             gc()
             samples.append(sum_memory())
         count = 0
-        for i in range(1, leak_count):
+        for i in range(1, LEAK_COUNT):
             if samples[i - 1] < samples[i]:
                 count += 1
         print(samples)
         sloped = get_linear_regression_sloped(samples)
         print(sloped)
-        print(count / leak_count)
+        print(count / LEAK_COUNT)
 
         if os.environ.get("CI"): # CI is not stable
             return
 
-        if sloped > 1000 and (count / leak_count) > 0.1:
+        # the threshold is chosen so that we can find leaking a table per request
+        if sloped > 10000 and (count / LEAK_COUNT) > 0.2:
             raise AssertionError("memory leak")
 
     return wrapper
