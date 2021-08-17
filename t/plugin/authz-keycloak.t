@@ -152,7 +152,33 @@ done
 
 
 
-=== TEST 6: full schema check
+=== TEST 6: no permissions when lazy_load_paths=false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-keycloak")
+            local ok, err = plugin.check_schema({
+                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                client_id = "University",
+                                lazy_load_paths = false
+                            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: full schema check
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +218,7 @@ done
 
 
 
-=== TEST 7: token_endpoint and discovery both missing
+=== TEST 8: token_endpoint and discovery both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +241,7 @@ done
 
 
 
-=== TEST 8: client_id and audience both missing
+=== TEST 9: client_id and audience both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -238,7 +264,7 @@ done
 
 
 
-=== TEST 9: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
+=== TEST 10: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +291,7 @@ done
 
 
 
-=== TEST 10: Add https endpoint with ssl_verify true (default)
+=== TEST 11: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -331,7 +357,7 @@ passed
 
 
 
-=== TEST 11: TEST with fake token and https endpoint
+=== TEST 12: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -361,7 +387,7 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 
 
 
-=== TEST 12: Add https endpoint with ssl_verify false
+=== TEST 13: Add https endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -429,7 +455,7 @@ passed
 
 
 
-=== TEST 13: TEST for https based token verification with ssl_verify false
+=== TEST 14: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
