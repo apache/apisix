@@ -59,6 +59,7 @@ local str_sub = string.sub
 local error = error
 local ipairs = ipairs
 local pairs = pairs
+local tostring = tostring
 local type = type
 
 
@@ -268,7 +269,7 @@ local function handle_extra_info(ctx, input)
         var_req:Init(info.bytes, info.pos)
 
         local var_name = var_req:Name()
-        res = ctx.var[var_name]
+        res = tostring(ctx.var[var_name])
     else
         return nil, "unsupported info type: " .. info_type
     end
