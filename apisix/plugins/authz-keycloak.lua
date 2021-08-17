@@ -84,9 +84,6 @@ local schema = {
                 {
                     properties = {
                         lazy_load_paths = {enum = {false}},
-                    },
-                    anyOf = {
-                        {required = {"permissions"}}
                     }
                 },
                 {
