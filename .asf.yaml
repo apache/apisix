@@ -42,6 +42,32 @@ github:
       merge:   false
       rebase:  false
 
+    protected_branches:
+      master:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.8:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.7:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.6:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.5:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.4:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+
     notifications:
       commits:      notifications@apisix.apache.org
       issues:       notifications@apisix.apache.org
