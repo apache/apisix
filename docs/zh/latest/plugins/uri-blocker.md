@@ -77,6 +77,20 @@ Server: APISIX web server
 ... ...
 ```
 
+如果你设置了属性 `rejected_msg` 的值为 `"access is not allowed"` ，将会收到如下的响应体：
+
+```shell
+$ curl -i http://127.0.0.1:9080/root.exe?a=a
+HTTP/1.1 403 Forbidden
+Date: Wed, 17 Jun 2020 13:55:41 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 150
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"access is not allowed"}
+```
+
 ## 禁用插件
 
 当想禁用`uri blocker`插件时，非常简单，只需要在插件配置中删除相应的 json 配置，无需重启服务，即可立即生效：
