@@ -456,3 +456,94 @@ GET /t
 false
 --- error_log
 Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
+
+
+
+=== TEST 14: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "client_id": "course_management",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "policy_enforcement_mode": "ENFORCING",
+                                "timeout": 3000
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                    "client_id": "course_management",
+                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                    "policy_enforcement_mode": "ENFORCING",
+                                    "timeout": 3000
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello1"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: test for permission is empty and enforcement mode is "ENFORCING".
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"error":"access_denied","error_description":"not_authorized"}
+--- no_error_log
