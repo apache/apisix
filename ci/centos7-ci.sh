@@ -39,7 +39,7 @@ install_dependencies() {
     rm -rf etcd-v3.4.0-linux-amd64
 
     # install test::nginx
-    yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
+    yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # install and start grpc_server_example
