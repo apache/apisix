@@ -51,7 +51,8 @@ local schema = {
                 type = "string",
                 minLength = 1, maxLength = 100
             },
-            uniqueItems = true
+            uniqueItems = true,
+            default = {}
         },
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
