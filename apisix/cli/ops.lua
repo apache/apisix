@@ -481,15 +481,37 @@ Please modify "admin_key" in conf/config.yaml .
                         ports_to_check[value], "\n")
                 end
 
-                table_insert(node_listen, index, {port = value})
+                table_insert(node_listen, index, {ip = "0.0.0.0", port = value, allow_ssl = true})
+                if yaml_conf.apisix.enable_ipv6 then
+                    table_insert(node_listen, index, {ip = "[::]", port = value, allow_ssl = true})
+                end
             elseif type(value) == "table" then
+
+                local ip = value.ip
+                local port = value.port
+                local allow_ssl = value.allow_ssl
+
+                if ip == nil then
+                    ip = "0.0.0.0"
+                end
+
+                if port == nil then
+                    util.die("node_listen port not given")
+                end
+
+                if allow_ssl == nil then
+                    allow_ssl = true
+                end
 
                 if type(value.port) == "number" and ports_to_check[value.port] ~= nil then
                     util.die("node_listen port ", value.port, " conflicts with ",
                         ports_to_check[value.port], "\n")
                 end
 
-                table_insert(node_listen, index, value)
+                table_insert(node_listen, index, {ip = ip, port = port, allow_ssl = allow_ssl})
+                if yaml_conf.apisix.enable_ipv6 and value.ip == nil then
+                    table_insert(node_listen, index, {ip = "[::]", port = port, allow_ssl = allow_ssl})
+                end
             end
         end
         yaml_conf.apisix.node_listen = node_listen
