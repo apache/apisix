@@ -354,7 +354,7 @@ location /t {
         for i in pairs(data) do
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[i].input, data[i].output)
 
-            if code >= 300 then
+            if code >= 300 and i == #data then
                 ngx.status = code
             end
             ngx.print(body)
@@ -363,7 +363,6 @@ location /t {
 }
 --- request
 GET /t
---- error_code eval
-[400, 400]
+--- error_code: 400
 --- no_error_log
 [error]
