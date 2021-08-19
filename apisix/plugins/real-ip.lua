@@ -69,6 +69,8 @@ local function get_addr(conf, ctx)
         for i = idx + 1, #addrs do
             if str_byte(addrs, i) == str_byte(" ") then
                 idx = idx + 1
+            else
+                break
             end
         end
 
