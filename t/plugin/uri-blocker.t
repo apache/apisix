@@ -335,127 +335,35 @@ GET /hello?cc=2
 
 
 
-=== TEST 16: invalid rejected_msg length
+=== TEST 16: invalid rejected_msg length or type
 --- config
 location /t {
     content_by_lua_block {
-        local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/routes/1',
-            ngx.HTTP_PUT,
-            [[{
-                "plugins": {
-                    "uri-blocker": {
-                        "block_rules": ["^a"],
-                        "rejected_msg": ""
-                    }
-                },
-                "uri": "/hello"
-            }]]
-            )
+        local data = {
+            {
+                input = '[[{"plugins":{"uri-blocker":{"block_rules":["^a"],"rejected_msg":""}},"uri":"/hello"}]]',
+                output = '{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}'
+            },
+            {
+                input = '[[{"plugins":{"uri-blocker":{"block_rules":["^a"],"rejected_msg":true}},"uri":"/hello"}]]',
+                output = '{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}'
+            }
+        }
 
-        if code >= 300 then
-            ngx.status = code
+        local t = require("lib.test_admin").test
+        for i in pairs(data) do
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[i].input, data[i].output)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
         end
-        ngx.print(body)
     }
 }
 --- request
 GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
---- no_error_log
-[error]
-
-
-
-=== TEST 17: invalid rejected_msg type
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/routes/1',
-            ngx.HTTP_PUT,
-            [[{
-                "plugins": {
-                    "uri-blocker": {
-                        "block_rules": ["^a"],
-                        "rejected_msg": true
-                    }
-                },
-                "uri": "/hello"
-            }]]
-            )
-
-        if code >= 300 then
-            ngx.status = code
-        end
-        ngx.print(body)
-    }
-}
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
---- no_error_log
-[error]
-
-
-
-=== TEST 18: one block rule, with rejected_msg
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/routes/1',
-            ngx.HTTP_PUT,
-            [[{
-                "plugins": {
-                    "uri-blocker": {
-                        "block_rules": ["aa"],
-                        "rejected_msg": "access is not allowed"
-                    }
-                },
-                "upstream": {
-                    "nodes": {
-                        "127.0.0.1:1980": 1
-                    },
-                    "type": "roundrobin"
-                },
-                "uri": "/hello"
-            }]],
-            [[{
-                "node": {
-                    "value": {
-                        "plugins": {
-                            "uri-blocker": {
-                                "block_rules": ["aa"]
-                            }
-                        }
-                    }
-                }
-            }]]
-            )
-
-        if code >= 300 then
-            ngx.status = code
-        end
-        ngx.print(body)
-    }
-}
---- request
-GET /t
---- no_error_log
-[error]
-
-
-
-=== TEST 19: hit block rule and return rejected_msg
---- request
-GET /hello?aa=1
---- error_code: 403
---- response_body
-{"error_msg":"access is not allowed"}
+--- error_code eval
+[400, 400]
 --- no_error_log
 [error]
