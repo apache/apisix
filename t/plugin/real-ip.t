@@ -265,3 +265,64 @@ GET /hello
 XFF: 1.1.1.1:7090
 --- response_headers
 remote_port: 7090
+
+
+
+=== TEST 14: X-Forwarded-For
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "real-ip": {
+                            "source": "http_x_forwarded_for"
+                        },
+                        "ip-restriction": {
+                            "whitelist": ["::2"]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 15: hit
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: ::1, ::2
+
+
+
+=== TEST 16: hit (multiple X-Forwarded-For)
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: ::1
+X-Forwarded-For: ::2
+
+
+
+=== TEST 17: miss address
+--- request
+GET /hello
+--- error_code: 403
