@@ -97,7 +97,7 @@ function _M.check_schema(conf)
     end
 
     -- we still need this as it is too complex to filter out all invalid IPv6 via regex
-    if conf.whitelist and #conf.whitelist > 0 then
+    if conf.whitelist then
         for _, cidr in ipairs(conf.whitelist) do
             if not valid_ip(cidr) then
                 return false, "invalid ip address: " .. cidr
@@ -105,7 +105,7 @@ function _M.check_schema(conf)
         end
     end
 
-    if conf.blacklist and #conf.blacklist > 0 then
+    if conf.blacklist then
         for _, cidr in ipairs(conf.blacklist) do
             if not valid_ip(cidr) then
                 return false, "invalid ip address: " .. cidr
@@ -133,7 +133,7 @@ function _M.restrict(conf, ctx)
     local block = false
     local remote_addr = ctx.var.remote_addr
 
-    if conf.blacklist and #conf.blacklist > 0 then
+    if conf.blacklist then
         local matcher = lrucache(conf.blacklist, nil,
                                  create_ip_matcher, conf.blacklist)
         if matcher then
@@ -141,7 +141,7 @@ function _M.restrict(conf, ctx)
         end
     end
 
-    if conf.whitelist and #conf.whitelist > 0 then
+    if conf.whitelist then
         local matcher = lrucache(conf.whitelist, nil,
                                  create_ip_matcher, conf.whitelist)
         if matcher then
