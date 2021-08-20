@@ -186,11 +186,6 @@ function _M.log(conf, ctx)
         return
     end
 
-    if core.table.nkeys(conf.broker_list) == 0 then
-        core.log.error("failed to identify the broker specified")
-        return
-    end
-
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
     local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
     local broker_config = {}
@@ -204,6 +199,11 @@ function _M.log(conf, ctx)
             }
             core.table.insert(broker_list, broker)
         end
+    end
+
+    if core.table.nkeys(broker_list) == 0 then
+        core.log.error("failed to identify the broker specified")
+        return
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
