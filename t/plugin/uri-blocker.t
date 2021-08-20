@@ -341,13 +341,33 @@ location /t {
     content_by_lua_block {
         local data = {
             {
-                input = [[{"plugins":{"uri-blocker":{"block_rules":["^a"],"rejected_msg":""}},"uri":"/hello"}]],
-                output = [[{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}]]
+                input = {
+                    plugins = {
+                        ["uri-blocker"] = {
+                            block_rules = { "^a" },
+                            rejected_msg = "",
+                        },
+                    },
+                    uri = "/hello",
+                },
+                output = {
+                    error_msg = "failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0",
+                },
             },
             {
-                input = [[{"plugins":{"uri-blocker":{"block_rules":["^a"],"rejected_msg":true}},"uri":"/hello"}]],
-                output = [[{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}]]
-            }
+                input = {
+                    plugins = {
+                        ["uri-blocker"] = {
+                            block_rules = { "^a" },
+                            rejected_msg = true,
+                        },
+                    },
+                    uri = "/hello",
+                },
+                output = {
+                    error_msg = "failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean",
+                },
+            },
         }
 
         local t = require("lib.test_admin").test
