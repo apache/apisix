@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
+local type = type
 
 
 local schema = {
@@ -49,6 +50,32 @@ end
 
 
 local function get_addr(conf, ctx)
+    if conf.source == "http_x_forwarded_for" then
+        -- use the last address from X-Forwarded-For header
+        local addrs = core.request.header(ctx, "X-Forwarded-For")
+        if not addrs then
+            return nil
+        end
+
+        if type(addrs) == "table" then
+            addrs = addrs[#addrs]
+        end
+
+        local idx = core.string.rfind_char(addrs, ",")
+        if not idx then
+            return addrs
+        end
+
+        for i = idx + 1, #addrs do
+            if str_byte(addrs, i) == str_byte(" ") then
+                idx = idx + 1
+            else
+                break
+            end
+        end
+
+        return str_sub(addrs, idx + 1)
+    end
     return ctx.var[conf.source]
 end
 
