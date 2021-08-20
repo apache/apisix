@@ -722,3 +722,44 @@ GET /t
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+=== TEST 20: error log, failed to identify the broker specified
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                             "kafka-logger": {
+                                    "broker_list" : {},
+                                    "kafka_topic" : "test"
+                             }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+        }
+    }
+--- request
+GET /t
+--- error_log
+failed to identify the broker specified
