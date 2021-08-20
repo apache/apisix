@@ -386,5 +386,8 @@ location /t {
 }
 --- request
 GET /t
+--- response_body
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
 --- no_error_log
 [error]
