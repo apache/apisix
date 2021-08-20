@@ -141,10 +141,6 @@ end
 
 
 local function send_kafka_data(conf, log_message, prod)
-    if core.table.nkeys(conf.broker_list) == 0 then
-        return nil, "failed to identify the broker specified"
-    end
-
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     core.log.info("partition_id: ",
                   core.log.delay_exec(get_partition_id,
@@ -187,6 +183,11 @@ function _M.log(conf, ctx)
     local log_buffer = buffers[conf]
     if log_buffer then
         log_buffer:push(entry)
+        return
+    end
+
+    if core.table.nkeys(conf.broker_list) == 0 then
+        core.log.error("failed to identify the broker specified")
         return
     end
 

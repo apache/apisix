@@ -761,5 +761,5 @@ qr/partition_id: 2/]
     }
 --- request
 GET /t
---- error_log
-failed to identify the broker specified
+--- error_log_like eval
+qr/failed to identify the broker specified/
