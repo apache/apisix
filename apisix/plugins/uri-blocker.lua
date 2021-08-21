@@ -36,6 +36,10 @@ local schema = {
             minimum = 200,
             default = 403
         },
+        rejected_msg = {
+            type = "string",
+            minLength = 1
+        },
     },
     required = {"block_rules"},
 }
@@ -86,6 +90,9 @@ function _M.rewrite(conf, ctx)
 
     local from = re_find(ctx.var.request_uri, conf.block_rules_concat, "jo")
     if from then
+        if conf.rejected_msg then
+            return conf.rejected_code, { error_msg = conf.rejected_msg }
+        end
         return conf.rejected_code
     end
 end
