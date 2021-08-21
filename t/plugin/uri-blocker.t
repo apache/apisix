@@ -332,3 +332,107 @@ GET /hello?name=;union%20select%20
 GET /hello?cc=2
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: invalid rejected_msg length or type
+--- config
+location /t {
+    content_by_lua_block {
+        local data = {
+            {
+                input = {
+                    plugins = {
+                        ["uri-blocker"] = {
+                            block_rules = { "^a" },
+                            rejected_msg = "",
+                        },
+                    },
+                    uri = "/hello",
+                },
+                output = {
+                    error_msg = "failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0",
+                },
+            },
+            {
+                input = {
+                    plugins = {
+                        ["uri-blocker"] = {
+                            block_rules = { "^a" },
+                            rejected_msg = true,
+                        },
+                    },
+                    uri = "/hello",
+                },
+                output = {
+                    error_msg = "failed to check the configuration of plugin uri-blocker err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean",
+                },
+            },
+        }
+
+        local t = require("lib.test_admin").test
+        local err_count = 0
+        for i in ipairs(data) do
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[i].input, data[i].output)
+
+            if code >= 300 then
+                err_count = err_count + 1
+            end
+            ngx.print(body)
+        end
+
+        assert(err_count == #data)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: one block rule, with rejected_msg
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "plugins": {
+                    "uri-blocker": {
+                        "block_rules": ["aa"],
+                        "rejected_msg": "access is not allowed"
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.print(body)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit block rule and return rejected_msg
+--- request
+GET /hello?aa=1
+--- error_code: 403
+--- response_body
+{"error_msg":"access is not allowed"}
+--- no_error_log
+[error]

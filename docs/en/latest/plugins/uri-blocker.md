@@ -38,7 +38,8 @@ The plugin helps we intercept user requests, we only need to indicate the `block
 | Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
 | ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
 | block_rules   | array[string] | required    |         |            | Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`. |
-| rejected_code | integer       | optional    | 403     | [200, ...] | The HTTP status code returned when the request URI hit any of `block_rules` |
+| rejected_code | integer       | optional    | 403     | [200, ...] | The HTTP status code returned when the request URI hit any of `block_rules`. |
+| rejected_msg | string       | optional    |      | non-empty | The HTTP response body returned when the request URI hit any of `block_rules`. |
 
 ## How To Enable
 
@@ -74,6 +75,20 @@ Connection: keep-alive
 Server: APISIX web server
 
 ... ...
+```
+
+If you set the property `rejected_msg` to `"access is not allowed"` , the response body will like below:
+
+```shell
+$ curl -i http://127.0.0.1:9080/root.exe?a=a
+HTTP/1.1 403 Forbidden
+Date: Wed, 17 Jun 2020 13:55:41 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 150
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"access is not allowed"}
 ```
 
 ## Disable Plugin
