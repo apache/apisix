@@ -42,6 +42,8 @@ __DATA__
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        -- now the plugin will be loaded twice,
+        -- one during startup and the other one by reload
         local code, _, org_body = t('/apisix/admin/plugins/reload',
                                     ngx.HTTP_PUT)
 
@@ -54,15 +56,15 @@ location /t {
 GET /t
 --- response_body
 done
+--- grep_error_log eval
+qr/sync local conf to etcd/
+--- grep_error_log_out
+sync local conf to etcd
 --- error_log
-load plugin times: 1
-load plugin times: 1
+load plugin times: 2
+load plugin times: 2
 start to hot reload plugins
 start to hot reload plugins
-load(): plugins not changed
-load_stream(): plugins not changed
-load(): plugins not changed
-load_stream(): plugins not changed
 
 
 
@@ -80,8 +82,7 @@ location /t {
             automatic = true,
             single_item = true,
             filter = function(item)
-                -- called twice before reload,
-                -- one for worker start, another for sync data from admin
+                -- called once before reload for sync data from admin
                 ngx.log(ngx.WARN, "reload plugins on node ",
                         before_reload and "before reload" or "after reload")
                 ngx.log(ngx.WARN, require("toolkit.json").encode(item.value))
@@ -121,7 +122,6 @@ done
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out
-reload plugins on node before reload
 reload plugins on node before reload
 reload plugins on node after reload
 --- error_log
@@ -180,6 +180,7 @@ plugin_attr:
         local code, _, org_body = t('/apisix/admin/plugins/reload',
                                     ngx.HTTP_PUT)
         ngx.say(org_body)
+        ngx.sleep(0.1)
     }
 }
 --- request
@@ -196,9 +197,9 @@ example-plugin get plugin attr val: 0
 example-plugin get plugin attr val: 1
 example-plugin get plugin attr val: 1
 example-plugin get plugin attr val: 1
---- error_log
-plugin_attr of example-plugin changed
-plugins not changed
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
 
 
 
@@ -301,3 +302,84 @@ done
 qr/Instance report fails/
 --- grep_error_log_out
 Instance report fails
+
+
+
+=== TEST 6: check disabling plugin via etcd
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "body":"hello upstream\n"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 7: hit
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_admin: false
+--- request
+GET /hello
+--- response_body
+hello upstream
+
+
+
+=== TEST 8: hit after disabling echo
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_admin: false
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local etcd = require("apisix.core.etcd")
+        assert(etcd.set("/plugins", {{name = "jwt-auth"}}))
+
+        ngx.sleep(0.2)
+
+        local http = require "resty.http"
+        local httpc = http.new()
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                    .. "/hello"
+        local res, err = httpc:request_uri(uri)
+        if not res then
+            ngx.say(err)
+            return
+        end
+        ngx.print(res.body)
+    }
+}
+--- request
+GET /t
+--- response_body
+hello world

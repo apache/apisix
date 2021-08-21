@@ -71,7 +71,105 @@ Here are the rules:
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
 
-#### 4. Parameter match
+#### 4. Different routes have the same `uri`
+
+When different routes have the same `uri`, you can set the priority field of the route to determine which route to match first, or add other matching rules to distinguish different routes.
+
+Note: In the matching rules, the `priority` field takes precedence over other rules except `uri`.
+
+1. Different routes have the same `uri` and set the `priority` field
+
+Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
+    "priority": 3,
+    "uri": "/hello"
+}'
+```
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1981": 1
+       },
+       "type": "roundrobin"
+    },
+    "priority": 2,
+    "uri": "/hello"
+}'
+```
+
+Test:
+
+```shell
+curl http://127.0.0.1:1980/hello
+1980
+```
+
+All requests only hit the route of port `1980`.
+
+2. Different routes have the same `uri` and set different matching conditions
+
+Here is an example of setting host matching rules:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
+    "hosts": ["localhost.com"],
+    "uri": "/hello"
+}'
+```
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1981": 1
+       },
+       "type": "roundrobin"
+    },
+    "hosts": ["test.com"],
+    "uri": "/hello"
+}'
+```
+
+Test:
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'host: localhost.com'
+1980
+```
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H 'host: test.com'
+1981
+```
+
+```shell
+$ curl http://127.0.0.1:9080/hello
+{"error_msg":"404 Route Not Found"}
+```
+
+The `host` rule matches, the request hits the corresponding upstream, and the `host` does not match, the request returns a 404 message.
+
+#### 5. Parameter match
 
 When `radixtree_uri_with_parameter` is used, we can match routes with parameters.
 
@@ -120,15 +218,15 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
 
-### How to filter route by graphql attributes
+### How to filter route by GraphQL attributes
 
-APISIX supports filtering route by some attributes of graphql. Currently we support:
+APISIX supports filtering route by some attributes of GraphQL. Currently we support:
 
 * graphql_operation
 * graphql_name
 * graphql_root_fields
 
-For instance, with graphql like this:
+For instance, with GraphQL like this:
 
 ```graphql
 query getRepo {
@@ -166,7 +264,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-To prevent spending too much time reading invalid graphql request body, we only read the first 1 MiB
+To prevent spending too much time reading invalid GraphQL request body, we only read the first 1 MiB
 data from the request body. This limitation is configured via:
 
 ```yaml
@@ -175,4 +273,4 @@ graphql:
 
 ```
 
-If you need to pass a graphql body which is larger than the limitation, you can increase the value in `conf/config.yaml`.
+If you need to pass a GraphQL body which is larger than the limitation, you can increase the value in `conf/config.yaml`.

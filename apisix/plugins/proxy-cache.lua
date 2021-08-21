@@ -64,10 +64,9 @@ local schema = {
             type = "array",
             minItems = 1,
             items = {
-                description = "http method",
+                description = "supported http method",
                 type = "string",
-                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                    "OPTIONS", "CONNECT", "TRACE"},
+                enum = {"GET", "POST", "HEAD"},
             },
             uniqueItems = true,
             default = {"GET", "HEAD"},

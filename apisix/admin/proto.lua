@@ -20,6 +20,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
+local compile_proto = require("apisix.plugins.grpc-transcode.proto").compile_proto
 local tostring = tostring
 
 
@@ -53,6 +54,11 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    local ok, err = compile_proto(conf.content)
+    if not ok then
+        return nil, {error_msg = "invalid content: " .. err}
+    end
+
     return need_id and id or true
 end
 
@@ -67,13 +73,13 @@ function _M.put(id, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("proto", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put proto[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -89,9 +95,10 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get proto[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
+    utils.fix_count(res.body, id)
     return res.status, res.body
 end
 
@@ -103,38 +110,40 @@ function _M.post(id, conf)
     end
 
     local key = "/proto"
-
     utils.inject_timestamp(conf)
-
-    -- core.log.info("key: ", key)
-    local res, err = core.etcd.push("/proto", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post proto[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
 end
 
-function _M.check_proto_used(plugins, deleting, ptype, pid)
+local function check_proto_used(plugins, deleting, ptype, pid)
 
-    core.log.info("plugins1: ", core.json.delay_encode(plugins, true))
+    --core.log.info("check_proto_used plugins: ", core.json.delay_encode(plugins, true))
+    --core.log.info("check_proto_used deleting: ", deleting)
+    --core.log.info("check_proto_used ptype: ", ptype)
+    --core.log.info("check_proto_used pid: ", pid)
 
     if plugins then
         if type(plugins) == "table" and plugins["grpc-transcode"]
            and plugins["grpc-transcode"].proto_id
            and tostring(plugins["grpc-transcode"].proto_id) == deleting then
-            return 400, {error_msg = "can not delete this proto,"
+            return false, {error_msg = "can not delete this proto,"
                                      .. ptype .. " [" .. pid
                                      .. "] is still using it now"}
         end
     end
+    return true
 end
 
 function _M.delete(id)
     if not id then
         return 400, {error_msg = "missing proto id"}
     end
+    core.log.info("proto delete: ", id)
 
     local routes, routes_ver = get_routes()
 
@@ -143,13 +152,16 @@ function _M.delete(id)
 
     if routes_ver and routes then
         for _, route in ipairs(routes) do
-            if type(route) == "table" and route.value
-               and route.value.plugins then
-                  return _M.check_proto_used(route.value.plugins, id, "route",
-                                             route.value.id)
+            core.log.info("proto delete route item: ", core.json.delay_encode(route, true))
+            if type(route) == "table" and route.value and route.value.plugins then
+                local ret, err = check_proto_used(route.value.plugins, id, "route",route.value.id)
+                if not ret then
+                    return 400, err
+                end
             end
         end
     end
+    core.log.info("proto delete route ref check pass: ", id)
 
     local services, services_ver = get_services()
 
@@ -158,20 +170,23 @@ function _M.delete(id)
 
     if services_ver and services then
         for _, service in ipairs(services) do
-            if type(service) == "table" and service.value
-               and service.value.plugins then
-                  return _M.check_proto_used(service.value.plugins, id,
-                                             "service", service.value.id)
+            if type(service) == "table" and service.value and service.value.plugins then
+                local ret, err = check_proto_used(service.value.plugins, id,
+                                                "service", service.value.id)
+                if not ret then
+                    return 400, err
+                end
             end
         end
     end
+    core.log.info("proto delete service ref check pass: ", id)
 
     local key = "/proto/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete proto[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

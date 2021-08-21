@@ -55,7 +55,7 @@ local plugin_name = "ldap-auth"
 
 local _M = {
     version = 0.1,
-    priority = 2520,
+    priority = 2540,
     type = 'auth',
     name = plugin_name,
     schema = schema,

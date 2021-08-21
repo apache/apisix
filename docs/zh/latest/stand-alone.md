@@ -33,21 +33,19 @@ APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路�
 
 *注意*：重新加载规则并更新时，均是内存热更新，不会有工作进程的替换过程，是个热更新过程。
 
-通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` 表示启
+由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
+Admin API 将不再被允许使用。
+
+通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` ，并禁用 Admin API 即可启
 用 Stand-alone 模式。
 
 参考下面示例：
 
 ```yaml
 apisix:
-  # ...
-  config_center: yaml             # etcd: use etcd to store the config value
-                                  # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
-# ...
+  enable_admin: false
+  config_center: yaml
 ```
-
-此外由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
-Admin API 将不再被允许使用。
 
 ### 如何配置规则
 

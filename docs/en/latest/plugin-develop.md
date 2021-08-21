@@ -37,6 +37,9 @@ title: Plugin Develop
   - [Register public API](#register-public-api)
   - [Register control API](#register-control-api)
 
+This documentation is about developing plugin in Lua. For other languages,
+see [external plugin](./external-plugin.md).
+
 ## where to put your plugins
 
 There are two ways to add new features based on APISIX.
@@ -89,9 +92,9 @@ method "http_init" in the file __apisix/init.lua__, and you may need to add some
 configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
 existing plugin mechanism, **we do not recommend this unless you have a complete grasp of the code**.
 
-## name and config
+## name, priority and the others
 
-Determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the example-plugin plugin,
+Determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the example-plugin plugin,
 you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
 duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
 
@@ -107,9 +110,9 @@ local _M = {
 }
 ```
 
-Note : The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
+Note: The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
 
-in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+In the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
 ```yaml
 plugins:                          # plugin list
@@ -131,7 +134,7 @@ plugins:                          # plugin list
   ...
 ```
 
-Note : the order of the plugins is not related to the order of execution.
+Note: the order of the plugins is not related to the order of execution.
 
 To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
 
@@ -139,9 +142,7 @@ To enable your plugin, copy this plugin list into `conf/config.yaml`, and add yo
 apisix:
   admin_key:
     - name: "admin"
-      # yamllint disable rule:comments-indentation
       key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
-      # yamllint enable rule:comments-indentation
       role: admin
 
 plugins: # copied from config-default.yaml
@@ -156,9 +157,25 @@ $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 ```
 
+There are other fields in the `_M` which affect the plugin's behavior.
+
+```lua
+local _M = {
+    ...
+    type = 'auth',
+    run_policy = 'prefer_route',
+}
+```
+
+`run_policy` field can be used to control the behavior of the plugin execution.
+When this field set to `prefer_route`, and the plugin has been configured both
+in the global and at the route level, only the route level one will take effect.
+
+`type` field is required to be set to `auth` if your plugin needs to work with consumer. See the section below.
+
 ## schema and check
 
-Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
+Write [JSON Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
 configuration data:
 
 ```json
@@ -210,7 +227,6 @@ local metadata_schema = {
         skey = {type = "string"},
     },
     required = {"ikey", "skey"},
-    additionalProperties = false,
 }
 
 local plugin_name = "example-plugin"
@@ -251,7 +267,6 @@ To validate the configuration, the plugin uses a schema like this:
 ```lua
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         key = {type = "string"},
     },
@@ -403,7 +418,7 @@ The above test case represents a simple scenario. Most scenarios will require mu
 
 Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
 
-Refer the following [document](how-to-build.md#4-test) to setup the testing framework.
+Refer the following [document](how-to-build.md#Step-4-Run-Test-Cases) to setup the testing framework.
 
 ### Attach the test-nginx execution process:
 

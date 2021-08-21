@@ -1,5 +1,5 @@
 {
-  "version": 2.5,
+  "version": 2.8,
   "sidebar": [
     {
       "type": "category",
@@ -17,6 +17,10 @@
         "architecture-design/router",
         "architecture-design/debug-mode"
       ]
+    },
+    {
+      "type": "doc",
+      "id": "getting-started"
     },
     {
       "type": "doc",
@@ -67,6 +71,7 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
+            "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction"
           ]
@@ -127,10 +132,6 @@
         {
           "type": "doc",
           "id": "admin-api"
-        },
-        {
-          "type": "doc",
-          "id": "control-api"
         }
       ]
     },
@@ -143,12 +144,15 @@
       "label": "Others",
       "items": [
         {
-          "type": "doc",
-          "id": "health-check"
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery"
+          ]
         },
         {
           "type": "doc",
-          "id": "router-radixtree"
+          "id": "health-check"
         },
         {
           "type": "doc",
@@ -168,7 +172,11 @@
         },
         {
           "type": "doc",
-          "id": "https"
+          "id": "certificate"
+        },
+        {
+          "type": "doc",
+          "id": "batch-processor"
         },
         {
           "type": "doc",
@@ -176,11 +184,31 @@
         },
         {
           "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-interceptors"
+        },
+        {
+          "type": "doc",
           "id": "CODE_STYLE"
         },
         {
           "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
           "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
         }
       ]
     },

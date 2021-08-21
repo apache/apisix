@@ -21,237 +21,299 @@ title: 快速入门指南
 #
 -->
 
-本指南的目的是介绍如何使用 APISIX 来配置出一个安全的可以对外提供服务的 API。当您读完本指南，你需要自己安装一下 APISIX 应用，并准备好一个可以对外提供服务的 API，该服务将由 API key 进行访问保护。
+## 概述
 
-本指南会使用到以下 GET 请求，该服务可以回显发送到这个 API 的传参。
+本文是 Apache APISIX 的快速入门指南。快速入门分为三个步骤：
 
-```bash
-$ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
-```
+1. 通过 [Docker Compose](https://docs.docker.com/compose/) 安装 Apache APISIX。
+1. 创建路由并绑定上游。
+1. 使用命令行语句 `curl` 验证绑定之后返回的结果是否符合预期。
 
-让我们来分析一下这个 URL 请求
+除此之外，本文也提供了 Apache APISIX 的一些进阶操作技巧，包括：添加身份验证、为路由添加前缀、使用 APISIX Dashboard 以及常见问题排查。
 
-- Scheme: HTTPS
-- Host/Address: httpbin.org
-- Port: 443
-- URI: /get
-- Query Parameters: foo1, foo2
+我们将以下面的 `echo` 端点为例，它将返回我们传递的参数。
 
-## 前提
+**请求内容**
 
-- 本指南使用 docker 和 docker compose 来安装 Apache APISIX。 但是， 如果您已经以其他方式安装了 Apache APISIX ，您只需跳到 [第二步](getting-started.md#第二步:-在-APISIX-中设置路由) 。
-- Curl：指南使用 Curl 命令进行 API 测试，但是您也可以使用您选择的任何其他工具（ 例如 Postman ）。
+请求 URL 由以下这些参数构成：
 
-## 第一步: 安装 APISIX
+- Protocol：即网络传输协议，示例中使用的是最常见的 `HTTP` 协议。
+- Port：即端口，示例中使用的 `80` 端口。
+- Host：即宿主机，示例中的主机是 `httpbin.org`。
+- Path：即路径，示例中的路径是`/get`。
+- Query Parameters：即查询字符串，这里有两个字符串，分别是`foo1`和`foo2`。
 
-Apache APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build.md#通过源码包安装) 显示了多个平台中的安装步骤。
-为了快速入门，让我们基于 docker 容器的安装方式进行安装。启动 Apache APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/apisix-docker) 并切换到 example 文件夹下执行如下命令。
-
-如下命令会启动 Apache APISIX 服务并默认在 9080 端口（ https 请求是 9443 端口） 提供 admin API 接口服务
+运行以下命令，发送请求：
 
 ```bash
-$ git clone https://github.com/apache/apisix-docker.git
-$ cd apisix-docker/example
-$ docker-compose -p docker-apisix up -d
+curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 ```
 
-第一次下载源代码需要一段时间，之后将非常快。在 docker 容器启动后，请访问以下链接，检查您是否获得成功的响应。
-
-```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-```
-
-下面是 Admin API 的接口响应：
+**响应内容**
 
 ```json
 {
-    "node": {
-        "createdIndex": 6,
-        "modifiedIndex": 6,
-        "key": "/apisix/services",
-        "dir": true
-        },
-    "action": "get"
+  "args": {
+    "foo1": "bar1",
+    "foo2": "bar2"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id": "Root=1-6088fe84-24f39487166cce1f0e41efc9"
+  },
+  "origin": "58.152.81.42",
+  "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
-## 第二步: 在 Apache APISIX 中创建 Route
+## 前提条件
 
-为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个 [web控制台](https://github.com/apache/apisix-dashboard)。
-本指南将会使用到 Admin API 接口。
+- 已安装[Docker Compose 组件](https://docs.docker.com/compose/)。
 
-一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。
-Route（路由）与客户端请求匹配，并指定它们到达 APISIX 后如何发送到 Upstream（上游，后端 API 服务）。
-Service（服务）为上游服务提供了抽象。因此，您可以创建单个 Service 并在多个 Route 中引用它。
-查看架构文档可以获取更多信息。
+- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/)等，进行测试。
 
-从技术上讲，所有这些信息（upstream、service、plugins）都可以包含在路由配置中。 Route 路由是由这三个主要部分组成的。
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
-- 路由匹配规则：
+:::note 说明
+如果您已经安装了 Apache APISIX，请直接阅读 [第二步](getting-started.md#第二步：创建路由)
+:::
 
-    让我们来看看下面的场景
-    http://example.com/services/users
+## 第一步：安装 Apache APISIX
 
-    上面的URL托管了系统中所有跟用户有关的（getUser/GetAllUsers）微服务。例如，可以通过URL（ http://example.com/services/users/GetAllUsers ） 访问到 GetAllUsers 服务接口。
-    现在要公开 `users` 路径下的所有 `GET` 服务请求（微服务）。以下是匹配此类请求的路由配置。
-
-    ```json
-    {
-        "methods": ["GET"],
-        "host": "example.com",
-        "uri": "/services/users/*",
-        ... Additional Configurations
-    }
-    ```
-
-    通过上面的匹配规则你就可以通过如下的命令跟 APISIX 进行交互了
-
-    ```bash
-    curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
-    ```
-
-- Upstream 信息：
-
-    Upstream 是一个虚拟主机抽象，它根据配置规则在给定的一组服务节点上执行负载平衡。
-    因此，单个上游配置可以由提供相同服务的多个服务器组成。每个节点将包括一个 key（地址/ip:port）和一个 value （节点的权重）。
-    服务可以通过轮询或一致哈希（cHash）机制进行负载平衡。
-
-    配置路由时，可以直接设置 Upstream 信息，也可以使用服务抽象来引用 Upstream 信息。
-
-- 各种插件
-
-    插件允许您扩展 APISIX 的功能，并实现可以与 HTTP request / response 生命周期接口的任意逻辑。
-    因此，如果您想对 API 进行身份验证，那么您可以使用密钥验证插件来对每个请求强制进行身份验证。
-
-### 设置 Upstream
-
-执行以下命令在 APISIX 中创建 id 为 50 的上游信息，并使用 round-robin 机制进行负载平衡。
+得益于 Docker，我们可以通过执行以下命令来启动 Apache APISIX 并启用 [Admin API](./admin-api.md)。
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+#将 Apache APISIX 的 Docker 镜像下载到本地
+git clone https://github.com/apache/apisix-docker.git
+# 将当前的目录切换到 apisix-docker/example 路径下
+cd apisix-docker/example
+# 运行 docker-compose 命令，安装 Apache APISIX
+docker-compose -p docker-apisix up -d
+```
+
+下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。
+
+下载完成后，在运行 Docker 的宿主机上执行`curl`命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
+
+```bash
+# 注意：请在运行 Docker 的宿主机上执行 curl 命令。
+curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
+
+返回数据如下所示，表示Apache APISIX 成功启动：
+
+```json
 {
+  "count":1,
+  "action":"get",
+  "node":{
+    "key":"/apisix/services",
+    "nodes":{},
+    "dir":true
+  }
+}
+```
+
+## 第二步：创建路由
+
+您现在已经拥有一个运行中的 Apache APISIX 实例了！接下来，让我们来创建一个路由（Route）。
+
+### 工作原理
+
+Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
+
+我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为[Upstream](./architecture-design/upstream.md)或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
+
+因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码是一个 Route 配置示例：
+
+```json
+{
+  "methods": ["GET"],
+  "host": "example.com",
+  "uri": "/services/users/*",
+  "upstream": {
     "type": "roundrobin",
     "nodes": {
-        "httpbin.org:443": 1
+      "httpbin.org:80": 1
     }
-}'
+  }
+}
 ```
 
-### 为转发 Upstream  添加 Route 信息
+这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游服务：
 
-默认情况下，Apache APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
+- 请求的 HTTP 方法为 `GET`。
+- 请求头包含 `host` 字段，且它的值为 `example.com`。
+- 请求路径匹配 `/services/users/*`，`*` 意味着任意的子路径，例如 `/services/users/getAll?limit=10`。
+
+当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游服务：
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
+```
+
+这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
+
+### 创建上游服务（Upstream）
+
+读完上一节，我们知道必须为 `Route` 设置 `Upstream`。只需执行下面的命令即可创建一个上游服务：
+
+```bash
+curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-    "uri": "/get",
-    "host": "httpbin.org",
-    "plugins": {
-        "proxy-rewrite": {
-          "scheme": "https"
-        }
-    },
-    "upstream_id": 50
+  "type": "roundrobin",
+  "nodes": {
+    "httpbin.org:80": 1
+  }
 }'
 ```
 
-### 访问 Apache APISIX 进行测试
+我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游服务，其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
 
-现在让我们调用 Apache APISIX 来测试新配置的路由。
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
+
+:::note 注意
+创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
+:::
+
+### 绑定路由与上游服务
+
+我们刚刚创建了一个上游服务，现在让我们为它绑定一个路由！
+
+```bash
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/get",
+  "host": "httpbin.org",
+  "upstream_id": "1"
+}'
+```
+
+## 第三步：验证
+
+我们已创建了路由与上游服务，并将它们进行了绑定。现在让我们访问 Apache APISIX 来测试这条路由：
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-API 也可以通过 HTTPs（9443）端口服务访问。如果您使用的是自签名证书，那么通过 curl 命令使用 `-k` 参数忽略自签名证书错误。
+它从我们的上游服务（实际是 `httpbin.org`）返回数据，并且结果符合预期。
+
+## 进阶操作
+
+本节提供了 Apache APISIX 的一些进阶操作技巧，包括：添加身份验证、为路由添加前缀、使用 APISIX Dashboard 以及常见问题排查。
+
+### 添加身份验证
+
+我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
+
+现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用[消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
+
+首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥：
 
 ```bash
-curl -i -k -X GET "https://127.0.0.1:9443/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
-```
-
-## 第三步: 为服务增加鉴权
-
-由于服务对公众开放，我们需要为新创建的 Apache APISIX 服务接口提供适当的保护。执行以下命令来创建一个名为 John 需要 api-key 的用户。
-
-注：Apache APISIX 支持多种认证机制，查看插件文档了解更多。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-    "username": "john",
-    "plugins": {
-        "key-auth": {
-            "key": "superSecretAPIKey"
-        }
+  "username": "john",
+  "plugins": {
+    "key-auth": {
+      "key": "key-of-john"
     }
+  }
 }'
 ```
 
-现在，让我们将服务配置为包含 KEY 验证插件。
+接下来，让我们绑定 `消费者（John）` 到路由上，我们只需要为路由 **启用** [key-auth](./plugins/key-auth.md) 插件即可。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-    "uri": "/get",
-    "host": "httpbin.org",
-    "plugins": {
-        "proxy-rewrite": {
-          "scheme": "https"
-        },
-        "key-auth": {}
-    },
-    "upstream_id": 50
+  "uri": "/get",
+  "host": "httpbin.org",
+  "plugins": {
+    "key-auth": {}
+  },
+  "upstream_id": "1"
 }'
 ```
 
-由于 route 由密钥验证插件保护，前一个访问 API 的 curl 命令将产生未经授权的访问错误。
-现在使用下面的命令安全地访问请求。
+现在当我们访问第二步创建的路由时，会触发 **Unauthorized Error（未经授权的错误）**。
+
+访问那个路由的正确方式是添加一个带有正确密钥的名为 `apikey` 的 `Header`，如下方代码所示。
 
 ```bash
-curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
+curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "apikey: key-of-john"
 ```
 
-## 为 route 添加前缀
+### 为路由添加前缀
 
-现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用代理来完成。
+现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用 `proxy-rewrite` 插件来完成。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-    "uri": "/samplePrefix/get",
-    "plugins": {
-        "proxy-rewrite": {
-          "scheme": "https",
-          "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
-        },
-        "key-auth": {}
+  "uri": "/samplePrefix/get",
+  "plugins": {
+    "proxy-rewrite": {
+      "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
     },
-    "upstream_id": 50
+    "key-auth": {}
+  },
+  "upstream_id": "1"
 }'
 ```
 
-现在可以使用以下命令调用路由：
+现在您可以使用以下命令来调用路由：
 
 ```bash
-curl -i -X GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' -H 'apikey: superSecretAPIKey'
+curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H "apikey: key-of-john"
 ```
 
-## Apache APISIX 控制台
+### APISIX Dashboard
 
-到目前为止，已经通过使用 admin API 接口编排对 Apache APISIX 的 API 的调用。然而，Apache APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
-可以在[repository](https://github.com/apache/apisix)中使用。控制台是直观的，您可以通过它编排同样的路由配置。
+Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashboard)，让我们的操作更直观更轻松。
 
 ![Dashboard](../../assets/images/dashboard.jpeg)
 
-### 故障排查
+<!--
+#
+#    In addition to the basic Markdown syntax, we use remark-admonitions
+#    alongside MDX to add support for admonitions. Admonitions are wrapped
+#    by a set of 3 colons.
+#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
+#    for more detail.
+#
+-->
 
-- 确保所需的端口未被其他系统/进程使用（默认端口为：9080、9443、2379）。下面是终止正在侦听特定端口（基于unix的系统）的进程的命令。
+### 常见问题排查
+
+- 确保所需的所有端口（**默认的 9080/9443/2379**）未被其他系统/进程使用。
+
+    下面是终止正在侦听特定端口（基于 unix 的系统）的进程的命令。
 
     ```bash
     sudo fuser -k 9443/tcp
     ```
 
-- 如果 docker 容器持续重启或者重启失败，请登录容器并观察日志以诊断问题。
+- 如果 Docker 容器持续不断地重启或失败，请登录容器并观察日志以诊断问题。
 
     ```bash
     docker logs -f --tail container_id

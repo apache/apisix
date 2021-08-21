@@ -30,6 +30,7 @@ title: log-rotate
 | -------- | ------- | ------ | ------- | ------ | ------------------------------------------------------ |
 | interval | integer | 必须   | 60 * 60 |        | 每间隔多长时间切分一次日志，秒为单位                   |
 | max_kept | integer | 必须   | 24 * 7  |        | 最多保留多少份历史日志，超过指定数量后，自动删除老文件 |
+| enable_compression | boolean | 可选    | false |       | 是否启用日志文件压缩（gzip）。该功能需要安装 `tar` 。    |
 
 开启该插件后，就会按照参数自动切分日志文件了。比如下面的例子是根据 `interval: 10` 和 `max_kept: 10` 得到的样本。
 
@@ -60,6 +61,21 @@ total 44K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
+当开启日志文件压缩时，日志文件将如下所示。
+
+```shell
+$ ll logs
+total 10.5K
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_error.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-34-00_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-00_error.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-10_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-10_error.log.tar.gz
+-rw-r--r--. 1 resty resty    0 Mar 20 20:34 access.log
+-rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
+```
+
 ### 示例
 
 #### 开启插件
@@ -75,6 +91,7 @@ plugin_attr:
     log-rotate:
         interval: 3600    # rotate interval (unit: second)
         max_kept: 168     # max number of log files will be kept
+        enable_compression: false    # enable log file compression(gzip) or not, default false
 ```
 
 #### 禁用插件

@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 return {
+    RPC_ERROR = 0,
+    RPC_PREPARE_CONF = 1,
+    RPC_HTTP_REQ_CALL = 2,
+    RPC_EXTRA_INFO = 3,
     HTTP_ETCD_DIRECTORY = {
         ["/upstreams"] = true,
         ["/plugins"] = true,

@@ -93,7 +93,7 @@ qr/X-APISIX-Upstream-Status: 200/
                             "read": 0.5
                         }
                     },
-                    "uri": "/sleep1"
+                    "uri": "/mysleep"
                 }]]
                 )
 
@@ -114,7 +114,7 @@ passed
 
 === TEST 4: hit routes (timeout) and $upstream_status is 504
 --- request
-GET /sleep1
+GET /mysleep?seconds=1
 --- error_code: 504
 --- response_body eval
 qr/504 Gateway Time-out/
@@ -206,8 +206,8 @@ passed
 --- request
 GET /server_error
 --- error_code: 500
---- response_body eval
-qr/500 Internal Server Error/
+--- response_body_like
+.*apisix.apache.org.*
 --- error_log
 X-APISIX-Upstream-Status: 500
 

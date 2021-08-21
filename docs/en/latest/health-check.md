@@ -26,8 +26,14 @@ title: Health Check
 Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck),
 you can use it for upstream.
 
-Note that we only start the health check when the upstream is hit by a request.
+Note:
+
+* We only start the health check when the upstream is hit by a request.
 There won't be any health check if an upstream is configured but isn't in used.
+* If there is no healthy node can be chosen, we will continue to access the upstream.
+* We won't start the health check when the upstream only has one node, as we will access
+it whether this unique node is healthy or not.
+* Active health check is required so that the unhealthy node can recover.
 
 The following is an example of health check:
 

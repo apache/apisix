@@ -21,9 +21,7 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
-local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
-local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -38,12 +36,19 @@ local tostring     = tostring
 local tonumber     = tonumber
 local xpcall       = xpcall
 local debug        = debug
+local string       = string
 local error        = error
 local rand         = math.random
 local constants    = require("apisix.constants")
+local health_check = require("resty.etcd.health_check")
 
 
 local is_http = ngx.config.subsystem == "http"
+local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
+local health_check_shm_name = "etcd-cluster-health-check"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
 local created_obj  = {}
 local loaded_configuration = {}
 
@@ -146,7 +151,11 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
 
     if type(res.result) ~= "table" then
-        return nil, "failed to wait etcd dir"
+        err = "failed to wait etcd dir"
+        if res.error and res.error.message then
+            err = err .. ": " .. res.error.message
+        end
+        return nil, err
     end
     return etcd_apisix.watch_format(res)
 end
@@ -479,6 +488,11 @@ function _M.getkey(self, key)
         return nil, "stopped"
     end
 
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+        key = local_conf.etcd.prefix .. key
+    end
+
     return getkey(self.etcd_cli, key)
 end
 
@@ -492,33 +506,8 @@ do
             return etcd_cli
         end
 
-        local local_conf, err = config_local.local_conf()
-        if not local_conf then
-            return nil, err
-        end
-
-        local etcd_conf = clone_tab(local_conf.etcd)
-        etcd_conf.http_host = etcd_conf.host
-        etcd_conf.host = nil
-        etcd_conf.prefix = nil
-        etcd_conf.protocol = "v3"
-        etcd_conf.api_prefix = "/v3"
-
-        -- default to verify etcd cluster certificate
-        etcd_conf.ssl_verify = true
-        if etcd_conf.tls then
-            if etcd_conf.tls.verify == false then
-                etcd_conf.ssl_verify = false
-            end
-
-            if etcd_conf.tls.cert then
-                etcd_conf.ssl_cert_path = etcd_conf.tls.cert
-                etcd_conf.ssl_key_path = etcd_conf.tls.key
-            end
-        end
-
         local err
-        etcd_cli, err = etcd.new(etcd_conf)
+        etcd_cli, err = etcd_apisix.new()
         return etcd_cli, err
     end
 end
@@ -527,6 +516,18 @@ end
 local function _automatic_fetch(premature, self)
     if premature then
         return
+    end
+
+    if not health_check.conf then
+        local _, err = health_check.init({
+            shm_name = health_check_shm_name,
+            fail_timeout = self.health_check_timeout,
+            max_fails = 3,
+            retry = true,
+        })
+        if err then
+            log.warn("fail to create health_check: " .. err)
+        end
     end
 
     local i = 0
@@ -545,7 +546,25 @@ local function _automatic_fetch(premature, self)
 
             local ok, err = sync_data(self)
             if err then
-                if err ~= "timeout" and err ~= "Key not found"
+                if string.find(err, err_etcd_unhealthy_all) then
+                    local reconnected = false
+                    while err and not reconnected and i <= 32 do
+                        local backoff_duration, backoff_factor, backoff_step = 1, 2, 6
+                        for _ = 1, backoff_step do
+                            i = i + 1
+                            ngx_sleep(backoff_duration)
+                            _, err = sync_data(self)
+                            if not err or not string.find(err, err_etcd_unhealthy_all) then
+                                log.warn("reconnected to etcd")
+                                reconnected = true
+                                break
+                            end
+                            backoff_duration = backoff_duration * backoff_factor
+                            log.error("no healthy etcd endpoint available, next retry after "
+                                       .. backoff_duration .. "s")
+                        end
+                    end
+                elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
                               tostring(self))
@@ -594,6 +613,10 @@ function _M.new(key, opts)
     if not resync_delay or resync_delay < 0 then
         resync_delay = 5
     end
+    local health_check_timeout = etcd_conf.health_check_timeout
+    if not health_check_timeout or health_check_timeout < 0 then
+        health_check_timeout = 10
+    end
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
@@ -618,6 +641,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         resync_delay = resync_delay,
+        health_check_timeout = health_check_timeout,
         timeout = timeout,
         single_item = single_item,
         filter = filter_fun,

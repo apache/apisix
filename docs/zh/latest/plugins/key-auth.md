@@ -37,9 +37,18 @@ title: key-auth
 
 ## 属性
 
+consumer 端配置：
+
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| key  | string | 可选   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
+| key  | string | 必需   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。 |
+
+router 端配置：
+
+| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
+| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
+| header  | string | 可选| apikey |        | 设置我们从哪个 header 获取 key。 |
+| query  | string | 可选 | apikey |        | 设置我们从哪个 querystring 获取 key，优先级低于header |
 
 ## 如何启用
 
@@ -83,6 +92,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+如果不想从默认的 `apikey` header 获取 key，可以自定义 header：
+
+```json
+{
+    "key-auth": {
+        "header": "Authorization"
+    }
+}
+```
+
 ## 测试插件
 
 下面是一个正常通过 `key-auth` 验证的请求:
@@ -112,7 +131,7 @@ HTTP/1.1 401 Unauthorized
 当你想去掉 `key-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

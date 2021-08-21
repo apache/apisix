@@ -37,9 +37,18 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
+For consumer side:
+
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
+
+For route side:
+
+| Name | Type   | Requirement | Default | Valid | Description                                                                  |
+| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| header  | string | optional    | apikey        |       | the header we get the key from |
+| query   | string | optional    | apikey        |       | the querystring we get the key from, which priority is lower than header |
 
 ## How To Enable
 
@@ -85,6 +94,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+If you don't want to fetch key from the default `apikey` header, you can customize the header:
+
+```json
+{
+    "key-auth": {
+        "header": "Authorization"
+    }
+}
+```
+
 ## Test Plugin
 
 Here is a correct test example:
@@ -116,7 +135,7 @@ When you want to disable the `key-auth` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

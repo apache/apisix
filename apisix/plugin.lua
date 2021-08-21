@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
+local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
 local pcall         = pcall
@@ -27,6 +28,7 @@ local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
 local tostring      = tostring
 local error         = error
+local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
@@ -137,37 +139,12 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
 end
 
 
-local function plugins_eq(old, new)
-    local eq = core.table.set_eq(old, new)
-    if not eq then
-        core.log.info("plugin list changed")
-        return false
-    end
-
-    for name, plugin in pairs(old) do
-        eq = core.table.deep_eq(plugin.attr, plugin_attr(name))
-        if not eq then
-            core.log.info("plugin_attr of ", name, " changed")
-            return false
-        end
-    end
-
-    return true
-end
-
-
 local function load(plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
         if processed[name] == nil then
             processed[name] = true
         end
-    end
-
-    -- the same configure may be synchronized more than one
-    if plugins_eq(local_plugins_hash, processed) then
-        core.log.info("plugins not changed")
-        return true
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
@@ -210,12 +187,6 @@ local function load_stream(plugin_names)
         if processed[name] == nil then
             processed[name] = true
         end
-    end
-
-    -- the same configure may be synchronized more than one
-    if plugins_eq(stream_local_plugins_hash, processed) then
-        core.log.info("plugins not changed")
-        return true
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
@@ -267,14 +238,12 @@ function _M.load(config)
         -- called during synchronizing plugin data
         http_plugin_names = {}
         stream_plugin_names = {}
-        for _, conf_value in config_util.iterate_values(config.values) do
-            local plugins_conf = conf_value.value
-            for _, conf in ipairs(plugins_conf) do
-                if conf.stream then
-                    core.table.insert(stream_plugin_names, conf.name)
-                else
-                    core.table.insert(http_plugin_names, conf.name)
-                end
+        local plugins_conf = config.value
+        for _, conf in ipairs(plugins_conf) do
+            if conf.stream then
+                core.table.insert(stream_plugin_names, conf.name)
+            else
+                core.table.insert(http_plugin_names, conf.name)
             end
         end
     end
@@ -309,8 +278,6 @@ local function trace_plugins_info_for_debug(plugins)
         return
     end
 
-    local is_http = ngx.config.subsystem == "http"
-
     if not plugins then
         if is_http and not ngx.headers_sent then
             core.response.add_header("Apisix-Plugins", "no plugin")
@@ -333,22 +300,34 @@ local function trace_plugins_info_for_debug(plugins)
 end
 
 
-function _M.filter(user_route, plugins)
-    local user_plugin_conf = user_route.value.plugins
+function _M.filter(conf, plugins, route_conf)
+    local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         trace_plugins_info_for_debug(nil)
-        return core.empty_tab
+        -- when 'plugins' is given, always return 'plugins' itself instead
+        -- of another one
+        return plugins or core.empty_tab
     end
 
+    local route_plugin_conf = route_conf and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" and not plugin_conf.disable then
+            if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
+                local plugin_conf_in_route = route_plugin_conf[name]
+                if plugin_conf_in_route and not plugin_conf_in_route.disable then
+                    goto continue
+                end
+            end
+
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
+
+            ::continue::
         end
     end
 
@@ -418,6 +397,8 @@ local function merge_service_route(service_conf, route_conf)
 
     if route_conf.value.name then
         new_conf.value.name = route_conf.value.name
+    else
+        new_conf.value.name = nil
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
@@ -486,8 +467,10 @@ do
             automatic = true,
             item_schema = core.schema.plugins,
             single_item = true,
-            filter = function()
-                _M.load(plugins_conf)
+            filter = function(item)
+                -- we need to pass 'item' instead of plugins_conf because
+                -- the latter one is nil at the first run
+                _M.load(item)
             end,
         })
         if not plugins_conf then
@@ -649,6 +632,7 @@ end
 
 
 function _M.run_plugin(phase, plugins, api_ctx)
+    local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
     if not api_ctx then
         return
@@ -666,27 +650,37 @@ function _M.run_plugin(phase, plugins, api_ctx)
         for i = 1, #plugins, 2 do
             local phase_func = plugins[i][phase]
             if phase_func then
+                plugin_run = true
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
-                    if code >= 400 then
-                        core.log.warn(plugins[i].name, " exits with http status code ", code)
-                    end
+                    if is_http then
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with http status code ", code)
+                        end
 
-                    core.response.exit(code, body)
+                        core.response.exit(code, body)
+                    else
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with status code ", code)
+                        end
+
+                        ngx_exit(1)
+                    end
                 end
             end
         end
-        return api_ctx
+        return api_ctx, plugin_run
     end
 
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         if phase_func then
+            plugin_run = true
             phase_func(plugins[i + 1], api_ctx)
         end
     end
 
-    return api_ctx
+    return api_ctx, plugin_run
 end
 
 
@@ -697,20 +691,21 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == "access" then
+        if phase_name == nil then
             api_ctx.global_rules = global_rules
         end
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = global_rules.values
+        local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
             api_ctx.conf_version = global_rule.modifiedIndex
             api_ctx.conf_id = global_rule.value.id
 
             core.table.clear(plugins)
-            plugins = _M.filter(global_rule, plugins)
-            if phase_name == "access" then
+            plugins = _M.filter(global_rule, plugins, route)
+            if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
             else

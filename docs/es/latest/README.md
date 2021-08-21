@@ -36,7 +36,7 @@ También puede usarse como [k8s ingress controller (control de ingreso)](https:/
 
 La arquitectura técnica de Apache APISIX:
 
-![](../../assets/images/apisix.png)
+![La arquitectura técnica de Apache APISIX](../../assets/images/apisix.png)
 
 ## Communidad
 
@@ -76,7 +76,7 @@ ensayos A/B, ensayos de despliegue de canarios (canary release), despliegue azul
   - Proxy de Protocolo
   - Proxy Dubbo: Proxy de Dubbo basado en Tengine.
   - Proxy de HTTP(S) hacia adelante
-  - [SSL](../../en/latest/https.md): Carga dinámica de certificado SSL.
+  - [SSL](../../en/latest/certificate.md): Carga dinámica de certificado SSL.
 
 - **Completamente Dinámico**
 
@@ -155,9 +155,9 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Bajar el paquete de publicación más reciente de código fuente:
 
      ```shell
-     $ mkdir apisix-2.5
-     $ wget https://downloads.apache.org/apisix/2.5/apache-apisix-2.5-src.tgz
-     $ tar zxvf apache-apisix-2.5-src.tgz -C apisix-2.5
+     $ mkdir apisix-2.8
+     $ wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
+     $ tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
      ```
 
    - Instalar las dependencias：
@@ -194,7 +194,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
    - Instalar APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.5/apisix-2.5-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
    ```
 
    - Chequear versión de APISIX:
@@ -235,7 +235,7 @@ Hay varias maneras de instalar la versión publicada Apache de APISIX:
 
    La Guía para Comenzar es una excelente manera de aprender los fundamentos de APISIX, basta seguir los pasos en [Getting Started](../../en/latest/getting-started.md).
 
-   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins.md).
+   Más aún, usted puede seguir la documentación para ensayar más [plugins](../../en/latest/plugins).
 
 3. Admin API
 
@@ -273,27 +273,27 @@ Al usar el servidor de 8 núcleos de AWS, los QPS de APISIX alcanzan 140,000 con
 
 #### Las ventajas de Apache APISIX
 
-| **Prestaciones**                                                     | **Apache APISIX**                                        | **Kong**               |
-| :------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
-| Le pertenece a                                                       | Apache Software Foundation                               | Kong Inc.              |
-| Arquitectura de la tecnología                                        | Nginx + etcd                                             | Nginx + postgres       |
-| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, GitHub, meetup | GitHub, freenode, foro |
-| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                    | 1700                   |
-| Latencia                                                             | 0.2 ms                                                   | 2 ms                   |
-| Dubbo                                                                | Sí                                                       | No                     |
-| Retroceso-deshacer de configuration                                  | Sí                                                       | No                     |
-| Ruta con TTL                                                         | Sí                                                       | No                     |
-| Plug-in carga en caliente                                            | Sí                                                       | No                     |
-| LB y ruta personalizados                                             | Sí                                                       | No                     |
-| REST API <--> transcodificación gRPC                                 | Sí                                                       | No                     |
-| Tengine                                                              | Sí                                                       | No                     |
-| MQTT                                                                 | Sí                                                       | No                     |
-| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                       | Recabando datos, 5 seg |
-| Tablero                                                              | Sí                                                       | No                     |
-| IdP                                                                  | Sí                                                       | No                     |
-| Centro de configuración HA                                           | Sí                                                       | No                     |
-| Límite de velocidad para una ventana específica de tiempo            | Sí                                                       | No                     |
-| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                       | No                     |
+| **Prestaciones**                                                     | **Apache APISIX**                                               | **Kong**               |
+| :------------------------------------------------------------------- | :-------------------------------------------------------------- | :--------------------- |
+| Le pertenece a                                                       | Apache Software Foundation                                      | Kong Inc.              |
+| Arquitectura de la tecnología                                        | Nginx + etcd                                                    | Nginx + postgres       |
+| Canales de comunicación                                              | Lista de correos, grupo Wechat, grupo QQ, [GitHub](https://github.com/apache/apisix/issues), [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg), meetup | GitHub, freenode, foro |
+| CPU de un solo núcleo, QPS (activa limit-count y plugins prometheus) | 18000                                                           | 1700                   |
+| Latencia                                                             | 0.2 ms                                                          | 2 ms                   |
+| Dubbo                                                                | Sí                                                              | No                     |
+| Retroceso-deshacer de configuration                                  | Sí                                                              | No                     |
+| Ruta con TTL                                                         | Sí                                                              | No                     |
+| Plug-in carga en caliente                                            | Sí                                                              | No                     |
+| LB y ruta personalizados                                             | Sí                                                              | No                     |
+| REST API <--> transcodificación gRPC                                 | Sí                                                              | No                     |
+| Tengine                                                              | Sí                                                              | No                     |
+| MQTT                                                                 | Sí                                                              | No                     |
+| Tiempo efectivo de Configuración                                     | Determinado por los eventos, < 1ms                              | Recabando datos, 5 seg |
+| Tablero                                                              | Sí                                                              | No                     |
+| IdP                                                                  | Sí                                                              | No                     |
+| Centro de configuración HA                                           | Sí                                                              | No                     |
+| Límite de velocidad para una ventana específica de tiempo            | Sí                                                              | No                     |
+| Soporta cualquier variable Nginx como condición de enrutamiento      | Sí                                                              | No                     |
 
 Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
@@ -310,9 +310,10 @@ Ensayo de comparación de desempeño [datos detallados](https://gist.github.com/
 
 ## Historias de Usuarios
 
+- [Sina Weibo: the road to customization of Sina Weibo API gateway based on Apache APISIX(Chinese)](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
 - [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
 - [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
 - [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller?(Chinese)](https://www.upyun.com/opentalk/448.html)
 - [aispeech: Why we create a new k8s ingress controller?(Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)

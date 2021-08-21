@@ -82,7 +82,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 | query    | object                      | optional    |         |       | Specify `QueryString` for all request |
 | headers  | object                      | optional    |         |       | Specify `Header` for all request      |
 | timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
-| pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
+| pipeline | [HttpRequest](#httprequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
 
@@ -98,7 +98,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Response：
 
-Response is `Array` of [HttpResponse](#HttpResponse).
+Response is `Array` of [HttpResponse](#httpresponse).
 
 #### HttpResponse
 
@@ -108,6 +108,22 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 | reason  | string  | http reason phrase    |
 | body    | string  | http response body    |
 | headers | object  | http response headers |
+
+## How to specify custom uri
+
+We can change the default uri in the `plugin_attr` section of `conf/config.yaml`.
+
+| Name       | Type   | Requirement | Default                      | Description                       |
+| ---------- | ------ |-------------| ---------------------------- | --------------------------------- |
+| uri        | string | optional    | "/apisix/batch-requests"     | uri to use with batch-requests plugin   |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  batch-requests:
+    uri: "/api-gw/batch"
+```
 
 ## Test Plugin
 

@@ -34,7 +34,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/docs/en/latest/benchmark.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/v3.4.0/learning/why/)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -307,6 +307,11 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 }
 ```
 
+```yml
+# etcd.conf.yml
+enable-grpc-gateway: true
+```
+
 事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
 
 ## 如何创建高可用的 Apache APISIX 集群？
@@ -319,7 +324,7 @@ APISIX 的高可用可分为两个部分：
 
 ## 为什么源码安装中执行 `make deps` 命令失败？
 
-1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install-dependencies.md](install-dependencies.md) 文档进行安装。
+1、当执行 `make deps` 命令时，发生诸如下面所示的错误。这是由于缺少 OpenResty  的 `openssl` 开发软件包导致的，你需要先安装它。请参考 [install dependencies](install-dependencies.md) 文档进行安装。
 
 ```shell
 $ make deps
@@ -393,9 +398,173 @@ HTTP/1.1 200 OK
 ...
 
 # uri 匹配失败
-curl http://127.0.0.1:9080/12ab -i
+$ curl http://127.0.0.1:9080/12ab -i
 HTTP/1.1 404 Not Found
 ...
 ```
 
 在 route 中，我们可以通过 `uri` 结合 `vars` 字段来实现更多的条件匹配，`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
+
+## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
+
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`(一个 Kubernetes Service) 的示例：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.default.svc.cluster.local": 1
+        }
+    }
+}'
+```
+
+```shell
+# 测试请求
+$ curl http://127.0.0.1:9080/ip -i
+HTTP/1.1 200 OK
+...
+```
+
+## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
+
+1、Admin API 的 `X-API-KEY` 指的是 `config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+
+注意：使用默认的 API token 存在安全风险，建议在部署到生产环境时对其进行更新。
+
+2、`X-API-KEY` 是可以修改的。
+
+例如：在 `conf/config.yaml` 文件中对 `apisix.admin_key.key` 做如下修改并 reload APISIX。
+
+```yaml
+apisix:
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+访问 Admin API：
+
+```shell
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+{
+    "uris":[ "/*" ],
+    "name":"admin-token-test",
+    "upstream":{
+        "nodes":[
+            {
+                "host":"127.0.0.1",
+                "port":1980,
+                "weight":1
+            }
+        ],
+        "type":"roundrobin"
+    }
+}'
+
+HTTP/1.1 200 OK
+......
+```
+
+路由创建成功，表示 `X-API-KEY` 修改生效。
+
+## 如何允许所有 IP 访问 Admin API
+
+Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`，如果你想允许所有的 IP 访问，那么你只需在 `conf/config.yaml` 配置文件中添加如下的配置。
+
+```yaml
+apisix:
+  allow_admin:
+    - 0.0.0.0/0
+```
+
+重启或 reload APISIX，所有 IP 便可以访问 `Admin API`。
+
+**注意：您可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问您的 `Apache APISIX` 实例，但是在生产环境中使用它并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问您的实例。**
+
+## 基于 acme.sh 自动更新 apisix ssl 证书
+
+```bash
+$ curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
+
+$ chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
+
+$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "~/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
+
+$ acme.sh --renew --domain demo.domain
+
+```
+
+详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
+
+## 如何在路径匹配时剪除请求路径前缀
+
+在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过插件 `proxy-rewrite` 实现。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/foo/*",
+    "plugins": {
+        "proxy-rewrite": {
+            "regex_uri": ["^/foo/(.*)","/$1"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+$ curl http://127.0.0.1:9080/foo/get -i
+HTTP/1.1 200 OK
+...
+{
+  ...
+  "url": "http://127.0.0.1/get"
+}
+```
+
+## 如何解决 `unable to get local issuer certificate` 错误
+
+修改 `conf/config.yaml`
+
+```yaml
+# ... 忽略其余无关项
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
+# ... 忽略其余无关项
+```
+
+**注意:**
+
+尝试使用 cosocket 连接任何 TLS 服务时，如果 APISIX 不信任对端 TLS 服务证书，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
+
+举例：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议， 即 Nacos 配置的 `host` 是 `https://` 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
+
+## 如何解决 `module 'resty.worker.events' not found` 错误
+
+在 `/root` 目录下安装 APISIX 会导致这个问题。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。需要移动 APISIX 安装目录，推荐安装在 `/usr/local` 目录下。
+
+## `plugin-metadata` 和 `plugin-configs` 有什么区别
+
+`plugin-metadata` 是插件的元数据，由插件的所有配置实例共享。在编写插件时，如果有一些属性变化需要对该插件的所有配置实例生效，那么放在 `plugin-metadata` 合适。
+
+`plugin-configs` 是指多个不同插件的配置实例的组合，如果你想要复用一组通用的插件配置实例，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
+
+`plugin-metadata` 和 `plugin-configs` 的区别在于：
+
+ - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的的插件配置实例。
+ - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
