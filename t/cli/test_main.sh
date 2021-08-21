@@ -131,12 +131,12 @@ apisix:
       port: 9081
   ssl:
     listen:
-    - 9443
-    - ip: 127.0.0.2
-      port: 9444
-    - ip: 127.0.0.3
-      port: 9445
-      enable_http2: true
+      - 9443
+      - ip: 127.0.0.2
+        port: 9444
+      - ip: 127.0.0.3
+        port: 9445
+        enable_http2: true
 " > conf/config.yaml
 
 make init

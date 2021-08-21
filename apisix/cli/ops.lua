@@ -463,37 +463,68 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ip_port_to_check = {}
 
-    -- support multiple ports listen, support specific IP, compatible with the original style
-    if type(yaml_conf.apisix.node_listen) == "number" then
-
-        if ports_to_check[yaml_conf.apisix.node_listen] ~= nil then
-            util.die("node_listen port ", yaml_conf.apisix.node_listen,
-                    " conflicts with ", ports_to_check[yaml_conf.apisix.node_listen], "\n")
+    local function listen_table_insert(listen_table, scheme, ip, port, enable_ipv6, enable_http2)
+        if type(ip) ~= "string" then
+            util.die(scheme, " listen ip format error, must be string", "\n")
         end
 
-        local node_listen = {}
-        table_insert(node_listen, {ip = "0.0.0.0", port = yaml_conf.apisix.node_listen})
-        if yaml_conf.apisix.enable_ipv6 then
-            table_insert(node_listen, {ip = "[::]", port = yaml_conf.apisix.node_listen})
+        if type(port) ~= "number" then
+            util.die(scheme, " listen port format error, must be number", "\n")
         end
-        yaml_conf.apisix.node_listen = node_listen
-    elseif type(yaml_conf.apisix.node_listen) == "table" then
-        local node_listen = {}
-        for _, value in ipairs(yaml_conf.apisix.node_listen) do
-            local ip = "0.0.0.0"
-            local port = 9080
-            local enable_ipv6 = false
 
-            if type(value) == "number" then
-                port = value
+        if ports_to_check[port] ~= nil then
+            util.die(scheme, " listen port ", port, " conflicts with ",
+                ports_to_check[port], "\n")
+        end
 
-                if yaml_conf.apisix.enable_ipv6 then
-                    enable_ipv6 = true
+        local addr = ip .. ":" .. port
+
+        if scheme == "http" then
+            if ip_port_to_check[addr] == nil then
+                table_insert(listen_table, {ip = ip, port = port})
+                ip_port_to_check[addr] = scheme
+            end
+
+            if enable_ipv6 then
+                ip = "[::]"
+                addr = ip .. ":" .. port
+
+                if ip_port_to_check[addr] == nil then
+                    table_insert(listen_table, {ip = ip, port = port})
+                    ip_port_to_check[addr] = scheme
                 end
+            end
 
+        elseif scheme == "https" then
+            if ip_port_to_check[addr] == nil then
+                table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
+                ip_port_to_check[addr] = scheme
+            end
+
+            if enable_ipv6 then
+                ip = "[::]"
+                addr = ip .. ":" .. port
+
+                if ip_port_to_check[addr] == nil then
+                    table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
+                    ip_port_to_check[addr] = scheme
+                end
+            end
+        end
+    end
+
+    local node_listen = {}
+    -- listen in http, support multiple ports, support specific IP, compatible with the original style
+    if type(yaml_conf.apisix.node_listen) == "number" then
+        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen, yaml_conf.apisix.enable_ipv6)
+    elseif type(yaml_conf.apisix.node_listen) == "table" then
+        for _, value in ipairs(yaml_conf.apisix.node_listen) do
+            if type(value) == "number" then
+                listen_table_insert(node_listen, "http", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6)
             elseif type(value) == "table" then
-
-                ip = value.ip
+                local ip = value.ip
+                local port = value.port
+                local enable_ipv6 = false
 
                 if ip == nil then
                     ip = "0.0.0.0"
@@ -501,90 +532,30 @@ Please modify "admin_key" in conf/config.yaml .
                         enable_ipv6 = true
                     end
                 end
-
-                if type(ip) ~= "string" then
-                    util.die("node_listen ip format error: ", ip, "\n")
-                end
-
-                port = value.port
 
                 if port == nil then
                     port = 9080
                 end
 
-                if type(port) ~= "number" then
-                    util.die("node_listen port format error: ", port, "\n")
-                end
-
-            end
-
-            if ports_to_check[port] ~= nil then
-                util.die("node_listen port ", port, " conflicts with ",
-                        ports_to_check[port], "\n")
-            end
-
-            local addr = ip .. ":" .. port
-
-            if ip_port_to_check[addr] == nil then
-                table_insert(node_listen, {ip = ip, port = port})
-                ip_port_to_check[addr] = true
-            end
-
-            if enable_ipv6 then
-                ip = "[::]"
-                addr = ip .. ":" .. port
-
-                if ip_port_to_check[addr] == nil then
-                    table_insert(node_listen, {ip = ip, port = port})
-                    ip_port_to_check[addr] = true
-                end
+                listen_table_insert(node_listen, "http", ip, port, enable_ipv6)
             end
         end
-        yaml_conf.apisix.node_listen = node_listen
     end
+    yaml_conf.apisix.node_listen = node_listen
 
-
-    local total_ssl_listen = {}
-    -- support specific IP listen in https
+    local ssl_listen = {}
+    -- listen in https, support multiple ports, support specific IP
     if type(yaml_conf.apisix.ssl.listen) == "number" then
-        local ip = "0.0.0.0"
-        local port = yaml_conf.apisix.ssl.listen
-
-        if ports_to_check[port] ~= nil then
-            util.die("ssl listen port ", port,
-                    " conflicts with ", ports_to_check[port], "\n")
-        end
-
-        local addr = ip .. ":" .. port
-
-        if ip_port_to_check[addr] == nil then
-            table_insert(total_ssl_listen, {ip = "0.0.0.0", port = port, enable_http2 = false})
-        end
-
-        if yaml_conf.apisix.enable_ipv6 then
-            ip = "[::]"
-            addr = ip .. ":" .. port
-            if ip_port_to_check[addr] == nil then
-                table_insert(total_ssl_listen, {ip = "[::]", port = port, enable_http2 = false})
-            end
-        end
+        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen, yaml_conf.apisix.enable_ipv6, false)
     elseif type(yaml_conf.apisix.ssl.listen) == "table" then
         for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
-            local ip = "0.0.0.0"
-            local port = 9443
-            local enable_http2 = false
-            local enable_ipv6 = false
-
             if type(value) == "number" then
-                port = value
-
-                if yaml_conf.apisix.enable_ipv6 then
-                    enable_ipv6 = true
-                end
-
+                listen_table_insert(ssl_listen, "https", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6, false)
             elseif type(value) == "table" then
-
-                ip = value.ip
+                local ip = value.ip
+                local port = value.port
+                local enable_ipv6 = false
+                local enable_http2 = value.enable_http2
 
                 if ip == nil then
                     ip = "0.0.0.0"
@@ -593,105 +564,33 @@ Please modify "admin_key" in conf/config.yaml .
                     end
                 end
 
-                if type(ip) ~= "string" then
-                    util.die("ssl listen ip format error: ", ip, "\n")
-                end
-
-                port = value.port
-
                 if port == nil then
                     port = 9443
                 end
 
-                if type(port) ~= "number" then
-                    util.die("ssl listen port format error: ", port, "\n")
-                end
-
-                enable_http2 = value.enable_http2
                 if enable_http2 == nil then
                     enable_http2 = false
                 end
 
-            end
-
-            if ports_to_check[port] ~= nil then
-                util.die("ssl listen port ", port, " conflicts with ",
-                    ports_to_check[port], "\n")
-            end
-
-            local addr = ip .. ":" .. port
-
-            if ip_port_to_check[addr] == nil then
-                table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = enable_http2})
-                ip_port_to_check[addr] = true
-            end
-
-            if enable_ipv6 then
-                ip = "[::]"
-                addr = ip .. ":" .. port
-
-                if ip_port_to_check[addr] == nil then
-                    table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = enable_http2})
-                    ip_port_to_check[addr] = true
-                end
+                listen_table_insert(ssl_listen, "https", ip, port, enable_ipv6, enable_http2)
             end
         end
     end
 
     -- listen in https, compatible with the original style
     if type(yaml_conf.apisix.ssl.listen_port) == "number" then
-        local ip = "0.0.0.0"
-        local port = yaml_conf.apisix.ssl.listen_port
-
-        if ports_to_check[port] ~= nil then
-            util.die("ssl listen port ", port,
-                    " conflicts with ", ports_to_check[port], "\n")
-        end
-
-        local addr = ip .. ":" .. port
-        if ip_port_to_check[addr] == nil then
-            table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = yaml_conf.apisix.ssl.enable_http2})
-        end
-
-        if yaml_conf.apisix.enable_ipv6 then
-            ip = "[::]"
-            addr = ip .. ":" .. port
-            if ip_port_to_check[addr] == nil then
-                table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = yaml_conf.apisix.ssl.enable_http2})
-            end
-        end
+        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen_port,
+                yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.ssl.enable_http2)
     elseif type(yaml_conf.apisix.ssl.listen_port) == "table" then
         for _, value in ipairs(yaml_conf.apisix.ssl.listen_port) do
             if type(value) == "number" then
-                local ip = "0.0.0.0"
-                local port = value
-
-                if ports_to_check[port] ~= nil then
-                    util.die("ssl listen port ", port, " conflicts with ",
-                            ports_to_check[port], "\n")
-                end
-
-                local addr = ip .. ":" .. port
-
-                if ip_port_to_check[addr] == nil then
-                    table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = yaml_conf.apisix.ssl.enable_http2})
-                    ip_port_to_check[addr] = true
-                end
-
-                if yaml_conf.apisix.enable_ipv6 then
-                    ip = "[::]"
-                    addr = ip .. ":" .. port
-
-                    if ip_port_to_check[addr] == nil then
-                        table_insert(total_ssl_listen, {ip = ip, port = port, enable_http2 = yaml_conf.apisix.ssl.enable_http2})
-                        ip_port_to_check[addr] = true
-                    end
-                end
+                listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
+                        yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.ssl.enable_http2)
             end
         end
     end
 
-    yaml_conf.apisix.ssl.listen = total_ssl_listen
+    yaml_conf.apisix.ssl.listen = ssl_listen
 
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
         local cert_path = yaml_conf.apisix.ssl.ssl_trusted_certificate
