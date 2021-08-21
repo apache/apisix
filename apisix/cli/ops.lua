@@ -479,36 +479,18 @@ Please modify "admin_key" in conf/config.yaml .
 
         local addr = ip .. ":" .. port
 
-        if scheme == "http" then
-            if ip_port_to_check[addr] == nil then
-                table_insert(listen_table, {ip = ip, port = port})
-                ip_port_to_check[addr] = scheme
-            end
+        if ip_port_to_check[addr] == nil then
+            table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
+            ip_port_to_check[addr] = scheme
+        end
 
-            if enable_ipv6 then
-                ip = "[::]"
-                addr = ip .. ":" .. port
+        if enable_ipv6 then
+            ip = "[::]"
+            addr = ip .. ":" .. port
 
-                if ip_port_to_check[addr] == nil then
-                    table_insert(listen_table, {ip = ip, port = port})
-                    ip_port_to_check[addr] = scheme
-                end
-            end
-
-        elseif scheme == "https" then
             if ip_port_to_check[addr] == nil then
                 table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
                 ip_port_to_check[addr] = scheme
-            end
-
-            if enable_ipv6 then
-                ip = "[::]"
-                addr = ip .. ":" .. port
-
-                if ip_port_to_check[addr] == nil then
-                    table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
-                    ip_port_to_check[addr] = scheme
-                end
             end
         end
     end
@@ -516,15 +498,16 @@ Please modify "admin_key" in conf/config.yaml .
     local node_listen = {}
     -- listen in http, support multiple ports, support specific IP, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen, yaml_conf.apisix.enable_ipv6)
+        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen, yaml_conf.apisix.enable_ipv6, false)
     elseif type(yaml_conf.apisix.node_listen) == "table" then
         for _, value in ipairs(yaml_conf.apisix.node_listen) do
             if type(value) == "number" then
-                listen_table_insert(node_listen, "http", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6)
+                listen_table_insert(node_listen, "http", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6, false)
             elseif type(value) == "table" then
                 local ip = value.ip
                 local port = value.port
                 local enable_ipv6 = false
+                local enable_http2 = value.enable_http2
 
                 if ip == nil then
                     ip = "0.0.0.0"
@@ -537,7 +520,11 @@ Please modify "admin_key" in conf/config.yaml .
                     port = 9080
                 end
 
-                listen_table_insert(node_listen, "http", ip, port, enable_ipv6)
+                if enable_http2 == nil then
+                    enable_http2 = false
+                end
+
+                listen_table_insert(node_listen, "http", ip, port, enable_ipv6, enable_http2)
             end
         end
     end
