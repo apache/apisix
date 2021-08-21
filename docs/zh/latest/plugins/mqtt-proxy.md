@@ -36,16 +36,12 @@ title: mqtt-proxy
 
 ## 属性
 
-* `protocol_name`: 必选，协议名称，正常情况下应为“ MQTT” 。
-* `protocol_level`: 必选，协议级别，MQTT `3.1.*` 应为 “4” ，MQTT `5.0` 应该是“5”。
-* `upstream.ip`: 必选，将当前请求转发到的上游的 IP 地址，
-* `upstream.port`: 必选，将当前请求转发到的上游的 端口，
-
 | 名称           | 类型    | 必选项 | 默认值 | 有效值 | 描述                                                   |
 | -------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------ |
 | protocol_name  | string  | 必须   |        |        | 协议名称，正常情况下应为“ MQTT”                        |
 | protocol_level | integer | 必须   |        |        | 协议级别，MQTT `3.1.*` 应为 `4` ，MQTT `5.0` 应是`5`。 |
-| upstream.ip    | string  | 必须   |        |        | 将当前请求转发到的上游的 IP 地址                       |
+| upstream.host  | string  | 必须   |        |        | 将当前请求转发到的上游的 IP 地址或域名                  |
+| upstream.ip    | string  | 废弃   |        |        | 推荐使用“host”代替。将当前请求转发到的上游的 IP 地址                       |
 | upstream.port  | number  | 必须   |        |        | 将当前请求转发到的上游的端口                           |
 
 ## 如何启用
@@ -77,7 +73,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
             "protocol_name": "MQTT",
             "protocol_level": 4,
             "upstream": {
-                "ip": "127.0.0.1",
+                "host": "127.0.0.1",
                 "port": 1980
             }
         }
@@ -90,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
+$ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
 现在就已经移除了 mqtt-proxy 插件了。

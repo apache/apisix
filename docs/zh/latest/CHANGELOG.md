@@ -23,6 +23,9 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.8.0](#280)
+- [2.7.0](#270)
+- [2.6.0](#260)
 - [2.5.0](#250)
 - [2.4.0](#240)
 - [2.3.0](#230)
@@ -40,6 +43,108 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.8.0
+
+### Change
+
+- 如果启用 stream proxy，默认将不再一并启用 HTTP proxy 功能 [#4580](https://github.com/apache/apisix/pull/4580)
+
+### Core
+
+- :sunrise: 允许用户自定义 balancer [#4605](https://github.com/apache/apisix/pull/4605)
+- :sunrise: upstream 中添加 retry_timeout，类似于 Nginx 的 proxy_next_upstream_timeout [#4574](https://github.com/apache/apisix/pull/4574)
+- :sunrise: 允许在 balancer_by_lua 中运行插件 [#4549](https://github.com/apache/apisix/pull/4549)
+- :sunrise: 允许给 upstream 指定单独的连接池 [#4506](https://github.com/apache/apisix/pull/4506)
+- :sunrise: etcd 连接开启健康检查 [#4191](https://github.com/apache/apisix/pull/4191)
+
+### Plugin
+
+- :sunrise: 增加 gzip 插件 [#4640](https://github.com/apache/apisix/pull/4640)
+- :sunrise: 增加 ua-restriction 插件来拒绝爬虫请求 [#4587](https://github.com/apache/apisix/pull/4587)
+- :sunrise: stream 模块增加 ip-restriction 插件 [#4602](https://github.com/apache/apisix/pull/4602)
+- :sunrise: stream 模块增加 limit-conn 插件 [#4515](https://github.com/apache/apisix/pull/4515)
+- :sunrise: 将 ext-plugin 的超时提升到 60s [#4557](https://github.com/apache/apisix/pull/4557)
+- :sunrise: key-auth 支持从 query string 中获取 key [#4490](https://github.com/apache/apisix/pull/4490)
+- :sunrise: kafka-logger 支持通过 admin API 设置日志格式 [#4483](https://github.com/apache/apisix/pull/4483)
+
+### Bugfix
+
+- 修复 stream proxy 的 SNI router 在 session 复用中不可用的问题 [#4607](https://github.com/apache/apisix/pull/4607)
+- 修复 limit-conn 同时在全局和 route 中指定会出错的问题 [#4585](https://github.com/apache/apisix/pull/4585)
+- 修复 Admin API 中检查 proto 引用关系的错误 [#4575](https://github.com/apache/apisix/pull/4575)
+- 修复 skywalking 同时在全局和 route 中指定会出错的问题 [#4589](https://github.com/apache/apisix/pull/4589)
+- 调用 `ctx.var.cookie_*` 时如果没有找到 cookie 不再报错 [#4564](https://github.com/apache/apisix/pull/4564)
+- 修复 request-id 同时在全局和 route 中指定会出错的问题 [#4479](https://github.com/apache/apisix/pull/4479)
+
+## 2.7.0
+
+### Change
+
+- 修改 metadata_schema 校验方式，让它跟其他 schema 一致 [#4381](https://github.com/apache/apisix/pull/4381)
+- 移除 echo 插件的 auth_value 字段 [#4055](https://github.com/apache/apisix/pull/4055)
+- 更正 Admin API count 字段的计算，并把它的类型变成 integer [#4385](https://github.com/apache/apisix/pull/4385)
+
+### Core
+
+- :sunrise: TCP 代理支持客户端证书校验 [#4445](https://github.com/apache/apisix/pull/4445)
+- :sunrise: TCP 代理支持接收 TLS over TCP 连接 [#4409](https://github.com/apache/apisix/pull/4409)
+- :sunrise: TCP/UDP 代理上游配置支持用域名 [#4386](https://github.com/apache/apisix/pull/4386)
+- :sunrise: CLI 中封装 nginx quit 操作 [#4360](https://github.com/apache/apisix/pull/4360)
+- :sunrise: 允许在 route 配置上游超时时间 [#4340](https://github.com/apache/apisix/pull/4340)
+- :sunrise: Nacos 服务发现支持 group 参数 [#4325](https://github.com/apache/apisix/pull/4325)
+- :sunrise: Nacos 服务发现支持 namespace 参数 [#4313](https://github.com/apache/apisix/pull/4313)
+
+### Plugin
+
+- :sunrise: client-control 允许动态设置 client_max_body_size [#4423](https://github.com/apache/apisix/pull/4423)
+- :sunrise: ext-plugin 使用 SIGTERM 结束 runner [#4367](https://github.com/apache/apisix/pull/4367)
+- :sunrise: limit-req 增加 nodelay 参数 [#4395](https://github.com/apache/apisix/pull/4395)
+- :sunrise: mqtt-proxy 允许配置域名 [#4391](https://github.com/apache/apisix/pull/4391)
+- :sunrise: redirect 支持带上 query string [#4298](https://github.com/apache/apisix/pull/4298)
+
+### Bugfix
+
+- 修复客户端断开连接导致的内存泄漏 [#4405](https://github.com/apache/apisix/pull/4405)
+- 修复处理 etcd 响应时有一个地方没有检查 res.body.error 的问题 [#4371](https://github.com/apache/apisix/pull/4371)
+- 修复 ext-plugin 插件 token 过期后没有刷新 token 的问题 [#4345](https://github.com/apache/apisix/pull/4345)
+- 修复 ext-plugin 插件没有传递环境变量的问题 [#4349](https://github.com/apache/apisix/pull/4349)
+- 修复插件热加载时，插件可能不会重新加载的问题 [#4319](https://github.com/apache/apisix/pull/4319)
+
+## 2.6.0
+
+### Change
+
+- 更改 prometheus 里面关于 latency 的指标的 label [#3993](https://github.com/apache/apisix/pull/3993)
+- 修改 prometheus 默认端口，不再暴露到数据面的端口上 [#3994](https://github.com/apache/apisix/pull/3994)
+- limit-count 里面如果使用 redis cluster，需要指定名称 [#3910](https://github.com/apache/apisix/pull/3910)
+- 不再支持 OpenResty 1.15 [#3960](https://github.com/apache/apisix/pull/3960)
+
+### Core
+
+- :sunrise: 允许 pass_host 为 node 时，upstream 配置多个节点 [#4208](https://github.com/apache/apisix/pull/4208)
+- :sunrise: 自定义 500 错误页 [#4164](https://github.com/apache/apisix/pull/4164)
+- :sunrise: stream_route 中支持 upstream_id [#4121](https://github.com/apache/apisix/pull/4121)
+- :sunrise: 支持客户端证书认证 [#4034](https://github.com/apache/apisix/pull/4034)
+- :sunrise: 实验性支持 nacos 服务发现 [#3820](https://github.com/apache/apisix/pull/3820)
+- :sunrise: 给 tcp.sock.connect 打补丁，采用配置的 DNS resolver [#4114](https://github.com/apache/apisix/pull/4114)
+
+### Plugin
+
+- :sunrise: redirect 插件，支持编码 uri [#4244](https://github.com/apache/apisix/pull/4244)
+- :sunrise: key-auth 插件: 支持自定义鉴权头 [#4013](https://github.com/apache/apisix/pull/4013)
+- :sunrise: response-rewrite 插件: 允许在 header 里面使用变量 [#4194](https://github.com/apache/apisix/pull/4194)
+- :sunrise: 实现 ext-plugin 第一版，APISIX 现在支持使用其他语言编写自定义插件 [#4183](https://github.com/apache/apisix/pull/4183)
+
+### Bugfix
+
+- 支持 IPv6 DNS resolver [#4242](https://github.com/apache/apisix/pull/4242)
+- 修复被动健康检查可能重复报告的问题 [#4116](https://github.com/apache/apisix/pull/4116)
+- 修复 traffic-split 中偶发的规则紊乱 [#4092](https://github.com/apache/apisix/pull/4092)
+- 修复带域名的 upstream 配置的访问问题 [#4061](https://github.com/apache/apisix/pull/4061)
+- 修复 2.5 版本的 APISIX 无法识别之前版本的 route 配置的问题 [#4056](https://github.com/apache/apisix/pull/4056)
+- standalone 模式下，启动程序时应该可以读取配置 [#4027](https://github.com/apache/apisix/pull/4027)
+- limit-count 插件 redis 模式下原子化计数操作 [#3991](https://github.com/apache/apisix/pull/3991)
 
 ## 2.5.0
 

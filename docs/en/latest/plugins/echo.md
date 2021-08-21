@@ -45,7 +45,6 @@ This plugin addresses the corresponding functionality in the common phases such 
 | body        | string | optional    |         |       | Body to replace upstream response.           |
 | after_body  | string | optional    |         |       | Body after the modification of filter phase. |
 | headers     | object | optional    |         |       | New headers for response                     |
-| auth_value  | string | optional    |         |       | Auth value                                   |
 
 At least one of `before_body`, `body`, and `after_body` must be specified.
 
@@ -88,7 +87,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/apache/apisix/discussions
+    about: Ask (and answer) questions at the Apache APISIX discussion forum

@@ -26,7 +26,6 @@ local ck           = require "resty.cookie"
 local gq_parse     = require("graphql").parse
 local setmetatable = setmetatable
 local sub_str      = string.sub
-local rawset       = rawset
 local ngx          = ngx
 local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
@@ -70,7 +69,8 @@ local function parse_graphql(ctx)
 end
 
 
-local function get_parsed_graphql(ctx)
+local function get_parsed_graphql()
+    local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
         return ctx._graphql
     end
@@ -112,7 +112,11 @@ end
 do
     local var_methods = {
         method = ngx.req.get_method,
-        cookie = function () return ck:new() end
+        cookie = function ()
+            if ngx.var.http_cookie then
+                return ck:new()
+            end
+        end
     }
 
     local ngx_var_names = {
@@ -129,10 +133,17 @@ do
         upstream_no_cache          = true,
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
+
+        var_x_forwarded_proto = true,
     }
 
     local mt = {
         __index = function(t, key)
+            local cached = t._cache[key]
+            if cached ~= nil then
+                return cached
+            end
+
             if type(key) ~= "string" then
                 error("invalid argument, expect string value", 2)
             end
@@ -147,9 +158,20 @@ do
                 if cookie then
                     local err
                     val, err = cookie:get(sub_str(key, 8))
-                    if not val then
+                    if err then
                         log.warn("failed to fetch cookie value by key: ",
                                  key, " error: ", err)
+                    end
+                end
+
+            elseif core_str.has_prefix(key, "arg_") then
+                local arg_key = sub_str(key, 5)
+                local args = request.get_uri_args()[arg_key]
+                if args then
+                    if type(args) == "table" then
+                        val = args[1]
+                    else
+                        val = args
                     end
                 end
 
@@ -161,7 +183,7 @@ do
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
-                val = get_parsed_graphql(t)[key]
+                val = get_parsed_graphql()[key]
 
             elseif key == "route_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
@@ -178,12 +200,18 @@ do
             elseif key == "service_name" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_name
 
+            elseif key == "balancer_ip" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_ip
+
+            elseif key == "balancer_port" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_port
+
             else
                 val = get_var(key, t._request)
             end
 
             if val ~= nil then
-                rawset(t, key, val)
+                t._cache[key] = val
             end
 
             return val
@@ -195,12 +223,16 @@ do
             end
 
             -- log.info("key: ", key, " new val: ", val)
-            rawset(t, key, val)
+            t._cache[key] = val
         end,
     }
 
 function _M.set_vars_meta(ctx)
     local var = tablepool.fetch("ctx_var", 0, 32)
+    if not var._cache then
+        var._cache = {}
+    end
+
     var._request = get_request()
     setmetatable(var, mt)
     ctx.var = var
@@ -211,7 +243,8 @@ function _M.release_vars(ctx)
         return
     end
 
-    tablepool.release("ctx_var", ctx.var)
+    core_tab.clear(ctx.var._cache)
+    tablepool.release("ctx_var", ctx.var, true)
     ctx.var = nil
 end
 

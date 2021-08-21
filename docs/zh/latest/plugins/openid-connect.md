@@ -52,6 +52,10 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | introspection_endpoint_auth_method | string  | 可选   | "client_secret_basic" |         | 令牌自省的认证方法名称                         |
 | public_key                         | string  | 可选   |                       |         | 验证令牌的公钥                                 |
 | token_signing_alg_values_expected  | string  | 可选   |                       |         | 用于对令牌进行签名的算法                       |
+| set_access_token_header              | boolean | 可选    | true               |         | 在请求头设置访问令牌                        |
+| access_token_in_authorization_header | boolean | 可选    | false              |         | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。|
+| set_id_token_header                  | boolean | 可选    | true               |         | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`    |
+| set_userinfo_header                  | boolean | 可选    | true               |         | 是否将用户信息对象设置到请求头参数 `X-Userinfo`    |
 
 ### 令牌自省
 
@@ -97,6 +101,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorization: Bearer {replace_jwt_token}"
 ```
 
+当 Oauth 2 授权服务器返回结果里面除了 token 之外还有过期时间, token 将在 APISIX 中缓存直至过期。
+具体细节参见：
+
+1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和代码。
+2. `exp` 字段的定义： [Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
+
 ### 公钥自省
 
 您还可以提供 JWT 令牌的公钥来验证令牌。 如果您提供了公共密钥和令牌自省端点，则将执行公共密钥工作流，而不是通过身份服务器进行验证。如果要减少额外的网络呼叫并加快过程，可以使用此方法。
@@ -118,9 +128,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "bearer_only":true,
             "realm":"master",
             "token_signing_alg_values_expected":"RS256",
-            "public_key":"-----BEGIN CERTIFICATE-----
+            "public_key":"-----BEGIN PUBLIC KEY-----
             {public_key}
-            -----END CERTIFICATE-----"
+            -----END PUBLIC KEY-----"
         }
     },
     "upstream":{

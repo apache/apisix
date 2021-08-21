@@ -46,12 +46,12 @@ response rewrite plugin, rewrite the content returned by the upstream as well as
 | status_code | integer | optional    |         | [200, 598] | New `status code` to client, keep the original response code by default.                                                                                                                                                      |
 | body        | string  | optional    |         |            | New `body` to client, and the content-length will be reset too.                                                                                                                                                               |
 | body_base64 | boolean | optional    | false   |            | Identify if `body` in configuration need base64 decoded before rewrite to client.                                                                                                                                             |
-| headers     | object  | optional    |         |            | Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
+| headers     | object  | optional    |         |            | Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. The value can contain Nginx variables in `$var` format, like `$remote_addr $balancer_ip` |
 | vars     | array[]  | optional    |         |            | A DSL to evaluate with the given ngx.var. See `vars` [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). if the `vars` is empty, then all rewrite operations will be executed unconditionally |
 
 ## How To Enable
 
-Here's an example, enable the `response rewrite` plugin on the specified route:
+Here's an example, enable the `response-rewrite` plugin on the specified route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,7 +63,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
                 "X-Server-id": 3,
-                "X-Server-status": "on"
+                "X-Server-status": "on",
+                "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
             },
             "vars":[
                 [ "status","==","200" ]
@@ -97,15 +98,16 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 X-Server-id: 3
 X-Server-status: on
+X-Server-balancer_addr: 127.0.0.1:80
 
 {"code":"ok","message":"new json body"}
 ```
 
-This means that the `response rewrite` plugin is in effect.
+This means that the `response-rewrite` plugin is in effect.
 
 ## Disable Plugin
 
-When you want to disable the `response rewrite` plugin, it is very simple,
+When you want to disable the `response-rewrite` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
@@ -123,7 +125,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-The `response rewrite` plugin has been disabled now. It works for other plugins.
+The `response-rewrite` plugin has been disabled now. It works for other plugins.
 
 ## Attention
 

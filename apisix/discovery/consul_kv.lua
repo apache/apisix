@@ -102,12 +102,12 @@ local schema = {
                     type = "object",
                     properties = {
                         fail_timeout = {type = "integer", default = 1},
-                        weigth = {type = "integer", default = 1},
+                        weight = {type = "integer", default = 1},
                         max_fails = {type = "integer", default = 1}
                     },
                     default = {
                         fail_timeout = 1,
-                        weigth = 1,
+                        weight = 1,
                         max_fails = 1
                     }
                 }
@@ -458,11 +458,12 @@ function _M.init_worker()
     end
 
     log.notice("consul_conf: ", core.json.encode(consul_conf))
+    default_weight = consul_conf.weight
     -- set default service, used when the server node cannot be found
     if consul_conf.default_service then
         default_service = consul_conf.default_service
+        default_service.weight = default_weight
     end
-    default_weight = consul_conf.weight
     default_prefix_rule = "(" .. consul_conf.prefix .. "/.*/)([a-zA-Z0-9.]+):([0-9]+)"
     log.info("default params, default_weight: ", default_weight,
             ", default_prefix_rule: ", default_prefix_rule)

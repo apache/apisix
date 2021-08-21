@@ -119,6 +119,7 @@ end
 local function run()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -158,7 +159,7 @@ local function run()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -185,6 +186,7 @@ end
 local function run_stream()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
@@ -228,7 +230,7 @@ local function run_stream()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -255,6 +257,7 @@ end
 local function get_plugins_list()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -270,6 +273,7 @@ end
 local function post_reload_plugins()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -279,16 +283,29 @@ local function post_reload_plugins()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(500, err)
+        core.response.exit(503, err)
     end
 
     core.response.exit(200, "done")
 end
 
 
-local function sync_local_conf_to_etcd()
-    core.log.warn("sync local conf to etcd")
+local function plugins_eq(old, new)
+    local old_set = {}
+    for _, p in ipairs(old) do
+        old_set[p.name] = p
+    end
 
+    local new_set = {}
+    for _, p in ipairs(new) do
+        new_set[p.name] = p
+    end
+
+    return core.table.set_eq(old_set, new_set)
+end
+
+
+local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
     local plugins = {}
@@ -304,6 +321,42 @@ local function sync_local_conf_to_etcd()
             stream = true,
         })
     end
+
+    if reset then
+        local res, err = core.etcd.get("/plugins")
+        if not res then
+            core.log.error("failed to get current plugins: ", err)
+            return
+        end
+
+        if res.status == 404 then
+            -- nothing need to be reset
+            return
+        end
+
+        if res.status ~= 200 then
+            core.log.error("failed to get current plugins, status: ", res.status)
+            return
+        end
+
+        local stored_plugins = res.body.node.value
+        local revision = res.body.node.modifiedIndex
+        if plugins_eq(stored_plugins, plugins) then
+            core.log.info("plugins not changed, don't need to reset")
+            return
+        end
+
+        core.log.warn("sync local conf to etcd")
+
+        local res, err = core.etcd.atomic_set("/plugins", plugins, nil, revision)
+        if not res then
+            core.log.error("failed to set plugins: ", err)
+        end
+
+        return
+    end
+
+    core.log.warn("sync local conf to etcd")
 
     -- need to store all plugins name into one key so that it can be updated atomically
     local res, err = core.etcd.set("/plugins", plugins)
@@ -364,7 +417,8 @@ function _M.init_worker()
                 return
             end
 
-            sync_local_conf_to_etcd()
+            -- try to reset the /plugins to the current configuration in the admin
+            sync_local_conf_to_etcd(true)
         end)
 
         if not ok then

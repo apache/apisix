@@ -38,7 +38,6 @@ local function new()
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
     etcd_conf.api_prefix = "/v3"
-    etcd_conf.ssl_verify = true
 
     -- default to verify etcd cluster certificate
     etcd_conf.ssl_verify = true
@@ -98,6 +97,15 @@ end
 function _M.get_format(res, real_key, is_dir, formatter)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
+    end
+
+    if res.body.error == "etcdserver: permission denied" then
+        return nil, "etcd forbidden code: 403"
+    end
+
+    if res.body.error then
+        -- other errors, like "grpc: received message larger than max"
+        return nil, res.body.error
     end
 
     res.headers["X-Etcd-Index"] = res.body.header.revision
@@ -301,6 +309,9 @@ function _M.push(key, value, ttl)
     -- manually add suffix
     local index = res.body.header.revision
     index = string.format("%020d", index)
+
+    -- set the basic id attribute
+    value.id = index
 
     res, err = set(key .. "/" .. index, value, ttl)
     if not res then

@@ -12,6 +12,10 @@ on:
     paths-ignore:
       - 'docs/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test_apisix:
     name: run fuzzing
@@ -29,9 +33,17 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
       with:
         submodules: recursive
+
+    - name: Cache deps
+      uses: actions/cache@v2.1.6
+      env:
+        cache-name: cache-deps
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
     - name: run apisix
       run: |
@@ -53,7 +65,7 @@ jobs:
 
     - name: install boofuzz
       run: |
-        pip install typing boofuzz
+        pip install -r $PWD/t/fuzzing/requirements.txt
 
     - name: run simpleroute test
       run: |
@@ -66,3 +78,8 @@ jobs:
     - name: run vars route test
       run: |
         python $PWD/t/fuzzing/vars_route_test.py
+
+    - name: run check leak test
+      run: |
+        python $PWD/t/fuzzing/client_abort.py
+        python $PWD/t/fuzzing/simple_http.py

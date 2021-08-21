@@ -20,7 +20,7 @@ local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
-local ipairs	       = ipairs
+local ipairs           = ipairs
 local type             = type
 local error            = error
 local str_find         = core.string.find
@@ -29,35 +29,11 @@ local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
 
-local cert_cache = core.lrucache.new {
-    ttl = 3600, count = 512,
-}
-
-local pkey_cache = core.lrucache.new {
-    ttl = 3600, count = 512,
-}
-
 
 local _M = {
     version = 0.1,
     server_name = ngx_ssl.server_name,
 }
-
-
-local function parse_pem_cert(sni, cert)
-    core.log.debug("parsing cert for sni: ", sni)
-
-    local parsed, err = ngx_ssl.parse_pem_cert(cert)
-    return parsed, err
-end
-
-
-local function parse_pem_priv_key(sni, pkey)
-    core.log.debug("parsing priv key for sni: ", sni)
-
-    local parsed, err = ngx_ssl.parse_pem_priv_key(pkey)
-    return parsed, err
-end
 
 
 local function create_router(ssl_items)
@@ -80,23 +56,6 @@ local function create_router(ssl_items)
                 end
             else
                 sni = ssl.value.sni:reverse()
-            end
-
-            -- decrypt private key
-            if ssl.value.key then
-                local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.key)
-                if decrypted then
-                    ssl.value.key = decrypted
-                end
-            end
-
-            if ssl.value.keys then
-                for i = 1, #ssl.value.keys do
-                    local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.keys[i])
-                    if decrypted then
-                        ssl.value.keys[i] = decrypted
-                    end
-                end
             end
 
             idx = idx + 1
@@ -133,7 +92,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
         return false, "no request found"
     end
 
-    local parsed_cert, err = cert_cache(cert, nil, parse_pem_cert, sni, cert)
+    local parsed_cert, err = apisix_ssl.fetch_cert(sni, cert)
     if not parsed_cert then
         return false, "failed to parse PEM cert: " .. err
     end
@@ -143,9 +102,8 @@ local function set_pem_ssl_key(sni, cert, pkey)
         return false, "failed to set PEM cert: " .. err
     end
 
-    local parsed_pkey, err = pkey_cache(pkey, nil, parse_pem_priv_key, sni,
-                                        pkey)
-    if not parsed_pkey then
+    local parsed_pkey, err = apisix_ssl.fetch_pkey(sni, pkey)
+    if not parsed_cert then
         return false, "failed to parse PEM priv key: " .. err
     end
 
@@ -237,6 +195,24 @@ function _M.match_and_set(api_ctx)
         end
     end
 
+    if matched_ssl.value.client then
+        local ca_cert = matched_ssl.value.client.ca
+        local depth = matched_ssl.value.client.depth
+        if apisix_ssl.support_client_verification() then
+            local parsed_cert, err = apisix_ssl.fetch_cert(sni, ca_cert)
+            if not parsed_cert then
+                return false, "failed to parse client cert: " .. err
+            end
+
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth)
+            if not ok then
+                return false, err
+            end
+
+            api_ctx.ssl_client_verified = true
+        end
+    end
+
     return true
 end
 
@@ -253,9 +229,12 @@ end
 function _M.init_worker()
     local err
     ssl_certificates, err = core.config.new("/ssl", {
-                        automatic = true,
-                        item_schema = core.schema.ssl,
-                    })
+        automatic = true,
+        item_schema = core.schema.ssl,
+        checker = function (item, schema_type)
+            return apisix_ssl.check_ssl_conf(true, item)
+        end,
+    })
     if not ssl_certificates then
         error("failed to create etcd instance for fetching ssl certificates: "
               .. err)

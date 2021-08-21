@@ -37,6 +37,7 @@ local schema = {
                 "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
                 "multiple origin use ',' to split. default: *.",
             type = "string",
+            pattern = [[^(\*|\*\*|null|\w+://[^,]+(,\w+://[^,]+)*)$]],
             default = "*"
         },
         allow_methods = {

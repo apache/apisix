@@ -36,6 +36,13 @@ local schema = {
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        rejected_msg = {
+            type = "string", minLength = 1
+        },
+        nodelay = {
+            type = "boolean", default = false
+        },
+        allow_degradation = {type = "boolean", default = false}
     },
     required = {"rate", "burst", "key"}
 }
@@ -70,6 +77,9 @@ function _M.access(conf, ctx)
                                               create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 
@@ -89,14 +99,20 @@ function _M.access(conf, ctx)
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
+            if conf.rejected_msg then
+                return conf.rejected_code, { error_msg = conf.rejected_msg }
+            end
             return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 
-    if delay >= 0.001 then
+    if delay >= 0.001 and not conf.nodelay then
         sleep(delay)
     end
 end

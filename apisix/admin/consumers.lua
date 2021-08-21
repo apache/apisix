@@ -25,7 +25,7 @@ local _M = {
 }
 
 
-local function check_conf(conf)
+local function check_conf(username, conf)
     -- core.log.error(core.json.encode(conf))
     if not conf then
         return nil, {error_msg = "missing configurations"}
@@ -36,6 +36,10 @@ local function check_conf(conf)
     local ok, err = core.schema.check(core.schema.consumer, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    if username and username ~= conf.username then
+        return nil, {error_msg = "wrong username" }
     end
 
     if conf.plugins then
@@ -61,8 +65,8 @@ local function check_conf(conf)
 end
 
 
-function _M.put(_, conf)
-    local consumer_name, err = check_conf(conf)
+function _M.put(username, conf)
+    local consumer_name, err = check_conf(username, conf)
     if not consumer_name then
         return 400, err
     end
@@ -72,13 +76,13 @@ function _M.put(_, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -94,9 +98,10 @@ function _M.get(consumer_name)
     local res, err = core.etcd.get(key, not consumer_name)
     if not res then
         core.log.error("failed to get consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
+    utils.fix_count(res.body, consumer_name)
     return res.status, res.body
 end
 
@@ -115,7 +120,7 @@ function _M.delete(consumer_name)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete consumer[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

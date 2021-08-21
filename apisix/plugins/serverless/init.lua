@@ -75,7 +75,7 @@ return function(plugin_name, priority)
                                                    load_funcs, conf.functions)
 
         for _, func in ipairs(functions) do
-            func()
+            func(conf, ctx)
         end
     end
 
@@ -113,7 +113,7 @@ return function(plugin_name, priority)
         call_funcs('access', conf, ctx)
     end
 
-    function _M.balancer(conf, ctx)
+    function _M.before_proxy(conf, ctx)
         call_funcs('balancer', conf, ctx)
     end
 

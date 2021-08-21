@@ -17,7 +17,6 @@
 
 local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
-local resty_lock = require("resty.lock")
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -30,9 +29,19 @@ local mt = {
 }
 
 
+local script = [=[
+    if redis.call('ttl', KEYS[1]) < 0 then
+        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
+        return ARGV[1] - 1
+    end
+    return redis.call('incrby', KEYS[1], -1)
+]=]
+
+
 local function new_redis_cluster(conf)
     local config = {
-        name = "apisix-redis-cluster",
+        -- can set different name for different redis cluster
+        name = conf.redis_cluster_name,
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password,
@@ -65,8 +74,11 @@ function _M.new(plugin_name, limit, window, conf)
     end
 
     local self = {
-        limit = limit, window = window, conf = conf,
-        plugin_name = plugin_name, red_cli =red_cli
+        limit = limit,
+        window = window,
+        conf = conf,
+        plugin_name = plugin_name,
+        red_cli = red_cli,
     }
 
     return setmetatable(self, mt)
@@ -77,56 +89,17 @@ function _M.incoming(self, key)
     local red = self.red_cli
     local limit = self.limit
     local window = self.window
-    local remaining
     key = self.plugin_name .. tostring(key)
 
-    local ret, err = red:ttl(key)
-    if not ret then
-        return false, "failed to get redis `" .. key .."` ttl: " .. err
-    end
+    local remaining, err = red:eval(script, 1, key, limit, window)
 
-    core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
-    if ret < 0 then
-        local lock, err = resty_lock:new("plugin-limit-count")
-        if not lock then
-            return false, "failed to create lock: " .. err
-        end
-
-        local elapsed, err = lock:lock(key)
-        if not elapsed then
-            return false, "failed to acquire the lock: " .. err
-        end
-
-        ret = red:ttl(key)
-        if ret < 0 then
-            local ok, err = lock:unlock()
-            if not ok then
-                return false, "failed to unlock: " .. err
-            end
-
-            ret, err = red:set(key, limit -1, "EX", window)
-            if not ret then
-                return nil, err
-            end
-
-            return 0, limit -1
-        end
-
-        local ok, err = lock:unlock()
-        if not ok then
-            return false, "failed to unlock: " .. err
-        end
-    end
-
-    remaining, err = red:incrby(key, -1)
-    if not remaining then
+    if err then
         return nil, err
     end
 
     if remaining < 0 then
         return nil, "rejected"
     end
-
     return 0, remaining
 end
 

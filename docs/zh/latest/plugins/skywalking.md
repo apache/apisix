@@ -33,7 +33,7 @@ title: skywalking
 
 ## 名字
 
-`Skywalking`(https://github.com/apache/skywalking) 是一个开源的服务跟踪插件。
+`Skywalking`(https://github.com/apache/skywalking) 使用其原生的 Nginx LUA tracer，提供分布式追踪、拓扑分析以及服务和 URI 级别的 metrics 信息。
 
 服务端目前支持http和grpc两种协议，在apisix中目前只支持http协议
 
@@ -94,9 +94,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 | 名称         | 类型   | 默认值   | 描述                                                  |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
 | service_name | string |  "APISIX" | skywalking 上报的 service 名称                                 |
-|service_instance_name|string| "APISIX Instance Name" | skywalking 上报的 service 实例名 |
-| endpoint_addr| string | "http://127.0.0.1:12800" | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800 |
-| report_interval| integer | 使用 skywalking 客户端内置的值 | 上报时间间隔，单位是秒|
+| service_instance_name | string | "APISIX Instance Name" | skywalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
+| endpoint_addr | string | "http://127.0.0.1:12800" | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800 |
+| report_interval | integer | 使用 skywalking 客户端内置的值 | 上报时间间隔，单位是秒|
 
 配置示例:
 
@@ -178,7 +178,7 @@ plugin_attr:
 当你想去掉路由上的插件规则的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

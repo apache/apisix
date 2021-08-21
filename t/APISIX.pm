@@ -30,6 +30,7 @@ master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
 sub read_file($) {
     my $infile = shift;
@@ -78,7 +79,8 @@ if ($custom_dns_server) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -145,6 +147,7 @@ if ($version =~ m/\/mod_dubbo/) {
     $dubbo_upstream = <<_EOC_;
     upstream apisix_dubbo_backend {
         server 0.0.0.1;
+
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -205,6 +208,13 @@ my $grpc_location = <<_EOC_;
         }
 _EOC_
 
+my $a6_ngx_directives = "";
+if ($version =~ m/\/apisix-nginx-module/) {
+    $a6_ngx_directives = <<_EOC_;
+    apisix_delay_client_max_body_check on;
+_EOC_
+}
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
@@ -227,6 +237,7 @@ _EOC_
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
@@ -234,14 +245,76 @@ _EOC_
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
 
-    $block->set_value("main_config", $main_config);
+    my $stream_tls_request = $block->stream_tls_request;
+    if ($stream_tls_request) {
+        # generate a springboard to send tls stream request
+        $block->set_value("stream_conf_enable", 1);
+        $block->set_value("request", "GET /stream_tls_request");
+
+        my $sni = "nil";
+        if ($block->stream_sni) {
+            $sni = '"' . $block->stream_sni . '"';
+        }
+        chomp $stream_tls_request;
+
+        my $repeat = "1";
+        if (defined $block->stream_session_reuse) {
+            $repeat = "2";
+        }
+
+        my $config = <<_EOC_;
+            location /stream_tls_request {
+                content_by_lua_block {
+                    local sess
+                    for _ = 1, $repeat do
+                        local sock = ngx.socket.tcp()
+                        local ok, err = sock:connect("127.0.0.1", 2005)
+                        if not ok then
+                            ngx.say("failed to connect: ", err)
+                            return
+                        end
+
+                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        if not sess then
+                            ngx.say("failed to do SSL handshake: ", err)
+                            return
+                        end
+
+                        local bytes, err = sock:send("$stream_tls_request")
+                        if not bytes then
+                            ngx.say("send stream request error: ", err)
+                            return
+                        end
+                        local data, err = sock:receive("*a")
+                        if not data then
+                            sock:close()
+                            ngx.say("receive stream response error: ", err)
+                            return
+                        end
+                        ngx.print(data)
+                        sock:close()
+                    end
+                }
+            }
+_EOC_
+        $block->set_value("config", $config)
+    }
 
     my $stream_enable = $block->stream_enable;
+    my $stream_conf_enable = $block->stream_conf_enable;
+    my $extra_stream_config = $block->extra_stream_config // '';
+    my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
+            ngx.say("hello world")
+_EOC_
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache-lock-stream   10m;
+    lua_shared_dict lrucache-lock-stream 10m;
+    lua_shared_dict plugin-limit-conn-stream 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -260,7 +333,10 @@ _EOC_
         require "resty.core"
 
         apisix = require("apisix")
-        apisix.stream_init()
+        local args = {
+            dns_resolver = $dns_addrs_tbl_str,
+        }
+        apisix.stream_init(args)
 _EOC_
 
     $stream_config .= <<_EOC_;
@@ -271,15 +347,14 @@ _EOC_
         apisix.stream_init_worker()
     }
 
+    $extra_stream_config
 
     # fake server, only for test
     server {
         listen 1995;
 
         content_by_lua_block {
-            local sock = ngx.req.socket()
-            local data = sock:receive("1")
-            ngx.say("hello world")
+            $stream_upstream_code
         }
     }
 _EOC_
@@ -289,6 +364,15 @@ _EOC_
     }
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
+    listen 2005 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+    lua_ssl_trusted_certificate cert/apisix.crt;
+
+    ssl_certificate_by_lua_block {
+        apisix.stream_ssl_phase()
+    }
+
     preread_by_lua_block {
         -- wait for etcd sync
         ngx.sleep($wait_etcd_sync)
@@ -305,6 +389,20 @@ _EOC_
     if (defined $stream_enable) {
         $block->set_value("stream_server_config", $stream_server_config);
     }
+
+    if (defined $stream_conf_enable) {
+        $main_config .= <<_EOC_;
+stream {
+$stream_config
+    server {
+        listen 1985;
+        $stream_server_config
+    }
+}
+_EOC_
+    }
+
+    $block->set_value("main_config", $main_config);
 
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
@@ -329,23 +427,24 @@ _EOC_
     $http_config .= <<_EOC_;
     $lua_deps_path
 
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict internal_status      10m;
+    lua_shared_dict plugin-limit-req 10m;
+    lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-conn 10m;
+    lua_shared_dict prometheus-metrics 10m;
+    lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
-    lua_shared_dict worker-events        10m;
-    lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict balancer_ewma         1m;
-    lua_shared_dict balancer_ewma_locks   1m;
-    lua_shared_dict balancer_ewma_last_touched_at  1m;
+    lua_shared_dict worker-events 10m;
+    lua_shared_dict lrucache-lock 10m;
+    lua_shared_dict balancer-ewma 1m;
+    lua_shared_dict balancer-ewma-locks 1m;
+    lua_shared_dict balancer-ewma-last-touched-at 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-    lua_shared_dict tracing_buffer       10m;    # plugin skywalking
-    lua_shared_dict access_tokens         1m;    # plugin authz-keycloak
-    lua_shared_dict discovery             1m;    # plugin authz-keycloak
-    lua_shared_dict plugin-api-breaker   10m;
-    lua_capture_error_log                 1m;    # plugin error-log-logger
+    lua_shared_dict tracing_buffer 10m;    # plugin skywalking
+    lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
+    lua_shared_dict discovery 1m;    # plugin authz-keycloak
+    lua_shared_dict plugin-api-breaker 10m;
+    lua_capture_error_log 1m;    # plugin error-log-logger
+    lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -357,13 +456,33 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
+    error_page 500 \@50x.html;
+
+    variables_hash_bucket_size 128;
+
     upstream apisix_backend {
         server 0.0.0.1;
+_EOC_
+
+    if ($version =~ m/\/apisix-nginx-module/) {
+    $http_config .= <<_EOC_;
+        keepalive 32;
+
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+_EOC_
+    } else {
+    $http_config .= <<_EOC_;
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
 
         keepalive 32;
+_EOC_
+    }
+
+    $http_config .= <<_EOC_;
     }
 
     $dubbo_upstream
@@ -376,7 +495,17 @@ _EOC_
         require("apisix").http_init_worker()
         $extra_init_worker_by_lua
     }
+_EOC_
 
+    if ($version !~ m/\/1.17.8/) {
+    $http_config .= <<_EOC_;
+    exit_worker_by_lua_block {
+        require("apisix").http_exit_worker()
+    }
+_EOC_
+    }
+
+    $http_config .= <<_EOC_;
     log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
 
     # fake server, only for test
@@ -387,6 +516,10 @@ _EOC_
         listen 5044;
 
 _EOC_
+
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
 
     my $ipv6_fake_server = "";
     if (defined $block->listen_ipv6) {
@@ -405,27 +538,35 @@ _EOC_
             more_clear_headers Date;
         }
 
-        location = /v3/auth/authenticate {
+        location \@50x.html {
+            set \$from_error_page 'true';
             content_by_lua_block {
-                ngx.log(ngx.WARN, "etcd auth failed!")
+                require("apisix.error_handling").handle_500()
             }
-        }
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
 
-        location  = /.well-known/openid-configuration {
-            content_by_lua_block {
-                ngx.say([[
-{"issuer":"https://samples.auth0.com/","authorization_endpoint":"https://samples.auth0.com/authorize","token_endpoint":"https://samples.auth0.com/oauth/token","device_authorization_endpoint":"https://samples.auth0.com/oauth/device/code","userinfo_endpoint":"https://samples.auth0.com/userinfo","mfa_challenge_endpoint":"https://samples.auth0.com/mfa/challenge","jwks_uri":"https://samples.auth0.com/.well-known/jwks.json","registration_endpoint":"https://samples.auth0.com/oidc/register","revocation_endpoint":"https://samples.auth0.com/oauth/revoke","scopes_supported":["openid","profile","offline_access","name","given_name","family_name","nickname","email","email_verified","picture","created_at","identities","phone","address"],"response_types_supported":["code","token","id_token","code token","code id_token","token id_token","code token id_token"],"code_challenge_methods_supported":["S256","plain"],"response_modes_supported":["query","fragment","form_post"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["HS256","RS256"],"token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post"],"claims_supported":["aud","auth_time","created_at","email","email_verified","exp","family_name","given_name","iat","identities","iss","name","nickname","phone_number","picture","sub"],"request_uri_parameter_supported":false}
-                ]])
+            log_by_lua_block {
+                apisix.http_log_phase()
             }
         }
     }
+
+    $a6_ngx_directives
 
     server {
         listen 1983 ssl;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
+_EOC_
 
+    if (defined $block->upstream_server_config) {
+        $http_config .= $block->upstream_server_config;
+    }
+
+    $http_config .= <<_EOC_;
         server_tokens off;
 
         ssl_certificate_by_lua_block {
@@ -449,7 +590,7 @@ _EOC_
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
     my $ipv6_listen_conf = '';
     if (defined $block->listen_ipv6) {
-        $ipv6_listen_conf = "listen \[::1\]:12345;"
+        $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
     my $config = $block->config // '';
@@ -485,6 +626,20 @@ _EOC_
             }
         }
 
+        location \@50x.html {
+            set \$from_error_page 'true';
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
@@ -500,6 +655,7 @@ _EOC_
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
             set \$ctx_ref                     '';
+            set \$from_error_page             '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
@@ -509,7 +665,7 @@ _EOC_
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
             proxy_cache_min_uses                1;
-            proxy_cache_methods                 GET HEAD;
+            proxy_cache_methods                 GET HEAD POST;
             proxy_cache_lock_timeout            5s;
             proxy_cache_use_stale               off;
             proxy_cache_key                     \$upstream_cache_key;
@@ -528,6 +684,29 @@ _EOC_
             proxy_set_header   Connection        \$upstream_connection;
             proxy_set_header   X-Real-IP         \$remote_addr;
             proxy_pass_header  Date;
+
+            ### the following x-forwarded-* headers is to send to upstream server
+
+            set \$var_x_forwarded_for        \$remote_addr;
+            set \$var_x_forwarded_proto      \$scheme;
+            set \$var_x_forwarded_host       \$host;
+            set \$var_x_forwarded_port       \$server_port;
+
+            if (\$http_x_forwarded_for != "") {
+                set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
+            }
+            if (\$http_x_forwarded_host != "") {
+                set \$var_x_forwarded_host \$http_x_forwarded_host;
+            }
+            if (\$http_x_forwarded_port != "") {
+                set \$var_x_forwarded_port \$http_x_forwarded_port;
+            }
+
+            proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
+
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
 

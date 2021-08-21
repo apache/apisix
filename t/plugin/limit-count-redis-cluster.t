@@ -69,7 +69,7 @@ GET /t
 
 
 
-=== TEST 2: set route, with redis host and port
+=== TEST 2: set route, with redis host and port and redis_cluster_name
 --- config
     location /t {
         content_by_lua_block {
@@ -89,7 +89,8 @@ GET /t
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
                                 "127.0.0.1:5001"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -135,7 +136,8 @@ passed
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
                                 "127.0.0.1:5001"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -159,7 +161,8 @@ passed
                                     "redis_cluster_nodes": [
                                         "127.0.0.1:5000",
                                         "127.0.0.1:5001"
-                                    ]
+                                    ],
+                                    "redis_cluster_name": "redis-cluster-1"
                                 }
                             },
                             "upstream": {
@@ -242,7 +245,8 @@ unlock with key route#1#redis-cluster
                                 "127.0.0.1:8001",
                                 "127.0.0.1:8002",
                                 "127.0.0.1:8003"
-                            ]
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
                         }
                     },
                     "upstream": {
@@ -329,7 +333,8 @@ code: 200
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5001"
-                                ]
+                                ],
+                                "redis_cluster_name": "redis-cluster-1"
                             }
                         },
                         "upstream": {
@@ -372,3 +377,60 @@ code: 503
 code: 503
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: set route, four redis nodes, no one is valid, with enable degradation switch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 9999,
+                            "time_window": 60,
+                            "key": "http_x_real_ip",
+                            "policy": "redis-cluster",
+                            "allow_degradation": true,
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:8001",
+                                "127.0.0.1:8002",
+                                "127.0.0.1:8003",
+                                "127.0.0.1:8004"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: enable degradation switch for TEST 10
+--- request
+GET /hello
+--- response_body
+hello world

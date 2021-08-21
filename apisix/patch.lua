@@ -15,12 +15,15 @@
 -- limitations under the License.
 --
 local require = require
+require("resty.dns.resolver") -- preload dns resolver to prevent recursive patch
+local ipmatcher = require("resty.ipmatcher")
 local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
+local original_udp = ngx.socket.udp
 local concat_tab = table.concat
 local new_tab = require("table.new")
 local log = ngx.log
@@ -41,6 +44,82 @@ local function get_local_conf()
     end
 
     return config_local.local_conf()
+end
+
+
+local patch_tcp_socket
+do
+    local old_tcp_sock_connect
+
+    local function new_tcp_sock_connect(sock, host, port, opts)
+        local core_str = require("apisix.core.string")
+        local resolver = require("apisix.core.resolver")
+
+        if host then
+            if core_str.has_prefix(host, "unix:") then
+                if not opts then
+                    -- workaround for https://github.com/openresty/lua-nginx-module/issues/860
+                    return old_tcp_sock_connect(sock, host)
+                end
+
+            elseif not ipmatcher.parse_ipv4(host) and not ipmatcher.parse_ipv6(host) then
+                local err
+                host, err = resolver.parse_domain(host)
+                if not host then
+                    return nil, "failed to parse domain: " .. err
+                end
+            end
+        end
+
+        return old_tcp_sock_connect(sock, host, port, opts)
+    end
+
+
+    function patch_tcp_socket(sock)
+        if not old_tcp_sock_connect then
+            old_tcp_sock_connect = sock.connect
+        end
+
+        sock.connect = new_tcp_sock_connect
+        return sock
+    end
+end
+
+
+local patch_udp_socket
+do
+    local old_udp_sock_setpeername
+
+    local function new_udp_sock_setpeername(sock, host, port)
+        local core_str = require("apisix.core.string")
+        local resolver = require("apisix.core.resolver")
+
+        if host then
+            if core_str.has_prefix(host, "unix:") then
+                return old_udp_sock_setpeername(sock, host)
+            end
+
+            if not ipmatcher.parse_ipv4(host) and not ipmatcher.parse_ipv6(host) then
+                local err
+                host, err = resolver.parse_domain(host)
+                if not host then
+                    return nil, "failed to parse domain: " .. err
+                end
+            end
+        end
+
+        return old_udp_sock_setpeername(sock, host, port)
+    end
+
+
+    function patch_udp_socket(sock)
+        if not old_udp_sock_setpeername then
+            old_udp_sock_setpeername = sock.setpeername
+        end
+
+        sock.setpeername = new_udp_sock_setpeername
+        return sock
+    end
 end
 
 
@@ -233,10 +312,14 @@ function _M.patch()
     ngx_socket.tcp = function ()
         local phase = get_phase()
         if phase ~= "init" and phase ~= "init_worker" then
-            return original_tcp()
+            return patch_tcp_socket(original_tcp())
         end
 
         return luasocket_tcp()
+    end
+
+    ngx_socket.udp = function ()
+        return patch_udp_socket(original_udp())
     end
 end
 

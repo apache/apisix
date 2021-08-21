@@ -46,7 +46,7 @@ __DATA__
                                 "read": 0.5
                             }
                         },
-                        "uri": "/sleep1"
+                        "uri": "/mysleep"
                 }]]
                 )
 
@@ -67,7 +67,62 @@ passed
 
 === TEST 2: hit routes (timeout)
 --- request
-GET /sleep1
+GET /mysleep?seconds=1
+--- error_code: 504
+--- response_body eval
+qr/504 Gateway Time-out/
+--- error_log
+timed out) while reading response header from upstream
+
+
+
+=== TEST 3: set custom timeout for route(overwrite upstream timeout)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "timeout": {
+                            "connect": 0.5,
+                            "send": 0.5,
+                            "read": 0.5
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin",
+                            "timeout": {
+                                "connect": 2,
+                                "send": 2,
+                                "read": 2
+                            }
+                        },
+                        "uri": "/mysleep"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: hit routes (timeout)
+--- request
+GET /mysleep?seconds=1
 --- error_code: 504
 --- response_body eval
 qr/504 Gateway Time-out/

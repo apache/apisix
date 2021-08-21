@@ -20,6 +20,7 @@ local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
 local get_upstreams = upstream_mod.upstreams
+local collectgarbage = collectgarbage
 local ipairs = ipairs
 local str_format = string.format
 local ngx_var = ngx.var
@@ -154,6 +155,13 @@ function _M.get_health_checker()
 end
 
 
+function _M.trigger_gc()
+    -- TODO: find a way to trigger GC in the stream subsystem
+    collectgarbage()
+    return 200
+end
+
+
 return {
     -- /v1/schema
     {
@@ -172,5 +180,11 @@ return {
         methods = {"GET"},
         uris = {"/healthcheck/*"},
         handler = _M.get_health_checker,
-    }
+    },
+    -- /v1/gc
+    {
+        methods = {"POST"},
+        uris = {"/gc"},
+        handler = _M.trigger_gc,
+    },
 }

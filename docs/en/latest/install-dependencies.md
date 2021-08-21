@@ -42,6 +42,8 @@ title: Install Dependencies
 
 - WARNING: If you are using OpenResty which is older than `1.17.8`, please installing openresty-openss-devel instead of openresty-openssl111-devel.
 
+- OpenResty is a dependency of APISIX. If it is your first time to deploy APISIX and you don't need to use OpenResty to deploy other services, you can stop and disable OpenResty after installation since it will not affect the normal work of APISIX. Please operate carefully according to your service. For example in Ubuntu: `systemctl stop openresty && systemctl disable openresty`.
+
 ## CentOS 7
 
 ```shell
@@ -56,7 +58,7 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -79,7 +81,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel pcre pcre-devel
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -105,7 +107,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl openresty-openssl111-dev
+sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -136,7 +138,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl make openresty-openssl111-dev
+sudo apt-get install -y git openresty curl make openresty-openssl111-dev libpcre3 libpcre3-dev
 
 # install LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -149,11 +151,8 @@ nohup etcd &
 
 ```shell
 # install OpenResty, etcd and some compilation tools
-brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git
+brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre
 
 # start etcd server
 brew services start etcd
-
-# enable TLS for etcd server
-etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
 ```

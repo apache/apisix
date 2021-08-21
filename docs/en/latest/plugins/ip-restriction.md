@@ -41,9 +41,10 @@ in CIDR notation like 10.10.10.0/24 can be used.
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
 | whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
 | blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
+| message | string | optional    | Your IP address is not allowed. | [1, 1024] | Message returned in case IP access is not allowed. |
 
-One of `whitelist` or `blacklist` must be specified, and they can not work
-together.
+One of `whitelist` or `blacklist` must be specified, and they can not work together.
+The message can be user-defined.
 
 ## How To Enable
 
@@ -68,6 +69,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
+
+Default returns `{"message":"Your IP address is not allowed"}` when unallowed IP access. If you want to use a custom message, you can configure it in the plugin section.
+
+```json
+"plugins": {
+    "ip-restriction": {
+        "whitelist": [
+            "127.0.0.1",
+            "113.74.26.106/24"
+        ],
+        "message": "Do you want to do something bad?"
+    }
+}
 ```
 
 ## Test Plugin
@@ -142,7 +157,7 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
