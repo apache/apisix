@@ -329,7 +329,7 @@ plugins:                          # plugin list (sorted by priority)
   #- skywalking                    # priority: -1100
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
- 
+
 stream_plugins: # sorted by priority
   - ip-restriction                 # priority: 3000
   - limit-conn                     # priority: 1003
