@@ -725,7 +725,7 @@ qr/partition_id: 2/]
 
 
 
-=== TEST 20: error log, failed to identify the broker
+=== TEST 20: error log, failed to identify the broker specified
 --- config
     location /t {
         content_by_lua_block {
