@@ -139,7 +139,7 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Invalid user authorization" }
     end
 
-    -- 3. Retreive consumer for authorization plugin
+    -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
