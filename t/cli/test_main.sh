@@ -125,8 +125,8 @@ echo "passed: support multiple ports listen in http and https"
 
 echo "
 apisix:
+  port_admin: 9180
   node_listen:
-    - 9080
     - ip: 127.0.0.1
       port: 9081
     - ip: 127.0.0.2
@@ -134,7 +134,6 @@ apisix:
       enable_http2: true
   ssl:
     listen:
-      - 9443
       - ip: 127.0.0.3
         port: 9444
       - ip: 127.0.0.4
@@ -144,51 +143,33 @@ apisix:
 
 make init
 
-count_http_not_specific_ipv4=`grep -c "listen 0.0.0.0:908." conf/nginx.conf || true`
-if [ $count_http_not_specific_ipv4 -ne 1 ]; then
-    echo "failed: failed to support unspecific IP listen in http with ipv4"
+count_http_specific_ip_and_port_admin=`grep -c "listen 127.0.0..:9180" conf/nginx.conf || true`
+if [ $count_http_specific_ip_and_port_admin -ne 2 ]; then
+    echo "failed: failed to support specific IP and port admin listen in http"
     exit 1
 fi
 
-count_http_not_specific_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
-if [ $count_http_not_specific_ipv6 -ne 1 ]; then
-    echo "failed: failed to support unspecific IP listen in http with ipv6"
+count_http_specific_ip=`grep -c "listen 127.0.0..:908." conf/nginx.conf || true`
+if [ $count_http_specific_ip -ne 2 ]; then
+    echo "failed: failed to support specific IP listen in http"
     exit 1
 fi
 
-count_http_specific_ipv4=`grep -c "listen 127.0.0..:908." conf/nginx.conf || true`
-if [ $count_http_specific_ipv4 -ne 2 ]; then
-    echo "failed: failed to support specific IP listen in http with ipv4"
+count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
+if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http2 listen in http"
     exit 1
 fi
 
-count_http_specific_ipv4_with_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
-if [ $count_http_specific_ipv4_with_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP listen in http with ipv4 and enable http2"
+count_https_specific_ip=`grep -c "listen 127.0.0..:944. ssl" conf/nginx.conf || true`
+if [ $count_https_specific_ip -ne 2 ]; then
+    echo "failed: failed to support specific IP listen in https"
     exit 1
 fi
 
-count_https_not_specific_ipv4=`grep -c "listen 0.0.0.0:944. ssl" conf/nginx.conf || true`
-if [ $count_https_not_specific_ipv4 -ne 1 ]; then
-    echo "failed: failed to support unspecific IP listen in https with ipv4"
-    exit 1
-fi
-
-count_https_not_specific_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
-if [ $count_https_not_specific_ipv6 -ne 1 ]; then
-    echo "failed: failed to support unspecific IP listen in https with ipv6"
-    exit 1
-fi
-
-count_https_specific_ipv4=`grep -c "listen 127.0.0..:944. ssl" conf/nginx.conf || true`
-if [ $count_https_specific_ipv4 -ne 2 ]; then
-    echo "failed: failed to support specific IP listen in https with ipv4"
-    exit 1
-fi
-
-count_https_specific_ipv4_with_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
-if [ $count_https_specific_ipv4_with_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP listen in https with ipv4 and enable http2"
+count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http2 listen in http"
     exit 1
 fi
 

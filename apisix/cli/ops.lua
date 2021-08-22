@@ -463,7 +463,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ip_port_to_check = {}
 
-    local function listen_table_insert(listen_table, scheme, ip, port, enable_ipv6, enable_http2)
+    local function listen_table_insert(listen_table, scheme, ip, port, enable_http2, enable_ipv6, enable_admin)
         if type(ip) ~= "string" then
             util.die(scheme, " listen ip format error, must be string", "\n")
         end
@@ -477,10 +477,31 @@ Please modify "admin_key" in conf/config.yaml .
                 ports_to_check[port], "\n")
         end
 
+        local enable_port_admin = false
+        local only_admin = false
+
+        if enable_admin and yaml_conf.apisix.port_admin then
+            if scheme == "http" and not yaml_conf.apisix.https_admin then
+                enable_port_admin = true
+            elseif scheme == "https" and yaml_conf.apisix.https_admin then
+                enable_port_admin = true
+            end
+
+            if enable_port_admin then
+                if port == yaml_conf.apisix.port_admin then
+                    only_admin = true
+                else
+                    listen_table_insert(listen_table, scheme, ip, yaml_conf.apisix.port_admin,
+                            false, enable_ipv6, enable_admin)
+                end
+            end
+        end
+
         local addr = ip .. ":" .. port
 
         if ip_port_to_check[addr] == nil then
-            table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
+            table_insert(listen_table,
+                    {ip = ip, port = port, enable_http2 = enable_http2, only_admin = only_admin})
             ip_port_to_check[addr] = scheme
         end
 
@@ -489,7 +510,8 @@ Please modify "admin_key" in conf/config.yaml .
             addr = ip .. ":" .. port
 
             if ip_port_to_check[addr] == nil then
-                table_insert(listen_table, {ip = ip, port = port, enable_http2 = enable_http2})
+                table_insert(listen_table,
+                        {ip = ip, port = port, enable_http2 = enable_http2, only_admin = only_admin})
                 ip_port_to_check[addr] = scheme
             end
         end
@@ -498,11 +520,13 @@ Please modify "admin_key" in conf/config.yaml .
     local node_listen = {}
     -- listen in http, support multiple ports, support specific IP, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen, yaml_conf.apisix.enable_ipv6, false)
+        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen,
+                false, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
     elseif type(yaml_conf.apisix.node_listen) == "table" then
         for _, value in ipairs(yaml_conf.apisix.node_listen) do
             if type(value) == "number" then
-                listen_table_insert(node_listen, "http", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6, false)
+                listen_table_insert(node_listen, "http", "0.0.0.0", value,
+                        false, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
             elseif type(value) == "table" then
                 local ip = value.ip
                 local port = value.port
@@ -524,7 +548,8 @@ Please modify "admin_key" in conf/config.yaml .
                     enable_http2 = false
                 end
 
-                listen_table_insert(node_listen, "http", ip, port, enable_ipv6, enable_http2)
+                listen_table_insert(node_listen, "http", ip, port,
+                        enable_http2, enable_ipv6, yaml_conf.apisix.enable_admin)
             end
         end
     end
@@ -533,11 +558,13 @@ Please modify "admin_key" in conf/config.yaml .
     local ssl_listen = {}
     -- listen in https, support multiple ports, support specific IP
     if type(yaml_conf.apisix.ssl.listen) == "number" then
-        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen, yaml_conf.apisix.enable_ipv6, false)
+        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen,
+                false, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
     elseif type(yaml_conf.apisix.ssl.listen) == "table" then
         for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
             if type(value) == "number" then
-                listen_table_insert(ssl_listen, "https", "0.0.0.0", value, yaml_conf.apisix.enable_ipv6, false)
+                listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
+                        false, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
             elseif type(value) == "table" then
                 local ip = value.ip
                 local port = value.port
@@ -559,7 +586,8 @@ Please modify "admin_key" in conf/config.yaml .
                     enable_http2 = false
                 end
 
-                listen_table_insert(ssl_listen, "https", ip, port, enable_ipv6, enable_http2)
+                listen_table_insert(ssl_listen, "https", ip, port,
+                        enable_http2, enable_ipv6, yaml_conf.apisix.enable_admin)
             end
         end
     end
@@ -567,12 +595,12 @@ Please modify "admin_key" in conf/config.yaml .
     -- listen in https, compatible with the original style
     if type(yaml_conf.apisix.ssl.listen_port) == "number" then
         listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen_port,
-                yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.ssl.enable_http2)
+                yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
     elseif type(yaml_conf.apisix.ssl.listen_port) == "table" then
         for _, value in ipairs(yaml_conf.apisix.ssl.listen_port) do
             if type(value) == "number" then
                 listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                        yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.ssl.enable_http2)
+                        yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6, yaml_conf.apisix.enable_admin)
             end
         end
     end
