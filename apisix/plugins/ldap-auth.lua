@@ -24,9 +24,6 @@ local lualdap = require "lualdap"
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
-local consumers_lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
