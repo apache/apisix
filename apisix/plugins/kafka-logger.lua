@@ -29,7 +29,7 @@ local stale_timer_running = false
 local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
-
+local tostring = tostring
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -210,6 +210,7 @@ function _M.log(conf, ctx)
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config)
+    core.log.info("kafka producer table id: ", tostring(prod))
     if err then
         return nil, "failed to identify the broker specified: " .. err
     end
