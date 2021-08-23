@@ -734,7 +734,7 @@ qr/partition_id: 2/]
                 broker_list = {
                     ["127.0.0.1"] = 3000
                 },
-                "required_acks": 10,
+                required_acks = 10,
                 kafka_topic ="test",
                 key= "key1"
             })
