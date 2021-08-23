@@ -20,13 +20,13 @@ local error = error
 local DECAY_TIME = 10 -- this value is in seconds
 local LOCK_KEY = ":ewma_key"
 
-local shm_ewma = ngx_shared.balancer_ewma
-local shm_last_touched_at = ngx_shared.balancer_ewma_last_touched_at
+local shm_ewma = ngx_shared["balancer-ewma"]
+local shm_last_touched_at = ngx_shared["balancer-ewma-last-touched-at"]
 
 local lrucache_addr = core.lrucache.new({ttl = 300, count = 1024})
 local lrucache_trans_format = core.lrucache.new({ttl = 300, count = 256})
 
-local ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks", {timeout = 0, exptime = 0.1})
+local ewma_lock, ewma_lock_err = resty_lock:new("balancer-ewma-locks", {timeout = 0, exptime = 0.1})
 
 local _M = {name = "ewma"}
 

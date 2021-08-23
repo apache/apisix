@@ -133,7 +133,7 @@ When you want to disable the `basic-auth` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

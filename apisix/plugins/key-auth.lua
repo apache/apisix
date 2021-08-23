@@ -26,9 +26,12 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         header = {
+            type = "string",
+            default = "apikey",
+        },
+        query = {
             type = "string",
             default = "apikey",
         },
@@ -37,7 +40,6 @@ local schema = {
 
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         key = {type = "string"},
     },
@@ -84,6 +86,12 @@ end
 
 function _M.rewrite(conf, ctx)
     local key = core.request.header(ctx, conf.header)
+
+    if not key then
+        local uri_args = core.request.get_uri_args(ctx) or {}
+        key = uri_args[conf.query]
+    end
+
     if not key then
         return 401, {message = "Missing API key found in request"}
     end

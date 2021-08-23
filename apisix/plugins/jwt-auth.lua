@@ -36,14 +36,12 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    additionalProperties = false,
     properties = {},
 }
 
 local consumer_schema = {
     type = "object",
     -- can't use additionalProperties with dependencies
-    -- additionalProperties = false,
     properties = {
         key = {type = "string"},
         secret = {type = "string"},

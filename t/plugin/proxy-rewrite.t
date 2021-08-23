@@ -1103,35 +1103,7 @@ GET /t
 
 
 
-=== TEST 37:  additional property
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-rewrite")
-            local ok, err = plugin.check_schema({
-                uri = '/apisix/home',
-                host = 'apisix.iresty.com',
-                scheme = 'http',
-                invalid_att = "invalid",
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- request
-GET /t
---- response_body
-additional properties forbidden, found invalid_att
---- no_error_log
-[error]
-
-
-
-=== TEST 38: set route(header contains nginx variables)
+=== TEST 37: set route(header contains nginx variables)
 --- config
     location /t {
         content_by_lua_block {
@@ -1174,7 +1146,7 @@ passed
 
 
 
-=== TEST 39: hit route(header supports nginx variables)
+=== TEST 38: hit route(header supports nginx variables)
 --- request
 GET /hello?name=Bill HTTP/1.1
 --- more_headers
@@ -1192,7 +1164,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 40: set route(nginx variable does not exist)
+=== TEST 39: set route(nginx variable does not exist)
 --- config
     location /t {
         content_by_lua_block {
@@ -1236,7 +1208,7 @@ passed
 
 
 
-=== TEST 41: hit route(get nginx variable is nil)
+=== TEST 40: hit route(get nginx variable is nil)
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -1249,7 +1221,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 42: set route(rewrite uri based on ctx.var)
+=== TEST 41: set route(rewrite uri based on ctx.var)
 --- config
     location /t {
         content_by_lua_block {
@@ -1287,7 +1259,7 @@ passed
 
 
 
-=== TEST 43: hit route(upstream uri: should be /hello)
+=== TEST 42: hit route(upstream uri: should be /hello)
 --- request
 GET /test?new_uri=hello
 --- response_body
@@ -1297,7 +1269,7 @@ hello world
 
 
 
-=== TEST 44: host with port
+=== TEST 43: host with port
 --- config
     location /t {
         content_by_lua_block {
@@ -1321,7 +1293,7 @@ done
 
 
 
-=== TEST 45: set route(rewrite host with port)
+=== TEST 44: set route(rewrite host with port)
 --- config
     location /t {
         content_by_lua_block {
@@ -1361,7 +1333,7 @@ passed
 
 
 
-=== TEST 46: rewrite host with port
+=== TEST 45: rewrite host with port
 --- request
 GET /hello
 --- response_body

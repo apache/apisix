@@ -297,7 +297,7 @@ local function get_upstream_by_id(up_id)
             end
         end
 
-        core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+        core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
         return upstream.dns_value or upstream.value
     end
 end
@@ -318,6 +318,23 @@ local function verify_tls_client(ctx)
     end
 
     return true
+end
+
+
+local function common_phase(phase_name)
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+
+    if api_ctx.script_obj then
+        script.run(phase_name, api_ctx)
+        return api_ctx, true
+    end
+
+    return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
 
@@ -355,11 +372,11 @@ function _M.http_access_phase()
 
     router.router_http.match(api_ctx)
 
-    -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
     local route = api_ctx.matched_route
     if not route then
+        -- run global rule
+        plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
         core.log.info("not find any matched route")
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
@@ -409,9 +426,13 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    -- run global rule
+    plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
     if route.value.script then
         script.load(route, api_ctx)
         script.run("access", api_ctx)
+
     else
         local plugins = plugin.filter(route)
         api_ctx.plugins = plugins
@@ -429,6 +450,7 @@ function _M.http_access_phase()
                           ", config changed: ", changed)
 
             if changed then
+                api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
             end
@@ -496,6 +518,9 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
+
     local ref = ctxdump.stash_ngx_ctx()
     core.log.info("stash ngx ctx: ", ref)
     ngx_var.ctx_ref = ref
@@ -538,24 +563,6 @@ function _M.grpc_access_phase()
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
     end
-end
-
-
-local function common_phase(phase_name)
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
-
-    if api_ctx.script_obj then
-        script.run(phase_name, api_ctx)
-    else
-        plugin.run_plugin(phase_name, nil, api_ctx)
-    end
-
-    return api_ctx
 end
 
 
@@ -687,7 +694,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
+    if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
@@ -706,7 +713,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 
@@ -747,6 +754,7 @@ function _M.http_admin()
         router = admin_init.get()
     end
 
+    core.response.set_header("Server", ver_header)
     -- add cors rsp header
     cors_admin()
 
@@ -910,6 +918,9 @@ function _M.stream_preread_phase()
     end
 
     api_ctx.picked_server = server
+
+    -- run the before_proxy method in preread phase first to avoid always reinit request
+    common_phase("before_proxy")
 end
 
 
@@ -921,7 +932,7 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 

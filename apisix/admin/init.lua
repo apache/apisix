@@ -119,6 +119,7 @@ end
 local function run()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -158,7 +159,7 @@ local function run()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -185,6 +186,7 @@ end
 local function run_stream()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
@@ -228,7 +230,7 @@ local function run_stream()
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -255,6 +257,7 @@ end
 local function get_plugins_list()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -270,6 +273,7 @@ end
 local function post_reload_plugins()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
 
     local ok, err = check_token(api_ctx)
     if not ok then
@@ -279,7 +283,7 @@ local function post_reload_plugins()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(500, err)
+        core.response.exit(503, err)
     end
 
     core.response.exit(200, "done")

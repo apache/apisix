@@ -21,7 +21,7 @@ title: Global rule
 #
 -->
 
-[Plugin](plugin.md) just can be binded to [Service](service.md) or [Route](route.md), if we want a [Plugin](plugin.md) work on all requests, how to do it?
+[Plugin](plugin.md) just can be bound to [Service](service.md) or [Route](route.md), if we want a [Plugin](plugin.md) work on all requests, how to do it?
 We can register a global [Plugin](plugin.md) with `GlobalRule`:
 
 ```shell

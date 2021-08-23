@@ -37,7 +37,7 @@ dubbo-proxy plugin allows you proxy HTTP request to [**dubbo**](http://dubbo.apa
 
 ## Requirement
 
-If you are using OpenResty, you need to build it with dubbo support, see [how to build](../how-to-build.md#6-build-openresty-for-apisix)
+If you are using OpenResty, you need to build it with dubbo support, see [how to build](../how-to-build.md#step-6-build-openresty-for-apache-apisix)
 
 To make http2dubbo work in APISIX, we enhance the dubbo module based on Tengine's `mod_dubbo`. The modifications are contributed back to Tengine, but they are not included in the latest release version (Tengine-2.3.2) yet. So Tengine itself is unsupported.
 
@@ -132,7 +132,7 @@ When you want to disable the dubbo-proxy plugin on a route/service, it is very s
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
