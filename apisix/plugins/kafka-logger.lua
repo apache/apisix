@@ -210,7 +210,8 @@ function _M.log(conf, ctx)
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
-    core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ", prod.client.broker_list[1].port, "\n")
+    core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ",
+                  prod.client.broker_list[1].port, "\n")
     if err then
         return nil, "failed to identify the broker specified: " .. err
     end
