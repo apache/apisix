@@ -40,6 +40,7 @@ The plugin helps we intercept user requests, we only need to indicate the `block
 | block_rules   | array[string] | required    |         |            | Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`. |
 | rejected_code | integer       | optional    | 403     | [200, ...] | The HTTP status code returned when the request URI hit any of `block_rules`. |
 | rejected_msg | string       | optional    |      | non-empty | The HTTP response body returned when the request URI hit any of `block_rules`. |
+| case_insensitive | boolean       | optional    | false     |  | Whether case insensitive or not. Set true will ignore case when matching the request URI. Default is false. |
 
 ## How To Enable
 
