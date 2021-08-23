@@ -47,6 +47,7 @@ title: kafka-logger
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
 | producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
 | key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
+| required_acks          | integer | 可选    | 1              | [0, 1, -1] | 此配置是 Producer 在确认一个请求发送完成之前需要收到的反馈信息的数量。这个参数是为了保证发送请求的可靠性。         |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
 | meta_format      | enum    | 可选   | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|

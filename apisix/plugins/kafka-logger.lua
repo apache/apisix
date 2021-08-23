@@ -60,7 +60,12 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        required_acks = {
+            type = "integer",
+            default = 1,
+            enum = { 0, 1, -1 },
+        },
     },
     required = {"broker_list", "kafka_topic"}
 }
@@ -207,6 +212,7 @@ function _M.log(conf, ctx)
 
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
+    broker_config["required_acks"] = conf.required_acks
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config)
