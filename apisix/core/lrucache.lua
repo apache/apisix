@@ -165,8 +165,6 @@ do
 
     function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
         local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
-        log.info("lrucache key: ", key)
-        log.info("lrucache ver: ", ver)
         return lrucache(key, ver, create_obj_func, ...)
     end
 
