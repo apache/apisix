@@ -52,6 +52,11 @@ local schema = {
             default = "async",
             enum = {"async", "sync"},
         },
+        required_acks = {
+            type = "integer",
+            default = 1,
+            enum = { 0, 1, -1 },
+        },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "kafka logger"},
@@ -60,12 +65,7 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false},
-        required_acks = {
-            type = "integer",
-            default = 1,
-            enum = { 0, 1, -1 },
-        },
+        include_req_body = {type = "boolean", default = false}
     },
     required = {"broker_list", "kafka_topic"}
 }

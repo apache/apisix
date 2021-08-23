@@ -722,3 +722,32 @@ GET /t
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+=== TEST 20: required_acks, matches none of the enum values
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                broker_list = {
+                    ["127.0.0.1"] = 3000
+                },
+                "required_acks": 10,
+                kafka_topic ="test",
+                key= "key1"
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property \"required_acks\" validation failed: matches none of the enum values
+done
+--- no_error_log
+[error]
