@@ -747,7 +747,7 @@ qr/partition_id: 2/]
 --- request
 GET /t
 --- response_body
-property \"required_acks\" validation failed: matches none of the enum values
+property "required_acks" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]
