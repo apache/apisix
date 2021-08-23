@@ -84,4 +84,66 @@ until  [[ $(curl -s "127.0.0.1:8858/nacos/v1/ns/service/list?groupName=test_grou
     sleep 1;
 done
 
+# create kubernetes cluster using kind
+echo -e "
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443
+" > kind.yaml
+
+curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.11.1/kind-$(uname)-amd64"
+chmod +x ./kind
+./kind delete cluster --name apisix-test
+./kind create cluster --name apisix-test --config ./kind.yaml
+
+echo -e "
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: apisix-test
+  namespace: default
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: apisix-test
+rules:
+  - apiGroups: [ \"\" ]
+    resources: [ endpoints ]
+    verbs: [ get,list,watch ]
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+    name: apisix-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apisix-test
+subjects:
+  - kind: ServiceAccount
+    name: apisix-test
+    namespace: default
+" > apisix-test-rbac.yaml
+
+curl -Lo ./kubectl "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"
+chmod +x ./kubectl
+./kubectl apply -f ./apisix-test-rbac.yaml
+
+curl -Lo ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+chmod +x ./jq
+
+K8S_SERVICEACCOUNT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o json "$1" |./jq -r .data.token | base64 --decode")}')
+K8S_SERVICEACCOUNT_TOKEN_DIR="/var/run/secrets/kubernetes.io/serviceaccount"
+K8S_SERVICEACCOUNT_TOKEN_FILE="/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+mkdir -p ${K8S_SERVICEACCOUNT_TOKEN_DIR}
+echo -n $K8S_SERVICEACCOUNT_TOKEN_CONTENT > ${K8S_SERVICEACCOUNT_TOKEN_FILE}
+
+export KUBERNETES_SERVICE_HOST="127.0.0.1"
+export KUBERNETES_SERVICE_PORT="6443"
+
 cd ..
