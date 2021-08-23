@@ -42,6 +42,7 @@ It works like Nginx's `ngx_http_realip_module`, but is more flexible.
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | source      | string        | required    |            | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`| dynamically set the client's IP and port in APISIX's view, according to the value of variable. If the value doesn't contain a port, the client's port won't be changed. |
+| trusted_addresses| array[string] | optional    |            | List of IPs or CIDR ranges | dynamically set the `set_real_ip_from` directive |
 
 If the remote address comes from `source` is missing or invalid, this plugin will just let it go and don't change the client address.
 
@@ -55,7 +56,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "uri": "/index.html",
     "plugins": {
         "real-ip": {
-            "source": "arg_realip"
+            "source": "arg_realip",
+            "trusted_addresses": ["127.0.0.0/24"]
         },
         "response-rewrite": {
             "headers": {
