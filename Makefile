@@ -258,15 +258,6 @@ test:
 	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
-### license-check:    Check Lua source code for Apache License
-.PHONY: license-check
-license-check:
-ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
-	git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-	cp ci/ASF* ci/openwhisk-utilities/scancode/
-endif
-	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
-
 .PHONY: release-src
 release-src: compress-tar
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz

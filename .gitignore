@@ -61,10 +61,10 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 *.iml
 \.*
 !.github/
-ci/openwhisk-utilities/
 !.gitmodules
 !.markdownlint.yml
 !.yamllint
+!.licenserc.yaml
 /conf/apisix.yaml
 /conf/apisix-*.yaml
 /conf/config-*.yaml
