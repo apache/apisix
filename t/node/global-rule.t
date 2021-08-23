@@ -372,7 +372,7 @@ changed
 
 
 
-=== TEST 17: delete global rules, ensure no stale data remain
+=== TEST 17: global rule works with the consumer, after deleting the global rule, ensure no stale plugins remaining
 --- config
     location /t {
         content_by_lua_block {

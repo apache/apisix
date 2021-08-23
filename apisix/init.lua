@@ -694,7 +694,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins and core.table.nkeys(api_ctx.plugins) > 0 then
+    if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
