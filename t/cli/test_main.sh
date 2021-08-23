@@ -132,6 +132,7 @@ apisix:
       port: 9082
       enable_http2: true
   ssl:
+    enable_http2: false
     listen:
       - ip: 127.0.0.3
         port: 9444

@@ -539,17 +539,17 @@ Please modify "admin_key" in conf/config.yaml .
     -- listen in https, support multiple ports, support specific IP
     if type(yaml_conf.apisix.ssl.listen) == "number" then
         listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen,
-                false, yaml_conf.apisix.enable_ipv6)
+                yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
     elseif type(yaml_conf.apisix.ssl.listen) == "table" then
         for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
             if type(value) == "number" then
                 listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                        false, yaml_conf.apisix.enable_ipv6)
+                        yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
             elseif type(value) == "table" then
                 local ip = value.ip
                 local port = value.port
                 local enable_ipv6 = false
-                local enable_http2 = value.enable_http2
+                local enable_http2 = (value.enable_http2 or yaml_conf.apisix.ssl.enable_http2)
 
                 if ip == nil then
                     ip = "0.0.0.0"
