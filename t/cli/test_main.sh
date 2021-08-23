@@ -125,7 +125,6 @@ echo "passed: support multiple ports listen in http and https"
 
 echo "
 apisix:
-  port_admin: 9180
   node_listen:
     - ip: 127.0.0.1
       port: 9081
@@ -142,12 +141,6 @@ apisix:
 " > conf/config.yaml
 
 make init
-
-count_http_specific_ip_and_port_admin=`grep -c "listen 127.0.0..:9180" conf/nginx.conf || true`
-if [ $count_http_specific_ip_and_port_admin -ne 2 ]; then
-    echo "failed: failed to support specific IP and port admin listen in http"
-    exit 1
-fi
 
 count_http_specific_ip=`grep -c "listen 127.0.0..:908." conf/nginx.conf || true`
 if [ $count_http_specific_ip -ne 2 ]; then
@@ -169,7 +162,7 @@ fi
 
 count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
 if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP and enable http2 listen in http"
+    echo "failed: failed to support specific IP and enable http2 listen in https"
     exit 1
 fi
 

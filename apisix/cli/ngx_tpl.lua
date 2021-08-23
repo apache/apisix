@@ -399,11 +399,7 @@ http {
     {% if enable_admin and port_admin then %}
     server {
         {%if https_admin then%}
-        {% for _, item in ipairs(ssl.listen) do %}
-        {% if item.only_admin then %}
-        listen {* item.ip *}:{* item.port *} ssl;
-        {% end %}
-        {% end %}
+        listen {* port_admin *} ssl;
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -423,11 +419,7 @@ http {
         {% end %}
 
         {% else %}
-        {% for _, item in ipairs(node_listen) do %}
-        {% if item.only_admin then %}
-        listen {* item.ip *}:{* item.port *};
-        {% end %}
-        {% end %}
+        listen {* port_admin *};
         {%end%}
         log_not_found off;
 
@@ -467,15 +459,11 @@ http {
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        {% if not item.only_admin then %}
         listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
         {% end %}
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
-        {% if not item.only_admin then %}
         listen {* item.ip *}:{* item.port *} ssl default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
