@@ -814,11 +814,9 @@ GET /t
 --- response
 passed
 --- wait: 5
---- grep_error_log eval
-qr/kafka cluster name .*/
---- grep_error_log_out
-kafka cluster name 1, broker_list[1] port 9092
-kafka cluster name 2, broker_list[1] port 19092
+--- error_log
+phase_func(): kafka cluster name 1, broker_list[1] port 9092
+phase_func(): kafka cluster name 2, broker_list[1] port 19092
 --- no_error_log eval
 qr/not found topic/
 
