@@ -518,8 +518,8 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
-    -- run the balancer phase in access phase first to avoid always reinit request
-    common_phase("balancer")
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
 
     local ref = ctxdump.stash_ngx_ctx()
     core.log.info("stash ngx ctx: ", ref)
@@ -694,7 +694,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
+    if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
@@ -754,6 +754,7 @@ function _M.http_admin()
         router = admin_init.get()
     end
 
+    core.response.set_header("Server", ver_header)
     -- add cors rsp header
     cors_admin()
 
@@ -913,8 +914,8 @@ function _M.stream_preread_phase()
 
     api_ctx.picked_server = server
 
-    -- run the balancer phase in preread phase first to avoid always reinit request
-    common_phase("balancer")
+    -- run the before_proxy method in preread phase first to avoid always reinit request
+    common_phase("before_proxy")
 end
 
 

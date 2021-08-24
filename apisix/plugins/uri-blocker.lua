@@ -36,6 +36,14 @@ local schema = {
             minimum = 200,
             default = 403
         },
+        rejected_msg = {
+            type = "string",
+            minLength = 1
+        },
+        case_insensitive = {
+            type = "boolean",
+            default = false
+        },
     },
     required = {"block_rules"},
 }
@@ -81,11 +89,17 @@ function _M.rewrite(conf, ctx)
         end
 
         conf.block_rules_concat = core.table.concat(block_rules, "|")
+        if conf.case_insensitive then
+            conf.block_rules_concat = "(?i)" .. conf.block_rules_concat
+        end
         core.log.info("concat block_rules: ", conf.block_rules_concat)
     end
 
     local from = re_find(ctx.var.request_uri, conf.block_rules_concat, "jo")
     if from then
+        if conf.rejected_msg then
+            return conf.rejected_code, { error_msg = conf.rejected_msg }
+        end
         return conf.rejected_code
     end
 end

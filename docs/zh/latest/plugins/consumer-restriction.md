@@ -38,7 +38,7 @@ title: consumer-restriction
 
 | 参数名     | 类型          | 可选项   | 默认值            | 有效值                           | 描述                                                       |
 | --------- | ------------- | ------ | -----------------| --------------------------------| ----------------------------------------------------------|
-| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id"] | 根据不同的对象做相应的限制,支持 `consumer_name`、`service_id`。     |
+| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 根据不同的对象做相应的限制,支持 `consumer_name`、`service_id`、`route_id`。     |
 | whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|

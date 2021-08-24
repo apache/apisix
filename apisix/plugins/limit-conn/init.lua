@@ -41,6 +41,9 @@ function _M.increase(conf, ctx)
     local lim, err = lrucache(conf, nil, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 
@@ -50,10 +53,16 @@ function _M.increase(conf, ctx)
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
+            if conf.rejected_msg then
+                return conf.rejected_code, { error_msg = conf.rejected_msg }
+            end
             return conf.rejected_code or 503
         end
 
-        core.log.error("failed to limit req: ", err)
+        core.log.error("failed to limit conn: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 

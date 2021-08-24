@@ -58,7 +58,7 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -81,7 +81,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel pcre pcre-devel
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -107,7 +107,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc
+sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -138,7 +138,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl make openresty-openssl111-dev
+sudo apt-get install -y git openresty curl make openresty-openssl111-dev libpcre3 libpcre3-dev
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -151,7 +151,7 @@ nohup etcd &
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具
-brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git
+brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre
 
 # 开启 etcd server
 brew services start etcd

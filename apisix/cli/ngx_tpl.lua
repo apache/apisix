@@ -66,6 +66,13 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
@@ -147,6 +154,13 @@ http {
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
+
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
     lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
@@ -352,7 +366,9 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
         }
     }
     {% end %}
@@ -434,7 +450,9 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
         }
     }
     {% end %}
@@ -592,7 +610,7 @@ http {
             proxy_cache                         $upstream_cache_zone;
             proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
             proxy_cache_min_uses                1;
-            proxy_cache_methods                 GET HEAD;
+            proxy_cache_methods                 GET HEAD POST;
             proxy_cache_lock_timeout            5s;
             proxy_cache_use_stale               off;
             proxy_cache_key                     $upstream_cache_key;
@@ -683,7 +701,9 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }

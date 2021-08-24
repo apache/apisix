@@ -260,7 +260,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 访问那个路由的正确方式是添加一个带有正确密钥的名为 `apikey` 的 `Header`，如下方代码所示。
 
 ```bash
-curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
+curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "apikey: key-of-john"
 ```
 
 ### 为路由添加前缀
@@ -302,10 +302,6 @@ Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashb
 #    for more detail.
 #
 -->
-
-:::note 注意
-APISIX Dashboard 目前仍然是一个实验性功能。
-:::
 
 ### 常见问题排查
 

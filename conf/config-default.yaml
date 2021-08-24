@@ -141,6 +141,10 @@ nginx_config:                     # config for render the template to generate n
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
+
+  max_pending_timers: 16384       # increase it if you see "too many pending timers" error
+  max_running_timers: 4096        # increase it if you see "lua_max_running_timers are not enough" error
+
   event:
     worker_connections: 10620
   #envs:                          # allow to get a list of environment variables
@@ -271,6 +275,7 @@ graphql:
   #cmd: ["ls", "-l"]
 
 plugins:                          # plugin list (sorted by priority)
+  - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
@@ -285,6 +290,7 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
+  - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
@@ -333,6 +339,7 @@ plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
     max_kept: 168     # max number of log files will be kept
+    enable_compression: false    # enable log file compression(gzip) or not, default false
   skywalking:
     service_name: APISIX
     service_instance_name: APISIX Instance Name
@@ -348,3 +355,12 @@ plugin_attr:
     report_ttl: 3600     # live time for server info in etcd (unit: second)
   dubbo-proxy:
     upstream_multiplex_count: 32
+  request-id:
+    snowflake:
+      enable: false
+      snowflake_epoc: 1609459200000   # the starting timestamp is expressed in milliseconds
+      data_machine_bits: 12           # data machine bit, maximum 31, because Lua cannot do bit operations greater than 31
+      sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
+      data_machine_ttl: 30            # live time for data_machine in etcd (unit: second)
+      data_machine_interval: 10       # lease renewal interval in etcd (unit: second)
+
