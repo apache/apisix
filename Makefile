@@ -258,6 +258,11 @@ test:
 	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
+### license-check:    Check Lua source code for Apache License
+.PHONY: license-check
+license-check:
+	docker run -it --rm -v $(shell pwd):/github/workspace apache/skywalking-eyes header check
+
 .PHONY: release-src
 release-src: compress-tar
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz

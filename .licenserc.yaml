@@ -29,6 +29,8 @@ header:
     - '**/*.pem'
     - '.github/'
     - 'conf/mime.types'
+    # eyes has some limitation to handle git pattern
+    - '**/*.log'
     # Exclude test toolkit files
     - 't/toolkit'
     - 't/chaos/go.mod'
