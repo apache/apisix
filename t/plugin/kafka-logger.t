@@ -771,6 +771,7 @@ location /t {
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = 1,
+                            meta_format = "origin",
                         }
                     },
                     upstream = {
@@ -794,6 +795,7 @@ location /t {
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = 0,
+                            meta_format = "origin",
                         }
                     },
                     upstream = {
@@ -817,6 +819,7 @@ location /t {
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = -1,
+                            meta_format = "origin",
                         }
                     },
                     upstream = {
@@ -850,3 +853,7 @@ location /t {
 GET /t
 --- no_error_log
 [error]
+--- error_log
+send data to kafka: GET /hello
+send data to kafka: GET /hello
+send data to kafka: GET /hello
