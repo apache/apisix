@@ -840,8 +840,7 @@ location /t {
             end
             ngx.print(body)
 
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
+            t('/hello', ngx.HTTP_GET)
         end
 
         assert(err_count == 0)
@@ -851,7 +850,3 @@ location /t {
 GET /t
 --- no_error_log
 [error]
---- error_log
-send data to kafka: GET /hello
-send data to kafka: GET /hello
-send data to kafka: GET /hello
