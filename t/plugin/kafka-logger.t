@@ -860,7 +860,7 @@ send data to kafka: GET /hello
 
 
 
-=== TEST 20: update the broker_list and cluster_name, generate different kafka producers
+=== TEST 22: update the broker_list and cluster_name, generate different kafka producers
 --- config
     location /t {
         content_by_lua_block {
@@ -957,7 +957,7 @@ qr/not found topic/
 
 
 
-=== TEST 21: use the topic that does not exist on kafka(even if kafka allows auto create topics, first time push messages to kafka would got this error)
+=== TEST 23: use the topic that does not exist on kafka(even if kafka allows auto create topics, first time push messages to kafka would got this error)
 --- config
     location /t {
         content_by_lua_block {
