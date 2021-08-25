@@ -857,3 +857,47 @@ GET /t
 send data to kafka: GET /hello
 send data to kafka: GET /hello
 send data to kafka: GET /hello
+
+
+
+=== TEST 22: schema check, broker_list is {}
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({broker_list = {}, kafka_topic = "test", key= "key1"})
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "broker_list" validation failed: expect object to have at least 1 properties
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: schema check, wrong kafka port type
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({broker_list = {["127.0.0.1"] = "9092"}, kafka_topic = "test", key= "key1"})
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): wrong type: expected integer, got string
+done
+--- no_error_log
+[error]

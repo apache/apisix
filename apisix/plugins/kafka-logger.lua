@@ -44,7 +44,14 @@ local schema = {
             enum = {"default", "origin"},
         },
         broker_list = {
-            type = "object"
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                [".*"] = {
+                    description = "port of kafka",
+                    type = "integer",
+                },
+            },
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -196,19 +203,11 @@ function _M.log(conf, ctx)
     local broker_config = {}
 
     for host, port in pairs(conf.broker_list) do
-        if type(host) == 'string'
-                and type(port) == 'number' then
-            local broker = {
-                host = host,
-                port = port
-            }
-            core.table.insert(broker_list, broker)
-        end
-    end
-
-    if core.table.nkeys(broker_list) == 0 then
-        core.log.error("failed to identify the broker specified")
-        return
+        local broker = {
+            host = host,
+            port = port
+        }
+        core.table.insert(broker_list, broker)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
