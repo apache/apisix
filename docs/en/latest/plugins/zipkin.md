@@ -1,5 +1,5 @@
 ---
-title: Zipkin
+title: zipkin
 ---
 
 <!--
@@ -31,7 +31,7 @@ title: Zipkin
 
 ## Name
 
-[Zipkin](https://github.com/openzipkin/zipkin) is a OpenTracing plugin.
+`zipkin` is a plugin for [Zipkin](https://github.com/openzipkin/zipkin), which is a distributed tracing system.
 
 It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 
