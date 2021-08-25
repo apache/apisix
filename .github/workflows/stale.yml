@@ -1,0 +1,43 @@
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: '0 10 * * *'
+
+jobs:
+  prune_stale:
+    name: Prune Stale
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Prune Stale
+      uses: actions/stale@v4.0.0
+      with:
+        days-before-issue-stale: 350
+        days-before-issue-close: 14
+        stale-issue-message: >
+          This issue has been marked as stale due to 350 days of inactivity.
+          It will be closed in 2 weeks if no further activity occurs. If this issue is still
+          relevant, please simply write any comment. Even if closed, you can still revive the
+          issue at any time or discuss it on the dev@apisix.apache.org list.
+          Thank you for your contributions.
+        close-issue-message: >
+          This issue has been closed due to lack of activity. If you think that
+          is incorrect, or the issue requires additional review, you can revive the issue at
+          any time.
+        days-before-pr-stale: 60
+        days-before-pr-close: 28
+        stale-pr-message: >
+          This pull request has been marked as stale due to 60 days of inactivity.
+          It will be closed in 4 weeks if no further activity occurs. If you think
+          that's incorrect or this pull request should instead be reviewed, please simply
+          write any comment. Even if closed, you can still revive the PR at any time or
+          discuss it on the dev@apisix.apache.org list.
+          Thank you for your contributions.
+        close-pr-message: >
+          This pull request/issue has been closed due to lack of activity. If you think that
+          is incorrect, or the pull request requires review, you can revive the PR at any time.
+        # Issues with these labels will never be considered stale.
+        exempt-issue-labels: 'bug,enhancement,good first issue'
+        stale-issue-label: 'stale'
+        stale-pr-label: 'stale'
+        ascending: true

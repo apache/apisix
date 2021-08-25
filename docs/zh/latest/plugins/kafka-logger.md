@@ -46,6 +46,7 @@ title: kafka-logger
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
 | producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
+| required_acks          | integer | 可选    | 1              | [0, 1, -1] | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。这个参数是为了保证发送请求的可靠性。语义同 kafka 生产者的 acks 参数（如果设置 `acks=0`，则 producer 不会等待服务器的反馈。该消息会被立刻添加到 socket buffer 中并认为已经发送完成。如果设置 `acks=1`，leader 节点会将记录写入本地日志，并且在所有 follower 节点反馈之前就先确认成功。如果设置 `acks=-1`，这就意味着 leader 节点会等待所有同步中的副本确认之后再确认这条记录是否发送完成。）。         |
 | key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |

@@ -307,7 +307,7 @@ function _M.filter(conf, plugins, route_conf)
         trace_plugins_info_for_debug(nil)
         -- when 'plugins' is given, always return 'plugins' itself instead
         -- of another one
-        return plugins or core.empty_tab
+        return plugins or core.tablepool.fetch("plugins", 0, 0)
     end
 
     local route_plugin_conf = route_conf and route_conf.value.plugins

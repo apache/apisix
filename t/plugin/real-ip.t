@@ -51,32 +51,40 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "real-ip": {
+            for _, case in ipairs({
+                {input = {}},
+                {input = {
+                    source = "http_xff",
+                    trusted_addresses = {"127.0.0.1/33"}
+                }},
+                {input = {
+                    source = "http_xff",
+                    trusted_addresses = {"::1/129"}
+                }},
+            }) do
+                local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    {
+                        uri = "/hello",
+                        upstream = {
+                            type = "roundrobin",
+                            nodes = {
+                                ["127.0.0.1:1980"] = 1
+                            }
+                        },
+                        plugins = {
+                            ["real-ip"] = case.input
                         }
                     }
-            }]]
-            )
-
-        if code >= 300 then
-            ngx.status = code
-        end
-        ngx.print(body)
+                )
+                ngx.print(body)
+            end
     }
 }
---- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin real-ip err: property \"source\" is required"}
+{"error_msg":"failed to check the configuration of plugin real-ip err: property \"trusted_addresses\" validation failed: failed to validate item 1: object matches none of the requireds"}
+{"error_msg":"failed to check the configuration of plugin real-ip err: invalid ip address: ::1\/129"}
 
 
 
@@ -326,3 +334,96 @@ X-Forwarded-For: ::2
 --- request
 GET /hello
 --- error_code: 403
+
+
+
+=== TEST 18: trusted addresses (not trusted)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "real-ip": {
+                            "trusted_addresses": ["192.128.0.0/16"],
+                            "source": "http_x_forwarded_for"
+                        },
+                        "ip-restriction": {
+                            "whitelist": ["1.1.1.1"]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 19: hit
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 1.1.1.1
+--- error_code: 403
+
+
+
+=== TEST 20: trusted addresses (trusted)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "real-ip": {
+                            "trusted_addresses": ["192.128.0.0/16", "127.0.0.0/24"],
+                            "source": "http_x_forwarded_for"
+                        },
+                        "ip-restriction": {
+                            "whitelist": ["1.1.1.1"]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 21: hit
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 1.1.1.1
