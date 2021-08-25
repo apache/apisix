@@ -754,7 +754,7 @@ done
 
 
 
-=== TEST 21: report log to kafka, with required_acks(1, 0, -1)
+=== TEST 21: report log to kafka, with required_acks(1, 0, -1), the kafka port is wrong when required_acks=0
 --- config
 location /t {
     content_by_lua_block {
@@ -794,7 +794,7 @@ location /t {
                             producer_type = "sync",
                             timeout = 1,
                             batch_max_size = 1,
-                            required_acks = 0,
+                            required_acks = -1,
                             meta_format = "origin",
                         }
                     },
@@ -812,13 +812,13 @@ location /t {
                     plugins = {
                         ["kafka-logger"] = {
                             broker_list = {
-                                ["127.0.0.1"] = 9092
+                                ["127.0.0.1"] = 9992
                             },
                             kafka_topic = "test2",
                             producer_type = "sync",
                             timeout = 1,
                             batch_max_size = 1,
-                            required_acks = -1,
+                            required_acks = 0,
                             meta_format = "origin",
                         }
                     },
