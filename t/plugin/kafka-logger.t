@@ -722,3 +722,138 @@ GET /t
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+=== TEST 20: required_acks, matches none of the enum values
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                broker_list = {
+                    ["127.0.0.1"] = 3000
+                },
+                required_acks = 10,
+                kafka_topic ="test",
+                key= "key1"
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "required_acks" validation failed: matches none of the enum values
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: report log to kafka, with required_acks(1, 0, -1)
+--- config
+location /t {
+    content_by_lua_block {
+        local data = {
+            {
+                input = {
+                    plugins = {
+                        ["kafka-logger"] = {
+                            broker_list = {
+                                ["127.0.0.1"] = 9092
+                            },
+                            kafka_topic = "test2",
+                            producer_type = "sync",
+                            timeout = 1,
+                            batch_max_size = 1,
+                            required_acks = 1,
+                            meta_format = "origin",
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello",
+                },
+            },
+            {
+                input = {
+                    plugins = {
+                        ["kafka-logger"] = {
+                            broker_list = {
+                                ["127.0.0.1"] = 9092
+                            },
+                            kafka_topic = "test2",
+                            producer_type = "sync",
+                            timeout = 1,
+                            batch_max_size = 1,
+                            required_acks = -1,
+                            meta_format = "origin",
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello",
+                },
+            },
+            {
+                input = {
+                    plugins = {
+                        ["kafka-logger"] = {
+                            broker_list = {
+                                ["127.0.0.1"] = 9092
+                            },
+                            kafka_topic = "test2",
+                            producer_type = "sync",
+                            timeout = 1,
+                            batch_max_size = 1,
+                            required_acks = 0,
+                            meta_format = "origin",
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello",
+                },
+            },
+        }
+
+        local t = require("lib.test_admin").test
+        local err_count = 0
+        for i in ipairs(data) do
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[i].input)
+
+            if code >= 300 then
+                err_count = err_count + 1
+            end
+            ngx.print(body)
+
+            t('/hello', ngx.HTTP_GET)
+        end
+
+        assert(err_count == 0)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+--- error_log
+send data to kafka: GET /hello
+send data to kafka: GET /hello
+send data to kafka: GET /hello
