@@ -1050,7 +1050,7 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
                 local ok, err = plugin.check_schema(data[i].input)
                 if not ok then
                     err_count = err_count + 1
-                    ngx.print(err)
+                    ngx.say(err)
                 end
             end
 
