@@ -33,7 +33,7 @@ title: skywalking
 
 ## Name
 
-[**Skywalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.\
+[**Skywalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.
 The skywalking server can supports both http and grpc protocols. The APISIX client only support http protocols.
 
 ## Attributes
