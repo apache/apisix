@@ -43,7 +43,6 @@ luac.out
 *.log
 *.pid
 t/servroot
-go
 conf/apisix.uid
 conf/nginx.conf
 deps
@@ -63,7 +62,6 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 !.github/
 !.gitmodules
 !.markdownlint.yml
-!.yamllint
 !.licenserc.yaml
 conf/apisix.yaml
 conf/apisix-*.yaml
