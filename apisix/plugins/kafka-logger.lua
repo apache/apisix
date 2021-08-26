@@ -43,7 +43,16 @@ local schema = {
             enum = {"default", "origin"},
         },
         broker_list = {
-            type = "object"
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                [".*"] = {
+                    description = "the port of kafka broker",
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 65535,
+                },
+            },
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -148,10 +157,6 @@ end
 
 
 local function send_kafka_data(conf, log_message, prod)
-    if core.table.nkeys(conf.broker_list) == 0 then
-        core.log.error("failed to identify the broker specified")
-    end
-
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     core.log.info("partition_id: ",
                   core.log.delay_exec(get_partition_id,
@@ -202,14 +207,11 @@ function _M.log(conf, ctx)
     local broker_config = {}
 
     for host, port in pairs(conf.broker_list) do
-        if type(host) == 'string'
-                and type(port) == 'number' then
-            local broker = {
-                host = host,
-                port = port
-            }
-            core.table.insert(broker_list, broker)
-        end
+        local broker = {
+            host = host,
+            port = port
+        }
+        core.table.insert(broker_list, broker)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
