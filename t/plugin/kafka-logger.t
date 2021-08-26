@@ -857,3 +857,145 @@ GET /t
 send data to kafka: GET /hello
 send data to kafka: GET /hello
 send data to kafka: GET /hello
+
+
+
+=== TEST 22: update the broker_list and cluster_name, generate different kafka producers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            ngx.sleep(0.5)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "kafka-logger": {
+                            "broker_list" : {
+                                "127.0.0.1": 9092
+                            },
+                            "kafka_topic" : "test2",
+                            "timeout" : 1,
+                            "batch_max_size": 1,
+                            "include_req_body": false,
+                            "cluster_name": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+
+            code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "kafka-logger": {
+                            "broker_list" : {
+                                "127.0.0.1": 19092
+                            },
+                            "kafka_topic" : "test4",
+                            "timeout" : 1,
+                            "batch_max_size": 1,
+                            "include_req_body": false,
+                            "cluster_name": 2
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+
+            ngx.sleep(2)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response
+passed
+--- wait: 5
+--- error_log
+phase_func(): kafka cluster name 1, broker_list[1] port 9092
+phase_func(): kafka cluster name 2, broker_list[1] port 19092
+--- no_error_log eval
+qr/not found topic/
+
+
+
+=== TEST 23: use the topic that does not exist on kafka(even if kafka allows auto create topics, first time push messages to kafka would got this error)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "kafka-logger": {
+                            "broker_list" : {
+                                "127.0.0.1": 9092
+                            },
+                            "kafka_topic" : "undefined_topic",
+                            "timeout" : 1,
+                            "batch_max_size": 1,
+                            "include_req_body": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+
+            ngx.sleep(2)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 5
+--- response
+passed
+--- error_log eval
+qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
