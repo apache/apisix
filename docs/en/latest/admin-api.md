@@ -971,7 +971,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | server_addr      | False  | IP       | server IP | "127.0.0.1"  |
 | server_port      | False  | Integer  | server port | 9090  |
 | sni              | False  | Host     | server name indication | "test.com"  |
-| upstream | False | Upstream | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more | {<br/>        "type": "roundrobin",<br/>        "nodes": {<br/>            "39.97.63.215:80": 1<br/>        } |
-| upstream_id | False | Upstream | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more | "1" |
+| upstream | False | Upstream | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more |  |
+| upstream_id | False | Upstream | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more |             |
 
 [Back to TOC](#table-of-contents)
