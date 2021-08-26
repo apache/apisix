@@ -30,7 +30,6 @@ local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
 
-
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
@@ -65,7 +64,10 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        -- in lua-resty-kafka, cluster_name is defined as number
+        -- see https://github.com/doujiang24/lua-resty-kafka#new-1
+        cluster_name = {type = "integer", minimum = 1, default = 1},
     },
     required = {"broker_list", "kafka_topic"}
 }
@@ -139,9 +141,9 @@ local function remove_stale_objects(premature)
 end
 
 
-local function create_producer(broker_list, broker_config)
+local function create_producer(broker_list, broker_config, cluster_name)
     core.log.info("create new kafka producer instance")
-    return producer:new(broker_list, broker_config)
+    return producer:new(broker_list, broker_config, cluster_name)
 end
 
 
@@ -215,7 +217,9 @@ function _M.log(conf, ctx)
     broker_config["required_acks"] = conf.required_acks
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
-                                               broker_list, broker_config)
+                                               broker_list, broker_config, conf.cluster_name)
+    core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ",
+                  prod.client.broker_list[1].port)
     if err then
         return nil, "failed to identify the broker specified: " .. err
     end
