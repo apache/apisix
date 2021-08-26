@@ -1112,6 +1112,6 @@ property "broker_list" validation failed: failed to validate 127.0.0.1 (matching
     }
 --- request
 GET /t
---- grep_error_log eval
-qr/create new kafka producer instance, brokers: [{"port":9092,"host":"127.0.0.127"},{"port":9093,"host":"127.0.0.127"}]/
-qr/failed to send data to Kafka topic: .*, brokers: [{"port":9092,"host":"127.0.0.127"},{"port":9093,"host":"127.0.0.127"}]/
+--- error_log_like eval
+qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.127"},\{"port":9093,"host":"127.0.0.127"}]/
+qr/failed to send data to Kafka topic: .*, brokers: \[\{"port":9092,"host":"127.0.0.127"},\{"port":9093,"host":"127.0.0.127"}]/
