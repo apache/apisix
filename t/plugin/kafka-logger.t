@@ -1009,44 +1009,36 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
             local data = {
                 {
                     input = {
-                        {
-                            broker_list = {},
-                            kafka_topic = "test",
-                            key= "key1",
-                        },
+                        broker_list = {},
+                        kafka_topic = "test",
+                        key= "key1",
                     },
                 },
                 {
                     input = {
-                        {
-                            broker_list = {
-                                ["127.0.0.1"] = "9092"
-                            },
-                            kafka_topic = "test",
-                            key= "key1",
+                        broker_list = {
+                            ["127.0.0.1"] = "9092"
                         },
+                        kafka_topic = "test",
+                        key= "key1",
                     },
                 },
                 {
                     input = {
-                        {
-                            broker_list = {
-                                ["127.0.0.1"] = 0
-                            },
-                            kafka_topic = "test",
-                            key= "key1",
+                        broker_list = {
+                            ["127.0.0.1"] = 0
                         },
+                        kafka_topic = "test",
+                        key= "key1",
                     },
                 },
                 {
                     input = {
-                        {
-                            broker_list = {
-                                ["127.0.0.1"] = 65536
-                            },
-                            kafka_topic = "test",
-                            key= "key1",
+                        broker_list = {
+                            ["127.0.0.1"] = 65536
                         },
+                        kafka_topic = "test",
+                        key= "key1",
                     },
                 },
             }
