@@ -1087,7 +1087,8 @@ property "broker_list" validation failed: failed to validate 127.0.0.1 (matching
                                     "kafka_topic" : "test2",
                                     "producer_type": "sync",
                                     "key" : "key1",
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "cluster_name": 10
                              }
                         },
                         "upstream": {
