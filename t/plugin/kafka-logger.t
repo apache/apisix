@@ -1002,44 +1002,75 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
 
 
 
-=== TEST 22: schema check, broker_list is {}
+=== TEST 24: check broker_list via schema
 --- config
     location /t {
         content_by_lua_block {
+            local data = {
+                {
+                    input = {
+                        {
+                            broker_list = {},
+                            kafka_topic = "test",
+                            key= "key1",
+                        },
+                    },
+                },
+                {
+                    input = {
+                        {
+                            broker_list = {
+                                ["127.0.0.1"] = "9092"
+                            },
+                            kafka_topic = "test",
+                            key= "key1",
+                        },
+                    },
+                },
+                {
+                    input = {
+                        {
+                            broker_list = {
+                                ["127.0.0.1"] = 0
+                            },
+                            kafka_topic = "test",
+                            key= "key1",
+                        },
+                    },
+                },
+                {
+                    input = {
+                        {
+                            broker_list = {
+                                ["127.0.0.1"] = 65536
+                            },
+                            kafka_topic = "test",
+                            key= "key1",
+                        },
+                    },
+                },
+            }
+
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = {}, kafka_topic = "test", key= "key1"})
-            if not ok then
-                ngx.say(err)
+
+            local err_count = 0
+            for i in ipairs(data) do
+                local ok, err = plugin.check_schema(data[i].input)
+                if not ok then
+                    err_count = err_count + 1
+                    ngx.print(err)
+                end
             end
-            ngx.say("done")
+
+            assert(err_count == #data)
         }
     }
 --- request
 GET /t
 --- response_body
 property "broker_list" validation failed: expect object to have at least 1 properties
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 23: schema check, wrong kafka port type
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = {["127.0.0.1"] = "9092"}, kafka_topic = "test", key= "key1"})
-            if not ok then
-                ngx.say(err)
-            end
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): wrong type: expected integer, got string
-done
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 0 to be greater than 1
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be smaller than 65535
 --- no_error_log
 [error]

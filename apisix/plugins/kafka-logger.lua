@@ -47,8 +47,10 @@ local schema = {
             minProperties = 1,
             patternProperties = {
                 [".*"] = {
-                    description = "port of kafka",
+                    description = "the port of kafka broker",
                     type = "integer",
+                    minimum = 1,
+                    maximum = 65535,
                 },
             },
         },
