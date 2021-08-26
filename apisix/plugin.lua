@@ -231,7 +231,13 @@ function _M.load(config)
 
     if not config then
         -- called during starting or hot reload in admin
-        local_conf = core.config.local_conf(true)
+        local err
+        local_conf, err = core.config.local_conf(true)
+        if not local_conf then
+            -- the error is unrecoverable, so we need to raise it
+            error("failed to load the configuration file: ", err)
+        end
+
         http_plugin_names = local_conf.plugins
         stream_plugin_names = local_conf.stream_plugins
     else
