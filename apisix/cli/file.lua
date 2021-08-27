@@ -126,6 +126,10 @@ local function path_is_multi_type(path, type_val)
         return true
     end
 
+    if path == "apisix->ssl->listen" and type_val == "number" then
+        return true
+    end
+
     return false
 end
 
