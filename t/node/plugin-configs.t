@@ -180,3 +180,76 @@ GET /t
 GET /t
 --- error_log
 property "block_rules" validation failed
+
+
+
+=== TEST 4: recover plugin when plugin_config changed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, err = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "hello"
+                        }
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local code, err = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugin_config_id": 1
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local code, err, org_body = t('/hello')
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(org_body)
+
+            local code, err = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local code, err, org_body = t('/hello')
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(org_body)
+        }
+    }
+--- response_body
+hello
+hello world
