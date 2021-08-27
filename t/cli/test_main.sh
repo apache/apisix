@@ -47,7 +47,7 @@ echo "passed: error_log directive uses warn level by default"
 
 # check whether the 'reuseport' is in nginx.conf .
 
-grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
+grep -E "listen 0.0.0.0:9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: nginx.conf file is missing reuseport configuration"
     exit 1
@@ -64,7 +64,7 @@ apisix:
 
 make init
 
-grep "listen 8443 ssl" conf/nginx.conf > /dev/null
+grep "listen 0.0.0.0:8443 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: failed to update ssl port"
     exit 1
@@ -393,7 +393,7 @@ if [ $count -ne 1 ]; then
     exit 1
 fi
 
-count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
+count=`grep -c "listen 0.0.0.0:9080.*reuseport" conf/nginx.conf || true`
 if [ $count -ne 0 ]; then
     echo "failed: reuseport should be disabled when enable enable_dev_mode"
     exit 1
