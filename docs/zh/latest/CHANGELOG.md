@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.9.0](#290)
 - [2.8.0](#280)
 - [2.7.0](#270)
 - [2.6.0](#260)
@@ -43,6 +44,42 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.9.0
+
+### Change
+
+- 为避免误解，将插件中的 balancer 方法改成 before_proxy [#4697](https://github.com/apache/apisix/pull/4697)
+
+### Core
+
+- :sunrise: 增大总 timer 数的限制 [#4843](https://github.com/apache/apisix/pull/4843)
+- :sunrise: 移除禁止额外字段的检验，方便给 APISIX 做 A/B 测试 [#4797](https://github.com/apache/apisix/pull/4797)
+- :sunrise: 支持在 arg 变量中使用 '-' (#4519) [#4676](https://github.com/apache/apisix/pull/4676)
+- :sunrise: Admin API 拒绝错误的 proto 文件内容 [#4750](https://github.com/apache/apisix/pull/4750)
+
+### Plugin
+
+- :sunrise: ext-plugin 插件允许 Runner 查询请求信息 [#4835](https://github.com/apache/apisix/pull/4835)
+- :sunrise: gzip 插件支持通过 * 匹配任意类型 [#4817](https://github.com/apache/apisix/pull/4817)
+- :sunrise: 增加 real-ip 插件 [#4813](https://github.com/apache/apisix/pull/4813)
+- :sunrise: limit-* 系列插件允许自定义请求拒绝信息 [#4808](https://github.com/apache/apisix/pull/4808)
+- :sunrise: request-id 插件增加 snowflake 算法支持 [#4559](https://github.com/apache/apisix/pull/4559)
+- :sunrise: 增加 authz-casbin 插件 [#4710](https://github.com/apache/apisix/pull/4710)
+- :sunrise: error-log-logger 插件增加 skywalking 后端 [#4633](https://github.com/apache/apisix/pull/4633)
+- :sunrise: ext-plugin 插件在发送配置时会额外发送一个 idempotent key [#4736](https://github.com/apache/apisix/pull/4736)
+
+### Bugfix
+
+- 避免特定条件下缓存过期的全局规则 [#4867](https://github.com/apache/apisix/pull/4867)
+- grpc-transcode 插件支持嵌套信息 [#4859](https://github.com/apache/apisix/pull/4859)
+- authz-keycloak 插件避免当 lazy_load_path 为 false 且没有配置 permissions 时出错 [#4845](https://github.com/apache/apisix/pull/4845)
+- proxy-cache 插件保持 cache_method 配置和 nginx's proxy_cache_methods 一致 [#4814](https://github.com/apache/apisix/pull/4814)
+- Admin API 确保 PATCH with sub path 时也能注入 updatetime [#4765](https://github.com/apache/apisix/pull/4765)
+- Admin API 更新 consumer 时校验 username [#4756](https://github.com/apache/apisix/pull/4756)
+- error-log-logger 插件避免发送过期的错误日志 [#4690](https://github.com/apache/apisix/pull/4690)
+- grpc-transcode 插件支持 enum 类型 [#4706](https://github.com/apache/apisix/pull/4706)
+- 当非 HEAD/GET 请求触发 500 错误时，会被错误转成 405 [#4696](https://github.com/apache/apisix/pull/4696)
 
 ## 2.8.0
 
