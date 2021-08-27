@@ -29,7 +29,6 @@ local stale_timer_running = false
 local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
-local brokers
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -152,7 +151,8 @@ end
 
 
 local function create_producer(broker_list, broker_config, cluster_name)
-    core.log.info("create new kafka producer instance, brokers: " .. brokers)
+    core.log.info("create new kafka producer instance, brokers: ",
+        core.json.delay_encode(broker_list))
     return producer:new(broker_list, broker_config, cluster_name)
 end
 
@@ -164,7 +164,8 @@ local function send_kafka_data(conf, log_message, prod)
                                       prod, conf.kafka_topic, log_message))
 
     if not ok then
-        return nil, "failed to send data to Kafka topic: " .. err .. ", brokers: " .. brokers
+        return nil, "failed to send data to Kafka topic: " .. err ..
+                ", brokers: " .. core.json.encode(conf.broker_list)
     end
 
     return true
@@ -206,7 +207,6 @@ function _M.log(conf, ctx)
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
     local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
     local broker_config = {}
-    brokers = ""
 
     for host, port in pairs(conf.broker_list) do
         local broker = {
@@ -215,8 +215,6 @@ function _M.log(conf, ctx)
         }
         core.table.insert(broker_list, broker)
     end
-
-    brokers = core.json.encode(broker_list)
 
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
