@@ -236,7 +236,7 @@ GET /hello
 Referer: http://www.xx.com
 --- error_code: 403
 --- response_body
-Your referer host is deny
+{"message":"Your referer host is deny"}
 
 
 
