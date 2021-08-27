@@ -124,7 +124,7 @@ apisix:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "node_listen port 9090 conflicts with control"; then
+if ! echo "$out" | grep "http listen port 9090 conflicts with control"; then
     echo "failed: can't detect port conflicts"
     exit 1
 fi
