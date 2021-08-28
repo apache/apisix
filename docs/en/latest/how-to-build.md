@@ -237,7 +237,9 @@ Content-Type: text/html
 
 ## Step 6: Build OpenResty for Apache APISIX
 
-Some features require additional NGINX modules to be introduced into OpenResty. If you need these features, you can build OpenResty with [this script](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh).
+Some features require additional NGINX modules to be introduced into OpenResty.
+If you need these features, you can build the APISIX OpenResty.
+You can refer to the source of [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) for how to set up the build environment and build the APISIX OpenResty.
 
 ## Step 7: Add Systemd Unit File for Apache APISIX
 
