@@ -235,7 +235,9 @@ Content-Type: text/html
 
 ## 步骤6：为 Apache APISIX 构建 OpenResty
 
-有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。如果您需要这些功能，你可以用[这个脚本](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh)构建 OpenResty。
+有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
+如果您需要这些功能，您可以构建 APISIX OpenResty。
+您可以根据[api7/apisix-build-tools](https://github.com/api7/apisix-build-tools)里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
 ## 步骤7：为 Apache APISIX 添加 systemd 配置文件
 
