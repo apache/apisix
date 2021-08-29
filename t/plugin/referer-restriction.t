@@ -268,5 +268,3 @@ GET /t
 --- response_body
 value should match only one schema, but matches both schemas 1 and 2
 done
---- no_error_log
-[error]
