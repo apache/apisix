@@ -163,7 +163,7 @@ local function send_kafka_data(conf, log_message, prod)
                                       prod, conf.kafka_topic, log_message))
 
     if not ok then
-        return nil, "failed to send data to Kafka topic: " .. err
+        return false, "failed to send data to Kafka topic: " .. err
     end
 
     return true
