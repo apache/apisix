@@ -151,8 +151,7 @@ end
 
 
 local function create_producer(broker_list, broker_config, cluster_name)
-    core.log.info("create new kafka producer instance, brokers: ",
-        core.json.delay_encode(broker_list))
+    core.log.info("create new kafka producer instance")
     return producer:new(broker_list, broker_config, cluster_name)
 end
 
@@ -164,7 +163,7 @@ local function send_kafka_data(conf, log_message, prod)
                                       prod, conf.kafka_topic, log_message))
 
     if not ok then
-        return nil, "failed to send data to Kafka topic: " .. err ..
+        return false, "failed to send data to Kafka topic: " .. err ..
                 ", brokers: " .. core.json.encode(conf.broker_list)
     end
 
