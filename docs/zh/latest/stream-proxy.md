@@ -110,6 +110,7 @@ apisix:
 
 接着，我们需要为给定的 SNI 配置证书。
 具体步骤参考 [Admin API 的 SSL](./admin-api.md#ssl)。
+mTLS 也是支持的，参考 [保护路由](./mtls.md#保护路由)。
 
 然后，我们需要配置一个 route，匹配连接并代理到上游：
 
