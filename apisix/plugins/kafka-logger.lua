@@ -163,7 +163,8 @@ local function send_kafka_data(conf, log_message, prod)
                                       prod, conf.kafka_topic, log_message))
 
     if not ok then
-        return false, "failed to send data to Kafka topic: " .. err
+        return false, "failed to send data to Kafka topic: " .. err ..
+                ", brokers: " .. core.json.encode(conf.broker_list)
     end
 
     return true

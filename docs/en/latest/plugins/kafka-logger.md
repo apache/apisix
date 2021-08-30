@@ -34,9 +34,7 @@ title: kafka-logger
 
 `kafka-logger` is a plugin which works as a Kafka client driver for the ngx_lua nginx module.
 
-This will provide the ability to send Log data requests as JSON objects to external Kafka clusters.
-
-This plugin provides the ability to push Log data as a batch to you're external Kafka topics. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability to push requests log data as JSON objects to your external Kafka clusters. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
@@ -169,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-*success:
+success:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
