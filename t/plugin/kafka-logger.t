@@ -1066,3 +1066,51 @@ property "broker_list" validation failed: failed to validate 127.0.0.1 (matching
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be smaller than 65535
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: kafka brokers info in log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                             "kafka-logger": {
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.127":9092
+                                      },
+                                    "kafka_topic" : "test2",
+                                    "producer_type": "sync",
+                                    "key" : "key1",
+                                    "batch_max_size": 1,
+                                    "cluster_name": 10
+                             }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+        }
+    }
+--- request
+GET /t
+--- error_log_like eval
+qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.127"}]/
+qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
