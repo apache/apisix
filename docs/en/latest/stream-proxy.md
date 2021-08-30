@@ -112,6 +112,7 @@ apisix:
 
 Second, we need to configure certificate for the given SNI.
 See [Admin API's SSL section](./admin-api.md#ssl) for how to do.
+mTLS is also supported, see [Protect Route](./mtls.md#protect-route) for how to do.
 
 Third, we need to configure a stream route to match and proxy it to the upstream:
 
