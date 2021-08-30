@@ -537,38 +537,33 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ssl_listen = {}
     -- listen in https, support multiple ports, support specific IP
-    if type(yaml_conf.apisix.ssl.listen) == "number" then
-        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen,
-                yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-    elseif type(yaml_conf.apisix.ssl.listen) == "table" then
-        for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
-            if type(value) == "number" then
-                listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                        yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-            elseif type(value) == "table" then
-                local ip = value.ip
-                local port = value.port
-                local enable_ipv6 = false
-                local enable_http2 = (value.enable_http2 or yaml_conf.apisix.ssl.enable_http2)
+    for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
+        if type(value) == "number" then
+            listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
+                    yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
+        elseif type(value) == "table" then
+            local ip = value.ip
+            local port = value.port
+            local enable_ipv6 = false
+            local enable_http2 = (value.enable_http2 or yaml_conf.apisix.ssl.enable_http2)
 
-                if ip == nil then
-                    ip = "0.0.0.0"
-                    if yaml_conf.apisix.enable_ipv6 then
-                        enable_ipv6 = true
-                    end
+            if ip == nil then
+                ip = "0.0.0.0"
+                if yaml_conf.apisix.enable_ipv6 then
+                    enable_ipv6 = true
                 end
-
-                if port == nil then
-                    port = 9443
-                end
-
-                if enable_http2 == nil then
-                    enable_http2 = false
-                end
-
-                listen_table_insert(ssl_listen, "https", ip, port,
-                        enable_http2, enable_ipv6)
             end
+
+            if port == nil then
+                port = 9443
+            end
+
+            if enable_http2 == nil then
+                enable_http2 = false
+            end
+
+            listen_table_insert(ssl_listen, "https", ip, port,
+                    enable_http2, enable_ipv6)
         end
     end
 
