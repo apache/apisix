@@ -187,3 +187,84 @@ hello world
     }
 --- request
 GET /t
+
+
+
+=== TEST 10: set blacklist with reject message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "referer-restriction": {
+                                 "blacklist": [
+                                     "*.xx.com"
+                                 ],
+                                 "message": "Your referer host is deny"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: hit route and in the blacklist
+--- request
+GET /hello
+--- more_headers
+Referer: http://www.xx.com
+--- error_code: 403
+--- response_body
+{"message":"Your referer host is deny"}
+
+
+
+=== TEST 12: hit route and not in the blacklist
+--- request
+GET /hello
+--- more_headers
+Referer: https://yy.com
+--- response_body
+hello world
+
+
+
+=== TEST 13: whitelist and blacklist mutual exclusive
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.referer-restriction")
+            local ok, err = plugin.check_schema({whitelist={"xx.com"}, blacklist={"yy.com"}})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+value should match only one schema, but matches both schemas 1 and 2
+done
