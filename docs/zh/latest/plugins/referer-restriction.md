@@ -37,8 +37,13 @@ title: referer-restriction
 
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 必须    |         |       | 域名列表。域名开头可以用'*'作为通配符 |
-| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查 |
+| whitelist | array[string] | 可选    |         |       | 白名单域名列表。域名开头可以用'*'作为通配符。 |
+| blacklist | array[string] | 可选    |         |       | 黑名单域名列表。域名开头可以用'*'作为通配符。 |
+| message | string | 可选    | Your referer host is not allowed | [1, 1024] | 在未允许访问的情况下返回的信息。 |
+| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查。 |
+
+只能单独启用白名单或黑名单，两个不能一起使用。
+`message`可以由用户自定义。
 
 ## 如何启用
 
