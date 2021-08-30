@@ -120,8 +120,7 @@ apisix:
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
-    # listen: 9443                # APISIX listening port in https.
-    listen:                       # This style support multiple ports.
+    listen:                       # APISIX listening port in https.
       - 9443
     #   - port: 9444
     #     enable_http2: true      # If not set, the default value is `false`.
