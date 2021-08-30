@@ -158,9 +158,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - قم بتنزيل أحدث حزمة إصدار لشفرة المصدر:
 
      ```shell
-     $ mkdir apisix-2.8
-     $ wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
-     $ tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
+     $ mkdir apisix-2.9
+     $ wget https://downloads.apache.org/apisix/2.9/apache-apisix-2.9-src.tgz
+     $ tar zxvf apache-apisix-2.9-src.tgz -C apisix-2.9
      ```
 
    - تثبيت التبعيات ：
@@ -197,7 +197,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - تثبيت أبيسكس：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.9/apisix-2.9-0.el7.x86_64.rpm
    ```
 
    - تحقق من إصدار أبيسكس:
