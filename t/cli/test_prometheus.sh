@@ -90,6 +90,8 @@ fi
 
 make stop
 
+echo "passed: should listen at previous prometheus address"
+
 echo '
 plugin_attr:
   prometheus:
@@ -120,4 +122,4 @@ if ! echo "$out" | grep "node_listen port 9092 conflicts with prometheus"; then
     exit 1
 fi
 
-echo "passed: should listen at previous prometheus address"
+echo "passed: should detect port conflicts"
