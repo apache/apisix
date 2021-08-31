@@ -155,14 +155,14 @@ local function sync_data(self)
             data_valid, err = check_schema(self.item_schema, item)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(item))
+                          "] err:", err, ", val: ", json.delay_encode(item))
             end
 
             if data_valid and self.checker then
                 data_valid, err = self.checker(item)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", val: ", json.delay_encode(item))
                 end
             end
         end
@@ -200,7 +200,7 @@ local function sync_data(self)
                 data_valid, err = check_schema(self.item_schema, item)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", val: ", json.delay_encode(item))
                 end
             end
 
@@ -208,7 +208,7 @@ local function sync_data(self)
                 data_valid, err = self.checker(item)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", val: ", json.delay_encode(item))
                 end
             end
 
