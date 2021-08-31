@@ -39,8 +39,8 @@ title: cors
 | ---------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------------ |
 | allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081 。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
 | allow_methods    | string  | 可选   | "*"    |        | 允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。 |
+| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS 规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Header 都通过，但请注意这样存在安全隐患。 |
+| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS 规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示允许任意 Header 。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许任意 Header，但请注意这样存在安全隐患。 |
 | max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
 | allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
 | allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin, 如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
