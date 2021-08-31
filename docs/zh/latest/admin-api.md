@@ -927,6 +927,7 @@ Content-Type: text/plain
 | ----------- | ----------------------------------- | ---------- | ------------- |
 | GET         | /apisix/admin/plugins/list          | 无         | 获取资源列表  |
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源      |
+| GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性|
 
 ### body 请求参数
 
@@ -944,13 +945,21 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *地址*：/apisix/admin/plugins?all=true
 
-*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` 和 `version`。
+
+默认情况下，这个接口只返回 http 插件。如果你需要 stream 插件，需要用 `/apisix/admin/plugins?all=true&subsystem=stream`。
 
 ### 请求方法
 
 | Method | 请求 URI                       | 请求 body | 说明     |
 | ------ | ------------------------------ | --------- | -------- |
 | GET    | /apisix/admin/plugins?all=true | 无        | 获取资源 |
+
+### 请求参数
+
+| 名称      | 说明                    | 默认 |
+| ----      | ----------------------- | -----|
+| subsystem | 插件所属的子系统        | http |
 
 [Back to TOC](#目录)
 
