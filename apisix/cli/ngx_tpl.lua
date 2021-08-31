@@ -396,10 +396,10 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and port_admin then %}
+    {% if enable_admin and admin_server_addr then %}
     server {
         {%if https_admin then%}
-        listen {* port_admin *} ssl;
+        listen {* admin_server_addr *} ssl;
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -419,7 +419,7 @@ http {
         {% end %}
 
         {% else %}
-        listen {* port_admin *};
+        listen {* admin_server_addr *};
         {%end%}
         log_not_found off;
 
@@ -506,7 +506,7 @@ http {
         }
         {% end %}
 
-        {% if enable_admin and not port_admin then %}
+        {% if enable_admin and not admin_server_addr then %}
         location /apisix/admin {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
