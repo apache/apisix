@@ -61,7 +61,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
+you also can add a Consumer through the web console:
 
 ![auth-1](../../../assets/images/plugin/basic-auth-1.png)
 
