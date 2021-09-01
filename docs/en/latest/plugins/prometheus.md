@@ -106,6 +106,7 @@ For example like this:
 ```yaml
 scrape_configs:
   - job_name: 'apisix'
+    scrape_interval: 20s
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
     - targets: ['127.0.0.1:9091']
