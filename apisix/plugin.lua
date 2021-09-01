@@ -294,8 +294,22 @@ local function trace_plugins_info_for_debug(plugins)
         return
     end
 
+    local headers
+    if is_http and not ngx.headers_sent then
+        headers, err = core.response.get_headers("Apisix-Plugins")
+        if err then
+            core.log.warn("failed to get response headers, err: ", err)
+        end
+    end
+
+
     local t = {}
     for i = 1, #plugins, 2 do
+        if headers and type(headers) == "table" then
+            if core.table.array_find(headers, plugins[i].name) then
+                break
+            end
+        end
         core.table.insert(t, plugins[i].name)
     end
     if is_http and not ngx.headers_sent then

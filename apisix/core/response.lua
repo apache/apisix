@@ -19,9 +19,11 @@ local ngx = ngx
 local ngx_print = ngx.print
 local ngx_header = ngx.header
 local ngx_add_header
+local ngx_get_headers
 if ngx.config.subsystem == "http" then
     local ngx_resp = require "ngx.resp"
     ngx_add_header = ngx_resp.add_header
+    ngx_get_headers = ngx_resp.get_headers
 end
 
 local error = error
@@ -33,6 +35,7 @@ local str_sub = string.sub
 local tonumber = tonumber
 local clear_tab = require("table.clear")
 local pairs = pairs
+local str_lower = string.lower
 
 local _M = {version = 0.1}
 
@@ -131,6 +134,24 @@ end
 
 function _M.add_header(...)
     set_header(true, ...)
+end
+
+function _M.get_headers(key)
+    local h, err = ngx.resp.get_headers()
+
+    if err == "truncated" then
+        return nil, err
+    end
+
+    if key then
+        for k, v in pairs(h) do
+            if key == k or str_lower(key) == k then
+                return v, nil
+            end
+        end
+    end
+
+    return h, nil
 end
 
 
