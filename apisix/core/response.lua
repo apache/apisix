@@ -19,11 +19,9 @@ local ngx = ngx
 local ngx_print = ngx.print
 local ngx_header = ngx.header
 local ngx_add_header
-local ngx_get_headers
 if ngx.config.subsystem == "http" then
     local ngx_resp = require "ngx.resp"
     ngx_add_header = ngx_resp.add_header
-    ngx_get_headers = ngx_resp.get_headers
 end
 
 local error = error
@@ -137,7 +135,7 @@ function _M.add_header(...)
 end
 
 function _M.get_headers(key)
-    local h, err = ngx_get_headers()
+    local h, err = ngx.resp.get_headers()
 
     if err == "truncated" then
         return nil, err
