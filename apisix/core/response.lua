@@ -137,7 +137,7 @@ function _M.add_header(...)
 end
 
 function _M.get_headers(key)
-    local h, err = ngx.resp.get_headers()
+    local h, err = ngx_get_headers()
 
     if err == "truncated" then
         return nil, err
