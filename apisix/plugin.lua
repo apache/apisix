@@ -296,6 +296,7 @@ local function trace_plugins_info_for_debug(plugins)
 
     local headers
     if is_http and not ngx.headers_sent then
+        local err
         headers, err = core.response.get_headers("Apisix-Plugins")
         if err then
             core.log.warn("failed to get response headers, err: ", err)
