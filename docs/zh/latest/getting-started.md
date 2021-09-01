@@ -320,4 +320,3 @@ Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashb
     ```
 
 - 如果发现只有 dashboard 无法被访问，请注意 etcd 容器是否在重启或失败，观察 etcd 容器日志中存在 Permission 问题，请留意并尝试更改 apisix-docker/example 的权限。
-
