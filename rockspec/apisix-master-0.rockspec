@@ -69,6 +69,7 @@ dependencies = {
     "ext-plugin-proto = 0.2.1",
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
+    "lua-zlib = 1.2-1",
 }
 
 build = {
