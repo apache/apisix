@@ -269,3 +269,35 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530
 qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: confirm the name, priority, schema, type and version of stream plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true&subsystem=stream',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            for k, v in pairs(res) do
+                if k == "limit-conn" then
+                    ngx.say(json.encode(v))
+                end
+            end
+        }
+    }
+--- response_body
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"enum":["remote_addr","server_addr"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+--- no_error_log
+[error]

@@ -76,6 +76,12 @@ Return the jsonschema used by this APISIX instance in the format below:
             "version": 0.1
         },
         ...
+    },
+    "stream-plugins": {
+        "mqtt-proxy": {
+            ...
+        },
+        ...
     }
 }
 ```
