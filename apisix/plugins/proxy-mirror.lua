@@ -27,7 +27,12 @@ local schema = {
             pattern = [[^http(s)?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]{0,62}]]
                       .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
         },
-        percentage = { type = "number", minimum = 0.00001, maximum = 1, default = 1 },
+        percentage = {
+            type = "number",
+            minimum = 0.00001,
+            maximum = 1,
+            default = 1,
+        },
     },
     required = {"host"},
     minProperties = 1,
@@ -60,7 +65,9 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_mirror_host = conf.host
     else
         math.randomseed(socket.gettime())
-        if math.random() < conf.percentage then
+        local val = math.random()
+        core.log.info("mirror request percentage conf: ", conf.percentage, ", random value: ", val)
+        if val < conf.percentage then
             ctx.var.upstream_mirror_host = conf.host
         end
     end

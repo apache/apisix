@@ -48,7 +48,7 @@ add_block_preprocessor(sub {
                     core.log.info(v, ": ", headers_tab[v])
                 end
 
-                core.log.info("uri: ", ngx.var.uri)
+                core.log.info("uri: ", ngx.var.request_uri)
                 ngx.say("hello world")
             }
         }
@@ -445,3 +445,143 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: sanity check (invalid percentage)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986",
+                               "percentage": 10
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"percentage\" validation failed: expected 10 to be smaller than 1"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: set mirror requests percentage to 1
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986",
+                               "percentage": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: hit route with percentage 1
+--- request
+GET /hello?percentage=1
+--- error_code: 200
+--- response_body
+hello world
+--- error_log_like eval
+qr/uri: \/hello\?percentage=1/
+
+
+
+=== TEST 16: set mirror requests percentage to 0.5
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986",
+                               "percentage": 0.5
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: hit route with percentage 0.5
+--- request
+GET /hello?percentage=0.5
+--- error_code: 200
+--- error_log_like eval
+qr/mirror request percentage conf: 0\.5/

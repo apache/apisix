@@ -29,13 +29,14 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 
 | Name | Type   | Requirement | Default | Valid | Description                                                                                                                 |
 | ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| host | string | optional    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
+| host | string | required    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
+| percentage | number | optional    | 1       |  [0.00001, 1]     | the percentage of mirror requests |
 
 ### Examples
 
 #### Enable the plugin
 
-1:  enable the proxy-mirror plugin for a specific route :
+example 1:  enable the proxy-mirror plugin for a specific route :
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
