@@ -33,7 +33,6 @@ local str_sub = string.sub
 local tonumber = tonumber
 local clear_tab = require("table.clear")
 local pairs = pairs
-local str_lower = string.lower
 
 local _M = {version = 0.1}
 
@@ -132,24 +131,6 @@ end
 
 function _M.add_header(...)
     set_header(true, ...)
-end
-
-function _M.get_headers(key)
-    local h, err = ngx.resp.get_headers()
-
-    if err == "truncated" then
-        return nil, err
-    end
-
-    if key then
-        for k, v in pairs(h) do
-            if key == k or str_lower(key) == k then
-                return v, nil
-            end
-        end
-    end
-
-    return h, nil
 end
 
 

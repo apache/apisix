@@ -434,7 +434,7 @@ function _M.http_access_phase()
         script.run("access", api_ctx)
 
     else
-        local plugins = plugin.filter(route)
+        local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
 
         plugin.run_plugin("rewrite", plugins, api_ctx)
@@ -452,7 +452,7 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -606,6 +606,24 @@ function _M.http_header_filter_phase()
     end
 
     common_phase("header_filter")
+
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    local debug_headers = api_ctx.debug_headers
+    if debug_headers then
+        local deduplicate = core.table.new(#debug_headers, 0)
+        local temp = core.table.new(0, #debug_headers)
+        for i, v in ipairs(debug_headers) do
+            if not temp[v] then
+                core.table.insert(deduplicate, v)
+            end
+            temp[v] = true
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
+    end
 end
 
 
