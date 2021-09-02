@@ -16,6 +16,7 @@
 --
 local core          = require("apisix.core")
 local socket = require("socket")
+local math = math
 local plugin_name   = "proxy-mirror"
 
 local schema = {
@@ -24,7 +25,7 @@ local schema = {
         host = {
             type = "string",
             pattern = [[^http(s)?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]{0,62}]]
-                    .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
+                      .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
         },
         percentage = { type = "number", minimum = 0.00001, maximum = 1, default = 1 },
     },
@@ -54,7 +55,6 @@ function _M.rewrite(conf, ctx)
     core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     ctx.var.upstream_host = ctx.var.host
-    ctx.var.upstream_mirror_host = conf.host
 
     if not conf.percentage or conf.percentage == 1 then
         ctx.var.upstream_mirror_host = conf.host
