@@ -188,9 +188,6 @@ http {
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
-    # for proxy-mirror plugin
-    lua_shared_dict plugin-proxy-mirror {* http.lua_shared_dict["plugin-proxy-mirror"] *};
-
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
