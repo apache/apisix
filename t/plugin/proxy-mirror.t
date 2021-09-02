@@ -490,13 +490,13 @@ passed
 
 === TEST 14: hit route and the second request will not be mirrored
 --- pipelined_requests eval
-["GET /hello", "GET /hello"]
+["GET /hello?policy=local", "GET /hello?policy=local"]
 --- error_code eval
 [200, 200]
 --- response_body eval
-["hello world"]
+["hello world\n","hello world\n"]
 --- error_log
-uri: /hello
+uri: /hello?policy=local
 
 
 
@@ -547,13 +547,13 @@ passed
 
 === TEST 16: hit route and the second request will not be mirrored(use redis policy)
 --- pipelined_requests eval
-["GET /hello", "GET /hello"]
+["GET /hello?policy=redis", "GET /hello?policy=redis"]
 --- error_code eval
 [200, 200]
 --- response_body eval
-["hello world"]
+["hello world\n","hello world\n"]
 --- error_log
-uri: /hello
+uri: /hello?policy=redis
 
 
 
@@ -605,10 +605,10 @@ passed
 
 === TEST 18: hit route and the second request will not be mirrored(use redis-cluster policy)
 --- pipelined_requests eval
-["GET /hello", "GET /hello"]
+["GET /hello?policy=redis-cluster", "GET /hello?policy=redis-cluster"]
 --- error_code eval
 [200, 200]
 --- response_body eval
-["hello world"]
+["hello world\n","hello world\n"]
 --- error_log
-uri: /hello
+uri: /hello?policy=redis-cluster
