@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signing_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。
+签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signing_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 signing_string 中的某一项不存在，也需要使用一个空字符串代替。
 
 1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
 2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
@@ -155,7 +155,7 @@ x-custom-a:test
 "
 ```
 
-注意：最后一个请求头也需要 + `\n`。如果 signing_string 中的某一项不存在，也需要使用一个空字符串代替。
+注意：最后一个请求头也需要 + `\n`。
 
 **生成签名**
 
