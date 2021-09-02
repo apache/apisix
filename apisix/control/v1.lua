@@ -30,6 +30,14 @@ local _M = {}
 
 
 function _M.schema()
+    local http_plugins, stream_plugins = plugin.get_all({
+        version = true,
+        priority = true,
+        schema = true,
+        metadata_schema = true,
+        consumer_schema = true,
+        type = true,
+    })
     local schema = {
         main = {
             consumer = core.schema.consumer,
@@ -45,14 +53,8 @@ function _M.schema()
             upstream_hash_header_schema = core.schema.upstream_hash_header_schema,
             upstream_hash_vars_schema = core.schema.upstream_hash_vars_schema,
         },
-        plugins = plugin.get_all({
-            version = true,
-            priority = true,
-            schema = true,
-            metadata_schema = true,
-            consumer_schema = true,
-            type = true,
-        }),
+        plugins = http_plugins,
+        stream_plugins = stream_plugins,
     }
     return 200, schema
 end
