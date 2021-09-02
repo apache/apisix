@@ -468,7 +468,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello-local"
+                        "uri": "/hello"
                    }]]
                    )
 
@@ -490,13 +490,13 @@ passed
 
 === TEST 14: hit route and the second request will not be mirrored
 --- pipelined_requests eval
-["GET /hello-local", "GET /hello-local"]
+["GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200]
---- response_body
-hello world
+--- response_body eval
+["hello world"]
 --- error_log
-uri: /hello-local
+uri: /hello
 
 
 
@@ -525,7 +525,7 @@ uri: /hello-local
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello-redis"
+                        "uri": "/hello"
                    }]]
                    )
 
@@ -547,13 +547,13 @@ passed
 
 === TEST 16: hit route and the second request will not be mirrored(use redis policy)
 --- pipelined_requests eval
-["GET /hello-redis", "GET /hello-redis"]
+["GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200]
---- response_body
-hello world
+--- response_body eval
+["hello world"]
 --- error_log
-uri: /hello-redis
+uri: /hello
 
 
 
@@ -583,7 +583,7 @@ uri: /hello-redis
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello-cluster"
+                        "uri": "/hello"
                    }]]
                    )
 
@@ -605,10 +605,10 @@ passed
 
 === TEST 18: hit route and the second request will not be mirrored(use redis-cluster policy)
 --- pipelined_requests eval
-["GET /hello-cluster", "GET /hello-cluster"]
+["GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200]
---- response_body
-hello world
+--- response_body eval
+["hello world"]
 --- error_log
-uri: /hello-cluster
+uri: /hello
