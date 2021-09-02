@@ -48,7 +48,7 @@ add_block_preprocessor(sub {
                     core.log.info(v, ": ", headers_tab[v])
                 end
 
-                core.log.info("uri: ", ngx.var.uri)
+                core.log.info("uri: ", ngx.var.request_uri)
                 ngx.say("hello world")
             }
         }
