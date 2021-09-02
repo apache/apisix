@@ -445,6 +445,7 @@ _EOC_
     lua_shared_dict plugin-api-breaker 10m;
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
+    lua_shared_dict plugin-proxy-mirror 10m;    # plugin proxy-mirror
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
