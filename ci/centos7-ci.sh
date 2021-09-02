@@ -27,7 +27,10 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel zlib zlib-devel
+    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+
+    # install zlib to make lua-zlib work
+    yum install -y zlib zlib-devel
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
