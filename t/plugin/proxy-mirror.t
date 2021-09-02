@@ -495,8 +495,8 @@ passed
 [200, 200]
 --- response_body eval
 ["hello world\n","hello world\n"]
---- error_log
-uri: /hello?policy=local
+--- error_log eval
+qr/uri: /hello\?policy=local/
 
 
 
@@ -552,8 +552,8 @@ passed
 [200, 200]
 --- response_body eval
 ["hello world\n","hello world\n"]
---- error_log
-uri: /hello?policy=redis
+--- error_log eval
+qr/uri: /hello\?policy=redis/
 
 
 
@@ -610,5 +610,5 @@ passed
 [200, 200]
 --- response_body eval
 ["hello world\n","hello world\n"]
---- error_log
-uri: /hello?policy=redis-cluster
+--- error_log eval
+qr/uri: /hello\?policy=redis-cluster/
