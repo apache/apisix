@@ -332,6 +332,7 @@ Instance report fails
                 ngx.status = code
             end
             ngx.say(body)
+            ngx.sleep(0.1)
         }
     }
 --- request

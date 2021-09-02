@@ -521,21 +521,22 @@ end
 
 
 function _M.get_all(attrs)
-    local plugins = {}
+    local http_plugins = {}
+    local stream_plugins = {}
 
     if local_plugins_hash then
         for name, plugin_obj in pairs(local_plugins_hash) do
-            plugins[name] = core.table.pick(plugin_obj, attrs)
+            http_plugins[name] = core.table.pick(plugin_obj, attrs)
         end
     end
 
     if stream_local_plugins_hash then
         for name, plugin_obj in pairs(stream_local_plugins_hash) do
-            plugins[name] = core.table.pick(plugin_obj, attrs)
+            stream_plugins[name] = core.table.pick(plugin_obj, attrs)
         end
     end
 
-    return plugins
+    return http_plugins, stream_plugins
 end
 
 

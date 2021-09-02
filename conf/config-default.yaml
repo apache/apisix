@@ -23,6 +23,11 @@ apisix:
   # node_listen: 9080              # APISIX listening port
   node_listen:                     # This style support multiple ports
     - 9080
+  #   - port: 9081
+  #     enable_http2: true         # If not set, the default value is `false`.
+  #   - ip: 127.0.0.2              # Specific IP, If not set, the default value is `0.0.0.0`.
+  #     port: 9082
+  #     enable_http2: true
   enable_admin: true
   enable_admin_cors: true          # Admin API support CORS response headers.
   enable_debug: false
@@ -65,7 +70,10 @@ apisix:
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
     #- "::/64"
-  #port_admin: 9180             # use a separate port
+  #admin_listen:                # use a separate port
+  #  ip: 127.0.0.1              # Specific IP, if not set, the default value is `0.0.0.0`.
+  #  port: 9180
+  #port_admin: 9180             # Not recommend: This parameter should be set via the `admin_listen`.
   #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
@@ -115,8 +123,15 @@ apisix:
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
-    enable_http2: true
-    listen_port: 9443
+    listen:                       # APISIX listening port in https.
+      - 9443
+    #   - port: 9444
+    #     enable_http2: true      # If not set, the default value is `false`.
+    #   - ip: 127.0.0.3           # Specific IP, If not set, the default value is `0.0.0.0`.
+    #     port: 9445
+    #     enable_http2: true
+    enable_http2: true            # Not recommend: This parameter should be set via the `listen`.
+    # listen_port: 9443           # Not recommend: This parameter should be set via the `listen`.
     #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)

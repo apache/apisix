@@ -939,11 +939,19 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
+By default, this API only returns the http plugins. If you need stream plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+
 ### Request Methods
 
 | Method | Request URI                    | Request Body | Description    |
 | ------ | ------------------------------ | ------------ | -------------- |
 | GET    | /apisix/admin/plugins?all=true | NULL         | Fetch resource |
+
+### Request Arguments
+
+| Name      | Description                    | Default |
+| --------- | ------------------------------ | ------------ |
+| subsystem | the subsystem of plugins       | http         |
 
 [Back to TOC](#table-of-contents)
 

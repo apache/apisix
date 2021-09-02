@@ -226,7 +226,9 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value)
+    -- Here we copy the whole route instead of part of it,
+    -- so that we can avoid going back from route.value to route during copying.
+    route.dns_value = core.table.deepcopy(route).value
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))

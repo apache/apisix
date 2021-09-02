@@ -47,7 +47,7 @@ echo "passed: error_log directive uses warn level by default"
 
 # check whether the 'reuseport' is in nginx.conf .
 
-grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
+grep -E "listen 0.0.0.0:9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: nginx.conf file is missing reuseport configuration"
     exit 1
@@ -64,7 +64,7 @@ apisix:
 
 make init
 
-grep "listen 8443 ssl" conf/nginx.conf > /dev/null
+grep "listen 0.0.0.0:8443 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: failed to update ssl port"
     exit 1
@@ -95,7 +95,7 @@ apisix:
 
 make init
 
-count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+count_http_ipv4=`grep -c "listen 0.0.0.0:908." conf/nginx.conf || true`
 if [ $count_http_ipv4 -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in http with ipv4"
     exit 1
@@ -107,7 +107,7 @@ if [ $count_http_ipv6 -ne 3 ]; then
     exit 1
 fi
 
-count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+count_https_ipv4=`grep -c "listen 0.0.0.0:944. ssl" conf/nginx.conf || true`
 if [ $count_https_ipv4 -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in https with ipv4"
     exit 1
@@ -120,6 +120,54 @@ if [ $count_https_ipv6 -ne 3 ]; then
 fi
 
 echo "passed: support multiple ports listen in http and https"
+
+# check support specific IP listen in http and https
+
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+    - ip: 127.0.0.2
+      port: 9082
+      enable_http2: true
+  ssl:
+    enable_http2: false
+    listen:
+      - ip: 127.0.0.3
+        port: 9444
+      - ip: 127.0.0.4
+        port: 9445
+        enable_http2: true
+" > conf/config.yaml
+
+make init
+
+count_http_specific_ip=`grep -c "listen 127.0.0..:908." conf/nginx.conf || true`
+if [ $count_http_specific_ip -ne 2 ]; then
+    echo "failed: failed to support specific IP listen in http"
+    exit 1
+fi
+
+count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
+if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http2 listen in http"
+    exit 1
+fi
+
+count_https_specific_ip=`grep -c "listen 127.0.0..:944. ssl" conf/nginx.conf || true`
+if [ $count_https_specific_ip -ne 2 ]; then
+    echo "failed: failed to support specific IP listen in https"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http2 listen in https"
+    exit 1
+fi
+
+echo "passed: support specific IP listen in http and https"
 
 # check default env
 echo "
@@ -345,7 +393,7 @@ if [ $count -ne 1 ]; then
     exit 1
 fi
 
-count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
+count=`grep -c "listen 0.0.0.0:9080.*reuseport" conf/nginx.conf || true`
 if [ $count -ne 0 ]; then
     echo "failed: reuseport should be disabled when enable enable_dev_mode"
     exit 1
