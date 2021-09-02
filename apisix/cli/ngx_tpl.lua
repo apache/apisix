@@ -459,11 +459,11 @@ http {
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen {* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, item in ipairs(ssl.listen) do %}
+        listen {* item.ip *}:{* item.port *} ssl default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
@@ -472,17 +472,6 @@ http {
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
-
-        {% if enable_ipv6 then %}
-        {% for _, item in ipairs(node_listen) do %}
-        listen [::]:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
-        {% end %}
-        {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen [::]:{* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
-        {% end %}
-        {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
 
