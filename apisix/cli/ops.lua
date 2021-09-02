@@ -408,6 +408,27 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ports_to_check = {}
 
+    -- listen in admin use a separate port, support specific IP, compatible with the original style
+    local admin_server_addr
+    if yaml_conf.apisix.enable_admin then
+        if yaml_conf.apisix.admin_listen or yaml_conf.apisix.port_admin then
+            local ip = "0.0.0.0"
+            local port = yaml_conf.apisix.port_admin or 9180
+
+            if yaml_conf.apisix.admin_listen then
+                ip = yaml_conf.apisix.admin_listen.ip or ip
+                port = tonumber(yaml_conf.apisix.admin_listen.port) or port
+            end
+
+            if ports_to_check[port] ~= nil then
+                util.die("admin port ", port, " conflicts with ", ports_to_check[port], "\n")
+            end
+
+            admin_server_addr = ip .. ":" .. port
+            ports_to_check[port] = "admin"
+        end
+    end
+
     local control_server_addr
     if yaml_conf.apisix.enable_control then
         if not yaml_conf.apisix.control then
@@ -654,6 +675,7 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         tcp_enable_ssl = tcp_enable_ssl,
+        admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
     }
