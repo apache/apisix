@@ -23,7 +23,18 @@ local string  = string
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        from = {
+            type = "string",
+            enum = {"json", "xml"},
+            default = "yaml"
+        },
+        to = {
+            type = "string",
+            enum = {"json", "xml"},
+            default = "json"
+        }
+    },
     additionalProperties = false,
 }
 
@@ -51,61 +62,82 @@ local function json2xml(table_data)
     return 200, xml2lua.toXml(cjson.decode(table_data))
 end
 
-function _M.access(conf, ctx)
-    local request_header = core.request.headers()
-    local req_body, err = core.request.get_body()
-    if err or req_body == nil or req_body == '' then
-        core.log.error("failed to read request body: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
-
-    if request_header["Content-Type"] == "application/json" then
-        if string.find(request_header["Accept"], "text/xml") == nil then
-            return 401, {message = "Operation not supported"}
+local _switch_anonymous = {
+    ["json"] = function(content_type, req_body, to)
+        if "application/json" ~= content_type then
+            return 400, {message = "Operation not supported"}
         end
-        local data, _ = core.json.decode(req_body)
+
+        local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
             return 400, {error_msg = "invalid request body: " .. err,
                          req_body = req_body}
         end
-        return json2xml(req_body)
-    elseif request_header["Content-Type"] == "text/xml" then
-        if string.find(request_header["Accept"], "application/json") == nil then
-            return 401, {message = "Operation not supported"}
+        if to == 'xml' then
+            return json2xml(req_body)
+        else
+            return 400, {message = "Operation not supported"}
         end
-        return xml2json(req_body)
-    else
-        return 401, {message = "Operation not supported"}
+    end,
+    ["xml"] = function(content_type, req_body, to)
+        if "text/xml" ~= content_type then
+            return 400, {message = "Operation not supported"}
+        end
+        if to == 'json' then
+            return xml2json(req_body)
+        else
+            return 400, {message = "Operation not supported"}
+        end
     end
-end
+}
 
-local function get_json()
-    local request_header = core.request.headers()
+function _M.access(conf, ctx)
     local req_body, err = core.request.get_body()
     if err or req_body == nil or req_body == '' then
         core.log.error("failed to read request body: ", err)
         core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
-    if request_header["Content-Type"] == "application/json" then
-        if string.find(request_header["Accept"], "text/xml") == nil then
-            return 401, {message = "Operation not supported"}
-        end
-        local data, decode_err = core.json.decode(req_body)
-        if not data then
-            core.log.error("invalid request body: ", req_body, " err: ", decode_err)
-            return 400, {error_msg = "invalid request body: " .. decode_err,
-                         req_body = req_body}
-        end
-        return json2xml(req_body)
-    elseif request_header["Content-Type"] == "text/xml" then
-        if string.find(request_header["Accept"], "application/json") == nil then
-            return 401, {message = "Operation not supported"}
-        end
-        return xml2json(req_body)
+    local from = conf.from
+    local to = conf.to
+    if from == to then
+        return req_body
+    end
+
+    local content_type = core.request.headers()["Content-Type"]
+    local _f_anon = _switch_anonymous[from]
+    if _f_anon then
+        return _f_anon(content_type, req_body, to)
     else
-        return 401, {message = "Operation not supported"}
+        return 400, {message = "Operation not supported"}
+    end
+end
+
+local function get_json()
+    local args = core.request.get_uri_args()
+    if not args or not args.from or not args.to then
+        return core.response.exit(400)
+    end
+
+    local req_body, err = core.request.get_body()
+    if err or req_body == nil or req_body == '' then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    local from = args.from
+    local to = args.to
+    if from == to then
+        return req_body
+    end
+
+    local content_type = core.request.headers()["Content-Type"]
+    local _f_anon = _switch_anonymous[from]
+    if _f_anon then
+        return _f_anon(content_type, req_body, to)
+    else
+        return 400, {message = "Operation not supported"}
     end
 end
 
@@ -113,7 +145,7 @@ function _M.api()
     return {
         {
             methods = {"GET"},
-            uri = "/v1/plugin/xml-json-conversion",
+            uri = "/apisix/plugin/xml-json-conversion",
             handler = get_json,
         }
     }
