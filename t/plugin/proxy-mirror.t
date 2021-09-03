@@ -579,7 +579,7 @@ GET /t
 --- response_body
 passed
 --- grep_error_log eval
-qr/uri: \/hello\?sample_ratio=0.5/
+qr/sample_ratio/
 --- grep_error_log_out eval
-qr/(uri: \/hello\?sample_ratio=0.5){75,125}/
+qr/(sample_ratio){75,125}/
 --- timeout: 120
