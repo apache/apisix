@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local core_ip  = require("apisix.core.ip")
 local config_util = require("apisix.core.config_util")
 local plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
@@ -23,7 +24,6 @@ local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
 
-
 local user_routes
 local router_ver
 local tls_router
@@ -31,16 +31,21 @@ local other_routes = {}
 local _M = {version = 0.1}
 
 
+
 local function match_addrs(route, vars)
     -- todo: use resty-ipmatcher to support multiple ip address
-    if route.value.remote_addr and
-       route.value.remote_addr ~= vars.remote_addr then
-        return false
+    if route.value.remote_addr_matcher then
+        local ok, _ = route.value.remote_addr_matcher:match(vars.remote_addr)
+        if not ok then
+            return false
+        end
     end
 
-    if route.value.server_addr and
-       route.value.server_addr ~= vars.server_addr then
-        return false
+    if route.value.server_addr_matcher then
+        local ok, _ = route.value.server_addr_matcher:match(vars.server_addr)
+        if not ok then
+            return false
+        end
     end
 
     -- todo: use resty-ipmatcher to support multiple ip address
@@ -71,6 +76,18 @@ do
             end
 
             local route = item.value
+            if item.value.remote_addr then
+                local remote_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
+                if remote_matcher then
+                    item.value.remote_addr_matcher = remote_matcher
+                end
+            end
+            if item.value.server_addr then
+                local server_matcher = core_ip.create_ip_matcher({item.value.server_addr})
+                if server_matcher then
+                    item.value.server_addr_matcher = server_matcher
+                end
+            end
             if not route.sni then
                 other_routes[other_routes_idx] = item
                 other_routes_idx = other_routes_idx + 1
@@ -176,13 +193,30 @@ function _M.routes()
     return user_routes.values, user_routes.conf_version
 end
 
+local function address_checker(item)
+    if item.plugins then
+        return plugin_checker(item)
+    end
+    if item.remote_addr then
+        if not core_ip.validate_cidr_or_ip(item.remote_addr) then
+            return false, "invalid remote_addr: " .. item.remote_addr
+        end
+    end
+    if item.server_addr then
+        if not core_ip.validate_cidr_or_ip(item.server_addr) then
+            return false, "invalid server_addr: " .. item.server_addr
+        end
+    end
+    return true
+end
+
 
 function _M.stream_init_worker(filter)
     local err
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
-            checker = plugin_checker,
+            checker = address_checker,
             filter = filter,
         })
 
