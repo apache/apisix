@@ -448,7 +448,7 @@ passed
 
 
 
-=== TEST 13: sanity check (invalid percentage)
+=== TEST 13: sanity check (invalid sample_ratio)
 --- config
        location /t {
            content_by_lua_block {
@@ -459,7 +459,7 @@ passed
                         "plugins": {
                             "proxy-mirror": {
                                "host": "http://127.0.0.1:1986",
-                               "percentage": 10
+                               "sample_ratio": 10
                             }
                         },
                         "upstream": {
@@ -482,13 +482,13 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"percentage\" validation failed: expected 10 to be smaller than 1"}
+{"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"sample_ratio\" validation failed: expected 10 to be smaller than 1"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 14: set mirror requests percentage to 1
+=== TEST 14: set mirror requests sample_ratio to 1
 --- config
        location /t {
            content_by_lua_block {
@@ -499,7 +499,7 @@ GET /t
                         "plugins": {
                             "proxy-mirror": {
                                "host": "http://127.0.0.1:1986",
-                               "percentage": 1
+                               "sample_ratio": 1
                             }
                         },
                         "upstream": {
@@ -528,18 +528,18 @@ passed
 
 
 
-=== TEST 15: hit route with percentage 1
+=== TEST 15: hit route with sample_ratio 1
 --- request
-GET /hello?percentage=1
+GET /hello?sample_ratio=1
 --- error_code: 200
 --- response_body
 hello world
 --- error_log_like eval
-qr/uri: \/hello\?percentage=1/
+qr/uri: \/hello\?sample_ratio=1/
 
 
 
-=== TEST 16: set mirror requests percentage to 0.5
+=== TEST 16: set mirror requests sample_ratio to 0.5
 --- config
        location /t {
            content_by_lua_block {
@@ -550,7 +550,7 @@ qr/uri: \/hello\?percentage=1/
                         "plugins": {
                             "proxy-mirror": {
                                "host": "http://127.0.0.1:1986",
-                               "percentage": 0.5
+                               "sample_ratio": 0.5
                             }
                         },
                         "upstream": {
@@ -579,9 +579,9 @@ passed
 
 
 
-=== TEST 17: hit route with percentage 0.5
+=== TEST 17: hit route with sample_ratio 0.5
 --- request
-GET /hello?percentage=0.5
+GET /hello?sample_ratio=0.5
 --- error_code: 200
 --- error_log_like eval
-qr/mirror request percentage conf: 0\.5/
+qr/mirror request sample_ratio conf: 0\.5/

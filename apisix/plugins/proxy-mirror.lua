@@ -26,7 +26,7 @@ local schema = {
             pattern = [[^http(s)?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]{0,62}]]
                       .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
         },
-        percentage = {
+        sample_ratio = {
             type = "number",
             minimum = 0.00001,
             maximum = 1,
@@ -60,12 +60,12 @@ function _M.rewrite(conf, ctx)
 
     ctx.var.upstream_host = ctx.var.host
 
-    if not conf.percentage or conf.percentage == 1 then
+    if not conf.sample_ratio or conf.sample_ratio == 1 then
         ctx.var.upstream_mirror_host = conf.host
     else
         local val = math.random()
-        core.log.info("mirror request percentage conf: ", conf.percentage, ", random value: ", val)
-        if val < conf.percentage then
+        core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio, ", random value: ", val)
+        if val < conf.sample_ratio then
             ctx.var.upstream_mirror_host = conf.host
         end
     end
