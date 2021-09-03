@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
-local math = math
+local math_random = math.random
 local plugin_name   = "proxy-mirror"
 
 local schema = {
@@ -63,7 +63,7 @@ function _M.rewrite(conf, ctx)
     if not conf.percentage or conf.percentage == 1 then
         ctx.var.upstream_mirror_host = conf.host
     else
-        local val = math.random()
+        local val = math_random()
         core.log.info("mirror request percentage conf: ", conf.percentage, ", random value: ", val)
         if val < conf.percentage then
             ctx.var.upstream_mirror_host = conf.host
