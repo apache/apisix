@@ -144,7 +144,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 #### 通过 OIDC 依赖方认证流程进行身份验证
 
-当一个请求在请求头中不包含访问令牌时，也不在会话 cookie 中，
+当一个请求在请求头或会话 Cookie 中不包含访问令牌时，
 插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 OIDC 授权代码流程；
 请参阅 https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth 。
 一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。
