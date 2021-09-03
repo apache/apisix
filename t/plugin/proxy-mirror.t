@@ -563,7 +563,11 @@ qr/uri: \/hello\?sample_ratio=1/
                    }]]
                    )
 
-               if code >= 300 then
+			   if code == 200 then
+                   for i = 1, 200 do
+                       t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
+                   end
+               elseif code >= 300 then
                    ngx.status = code
                end
                ngx.say(body)
@@ -574,14 +578,5 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
-
-
-
-=== TEST 17: hit route with sample_ratio 0.5
---- request
-GET /hello?sample_ratio=0.5
---- error_code: 200
 --- error_log_like eval
-qr/mirror request sample_ratio conf: 0\.5/
+qr/(uri: \/hello\?sample_ratio=0.5){75, 125}/
