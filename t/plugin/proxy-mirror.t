@@ -563,7 +563,7 @@ qr/uri: \/hello\?sample_ratio=1/
                    }]]
                    )
 
-			   if code == 200 then
+               if code == 200 then
                    for i = 1, 200 do
                        t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
                    end
@@ -580,4 +580,4 @@ GET /t
 passed
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
---- timeout: 120
+--- timeout: 60
