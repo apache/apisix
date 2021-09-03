@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
-local math = math
+local math_random = math.random
 local plugin_name   = "proxy-mirror"
 
 local schema = {
@@ -63,7 +63,7 @@ function _M.rewrite(conf, ctx)
     if not conf.sample_ratio or conf.sample_ratio == 1 then
         ctx.var.upstream_mirror_host = conf.host
     else
-        local val = math.random()
+        local val = math_random()
         core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio, ", random value: ", val)
         if val < conf.sample_ratio then
             ctx.var.upstream_mirror_host = conf.host
