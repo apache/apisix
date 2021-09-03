@@ -27,7 +27,7 @@ local schema = {
         from = {
             type = "string",
             enum = {"json", "xml"},
-            default = "yaml"
+            default = "xml"
         },
         to = {
             type = "string",
