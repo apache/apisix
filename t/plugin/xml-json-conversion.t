@@ -30,9 +30,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.xml-json-conversion")
-            local conf = {
-
-            }
+            local conf = {from = "xml", to = "json"}
 
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -60,7 +58,10 @@ done
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "xml-json-conversion": {}
+                        "xml-json-conversion": {
+                            "from": "xml",
+                            "to": "json"
+                        }
                     },
                     "upstream": {
                         "nodes": {
@@ -95,9 +96,8 @@ GET /hello
  </person>
 </people>
 --- more_headers
-Accept: application/json
 Content-Type: text/html
---- error_code: 401
+--- error_code: 400
 --- response_body
 {"message":"Operation not supported"}
 --- no_error_log
@@ -113,9 +113,8 @@ GET /hello
  </person>
 </people>
 --- more_headers
-Accept: application/json
 Content-Type: application/json
---- error_code: 401
+--- error_code: 400
 --- response_body
 {"message":"Operation not supported"}
 --- no_error_log
@@ -128,7 +127,6 @@ Content-Type: application/json
         content_by_lua_block {
             local headers = {}
             headers["Content-Type"] = "text/xml"
-            headers["Accept"] = "application/json"
             local t = require("lib.test_admin").test
             local code, body = t('/hello',
                 ngx.HTTP_GET,
