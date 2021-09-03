@@ -578,5 +578,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- error_log_like eval
+--- grep_error_log eval
 qr/(uri: \/hello\?sample_ratio=0.5){75, 125}/
+--- timeout: 120
