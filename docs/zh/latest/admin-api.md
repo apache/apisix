@@ -325,12 +325,13 @@ HTTP/1.1 200 OK
 | desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 |                                                  |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                   | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 可选                               | 辅助     | 是否启用 `websocket`(boolean), 缺省 `false`.                           |                                                  |
+| hosts            | 可选                              | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                            |
 | create_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 | update_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 
 service 对象 json 配置内容：
 
-```shell
+```json
 {
     "id": "1",              # id
     "plugins": {},          # 指定 service 绑定的插件
@@ -339,6 +340,7 @@ service 对象 json 配置内容：
     "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
     "enable_websocket": true, #启动 websocket 功能
+    "hosts": ["foo.com"]
 }
 ```
 

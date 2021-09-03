@@ -401,6 +401,13 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.value.name = nil
     end
 
+    if route_conf.value.hosts then
+        new_conf.value.hosts = route_conf.value.hosts
+    end
+    if not new_conf.value.hosts and route_conf.value.host then
+        new_conf.value.host = route_conf.value.host
+    end
+
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
     return new_conf
 end
