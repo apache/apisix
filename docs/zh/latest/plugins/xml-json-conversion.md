@@ -36,7 +36,10 @@ xml-json-conversion 插件意在将request body中的xml数据转换成json输�
 
 ## 属性
 
-无
+| 名称           | 类型    | 必选项   | 默认值   | 有效值                       | Description  |
+|:--------------|:--------|:--------|:-------|:----------------------------|:-------------|
+| from          | string  | 可选    | xml     | ["xml", "json"]             | 输入类型  |
+| to            | string  | 可选    | json    | ["xml", "json"]             | 输出类型  |
 
 ## 如何开启
 
@@ -47,7 +50,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 {
     "uri": "/hello",
     "plugins": {
-        "xml-json-conversion": {}
+        "xml-json-conversion": {
+            "from": "xml",
+            "to": "json"
+        }
     },
     "upstream": {
         "type": "roundrobin",

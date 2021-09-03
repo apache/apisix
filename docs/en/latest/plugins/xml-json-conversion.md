@@ -36,7 +36,10 @@ xml-json-conversion plugin convert xml data from request body to json response, 
 
 ## Attributes
 
-None
+| Name          | Type    | Requirement | Default | Valid                       | Description  |
+|:--------------|:--------|:------------|:--------|:----------------------------|:-------------|
+| from          | string  | optional    | xml     | ["xml", "json"]             | input type   |
+| to            | string  | optional    | json    | ["xml", "json"]             | output type  |
 
 ## how-to-enable
 
@@ -47,7 +50,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 {
     "uri": "/hello",
     "plugins": {
-        "xml-json-conversion": {}
+        "xml-json-conversion": {
+            "from": "xml",
+            "to": "json"
+        }
     },
     "upstream": {
         "type": "roundrobin",
@@ -65,7 +71,6 @@ Via curl to access
 ```shell
 curl -X GET http://127.0.0.1:9080/hello \
 -H 'Content-Type: text/xml' \
--H 'Accept: application/json' \
 --data '
 <people>
   <person>
