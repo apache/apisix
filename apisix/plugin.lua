@@ -301,19 +301,13 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     if is_http and not ngx.headers_sent then
         if ctx then
             local debug_headers = ctx.debug_headers
-            if debug_headers then
-                if type(t) == "string" then
-                    core.table.insert(debug_headers, t)
-                end
-                if type(t) == "table" then
-                    for i, v in ipairs(t) do
-                        core.table.insert(debug_headers, v)
-                    end
-                end
-                ctx.debug_headers = debug_headers
-            else
-                ctx.debug_headers = t
+            if not debug_headers then
+                debug_headers = core.table.new(0, 5)
             end
+            for i, v in ipairs(t) do
+                debug_headers[v] = true
+            end
+            ctx.debug_headers = debug_headers
         end
     else
         core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))

@@ -189,13 +189,32 @@ passed
 
 
 === TEST 5: hit routes
---- request
-GET /hello
 --- yaml_config eval: $::yaml_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local ngx_re = require("ngx.re")
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            local debug_header = res.headers["Apisix-Plugins"]
+            local arr = ngx_re.split(debug_header, ", ")
+            local hash = {}
+            for i, v in ipairs(arr) do
+                hash[v] = true
+            end
+            ngx.status = res.status
+            ngx.say(json.encode(hash))
+        }
+    }
+--- request
+GET /t
 --- response_body
-hello world
---- response_headers
-Apisix-Plugins: limit-conn, limit-count
+{"limit-conn":true,"limit-count":true}
 --- no_error_log
 [error]
 
@@ -234,13 +253,34 @@ passed
 
 
 === TEST 7: hit routes
---- request
-GET /hello
 --- yaml_config eval: $::yaml_config
---- response_headers
-Apisix-Plugins: response-rewrite, limit-conn, limit-count
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local ngx_re = require("ngx.re")
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            local debug_header = res.headers["Apisix-Plugins"]
+            local arr = ngx_re.split(debug_header, ", ")
+            local hash = {}
+            for i, v in ipairs(arr) do
+                hash[v] = true
+            end
+            ngx.status = res.status
+            ngx.say(json.encode(hash))
+        }
+    }
+--- request
+GET /t
 --- response_body
-yes
+{"limit-conn":true,"limit-count":true,"response-rewrite":true}
+--- error_log
+Apisix-Plugins: response-rewrite
 --- no_error_log
 [error]
 

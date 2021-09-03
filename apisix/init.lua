@@ -42,6 +42,7 @@ local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local pairs           = pairs
 local control_api_router
 
 local is_http = false
@@ -615,12 +616,8 @@ function _M.http_header_filter_phase()
     local debug_headers = api_ctx.debug_headers
     if debug_headers then
         local deduplicate = core.table.new(#debug_headers, 0)
-        local temp = core.table.new(0, #debug_headers)
-        for i, v in ipairs(debug_headers) do
-            if not temp[v] then
-                core.table.insert(deduplicate, v)
-            end
-            temp[v] = true
+        for k, v in pairs(debug_headers) do
+            core.table.insert(deduplicate, k)
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
