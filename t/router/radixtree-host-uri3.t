@@ -88,13 +88,19 @@ __DATA__
                 ngx.say(body)
                 return
             end
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {headers = {Host = "foo.com"}})
-            if not res then
-                ngx.say(err)
-                return
+            for _, h in ipairs({"foo.com", "bar.com"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {Host = h}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                if res.status == 404 then
+                    ngx.say(res.status)
+                else
+                    ngx.print(res.body)
+                end
             end
-            ngx.print(res.body)
 
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
@@ -110,15 +116,23 @@ __DATA__
             end
             ngx.sleep(0.1)
 
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {headers = {Host = "foo.com"}})
-            if not res then
-                ngx.say(err)
-                return
+            for _, h in ipairs({"foo.com", "bar.com"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {Host = h}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                if res.status == 404 then
+                    ngx.say(res.status)
+                else
+                    ngx.print(res.body)
+                end
             end
-            ngx.say(res.status)
         }
     }
 --- response_body
 hello world
 404
+404
+hello world
