@@ -241,6 +241,10 @@ env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 env KUBERNETES_SERVICE_HOST;
 env KUBERNETES_SERVICE_PORT;
+env KUBERNETES_CLIENT_TOKEN;
+env KUBERNETES_CLIENT_TOKEN_FILE;
+ls
+
 _EOC_
 
     # set default `timeout` to 5sec

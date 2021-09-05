@@ -1,5 +1,23 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
 local ngx = ngx
 local ipairs = ipairs
+local pairs = pairs
 local string = string
 local tonumber = tonumber
 local tostring = tostring
@@ -8,14 +26,15 @@ local os = os
 local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
+local local_conf = require("apisix.core.config_local").local_conf()
 local http = require("resty.http")
 local endpoints_shared = ngx.shared.discovery
 
+local apiserver_schema = ""
 local apiserver_host = ""
-local apiserver_port = ""
+local apiserver_port = 0
 local apiserver_token = ""
-
-local default_weight = 50
+local default_weight = 0
 
 local endpoint_lrucache = core.lrucache.new({
     ttl = 300,
@@ -30,59 +49,6 @@ local function sort_by_ip(a, b)
     return a.ip < b.ip
 end
 
-local function on_endpoint_added(endpoint)
-    local subsets = endpoint.subsets
-    if subsets == nil or #subsets == 0 then
-        return
-    end
-
-    local subset = subsets[1]
-
-    local addresses = subset.addresses
-    if addresses == nil or #addresses == 0 then
-        return
-    end
-
-    local ports = subset.ports
-    if ports == nil or #ports == 0 then
-        return
-    end
-
-    core.table.sort(addresses, sort_by_ip)
-    core.table.clear(endpoint_cache)
-    for _, port in ipairs(ports) do
-        local nodes = core.table.new(#addresses, 0)
-        for i, address in ipairs(addresses) do
-            nodes[i] = {
-                host = address.ip,
-                port = port.port,
-                weight = default_weight
-            }
-        end
-        if port.name then
-            endpoint_cache[port.name] = nodes
-        else
-            endpoint_cache[tostring(port.port)] = nodes
-        end
-    end
-
-    local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    local endpoint_content = core.json.encode(endpoint_cache, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
-
-    local _, err
-    _, err = endpoints_shared:safe_set(endpoint_key .. "#version", endpoint_version)
-    if err then
-        core.log.emerg("set endpoint version into discovery DICT failed ,", err)
-        return
-    end
-    endpoints_shared:safe_set(endpoint_key, endpoint_content)
-    if err then
-        core.log.emerg("set endpoint into discovery DICT failed ,", err)
-        endpoints_shared:delete(endpoint_key .. "#version")
-    end
-end
-
 local function on_endpoint_deleted(endpoint)
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
     endpoints_shared:delete(endpoint_key .. "#version")
@@ -93,33 +59,40 @@ local function on_endpoint_modified(endpoint)
     if endpoint.subsets == nil or #endpoint.subsets == 0 then
         return on_endpoint_deleted(endpoint)
     end
-    local subset = endpoint.subsets[1]
 
-    if subset.addresses == nil or #subset.addresses == 0 then
-        return on_endpoint_deleted(endpoint)
-    end
-    local addresses = subset.addresses
+    local subsets = endpoint.subsets
+    for _, subset in ipairs(subsets) do
+        if subset.addresses ~= nil then
+            local addresses = subset.addresses
 
-    if subset.ports == nil or #subset.ports == 0 then
-        return on_endpoint_deleted(endpoint)
-    end
-    local ports = subset.ports
+            for _, port in ipairs(subset.ports or empty_table) do
+                local port_name = ""
+                if port.name then
+                    port_name = port.name
+                else
+                    port_name = tostring(port.port)
+                end
 
-    core.table.sort(addresses, sort_by_ip)
-    core.table.clear(endpoint_cache)
-    for _, port in ipairs(ports) do
-        local nodes = core.table.new(#addresses, 0)
-        for i, address in ipairs(addresses) do
-            nodes[i] = {
-                host = address.ip,
-                port = port.port,
-                weight = default_weight
-            }
+                local nodes = endpoint_cache[port_name]
+                if nodes == nil then
+                    nodes = core.table.new(0, #addresses * #subsets)
+                    endpoint_cache[port_name] = nodes
+                end
+
+                for _, address in ipairs(subset.addresses) do
+                    core.table.insert(nodes, {
+                        host = address.ip,
+                        port = port.port,
+                        weight = default_weight
+                    })
+                end
+            end
         end
-        if port.name then
-            endpoint_cache[port.name] = nodes
-        else
-            endpoint_cache[tostring(port.port)] = nodes
+    end
+
+    for _, ports in pairs(endpoint_cache) do
+        for _, nodes in pairs(ports) do
+            core.table.sort(nodes, sort_by_ip)
         end
     end
 
@@ -130,12 +103,12 @@ local function on_endpoint_modified(endpoint)
     local _, err
     _, err = endpoints_shared:safe_set(endpoint_key .. "#version", endpoint_version)
     if err then
-        core.log.emerg("set endpoint version into discovery DICT failed ,", err)
+        core.log.emerg("set endpoint version into discovery DICT failed, ", err)
         return
     end
     endpoints_shared:safe_set(endpoint_key, endpoint_content)
     if err then
-        core.log.emerg("set endpoint into discovery DICT failed ,", err)
+        core.log.emerg("set endpoint into discovery DICT failed, ", err)
         endpoints_shared:delete(endpoint_key .. "#version")
     end
 end
@@ -146,7 +119,7 @@ local function list_resource(httpc, resource, continue)
         path = resource:list_path(),
         query = resource:list_query(continue),
         headers = {
-            ["Host"] = string.format("%s:%s", apiserver_host, apiserver_port),
+            ["Host"] = string.format("%s:%d", apiserver_host, apiserver_port),
             ["Authorization"] = string.format("Bearer %s", apiserver_token),
             ["Accept"] = "application/json",
             ["Connection"] = "keep-alive"
@@ -174,7 +147,7 @@ local function list_resource(httpc, resource, continue)
     resource.newest_resource_version = data.metadata.resourceVersion
 
     for _, item in ipairs(data.items or empty_table) do
-        resource:event_dispatch("ADDED", item)
+        resource:event_dispatch("ADDED", item, "list")
     end
 
     if data.metadata.continue ~= nil and data.metadata.continue ~= "" then
@@ -193,7 +166,7 @@ local function watch_resource(httpc, resource)
         path = resource:watch_path(),
         query = resource:watch_query(watch_seconds),
         headers = {
-            ["Host"] = string.format("%s:%s", apiserver_host, apiserver_port),
+            ["Host"] = string.format("%s:%d", apiserver_host, apiserver_port),
             ["Authorization"] = string.format("Bearer %s", apiserver_token),
             ["Accept"] = "application/json",
             ["Connection"] = "keep-alive"
@@ -250,7 +223,7 @@ local function watch_resource(httpc, resource)
 
             resource.newest_resource_version = v.object.metadata.resource_version
             if v.type ~= "BOOKMARK" then
-                resource:event_dispatch(v.type, v.object)
+                resource:event_dispatch(v.type, v.object, "watch")
             end
         end
 
@@ -266,6 +239,7 @@ local function watch_resource(httpc, resource)
 end
 
 local function fetch_resource(resource)
+    local begin_time = ngx.time()
     while true do
         local ok = false
         local reason, message = "", ""
@@ -275,15 +249,15 @@ local function fetch_resource(resource)
             resource.watch_state = "connecting"
             core.log.info("begin to connect ", apiserver_host, ":", apiserver_port)
             ok, message = httpc:connect({
-                scheme = "https",
+                scheme = apiserver_schema,
                 host = apiserver_host,
-                port = tonumber(apiserver_port),
+                port = apiserver_port,
                 ssl_verify = false
             })
             if not ok then
                 resource.watch_state = "connecting"
-                core.log.error("connect apiserver failed , apiserver_host: ", apiserver_host, "apiserver_port",
-                        apiserver_port, "message : ", message)
+                core.log.error("connect apiserver failed , apiserver_host: ", apiserver_host,
+                        ", apiserver_port", apiserver_port, ", message : ", message)
                 retry_interval = 100
                 break
             end
@@ -294,7 +268,8 @@ local function fetch_resource(resource)
             ok, reason, message = list_resource(httpc, resource, nil)
             if not ok then
                 resource.watch_state = "list failed"
-                core.log.error("list failed , resource: ", resource.plural, " reason: ", reason, "message : ", message)
+                core.log.error("list failed, resource: ", resource.plural,
+                        ", reason: ", reason, ", message : ", message)
                 retry_interval = 100
                 break
             end
@@ -306,27 +281,28 @@ local function fetch_resource(resource)
             ok, reason, message = watch_resource(httpc, resource)
             if not ok then
                 resource.watch_state = "watch failed"
-                core.log.error("watch failed, resource: ", resource.plural, " reason: ", reason, "message : ", message)
+                core.log.error("watch failed, resource: ", resource.plural,
+                        ", reason: ", reason, ", message : ", message)
                 retry_interval = 0
                 break
             end
             resource.watch_state = "watch finished"
             retry_interval = 0
         until true
+
+        -- every 3 hours,we should quit and use another timer
+        local now_time = ngx.time()
+        if now_time - begin_time >= 10800 then
+            break
+        end
         if retry_interval ~= 0 then
             ngx.sleep(retry_interval)
         end
     end
-end
-
-local function fetch()
-    local threads = core.table.new(#pending_resources, 0)
-    for i, resource in ipairs(pending_resources) do
-        threads[i] = ngx.thread.spawn(fetch_resource, resource)
+    local timer_runner = function()
+        fetch_resource(resource)
     end
-    for _, thread in ipairs(threads) do
-        ngx.thread.wait(thread)
-    end
+    ngx.timer.at(0, timer_runner)
 end
 
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
@@ -342,6 +318,147 @@ local function create_endpoint_lrucache(endpoint_key, endpoint_port)
     end
 
     return endpoint[endpoint_port]
+end
+
+local schema = {
+    type = "object",
+    properties = {
+        service = {
+            type = "object",
+            properties = {
+                schema = {
+                    type = "string",
+                    enum = { "http", "https" },
+                    default = "https",
+                },
+                host = {
+                    type = "string",
+                    default = "${KUBERNETES_SERVICE_HOST}",
+                    oneOf = {
+                        { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+                        { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
+                    }
+                },
+                port = {
+                    type = "string",
+                    default = "${KUBERNETES_SERVICE_PORT}",
+                    oneOf = {
+                        { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+                        { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
+                    },
+                },
+            },
+            default = {
+                schema = "https",
+                host = "${KUBERNETES_SERVICE_HOST}",
+                port = "${KUBERNETES_SERVICE_PORT}",
+            }
+        },
+        client = {
+            type = "object",
+            properties = {
+                token = {
+                    type = "string",
+                    oneOf = {
+                        { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+                        { pattern = [[^[A-Za-z0-9+\/_=-]{0,4096}$]] },
+                    },
+                },
+                token_file = {
+                    type = "string",
+                    pattern = [[^[^\:*?"<>|]*$]],
+                    minLength = 1,
+                    maxLength = 500,
+                }
+            },
+            oneOf = {
+                { required = { "token" } },
+                { required = { "token_file" } },
+            },
+            default = {
+                token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            }
+        },
+        default_weight = {
+            type = "integer",
+            default = 50,
+            minimum = 0,
+        },
+    },
+    default = {
+        service = {
+            schema = "https",
+            host = "${KUBERNETES_SERVICE_HOST}",
+            port = "${KUBERNETES_SERVICE_PORT}",
+        },
+        client = {
+            token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        },
+        default_weight = 50
+    }
+}
+
+local function load_value(key)
+    if #key > 3 then
+        local a, b = string.byte(key, 1, 2)
+        local c = string.byte(key, #key, #key)
+        -- '$', '{', '}' == 36,123,125
+        if a == 36 and b == 123 and c == 125 then
+            local env = string.sub(key, 3, #key - 1)
+            local val = os.getenv(env)
+            if not val or val == "" then
+                return false, nil, "get empty " .. key .. " value"
+            end
+            return true, val, nil
+        end
+    end
+    return true, key, nil
+end
+
+local function read_conf(conf)
+    apiserver_schema = conf.service.schema
+
+    local ok, value, error
+    ok, value, error = load_value(conf.service.host)
+    if not ok then
+        return false, error
+    end
+    apiserver_host = value
+
+    ok, value, error = load_value(conf.service.port)
+    if not ok then
+        return false, error
+    end
+    apiserver_port = tonumber(value)
+    if not apiserver_port or apiserver_port <= 0 or apiserver_port > 65535 then
+        return false, "get invalid port value: " .. apiserver_port
+    end
+
+    -- we should not check if the apiserver_token is empty here
+    if conf.client.token then
+        ok, value, error = load_value(conf.client.token)
+        if not ok then
+            return false, error
+        end
+        apiserver_token = value
+    elseif conf.client.token_file and conf.client.token_file ~= "" then
+        ok, value, error = load_value(conf.client.token_file)
+        if not ok then
+            return false, error
+        end
+        local apiserver_token_file = value
+
+        apiserver_token, error = util.read_file(apiserver_token_file)
+        if not apiserver_token then
+            return false, error
+        end
+    else
+        return false, "invalid k8s discovery configuration: should set one of [client.token,client.token_file] but none"
+    end
+
+    default_weight = conf.default_weight or 50
+
+    return true, nil
 end
 
 local _M = {
@@ -400,8 +517,8 @@ local function fill_pending_resources()
         end,
 
         watch_query = function(self, timeout)
-            return string.format("watch=true&allowWatchBookmarks=true&timeoutSeconds=%d&resourceVersion=%s", timeout,
-                    self.newest_resource_version)
+            return string.format("watch=true&allowWatchBookmarks=true&timeoutSeconds=%d&resourceVersion=%s",
+                    timeout, self.newest_resource_version)
         end,
 
         pre_list_callback = function(self)
@@ -413,8 +530,8 @@ local function fill_pending_resources()
             endpoints_shared:flush_expired()
         end,
 
-        added_callback = function(self, object)
-            on_endpoint_added(object)
+        added_callback = function(self, object, drive)
+            on_endpoint_modified(object)
         end,
 
         modified_callback = function(self, object)
@@ -425,14 +542,14 @@ local function fill_pending_resources()
             on_endpoint_deleted(object)
         end,
 
-        event_dispatch = function(self, event, object)
+        event_dispatch = function(self, event, object, drive)
             if event == "DELETED" or object.deletionTimestamp ~= nil then
                 self:deleted_callback(object)
                 return
             end
 
             if event == "ADDED" then
-                self:added_callback(object)
+                self:added_callback(object, drive)
             elseif event == "MODIFIED" then
                 self:modified_callback(object)
             end
@@ -445,28 +562,33 @@ function _M.init_worker()
         return
     end
 
-    apiserver_host = os.getenv("KUBERNETES_SERVICE_HOST")
-    --apiserver_host = "127.0.0.1"
-    if not apiserver_host or apiserver_host == "" then
-        error("get empty KUBERNETES_SERVICE_HOST value")
+    if not local_conf.discovery.k8s then
+        error("does not set k8s discovery configuration")
+        return
     end
 
-    apiserver_port = os.getenv("KUBERNETES_SERVICE_PORT")
-    --apiserver_port = "6443"
-    if not apiserver_port or apiserver_port == "" then
-        error("get empty KUBERNETES_SERVICE_PORT value")
+    core.log.info("k8s discovery configuration: ", core.json.encode(local_conf.discovery.k8s, true))
+
+    local ok, err = core.schema.check(schema, local_conf.discovery.k8s)
+    if not ok then
+        error("invalid k8s discovery configuration: " .. err)
+        return
     end
 
-    local err
-    apiserver_token, err = util.read_file("/var/run/secrets/kubernetes.io/serviceaccount/token")
-    if not apiserver_token or apiserver_token == "" then
-        error("get empty token value " .. (err or ""))
+    ok, err = read_conf(local_conf.discovery.k8s)
+    if not ok then
+        error(err)
         return
     end
 
     fill_pending_resources()
 
-    ngx.timer.at(0, fetch)
+    for _, resource in ipairs(pending_resources) do
+        local timer_runner = function()
+            fetch_resource(resource)
+        end
+        ngx.timer.at(0, timer_runner)
+    end
 end
 
 return _M

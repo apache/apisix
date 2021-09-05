@@ -132,18 +132,30 @@ subjects:
 curl -Lo ./kubectl "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"
 chmod +x ./kubectl
 ./kubectl apply -f ./apisix-test-rbac.yaml
+./kubectl proxy -p 6445 &
+until [[ $(curl 127.0.0.1:6445/api/v1/pods?fieldSelector=status.phase%21%3DRunning |./jq .items) == "[]" ]]; do
+    echo 'wait k8s start...'
+    sleep 1;
+done
 
 curl -Lo ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
 chmod +x ./jq
 
-K8S_SERVICEACCOUNT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o json "$1" |./jq -r .data.token | base64 --decode")}')
-K8S_SERVICEACCOUNT_TOKEN_DIR="/var/run/secrets/kubernetes.io/serviceaccount"
-K8S_SERVICEACCOUNT_TOKEN_FILE="/var/run/secrets/kubernetes.io/serviceaccount/token"
+KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o json "$1" |./jq -r .data.token | base64 --decode")}')
 
-mkdir -p ${K8S_SERVICEACCOUNT_TOKEN_DIR}
-echo -n $K8S_SERVICEACCOUNT_TOKEN_CONTENT > ${K8S_SERVICEACCOUNT_TOKEN_FILE}
+# if we do not have permission to create folders under the /var/run path, we will use the /tmp as an alternative
+KUBERNETES_CLIENT_TOKEN_DIR="/var/run/secrets/kubernetes.io/serviceaccount"
+if ! mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR} ;then
+  KUBERNETES_CLIENT_TOKEN_DIR=/tmp${KUBERNETES_CLIENT_TOKEN_DIR}
+  mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
+fi
+
+KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}"/token"
+echo -n $KUBERNETES_CLIENT_TOKEN_CONTENT > ${KUBERNETES_CLIENT_TOKEN_FILE}
 
 export KUBERNETES_SERVICE_HOST="127.0.0.1"
 export KUBERNETES_SERVICE_PORT="6443"
+export KUBERNETES_CLIENT_TOKEN=${KUBERNETES_CLIENT_TOKEN_CONTENT}
+export KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_FILE}
 
 cd ..
