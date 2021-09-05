@@ -177,6 +177,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+在该例子中，插件可以强制在各自配置的请求头中设置访问令牌、ID 令牌和 UserInfo 对象。
+
 ## 故障排除
 
 如果 APISIX 无法解析/连接到身份提供者，请检查/修改 DNS 设置（`conf / config.yaml`）。
