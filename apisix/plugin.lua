@@ -279,7 +279,7 @@ function _M.load(config)
 end
 
 
-local function trace_plugins_info_for_debug(plugins)
+local function trace_plugins_info_for_debug(ctx, plugins)
     if not (local_conf and local_conf.apisix.enable_debug) then
         return
     end
@@ -299,18 +299,27 @@ local function trace_plugins_info_for_debug(plugins)
         core.table.insert(t, plugins[i].name)
     end
     if is_http and not ngx.headers_sent then
-        core.response.add_header("Apisix-Plugins", core.table.concat(t, ", "))
+        if ctx then
+            local debug_headers = ctx.debug_headers
+            if not debug_headers then
+                debug_headers = core.table.new(0, 5)
+            end
+            for i, v in ipairs(t) do
+                debug_headers[v] = true
+            end
+            ctx.debug_headers = debug_headers
+        end
     else
         core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))
     end
 end
 
 
-function _M.filter(conf, plugins, route_conf)
+function _M.filter(ctx, conf, plugins, route_conf)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        trace_plugins_info_for_debug(nil)
+        trace_plugins_info_for_debug(nil, nil)
         -- when 'plugins' is given, always return 'plugins' itself instead
         -- of another one
         return plugins or core.tablepool.fetch("plugins", 0, 0)
@@ -337,7 +346,7 @@ function _M.filter(conf, plugins, route_conf)
         end
     end
 
-    trace_plugins_info_for_debug(plugins)
+    trace_plugins_info_for_debug(ctx, plugins)
 
     return plugins
 end
@@ -347,7 +356,7 @@ function _M.stream_filter(user_route, plugins)
     plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
-        trace_plugins_info_for_debug(nil)
+        trace_plugins_info_for_debug(nil, nil)
         return plugins
     end
 
@@ -361,7 +370,7 @@ function _M.stream_filter(user_route, plugins)
         end
     end
 
-    trace_plugins_info_for_debug(plugins)
+    trace_plugins_info_for_debug(nil, plugins)
 
     return plugins
 end
@@ -711,7 +720,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
             api_ctx.conf_id = global_rule.value.id
 
             core.table.clear(plugins)
-            plugins = _M.filter(global_rule, plugins, route)
+            plugins = _M.filter(api_ctx, global_rule, plugins, route)
             if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
