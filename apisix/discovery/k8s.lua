@@ -66,7 +66,7 @@ local function on_endpoint_modified(endpoint)
             local addresses = subset.addresses
 
             for _, port in ipairs(subset.ports or empty_table) do
-                local port_name = ""
+                local port_name
                 if port.name then
                     port_name = port.name
                 else
@@ -119,8 +119,8 @@ local function list_resource(httpc, resource, continue)
         path = resource:list_path(),
         query = resource:list_query(continue),
         headers = {
-            ["Host"] = string.format("%s:%d", apiserver_host, apiserver_port),
-            ["Authorization"] = string.format("Bearer %s", apiserver_token),
+            ["Host"] = apiserver_host .. ":" .. apiserver_port,
+            ["Authorization"] = "Bearer " .. apiserver_token,
             ["Accept"] = "application/json",
             ["Connection"] = "keep-alive"
         }
@@ -133,7 +133,6 @@ local function list_resource(httpc, resource, continue)
     if res.status ~= 200 then
         return false, res.reason, res:read_body() or ""
     end
-
     local body, err = res:read_body()
     if err then
         return false, "ReadBodyError", err
@@ -166,8 +165,8 @@ local function watch_resource(httpc, resource)
         path = resource:watch_path(),
         query = resource:watch_query(watch_seconds),
         headers = {
-            ["Host"] = string.format("%s:%d", apiserver_host, apiserver_port),
-            ["Authorization"] = string.format("Bearer %s", apiserver_token),
+            ["Host"] = apiserver_host .. ":" .. apiserver_port,
+            ["Authorization"] = "Bearer " .. apiserver_token,
             ["Accept"] = "application/json",
             ["Connection"] = "keep-alive"
         }
@@ -182,10 +181,10 @@ local function watch_resource(httpc, resource)
     end
 
     local remainder_body = ""
-    local body = ""
+    local body
     local reader = res.body_reader
-    local gmatch_iterator;
-    local captures;
+    local gmatch_iterator
+    local captures
     local captured_size = 0
     while true do
 
@@ -241,9 +240,9 @@ end
 local function fetch_resource(resource)
     local begin_time = ngx.time()
     while true do
-        local ok = false
-        local reason, message = "", ""
-        local retry_interval = 0
+        local ok
+        local reason, message
+        local retry_interval
         repeat
             local httpc = http.new()
             resource.watch_state = "connecting"
@@ -308,17 +307,29 @@ end
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
     local endpoint_content, _, _ = endpoints_shared:get_stale(endpoint_key)
     if not endpoint_content then
-        core.log.emerg("get empty endpoint content from discovery DICT,this should not happen ", endpoint_key)
+        core.log.emerg("get empty endpoint content from discovery DICT,this should not happen ",
+                endpoint_key)
         return nil
     end
 
     local endpoint, _ = core.json.decode(endpoint_content)
     if not endpoint then
-        core.log.emerg("decode endpoint content failed, this should not happen, content : ", endpoint_content)
+        core.log.emerg("decode endpoint content failed, this should not happen, content : ",
+                endpoint_content)
     end
 
     return endpoint[endpoint_port]
 end
+
+local host_patterns = {
+    { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+    { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
+}
+
+local port_patterns = {
+    { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+    { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
+}
 
 local schema = {
     type = "object",
@@ -334,18 +345,12 @@ local schema = {
                 host = {
                     type = "string",
                     default = "${KUBERNETES_SERVICE_HOST}",
-                    oneOf = {
-                        { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                        { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
-                    }
+                    oneOf = host_patterns,
                 },
                 port = {
                     type = "string",
                     default = "${KUBERNETES_SERVICE_PORT}",
-                    oneOf = {
-                        { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                        { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
-                    },
+                    oneOf = port_patterns,
                 },
             },
             default = {
@@ -453,7 +458,8 @@ local function read_conf(conf)
             return false, error
         end
     else
-        return false, "invalid k8s discovery configuration: should set one of [client.token,client.token_file] but none"
+        return false, "invalid k8s discovery configuration:" ..
+                "should set one of [client.token,client.token_file] but none"
     end
 
     default_weight = conf.default_weight or 50
@@ -480,7 +486,8 @@ function _M.nodes(service_name)
         core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
         return nil
     end
-    return endpoint_lrucache(service_name, endpoint_version, create_endpoint_lrucache, endpoint_key, endpoint_port)
+    return endpoint_lrucache(service_name, endpoint_version,
+            create_endpoint_lrucache, endpoint_key, endpoint_port)
 end
 
 local function fill_pending_resources()
@@ -517,8 +524,8 @@ local function fill_pending_resources()
         end,
 
         watch_query = function(self, timeout)
-            return string.format("watch=true&allowWatchBookmarks=true&timeoutSeconds=%d&resourceVersion=%s",
-                    timeout, self.newest_resource_version)
+            return "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. timeout ..
+                    "&resourceVersion=" .. self.newest_resource_version
         end,
 
         pre_list_callback = function(self)

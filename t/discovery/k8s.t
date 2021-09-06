@@ -22,7 +22,10 @@ no_root_location();
 no_shuffle();
 workers(4);
 
-our $yaml_config = <<_EOC_;
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
@@ -37,6 +40,40 @@ nginx_config:
   - KUBERNETES_SERVICE_PORT
   - KUBERNETES_CLIENT_TOKEN
 _EOC_
+  
+    $block->set_value("yaml_config", $yaml_config);
+
+    my $apisix_yaml = $block->apisix_yaml // <<_EOC_;
+routes: []
+#END
+_EOC_
+
+    $block->set_value("apisix_yaml", $apisix_yaml);
+
+
+    my $config = $block->config  // <<_EOC_;
+        location /t {
+            content_by_lua_block {
+              local d = require("apisix.discovery.k8s")
+              ngx.sleep(1)
+              local s = ngx.var.arg_s
+              local nodes = d.nodes(s)
+              
+              ngx.status = 200
+              local body=""
+
+              if nodes == nil or #nodes == 0 then
+                body="empty"  
+              else
+                body="passed"
+              end
+              ngx.say(body)
+            }
+        }    
+_EOC_
+
+    $block->set_value("config", $config);
+});
 
 run_tests();
 
@@ -57,21 +94,10 @@ nginx_config:
   - KUBERNETES_SERVICE_HOST
   - KUBERNETES_SERVICE_PORT
   - KUBERNETES_CLIENT_TOKEN
---- apisix_yaml
-routes:
-  - uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
 --- request
-GET /hello
---- error_code: 504
+GET /t?s=default/kubernetes:https
+--- response_body
+passed
 
 
 
@@ -91,23 +117,12 @@ discovery:
 nginx_config:
   envs:
   - KUBERNETES_CLIENT_TOKEN
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
 --- request
-GET /hello
---- error_code: 504
-
+GET /t?s=default/kubernetes:https
+--- response_body
+passed
+--- no_error_log
+[error]
 
 
 
@@ -123,29 +138,18 @@ discovery:
       host: ${KUBERNETES_SERVICE_HOST}
       port: ${KUBERNETES_SERVICE_PORT}
     client:
-      token: "${KUBERNETES_CLIENT_TOKEN}"
+      token: ${KUBERNETES_CLIENT_TOKEN}
 nginx_config:
   envs:
   - KUBERNETES_SERVICE_HOST
   - KUBERNETES_SERVICE_PORT
   - KUBERNETES_CLIENT_TOKEN
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
 --- request
-GET /hello
---- error_code: 504
-
+GET /t?s=default/kubernetes:https
+--- response_body
+passed
+--- no_error_log
+[error]
 
 
 
@@ -164,23 +168,12 @@ nginx_config:
   - KUBERNETES_SERVICE_HOST
   - KUBERNETES_SERVICE_PORT
   - KUBERNETES_CLIENT_TOKEN_FILE
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
 --- request
-GET /hello
---- error_code: 504
-
+GET /t?s=default/kubernetes:https
+--- response_body
+passed
+--- no_error_log
+[error]
 
 
 
@@ -198,144 +191,39 @@ discovery:
       port: "6445"
     client:
       token: ""
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
 --- request
-GET /hello
---- error_code: 504
+GET /t?s=default/kubernetes:https
+--- response_body
+passed
+--- no_error_log
+[error]
 
 
 
 === TEST 6: error service_name  - bad namespace
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: default/kube-dns:dns-tcp
-      discovery_type: k8s
-      type: roundrobin
-#END
 --- request
-GET /hello
---- error_code: 503
+GET /t?s=notexist/kubernetes:https
+--- response_body
+empty
+--- no_error_log
+[error]
 
 
 
 === TEST 7: error service_name   - bad service
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: kube-systm/notexit:dns-tcp
-      discovery_type: k8s
-      type: roundrobin
-#END
 --- request
-GET /hello
---- error_code: 503
+GET /t?s=default/notexist:https
+--- response_body
+empty
+--- no_error_log
+[error]
 
 
 
 === TEST 8: error service_name   - bad port
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: kube-systm/kube-dns:notexit
-      discovery_type: k8s
-      type: roundrobin
-#END
 --- request
-GET /hello
---- error_code: 503
-
-
-
-=== TEST 9: get kube-system/kube-dns:dns-tcp from k8s - configured in routes
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-#END
---- request
-GET /hello
---- error_code: 504
-
-
-
-=== TEST 10: get kube-system/kube-dns:dns-tcp from k8s - configured in services
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream:
-      service_name : kube-system/kube-dns:dns-tcp
-      type: roundrobin
-      discovery_type: k8s
-      timeout:
-        connect: 0.5
-        send : 1
-        read : 1
-#END
---- request
-GET /hello
---- error_code: 504
-
-
-
-=== TEST 11: get kube-system/kube-dns:dns-tcp info from k8s - configured in upstreams
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream_id : 1
-upstreams:
-  -
-    id: 1
-    service_name : kube-system/kube-dns:dns-tcp
-    type: roundrobin
-    discovery_type: k8s
-    timeout:
-      connect: 0.5
-      send : 1
-      read : 1
-#END
---- request
-GET /hello
---- error_code: 504
+GET /t?s=default/kubernetes:notexist
+--- response_body
+empty
+--- no_error_log
+[error]
