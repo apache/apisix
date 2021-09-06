@@ -661,7 +661,12 @@ _M.service = {
             description = "enable websocket for request",
             type        = "boolean",
         },
-
+        hosts = {
+            type = "array",
+            items = host_def,
+            minItems = 1,
+            uniqueItems = true,
+        },
     },
 }
 
