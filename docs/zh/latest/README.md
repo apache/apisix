@@ -41,6 +41,7 @@ Apache APISIX 的技术架构如下图所示：
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
 - QQ 群 - 578997126
 - [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg) - 加入 `#apisix` 频道以便与成员交流。
+- Slack - 请 [订阅邮件列表](https://apisix.apache.org/docs/general/subscribe-guide) 后发送邮件获取邀请链接
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
 - **新手任务列表**
