@@ -42,6 +42,7 @@ local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local pairs           = pairs
 local control_api_router
 
 local is_http = false
@@ -436,7 +437,7 @@ function _M.http_access_phase()
         script.run("access", api_ctx)
 
     else
-        local plugins = plugin.filter(route)
+        local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
 
         plugin.run_plugin("rewrite", plugins, api_ctx)
@@ -454,7 +455,7 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -608,6 +609,20 @@ function _M.http_header_filter_phase()
     end
 
     common_phase("header_filter")
+
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    local debug_headers = api_ctx.debug_headers
+    if debug_headers then
+        local deduplicate = core.table.new(#debug_headers, 0)
+        for k, v in pairs(debug_headers) do
+            core.table.insert(deduplicate, k)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
+    end
 end
 
 
