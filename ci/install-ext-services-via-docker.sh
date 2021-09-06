@@ -133,13 +133,14 @@ curl -Lo ./kubectl "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"
 chmod +x ./kubectl
 ./kubectl apply -f ./apisix-test-rbac.yaml
 ./kubectl proxy -p 6445 &
+
+curl -Lo ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+chmod +x ./jq
+
 until [[ $(curl 127.0.0.1:6445/api/v1/pods?fieldSelector=status.phase%21%3DRunning |./jq .items) == "[]" ]]; do
     echo 'wait k8s start...'
     sleep 1;
 done
-
-curl -Lo ./jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-chmod +x ./jq
 
 KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o json "$1" |./jq -r .data.token | base64 --decode")}')
 

@@ -83,7 +83,7 @@ apisix:
   enable_admin: false
 discovery:
   k8s:
-    service: 
+    service:
       host: "127.0.0.1"
       port: "6443"
     client:
@@ -119,7 +119,7 @@ apisix:
   enable_admin: false
 discovery:
   k8s:
-    service: 
+    service:
       host: ${KUBERNETES_SERVICE_HOST}
       port: ${KUBERNETES_SERVICE_PORT}
     client:
@@ -192,7 +192,7 @@ apisix:
   enable_admin: false
 discovery:
   k8s:
-    service: 
+    service:
       schema: http
       host: "127.0.0.1"
       port: "6445"
@@ -326,7 +326,7 @@ services:
     id: 1
     upstream_id : 1
 upstreams:
-  - 
+  -
     id: 1
     service_name : kube-system/kube-dns:dns-tcp
     type: roundrobin
