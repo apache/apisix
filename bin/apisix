@@ -23,9 +23,6 @@ if [ -s './apisix/cli/apisix.lua' ]; then
 elif [ -s '/usr/local/share/lua/5.1/apisix/cli/apisix.lua' ]; then
     # install via luarock
     APISIX_LUA=/usr/local/share/lua/5.1/apisix/cli/apisix.lua
-elif [ -s '/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua' ]; then
-    # install via shell
-    APISIX_LUA=/usr/local/apisix/deps/share/lua/5.1/apisix/cli/apisix.lua
 else
     # install via official rpm or docker
     APISIX_LUA=/usr/local/apisix/apisix/cli/apisix.lua
