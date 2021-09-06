@@ -101,7 +101,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### generate signature:
 
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`.
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_string` is `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. If one of the items in signing_string does not exist, you also need to use an empty string instead.
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".
