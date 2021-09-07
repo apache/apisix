@@ -65,7 +65,7 @@ function _M.rewrite(conf, ctx)
     else
         local val = math_random()
         core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio,
-            ", random value: ", val)
+                                ", random value: ", val)
         if val < conf.sample_ratio then
             ctx.var.upstream_mirror_host = conf.host
         end
