@@ -110,6 +110,9 @@ upstreams:
                     end
                 end
 
+                -- It is expected to have 5 DNS queries
+                -- the first turn: one for global resolver & two for discovery (SRV, then A)
+                -- the second turn: each one for both global resolver & discovery
                 if i < 2 then
                     ngx.sleep(1.1)
                 end
@@ -121,6 +124,7 @@ GET /t
 --- grep_error_log eval
 qr/connect to 127.0.0.1:1053/
 --- grep_error_log_out
+connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053
