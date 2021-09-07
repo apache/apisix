@@ -78,3 +78,47 @@ hook_phase: # 模块函数列表，名字：hook_phase
     - http_log_phase
 #END
 ```
+
+### 动态调试模式
+
+动态调试模式可通过 [Control API](../../../en/latest/control-api.md) 中的 `/v1/advance_debug` 动态开启或关闭，配置参数和调试效果与高级调试模式一致。
+
+示例：
+
+- 开启
+
+    ```shell
+    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
+    '{
+        "enable": true,
+        "is_print_input_args": true,
+        "is_print_return_value": true,
+        "log_level":"warn",
+        "name":"hook_phase",
+        "hook_phase":{
+            "apisix":[
+                "http_access_phase",
+                "http_header_filter_phase"
+            ]
+        }
+    }'
+    ```
+
+- 关闭
+
+    ```shell
+    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
+    '{
+        "enable": false,
+        "is_print_input_args": true,
+        "is_print_return_value": true,
+        "log_level":"warn",
+        "name":"hook_phase",
+        "hook_phase":{
+            "apisix":[
+                "http_access_phase",
+                "http_header_filter_phase"
+            ]
+        }
+    }'
+    ```

@@ -188,6 +188,9 @@ http {
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
+    # for dynamic-debug
+    lua_shared_dict dynamic-debug {* http.lua_shared_dict["dynamic-debug"] *}; # cache for dynamic debug
+
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}

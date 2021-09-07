@@ -17,7 +17,6 @@
 local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
-local json         = require("apisix.core.json")
 local profile      = require("apisix.core.profile")
 local process      = require("ngx.process")
 local lfs          = require("lfs")
@@ -30,12 +29,48 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
+local inspect      = require "inspect"
+local ngx_shared   = ngx.shared
+local json_decode  = require("apisix.core.json").decode
 local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
 
 
 local _M = {version = 0.1}
+
+
+local function dynamic()
+    local dict = ngx_shared["dynamic-debug"]
+    if not dict then
+        return nil
+    end
+
+    local dynamic_debug_data = "dynamic-debug"
+    local data_str = dict:get(dynamic_debug_data)
+    if not data_str then
+        return nil
+    end
+
+    local data, err = json_decode(data_str)
+    if err then
+        log.warn("failed to decode the data string, err: ", err)
+        return nil
+    end
+
+    local hook_conf = debug_yaml.hook_conf
+    hook_conf.enable = data.enable
+    hook_conf.is_print_input_args = data.is_print_input_args
+    hook_conf.is_print_return_value = data.is_print_return_value
+    hook_conf.log_level = data.log_level
+    hook_conf.name = data.name
+
+    for k, v in pairs(data[data.name]) do
+        debug_yaml[data.name][k] = v
+    end
+    debug_yaml_ctime = ngx.time()
+    return true
+end
 
 
 local function read_debug_yaml()
@@ -48,6 +83,9 @@ local function read_debug_yaml()
     -- log.info("change: ", json.encode(attributes))
     local last_change_time = attributes.change
     if debug_yaml_ctime == last_change_time then
+        if dynamic() then
+            return
+        end
         return
     end
 
@@ -126,13 +164,13 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
         local arg = {...}
         if hook_conf.is_print_input_args then
             log[log_level]("call require(\"", file_path, "\").", fun_name,
-                           "() args:", json.delay_encode(arg, true))
+                    "() args:", inspect(arg))
         end
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
             log[log_level]("call require(\"", file_path, "\").", fun_name,
-                           "() return:", json.delay_encode(ret, true))
+                    "() return:", inspect(ret))
         end
         return unpack(ret)
     end

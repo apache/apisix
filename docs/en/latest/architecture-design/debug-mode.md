@@ -76,3 +76,47 @@ hook_phase: # Module Function List, Name: hook_phase
     - http_log_phase
 #END
 ```
+
+### Dynamic Debug Mode
+
+Dynamic debug mode can be enabled or disabled dynamically via `/v1/advance_debug` in the [Control API](../control-api.md), with the same configuration parameters and debugging effects as advanced debug mode.
+
+Example:
+
+- enable
+
+    ```shell
+    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
+    '{
+        "enable": true,
+        "is_print_input_args": true,
+        "is_print_return_value": true,
+        "log_level":"warn",
+        "name":"hook_phase",
+        "hook_phase":{
+            "apisix":[
+                "http_access_phase",
+                "http_header_filter_phase"
+            ]
+        }
+    }'
+    ```
+
+- disable
+
+    ```shell
+    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
+    '{
+        "enable": false,
+        "is_print_input_args": true,
+        "is_print_return_value": true,
+        "log_level":"warn",
+        "name":"hook_phase",
+        "hook_phase":{
+            "apisix":[
+                "http_access_phase",
+                "http_header_filter_phase"
+            ]
+        }
+    }'
+    ```
