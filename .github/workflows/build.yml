@@ -131,8 +131,6 @@ jobs:
             -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
             -e ETCD_CERT_FILE=/certs/etcd.pem \
             -e ETCD_KEY_FILE=/certs/etcd.key \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
@@ -147,8 +145,6 @@ jobs:
             -e ETCD_KEY_FILE=/certs/mtls_server.key \
             -e ETCD_CLIENT_CERT_AUTH=true \
             -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
