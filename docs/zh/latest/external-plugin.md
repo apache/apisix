@@ -79,13 +79,13 @@ ext-plugin:
   path_for_test: "/tmp/x.sock" # without 'unix:' prefix
 ```
 
-在生产环境，不应该使用 `path_for_test` 并且 unix socket 路径将动态生产。
+在生产环境，不应该使用 `path_for_test`，此时监听的地址将动态生成。
 
 ## 常见问题
 
 ### 由 APISIX 管理时，插件运行程序无法访问我的环境变量
 
-自`v2.7`，APISIX 可以将环境传递给插件运行程序。
+自 `v2.7`，APISIX 可以将环境变量传递给插件运行程序。
 
 然而，默认情况下，Nginx 将隐藏所有环境变量。所以你需要首先在 `conf/config.yaml` 中声明环境变量：
 
@@ -101,4 +101,4 @@ nginx_config:
 
 但是，APISIX 需要等待插件运行程序退出，这样我们才能确保资源得以被释放。
 
-因此，我们先发送 SIGTERM 。然后在1秒后，如果插件运行程序仍然在运行，我们将发送 SIGKILL 。
+因此，我们先发送 SIGTERM 。然后在 1 秒后，如果插件运行程序仍然在运行，我们将发送 SIGKILL 。
