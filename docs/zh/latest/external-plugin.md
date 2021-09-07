@@ -21,7 +21,7 @@ title: External Plugin
 #
 -->
 
-## 什么是 `External Plugin` 和 `Plugin Runner` 
+## 什么是 `External Plugin` 和 `Plugin Runner`
 
 APISIX 支持使用 Lua 语言写插件，这种类型的插件在 APISIX 内部执行。
 有时候你想使用其他语言来开发插件，因此，APISIX 支持以 `Sidecar` 的方式加载和运行你写的插件。
@@ -41,13 +41,13 @@ APISIX 支持使用 Lua 语言写插件，这种类型的插件在 APISIX 内部
 
  `External Plugin` 及其执行顺序在这里 `ext-plugin-*` 配置。与其他插件一样， `External Plugin` 可以动态启用和重新配置。
 
-## 支持的 `Plugin Runner` 
+## 支持的 `Plugin Runner`
 
 - Java: https://github.com/apache/apisix-java-plugin-runner
 - Go: https://github.com/apache/apisix-go-plugin-runner
 - Python: https://github.com/apache/apisix-python-plugin-runner
 
-## 在 APISIX 中配置 `Plugin Runner` 
+## 在 APISIX 中配置 `Plugin Runner`
 
 在生产环境运行 `Plugin Runner` ，添加以下配置到 `config.yaml`：
 
