@@ -26,7 +26,6 @@ local str_format = string.format
 local ngx_var = ngx.var
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
-local pairs = pairs
 local ngx_shared = ngx.shared
 
 local _M = {}
