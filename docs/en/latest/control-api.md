@@ -210,4 +210,3 @@ Note that when you enable stream proxy, APISIX will run another Lua VM for the s
 Introduced since `v3.0`.
 
 Dynamically enable or disable the advanced debug mode, see [Dynamic Debug Mode](./architecture-design/debug-mode.md#dynamic-debug-mode) for more information.
-
