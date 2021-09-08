@@ -354,3 +354,47 @@ failed to do SSL handshake: handshake failed
 failed to fetch ssl config: failed to find SNI: please check if the client requests via IP or uses an outdated protocol
 --- no_error_log
 [alert]
+
+
+
+=== TEST 9: client request without sni, but fallback_sni is set
+--- yaml_config
+apisix:
+  node_listen: 1984
+  ssl:
+    fallback_sni: "a.test2.com"
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local sess, err = sock:sslhandshake(nil, nil, false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", sess ~= nil)
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+ssl handshake: true

@@ -128,7 +128,7 @@ function _M.match_and_set(api_ctx)
     end
 
     local sni
-    sni, err = ngx_ssl.server_name()
+    sni, err = apisix_ssl.server_name()
     if type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated protocol" ..
                        ". If you need to report an issue, " ..
