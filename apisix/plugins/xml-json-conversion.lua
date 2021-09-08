@@ -153,14 +153,4 @@ function _M.api()
     }
 end
 
---function _M.control_api()
---    return {
---        {
---            methods = {"GET"},
---            uris ={"/v1/plugin/xml-json-conversion"},
---            handler = get_json,
---        }
---    }
---end
-
 return _M
