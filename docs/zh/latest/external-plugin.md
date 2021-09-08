@@ -23,7 +23,7 @@ title: External Plugin
 
 ## 什么是 External Plugin 和 Plugin Runner
 
-APISIX 支持使用 Lua 语言写插件，这种类型的插件在 APISIX 内部执行。
+APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内部执行。
 有时候你想使用其他语言来开发插件，因此，APISIX 支持以 `Sidecar` 的方式加载和运行你写的插件。
 这里的 `Sidecar` 就是 Plugin Runner ，你写的插件叫做 External Plugin 。
 
