@@ -34,6 +34,7 @@ add_block_preprocessor(sub {
         location / {
             content_by_lua_block {
                 local core = require("apisix.core")
+                local t = require("lib.test_admin").test
 
                 core.log.info("upstream_http_version: ", ngx.req.http_version())
 
@@ -50,6 +51,8 @@ add_block_preprocessor(sub {
 
                 core.log.info("uri: ", ngx.var.request_uri)
                 ngx.say("hello world")
+
+                t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
             }
         }
     }
@@ -564,9 +567,13 @@ qr/uri: \/hello\?sample_ratio=1/
                    )
 
                if code == 200 then
+                   local code, body
                    for i = 1, 200 do
-                       t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
+                       code, body = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
                    end
+                   local count = body - 200
+                   assert(count >= 75 and count <= 125)
+                   ngx.say("the mirror request count is " .. count)
                elseif code >= 300 then
                    ngx.status = code
                end
@@ -579,5 +586,5 @@ GET /t
 --- response_body
 passed
 --- error_log_like eval
-qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
+qr/(uri: \/inc\?sample_ratio=0\.5){75,125}/
 --- timeout: 60

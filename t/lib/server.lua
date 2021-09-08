@@ -18,6 +18,7 @@ local json_decode = require("toolkit.json").decode
 local json_encode = require("toolkit.json").encode
 
 local _M = {}
+local count = 0
 
 
 local function inject_headers()
@@ -422,6 +423,12 @@ function _M._well_known_openid_configuration()
     local t = require("lib.test_admin")
     local openid_data = t.read_file("t/plugin/openid-configuration.json")
     ngx.say(openid_data)
+end
+
+
+function _M.inc()
+    count = count + 1
+    ngx.print(count)
 end
 
 
