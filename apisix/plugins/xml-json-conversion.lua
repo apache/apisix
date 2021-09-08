@@ -19,7 +19,7 @@ local core    = require("apisix.core")
 local xml2lua = require("xml2lua")
 local handler = require("xmlhandler.tree")
 local cjson   = require('cjson.safe')
-local string  = string
+local string  = require("string")
 
 local schema = {
     type = "object",
@@ -59,7 +59,9 @@ local function xml2json(xml_data)
 end
 
 local function json2xml(table_data)
-    return 200, xml2lua.toXml(cjson.decode(table_data))
+    local xmlStr = xml2lua.toXml(cjson.decode(table_data))
+    xmlStr = string.gsub(xmlStr, "%s+", "")
+    return 200, xmlStr
 end
 
 local _switch_anonymous = {
