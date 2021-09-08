@@ -277,7 +277,25 @@ proxy request to 127.0.0.2:1995
 
 
 
-=== TEST 10: no sni matched, fall back to non-sni route
+=== TEST 10: use fallback sni to match route
+--- yaml_config
+apisix:
+  node_listen: 1984
+  stream_proxy:
+    tcp:
+      - 9100
+  ssl:
+    fallback_sni: a.test.com
+--- stream_tls_request
+mmm
+--- response_body
+hello world
+--- error_log
+proxy request to 127.0.0.2:1995
+
+
+
+=== TEST 11: no sni matched, fall back to non-sni route
 --- config
     location /t {
         content_by_lua_block {
@@ -301,7 +319,7 @@ passed
 
 
 
-=== TEST 11: hit route
+=== TEST 12: hit route
 --- stream_tls_request
 mmm
 --- stream_sni: b.test.com
@@ -312,7 +330,7 @@ proxy request to 127.0.0.3:1995
 
 
 
-=== TEST 12: clean up routes
+=== TEST 13: clean up routes
 --- config
     location /t {
         content_by_lua_block {
