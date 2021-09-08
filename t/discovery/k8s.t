@@ -14,6 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+BEGIN {
+    $ENV{KUBERNETES_SERVICE_HOST} = "127.0.0.1";
+    $ENV{KUBERNETES_SERVICE_PORT} = "6443";
+ 
+    my $token_var_file = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+    my $token_from_var = eval { `cat ${token_var_file} 2>/dev/null` };
+    if ($token_from_var){
+      $ENV{KUBERNETES_TOKEN_IN_VAR}="true";
+      
+      $ENV{KUBERNETES_CLIENT_TOKEN}=$token_from_var;
+      $ENV{KUBERNETES_CLIENT_TOKEN_FILE}=$token_var_file;
+    }else {
+      my $token_tmp_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
+      my $token_from_tmp = eval { `cat ${token_tmp_file} 2>/dev/null` };
+      if ($token_from_tmp) {
+        $ENV{KUBERNETES_TOKEN_IN_TMP}="true";
+        $ENV{KUBERNETES_CLIENT_TOKEN}=$token_from_tmp;
+        $ENV{KUBERNETES_CLIENT_TOKEN_FILE}=$token_tmp_file;
+      }
+    }
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -25,22 +48,32 @@ workers(4);
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $token_in_var = eval { `echo -n \$KUBERNETES_TOKEN_IN_VAR 2>/dev/null` };
+    my $token_in_tmp = eval { `echo -n \$KUBERNETES_TOKEN_IN_TMP 2>/dev/null` };
+
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
   enable_admin: false
+_EOC_
+
+    if ($token_in_var eq "true") {
+       $yaml_config .= <<_EOC_;
+discovery:
+  k8s: {}
+_EOC_
+    }
+
+    if ($token_in_tmp eq "true") {
+       $yaml_config .= <<_EOC_;
 discovery:
   k8s:
     client:
-      token: \$\{KUBERNETES_CLIENT_TOKEN\}
-nginx_config:
-  envs:
-  - KUBERNETES_SERVICE_HOST
-  - KUBERNETES_SERVICE_PORT
-  - KUBERNETES_CLIENT_TOKEN
+      token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
 _EOC_
-  
+    }
+
     $block->set_value("yaml_config", $yaml_config);
 
     my $apisix_yaml = $block->apisix_yaml // <<_EOC_;
@@ -50,6 +83,14 @@ _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
 
+    my $main_config = $block->main_config // <<_EOC_;
+env KUBERNETES_SERVICE_HOST;
+env KUBERNETES_SERVICE_PORT;
+env KUBERNETES_CLIENT_TOKEN;
+env KUBERNETES_CLIENT_TOKEN_FILE;   
+_EOC_
+
+    $block->set_value("main_config", $main_config);
 
     my $config = $block->config  // <<_EOC_;
         location /t {
@@ -80,20 +121,6 @@ run_tests();
 __DATA__
 
 === TEST 1: use default parameters
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-discovery:
-  k8s:
-    client:
-      token: ${KUBERNETES_CLIENT_TOKEN}
-nginx_config:
-  envs:
-  - KUBERNETES_SERVICE_HOST
-  - KUBERNETES_SERVICE_PORT
-  - KUBERNETES_CLIENT_TOKEN
 --- request
 GET /t?s=default/kubernetes:https
 --- response_body
