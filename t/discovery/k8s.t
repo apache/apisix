@@ -60,16 +60,16 @@ _EOC_
               local nodes = d.nodes(s)
               
               ngx.status = 200
-              local body=""
+              local body
 
               if nodes == nil or #nodes == 0 then
-                body="empty"  
+                body="empty"
               else
                 body="passed"
               end
               ngx.say(body)
             }
-        }    
+        }
 _EOC_
 
     $block->set_value("config", $config);

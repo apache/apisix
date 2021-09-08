@@ -23,6 +23,7 @@ local tonumber = tonumber
 local tostring = tostring
 local math = math
 local os = os
+local error = error
 local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
@@ -307,7 +308,7 @@ end
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
     local endpoint_content, _, _ = endpoints_shared:get_stale(endpoint_key)
     if not endpoint_content then
-        core.log.emerg("get empty endpoint content from discovery DICT,this should not happen ",
+        core.log.emerg("get empty endpoint content from discovery DIC, this should not happen ",
                 endpoint_key)
         return nil
     end
@@ -411,8 +412,8 @@ local function load_value(key)
         if a == 36 and b == 123 and c == 125 then
             local env = string.sub(key, 3, #key - 1)
             local val = os.getenv(env)
-            if not val or val == "" then
-                return false, nil, "get empty " .. key .. " value"
+            if not val then
+                return false, nil, "not found environment variable " .. env
             end
             return true, val, nil
         end
@@ -423,16 +424,19 @@ end
 local function read_conf(conf)
     apiserver_schema = conf.service.schema
 
-    local ok, value, error
-    ok, value, error = load_value(conf.service.host)
+    local ok, value, message
+    ok, value, message = load_value(conf.service.host)
     if not ok then
-        return false, error
+        return false, message
     end
     apiserver_host = value
+    if apiserver_host == "" then
+        return false, "get empty host value"
+    end
 
-    ok, value, error = load_value(conf.service.port)
+    ok, value, message = load_value(conf.service.port)
     if not ok then
-        return false, error
+        return false, message
     end
     apiserver_port = tonumber(value)
     if not apiserver_port or apiserver_port <= 0 or apiserver_port > 65535 then
@@ -441,21 +445,21 @@ local function read_conf(conf)
 
     -- we should not check if the apiserver_token is empty here
     if conf.client.token then
-        ok, value, error = load_value(conf.client.token)
+        ok, value, message = load_value(conf.client.token)
         if not ok then
-            return false, error
+            return false, message
         end
         apiserver_token = value
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        ok, value, error = load_value(conf.client.token_file)
+        ok, value, message = load_value(conf.client.token_file)
         if not ok then
-            return false, error
+            return false, message
         end
         local apiserver_token_file = value
 
-        apiserver_token, error = util.read_file(apiserver_token_file)
+        apiserver_token, message = util.read_file(apiserver_token_file)
         if not apiserver_token then
-            return false, error
+            return false, message
         end
     else
         return false, "invalid k8s discovery configuration:" ..
