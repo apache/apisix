@@ -152,6 +152,10 @@
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
           "id": "health-check"
         },
         {
