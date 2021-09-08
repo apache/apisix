@@ -18,12 +18,11 @@
 BEGIN {
     $ENV{KUBERNETES_SERVICE_HOST} = "127.0.0.1";
     $ENV{KUBERNETES_SERVICE_PORT} = "6443";
- 
+
     my $token_var_file = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     my $token_from_var = eval { `cat ${token_var_file} 2>/dev/null` };
     if ($token_from_var){
       $ENV{KUBERNETES_TOKEN_IN_VAR}="true";
-      
       $ENV{KUBERNETES_CLIENT_TOKEN}=$token_from_var;
       $ENV{KUBERNETES_CLIENT_TOKEN_FILE}=$token_var_file;
     }else {
@@ -87,7 +86,7 @@ _EOC_
 env KUBERNETES_SERVICE_HOST;
 env KUBERNETES_SERVICE_PORT;
 env KUBERNETES_CLIENT_TOKEN;
-env KUBERNETES_CLIENT_TOKEN_FILE;   
+env KUBERNETES_CLIENT_TOKEN_FILE;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -99,7 +98,7 @@ _EOC_
               ngx.sleep(1)
               local s = ngx.var.arg_s
               local nodes = d.nodes(s)
-              
+
               ngx.status = 200
               local body
 
