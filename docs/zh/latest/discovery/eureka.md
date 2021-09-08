@@ -21,4 +21,5 @@ title: eureka
 #
 -->
 
-Apache APISIX 支持使用 [Eureka](../discovery.md#当前支持的注册中心) 做服务发现。
+Apache APISIX 支持使用 [Eureka](https://github.com/Netflix/eureka#eureka) 做服务发现。
+详情请阅读 [支持的服务注册发现](../discovery.md#当前支持的注册中心) 。
