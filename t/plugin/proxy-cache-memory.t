@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{TEST_NGINX_FORCE_RESTART_ON_TEST} = 0;
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -21,6 +25,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 log_level('info');
+
+
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -30,6 +36,7 @@ add_block_preprocessor(sub {
     # for proxy cache
     proxy_cache_path /tmp/disk_cache_one levels=1:2 keys_zone=disk_cache_one:50m inactive=1d max_size=1G;
     proxy_cache_path /tmp/disk_cache_two levels=1:2 keys_zone=disk_cache_two:50m inactive=1d max_size=1G;
+    lua_shared_dict memory_cache 50m;
 
     # for proxy cache
     map \$upstream_cache_zone \$upstream_cache_zone_info {
@@ -43,6 +50,16 @@ add_block_preprocessor(sub {
 
         location / {
             expires 60s;
+
+            if (\$arg_expires) {
+                expires \$arg_expires;
+            }
+
+            if (\$arg_cc) {
+                expires off;
+                add_header Cache-Control \$arg_cc;
+            }
+            
             return 200 "hello world!";
         }
 
@@ -59,7 +76,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity check (missing cache_zone field, the default value is disk_cache_one)
+=== TEST 1: sanity check (invalid cache strategy)
 --- config
        location /t {
            content_by_lua_block {
@@ -69,296 +86,7 @@ __DATA__
                     [[{
                         "plugins": {
                             "proxy-cache": {
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]],
-                   [[{
-                       "node": {
-                        "value": {
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "plugins": {
-                                "proxy-cache":{
-                                    "cache_zone":"disk_cache_one",
-                                    "hide_cache_headers":true,
-                                    "cache_bypass":["$arg_bypass"],
-                                    "cache_key":["$host","$request_uri"],
-                                    "no_cache":["$arg_no_cache"],
-                                    "cache_http_status":[200],
-                                    "cache_method":["GET"]
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                        },
-                        "action": "set"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 2: sanity check (invalid type for cache_method)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": "GET",
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
-
-
-
-=== TEST 3: sanity check (invalid type for cache_key)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_key": "${uri}-cache-key",
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1985": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
-
-
-
-=== TEST 4: sanity check (invalid type for cache_bypass)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_bypass": "$arg_bypass",
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1985": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
-
-
-
-=== TEST 5: sanity check (invalid type for no_cache)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": "$arg_no_cache"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1985": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
-
-
-
-=== TEST 6: sanity check (illegal character for cache_key)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri-", "-cache-id"],
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1985": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
-
-
-
-=== TEST 7: sanity check (normal case)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
+                               "cache_strategy": "network",
                                "cache_key":["$host","$uri"],
                                "cache_zone": "disk_cache_one",
                                "cache_bypass": ["$arg_bypass"],
@@ -386,6 +114,99 @@ qr/failed to check the configuration of plugin proxy-cache/
        }
 --- request
 GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin proxy-cache err: property \\"cache_strategy\\" validation failed: matches none of the enum values/
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: sanity check (invalid cache_zone when specifing cache_strategy as memory)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "invalid_cache_zone",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200],
+                               "hide_cache_headers": true,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin proxy-cache err: cache_zone invalid_cache_zone not found"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: sanity check (normal case for memory strategy)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "memory_cache",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "hide_cache_headers": false,
+                               "cache_ttl": 300,
+                               "cache_http_status": [200],
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
 --- error_code: 200
 --- response_body
 passed
@@ -394,7 +215,7 @@ passed
 
 
 
-=== TEST 8: hit route (cache miss)
+=== TEST 4: hit route (cache miss)
 --- request
 GET /hello
 --- response_body chop
@@ -406,21 +227,19 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 9: hit route (cache hit)
+=== TEST 5: hit route (cache hit)
 --- request
 GET /hello
 --- response_body chop
 hello world!
 --- response_headers
 Apisix-Cache-Status: HIT
---- raw_response_headers_unlike
-Expires:
 --- no_error_log
 [error]
 
 
 
-=== TEST 10: hit route (cache bypass)
+=== TEST 6: hit route (cache bypass)
 --- request
 GET /hello?bypass=1
 --- response_body chop
@@ -432,7 +251,7 @@ Apisix-Cache-Status: BYPASS
 
 
 
-=== TEST 11: purge cache
+=== TEST 7: purge cache
 --- request
 PURGE /hello
 --- error_code: 200
@@ -441,7 +260,7 @@ PURGE /hello
 
 
 
-=== TEST 12: hit route (nocache)
+=== TEST 8: hit route (nocache)
 --- request
 GET /hello?no_cache=1
 --- response_body chop
@@ -453,7 +272,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 13: hit route (there's no cache indeed)
+=== TEST 9: hit route (there's no cache indeed)
 --- request
 GET /hello
 --- response_body chop
@@ -467,7 +286,7 @@ Expires:
 
 
 
-=== TEST 14: hit route (will be cached)
+=== TEST 10: hit route (will be cached)
 --- request
 GET /hello
 --- response_body chop
@@ -479,7 +298,7 @@ Apisix-Cache-Status: HIT
 
 
 
-=== TEST 15: hit route (not found)
+=== TEST 11: hit route (not found)
 --- request
 GET /hello-not-found
 --- error_code: 404
@@ -492,7 +311,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 16: hit route (404 there's no cache indeed)
+=== TEST 12: hit route (404 there's no cache indeed)
 --- request
 GET /hello-not-found
 --- error_code: 404
@@ -505,7 +324,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 17: hit route (HEAD method)
+=== TEST 13: hit route (HEAD method)
 --- request
 HEAD /hello-world
 --- error_code: 200
@@ -516,7 +335,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 18: hit route (HEAD method there's no cache)
+=== TEST 14: hit route (HEAD method there's no cache)
 --- request
 HEAD /hello-world
 --- error_code: 200
@@ -527,7 +346,25 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 19:  hide cache headers = false
+=== TEST 15: purge cache
+--- request
+PURGE /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: purge cache (not found)
+--- request
+PURGE /hello-world
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 17:  hide cache headers = false
 --- config
        location /t {
            content_by_lua_block {
@@ -537,9 +374,12 @@ Apisix-Cache-Status: MISS
                     [[{
                         "plugins": {
                             "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "memory_cache",
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": ["GET"],
+                               "cache_ttl": 300,
                                "cache_http_status": [200],
                                "hide_cache_headers": false,
                                "no_cache": ["$arg_no_cache"]
@@ -571,13 +411,13 @@ passed
 
 
 
-=== TEST 20: hit route (catch the cache headers)
+=== TEST 18: hit route (catch the cache headers)
 --- request
 GET /hello
 --- response_body chop
 hello world!
 --- response_headers
-Apisix-Cache-Status: HIT
+Apisix-Cache-Status: MISS
 --- response_headers_like
 Cache-Control:
 --- no_error_log
@@ -585,114 +425,7 @@ Cache-Control:
 
 
 
-=== TEST 21: purge cache
---- request
-PURGE /hello
---- error_code: 200
---- no_error_log
-[error]
-
-
-
-=== TEST 22: purge cache (not found)
---- request
-PURGE /hello-world
---- error_code: 404
---- no_error_log
-[error]
-
-
-
-=== TEST 23:  invalid cache zone
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "invalid_disk_cache",
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": false,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1986": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello*"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/cache_zone invalid_disk_cache not found/
---- no_error_log
-[error]
-
-
-
-=== TEST 24: sanity check (invalid variable for cache_key)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "plugins": {
-                            "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri", "$request_method"],
-                               "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET"],
-                               "cache_http_status": [200],
-                               "hide_cache_headers": true,
-                               "no_cache": ["$arg_no_cache"]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1985": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache err: cache_key variable \$request_method unsupported/
---- no_error_log
-[error]
-
-
-
-=== TEST 25: don't override cache relative headers
+=== TEST 19: don't override cache relative headers
 --- config
        location /t {
            content_by_lua_block {
@@ -725,7 +458,7 @@ passed
 
 
 
-=== TEST 26: hit route
+=== TEST 20: hit route
 --- request
 GET /echo
 --- more_headers
@@ -741,7 +474,7 @@ Expires: any
 
 
 
-=== TEST 27: sanity check (invalid method for cache_method)
+=== TEST 21:  set cache_ttl to 1
 --- config
        location /t {
            content_by_lua_block {
@@ -751,21 +484,24 @@ Expires: any
                     [[{
                         "plugins": {
                             "proxy-cache": {
-                               "cache_zone": "disk_cache_one",
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "memory_cache",
                                "cache_bypass": ["$arg_bypass"],
-                               "cache_method": ["GET", "PUT"],
+                               "cache_method": ["GET"],
+                               "cache_ttl": 2,
                                "cache_http_status": [200],
-                               "hide_cache_headers": true,
+                               "hide_cache_headers": false,
                                "no_cache": ["$arg_no_cache"]
                             }
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:1986": 1
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/hello*"
                    }]]
                    )
 
@@ -777,8 +513,221 @@ Expires: any
        }
 --- request
 GET /t
---- error_code: 400
---- response_body eval
-qr/failed to check the configuration of plugin proxy-cache err/
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: hit route (MISS)
+--- request
+GET /hello
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: hit route (HIT)
+--- request
+GET /hello
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: HIT
+--- no_error_log
+[error]
+--- wait: 2
+
+
+
+=== TEST 24: hit route (MISS)
+--- request
+GET /hello
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+
+
+
+=== TEST 25:  enable cache_control option
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "memory_cache",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_control": true,
+                               "cache_method": ["GET"],
+                               "cache_ttl": 10,
+                               "cache_http_status": [200],
+                               "hide_cache_headers": false,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: hit route (MISS)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: max-age=60
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+--- wait: 1
+
+
+
+=== TEST 27: hit route (request header cache-control with max-age)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: max-age=1
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: STALE
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: hit route  (request header cache-control with min-fresh)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: min-fresh=300
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: STALE
+--- no_error_log
+[error]
+--- wait: 1
+
+
+
+=== TEST 29: purge cache
+--- request
+PURGE /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: hit route  (request header cache-control with no-store)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: no-store
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: BYPASS
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: hit route  (request header cache-control with no-cache)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: no-cache
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: BYPASS
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: hit route  (response header cache-control with private)
+--- request
+GET /hello?cc=private
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: hit route  (response header cache-control with no-store)
+--- request
+GET /hello?cc=no-store
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: hit route  (response header cache-control with no-cache)
+--- request
+GET /hello?cc=no-cache
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: hit route  (request header cache-control with only-if-cached)
+--- request
+GET /hello
+--- more_headers
+Cache-Control: only-if-cached
+--- error_code: 504
 --- no_error_log
 [error]
