@@ -45,7 +45,7 @@ apisix:
 
 ## 独立于插件的 control API
 
-以下是支持的API:
+以下是支持的 API:
 
 ### GET /v1/schema
 
@@ -151,10 +151,10 @@ apisix:
 ]
 ```
 
-每个entry包含以下字段：
+每个 entry 包含以下字段：
 
 * src_type：表示 health checker 的来源。值是 `routes,services,upstreams` 其中之一
-* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream 对 象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
+* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream 对象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
 * name： 表示 health checker 的名称
 * nodes： health checker 的目标节点
 * healthy_nodes： 表示 health checker 检测到的健康节点
