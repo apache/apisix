@@ -598,8 +598,7 @@ passed
                 -- reset count
                 local count = 0
                 local httpc = http.new()
-                local url = "http://127.0.0.1:" .. ngx.var.server_port
-                                .. "/stat_count?action=reset"
+                local url = "http://127.0.0.1:1980/stat_count?action=reset"
                 local res, err = httpc:request_uri(url, {method = "GET"})
                 if not res then
                     core.log.error(err)
@@ -627,7 +626,7 @@ passed
                 end
 
                 -- get mirror stat count
-                url = "http://127.0.0.1:" .. ngx.var.server_port .. "/stat_count"
+                url = "http://127.0.0.1:1980/stat_count"
                 httpc = http.new()
                 res, err = httpc:request_uri(url, {method = "GET"})
                 if not res then
