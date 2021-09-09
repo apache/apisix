@@ -562,13 +562,14 @@ qr/uri: \/hello\?sample_ratio=1/
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/inc"
+                        "uri": "/hello"
                    }]]
                    )
 
                if code == 200 then
                    local code, body
                    for i = 1, 200 do
+                       t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
                        code, body = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
                    end
                    local count = body - 200
@@ -586,5 +587,5 @@ GET /t
 --- response_body
 passed
 --- error_log_like eval
-qr/(uri: \/inc\?sample_ratio=0\.5){75,125}/
+qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
 --- timeout: 60
