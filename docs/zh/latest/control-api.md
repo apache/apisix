@@ -197,6 +197,6 @@ apisix:
 
 引入自 2.8 版本
 
-在 http 子系统中触发一次完整的GC
+在 http 子系统中触发一次完整的 GC
 
 注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。不会触发这个 Lua 虚拟机中的全量 GC。
