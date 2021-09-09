@@ -21,6 +21,7 @@ no_long_string();
 no_shuffle();
 no_root_location();
 log_level('info');
+worker_connections(1024);
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -567,7 +568,10 @@ qr/uri: \/hello\?sample_ratio=1/
                    )
 
                if code == 200 then
-                   local code, body
+                   -- reset count
+                   local code, body = t('/inc?action=reset', ngx.HTTP_GET)
+                   ngx.say(body)
+
                    for i = 1, 200 do
                        t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
                        code, body = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)

@@ -427,7 +427,12 @@ end
 
 
 function _M.inc()
-    count = count + 1
+    local action = ngx.var.arg_action
+    if action == "reset" then
+        count = 0
+    else
+        count = count + 1
+    end
     ngx.print(count)
 end
 
