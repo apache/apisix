@@ -103,6 +103,8 @@ cd apisix-docker/example
 docker-compose -p docker-apisix up -d
 ```
 
+> Apache APISIX has already supported ARM64 architecture. For ARM64 users, please use `docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d` instead in the last step.
+
 It will take some time to download all required files, please be patient.
 
 Once the download is complete, execute the `curl` command on the host running Docker to access the Admin API, and determine if Apache APISIX was successfully started based on the returned data.
