@@ -562,7 +562,7 @@ qr/uri: \/hello\?sample_ratio=1/
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/inc"
                    }]]
                    )
 
