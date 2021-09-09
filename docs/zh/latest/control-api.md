@@ -153,8 +153,8 @@ apisix:
 
 每个entry包含以下字段：
 
-* src_type：表示 health checker 的来源。值是 `routes,services,upstreams`其中之一
-* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream对 象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
+* src_type：表示 health checker 的来源。值是 `routes,services,upstreams` 其中之一
+* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream 对 象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
 * name： 表示 health checker 的名称
 * nodes： health checker 的目标节点
 * healthy_nodes： 表示 health checker 检测到的健康节点
@@ -197,6 +197,6 @@ apisix:
 
 引入自 2.8 版本
 
-在 http 子系统中触发一次完整的 GC
+在 http 子系统中触发一次全量 GC
 
 注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。不会触发这个 Lua 虚拟机中的全量 GC。
