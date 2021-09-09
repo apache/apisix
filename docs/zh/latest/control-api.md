@@ -41,7 +41,7 @@ apisix:
 
 ## 通过插件添加的control API
 
-插件被启用时可以添加自己的control API.If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
+插件被启用时可以添加自己的control API.如果你对他们感兴趣,请参阅对应插件的文档.
 
 ## 独立于插件的control API
 
@@ -91,8 +91,6 @@ apisix:
 引入自2.3版本
 
 以以下格式返回当前的[health check](health-check.md)状态
-
-
 
 ```json
 [
@@ -165,8 +163,6 @@ apisix:
 
 例如,`GET /v1/healthcheck/upstreams/1`返回:
 
-
-
 ```json
 {
     "healthy_nodes": [
@@ -204,4 +200,3 @@ apisix:
 在http子系统中触发一次完整的GC
 
 注意,当你启用stream proxy时,APISIX将为stream子系统运行另一个Lua 虚拟机.不会触发这个Lua虚拟机中的完整GC
-
