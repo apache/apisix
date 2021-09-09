@@ -147,7 +147,9 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
         },
         {
