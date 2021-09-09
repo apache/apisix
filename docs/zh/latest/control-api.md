@@ -26,7 +26,7 @@ control API 可以被用来：
 * 暴露 APISIX 内部状态信息
 * 控制单个 APISIX 的数据平面的行为
 
-默认情况下，control API 是启用的，监听`127.0.0.1:9090`。你可以通过修改`apisix/conf/config.yaml`中的 control 部分来更改设置，如下：
+默认情况下，control API 是启用的，监听 `127.0.0.1:9090`。你可以通过修改 `apisix/conf/config.yaml` 中的 control 部分来更改设置，如下：
 
 ```yaml
 apisix:
@@ -37,7 +37,7 @@ apisix:
     port: 9090
 ```
 
-注意: control API server 不应该被配置成监听公共流量(public traffic)
+注意: control API server 不应该被配置成监听公共流量(public traffic)。
 
 ## 通过插件添加的 control API
 
@@ -49,7 +49,7 @@ apisix:
 
 ### GET /v1/schema
 
-引入自2.2版本
+引入自 2.2 版本
 
 使用以下格式返回被该 APISIX 实例使用的 json schema：
 
@@ -84,13 +84,13 @@ apisix:
 }
 ```
 
-返回结果中`plugins`部分，只有启用了的插件才会被包含在内。(返回结果中的)一些插件可能会缺失如`consumer_schema`或者`type`字段,这取决于插件的定义
+只有启用了的插件才会被包含在返回结果中 `plugins` 部分。(返回结果中的)一些插件可能会缺失如 `consumer_schema` 或者 `type` 字段，这取决于插件的定义
 
 ### GET /v1/healthcheck
 
-引入自2.3版本
+引入自 2.3 版本
 
-使用以下格式返回当前的[health check](health-check.md)状态
+使用以下格式返回当前的 [health check](health-check.md) 状态
 
 ```json
 [
@@ -153,15 +153,15 @@ apisix:
 
 每个entry包含以下字段：
 
-* src_type：表示 health checker 的来源。值是`routes,services,upstreams`其中之一
-* src_id：表示创建health checker的对象的id。例如，假设id为1的Upstream对象创建了一个health checker，那么`src_type`就是`upstreams`，`src_id`就是1
+* src_type：表示 health checker 的来源。值是 `routes,services,upstreams`其中之一
+* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream对 象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
 * name： 表示 health checker 的名称
 * nodes： health checker 的目标节点
 * healthy_nodes： 表示 health checker 检测到的健康节点
 
-用户也可以通过`/v1/healthcheck/$src_type/$src_id`来获取指定 health checker 的状态
+用户也可以通过 `/v1/healthcheck/$src_type/$src_id` 来获取指定 health checker 的状态。
 
-例如,`GET /v1/healthcheck/upstreams/1`返回:
+例如，`GET /v1/healthcheck/upstreams/1` 返回：
 
 ```json
 {
@@ -195,8 +195,8 @@ apisix:
 
 ### POST /v1/gc
 
-引入自2.8版本
+引入自 2.8 版本
 
 在 http 子系统中触发一次完整的GC
 
-注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。不会触发这个Lua虚拟机中的完整 GC
+注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。不会触发这个 Lua 虚拟机中的全量 GC。
