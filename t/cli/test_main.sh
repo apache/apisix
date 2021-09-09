@@ -514,26 +514,6 @@ fi
 rm conf/config_original.yaml conf/customized_config.yaml
 echo "passed: customized config.yaml copied and reverted succeeded"
 
-# allow to merge configuration without middle layer
-
-git checkout conf/config.yaml
-
-echo '
-nginx_config:
-  http:
-    lua_shared_dicts:
-      my_dict: 1m
-' > conf/config.yaml
-
-make init
-
-if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'my_dict' not in nginx.conf"
-    exit 1
-fi
-
-echo "passed: found 'my_dict' in nginx.conf"
-
 # check disable cpu affinity
 git checkout conf/config.yaml
 
