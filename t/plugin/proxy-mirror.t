@@ -21,6 +21,7 @@ no_long_string();
 no_shuffle();
 no_root_location();
 log_level('info');
+worker_connections(1024);
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -35,6 +36,15 @@ add_block_preprocessor(sub {
             content_by_lua_block {
                 local core = require("apisix.core")
                 local http = require("resty.http")
+
+                local httpc = http.new()
+                local url = "http://127.0.0.1:1980/stat_count?action=inc"
+                local res, err = httpc:request_uri(url, {method = "GET"})
+                if not res then
+                    core.log.error(err)
+                else
+                    core.log.info("currently mirror request stat count is ", res.body)
+                end
 
                 core.log.info("upstream_http_version: ", ngx.req.http_version())
 
@@ -51,15 +61,6 @@ add_block_preprocessor(sub {
 
                 core.log.info("uri: ", ngx.var.request_uri)
                 ngx.say("hello world")
-
-                local httpc = http.new()
-                local url = "http://127.0.0.1:1980/stat_count?action=inc"
-                local res, err = httpc:request_uri(url, {method = "GET"})
-                if not res then
-                    core.log.error(err)
-                else
-                    core.log.info("currently stat count is ", res.body)
-                end
             }
         }
     }
@@ -553,8 +554,6 @@ qr/uri: \/hello\?sample_ratio=1/
 --- config
        location /t {
            content_by_lua_block {
-                local http = require("resty.http")
-               local core = require("apisix.core")
                local t = require("lib.test_admin").test
                local code, body = t('/apisix/admin/routes/1',
                     ngx.HTTP_PUT,
@@ -575,33 +574,7 @@ qr/uri: \/hello\?sample_ratio=1/
                    }]]
                    )
 
-               if code == 200 then
-                    -- reset count
-                    local count = 0
-                    local httpc = http.new()
-                    local url = "http://127.0.0.1:1980/stat_count?action=reset"
-                    local res, err = httpc:request_uri(url, {method = "GET"})
-                    if not res then
-                        core.log.error(err)
-                    else
-                        core.log.info("reset the mirror request stat count to " .. res.body)
-                        count = res.body
-                    end
-
-                   for i = 1, 200 do
-                       t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
-                   end
-
-                    url = "http://127.0.0.1:1980/stat_count"
-                    res, err = httpc:request_uri(url, {method = "GET"})
-                    if not res then
-                        core.log.error(err)
-                    else
-                        core.log.info("the mirror request stat count is " .. res.body)
-                        count = res.body
-                    end
-                   assert(count >= 75 and count <= 125)
-               elseif code >= 300 then
+               if code >= 300 then
                    ngx.status = code
                end
                ngx.say(body)
@@ -612,6 +585,62 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
+
+
+
+=== TEST 17: send batch requests and get mirror stat count
+--- config
+       location /t {
+           content_by_lua_block {
+                local http = require("resty.http")
+                local core = require("apisix.core")
+
+                -- reset count
+                local count = 0
+                local httpc = http.new()
+                local url = "http://127.0.0.1:" .. ngx.var.server_port
+                                .. "/stat_count?action=reset"
+                local res, err = httpc:request_uri(url, {method = "GET"})
+                if not res then
+                    core.log.error(err)
+                else
+                    core.log.info("reset the mirror request stat count to " .. res.body)
+                    count = res.body
+                end
+
+                -- send batch requests
+                url = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?sample_ratio=0.5"
+                local t = {}
+                for i = 1, 200 do
+                    local th = assert(ngx.thread.spawn(function(i)
+                        local httpc = http.new()
+                        local res, err = httpc:request_uri(url, {method = "GET"})
+                        if not res then
+                            core.log.error(err)
+                            return
+                        end
+                    end, i))
+                    table.insert(t, th)
+                end
+                for i, th in ipairs(t) do
+                    ngx.thread.wait(th)
+                end
+
+                -- get mirror stat count
+                url = "http://127.0.0.1:" .. ngx.var.server_port .. "/stat_count"
+                httpc = http.new()
+                res, err = httpc:request_uri(url, {method = "GET"})
+                if not res then
+                    core.log.error(err)
+                else
+                    core.log.info("the mirror request stat count is " .. res.body)
+                    count = res.body
+                end
+                assert(count >= 75 and count <= 125)
+           }
+       }
+--- request
+GET /t
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
 --- timeout: 60
