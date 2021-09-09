@@ -156,7 +156,8 @@ function _M.get_health_checker()
     return 200, info
 end
 
-local function iter_add_get_routes_info(infos, values, route_id)
+local function iter_add_get_routes_info(values, route_id)
+    local infos = {}
     for _, route in core.config_util.iterate_values(values) do
         local new_route = core.table.deepcopy(route)
         if new_route.value.upstream and new_route.value.upstream.parent then
@@ -164,16 +165,18 @@ local function iter_add_get_routes_info(infos, values, route_id)
         end
         core.table.insert(infos, new_route)
         if route_id and route.value.id == route_id then
-            return new_route, true
+            return new_route
         end
     end
-    return nil, false
+    if not route_id then
+        return infos
+    end
+    return nil
 end
 
 function _M.dump_all_routes_info()
     local routes = get_routes()
-    local infos = {}
-    iter_add_get_routes_info(infos, routes, nil)
+    local infos, _ = iter_add_get_routes_info(routes, nil)
     return 200, infos
 end
 
@@ -181,9 +184,8 @@ function _M.dump_route_info()
     local routes = get_routes()
     local uri_segs = core.utils.split_uri(ngx_var.uri)
     local route_id = uri_segs[4]
-    local infos = {}
-    local route, flag = iter_add_get_routes_info(infos, routes, route_id)
-    if not route and not flag then
+    local route = iter_add_get_routes_info(routes, route_id)
+    if not route then
         return 404, {error_msg = str_format("route[%s] not found", route_id)}
     end
     return 200, route
@@ -229,7 +231,7 @@ return {
         uris = {"/routes"},
         handler = _M.dump_all_routes_info,
     },
-    --- /v1/route/{route_id}
+    --- /v1/
     {
         methods = {"GET"},
         uris = {"/route/*"},

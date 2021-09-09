@@ -55,18 +55,7 @@ routes:
     upstream:
       nodes:
         "127.0.0.1:1980": 1
-        "127.0.0.1:1988": 1
       type: roundrobin
-      checks:
-        active:
-            http_path: "/status"
-            host: "127.0.0.1"
-            healthy:
-                interval: 1
-                successes: 1
-            unhealthy:
-                interval: 1
-                http_failures: 1
 #END
 --- config
     location /t {
@@ -79,12 +68,13 @@ routes:
             if res[1] then
                 local data = {}
                 data.uris = res[1].value.uris
+                data.upstream = res[1].value.upstream
                 ngx.say(json.encode(data))
             end
         }
     }
 --- response_body
-{"uris":["/hello"]}
+{"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"},"uris":["/hello"]}
 
 
 
@@ -98,18 +88,7 @@ routes:
     upstream:
       nodes:
         "127.0.0.1:1980": 1
-        "127.0.0.1:1988": 1
       type: roundrobin
-      checks:
-        active:
-            http_path: "/status"
-            host: "127.0.0.1"
-            healthy:
-                interval: 1
-                successes: 1
-            unhealthy:
-                interval: 1
-                http_failures: 1
 #END
 --- config
     location /t {
@@ -122,12 +101,13 @@ routes:
             if res then
                 local data = {}
                 data.uris = res.value.uris
+                data.upstream = res.value.upstream
                 ngx.say(json.encode(data))
             end
         }
     }
 --- response_body
-{"uris":["/hello"]}
+{"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"},"uris":["/hello"]}
 
 
 
@@ -141,18 +121,7 @@ routes:
     upstream:
       nodes:
         "127.0.0.1:1980": 1
-        "127.0.0.1:1988": 1
       type: roundrobin
-      checks:
-        active:
-            http_path: "/status"
-            host: "127.0.0.1"
-            healthy:
-                interval: 1
-                successes: 1
-            unhealthy:
-                interval: 1
-                http_failures: 1
 #END
 --- config
     location /t {
