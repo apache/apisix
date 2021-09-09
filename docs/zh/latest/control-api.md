@@ -21,12 +21,12 @@ title: Control API
 #
 -->
 
-control API 可以被用来:
+control API 可以被用来：
 
 * 暴露 APISIX 内部状态信息
 * 控制单个 APISIX 的数据平面的行为
 
-默认情况下，control API是启用的，监听`127.0.0.1:9090`。你可以通过修改`apisix/conf/config.yaml`中的 control 部分来更改设置，如下：
+默认情况下，control API 是启用的，监听`127.0.0.1:9090`。你可以通过修改`apisix/conf/config.yaml`中的 control 部分来更改设置，如下：
 
 ```yaml
 apisix:
