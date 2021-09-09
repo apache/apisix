@@ -59,7 +59,7 @@ add_block_preprocessor(sub {
                 expires off;
                 add_header Cache-Control \$arg_cc;
             }
-            
+
             return 200 "hello world!";
         }
 
@@ -122,7 +122,7 @@ qr/failed to check the configuration of plugin proxy-cache err: property \\"cach
 
 
 
-=== TEST 2: sanity check (invalid cache_zone when specifing cache_strategy as memory)
+=== TEST 2: sanity check (invalid cache_zone when specifying cache_strategy as memory)
 --- config
        location /t {
            content_by_lua_block {
