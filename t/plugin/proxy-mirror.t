@@ -569,14 +569,15 @@ qr/uri: \/hello\?sample_ratio=1/
 
                if code == 200 then
                    -- reset count
-                   local code, body = t('/inc?action=reset', ngx.HTTP_GET)
-                   ngx.say(body)
+                   local status_code, count = t('/inc?action=reset', ngx.HTTP_GET)
+                   ngx.say("reset the mirror request count to " .. count)
 
                    for i = 1, 200 do
                        t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
-                       code, body = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
                    end
-                   local count = body - 200
+
+                   status_code, count = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
+                   count = count -1
                    assert(count >= 75 and count <= 125)
                    ngx.say("the mirror request count is " .. count)
                elseif code >= 300 then
