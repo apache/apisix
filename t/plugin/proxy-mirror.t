@@ -619,6 +619,7 @@ GET /t
 passed
 
 
+
 === TEST 18: send batch requests and get mirror stat count
 --- config
        location /t {
