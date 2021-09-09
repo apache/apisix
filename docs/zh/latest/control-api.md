@@ -1,0 +1,207 @@
+---
+title: Control API
+---
+
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+control API 可以被用来:
+
+* 暴露APISIX内部状态信息
+* 控制单个APISIX的数据平面的行为
+
+默认情况下,control API是启用的,监听`127.0.0.1:9090`.你可以通过修改`apisix/conf/config.yaml`中的control部分来更改设置,如下:
+
+```yaml
+apisix:
+  ...
+  enable_control: true
+  control:
+    ip: "127.0.0.1"
+    port: 9090
+```
+
+注意: control API server不应该被配置成监听公共流量(public traffic)
+
+## 通过插件添加的control API
+
+插件被启用时可以添加自己的control API.If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
+
+## 独立于插件的control API
+
+以下是支持的API:
+
+### GET /v1/schema
+
+引入自2.2版本
+
+以以下格式返回被该APISIX 实例使用的json schema:
+
+```json
+{
+    "main": {
+        "route": {
+            "properties": {...}
+        },
+        "upstream": {
+            "properties": {...}
+        },
+        ...
+    },
+    "plugins": {
+        "example-plugin": {
+            "consumer_schema": {...},
+            "metadata_schema": {...},
+            "schema": {...},
+            "type": ...,
+            "priority": 0,
+            "version": 0.1
+        },
+        ...
+    },
+    "stream-plugins": {
+        "mqtt-proxy": {
+            ...
+        },
+        ...
+    }
+}
+```
+
+返回结果中`plugins`部分,只有启用了的插件才会被包含在内.(返回结果中的)一些插件可能会缺失如`consumer_schema`或者`type`字段,这取决于插件的定义
+
+### GET /v1/healthcheck
+
+引入自2.3版本
+
+以以下格式返回当前的[health check](health-check.md)状态
+
+
+
+```json
+[
+    {
+        "healthy_nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "priority": 0,
+                "weight": 1
+            }
+        ],
+        "name": "upstream#/upstreams/1",
+        "nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "priority": 0,
+                "weight": 1
+            },
+            {
+                "host": "127.0.0.2",
+                "port": 1988,
+                "priority": 0,
+                "weight": 1
+            }
+        ],
+        "src_id": "1",
+        "src_type": "upstreams"
+    },
+    {
+        "healthy_nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "priority": 0,
+                "weight": 1
+            }
+        ],
+        "name": "upstream#/routes/1",
+        "nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "priority": 0,
+                "weight": 1
+            },
+            {
+                "host": "127.0.0.1",
+                "port": 1988,
+                "priority": 0,
+                "weight": 1
+            }
+        ],
+        "src_id": "1",
+        "src_type": "routes"
+    }
+]
+```
+
+每个entry包含以下字段:
+
+* src_type:表示health checker的来源.值是`routes,services,upstreams`其中之一
+* src_id:表示创建health checker的对象的id.例如,假设id为1的Upstream对象创建了一个health checker,那么`src_type`就是`upstreams`,`src_id`就是1
+* name: 表示health checker的名称
+* nodes: health checker的目标节点
+* healthy_nodes: 表示health checker检测到的健康节点
+
+用户也可以通过`/v1/healthcheck/$src_type/$src_id`来获取指定health checker的状态
+
+例如,`GET /v1/healthcheck/upstreams/1`返回:
+
+
+
+```json
+{
+    "healthy_nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1980,
+            "priority": 0,
+            "weight": 1
+        }
+    ],
+    "name": "upstream#/upstreams/1",
+    "nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1980,
+            "priority": 0,
+            "weight": 1
+        },
+        {
+            "host": "127.0.0.2",
+            "port": 1988,
+            "priority": 0,
+            "weight": 1
+        }
+    ],
+    "src_id": "1",
+    "src_type": "upstreams"
+}
+```
+
+### POST /v1/gc
+
+引入自2.8版本
+
+在http子系统中触发一次完整的GC
+
+注意,当你启用stream proxy时,APISIX将为stream子系统运行另一个Lua 虚拟机.不会触发这个Lua虚拟机中的完整GC
+
