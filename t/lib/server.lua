@@ -426,11 +426,11 @@ function _M._well_known_openid_configuration()
 end
 
 
-function _M.inc()
+function _M.stat_count()
     local action = ngx.var.arg_action
     if action == "reset" then
         count = 0
-    else
+    elseif action == "inc" then
         count = count + 1
     end
     ngx.print(count)

@@ -21,7 +21,6 @@ no_long_string();
 no_shuffle();
 no_root_location();
 log_level('info');
-worker_connections(1024);
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -35,7 +34,7 @@ add_block_preprocessor(sub {
         location / {
             content_by_lua_block {
                 local core = require("apisix.core")
-                local t = require("lib.test_admin").test
+                local http = require("resty.http")
 
                 core.log.info("upstream_http_version: ", ngx.req.http_version())
 
@@ -53,7 +52,14 @@ add_block_preprocessor(sub {
                 core.log.info("uri: ", ngx.var.request_uri)
                 ngx.say("hello world")
 
-                t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
+                local httpc = http.new()
+                local url = "http://127.0.0.1:1980/stat_count?action=inc"
+                local res, err = httpc:request_uri(url, {method = "GET"})
+                if not res then
+                    core.log.error(err)
+                else
+                    core.log.info("currently stat count is ", res.body)
+                end
             }
         }
     }
@@ -547,6 +553,8 @@ qr/uri: \/hello\?sample_ratio=1/
 --- config
        location /t {
            content_by_lua_block {
+                local http = require("resty.http")
+               local core = require("apisix.core")
                local t = require("lib.test_admin").test
                local code, body = t('/apisix/admin/routes/1',
                     ngx.HTTP_PUT,
@@ -568,18 +576,31 @@ qr/uri: \/hello\?sample_ratio=1/
                    )
 
                if code == 200 then
-                   -- reset count
-                   local status_code, count = t('/inc?action=reset', ngx.HTTP_GET)
-                   ngx.say("reset the mirror request count to " .. count)
+                    -- reset count
+                    local count = 0
+                    local httpc = http.new()
+                    local url = "http://127.0.0.1:1980/stat_count?action=reset"
+                    local res, err = httpc:request_uri(url, {method = "GET"})
+                    if not res then
+                        core.log.error(err)
+                    else
+                        core.log.info("reset the mirror request stat count to " .. res.body)
+                        count = res.body
+                    end
 
                    for i = 1, 200 do
                        t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
                    end
 
-                   status_code, count = t('/inc?sample_ratio=0.5', ngx.HTTP_GET)
-                   count = count -1
+                    url = "http://127.0.0.1:1980/stat_count"
+                    res, err = httpc:request_uri(url, {method = "GET"})
+                    if not res then
+                        core.log.error(err)
+                    else
+                        core.log.info("the mirror request stat count is " .. res.body)
+                        count = res.body
+                    end
                    assert(count >= 75 and count <= 125)
-                   ngx.say("the mirror request count is " .. count)
                elseif code >= 300 then
                    ngx.status = code
                end
