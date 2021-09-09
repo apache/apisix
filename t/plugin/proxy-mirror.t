@@ -38,7 +38,7 @@ add_block_preprocessor(sub {
                 local http = require("resty.http")
 
                 local httpc = http.new()
-                local url = "http://127.0.0.1:9080/stat_count?action=inc"
+                local url = "http://127.0.0.1:1984/stat_count?action=inc"
                 local res, err = httpc:request_uri(url, {method = "GET"})
                 if not res then
                     core.log.error(err)
@@ -633,14 +633,14 @@ passed
                 end
 
                 -- send batch requests
-                local t = {}
+                local tb = {}
                 for i = 1, 200 do
                     local th = assert(ngx.thread.spawn(function(i)
                         t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
                     end, i))
-                    table.insert(t, th)
+                    table.insert(tb, th)
                 end
-                for i, th in ipairs(t) do
+                for i, th in ipairs(tb) do
                     ngx.thread.wait(th)
                 end
 
@@ -650,7 +650,7 @@ passed
                    ngx.status = code
                 end
 
-                assert(count >= 75 and count <= 125)
+                assert(count >= 75 and count <= 125, "mirror request count not in [75, 125]")
            }
        }
 --- request
