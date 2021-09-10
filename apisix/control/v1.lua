@@ -164,6 +164,7 @@ local function iter_add_get_routes_info(values, route_id)
             new_route.value.upstream.parent = nil
         end
         core.table.insert(infos, new_route)
+        -- check the roude id
         if route_id and route.value.id == route_id then
             return new_route
         end
