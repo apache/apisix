@@ -35,17 +35,6 @@ add_block_preprocessor(sub {
         location / {
             content_by_lua_block {
                 local core = require("apisix.core")
-                local http = require("resty.http")
-
-                local httpc = http.new()
-                local url = "http://127.0.0.1:1980/stat_count?action=inc"
-                local res, err = httpc:request_uri(url, {method = "GET"})
-                if not res then
-                    core.log.error(err)
-                else
-                    core.log.info("currently mirror request stat count is ", res.body)
-                end
-
                 core.log.info("upstream_http_version: ", ngx.req.http_version())
 
                 local headers_tab = ngx.req.get_headers()
@@ -593,7 +582,6 @@ passed
        location /t {
            content_by_lua_block {
                 local t = require("lib.test_admin").test
-                local http = require("resty.http")
 
                 -- send batch requests
                 local tb = {}
@@ -606,23 +594,6 @@ passed
                 for i, th in ipairs(tb) do
                     ngx.thread.wait(th)
                 end
-
-                -- get mirror stat count
-                local httpc = http.new()
-                local url = "http://127.0.0.1:1980/stat_count"
-                local res, err = httpc:request_uri(url)
-                if not res then
-                    ngx.log(ngx.ERR, err)
-                    ngx.exit(503)
-                    return
-                end
-                if res.status >= 300 then
-                   ngx.status = res.status
-                   return
-                end
-                local count = tonumber(res.body)
-
-                assert(count >= 75 and count <= 125, "mirror request count " .. count .. " not in [75, 125]")
            }
        }
 --- request
