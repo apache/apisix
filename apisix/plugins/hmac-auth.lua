@@ -29,13 +29,16 @@ local hmac       = require("resty.hmac")
 local consumer   = require("apisix.consumer")
 local plugin     = require("apisix.plugin")
 local ngx_decode_base64 = ngx.decode_base64
+local ngx_encode_base64 = ngx.encode_base64
 
+local DIGEST = "digest"
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local DATE_KEY = "Date"
 local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
 local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
+local MAX_REQ_BODY = 1024 * 512
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -79,7 +82,17 @@ local consumer_schema = {
             type = "boolean",
             title = "Whether to escape the uri parameter",
             default = true,
-        }
+        },
+        validate_request_body = {
+            type = "boolean",
+            title = "A boolean value telling the plugin to enable body validation.",
+            default = false,
+        },
+        max_req_body = {
+            type = "number",
+            title = "Max request body allowed",
+            default = MAX_REQ_BODY,
+        },
     },
     required = {"access_key", "secret_key"},
 }
@@ -193,6 +206,19 @@ local function do_nothing(v)
     return v
 end
 
+local function validate_body(ctx, secret_key, params, req_body)
+    if not req_body then
+        req_body = ""
+    end
+    local digest_header = core.request.header(ctx, DIGEST)
+    if not digest_header then
+        -- it's ok if there is no digest header and no body
+        return req_body == ""
+    end
+
+    local request_body_hash = ngx_encode_base64(hmac_funcs[params.algorithm](secret_key, req_body))
+    return request_body_hash == digest_header
+end
 
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
@@ -325,6 +351,18 @@ local function validate(ctx, params)
 
     if request_signature ~= generated_signature then
         return nil, {message = "Invalid signature"}
+    end
+
+    local validate_request_body = get_conf_field(params.access_key, "validate_request_body")
+    if validate_request_body then
+        local max_req_body = get_conf_field(params.access_key, "max_req_body")
+        local req_body, err = core.request.get_body(max_req_body, ctx)
+        if err then
+            return nil, {message = "Exceed body limit size"}
+        end
+        if not validate_body(ctx, secret_key, params, req_body) then
+            return nil, {message = "Invalid digest"}
+        end
     end
 
     return consumer
