@@ -600,11 +600,13 @@ passed
                 for i = 1, 200 do
                     local th = assert(ngx.thread.spawn(function(i)
                         t('/hello?sample_ratio=0.5', ngx.HTTP_GET)
+                        ngx.log(ngx.WARN, i, " is done")
                     end, i))
                     table.insert(tb, th)
                 end
                 for i, th in ipairs(tb) do
                     ngx.thread.wait(th)
+                    ngx.log(ngx.WARN, i, " is waited")
                 end
 
                 -- get mirror stat count
@@ -623,11 +625,13 @@ passed
                 local count = tonumber(res.body)
 
                 assert(count >= 75 and count <= 125, "mirror request count " .. count .. " not in [75, 125]")
+                ngx.log(ngx.ERR, count)
            }
        }
 --- request
 GET /t
 --- no_error_log
 [error]
+--- ONLY
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
