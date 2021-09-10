@@ -632,6 +632,5 @@ passed
 GET /t
 --- no_error_log
 [error]
---- ONLY
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
