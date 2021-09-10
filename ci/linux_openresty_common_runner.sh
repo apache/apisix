@@ -116,7 +116,7 @@ apisix:
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     #FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t/plugin/proxy-mirror.t
+    FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t/plugin/proxy-mirror.t || true
     cat t/servroot/logs/error.log
     cat t/servroot/logs/access.log
 }

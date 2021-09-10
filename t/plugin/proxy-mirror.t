@@ -21,7 +21,7 @@ no_long_string();
 no_shuffle();
 no_root_location();
 log_level('info');
-worker_connections(1024);
+worker_connections(2048);
 
 add_block_preprocessor(sub {
     my ($block) = @_;
