@@ -43,7 +43,8 @@ Note that the control API server should not be configured to listen to the publi
 ## Control API Added via plugin
 
 Plugin can add its control API when it is enabled.
-If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
+Some plugins in APISIX have added their own control APIs. If you are interested in these APIs,
+please refer to their documentation.
 
 ## Plugin independent Control API
 

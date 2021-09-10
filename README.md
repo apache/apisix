@@ -43,7 +43,7 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 578997126
-- [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg) - join `#apisix` on our Slack to meet the team and ask questions
+- Slack Workspace - Please [subscribe the mailing list](https://apisix.apache.org/docs/general/subscribe-guide) then ask for invitation link
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
@@ -55,6 +55,7 @@ The technical architecture of Apache APISIX:
   - [Apache APISIX® Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX® Java Plugin Runner](https://github.com/apache/apisix-java-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
   - [Apache APISIX® Go Plugin Runner](https://github.com/apache/apisix-go-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Python Plugin Runner](https://github.com/apache/apisix-python-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -123,9 +124,9 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
   - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
   - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
-  - works with external service discovery：In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
+  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
-  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
+  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
@@ -140,7 +141,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
-  - [Plugin can be writtern in Java/Go](docs/en/latest/external-plugin.md)
+  - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 

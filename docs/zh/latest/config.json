@@ -147,8 +147,14 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
         },
         {
           "type": "doc",
