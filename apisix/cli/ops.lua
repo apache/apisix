@@ -752,7 +752,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     if sys_conf["http"]["lua_shared_dicts"] then
         stderr:write("lua_shared_dicts is deprecated, " ..
-                     "custom_lua_shared_dict instead\n")
+                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()
