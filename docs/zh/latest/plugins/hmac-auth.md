@@ -52,7 +52,7 @@ title: hmac-auth
 | keep_headers     | boolean       | 可选   | false         | [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。              |
 | encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 | validate_request_body | boolean  | 可选   | false         | [ true, false ]                             | 是否对请求 body 做签名校验 |
-| max_req_body          | number   | 可选   | 512KB         |                                             | 最大允许的 body 大小 |
+| max_req_body     | number        | 可选   | 512KB         |                                             | 最大允许的 body 大小 |
 
 ## 如何启用
 
