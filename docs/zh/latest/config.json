@@ -148,6 +148,7 @@
           "label": "Discovery",
           "items": [
             "discovery",
+            "discovery/dns",
             "discovery/nacos",
             "discovery/eureka"
           ]
