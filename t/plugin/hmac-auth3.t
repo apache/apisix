@@ -82,7 +82,39 @@ passed
 
 
 
-=== TEST 2: missing body digest when validate_request_body is true
+=== TEST 2: enable hmac auth plugin using admin api
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: missing body digest when validate_request_body is true
 --- config
     location /t {
         content_by_lua_block {
@@ -142,7 +174,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 3: missing digest header and body is empty
+=== TEST 4: missing digest header and body is empty
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +235,7 @@ passed
 
 
 
-=== TEST 4: digest header with empty string and body is empty
+=== TEST 5: digest header with empty string and body is empty
 --- config
     location /t {
         content_by_lua_block {
@@ -262,7 +294,7 @@ passed
 
 
 
-=== TEST 5: verify body digest: not ok
+=== TEST 6: verify body digest: not ok
 --- config
     location /t {
         content_by_lua_block {
@@ -323,7 +355,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 6: verify body digest: ok
+=== TEST 7: verify body digest: ok
 --- config
     location /t {
         content_by_lua_block {
@@ -384,7 +416,7 @@ passed
 
 
 
-=== TEST 7: add consumer with max_req_body
+=== TEST 8: add consumer with max_req_body
 --- config
     location /t {
         content_by_lua_block {
@@ -430,7 +462,7 @@ passed
 
 
 
-=== TEST 8: Exceed body limit size
+=== TEST 9: Exceed body limit size
 --- config
     location /t {
         content_by_lua_block {
