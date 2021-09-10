@@ -38,7 +38,7 @@ add_block_preprocessor(sub {
                 local http = require("resty.http")
 
                 local httpc = http.new()
-                local url = "http://127.0.0.1:1984/stat_count?action=inc"
+                local url = "http://127.0.0.1:1980/stat_count?action=inc"
                 local res, err = httpc:request_uri(url, {method = "GET"})
                 if not res then
                     core.log.error(err)
@@ -588,46 +588,14 @@ passed
 
 
 
-=== TEST 17: set route(stat_count)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/2',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/stat_count"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 200
---- response_body
-passed
-
-
-
-=== TEST 18: send batch requests and get mirror stat count
+=== TEST 17: send batch requests and get mirror stat count
 --- config
        location /t {
            content_by_lua_block {
                 local t = require("lib.test_admin").test
 
                 -- reset count
-                local code, count = t('/stat_count?action=reset', ngx.HTTP_GET)
+                local code, _, count = t('/stat_count?action=reset', ngx.HTTP_GET)
                 if code >= 300 then
                    ngx.status = code
                 end
@@ -645,10 +613,12 @@ passed
                 end
 
                 -- get mirror stat count
-                code, count = t('/stat_count', ngx.HTTP_GET)
+                local code, _, count = t('/stat_count', ngx.HTTP_GET)
                 if code >= 300 then
                    ngx.status = code
+                   return
                 end
+                count = tonumber(count)
 
                 assert(count >= 75 and count <= 125, "mirror request count not in [75, 125]")
            }
@@ -657,4 +627,3 @@ passed
 GET /t
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
---- timeout: 60
