@@ -205,3 +205,81 @@ Introduced since `v2.8`.
 
 Trigger a full GC in the http subsystem.
 Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
+
+### Get /v1/routes
+
+Introduced since `v3.0`.
+
+Return all routes info in the format below:
+
+```json
+[
+  {
+    "update_count": 0,
+    "value": {
+      "priority": 0,
+      "uris": [
+        "/hello"
+      ],
+      "id": "1",
+      "upstream": {
+        "scheme": "http",
+        "pass_host": "pass",
+        "nodes": [
+          {
+            "port": 1980,
+            "host": "127.0.0.1",
+            "weight": 1
+          }
+        ],
+        "type": "roundrobin",
+        "hash_on": "vars"
+      },
+      "status": 1
+    },
+    "clean_handlers": {},
+    "has_domain": false,
+    "orig_modifiedIndex": 1631193445,
+    "modifiedIndex": 1631193445,
+    "key": "/routes/1"
+  }
+]
+```
+
+### Get /v1/route/{route_id}
+
+Introduced since `v3.0`.
+
+Return specific route info with **route_id** in the format below:
+
+```json
+{
+  "update_count": 0,
+  "value": {
+    "priority": 0,
+    "uris": [
+      "/hello"
+    ],
+    "id": "1",
+    "upstream": {
+      "scheme": "http",
+      "pass_host": "pass",
+      "nodes": [
+        {
+          "port": 1980,
+          "host": "127.0.0.1",
+          "weight": 1
+        }
+      ],
+      "type": "roundrobin",
+      "hash_on": "vars"
+    },
+    "status": 1
+  },
+  "clean_handlers": {},
+  "has_domain": false,
+  "orig_modifiedIndex": 1631193445,
+  "modifiedIndex": 1631193445,
+  "key": "/routes/1"
+}
+```
