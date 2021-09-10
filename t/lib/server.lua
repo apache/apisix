@@ -18,6 +18,7 @@ local json_decode = require("toolkit.json").decode
 local json_encode = require("toolkit.json").encode
 
 local _M = {}
+local count = 0
 
 
 local function inject_headers()
@@ -425,18 +426,14 @@ function _M._well_known_openid_configuration()
 end
 
 
-do
-    local count = 0
-
-    function _M.stat_count()
-        local action = ngx.var.arg_action
-        if action == "reset" then
-            count = 0
-        elseif action == "inc" then
-            count = count + 1
-        end
-        ngx.print(count)
+function _M.stat_count()
+    local action = ngx.var.arg_action
+    if action == "reset" then
+        count = 0
+    elseif action == "inc" then
+        count = count + 1
     end
+    ngx.print(count)
 end
 
 
