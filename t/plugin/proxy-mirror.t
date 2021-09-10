@@ -622,10 +622,12 @@ passed
                 end
                 local count = tonumber(res.body)
 
-                assert(count >= 75 and count <= 125, "mirror request count not in [75, 125]")
+                assert(count >= 75 and count <= 125, "mirror request count " .. count .. " not in [75, 125]")
            }
        }
 --- request
 GET /t
+--- no_error_log
+[error]
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
