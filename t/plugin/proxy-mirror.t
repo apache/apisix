@@ -593,12 +593,7 @@ passed
        location /t {
            content_by_lua_block {
                 local t = require("lib.test_admin").test
-
-                -- reset count
-                local code, _, count = t('/stat_count?action=reset', ngx.HTTP_GET)
-                if code >= 300 then
-                   ngx.status = code
-                end
+                local http = require("resty.http")
 
                 -- send batch requests
                 local tb = {}
@@ -613,12 +608,19 @@ passed
                 end
 
                 -- get mirror stat count
-                local code, _, count = t('/stat_count', ngx.HTTP_GET)
-                if code >= 300 then
-                   ngx.status = code
+                local httpc = http.new()
+                local url = "http://127.0.0.1:1980/stat_count"
+                local res, err = httpc:request_uri(url)
+                if not res then
+                    ngx.log(ngx.ERR, err)
+                    ngx.exit(503)
+                    return
+                end
+                if res.status >= 300 then
+                   ngx.status = res.status
                    return
                 end
-                count = tonumber(count)
+                local count = tonumber(res.body)
 
                 assert(count >= 75 and count <= 125, "mirror request count not in [75, 125]")
            }
