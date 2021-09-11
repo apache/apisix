@@ -147,6 +147,9 @@ local function set_upstream_scheme(ctx, upstream)
             ctx.upstream_scheme = ctx.var["scheme"] or "http"
         end
     end
+    core.log.info(ctx.var["scheme"])
+    core.log.info(ctx.upstream_scheme)
+
 
     ctx.var["upstream_scheme"] = ctx.upstream_scheme
 end

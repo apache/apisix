@@ -318,14 +318,14 @@ _M.resolve_var = resolve_var
 
 local scheme_to_port 
 do
-    local scheme_to_port = {
+    local scheme_to_port_map = {
         http = 80,
         https = 443,
         grpc = 80,
         grpcs = 443,
     }
     function scheme_to_port(scheme)
-        return scheme_to_port[scheme] or 80
+        return scheme_to_port_map[scheme] or 80
     end
 end
 -- Get Default Port By Scheme
