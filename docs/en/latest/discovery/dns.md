@@ -66,7 +66,9 @@ and `test.consul.service` be resolved as `1.1.1.1` and `1.1.1.2`, this result wi
 
 Note that all the IPs from `test.consul.service` share the same weight.
 
-If a service has both A and AAAA records, A record is preferred.
+The resolved records will be cached according to their TTL.
+For service whose record is not in the cache, we will query it in the order of `SRV -> A -> AAAA -> CNAME`.
+When we refresh the cache record, we will try from the last previously successful type.
 
 If you want to specify the port for the upstream server, you can add it to the `service_name`:
 
