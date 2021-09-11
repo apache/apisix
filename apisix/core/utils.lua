@@ -316,7 +316,7 @@ end
 -- Resolve ngx.var in the given string
 _M.resolve_var = resolve_var
 
-local scheme_to_port 
+local scheme_to_port
 do
     local scheme_to_port_map = {
         http = 80,

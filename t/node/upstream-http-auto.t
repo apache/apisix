@@ -57,6 +57,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 2: set ssl
 --- config
     location /t {
@@ -88,6 +90,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 3： http get
 --- request
 GET /get
@@ -95,6 +99,8 @@ GET /get
 qr/"url": "http:\/\//
 --- no_error_log
 [error]
+
+
 
 === TEST 4： https get
 --- config
