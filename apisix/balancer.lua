@@ -328,6 +328,12 @@ function _M.run(route, ctx, plugin_funcs)
         end
     end
 
+    -- scheme is http_auto, need dynamic get port
+    local scheme = ctx.matched_upstream.scheme  or "http"
+    if scheme == "http_auto" and (server.port == 80 and server.prot == 443) then
+        server.port = core.utils.scheme_to_port[ctx.upstream_scheme]
+    end
+
     core.log.info("proxy request to ", server.host, ":", server.port)
 
     local ok, err = set_current_peer(server, ctx)

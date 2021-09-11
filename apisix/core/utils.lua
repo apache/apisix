@@ -316,5 +316,19 @@ end
 -- Resolve ngx.var in the given string
 _M.resolve_var = resolve_var
 
+local scheme_to_port 
+do
+    local scheme_to_port = {
+        http = 80,
+        https = 443,
+        grpc = 80,
+        grpcs = 443,
+    }
+    function scheme_to_port(scheme)
+        return scheme_to_port[scheme] or 80
+    end
+end
+-- Get Default Port By Scheme
+_M.scheme_to_port = scheme_to_port
 
 return _M
