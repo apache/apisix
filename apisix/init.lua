@@ -30,7 +30,6 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
-local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -44,6 +43,7 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local control_api_router
+local debug
 
 local is_http = false
 if ngx.config.subsystem == "http" then
@@ -354,6 +354,7 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
+    debug = require("apisix.debug")
     debug.dynamic_enable(core.request.headers(api_ctx))
 
     local uri = api_ctx.var.uri
@@ -707,6 +708,7 @@ function _M.http_log_phase()
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
 
+    debug = require("apisix.debug")
     debug.dynamic_disable()
 
     core.tablepool.release("api_ctx", api_ctx)
