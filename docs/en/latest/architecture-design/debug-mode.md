@@ -77,46 +77,24 @@ hook_phase: # Module Function List, Name: hook_phase
 #END
 ```
 
-### Dynamic Debug Mode
+### Dynamic Advanced Debug Mode
 
-Dynamic debug mode can be enabled or disabled dynamically via `/v1/advance_debug` in the [Control API](../control-api.md), with the same configuration parameters and debugging effects as advanced debug mode.
+Dynamic advanced debug mode is based on advanced debug mode, which can be enabled dynamically by a single request and turned off automatically when the request ends.
 
 Example:
 
-- enable
+```yaml
+http:
+  dynamic: true # 是否动态开启高级调试模式
+  enable_header_name: X-APISIX-Dynamic-Debug # 对携带此 header 的请求开启高级调试模式
+......
+#END
+```
 
-    ```shell
-    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
-    '{
-        "enable": true,
-        "is_print_input_args": true,
-        "is_print_return_value": true,
-        "log_level":"warn",
-        "name":"hook_phase",
-        "hook_phase":{
-            "apisix":[
-                "http_access_phase",
-                "http_header_filter_phase"
-            ]
-        }
-    }'
-    ```
+Dynamically enable advanced debugging mode, example:
 
-- disable
+```shell
+curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
+```
 
-    ```shell
-    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
-    '{
-        "enable": false,
-        "is_print_input_args": true,
-        "is_print_return_value": true,
-        "log_level":"warn",
-        "name":"hook_phase",
-        "hook_phase":{
-            "apisix":[
-                "http_access_phase",
-                "http_header_filter_phase"
-            ]
-        }
-    }'
-    ```
+Notice: Dynamic advanced debug mode cannot debug the `apisix.http_access_phase` module (because the request enters the `apisix.http_access_phase` module before it determines whether advanced debug mode is dynamically enabled).

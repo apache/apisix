@@ -204,9 +204,3 @@ Introduced since `v2.8`.
 
 Trigger a full GC in the http subsystem.
 Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
-
-### POST /v1/advance_debug
-
-Introduced since `v3.0`.
-
-Dynamically enable or disable the advanced debug mode, see [Dynamic Debug Mode](./architecture-design/debug-mode.md#dynamic-debug-mode) for more information.

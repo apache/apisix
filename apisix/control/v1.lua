@@ -24,9 +24,7 @@ local collectgarbage = collectgarbage
 local ipairs = ipairs
 local str_format = string.format
 local ngx_var = ngx.var
-local req_read_body = ngx.req.read_body
-local req_get_body_data = ngx.req.get_body_data
-local ngx_shared = ngx.shared
+
 
 local _M = {}
 
@@ -166,36 +164,6 @@ function _M.trigger_gc()
 end
 
 
-function _M.advance_debug()
-    local dict = ngx_shared["dynamic-debug"]
-    if not dict then
-        core.log.warn("shared dict dynamic_debug_dict not defined")
-        return 400
-    end
-
-    req_read_body()
-    local body = req_get_body_data()
-
-    local data, err
-    if body then
-        data, err = core.json.decode(body)
-        if err then
-            core.log.warn("failed to decode the req body, err: ", err)
-            return 400
-        end
-    end
-
-    local dynamic_debug_data = "dynamic-debug"
-    if not data[data.name] or core.table.nkeys(data[data.name]) == 0 then
-        core.log.warn("no module and function list to hook")
-        return 400
-    end
-
-    local data_str = core.json.encode(data)
-    dict:set(dynamic_debug_data, data_str)
-end
-
-
 return {
     -- /v1/schema
     {
@@ -220,11 +188,5 @@ return {
         methods = {"POST"},
         uris = {"/gc"},
         handler = _M.trigger_gc,
-    },
-    -- /v1/advance_debug
-    {
-        methods = {"POST"},
-        uris = {"/advance_debug"},
-        handler = _M.advance_debug,
     },
 }

@@ -20,7 +20,6 @@ repeat_each(1);
 log_level('info');
 no_root_location();
 no_shuffle();
-workers(4);
 
 sub read_file($) {
     my $infile = shift;
@@ -32,6 +31,7 @@ sub read_file($) {
 }
 
 our $debug_config = read_file("conf/debug.yaml");
+$debug_config =~ s/dynamic: false/dynamic: true/;
 
 run_tests();
 
@@ -43,31 +43,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/v1/advance_debug',
-                ngx.HTTP_POST,
-                [[{
-                    "enable": true,
-                    "is_print_input_args": true,
-                    "is_print_return_value": true,
-                    "log_level":"warn",
-                    "name":"hook_phase",
-                    "hook_phase": {
-                        "apisix": [
-                            "http_access_phase",
-                            "http_header_filter_phase"
-                        ]
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            ngx.sleep(1.1) -- wait for debug timer start
-
-            code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/hello",
@@ -87,15 +63,82 @@ __DATA__
 
             ngx.sleep(0.6) -- wait for sync
 
-            local code, err, org_body = t('/hello')
-            if code > 300 then
-                ngx.log(ngx.ERR, err)
+            local headers = {}
+            headers["X-APISIX-Dynamic-Debug"] = ""
+            local code, body = t('/hello',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- wait: 2
+--- timeout: 4
+--- response_body
+passed
+--- error_log
+call require("apisix").http_header_filter_phase() args:{}
+call require("apisix").http_header_filter_phase() return:{}
+call require("apisix").http_body_filter_phase() args:{}
+call require("apisix").http_body_filter_phase() return:{}
+call require("apisix").http_log_phase() args:{}
+call require("apisix").http_log_phase() return:{}
+--- no_error_log
+call require("apisix").http_access_phase() args:{}
+call require("apisix").http_access_phase() return:{}
+
+
+
+=== TEST 2: dynamic enable by per request and disable after handle request
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello","/hello1"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
                 return
             end
 
-            ngx.sleep(1.1) -- wait for debug timer exec
+            ngx.sleep(0.6) -- wait for sync
 
-            ngx.print(org_body)
+            local headers = {}
+            headers["X-APISIX-Dynamic-Debug"] = ""  -- has the header name of dynamic debug
+            local code, body = t('/hello1',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code, body = t('/hello') -- has no the header name of dynamic debug
+
+            ngx.sleep(1.1)
+            ngx.status = code
+            ngx.say(body)
         }
     }
 --- request
@@ -103,110 +146,31 @@ GET /t
 --- wait: 3
 --- timeout: 5
 --- response_body
-hello world
---- error_log
-call require("apisix").http_access_phase() args:{}
-call require("apisix").http_access_phase() return:{}
-call require("apisix").http_header_filter_phase() args:{}
-call require("apisix").http_header_filter_phase() return:{}
---- no_error_log
-call require("apisix").http_body_filter_phase() args:{}
-call require("apisix").http_body_filter_phase() return:{}
-call require("apisix").http_log_phase() args:{}
-call require("apisix").http_log_phase() return:{}
+passed
+--- error_log eval
+[qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
+--- no_error_log eval
+[qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/]
 
 
 
-=== TEST 2: no module and function list to hook
+=== TEST 3: error dynamic enable header
 --- debug_config eval: $::debug_config
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/v1/advance_debug',
-                ngx.HTTP_POST,
-                [[{
-                    "dynamic_enable":true,
-                    "is_print_input_args":true,
-                    "is_print_return_value":true,
-                    "log_level":"warn",
-                    "name":"hook_phase",
-                    "hook_phase": {
-                    }
-                }]]
-            )
-            ngx.status = code
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- ignore_response_body
---- error_log
-no module and function list to hook
---- no_error_log
-[error]
-
-
-
-=== TEST 3: dynamic disable
---- debug_config eval: $::debug_config
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/v1/advance_debug',
-                ngx.HTTP_POST,
-                [[{
-                    "enable": true,
-                    "is_print_input_args": true,
-                    "is_print_return_value": true,
-                    "log_level":"warn",
-                    "name":"hook_phase",
-                    "hook_phase": {
-                        "apisix": [
-                            "http_access_phase",
-                            "http_header_filter_phase"
-                        ]
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            ngx.sleep(1.1) -- wait for debug timer start
-
-            code, body = t('/v1/advance_debug',
-                ngx.HTTP_POST,
-                [[{
-                    "enable": false,
-                    "is_print_input_args": true,
-                    "is_print_return_value": true,
-                    "log_level":"warn",
-                    "name":"hook_phase",
-                    "hook_phase": {
-                        "apisix": [
-                            "http_access_phase",
-                            "http_header_filter_phase"
-                        ]
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            ngx.sleep(1.1) -- wait for debug timer exec
-
-            for i = 1, 8 do
-
-            end
-            code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/hello",
@@ -226,64 +190,56 @@ no module and function list to hook
 
             ngx.sleep(0.6) -- wait for sync
 
-            local code, err, org_body
-            for i = 1, 4 do
-                code, err, org_body = t('/hello')
-                if code > 300 then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
-            end
-
-            ngx.sleep(1.1) -- wait for debug timer exec
-
-            ngx.print(org_body)
+            local headers = {}
+            headers["X-APISIX-Dynamic-Error"] = ""
+            local code, body = t('/hello',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
+            ngx.status = code
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- wait: 5
---- timeout: 7
+--- wait: 2
+--- timeout: 4
 --- response_body
-hello world
+passed
 --- no_error_log
-call require("apisix").http_access_phase() args:{}
-call require("apisix").http_access_phase() return:{}
 call require("apisix").http_header_filter_phase() args:{}
 call require("apisix").http_header_filter_phase() return:{}
+call require("apisix").http_body_filter_phase() args:{}
+call require("apisix").http_body_filter_phase() return:{}
+call require("apisix").http_log_phase() args:{}
+call require("apisix").http_log_phase() return:{}
 
 
 
-=== TEST 4: dynamic enable for plugin filter
---- debug_config eval: $::debug_config
+=== TEST 4: plugin filter log
+--- debug_config
+http:
+  dynamic_enable: true         # enable or disable this feature
+  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
+hook_conf:
+  enable: true                  # enable or disable this feature
+  name: hook_test               # the name of module and function list
+  log_level: warn               # log level
+  is_print_input_args: true     # print the input arguments
+  is_print_return_value: true   # print the return value
+
+hook_test:                      # module and function list, name: hook_test
+    apisix.plugin:              # required module name
+    - filter                    # function name
+
+#END
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/v1/advance_debug',
-                ngx.HTTP_POST,
-                [[{
-                    "enable": true,
-                    "is_print_input_args": true,
-                    "is_print_return_value": true,
-                    "log_level":"warn",
-                    "name":"hook_phase",
-                    "hook_phase": {
-                        "apisix.plugin": [
-                            "filter"
-                        ]
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            ngx.sleep(1.1) -- wait for debug timer start
-
-            code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/hello",
@@ -294,6 +250,12 @@ call require("apisix").http_header_filter_phase() return:{}
                             "rejected_code": 503,
                             "key": "remote_addr"
                         }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
                     },
                     "upstream": {
                         "nodes": {
@@ -311,23 +273,26 @@ call require("apisix").http_header_filter_phase() return:{}
 
             ngx.sleep(0.6) -- wait for sync
 
-            local code, err, org_body = t('/hello')
-            if code > 300 then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local headers = {}
+            headers["X-APISIX-Dynamic-Debug"] = ""  -- has the header name of dynamic debug
+            local code, body = t('/hello',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
 
-            ngx.sleep(1.1) -- wait for debug timer exec
-
-            ngx.print(org_body)
+            ngx.sleep(1.1)
+            ngx.status = code
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- wait: 4
---- timeout: 5
+--- wait: 2
+--- timeout: 3
 --- response_body
-hello world
+passed
 --- no_error_log
 [error]
 --- error_log

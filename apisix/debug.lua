@@ -30,47 +30,12 @@ local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
 local inspect      = require "inspect"
-local ngx_shared   = ngx.shared
-local json_decode  = require("apisix.core.json").decode
 local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
 
 
 local _M = {version = 0.1}
-
-
-local function dynamic()
-    local dict = ngx_shared["dynamic-debug"]
-    if not dict then
-        return nil
-    end
-
-    local dynamic_debug_data = "dynamic-debug"
-    local data_str = dict:get(dynamic_debug_data)
-    if not data_str then
-        return nil
-    end
-
-    local data, err = json_decode(data_str)
-    if err then
-        log.warn("failed to decode the data string, err: ", err)
-        return nil
-    end
-
-    local hook_conf = debug_yaml.hook_conf
-    hook_conf.enable = data.enable
-    hook_conf.is_print_input_args = data.is_print_input_args
-    hook_conf.is_print_return_value = data.is_print_return_value
-    hook_conf.log_level = data.log_level
-    hook_conf.name = data.name
-
-    for k, v in pairs(data[data.name]) do
-        debug_yaml[data.name][k] = v
-    end
-    debug_yaml_ctime = ngx.time()
-    return true
-end
 
 
 local function read_debug_yaml()
@@ -83,9 +48,6 @@ local function read_debug_yaml()
     -- log.info("change: ", json.encode(attributes))
     local last_change_time = attributes.change
     if debug_yaml_ctime == last_change_time then
-        if dynamic() then
-            return
-        end
         return
     end
 
@@ -186,7 +148,9 @@ end
 
 function sync_debug_hooks()
     if not debug_yaml_ctime or debug_yaml_ctime == pre_mtime then
-        return
+        if not (debug_yaml and debug_yaml.http and debug_yaml.http.dynamic) then
+            return
+        end
     end
 
     for _, hook in pairs(enabled_hooks) do
@@ -234,6 +198,45 @@ local function sync_debug_status(premature)
     end
 
     read_debug_yaml()
+    sync_debug_hooks()
+end
+
+
+local function check()
+    if not debug_yaml or not debug_yaml.http then
+        return false
+    end
+
+    local http = debug_yaml.http
+    if not http or not http.enable_header_name or not http.dynamic then
+        return false
+    end
+
+    return true
+end
+
+function _M.dynamic_enable(headers)
+    if not check() then
+        return
+    end
+
+    if not headers or type(headers) ~= "table" then
+        return
+    end
+
+    if headers[debug_yaml.http.enable_header_name]  then
+        debug_yaml.hook_conf.enable = true
+        sync_debug_hooks()
+    end
+end
+
+
+function _M.dynamic_disable()
+    if not check() then
+        return
+    end
+
+    debug_yaml.hook_conf.enable = false
     sync_debug_hooks()
 end
 

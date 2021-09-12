@@ -79,46 +79,24 @@ hook_phase: # 模块函数列表，名字：hook_phase
 #END
 ```
 
-### 动态调试模式
+### 动态高级调试模式
 
-动态调试模式可通过 [Control API](../../../en/latest/control-api.md) 中的 `/v1/advance_debug` 动态开启或关闭，配置参数和调试效果与高级调试模式一致。
+动态高级调试模式是基于高级调试模式，可以由单个请求动态开启高级调试模式，请求结束后自动关闭。设置 `conf/debug.yaml` 中的选项。
 
 示例：
 
-- 开启
+```yaml
+http:
+  dynamic: true # 是否动态开启高级调试模式
+  enable_header_name: X-APISIX-Dynamic-Debug # 对携带此 header 的请求开启高级调试模式
+......
+#END
+```
 
-    ```shell
-    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
-    '{
-        "enable": true,
-        "is_print_input_args": true,
-        "is_print_return_value": true,
-        "log_level":"warn",
-        "name":"hook_phase",
-        "hook_phase":{
-            "apisix":[
-                "http_access_phase",
-                "http_header_filter_phase"
-            ]
-        }
-    }'
-    ```
+动态开启高级调试模式，示例：
 
-- 关闭
+```shell
+curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
+```
 
-    ```shell
-    curl --location --request POST '127.0.0.1:9090/v1/advance_debug' --header 'Content-Type: application/json' --data-raw \
-    '{
-        "enable": false,
-        "is_print_input_args": true,
-        "is_print_return_value": true,
-        "log_level":"warn",
-        "name":"hook_phase",
-        "hook_phase":{
-            "apisix":[
-                "http_access_phase",
-                "http_header_filter_phase"
-            ]
-        }
-    }'
-    ```
+注意：动态高级调试模式无法调试 `apisix.http_access_phase` 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。
