@@ -41,7 +41,7 @@ apisix:
 
 ## 通过插件添加的 control API
 
-插件被启用时可以添加自己的 control API。如果你对他们感兴趣，请参阅对应插件的文档。
+APISIX 中一些插件添加了自己的 control API。如果你对他们感兴趣，请参阅对应插件的文档。
 
 ## 独立于插件的 control API
 
