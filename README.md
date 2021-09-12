@@ -108,7 +108,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Security**
 
-  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
+  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md), [casbin](docs/en/latest/plugins/authz-casbin.md), [keycloak](docs/en/latest/plugins/authz-keycloak.md)
   - [IP Whitelist/Blacklist](docs/en/latest/plugins/ip-restriction.md)
   - [Referer Whitelist/Blacklist](docs/en/latest/plugins/referer-restriction.md)
   - [IdP](docs/en/latest/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
