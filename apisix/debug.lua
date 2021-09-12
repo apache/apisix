@@ -18,6 +18,7 @@ local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
+local request      = require("apisix.core.request")
 local process      = require("ngx.process")
 local lfs          = require("lfs")
 local io           = io
@@ -215,16 +216,12 @@ local function check()
     return true
 end
 
-function _M.dynamic_enable(headers)
+function _M.dynamic_enable(api_ctx)
     if not check() then
         return
     end
 
-    if not headers or type(headers) ~= "table" then
-        return
-    end
-
-    if headers[debug_yaml.http.enable_header_name]  then
+    if request.header(api_ctx, debug_yaml.http.enable_header_name) then
         debug_yaml.hook_conf.enable = true
         sync_debug_hooks()
     end
