@@ -19,7 +19,6 @@ local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
 local request      = require("apisix.core.request")
-local process      = require("ngx.process")
 local lfs          = require("lfs")
 local io           = io
 local ngx          = ngx
@@ -239,6 +238,7 @@ end
 
 
 function _M.init_worker()
+    local process = require("ngx.process")
     if process.type() ~= "worker" then
         return
     end
