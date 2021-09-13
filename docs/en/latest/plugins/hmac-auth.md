@@ -51,6 +51,8 @@ The `consumer` then adds its key to request header to verify its request.
 | signed_headers    | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
 | keep_headers      | boolean       | optional    | false         | [ true, false ]                             | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header.   |
 | encode_uri_params | boolean       | optional    | true          | [ true, false ]                             | Whether to encode the uri parameter in the signature, for example: `params1=hello%2Cworld` is encoded, `params2=hello,world` is not encoded. true: means to encode the uri parameter in the signature, false: not to encode the uri parameter in the signature.               |
+| validate_request_body | boolean  | optional   | false         | [ true, false ]                             | Whether to check request body. |
+| max_req_body     | number        | optional   | 512KB         |                                             | Max allowed body size. |
 
 ## How To Enable
 
@@ -192,6 +194,16 @@ print(base64.b64encode(hash.digest()))
 | --------- | -------------------------------------------- |
 | SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
+### Request body checking
+
+When `validate_request_body` is assigned to `true`, the plugin will check the request body. The plugin will calculate the hmac-sha value of the request body，and check against the Digest header.
+
+```
+Digest: base64(hmac-sha(<body>))
+```
+
+when there is no request body, the Digest header can be omitted. You can also set Digest to the hmac-sha of empty string.
+
 ### Use the generated signature to try the request
 
 ```shell
@@ -276,6 +288,29 @@ Accept-Ranges: bytes
 
 <!DOCTYPE html>
 <html lang="cn">
+```
+
+### Enable request body checking
+
+```shell
+$ curl -X "POST" "http://localhost:9080/index.html?age=36&name=james" \
+     -H 'X-HMAC-ACCESS-KEY: zyedu-hmac-01' \
+     -H 'X-HMAC-SIGNATURE: ivlwjZPoVdSVvdSSM4drEFk9q9HS2jeJ5cAN9JffmdA=' \
+     -H 'X-HMAC-ALGORITHM: hmac-sha256' \
+     -H 'Date: Tue, 24 Aug 2021 03:19:21 GMT' \
+     -H 'X-HMAC-SIGNED-HEADERS: User-Agent;Digest' \
+     -H 'User-Agent: curl/7.29.0' \
+     -H 'Digest: L9b/+QMvhvnoUlSw5vq+kHPqnZiHGl61T8oavMVTaC4=' \
+     -H 'Content-Type: text/plain; charset=utf-8' \
+     -d "{\"hello\":\"world\"}"
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Tue, 19 Jan 2021 11:33:20 GMT
+Server: APISIX/2.2
+......
 ```
 
 ## Disable Plugin

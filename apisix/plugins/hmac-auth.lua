@@ -31,7 +31,7 @@ local plugin     = require("apisix.plugin")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_encode_base64 = ngx.encode_base64
 
-local DIGEST = "digest"
+local DIGEST = "Digest"
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local DATE_KEY = "Date"
@@ -207,9 +207,7 @@ local function do_nothing(v)
 end
 
 local function validate_body(ctx, secret_key, params, req_body)
-    if not req_body then
-        req_body = ""
-    end
+    req_body = req_body or ""
     local digest_header = core.request.header(ctx, DIGEST)
     if not digest_header then
         -- it's ok if there is no digest header and no body
