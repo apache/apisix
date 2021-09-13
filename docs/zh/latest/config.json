@@ -132,6 +132,10 @@
         {
           "type": "doc",
           "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
         }
       ]
     },
