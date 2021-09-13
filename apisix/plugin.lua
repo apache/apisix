@@ -168,7 +168,7 @@ local function load(plugin_names)
 
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
-        if enable_debug then
+        if enable_debug() then
             core.log.warn("loaded plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -209,7 +209,7 @@ local function load_stream(plugin_names)
 
     for i, plugin in ipairs(stream_local_plugins) do
         stream_local_plugins_hash[plugin.name] = plugin
-        if enable_debug then
+        if enable_debug() then
             core.log.warn("loaded stream plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -279,7 +279,7 @@ end
 
 
 local function trace_plugins_info_for_debug(ctx, plugins)
-    if not enable_debug then
+    if not enable_debug() then
         return
     end
 
