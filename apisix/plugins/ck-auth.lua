@@ -2,7 +2,7 @@ local core = require("apisix.core")
 
 local plugin_name = "ck-auth"
 local status_codes = {
-    200,401
+    200, 401
 }
 local schema = {
     type = "object",
