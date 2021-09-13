@@ -20,17 +20,24 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    enable_debug: true
-_EOC_
+sub read_file($) {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+
+our $debug_config = read_file("conf/debug.yaml");
+$debug_config =~ s/enable_debug: false/enable_debug: true/;
 
 run_tests;
 
 __DATA__
 
 === TEST 1: loaded plugin
+--- debug_config eval: $::debug_config
 --- config
     location /t {
         content_by_lua_block {
@@ -38,7 +45,6 @@ __DATA__
             ngx.say("done")
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -127,9 +133,9 @@ passed
 
 
 === TEST 3: hit routes
+--- debug_config eval: $::debug_config
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- response_headers
@@ -189,7 +195,7 @@ passed
 
 
 === TEST 5: hit routes
---- yaml_config eval: $::yaml_config
+--- debug_config eval: $::debug_config
 --- config
     location /t {
         content_by_lua_block {
@@ -253,7 +259,7 @@ passed
 
 
 === TEST 7: hit routes
---- yaml_config eval: $::yaml_config
+--- debug_config eval: $::debug_config
 --- config
     location /t {
         content_by_lua_block {
@@ -349,7 +355,7 @@ passed
 
 
 === TEST 10: hit route
---- yaml_config eval: $::yaml_config
+--- debug_config eval: $::debug_config
 --- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"

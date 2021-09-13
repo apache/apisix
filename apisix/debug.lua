@@ -19,7 +19,6 @@ local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local profile      = require("apisix.core.profile")
-local process      = require("ngx.process")
 local lfs          = require("lfs")
 local io           = io
 local ngx          = ngx
@@ -200,7 +199,17 @@ local function sync_debug_status(premature)
 end
 
 
+function _M.enable_debug()
+    if not debug_yaml then
+        return false
+    end
+
+    return debug_yaml.enable_debug
+end
+
+
 function _M.init_worker()
+    local process = require("ngx.process")
     if process.type() ~= "worker" then
         return
     end

@@ -23,7 +23,7 @@ title: Debug Mode
 
 ### 基本调试模式
 
-设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
+设置 `conf/debug.yaml` 中的 `enable_debug` 为 `true`，即可开启基本调试模式。
 
 比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
 

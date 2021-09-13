@@ -23,7 +23,7 @@ title: Debug Mode
 
 ### Basic Debug Mode
 
-Enable basic debug mode just by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
+Enable basic debug mode just by setting `enable_debug = true` in `conf/debug.yaml` file.
 
 e.g Using both `limit-conn` and `limit-count` plugins for a `/hello` request, there will have a response header called `Apisix-Plugins: limit-conn, limit-count`.
 
