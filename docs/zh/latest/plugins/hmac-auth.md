@@ -52,7 +52,7 @@ title: hmac-auth
 | keep_headers     | boolean       | 可选   | false         | [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。              |
 | encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 | validate_request_body | boolean  | 可选   | false         | [ true, false ]                             | 是否对请求 body 做签名校验。|
-| max_req_body     | number        | 可选   | 512KB         |                                             | 最大允许的 body 大小。|
+| max_req_body     | integer        | 可选   | 512 * 1024         |                                             | 最大允许的 body 大小。|
 
 ## 如何启用
 
@@ -190,13 +190,13 @@ print(base64.b64encode(hash.digest()))
 
 ### Body 校验
 
-把 `validate_request_body` 设置为 true 来进行请求 body 的校验。插件将计算 hmac-sha 值，对比头部中的 Digest 头部值。
+`validate_request_body` 设置为 true 时，插件将计算请求 body 的 `hmac-sha` 值，并与请求 headers 中的 `X-HMAC-DIGEST` 的值进行校验。
 
 ```
-Digest: base64(hmac-sha(<body>))
+X-HMAC-DIGEST: base64(hmac-sha(<body>))
 ```
 
-当无请求 body 时，可不传 Digest 头部，网关会校验是否确实无请求 body。如果要传 Digest 头部，可计算长度为 0 的空字符串的 hmac-sha 值。
+当没有请求 body 时，可不传 `X-HMAC-DIGEST` 头部，网关会校验是否确实无请求 body。如果要传 `X-HMAC-DIGEST` 头部，插件将请求 body 默认为长度为 0 的空字符串，并参与到计算 hmac-sha 值。
 
 ### 使用生成好的签名进行请求尝试
 
@@ -268,12 +268,13 @@ plugin_attr:
     date_key: X-APISIX-DATE
     access_key: X-APISIX-HMAC-ACCESS-KEY
     signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+    body_digest_key: X-APISIX-HMAC-BODY-DIGEST
 ```
 
 **自定义 header 后，请求示例：**
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -H 'X-APISIX-HMAC-BODY-DIGEST: BODY_DIGEST' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -288,13 +289,13 @@ Accept-Ranges: bytes
 
 ```shell
 $ curl -X "POST" "http://localhost:9080/index.html?age=36&name=james" \
-     -H 'X-HMAC-ACCESS-KEY: zyedu-hmac-01' \
-     -H 'X-HMAC-SIGNATURE: ivlwjZPoVdSVvdSSM4drEFk9q9HS2jeJ5cAN9JffmdA=' \
+     -H 'X-HMAC-ACCESS-KEY: my-access-key' \
+     -H 'X-HMAC-SIGNATURE: lSWO4vcyVoZG5bn8miHudzABAeJQd8tqEHyM7RsjeiU=' \
      -H 'X-HMAC-ALGORITHM: hmac-sha256' \
      -H 'Date: Tue, 24 Aug 2021 03:19:21 GMT' \
-     -H 'X-HMAC-SIGNED-HEADERS: User-Agent;Digest' \
+     -H 'X-HMAC-SIGNED-HEADERS: User-Agent;X-HMAC-DIGEST' \
      -H 'User-Agent: curl/7.29.0' \
-     -H 'Digest: L9b/+QMvhvnoUlSw5vq+kHPqnZiHGl61T8oavMVTaC4=' \
+     -H 'X-HMAC-DIGEST: L9b/+QMvhvnoUlSw5vq+kHPqnZiHGl61T8oavMVTaC4=' \
      -H 'Content-Type: text/plain; charset=utf-8' \
      -d "{\"hello\":\"world\"}"
 
@@ -302,9 +303,9 @@ HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 Transfer-Encoding: chunked
 Connection: keep-alive
-Date: Tue, 19 Jan 2021 11:33:20 GMT
-Server: APISIX/2.2
-......
+Date: Tue, 14 Sep 2021 03:28:14 GMT
+Server: APISIX/2.9     
+...
 ```
 
 ## 禁用插件

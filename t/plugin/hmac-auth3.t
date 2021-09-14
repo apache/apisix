@@ -114,7 +114,7 @@ passed
 
 
 
-=== TEST 3: missing body digest when validate_request_body is true
+=== TEST 3: missing body digest when validate_request_body is enabled
 --- config
     location /t {
         content_by_lua_block {
@@ -174,7 +174,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 4: missing digest header and body is empty
+=== TEST 4: no digest header and request body is empty
 --- config
     location /t {
         content_by_lua_block {
@@ -213,7 +213,7 @@ qr/\{"message":"Invalid digest"\}/
             headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
             headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
             headers["Date"] = gmt
-            headers["Digest"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-DIGEST"] = ngx_encode_base64(body_digest)
             headers["X-HMAC-ACCESS-KEY"] = access_key
             headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
             headers["x-custom-header-a"] = custom_header_a
@@ -252,7 +252,6 @@ passed
             local access_key = "my-access-key"
             local custom_header_a = "asld$%dfasf"
             local custom_header_b = "23879fmsldfk"
-            local body = ""
 
             local signing_string = {
                 "POST",
@@ -280,7 +279,7 @@ passed
 
             local code, body = t.test('/hello',
                 ngx.HTTP_POST,
-                body,
+                nil,
                 nil,
                 headers
             )
@@ -332,7 +331,7 @@ passed
             headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
             headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
             headers["Date"] = gmt
-            headers["Digest"] = "hello"
+            headers["X-HMAC-DIGEST"] = "hello"
             headers["X-HMAC-ACCESS-KEY"] = access_key
             headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
             headers["x-custom-header-a"] = custom_header_a
@@ -394,7 +393,7 @@ qr/\{"message":"Invalid digest"\}/
             headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
             headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
             headers["Date"] = gmt
-            headers["Digest"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-DIGEST"] = ngx_encode_base64(body_digest)
             headers["X-HMAC-ACCESS-KEY"] = access_key
             headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
             headers["x-custom-header-a"] = custom_header_a
@@ -501,7 +500,7 @@ passed
             headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
             headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
             headers["Date"] = gmt
-            headers["Digest"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-DIGEST"] = ngx_encode_base64(body_digest)
             headers["X-HMAC-ACCESS-KEY"] = access_key
             headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
             headers["x-custom-header-a"] = custom_header_a
@@ -521,3 +520,134 @@ passed
 --- error_code: 401
 --- response_body eval
 qr/\{"message":"Exceed body limit size"}/
+
+
+
+=== TEST 10: Test custom request body digest header name with mismatched header.
+--- yaml_config
+plugin_attr:
+    hmac-auth:
+        body_digest_key: "X-Digest-Custom"
+--- config
+    location /t {
+        content_by_lua_block {
+            local ngx_time = ngx.time
+            local ngx_http_time = ngx.http_time
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local ngx_encode_base64 = ngx.encode_base64
+
+            local secret_key = "my-secret-key"
+            local timestamp = ngx_time()
+            local gmt = ngx_http_time(timestamp)
+            local access_key = "my-access-key"
+            local custom_header_a = "asld$%dfasf"
+            local custom_header_b = "23879fmsldfk"
+            local body = "{\"name\": \"world\"}"
+
+            local signing_string = {
+                "POST",
+                "/hello",
+                "",
+                access_key,
+                gmt,
+                "x-custom-header-a:" .. custom_header_a,
+                "x-custom-header-b:" .. custom_header_b
+            }
+            signing_string = core.table.concat(signing_string, "\n") .. "\n"
+            core.log.info("signing_string:", signing_string)
+
+            local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+            local body_digest = hmac:new(secret_key, hmac.ALGOS.SHA256):final(body)
+
+            core.log.info("signature:", ngx_encode_base64(signature))
+            local headers = {}
+            headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+            headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+            headers["Date"] = gmt
+            headers["X-Digest"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-ACCESS-KEY"] = access_key
+            headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+            headers["x-custom-header-a"] = custom_header_a
+            headers["x-custom-header-b"] = custom_header_b
+
+            local code, body = t.test('/hello',
+                ngx.HTTP_POST,
+                body,
+                nil,
+                headers
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 401
+--- response_body eval
+qr/\{"message":"Invalid digest"\}/
+
+
+
+=== TEST 11: Test custom request body digest header name.
+--- yaml_config
+plugin_attr:
+    hmac-auth:
+        body_digest_key: "X-Digest-Custom"
+--- config
+    location /t {
+        content_by_lua_block {
+            local ngx_time = ngx.time
+            local ngx_http_time = ngx.http_time
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local ngx_encode_base64 = ngx.encode_base64
+
+            local secret_key = "my-secret-key"
+            local timestamp = ngx_time()
+            local gmt = ngx_http_time(timestamp)
+            local access_key = "my-access-key"
+            local custom_header_a = "asld$%dfasf"
+            local custom_header_b = "23879fmsldfk"
+            local body = "{\"name\": \"world\"}"
+
+            local signing_string = {
+                "POST",
+                "/hello",
+                "",
+                access_key,
+                gmt,
+                "x-custom-header-a:" .. custom_header_a,
+                "x-custom-header-b:" .. custom_header_b
+            }
+            signing_string = core.table.concat(signing_string, "\n") .. "\n"
+            core.log.info("signing_string:", signing_string)
+
+            local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+            local body_digest = hmac:new(secret_key, hmac.ALGOS.SHA256):final(body)
+
+            core.log.info("signature:", ngx_encode_base64(signature))
+            local headers = {}
+            headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+            headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+            headers["Date"] = gmt
+            headers["X-Digest-Custom"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-ACCESS-KEY"] = access_key
+            headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+            headers["x-custom-header-a"] = custom_header_a
+            headers["x-custom-header-b"] = custom_header_b
+
+            local code, body = t.test('/hello',
+                ngx.HTTP_POST,
+                body,
+                nil,
+                headers
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

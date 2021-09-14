@@ -31,7 +31,7 @@ local plugin     = require("apisix.plugin")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_encode_base64 = ngx.encode_base64
 
-local DIGEST = "Digest"
+local BODY_DIGEST_KEY = "X-HMAC-DIGEST"
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local DATE_KEY = "Date"
@@ -89,7 +89,7 @@ local consumer_schema = {
             default = false,
         },
         max_req_body = {
-            type = "number",
+            type = "integer",
             title = "Max request body allowed",
             default = MAX_REQ_BODY,
         },
@@ -206,9 +206,9 @@ local function do_nothing(v)
     return v
 end
 
-local function validate_body(ctx, secret_key, params, req_body)
+local function validate_body(secret_key, params, req_body)
     req_body = req_body or ""
-    local digest_header = core.request.header(ctx, DIGEST)
+    local digest_header = params.body_digest
     if not digest_header then
         -- it's ok if there is no digest header and no body
         return req_body == ""
@@ -358,7 +358,7 @@ local function validate(ctx, params)
         if err then
             return nil, {message = "Exceed body limit size"}
         end
-        if not validate_body(ctx, secret_key, params, req_body) then
+        if not validate_body(secret_key, params, req_body) then
             return nil, {message = "Invalid digest"}
         end
     end
@@ -374,6 +374,7 @@ local function get_params(ctx)
     local algorithm_key = ALGORITHM_KEY
     local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
+    local body_digest_key = BODY_DIGEST_KEY
 
 
     local attr = plugin.plugin_attr(plugin_name)
@@ -383,6 +384,7 @@ local function get_params(ctx)
         algorithm_key = attr.algorithm_key or algorithm_key
         date_key = attr.date_key or date_key
         signed_headers_key = attr.signed_headers_key or signed_headers_key
+        body_digest_key = attr.body_digest_key or body_digest_key
     end
 
     local app_key = core.request.header(ctx, access_key)
@@ -390,6 +392,7 @@ local function get_params(ctx)
     local algorithm = core.request.header(ctx, algorithm_key)
     local date = core.request.header(ctx, date_key)
     local signed_headers = core.request.header(ctx, signed_headers_key)
+    local body_digest = core.request.header(ctx, body_digest_key)
     core.log.info("signature_key: ", signature_key)
 
     -- get params from header `Authorization`
@@ -418,6 +421,7 @@ local function get_params(ctx)
     params.signature  = signature
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
+    params.body_digest = body_digest
 
     local keep_headers = get_conf_field(params.access_key, "keep_headers")
     core.log.info("keep_headers: ", keep_headers)
