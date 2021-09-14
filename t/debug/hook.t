@@ -31,7 +31,7 @@ sub read_file($) {
 }
 
 our $debug_config = read_file("conf/debug.yaml");
-$debug_config =~ s/enable: false/enable: true/;
+$debug_config =~ s/hook_conf:\n  enable: false/hook_conf:\n  enable: true/;
 
 run_tests();
 
