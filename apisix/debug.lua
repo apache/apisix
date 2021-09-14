@@ -204,7 +204,7 @@ function _M.enable_debug()
         return false
     end
 
-    return debug_yaml.enable_debug
+    return debug_yaml.basic.enable
 end
 
 

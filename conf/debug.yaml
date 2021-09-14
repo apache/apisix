@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-enable_debug: false
+basic:
+  enable: false
 hook_conf:
   enable: false                 # enable or disable this feature
   name: hook_phase              # the name of module and function list
