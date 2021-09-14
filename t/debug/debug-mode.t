@@ -362,6 +362,6 @@ passed
 --- stream_response
 hello world
 --- error_log
-Apisix-Plugins: mqtt-proxy
+mqtt client id: foo while prereading client data
 --- no_error_log
 [error]

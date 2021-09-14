@@ -113,6 +113,8 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    require("apisix.debug").init_worker()
+
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
@@ -123,7 +125,6 @@ function _M.http_init_worker()
         core.config.init_worker()
     end
 
-    require("apisix.debug").init_worker()
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 

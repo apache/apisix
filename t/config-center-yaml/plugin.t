@@ -51,6 +51,18 @@ _EOC_
     }
 });
 
+sub read_file($) {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+
+our $debug_config = read_file("conf/debug.yaml");
+$debug_config =~ s/enable_debug: false/enable_debug: true/;
+
 run_tests();
 
 __DATA__
@@ -62,8 +74,22 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
 hello world
 --- error_log
@@ -98,8 +124,22 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
 hello world
 --- grep_error_log eval
