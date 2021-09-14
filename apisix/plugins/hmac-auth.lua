@@ -85,12 +85,12 @@ local consumer_schema = {
         },
         validate_request_body = {
             type = "boolean",
-            title = "A boolean value telling the plugin to enable body validation.",
+            title = "A boolean value telling the plugin to enable body validation",
             default = false,
         },
         max_req_body = {
             type = "integer",
-            title = "Max request body allowed",
+            title = "Max request body size",
             default = MAX_REQ_BODY,
         },
     },
