@@ -125,14 +125,31 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
     function mt.__call(self, ...)
         local arg = {...}
         if hook_conf.is_print_input_args then
-            log[log_level]("call require(\"", file_path, "\").", fun_name,
-                    "() args:", inspect(arg))
+            if hook_conf.enable then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() args:", inspect(arg))
+            end
+
+            if debug_yaml.http.dynamic then
+                if request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                    log[log_level]("call require(\"", file_path, "\").", fun_name,
+                                   "() args:", inspect(arg))
+                end
+            end
         end
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            log[log_level]("call require(\"", file_path, "\").", fun_name,
-                    "() return:", inspect(ret))
+            if hook_conf.enable then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() return:", inspect(ret))
+            end
+            if debug_yaml.http.dynamic then
+                if request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                    log[log_level]("call require(\"", file_path, "\").", fun_name,
+                                   "() return:", inspect(ret))
+                end
+            end
         end
         return unpack(ret)
     end
@@ -148,7 +165,8 @@ end
 
 function sync_debug_hooks()
     if not debug_yaml_ctime or debug_yaml_ctime == pre_mtime then
-        if not (debug_yaml and debug_yaml.http and debug_yaml.http.dynamic) then
+        -- resume enabled_hooks when the specific request end
+        if not debug_yaml or not debug_yaml.http or not debug_yaml.http.dynamic then
             return
         end
     end
@@ -164,7 +182,12 @@ function sync_debug_hooks()
     local hook_conf = debug_yaml.hook_conf
     if not hook_conf.enable then
         pre_mtime = debug_yaml_ctime
-        return
+        -- keep the advanced debug triggered by ngx.timer same with the original.
+        -- if the dynamic debug is triggered by specific request,
+        -- then ngx.get_phase() is not ngx.timer and http.dynamic must be true.
+        if ngx.get_phase() == "timer" and debug_yaml.http.dynamic then
+            return
+        end
     end
 
     local hook_name = hook_conf.name or ""
@@ -215,25 +238,14 @@ local function check()
     return true
 end
 
-function _M.dynamic_enable(api_ctx)
+function _M.dynamic_debug(api_ctx)
     if not check() then
         return
     end
 
     if request.header(api_ctx, debug_yaml.http.enable_header_name) then
-        debug_yaml.hook_conf.enable = true
         sync_debug_hooks()
     end
-end
-
-
-function _M.dynamic_disable()
-    if not check() then
-        return
-    end
-
-    debug_yaml.hook_conf.enable = false
-    sync_debug_hooks()
 end
 
 
