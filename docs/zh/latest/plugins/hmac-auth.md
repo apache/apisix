@@ -304,7 +304,7 @@ Content-Type: text/html; charset=utf-8
 Transfer-Encoding: chunked
 Connection: keep-alive
 Date: Tue, 14 Sep 2021 03:28:14 GMT
-Server: APISIX/2.9     
+Server: APISIX/2.9
 ...
 ```
 
