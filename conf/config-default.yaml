@@ -30,7 +30,6 @@ apisix:
   #     enable_http2: true
   enable_admin: true
   enable_admin_cors: true          # Admin API support CORS response headers.
-  enable_debug: false
   enable_dev_mode: false           # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
