@@ -61,7 +61,7 @@ sub read_file($) {
 }
 
 our $debug_config = read_file("conf/debug.yaml");
-$debug_config =~ s/enable_debug: false/enable_debug: true/;
+$debug_config =~ s/basic:\n  enable: false/basic:\n  enable: true/;
 
 run_tests();
 

@@ -200,7 +200,7 @@ end
 
 
 function _M.enable_debug()
-    if not debug_yaml then
+    if not debug_yaml or not debug_yaml.basic then
         return false
     end
 
