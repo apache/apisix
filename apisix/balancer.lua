@@ -19,7 +19,8 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local ipairs            = ipairs
-local enable_keepalive = balancer.enable_keepalive
+local is_http           = ngx.config.subsystem == "http"
+local enable_keepalive = balancer.enable_keepalive and is_http
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -261,12 +262,29 @@ _M.pick_server = pick_server
 local set_current_peer
 do
     local pool_opt = {}
+    local default_keepalive_pool
 
     function set_current_peer(server, ctx)
         local up_conf = ctx.upstream_conf
         local keepalive_pool = up_conf.keepalive_pool
 
-        if keepalive_pool and enable_keepalive then
+        if enable_keepalive then
+            if not keepalive_pool then
+                if not default_keepalive_pool then
+                    local local_conf = core.config.local_conf()
+                    local up_keepalive_conf =
+                        core.table.try_read_attr(local_conf, "nginx_config",
+                                                 "http", "upstream")
+                    default_keepalive_pool = {}
+                    default_keepalive_pool.idle_timeout =
+                        core.config_util.parse_time_unit(up_keepalive_conf.keepalive_timeout)
+                    default_keepalive_pool.size = up_keepalive_conf.keepalive
+                    default_keepalive_pool.requests = up_keepalive_conf.keepalive_requests
+                end
+
+                keepalive_pool = default_keepalive_pool
+            end
+
             local idle_timeout = keepalive_pool.idle_timeout
             local size = keepalive_pool.size
             local requests = keepalive_pool.requests
