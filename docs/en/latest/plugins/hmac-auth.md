@@ -202,7 +202,9 @@ When `validate_request_body` is assigned to `true`, the plugin will check the re
 X-HMAC-DIGEST: base64(hmac-sha(<body>))
 ```
 
-When there is no request body, the `X-HMAC-DIGEST` header can be omitted. If you want to send request with this header whether the body is empty or not, you can set `X-HMAC-DIGEST` value to the hmac-sha of empty string.
+When there is no request body, the `X-HMAC-DIGEST` header can be omitted. If you want to send a request with this header when the body is missing, you can set `X-HMAC-DIGEST` value to the hmac-sha of empty string.
+
+**Note:** The plugin will load the request body to memory to calculate the digest of the request body, which wight cause high memory consumption with large bodies. You can limit the max allowed body size by the configuration of `max_req_body`(default=512KB), request body larger than that will be rejected.
 
 ### Use the generated signature to try the request
 

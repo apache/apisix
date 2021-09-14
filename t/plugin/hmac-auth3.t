@@ -566,7 +566,7 @@ plugin_attr:
             headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
             headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
             headers["Date"] = gmt
-            headers["X-Digest"] = ngx_encode_base64(body_digest)
+            headers["X-HMAC-DIGEST"] = ngx_encode_base64(body_digest)
             headers["X-HMAC-ACCESS-KEY"] = access_key
             headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
             headers["x-custom-header-a"] = custom_header_a

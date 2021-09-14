@@ -198,6 +198,8 @@ X-HMAC-DIGEST: base64(hmac-sha(<body>))
 
 当没有请求 body 时，可不传 `X-HMAC-DIGEST` 头部，网关会校验是否确实无请求 body。如果要传 `X-HMAC-DIGEST` 头部，插件将请求 body 默认为长度为 0 的空字符串，并参与到计算 hmac-sha 值。
 
+**注:**当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。插件提供了 `max_req_body`（默认值 512KB） 配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
+
 ### 使用生成好的签名进行请求尝试
 
 ```shell
