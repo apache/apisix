@@ -265,7 +265,7 @@ local config_schema = {
         http = {
             type = "object",
             properties = {
-                lua_shared_dicts = {
+                custom_lua_shared_dict = {
                     type = "object",
                 }
             }
@@ -748,6 +748,11 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
+    end
+
+    if sys_conf["http"]["lua_shared_dicts"] then
+        stderr:write("lua_shared_dicts is deprecated, " ..
+                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()

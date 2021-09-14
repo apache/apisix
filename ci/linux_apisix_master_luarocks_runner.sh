@@ -36,24 +36,6 @@ script() {
     mkdir tmp && cd tmp
     cp -r ../utils ./
 
-    # install APISIX by shell
-    sudo mkdir -p /usr/local/apisix/deps
-    sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
-    cp ../bin/apisix /usr/bin/apisix
-    tree /usr/local/apisix/
-
-    which apisix
-
-    # run test
-    sudo PATH=$PATH apisix help
-    sudo PATH=$PATH apisix init
-    sudo PATH=$PATH apisix start
-    sudo PATH=$PATH apisix quit
-    sudo PATH=$PATH apisix start
-    sudo PATH=$PATH apisix stop
-
-    sudo PATH=$PATH ./utils/install-apisix.sh remove > build.log 2>&1 || (cat build.log && exit 1)
-
     # install APISIX by luarocks
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix

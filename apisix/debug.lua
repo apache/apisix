@@ -17,8 +17,8 @@
 local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
+local json         = require("apisix.core.json")
 local profile      = require("apisix.core.profile")
-local request      = require("apisix.core.request")
 local lfs          = require("lfs")
 local io           = io
 local ngx          = ngx
@@ -246,6 +246,15 @@ function _M.dynamic_debug(api_ctx)
     if request.header(api_ctx, debug_yaml.http.enable_header_name) then
         sync_debug_hooks()
     end
+end
+
+
+function _M.enable_debug()
+    if not debug_yaml or not debug_yaml.basic then
+        return false
+    end
+
+    return debug_yaml.basic.enable
 end
 
 

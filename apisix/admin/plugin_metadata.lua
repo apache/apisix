@@ -69,7 +69,7 @@ local function check_conf(plugin_name, conf)
     schema.properties.interceptors = api_router.interceptors_schema
 
     core.log.info("schema: ", core.json.delay_encode(schema))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
+    core.log.info("conf: ", core.json.delay_encode(conf))
 
     local ok, err
     if schema['$comment'] == injected_mark

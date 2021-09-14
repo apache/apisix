@@ -18,7 +18,7 @@ local core      = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
-local ngx_ssl = require("ngx.ssl")
+local apisix_ssl = require("apisix.ssl")
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
@@ -134,7 +134,7 @@ do
             router_ver = user_routes.conf_version
         end
 
-        local sni = ngx_ssl.server_name()
+        local sni = apisix_ssl.server_name()
         if sni and tls_router then
             local sni_rev = sni:reverse()
 

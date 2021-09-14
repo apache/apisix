@@ -35,6 +35,17 @@ local pkey_cache = core.lrucache.new {
 local _M = {}
 
 
+function _M.server_name()
+    local sni, err = ngx_ssl.server_name()
+    if not err and not sni then
+        local local_conf = core.config.local_conf()
+        sni = core.table.try_read_attr(local_conf, "apisix", "ssl", "fallback_sni")
+    end
+
+    return sni, err
+end
+
+
 local _aes_128_cbc_with_iv = false
 local function get_aes_128_cbc_with_iv()
     if _aes_128_cbc_with_iv == false then
