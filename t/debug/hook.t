@@ -21,16 +21,7 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $debug_config = read_file("conf/debug.yaml");
+our $debug_config = t::APISIX::read_file("conf/debug.yaml");
 $debug_config =~ s/hook_conf:\n  enable: false/hook_conf:\n  enable: true/;
 
 run_tests();
