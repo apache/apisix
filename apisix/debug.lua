@@ -23,7 +23,6 @@ local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
 local get_headers  = ngx.req.get_headers
-local get_phase    = ngx.get_phase
 local type         = type
 local pairs        = pairs
 local setmetatable = setmetatable
@@ -128,12 +127,14 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
         local http_filter = debug_yaml.http_filter
         local api_ctx = ngx.ctx.api_ctx
         if hook_conf.is_print_input_args then
-            if not (http_filter and http_filter.enable) or (api_ctx and api_ctx.enable_dynamic_debug) then
+            if not (http_filter and http_filter.enable)
+                    or (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
 
-            if (http_filter and http_filter.enable) and (api_ctx and api_ctx.enable_dynamic_debug) then
+            if (http_filter and http_filter.enable)
+                    and (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
@@ -141,12 +142,14 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            if not (http_filter and http_filter.enable) or (api_ctx and api_ctx.enable_dynamic_debug) then
+            if not (http_filter and http_filter.enable)
+                    or (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
 
-            if (http_filter and http_filter.enable) and (api_ctx and api_ctx.enable_dynamic_debug) then
+            if (http_filter and http_filter.enable)
+                    and (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
