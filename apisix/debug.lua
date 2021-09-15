@@ -239,12 +239,12 @@ local function check()
     return true
 end
 
-function _M.dynamic_debug(api_ctx)
+function _M.dynamic_debug()
     if not check() then
         return
     end
 
-    if request.header(api_ctx, debug_yaml.http.enable_header_name) then
+    if ngx.req.get_headers()[debug_yaml.http.enable_header_name] then
         sync_debug_hooks()
     end
 end
