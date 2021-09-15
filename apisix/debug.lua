@@ -131,7 +131,8 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
             end
 
             if debug_yaml.http and debug_yaml.http.enable then
-                if ngx.ctx.api_ctx and request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                if ngx.ctx.api_ctx and
+                        request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
                     log[log_level]("call require(\"", file_path, "\").", fun_name,
                                    "() args:", inspect(arg))
                 end
@@ -145,7 +146,8 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
                                "() return:", inspect(ret))
             end
             if debug_yaml.http and debug_yaml.http.enable then
-                if ngx.ctx.api_ctx and request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                if ngx.ctx.api_ctx and
+                        request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
                     log[log_level]("call require(\"", file_path, "\").", fun_name,
                                    "() return:", inspect(ret))
                 end
