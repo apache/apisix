@@ -94,8 +94,8 @@ hook_phase: # 模块函数列表，名字：hook_phase
 
 ```yaml
 http:
-  dynamic: true # 是否动态开启高级调试模式
-  enable_header_name: X-APISIX-Dynamic-Debug # 对携带此 header 的请求开启高级调试模式
+  enable: true # 是否动态开启高级调试模式
+  enable_header_name: X-APISIX-Dynamic-Debug # 追踪携带此 header 的请求
 ......
 #END
 ```

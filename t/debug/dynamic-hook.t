@@ -31,7 +31,7 @@ sub read_file($) {
 }
 
 our $debug_config = read_file("conf/debug.yaml");
-$debug_config =~ s/dynamic: false/dynamic: true/;
+$debug_config =~ s/http:\n  enable: false/http:\n  enable: true/;
 
 run_tests();
 
@@ -82,15 +82,15 @@ GET /t
 --- response_body
 passed
 --- error_log
+call require("apisix").http_access_phase() return:{}
 call require("apisix").http_header_filter_phase() args:{}
 call require("apisix").http_header_filter_phase() return:{}
 call require("apisix").http_body_filter_phase() args:{}
 call require("apisix").http_body_filter_phase() return:{}
 call require("apisix").http_log_phase() args:{}
+call require("apisix").http_log_phase() return:{}
 --- no_error_log
 call require("apisix").http_access_phase() args:{}
-call require("apisix").http_access_phase() return:{}
-call require("apisix").http_log_phase() return:{}
 
 
 
@@ -221,7 +221,7 @@ call require("apisix").http_log_phase() return:{}
 === TEST 4: plugin filter log
 --- debug_config
 http:
-  dynamic_enable: true         # enable or disable this feature
+  enable: true         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 hook_conf:
   enable: true                  # enable or disable this feature
