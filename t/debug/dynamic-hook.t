@@ -78,7 +78,6 @@ __DATA__
 --- request
 GET /t
 --- wait: 2
---- timeout: 4
 --- response_body
 passed
 --- error_log
@@ -144,6 +143,7 @@ call require("apisix").http_access_phase() args:{}
     }
 --- request
 GET /t
+--- wait: 2
 --- response_body
 hello world
 --- error_log eval
@@ -207,7 +207,6 @@ qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sH
 --- request
 GET /t
 --- wait: 2
---- timeout: 4
 --- response_body
 passed
 --- no_error_log
@@ -292,7 +291,6 @@ hook_test:                      # module and function list, name: hook_test
 --- request
 GET /t
 --- wait: 2
---- timeout: 3
 --- response_body
 passed
 --- no_error_log
@@ -372,6 +370,7 @@ hook_test:
     }
 --- request
 GET /t
+--- wait: 2
 --- response_body
 passed
 --- error_log eval
