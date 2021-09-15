@@ -93,7 +93,7 @@ hook_phase: # 模块函数列表，名字：hook_phase
 示例：
 
 ```yaml
-http:
+http_filter:
   enable: true # 是否动态开启高级调试模式
   enable_header_name: X-APISIX-Dynamic-Debug # 追踪携带此 header 的请求
 ......
@@ -106,4 +106,4 @@ http:
 curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
-注意：动态高级调试模式无法调试 `apisix.http_access_phase` 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。
+注意：动态高级调试模式无法调试 `apisix.http_access_phase`， 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。

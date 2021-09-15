@@ -91,7 +91,7 @@ The advanced debug mode can be enabled dynamically by a single request and turne
 Example:
 
 ```yaml
-http:
+http_filter:
   enable: true # Enable/Disable Advanced Debug Mode Dynamically
   enable_header_name: X-APISIX-Dynamic-Debug # Trace for the request with this header
 ......

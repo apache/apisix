@@ -16,7 +16,7 @@
 #
 basic:
   enable: false
-http:
+http_filter:
   enable: false         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 hook_conf:

@@ -125,33 +125,30 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
     function mt.__call(self, ...)
         local arg = {...}
+        local http_filter = debug_yaml.http_filter
+        local api_ctx = ngx.ctx.api_ctx
         if hook_conf.is_print_input_args then
-            if hook_conf.enable then
+            if not (http_filter and http_filter.enable) or (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
 
-            if debug_yaml.http and debug_yaml.http.enable then
-                if ngx.ctx.api_ctx and
-                        get_headers()[debug_yaml.http.enable_header_name] then
-                    log[log_level]("call require(\"", file_path, "\").", fun_name,
-                                   "() args:", inspect(arg))
-                end
+            if (http_filter and http_filter.enable) and (api_ctx and api_ctx.enable_dynamic_debug) then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() args:", inspect(arg))
             end
         end
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            if hook_conf.enable then
+            if not (http_filter and http_filter.enable) or (api_ctx and api_ctx.enable_dynamic_debug) then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
-            if debug_yaml.http and debug_yaml.http.enable then
-                if ngx.ctx.api_ctx and
-                        get_headers()[debug_yaml.http.enable_header_name] then
-                    log[log_level]("call require(\"", file_path, "\").", fun_name,
-                                   "() return:", inspect(ret))
-                end
+
+            if (http_filter and http_filter.enable) and (api_ctx and api_ctx.enable_dynamic_debug) then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() return:", inspect(ret))
             end
         end
         return unpack(ret)
@@ -168,10 +165,7 @@ end
 
 function sync_debug_hooks()
     if not debug_yaml_ctime or debug_yaml_ctime == pre_mtime then
-        -- resume enabled_hooks when the specific request end
-        if not debug_yaml or not debug_yaml.http or not debug_yaml.http.enable then
-            return
-        end
+        return
     end
 
     for _, hook in pairs(enabled_hooks) do
@@ -185,13 +179,7 @@ function sync_debug_hooks()
     local hook_conf = debug_yaml.hook_conf
     if not hook_conf.enable then
         pre_mtime = debug_yaml_ctime
-        -- keep the advanced debug triggered by ngx.timer same with the original.
-        -- if the dynamic debug is triggered by specific request,
-        -- then ngx.get_phase() is not ngx.timer and http.enable must be true.
-        if (get_phase() == "timer" or get_phase() == "log")
-                and debug_yaml.http.enable then
-            return
-        end
+        return
     end
 
     local hook_name = hook_conf.name or ""
@@ -230,12 +218,12 @@ end
 
 
 local function check()
-    if not debug_yaml or not debug_yaml.http then
+    if not debug_yaml or not debug_yaml.http_filter then
         return false
     end
 
-    local http = debug_yaml.http
-    if not http or not http.enable_header_name or not http.enable then
+    local http_filter = debug_yaml.http_filter
+    if not http_filter or not http_filter.enable_header_name or not http_filter.enable then
         return false
     end
 
@@ -247,8 +235,8 @@ function _M.dynamic_debug()
         return
     end
 
-    if get_headers()[debug_yaml.http.enable_header_name] then
-        sync_debug_hooks()
+    if get_headers()[debug_yaml.http_filter.enable_header_name] then
+        ngx.ctx.api_ctx.enable_dynamic_debug = true
     end
 end
 

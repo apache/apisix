@@ -31,7 +31,8 @@ sub read_file($) {
 }
 
 our $debug_config = read_file("conf/debug.yaml");
-$debug_config =~ s/http:\n  enable: false/http:\n  enable: true/;
+$debug_config =~ s/http_filter:\n  enable: false/http_filter:\n  enable: true/;
+$debug_config =~ s/hook_conf:\n  enable: false/hook_conf:\n  enable: true/;
 
 run_tests();
 
@@ -81,15 +82,15 @@ GET /t
 --- response_body
 passed
 --- error_log
-call require("apisix").http_access_phase() return:{}
 call require("apisix").http_header_filter_phase() args:{}
 call require("apisix").http_header_filter_phase() return:{}
 call require("apisix").http_body_filter_phase() args:{}
 call require("apisix").http_body_filter_phase() return:{}
 call require("apisix").http_log_phase() args:{}
-call require("apisix").http_log_phase() return:{}
 --- no_error_log
+call require("apisix").http_access_phase() return:{}
 call require("apisix").http_access_phase() args:{}
+call require("apisix").http_log_phase() return:{}
 
 
 
@@ -147,22 +148,22 @@ GET /t
 --- response_body
 hello world
 --- error_log eval
-[qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+[qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
 --- no_error_log eval
-[qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+[qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/]
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
 
 
 
@@ -221,7 +222,7 @@ call require("apisix").http_log_phase() return:{}
 
 === TEST 4: plugin filter log
 --- debug_config
-http:
+http_filter:
   enable: true         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 hook_conf:
@@ -303,11 +304,11 @@ filter(): call require("apisix.plugin").filter() return:{
 
 === TEST 5: multiple requests, only output logs of the request with enable_header_name
 --- debug_config
-http:
+http_filter:
   enable: true
   enable_header_name: X-APISIX-Dynamic-Debug
 hook_conf:
-  enable: false
+  enable: true
   name: hook_test
   log_level: warn
   is_print_input_args: true
