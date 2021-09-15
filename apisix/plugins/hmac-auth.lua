@@ -353,7 +353,8 @@ local function validate(ctx, params)
         end
 
         req_body = req_body or ""
-        local request_body_hash = ngx_encode_base64(hmac_funcs[params.algorithm](secret_key, req_body))
+        local request_body_hash = ngx_encode_base64(
+                hmac_funcs[params.algorithm](secret_key, req_body))
         if request_body_hash ~= digest_header then
             return nil, {message = "Invalid digest"}
         end
