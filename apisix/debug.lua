@@ -187,8 +187,7 @@ function sync_debug_hooks()
         -- keep the advanced debug triggered by ngx.timer same with the original.
         -- if the dynamic debug is triggered by specific request,
         -- then ngx.get_phase() is not ngx.timer and http.enable must be true.
-        if (ngx.get_phase() == "timer" or ngx.get_phase() == "log")
-                and debug_yaml.http.enable then
+        if ngx.get_phase() == "timer" and debug_yaml.http.enable then
             return
         end
     end
