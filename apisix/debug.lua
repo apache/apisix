@@ -18,11 +18,12 @@ local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
-local request      = require("apisix.core.request")
 local lfs          = require("lfs")
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
+local get_headers  = ngx.req.get_headers
+local get_phase    = ngx.get_phase
 local type         = type
 local pairs        = pairs
 local setmetatable = setmetatable
@@ -132,7 +133,7 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
             if debug_yaml.http and debug_yaml.http.enable then
                 if ngx.ctx.api_ctx and
-                        request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                        get_headers()[debug_yaml.http.enable_header_name] then
                     log[log_level]("call require(\"", file_path, "\").", fun_name,
                                    "() args:", inspect(arg))
                 end
@@ -147,7 +148,7 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
             end
             if debug_yaml.http and debug_yaml.http.enable then
                 if ngx.ctx.api_ctx and
-                        request.header(ngx.ctx.api_ctx, debug_yaml.http.enable_header_name) then
+                        get_headers()[debug_yaml.http.enable_header_name] then
                     log[log_level]("call require(\"", file_path, "\").", fun_name,
                                    "() return:", inspect(ret))
                 end
@@ -187,7 +188,8 @@ function sync_debug_hooks()
         -- keep the advanced debug triggered by ngx.timer same with the original.
         -- if the dynamic debug is triggered by specific request,
         -- then ngx.get_phase() is not ngx.timer and http.enable must be true.
-        if ngx.get_phase() == "timer" and debug_yaml.http.enable then
+        if (get_phase() == "timer" or get_phase() == "log")
+                and debug_yaml.http.enable then
             return
         end
     end
@@ -245,7 +247,7 @@ function _M.dynamic_debug()
         return
     end
 
-    if ngx.req.get_headers()[debug_yaml.http.enable_header_name] then
+    if get_headers()[debug_yaml.http.enable_header_name] then
         sync_debug_hooks()
     end
 end
