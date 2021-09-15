@@ -206,18 +206,6 @@ local function do_nothing(v)
     return v
 end
 
-local function validate_body(secret_key, params, req_body)
-    req_body = req_body or ""
-    local digest_header = params.body_digest
-    if not digest_header then
-        -- it's ok if there is no digest header and no body
-        return req_body == ""
-    end
-
-    local request_body_hash = ngx_encode_base64(hmac_funcs[params.algorithm](secret_key, req_body))
-    return request_body_hash == digest_header
-end
-
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
@@ -353,12 +341,20 @@ local function validate(ctx, params)
 
     local validate_request_body = get_conf_field(params.access_key, "validate_request_body")
     if validate_request_body then
+        local digest_header = params.body_digest
+        if not digest_header then
+            return nil, {message = "Invalid digest"}
+        end
+
         local max_req_body = get_conf_field(params.access_key, "max_req_body")
         local req_body, err = core.request.get_body(max_req_body, ctx)
         if err then
             return nil, {message = "Exceed body limit size"}
         end
-        if not validate_body(secret_key, params, req_body) then
+
+        req_body = req_body or ""
+        local request_body_hash = ngx_encode_base64(hmac_funcs[params.algorithm](secret_key, req_body))
+        if request_body_hash ~= digest_header then
             return nil, {message = "Invalid digest"}
         end
     end

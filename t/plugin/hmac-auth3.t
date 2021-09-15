@@ -174,126 +174,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 4: no digest header and request body is empty
---- config
-    location /t {
-        content_by_lua_block {
-            local ngx_time = ngx.time
-            local ngx_http_time = ngx.http_time
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-            local hmac = require("resty.hmac")
-            local ngx_encode_base64 = ngx.encode_base64
-
-            local secret_key = "my-secret-key"
-            local timestamp = ngx_time()
-            local gmt = ngx_http_time(timestamp)
-            local access_key = "my-access-key"
-            local custom_header_a = "asld$%dfasf"
-            local custom_header_b = "23879fmsldfk"
-            local body = ""
-
-            local signing_string = {
-                "POST",
-                "/hello",
-                "",
-                access_key,
-                gmt,
-                "x-custom-header-a:" .. custom_header_a,
-                "x-custom-header-b:" .. custom_header_b
-            }
-            signing_string = core.table.concat(signing_string, "\n") .. "\n"
-            core.log.info("signing_string:", signing_string)
-
-            local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
-            local body_digest = hmac:new(secret_key, hmac.ALGOS.SHA256):final(body)
-
-            core.log.info("signature:", ngx_encode_base64(signature))
-            local headers = {}
-            headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-            headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-            headers["Date"] = gmt
-            headers["X-HMAC-DIGEST"] = ngx_encode_base64(body_digest)
-            headers["X-HMAC-ACCESS-KEY"] = access_key
-            headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
-            headers["x-custom-header-a"] = custom_header_a
-            headers["x-custom-header-b"] = custom_header_b
-
-            local code, body = t.test('/hello',
-                ngx.HTTP_POST,
-                body,
-                nil,
-                headers
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 5: digest header with empty string and body is empty
---- config
-    location /t {
-        content_by_lua_block {
-            local ngx_time = ngx.time
-            local ngx_http_time = ngx.http_time
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-            local hmac = require("resty.hmac")
-            local ngx_encode_base64 = ngx.encode_base64
-
-            local secret_key = "my-secret-key"
-            local timestamp = ngx_time()
-            local gmt = ngx_http_time(timestamp)
-            local access_key = "my-access-key"
-            local custom_header_a = "asld$%dfasf"
-            local custom_header_b = "23879fmsldfk"
-
-            local signing_string = {
-                "POST",
-                "/hello",
-                "",
-                access_key,
-                gmt,
-                "x-custom-header-a:" .. custom_header_a,
-                "x-custom-header-b:" .. custom_header_b
-            }
-            signing_string = core.table.concat(signing_string, "\n") .. "\n"
-            core.log.info("signing_string:", signing_string)
-
-            local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
-
-            core.log.info("signature:", ngx_encode_base64(signature))
-            local headers = {}
-            headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-            headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-            headers["Date"] = gmt
-            headers["X-HMAC-ACCESS-KEY"] = access_key
-            headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
-            headers["x-custom-header-a"] = custom_header_a
-            headers["x-custom-header-b"] = custom_header_b
-
-            local code, body = t.test('/hello',
-                ngx.HTTP_POST,
-                nil,
-                nil,
-                headers
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 6: verify body digest: not ok
+=== TEST 4: verify body digest: not ok
 --- config
     location /t {
         content_by_lua_block {
@@ -354,7 +235,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 7: verify body digest: ok
+=== TEST 5: verify body digest: ok
 --- config
     location /t {
         content_by_lua_block {
@@ -415,7 +296,7 @@ passed
 
 
 
-=== TEST 8: add consumer with max_req_body
+=== TEST 6: add consumer with max_req_body
 --- config
     location /t {
         content_by_lua_block {
@@ -461,7 +342,7 @@ passed
 
 
 
-=== TEST 9: Exceed body limit size
+=== TEST 7: Exceed body limit size
 --- config
     location /t {
         content_by_lua_block {
@@ -523,7 +404,7 @@ qr/\{"message":"Exceed body limit size"}/
 
 
 
-=== TEST 10: Test custom request body digest header name with mismatched header.
+=== TEST 8: Test custom request body digest header name with mismatched header.
 --- yaml_config
 plugin_attr:
     hmac-auth:
@@ -589,7 +470,7 @@ qr/\{"message":"Invalid digest"\}/
 
 
 
-=== TEST 11: Test custom request body digest header name.
+=== TEST 9: Test custom request body digest header name.
 --- yaml_config
 plugin_attr:
     hmac-auth:
