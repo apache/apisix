@@ -612,6 +612,49 @@ fi
 
 echo "passed: detect invalid extra_lua_path"
 
+# support hooking into APISIX methods
+echo '
+apisix:
+    lua_module_hook: "example/my_hook"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "lua_module_hook" validation failed'; then
+    echo "failed: bad lua_module_hook should be rejected"
+    exit 1
+fi
+
+echo "passed: bad lua_module_hook should be rejected"
+
+echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    lua_module_hook: "my_hook"
+    stream_proxy:
+        only: false
+        tcp:
+            - addr: 9100
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+sleep 0.5
+make stop
+
+if ! grep "my hook works in http" logs/error.log > /dev/null; then
+    echo "failed: hook can take effect"
+    exit 1
+fi
+
+if ! grep "my hook works in stream" logs/error.log > /dev/null; then
+    echo "failed: hook can take effect"
+    exit 1
+fi
+
+echo "passed: hook can take effect"
+
 # check restart with old nginx.pid exist
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
@@ -621,7 +664,7 @@ if echo "$out" | grep "APISIX is running"; then
     exit 1
 fi
 
-rm logs/nginx.pid
+./bin/apisix stop
 echo "pass: ignore stale nginx.pid"
 
 # check the keepalive related parameter settings in the upstream
