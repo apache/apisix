@@ -128,7 +128,7 @@ local function gen_data_machine(max_number)
                     if err4 then
                         snowflake_inited = nil
                         data_machine = nil
-                        core.log.error("snowflake data_machine: " .. id .." lease faild.")
+                        core.log.error("snowflake data_machine: " .. id .." lease failed.")
                     end
                     start_at = now
                     core.log.info("snowflake data_machine: " .. id .." lease success.")
