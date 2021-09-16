@@ -82,7 +82,7 @@ apisix:
 ```
 
 The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX.
-The example of `my_hook.lua` can be found under the `example` directory of this project.
+The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
 
 ## check dependencies
 
