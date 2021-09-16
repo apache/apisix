@@ -28,6 +28,12 @@ local package = package
 
 
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
+    -- ulimit setting should be checked when APISIX starts
+    ulimit = tonumber(util.trim(util.execute_cmd("ulimit -n")))
+    if not ulimit then
+        error("failed to fetch current maximum number of open file descriptors")
+    end
+
     -- only for developer, use current folder as working space
     local is_root_path = false
     local script_path = arg[0]
@@ -80,5 +86,6 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         pkg_cpath_org = pkg_cpath_org,
         pkg_path_org = pkg_path_org,
         min_etcd_version = min_etcd_version,
+        ulimit = ulimit,
     }
 end
