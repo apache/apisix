@@ -153,6 +153,9 @@ local config_schema = {
                 config_center = {
                     enum = {"etcd", "yaml"},
                 },
+                lua_module_hook = {
+                    pattern = "^[a-zA-Z._-]+$",
+                },
                 proxy_protocol = {
                     type = "object",
                     properties = {
