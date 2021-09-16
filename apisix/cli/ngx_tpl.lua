@@ -99,6 +99,9 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -338,6 +341,9 @@ http {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
 
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
