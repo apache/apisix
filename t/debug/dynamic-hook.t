@@ -78,10 +78,10 @@ call require("apisix").http_header_filter_phase() return:{}
 call require("apisix").http_body_filter_phase() args:{}
 call require("apisix").http_body_filter_phase() return:{}
 call require("apisix").http_log_phase() args:{}
+call require("apisix").http_log_phase() return:{}
 --- no_error_log
 call require("apisix").http_access_phase() return:{}
 call require("apisix").http_access_phase() args:{}
-call require("apisix").http_log_phase() return:{}
 
 
 
@@ -143,7 +143,8 @@ hello world
 qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
 --- no_error_log eval
 [qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_access_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
@@ -153,8 +154,7 @@ qr/call\srequire\(\"apisix\"\).http_header_filter_phase\(\)\sreturn\:\{\}.*GET\s
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_body_filter_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
 qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sargs\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/,
-qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello1\sHTTP\/1.1/]
+qr/call\srequire\(\"apisix\"\).http_log_phase\(\)\sreturn\:\{\}.*GET\s\/hello\sHTTP\/1.1/]
 
 
 
