@@ -847,9 +847,11 @@ GET /t
 --- timeout: 4
 --- response_body
 passed
---- error_log eval
-[qr/proxy request to\s\d+.\d+.\d+.\d+\:18003\swhile connecting to upstream.*\"GET \/hello HTTP\/1.1\"/,
-qr/proxy request to\s\d+.\d+.\d+.\d+\:18005\swhile connecting to upstream.*\"GET \/hello1 HTTP\/1.1\"/]
+--- grep_error_log eval
+qr/proxy request to \S+ while connecting to upstream.*\"GET \/hello.* HTTP\/1.1\"/
+--- grep_error_log_out
+proxy request to 127.0.0.1:18003 while connecting to upstream, client: 127.0.0.1, server: localhost, request: "GET /hello HTTP/1.1"
+proxy request to 127.0.0.1:18005 while connecting to upstream, client: 127.0.0.1, server: localhost, request: "GET /hello1 HTTP/1.1"
 --- no_error_log
 [error]
 
@@ -941,8 +943,10 @@ GET /t
 --- timeout: 4
 --- response_body
 passed
---- error_log eval
-[qr/proxy request to\s\d+.\d+.\d+.\d+\:18004\swhile connecting to upstream.*\"GET \/hello HTTP\/1.1\"/,
-qr/proxy request to\s\d+.\d+.\d+.\d+\:18005\swhile connecting to upstream.*\"GET \/hello1 HTTP\/1.1\"/]
+--- grep_error_log eval
+qr/proxy request to \S+ while connecting to upstream.*\"GET \/hello.* HTTP\/1.1\"/
+--- grep_error_log_out
+proxy request to 127.0.0.1:18004 while connecting to upstream, client: 127.0.0.1, server: localhost, request: "GET /hello HTTP/1.1"
+proxy request to 127.0.0.1:18005 while connecting to upstream, client: 127.0.0.1, server: localhost, request: "GET /hello1 HTTP/1.1"
 --- no_error_log
 [error]
