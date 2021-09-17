@@ -819,7 +819,7 @@ discovery:
                 ngx.status = code
             end
 
-            ngx.sleep(0.6)
+            ngx.sleep(1.5)
 
             local http = require "resty.http"
             local httpc = http.new()
@@ -843,9 +843,10 @@ discovery:
     }
 --- request
 GET /t
+--- wait: 2
+--- timeout: 4
 --- response_body
 passed
---- wait: 2
 --- error_log eval
 [qr/proxy request to\s\d+.\d+.\d+.\d+\:18003\swhile connecting to upstream.*\"GET \/hello HTTP\/1.1\"/,
 qr/proxy request to\s\d+.\d+.\d+.\d+\:18005\swhile connecting to upstream.*\"GET \/hello1 HTTP\/1.1\"/]
@@ -859,7 +860,7 @@ qr/proxy request to\s\d+.\d+.\d+.\d+\:18005\swhile connecting to upstream.*\"GET
 discovery:
   nacos:
       host:
-        - "http://139.219.130.170:8858"
+        - "http://127.0.0.1:8858"
       fetch_interval: 1
 --- config
     location /t {
@@ -912,7 +913,7 @@ discovery:
                 ngx.status = code
             end
 
-            ngx.sleep(0.6)
+            ngx.sleep(1.5)
 
             local http = require "resty.http"
             local httpc = http.new()
@@ -936,9 +937,10 @@ discovery:
     }
 --- request
 GET /t
+--- wait: 2
+--- timeout: 4
 --- response_body
 passed
---- wait: 2
 --- error_log eval
 [qr/proxy request to\s\d+.\d+.\d+.\d+\:18004\swhile connecting to upstream.*\"GET \/hello HTTP\/1.1\"/,
 qr/proxy request to\s\d+.\d+.\d+.\d+\:18005\swhile connecting to upstream.*\"GET \/hello1 HTTP\/1.1\"/]
