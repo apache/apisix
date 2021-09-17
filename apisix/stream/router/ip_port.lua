@@ -187,7 +187,7 @@ function _M.routes()
     return user_routes.values, user_routes.conf_version
 end
 
-local function plugin_checker(item)
+local function stream_route_checker(item)
     if item.plugins then
         local err, message = stream_plugin_checker(item)
         if not err then
@@ -207,6 +207,7 @@ local function plugin_checker(item)
     end
     return true
 end
+_M.stream_route_checker = stream_route_checker
 
 
 function _M.stream_init_worker(filter)
@@ -214,7 +215,7 @@ function _M.stream_init_worker(filter)
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
-            checker = plugin_checker,
+            checker = stream_route_checker,
             filter = filter,
         })
 

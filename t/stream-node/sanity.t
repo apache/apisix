@@ -319,3 +319,29 @@ mmm
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: reject bad CIDR
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": ":/8",
+                    "upstream_id": "1"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid remote_addr: :\/8"}
