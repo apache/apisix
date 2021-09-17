@@ -308,7 +308,7 @@ local function init(env)
     end
 
     if env.ulimit <= 1024 then
-        print(str_format("Warning! Current user limits [%d] too small, please modify user limits by execute \'ulimt -n <new user limits>\' , otherwise the performance is low.", env.ulimit))
+        print(str_format("Warning! Current user limits [%d] is too small, please modify user limits by execute \'ulimt -n <new user limits>\' , otherwise the performance is low.", env.ulimit))
     end
 
     -- read_yaml_conf
