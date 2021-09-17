@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
-local schema_plugin = require("apisix.admin.plugins").stream_check_schema
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 
