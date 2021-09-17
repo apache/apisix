@@ -244,7 +244,8 @@ function _M.set_by_route(route, api_ctx)
             return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end
         -- for test
-        core.log.info("route_id: ", up_conf.parent.value.id, ", new_nodes_port: ", new_nodes[1].port)
+        core.log.info("route_id: ", up_conf.parent.value.id,
+                      ", new_nodes_port: ", new_nodes[1].port)
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
