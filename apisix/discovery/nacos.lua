@@ -367,8 +367,11 @@ function _M.nodes(service_name, discovery_args)
         ngx.sleep(step)
         waiting_time = waiting_time - step
     end
-    return applications[namespace_id] and applications[namespace_id][group_name] and
-            applications[namespace_id][group_name][service_name]
+
+    if not applications[namespace_id] or not applications[namespace_id][group_name] then
+        return nil
+    end
+    return applications[namespace_id][group_name][service_name]
 end
 
 
