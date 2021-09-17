@@ -356,7 +356,7 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    debug.dynamic_debug()
+    debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then

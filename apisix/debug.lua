@@ -126,15 +126,17 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
         local arg = {...}
         local http_filter = debug_yaml.http_filter
         local api_ctx = ngx.ctx.api_ctx
+        local enable_by_hook = not (http_filter and http_filter.enable)
+                or (api_ctx and api_ctx.enable_dynamic_debug)
+        local enable_by_header_filter = (http_filter and http_filter.enable)
+                and (api_ctx and api_ctx.enable_dynamic_debug)
         if hook_conf.is_print_input_args then
-            if not (http_filter and http_filter.enable)
-                    or (api_ctx and api_ctx.enable_dynamic_debug) then
+            if enable_by_hook then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
 
-            if (http_filter and http_filter.enable)
-                    and (api_ctx and api_ctx.enable_dynamic_debug) then
+            if enable_by_header_filter then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
@@ -142,14 +144,12 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            if not (http_filter and http_filter.enable)
-                    or (api_ctx and api_ctx.enable_dynamic_debug) then
+            if enable_by_hook then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
 
-            if (http_filter and http_filter.enable)
-                    and (api_ctx and api_ctx.enable_dynamic_debug) then
+            if enable_by_header_filter then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
@@ -233,13 +233,13 @@ local function check()
     return true
 end
 
-function _M.dynamic_debug()
+function _M.dynamic_debug(api_ctx)
     if not check() then
         return
     end
 
     if get_headers()[debug_yaml.http_filter.enable_header_name] then
-        ngx.ctx.api_ctx.enable_dynamic_debug = true
+        api_ctx.enable_dynamic_debug = true
     end
 end
 

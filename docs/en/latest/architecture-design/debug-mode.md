@@ -86,7 +86,7 @@ hook_phase: # Module Function List, Name: hook_phase
 
 ### Enable Advanced Debug Mode Dynamically
 
-The advanced debug mode can be enabled dynamically by a single request and turned off automatically when the request ends.
+The advanced debug mode can take effect in particular requests by dynamic rule.
 
 Example:
 
@@ -98,10 +98,10 @@ http_filter:
 #END
 ```
 
-Dynamically enable advanced debugging mode, example:
+Dynamically enable advanced debugging mode in a particular request like this:
 
 ```shell
 curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
-Notice: Dynamic advanced debug mode cannot hook the `apisix.http_access_phase` module (because the request enters the `apisix.http_access_phase` module before it determines whether advanced debug mode is dynamically enabled).
+Notice: We can not only hook the `apisix.http_access_phase` module in particular requests. Because the request enters the `apisix.http_access_phase` module before it determines whether advanced debug mode is dynamically enabled.
