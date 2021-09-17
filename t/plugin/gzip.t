@@ -46,57 +46,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: schema check
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            for _, case in ipairs({
-                {input = {
-                    types = {}
-                }},
-                {input = {
-                    min_length = 0
-                }},
-                {input = {
-                    comp_level = 10
-                }},
-                {input = {
-                    http_version = 2
-                }},
-                {input = {
-                    buffers = {
-                        number = 0,
-                        size = 0,
-                    }
-                }},
-                {input = {
-                    vary = 0
-                }}
-            }) do
-                local code, body = t('/apisix/admin/global_rules/1',
-                    ngx.HTTP_PUT,
-                    {
-                        id = "1",
-                        plugins = {
-                            ["gzip"] = case.input
-                        }
-                    }
-                )
-                ngx.print(body)
-            end
-    }
-}
---- response_body
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"types\" validation failed: object matches none of the requireds"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"min_length\" validation failed: expected 0 to be greater than 1"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"comp_level\" validation failed: expected 0 to be greater than 1"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"http_version\" validation failed: matches none of the enum values"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be greater than 1"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
-
-
-=== TEST 2: sanity
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
@@ -129,7 +79,7 @@ passed
 
 
 
-=== TEST 3: hit
+=== TEST 2: hit
 --- request
 POST /echo
 0123456789
@@ -143,7 +93,7 @@ Vary:
 
 
 
-=== TEST 4: default buffers and compress level
+=== TEST 3: default buffers and compress level
 --- config
     location /t {
         content_by_lua_block {
@@ -174,7 +124,7 @@ Vary:
 
 
 
-=== TEST 5: compress level
+=== TEST 4: compress level
 --- config
     location /t {
         content_by_lua_block {
@@ -234,7 +184,7 @@ passed
 
 
 
-=== TEST 6: hit
+=== TEST 5: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +215,7 @@ ok
 
 
 
-=== TEST 7: min length
+=== TEST 6: min length
 --- config
     location /t {
         content_by_lua_block {
@@ -299,7 +249,7 @@ passed
 
 
 
-=== TEST 8: not hit
+=== TEST 7: not hit
 --- request
 POST /echo
 0123456789
@@ -312,7 +262,7 @@ Content-Encoding:
 
 
 
-=== TEST 9: http version
+=== TEST 8: http version
 --- config
     location /t {
         content_by_lua_block {
@@ -346,7 +296,7 @@ passed
 
 
 
-=== TEST 10: not hit
+=== TEST 9: not hit
 --- request
 POST /echo HTTP/1.0
 0123456789
@@ -359,7 +309,7 @@ Content-Encoding:
 
 
 
-=== TEST 11: hit again
+=== TEST 10: hit again
 --- request
 POST /echo HTTP/1.1
 0123456789
@@ -372,7 +322,7 @@ Content-Encoding: gzip
 
 
 
-=== TEST 12: types
+=== TEST 11: types
 --- config
     location /t {
         content_by_lua_block {
@@ -406,7 +356,7 @@ passed
 
 
 
-=== TEST 13: not hit
+=== TEST 12: not hit
 --- request
 POST /echo
 0123456789
@@ -419,7 +369,7 @@ Content-Encoding:
 
 
 
-=== TEST 14: hit again
+=== TEST 13: hit again
 --- request
 POST /echo
 0123456789
@@ -432,7 +382,7 @@ Content-Encoding: gzip
 
 
 
-=== TEST 15: hit with charset
+=== TEST 14: hit with charset
 --- request
 POST /echo
 0123456789
@@ -445,7 +395,7 @@ Content-Encoding: gzip
 
 
 
-=== TEST 16: match all types
+=== TEST 15: match all types
 --- config
     location /t {
         content_by_lua_block {
@@ -479,7 +429,7 @@ passed
 
 
 
-=== TEST 17: hit
+=== TEST 16: hit
 --- request
 POST /echo
 0123456789
@@ -492,7 +442,7 @@ Content-Encoding: gzip
 
 
 
-=== TEST 18: vary
+=== TEST 17: vary
 --- config
     location /t {
         content_by_lua_block {
@@ -526,7 +476,7 @@ passed
 
 
 
-=== TEST 19: hit
+=== TEST 18: hit
 --- request
 POST /echo
 0123456789
@@ -538,3 +488,54 @@ Content-Type: text/html
 --- response_headers
 Content-Encoding: gzip
 Vary: upstream, Accept-Encoding
+
+
+
+=== TEST 19: schema check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, case in ipairs({
+                {input = {
+                    types = {}
+                }},
+                {input = {
+                    min_length = 0
+                }},
+                {input = {
+                    comp_level = 10
+                }},
+                {input = {
+                    http_version = 2
+                }},
+                {input = {
+                    buffers = {
+                        number = 0,
+                        size = 0,
+                    }
+                }},
+                {input = {
+                    vary = 0
+                }}
+            }) do
+                local code, body = t('/apisix/admin/global_rules/1',
+                    ngx.HTTP_PUT,
+                    {
+                        id = "1",
+                        plugins = {
+                            ["gzip"] = case.input
+                        }
+                    }
+                )
+                ngx.print(body)
+            end
+    }
+}
+--- response_body
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"types\" validation failed: object matches none of the requireds"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"min_length\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"comp_level\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"http_version\" validation failed: matches none of the enum values"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
