@@ -38,6 +38,8 @@ local default_weight
 local applications
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
+local default_namespace_id = "public"
+local default_group_name = "DEFAULT_GROUP"
 
 local events
 local events_list
@@ -235,12 +237,12 @@ local function iter_and_add_service(services, values)
 
         local namespace_id
         if up.discovery_args then
-            namespace_id = up.discovery_args.namespace_id
+            namespace_id = up.discovery_args.namespace_id or default_namespace_id
         end
 
         local group_name
         if up.discovery_args then
-            group_name = up.discovery_args.group_name
+            group_name = up.discovery_args.group_name or default_group_name
         end
 
         if up.discovery_type == 'nacos' then
@@ -307,11 +309,21 @@ local function fetch_full_registry(premature)
             return
         end
 
+        if not up_apps[service_info.namespace_id] then
+            up_apps[service_info.namespace_id] = {}
+        end
+
+        if not up_apps[service_info.namespace_id][service_info.group_name] then
+            up_apps[service_info.namespace_id][service_info.group_name] = {}
+        end
+
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[service_info.service_name]
+            local nodes = up_apps[service_info.namespace_id]
+            [service_info.group_name][service_info.service_name]
             if not nodes then
                 nodes = {}
-                up_apps[service_info.service_name] = nodes
+                up_apps[service_info.namespace_id]
+                [service_info.group_name][service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
@@ -335,7 +347,12 @@ local function fetch_full_registry(premature)
 end
 
 
-function _M.nodes(service_name)
+function _M.nodes(service_name, discovery_args)
+    local namespace_id = discovery_args and
+            discovery_args.namespace_id or default_namespace_id
+    local group_name = discovery_args
+            and discovery_args.group_name or default_group_name
+
     local logged = false
     -- maximum waiting time: 5 seconds
     local waiting_time = 5
@@ -348,7 +365,8 @@ function _M.nodes(service_name)
         ngx.sleep(step)
         waiting_time = waiting_time - step
     end
-    return applications[service_name]
+    return applications[namespace_id] and applications[namespace_id][group_name] and
+            applications[namespace_id][group_name][service_name]
 end
 
 

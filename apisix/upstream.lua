@@ -239,7 +239,7 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
-        local new_nodes, err = dis.nodes(up_conf.service_name)
+        local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
         if not new_nodes then
             return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end
