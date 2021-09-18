@@ -80,7 +80,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ## Step 3: Manage Apache APISIX Server
 
-We can initialize dependencies, start service, and stop service with commands in the Apache APISIX directory, we can also view all commands and their corresponding functions with the `make help` command.
+We can initialize dependencies, start service, and stop service with commands in the Apache APISIX directory, we can also view all commands and their corresponding functions with the `apisix help` command.
 
 ### Initializing Dependencies
 
@@ -88,7 +88,7 @@ Run the following command to initialize the NGINX configuration file and etcd.
 
 ```shell
 # initialize NGINX config file and etcd
-make init
+apisix init
 ```
 
 ### Start Apache APISIX
@@ -97,36 +97,36 @@ Run the following command to start Apache APISIX.
 
 ```shell
 # start Apache APISIX server
-make run
+apisix start
 ```
 
 ### Stop Apache APISIX
 
-Both `make quit` and `make stop` can stop Apache APISIX. The main difference is that `make quit` stops Apache APISIX gracefully, while `make stop` stops Apache APISIX immediately.
+Both `apisix quit` and `apisix stop` can stop Apache APISIX. The main difference is that `apisix quit` stops Apache APISIX gracefully, while `apisix stop` stops Apache APISIX immediately.
 
-It is recommended to use gracefully stop command `make quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping down. In contrast, `make stop` will trigger a forced shutdown, it stops Apache APISIX immediately, in which case the incoming requests will not be processed before the shutdown.
+It is recommended to use gracefully stop command `apisix quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping down. In contrast, `apisix stop` will trigger a forced shutdown, it stops Apache APISIX immediately, in which case the incoming requests will not be processed before the shutdown.
 
 The command to perform a graceful shutdown is shown below.
 
 ```shell
 # stop Apache APISIX server gracefully
-make quit
+apisix quit
 ```
 
 The command to perform a forced shutdown is shown below.
 
 ```shell
 # stop Apache APISIX server immediately
-make stop
+apisix stop
 ```
 
 ### View Other Operations
 
-Run the `make help` command to see the returned results and get commands and descriptions of other operations.
+Run the `apisix help` command to see the returned results and get commands and descriptions of other operations.
 
 ```shell
 # more actions find by `help`
-make help
+apisix help
 ```
 
 ## Step 4: Run Test Cases
