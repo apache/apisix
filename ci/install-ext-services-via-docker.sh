@@ -59,9 +59,9 @@ curl https://raw.githubusercontent.com/api7/nacos-test-service/main/Dockerfile |
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18001 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18002 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with namespaceId=test_ns
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18003 -env NAMESPACE=test_ns --env SUFFIX_NUM=1 -p 18003:18001 --name nacos-service3 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18003 --env NAMESPACE=test_ns --env SUFFIX_NUM=1 -p 18003:18001 --name nacos-service3 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with group=test_group
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18004 -env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18004 --env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with namespaceId=test_ns and group=test_group
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env DISCOVERY_PORT=18005 --env NAMESPACE=test_ns --env GROUP=test_group --env SUFFIX_NUM=1 -p 18005:18001 --name nacos-service5 nacos-test-service:1.0-SNAPSHOT
 
