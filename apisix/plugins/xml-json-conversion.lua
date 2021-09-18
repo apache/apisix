@@ -53,10 +53,10 @@ function _M.check_schema(conf)
 end
 
 local function xml2json(xml_data)
-    local convertHandler = handler:new()
-    local parser = xml2lua.parser(convertHandler)
+    local convert_handler = handler:new()
+    local parser = xml2lua.parser(convert_handler)
     parser:parse(xml_data)
-    return 200, json_encode(convertHandler.root)
+    return 200, json_encode(convert_handler.root)
 end
 
 local function json2xml(table_data)
@@ -67,7 +67,7 @@ end
 
 local _switch_anonymous = {
     ["json"] = function(content_type, req_body, to)
-        if "application/json" ~= content_type then
+        if string.find(content_type, "application/json", 1, true) then
             return 400, {message = "Operation not supported"}
         end
 
