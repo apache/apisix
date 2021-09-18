@@ -19,6 +19,7 @@ local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
+local inspect      = require("inspect")
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
@@ -29,7 +30,6 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
-local inspect      = require("inspect")
 local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
