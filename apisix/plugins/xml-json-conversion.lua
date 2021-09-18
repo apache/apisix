@@ -16,11 +16,13 @@
 --
 
 local core    = require("apisix.core")
-local xml2lua = require("xml2lua")
 local handler = require("xmlhandler.tree")
 local string  = require("string")
+local parser   = require("xml2lua").parser
+local table_to_xml  = require("xml2lua").toXml
 local json_decode   = require('cjson.safe').decode
 local json_encode   = require('cjson.safe').encode
+
 
 local schema = {
     type = "object",
@@ -54,20 +56,20 @@ end
 
 local function xml2json(xml_data)
     local convert_handler = handler:new()
-    local parser = xml2lua.parser(convert_handler)
-    parser:parse(xml_data)
+    local parser_handler = parser(convert_handler)
+    parser_handler:parse(xml_data)
     return 200, json_encode(convert_handler.root)
 end
 
 local function json2xml(table_data)
-    local xmlStr = xml2lua.toXml(json_decode(table_data))
+    local xmlStr = table_to_xml(json_decode(table_data))
     xmlStr = string.gsub(xmlStr, "%s+", "")
     return 200, xmlStr
 end
 
 local _switch_anonymous = {
     ["json"] = function(content_type, req_body, to)
-        if string.find(content_type, "application/json", 0, true) == nil then
+        if string.find(content_type, "application/json", 1, true) == nil then
             return 400, {message = "Operation not supported"}
         end
 
@@ -84,7 +86,7 @@ local _switch_anonymous = {
         end
     end,
     ["xml"] = function(content_type, req_body, to)
-        if "text/xml" ~= content_type then
+        if string.find(content_type, "text/xml", 1, true) == nil then
             return 400, {message = "Operation not supported"}
         end
         if to == 'json' then
@@ -95,15 +97,13 @@ local _switch_anonymous = {
     end
 }
 
-function _M.access(conf, ctx)
+local function process(from, to)
     local req_body, err = core.request.get_body()
     if err or req_body == nil or req_body == '' then
         core.log.error("failed to read request body: ", err)
         core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
-    local from = conf.from
-    local to = conf.to
     if from == to then
         return req_body
     end
@@ -117,31 +117,23 @@ function _M.access(conf, ctx)
     end
 end
 
-local function get_json()
+function _M.access(conf, ctx)
+    local from = conf.from
+    local to = conf.to
+
+    return process(from, to)
+end
+
+local function conversion()
     local args = core.request.get_uri_args()
     if not args or not args.from or not args.to then
         return core.response.exit(400)
     end
 
-    local req_body, err = core.request.get_body()
-    if err or req_body == nil or req_body == '' then
-        core.log.error("failed to read request body: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
-
     local from = args.from
     local to = args.to
-    if from == to then
-        return req_body
-    end
 
-    local content_type = core.request.headers()["Content-Type"]
-    local _f_anon = _switch_anonymous[from]
-    if _f_anon then
-        return _f_anon(content_type, req_body, to)
-    else
-        return 400, {message = "Operation not supported"}
-    end
+    return process(from, to)
 end
 
 function _M.api()
@@ -149,7 +141,7 @@ function _M.api()
         {
             methods = {"GET"},
             uri = "/apisix/plugin/xml-json-conversion",
-            handler = get_json,
+            handler = conversion,
         }
     }
 end
