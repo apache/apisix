@@ -19,7 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local ipairs = ipairs
 local consumer_mod = require("apisix.consumer")
-local lualdap = require "lualdap"
+local lualdap = require("lualdap")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -34,8 +34,7 @@ local schema = {
         use_tls = { type = "boolean" },
         uid = { type = "string" }
     },
-    required = {"base_dn","ldap_uri"},
-    additionalProperties = false,
+    required = {"base_dn","ldap_uri"}
 }
 
 local consumer_schema = {
