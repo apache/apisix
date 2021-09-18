@@ -29,7 +29,7 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
-local inspect      = require "inspect"
+local inspect      = require("inspect")
 local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
@@ -127,16 +127,10 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
         local http_filter = debug_yaml.http_filter
         local api_ctx = ngx.ctx.api_ctx
         local enable_by_hook = not (http_filter and http_filter.enable)
-                or (api_ctx and api_ctx.enable_dynamic_debug)
         local enable_by_header_filter = (http_filter and http_filter.enable)
                 and (api_ctx and api_ctx.enable_dynamic_debug)
         if hook_conf.is_print_input_args then
-            if enable_by_hook then
-                log[log_level]("call require(\"", file_path, "\").", fun_name,
-                               "() args:", inspect(arg))
-            end
-
-            if enable_by_header_filter then
+            if enable_by_hook or enable_by_header_filter then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
             end
@@ -144,12 +138,7 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            if enable_by_hook then
-                log[log_level]("call require(\"", file_path, "\").", fun_name,
-                               "() return:", inspect(ret))
-            end
-
-            if enable_by_header_filter then
+            if enable_by_hook or enable_by_header_filter then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() return:", inspect(ret))
             end
