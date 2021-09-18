@@ -34,7 +34,7 @@ local schema = {
         use_tls = { type = "boolean" },
         uid = { type = "string" }
     },
-    required = {"base_dn","ldap_uri"}
+    required = {"base_dn","ldap_uri"},
 }
 
 local consumer_schema = {
@@ -44,7 +44,6 @@ local consumer_schema = {
         user_dn = { type = "string" },
     },
     required = {"user_dn"},
-    additionalProperties = false,
 }
 
 local plugin_name = "ldap-auth"
