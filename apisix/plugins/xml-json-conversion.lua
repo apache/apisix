@@ -18,8 +18,9 @@
 local core    = require("apisix.core")
 local xml2lua = require("xml2lua")
 local handler = require("xmlhandler.tree")
-local cjson   = require('cjson.safe')
 local string  = require("string")
+local json_decode   = require('cjson.safe').decode
+local json_encode   = require('cjson.safe').encode
 
 local schema = {
     type = "object",
@@ -42,7 +43,7 @@ local plugin_name = "xml-json-conversion"
 
 local _M = {
     version = 0.1,
-    priority = 90,
+    priority = 9,
     name = plugin_name,
     schema = schema,
 }
@@ -55,11 +56,11 @@ local function xml2json(xml_data)
     local convertHandler = handler:new()
     local parser = xml2lua.parser(convertHandler)
     parser:parse(xml_data)
-    return 200, cjson.encode(convertHandler.root)
+    return 200, json_encode(convertHandler.root)
 end
 
 local function json2xml(table_data)
-    local xmlStr = xml2lua.toXml(cjson.decode(table_data))
+    local xmlStr = xml2lua.toXml(json_decode(table_data))
     xmlStr = string.gsub(xmlStr, "%s+", "")
     return 200, xmlStr
 end
