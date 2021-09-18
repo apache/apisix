@@ -70,7 +70,7 @@ jobs:
 
       - name: Deploy Chaos Mesh
         run: |
-          curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash
+          curl -sSL https://mirrors.chaos-mesh.org/v2.0.1/install.sh | bash
 
 
       - name: Install Ginkgo
