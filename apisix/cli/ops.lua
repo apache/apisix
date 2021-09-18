@@ -308,7 +308,7 @@ local function init(env)
     end
 
     if env.ulimit <= 1024 then
-        print(str_format("Warning! Current user limits [%d] is too small, please modify user limits by execute \'ulimt -n <new user limits>\' , otherwise the performance is low.", env.ulimit))
+        print(str_format("Warning! Current maximum number of open file descriptors [%d] is too small, please increase user limits by execute \'ulimit -n <new user limits>\' , otherwise the performance is low.", env.ulimit))
     end
 
     -- read_yaml_conf

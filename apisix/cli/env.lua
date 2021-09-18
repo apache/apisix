@@ -29,7 +29,11 @@ local package = package
 
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
     -- ulimit setting should be checked when APISIX starts
-    ulimit = tonumber(util.trim(util.execute_cmd("ulimit -n")))
+    local res, err = util.execute_cmd("ulimit -n")
+    if not res or err ~= nil then
+        error("failed to exec ulimit cmd \'ulimit -n \', err: " .. err)
+    end
+    ulimit = tonumber(util.trim(res))
     if not ulimit then
         error("failed to fetch current maximum number of open file descriptors")
     end
