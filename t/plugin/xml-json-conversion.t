@@ -120,44 +120,7 @@ Content-Type: application/json
 --- no_error_log
 [error]
 
-
-=== TEST 5: verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local headers = {}
-            headers["Content-Type"] = "text/xml"
-            local t = require("lib.test_admin").test
-            local code, body = t('/hello',
-                ngx.HTTP_GET,
-                [[<people>
-                     <person>
-                       <name>Manoel</name>
-                       <city>Palmas-TO</city>
-                     </person>
-                   </people>]],
-               nil,
-               headers
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-=== TEST 6: xml to json
+=== TEST 5: xml to json
 --- request
 GET /hello
 <people>
@@ -173,7 +136,7 @@ qr/\{"people":\{"person":\{"name":"Manoel"\}\}\}/
 [error]
 
 
-=== TEST 7: create a route with the plugin which set from=json and to=xml
+=== TEST 6: create a route with the plugin which set from=json and to=xml
 --- config
     location /t {
         content_by_lua_block {
@@ -210,7 +173,20 @@ passed
 [error]
 
 
-=== TEST 7: verify plugin:json to xml
+=== TEST 7: test for unsupported operation
+--- request
+GET /json-to-xml
+{"people":{"person":{"name":"Manoel"}}}
+--- more_headers
+Content-Type: text/xml
+--- error_code: 400
+--- response_body
+{"message":"Operation not supported"}
+--- no_error_log
+[error]
+
+
+=== TEST 8: verify plugin:json to xml
 --- request
 GET /json-to-xml
 {"people":{"person":{"name":"Manoel"}}}
