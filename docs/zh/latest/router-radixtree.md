@@ -23,7 +23,8 @@ title: 路由 RadixTree
 
 ### 什么是 libradixtree？
 
-[libradixtree](https://github.com/iresty/lua-resty-radixtree), 是在 `Lua` 中为 `OpenResty` 实现的自适应基数树。
+[libradixtree](https://github.com/iresty/lua-resty-radixtree)
+, 是在 `Lua` 中为 `OpenResty` 实现的自适应基数树。
 
 `Apache APISIX` 使用 `libradixtree` 作为路由调度库。
 
@@ -35,19 +36,20 @@ title: 路由 RadixTree
 
 #### 1. 完全匹配
 
-```
+```bash
 /blog/foo
 ```
 
-此时只能匹配 `/blog/foo`。
+此时只能匹配 `/blog/foo` 。
 
 #### 2. 前缀匹配
 
-```
+```bash
 /blog/bar*
 ```
 
-它将匹配带有前缀 `/blog/bar` 的路径，例如：`/blog/bar/a`、`/blog/bar/b`、`/blog/bar/c/d/e`、`/blog/bar` 等。
+它将匹配带有前缀 `/blog/bar` 的路径，
+例如： `/blog/bar/a` 、 `/blog/bar/b` 、 `/blog/bar/c/d/e` 、 `/blog/bar` 等。
 
 #### 3. 匹配优先级
 
@@ -55,28 +57,28 @@ title: 路由 RadixTree
 
 以下是规则:
 
-```
+```bash
 /blog/foo/*
 /blog/foo/a/*
 /blog/foo/c/*
 /blog/foo/bar
 ```
 
-| 路径 | 匹配结果 |
-|------|--------------|
-|/blog/foo/bar | `/blog/foo/bar` |
-|/blog/foo/a/b/c | `/blog/foo/a/*` |
-|/blog/foo/c/d | `/blog/foo/c/*` |
-|/blog/foo/gloo | `/blog/foo/*` |
-|/blog/bar | not match |
+| 路径            | 匹配结果        |
+| --------------- | --------------- |
+| /blog/foo/bar   | `/blog/foo/bar` |
+| /blog/foo/a/b/c | `/blog/foo/a/*` |
+| /blog/foo/c/d   | `/blog/foo/c/*` |
+| /blog/foo/gloo  | `/blog/foo/*` |
+| /blog/bar       | not match       |
 
 #### 4. 不同的路由具有相同 `uri`
 
 当不同的路由有相同的 `uri` 时，可以通过设置路由的 `priority` 字段来决定先匹配哪条路由，或者添加其他匹配规则来区分不同的路由。
 
-注意：在匹配规则中，`priority` 字段优先于除 `uri` 之外的其他规则。
+注意：在匹配规则中， `priority` 字段优先于除 `uri` 之外的其他规则。
 
-1.不同的路由有相同的 `uri` 并设置 `priority` 字段
+1、不同的路由有相同的 `uri` 并设置 `priority` 字段
 
 创建两条 `priority` 值不同的路由（值越大，优先级越高）。
 
@@ -117,7 +119,7 @@ curl http://127.0.0.1:1980/hello
 
 所有请求只到达端口 `1980` 的路由。
 
-2.不同的路由有相同的 `uri` 并设置不同的匹配条件
+2、不同的路由有相同的 `uri` 并设置不同的匹配条件
 
 以下是设置主机匹配规则的示例：
 
@@ -166,7 +168,7 @@ $ curl http://127.0.0.1:9080/hello
 {"error_msg":"404 Route Not Found"}
 ```
 
-`host` 规则匹配，请求命中对应的上游，`host` 不匹配，请求返回404消息。
+`host` 规则匹配，请求命中对应的上游， `host` 不匹配，请求返回404消息。
 
 #### 5. 参数匹配
 
@@ -176,19 +178,19 @@ $ curl http://127.0.0.1:9080/hello
 
 ```yaml
 apisix:
-    router:
-        http: 'radixtree_uri_with_parameter'
+  router:
+    http: 'radixtree_uri_with_parameter'
 ```
 
 示例：
 
-```
+```bash
 /blog/:name
 ```
 
-此时将匹配 `/blog/dog` 和 `/blog/cat`。
+此时将匹配 `/blog/dog` 和 `/blog/cat` 。
 
-更多使用方式请参考：https://github.com/api7/lua-resty-radixtree/#parameters-in-path
+更多使用方式请参考：[lua-resty-radixtree/#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 
 ### 如何通过 Nginx 内置变量过滤路由
 
@@ -214,7 +216,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-这个路由需要请求头 `host` 等于 `iresty.com`，请求cookie密钥 `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
+这个路由需要请求头 `host` 等于 `iresty.com` ，
+请求cookie密钥 `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
 
 ### 如何通过 GraphQL 属性过滤路由
 
@@ -263,6 +266,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
+
 来自请求正文的数据。 此限制是通过以下方式配置的：
 
 ```yaml
@@ -270,4 +274,4 @@ graphql:
   max_size: 1048576
 ```
 
-如果你需要传递一个大于限制的 `GraphQL body`，你可以增加 `conf/config.yaml` 中的值。
+如果你需要传递一个大于限制的 `GraphQL body` ，你可以增加 `conf/config.yaml` 中的值。
