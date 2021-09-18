@@ -32,7 +32,7 @@ title: xml-json-conversion
 
 ## 名称
 
-xml-json-conversion 插件意在将request body中的xml数据转换成json输出,或者将json数据转换成xml数据输出
+xml-json-conversion 插件意在将 request body 中的 xml 格式数据转换成 json 输出，或者将 json 格式数据转换成 xml 格式数据输出。
 
 ## 属性
 
@@ -86,7 +86,7 @@ curl -X GET http://127.0.0.1:9080/hello \
 
 ## 禁用插件
 
-想要禁用“xml-json-conversion”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
+想要禁用 xml-json-conversion 插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
