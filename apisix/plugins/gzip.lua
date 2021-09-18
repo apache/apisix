@@ -31,7 +31,7 @@ local schema = {
             anyOf = {
                 {
                     type = "array",
-                    minItem = 1,
+                    minItems = 1,
                     items = {
                         type = "string",
                         minLength = 1,
