@@ -67,7 +67,7 @@ end
 
 local _switch_anonymous = {
     ["json"] = function(content_type, req_body, to)
-        if string.find(content_type, "application/json", 1, true) then
+        if string.find(content_type, "application/json", 0, true) == nil then
             return 400, {message = "Operation not supported"}
         end
 
