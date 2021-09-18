@@ -32,7 +32,7 @@ title: xml-json-conversion
 
 ## 名称
 
-xml-json-conversion 插件意在将request body中的xml数据转换成json输出,或者将json数据转换成xml数据输出
+xml-json-conversion 插件意在将 request body 中的 xml 格式数据转换成 json 输出，或者将 json 格式数据转换成 xml 格式数据输出。
 
 ## 属性
 
