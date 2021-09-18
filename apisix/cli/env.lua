@@ -25,7 +25,7 @@ local stderr = io.stderr
 local str_find = string.find
 local arg = arg
 local package = package
-
+local tonumber = tonumber
 
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
     -- ulimit setting should be checked when APISIX starts
