@@ -167,6 +167,10 @@
         },
         {
           "type": "doc",
+          "id": "router-radixtree"
+        },
+        {
+          "type": "doc",
           "id": "stand-alone"
         },
         {
