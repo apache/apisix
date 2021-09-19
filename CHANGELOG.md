@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.9.0](#290)
 - [2.8.0](#280)
 - [2.7.0](#270)
 - [2.6.0](#260)
@@ -43,6 +44,42 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.9.0
+
+### Change
+
+- change: rename plugin's balancer method to before_proxy [#4697](https://github.com/apache/apisix/pull/4697)
+
+### Core
+
+- :sunrise: feat: increase timers limitation [#4843](https://github.com/apache/apisix/pull/4843)
+- :sunrise: feat: make A/B test APISIX easier by removing "additionalProperties = false" [#4797](https://github.com/apache/apisix/pull/4797)
+- :sunrise: feat: support dash in args (#4519) [#4676](https://github.com/apache/apisix/pull/4676)
+- :sunrise: feat(admin): reject invalid proto [#4750](https://github.com/apache/apisix/pull/4750)
+
+### Plugin
+
+- :sunrise: feat(ext-plugin): support ExtraInfo [#4835](https://github.com/apache/apisix/pull/4835)
+- :sunrise: feat(gzip): support special * to match any type [#4817](https://github.com/apache/apisix/pull/4817)
+- :sunrise: feat(real-ip): implement the first version [#4813](https://github.com/apache/apisix/pull/4813)
+- :sunrise: feat(limit-*): add custom reject-message for traffic control [#4808](https://github.com/apache/apisix/pull/4808)
+- :sunrise: feat: Request-ID plugin add snowflake algorithm [#4559](https://github.com/apache/apisix/pull/4559)
+- :sunrise: feat: Added authz-casbin plugin and doc and tests for it [#4710](https://github.com/apache/apisix/pull/4710)
+- :sunrise: feat: add error log skywalking reporter [#4633](https://github.com/apache/apisix/pull/4633)
+- :sunrise: feat(ext-plugin): send the idempotent key when preparing conf [#4736](https://github.com/apache/apisix/pull/4736)
+
+### Bugfix
+
+- fix: the issue that plugins in global rule may be cached to route [#4867](https://github.com/apache/apisix/pull/4867)
+- fix(grpc-transcode): support converting nested message [#4859](https://github.com/apache/apisix/pull/4859)
+- fix(authz-keycloak): set permissions as empty table when lazy_load_path is false [#4845](https://github.com/apache/apisix/pull/4845)
+- fix(proxy-cache): keep cache_method same with nginx's proxy_cache_methods [#4814](https://github.com/apache/apisix/pull/4814)
+- fix(admin): inject updatetime when the requst is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
+- fix(admin): check username for updating consumer [#4756](https://github.com/apache/apisix/pull/4756)
+- fix(error-log-logger): avoid sending stale error log [#4690](https://github.com/apache/apisix/pull/4690)
+- fix(grpc-transcode): handle enum type [#4706](https://github.com/apache/apisix/pull/4706)
+- fix: when a request caused a 500 error, the status was converted to 405 [#4696](https://github.com/apache/apisix/pull/4696)
 
 ## 2.8.0
 

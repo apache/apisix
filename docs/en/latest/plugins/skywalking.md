@@ -33,7 +33,7 @@ title: skywalking
 
 ## Name
 
-[**Skywalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.\
+[**Skywalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.
 The skywalking server can supports both http and grpc protocols. The APISIX client only support http protocols.
 
 ## Attributes
@@ -78,10 +78,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`，to complete the above operation through the web interface, first add a route:\
-![ ](../../../assets/images/plugin/skywalking-1.png)\
-Then add skywalking plugin:\
-![ ](../../../assets/images/plugin/skywalking-2.png)
+You also can complete the above operation through the web interface, first add a route, then add skywalking plugin:
+
+![ ](../../../assets/images/plugin/skywalking-1.png)
 
 ## How to set endpoint
 

@@ -325,12 +325,13 @@ HTTP/1.1 200 OK
 | desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 |                                                  |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                   | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 可选                               | 辅助     | 是否启用 `websocket`(boolean), 缺省 `false`.                           |                                                  |
+| hosts            | 可选                              | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                            |
 | create_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 | update_time      | 可选                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建                          | 1602883670                                       |
 
 service 对象 json 配置内容：
 
-```shell
+```json
 {
     "id": "1",              # id
     "plugins": {},          # 指定 service 绑定的插件
@@ -339,6 +340,7 @@ service 对象 json 配置内容：
     "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
     "enable_websocket": true, #启动 websocket 功能
+    "hosts": ["foo.com"]
 }
 ```
 
@@ -927,6 +929,7 @@ Content-Type: text/plain
 | ----------- | ----------------------------------- | ---------- | ------------- |
 | GET         | /apisix/admin/plugins/list          | 无         | 获取资源列表  |
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源      |
+| GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性|
 
 ### body 请求参数
 
@@ -944,13 +947,21 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *地址*：/apisix/admin/plugins?all=true
 
-*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` 和 `version`。
+
+默认情况下，这个接口只返回 http 插件。如果你需要 stream 插件，需要用 `/apisix/admin/plugins?all=true&subsystem=stream`。
 
 ### 请求方法
 
 | Method | 请求 URI                       | 请求 body | 说明     |
 | ------ | ------------------------------ | --------- | -------- |
 | GET    | /apisix/admin/plugins?all=true | 无        | 获取资源 |
+
+### 请求参数
+
+| 名称      | 说明                    | 默认 |
+| ----      | ----------------------- | -----|
+| subsystem | 插件所属的子系统        | http |
 
 [Back to TOC](#目录)
 
@@ -978,5 +989,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | server_addr      | 可选  | IP       | 服务端 IP 地址 | "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 服务端端口 | 9090  |
 | sni              | 可选  | Host     | 服务器名称指示| "test.com"  |
+| upstream | 可选 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |  |
+| upstream_id | 可选 | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md) |  |
 
 [Back to TOC](#目录)

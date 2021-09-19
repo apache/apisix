@@ -18,7 +18,8 @@ local core = require("apisix.core")
 local ngx_ssl = require("ngx.ssl")
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
-local aes = require "resty.aes"
+local aes = require("resty.aes")
+local str_lower = string.lower
 local assert = assert
 local type = type
 
@@ -33,6 +34,25 @@ local pkey_cache = core.lrucache.new {
 
 
 local _M = {}
+
+
+function _M.server_name()
+    local sni, err = ngx_ssl.server_name()
+    if err then
+        return nil, err
+    end
+
+    if not sni then
+        local local_conf = core.config.local_conf()
+        sni = core.table.try_read_attr(local_conf, "apisix", "ssl", "fallback_sni")
+        if not sni then
+            return nil
+        end
+    end
+
+    sni = str_lower(sni)
+    return sni
+end
 
 
 local _aes_128_cbc_with_iv = false

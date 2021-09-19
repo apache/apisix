@@ -74,6 +74,12 @@ __DATA__
                             },
                             "metadata_schema": {"type":"object"}
                         },
+                        "basic-auth": {
+                            "type": "auth",
+                            "consumer_schema": {"type":"object"}
+                        }
+                    },
+                    "stream_plugins": {
                         "mqtt-proxy": {
                             "schema": {
                                 "type":"object",
@@ -82,10 +88,6 @@ __DATA__
                                 }
                             },
                             "priority": 1000
-                        },
-                        "basic-auth": {
-                            "type": "auth",
-                            "consumer_schema": {"type":"object"}
                         }
                     }
                 }]]

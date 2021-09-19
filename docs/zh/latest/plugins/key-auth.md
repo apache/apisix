@@ -66,7 +66,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
+你也可以通过 web 界面来完成上面的操作，先增加一个 consumer：
 ![](../../../assets/images/plugin/key-auth-1.png)
 
 然后在 consumer 页面中添加 key-auth 插件：

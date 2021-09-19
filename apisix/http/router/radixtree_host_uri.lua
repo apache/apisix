@@ -17,12 +17,15 @@
 local require = require
 local router = require("apisix.utils.router")
 local core = require("apisix.core")
+local get_services = require("apisix.http.service").services
+local service_fetch = require("apisix.http.service").get
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
 local loadstring = loadstring
 local pairs = pairs
-local cached_version
+local cached_router_version
+local cached_service_version
 local host_router
 local only_uri_router
 
@@ -49,7 +52,21 @@ local function push_host_router(route, host_routes, only_uri_routes)
         filter_fun = filter_fun()
     end
 
-    local hosts = route.value.hosts or {route.value.host}
+    local hosts = route.value.hosts
+    if not hosts then
+        if route.value.host then
+            hosts = {route.value.host}
+        elseif route.value.service_id then
+            local service = service_fetch(route.value.service_id)
+            if not service then
+                core.log.error("failed to fetch service configuration by ",
+                                "id: ", route.value.service_id)
+                -- we keep the behavior that missing service won't affect the route matching
+            else
+                hosts = service.value.hosts
+            end
+        end
+    end
 
     local radixtree_route = {
         paths = route.value.uris or route.value.uri,
@@ -66,7 +83,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
         end
     }
 
-    if #hosts == 0 then
+    if hosts == nil then
         core.table.insert(only_uri_routes, radixtree_route)
         return
     end
@@ -124,10 +141,15 @@ end
     local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
-    if not cached_version or cached_version ~= user_routes.conf_version then
+    local _, service_version = get_services()
+    if not cached_router_version or cached_router_version ~= user_routes.conf_version
+        or not cached_service_version or cached_service_version ~= service_version
+    then
         create_radixtree_router(user_routes.values)
-        cached_version = user_routes.conf_version
+        cached_router_version = user_routes.conf_version
+        cached_service_version = service_version
     end
+
 
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.request_method
