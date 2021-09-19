@@ -23,8 +23,8 @@ title: 路由 RadixTree
 
 ### 什么是 libradixtree？
 
-[libradixtree](https://github.com/iresty/lua-resty-radixtree)
-, 是在 `Lua` 中为 `OpenResty` 实现的自适应基数树。
+[libradixtree](https://github.com/iresty/lua-resty-radixtree), 是在 `Lua` 中为 `OpenResty` 实现的自适应
+[基数树](https://zh.wikipedia.org/wiki/%E5%9F%BA%E6%95%B0%E6%A0%91) 。
 
 `Apache APISIX` 使用 `libradixtree` 作为路由调度库。
 
@@ -36,7 +36,7 @@ title: 路由 RadixTree
 
 #### 1. 完全匹配
 
-```bash
+```text
 /blog/foo
 ```
 
@@ -44,7 +44,7 @@ title: 路由 RadixTree
 
 #### 2. 前缀匹配
 
-```bash
+```text
 /blog/bar*
 ```
 
@@ -57,7 +57,7 @@ title: 路由 RadixTree
 
 以下是规则:
 
-```bash
+```text
 /blog/foo/*
 /blog/foo/a/*
 /blog/foo/c/*
@@ -190,11 +190,12 @@ apisix:
 
 此时将匹配 `/blog/dog` 和 `/blog/cat` 。
 
-更多使用方式请参考：[lua-resty-radixtree/#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
+更多使用方式请参考：[lua-resty-radixtree#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 
 ### 如何通过 Nginx 内置变量过滤路由
 
-示例:
+具体参数及使用方式请查看 [radixtree#new](https://github.com/iresty/lua-resty-radixtree#new) 文档
+，下面是一个简单的示例:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -217,7 +218,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 这个路由需要请求头 `host` 等于 `iresty.com` ，
-请求cookie密钥 `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
+请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
 
 ### 如何通过 GraphQL 属性过滤路由
 
@@ -266,12 +267,11 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
-
-来自请求正文的数据。 此限制是通过以下方式配置的：
+来自请求体的数据。 此限制是通过以下方式配置的：
 
 ```yaml
 graphql:
   max_size: 1048576
 ```
 
-如果你需要传递一个大于限制的 `GraphQL body` ，你可以增加 `conf/config.yaml` 中的值。
+如果你需要传递一个大于限制的 GraphQL 查询语句 ，你可以增加 `conf/config.yaml` 中的值。
