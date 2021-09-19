@@ -773,7 +773,7 @@ discovery:
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-           -- use nacos-service3, NAMESPACE=test_ns and use default group_name
+           -- use nacos-service5
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -783,7 +783,8 @@ discovery:
                         "discovery_type": "nacos",
                         "type": "roundrobin",
                         "discovery_args": {
-                          "namespace_id": "test_ns"
+                          "namespace_id": "test_ns",
+                          "group_name": "test_group"
                         }
                     }
                 }]]
@@ -793,7 +794,7 @@ discovery:
                 ngx.status = code
             end
 
-            -- use nacos-service5, NAMESPACE=test_ns and group_name=test_group
+            -- use nacos-service6
             local code, body = t('/apisix/admin/routes/2',
                  ngx.HTTP_PUT,
                  [[{
@@ -804,7 +805,7 @@ discovery:
                         "type": "roundrobin",
                         "discovery_args": {
                           "namespace_id": "test_ns",
-                          "group_name": "test_group"
+                          "group_name": "test_group2"
                         }
                     },
                     "plugins": {
@@ -830,6 +831,7 @@ discovery:
                 ngx.status = res.status
                 return
             end
+            ngx.say(res.body)
 
             local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
             res, err = httpc:request_uri(uri2, { method = "GET"})
@@ -838,18 +840,14 @@ discovery:
                 ngx.status = res.status
                 return
             end
-            ngx.say("passed")
+            ngx.say(res.body)
         }
     }
 --- request
 GET /t
---- wait: 2
---- timeout: 4
 --- response_body
-passed
---- error_log
-route_id: 1, new_nodes_port: 18003
-route_id: 2, new_nodes_port: 18005
+server 1
+server 3
 --- no_error_log
 [error]
 
@@ -867,7 +865,7 @@ discovery:
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-           -- use nacos-service4, group_name=test_group and use default namespace_id
+           -- use nacos-service5
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -877,6 +875,7 @@ discovery:
                         "discovery_type": "nacos",
                         "type": "roundrobin",
                         "discovery_args": {
+                          "namespace_id": "test_ns",
                           "group_name": "test_group"
                         }
                     }
@@ -887,7 +886,7 @@ discovery:
                 ngx.status = code
             end
 
-            -- use nacos-service5, NAMESPACE=test_ns and group_name=test_group
+            -- use nacos-service7
             local code, body = t('/apisix/admin/routes/2',
                  ngx.HTTP_PUT,
                  [[{
@@ -897,7 +896,7 @@ discovery:
                         "discovery_type": "nacos",
                         "type": "roundrobin",
                         "discovery_args": {
-                          "namespace_id": "test_ns",
+                          "namespace_id": "test_ns2",
                           "group_name": "test_group"
                         }
                     },
@@ -924,6 +923,7 @@ discovery:
                 ngx.status = res.status
                 return
             end
+            ngx.say(res.body)
 
             local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
             res, err = httpc:request_uri(uri2, { method = "GET"})
@@ -932,17 +932,13 @@ discovery:
                 ngx.status = res.status
                 return
             end
-            ngx.say("passed")
+            ngx.say(res.body)
         }
     }
 --- request
 GET /t
---- wait: 2
---- timeout: 4
 --- response_body
-passed
---- error_log
-route_id: 1, new_nodes_port: 18004
-route_id: 2, new_nodes_port: 18005
+server 1
+server 4
 --- no_error_log
 [error]
