@@ -314,7 +314,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"additionalProperties":false,"type":"object"}
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -336,7 +336,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","required":["user_dn"],"properties":{"user_dn":{"type":"string"}},"additionalProperties":false,"type":"object"}
+{"title":"work with consumer object","required":["user_dn"],"properties":{"user_dn":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -358,7 +358,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"additionalProperties":false,"type":"object"}                ]]
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
                 )
             ngx.status = code
         }
