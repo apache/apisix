@@ -27,7 +27,7 @@ title: SkyWalking
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
-  - [**Run SkyWalking Example**](#run-skywalking-example)
+  - [**Run SkyWalking Example**](#running-skywalking)
 - [**Disable Plugin**](#disable-plugin)
 - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
@@ -41,7 +41,7 @@ The SkyWalking server can support both HTTP and gRPC protocols. Currently, the A
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| sample_ratio | number | required    | 1        | [0.00001, 1] | The ratio of sample                                                  |
+| sample_ratio | number | required    | 1        | [0.00001, 1] | The ratio of sampling                                               |
 
 ## How To Enable
 
@@ -92,7 +92,7 @@ We can set the endpoint by specifying the configuration in `conf/config.yaml`.
 | service_name | string | "APISIX" | service name for SkyWalking reporter                                 |
 | service_instance_name | string |"APISIX Instance Name" | service instance name for SkyWalking reporter，  set it to `$hostname` to get local hostname directly.|
 | endpoint_addr | string | "http://127.0.0.1:12800" | the HTTP endpoint of SkyWalking, for example: http://127.0.0.1:12800 |
-| report_interval | integer | use the value in the SkyWalking client library | the report interval, in seconds |
+| report_interval | integer | uses the value in the SkyWalking client library | the report interval, in seconds |
 
 Here is an example:
 
@@ -145,12 +145,13 @@ plugin_attr:
         ```
 
     2. Access the web UI of SkyWalking:
-        You can access the dashboard with a browser: http://10.110.149.175:8080. It will show a successful installation as follows:
+        You can access the dashboard from a browser: http://10.110.149.175:8080 It will show the following
+        if the installation is successful.
         ![ ](../../../assets/images/plugin/skywalking-3.png)
     
 3. Test:
 
-    - Access to upstream services through access APISIX:
+    - Access to upstream services through accessing APISIX:
 
         ```bash
         $ curl -v http://10.110.149.192:9080/uid/12
@@ -196,7 +197,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 
 The SkyWalking plugin has been disabled now. The step works in the same fashion for other plugins.
 
-If you want to disable SkyWalking plugin totally, for example, stopping the background report timer,
+If you want to completely disable the SkyWalking plugin, for example, stopping the background report timer,
 you will need to comment out the plugin in the `config.yaml`:
 
 ```yaml

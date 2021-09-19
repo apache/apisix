@@ -27,9 +27,9 @@ title: SkyWalking
 - [属性](#属性)
 - [如何启用](#如何启用)
 - [测试插件](#测试插件)
-  - [运行 SkyWalking 实例](#运行-Skywalking-实例)
+  - [运行 SkyWalking 实例](#运行-SkyWalking-实例)
 - [禁用插件](#禁用插件)
-- [上游服务是java的SpringBoot示例代码](#上游服务是java的SpringBoot示例代码)
+- [上游服务为 SpringBoot 的示例代码](#上游服务为-SpringBoot-的示例代码)
 
 ## 名字
 
@@ -41,7 +41,7 @@ title: SkyWalking
 
 | 名称         | 类型   | 必选项 | 默认值   | 有效值       | 描述                                                  |
 | ------------ | ------ | ------ | -------- | ------------ | ----------------------------------------------------- |
-| sample_ratio | number | 必须   | 1        | [0.00001, 1] | 监听的比例                                            |
+| sample_ratio | number | 必须   | 1        | [0.00001, 1] | 采样的比例                                            |
 
 ## 如何启用
 
@@ -144,7 +144,7 @@ plugin_attr:
         ```
 
     2. 打开 Web UI 页面
-        在浏览器里面输入 http://10.110.149.175:8080,如出现如下界面，则表示安装成功
+        在浏览器里面输入 http://10.110.149.175:8080 如出现如下界面，则表示安装成功
 
         ![plugin_skywalking](../../../assets/images/plugin/skywalking-3.png)
 
@@ -164,14 +164,14 @@ plugin_attr:
         http://10.110.149.175:8080/
         ```
 
-        可以看到访问拓扑图\
+        可以看到服务拓扑图\
         ![plugin_skywalking](../../../assets/images/plugin/skywalking-4.png)\
-        可以看到服务追踪图\
+        可以看到服务追踪列表\
         ![plugin_skywalking](../../../assets/images/plugin/skywalking-5.png)
 
 ## 禁用插件
 
-当你想去掉路由上的插件规则的时候，很简单，在插件的配置中把对应的 JSON 配置删除即可，无须重启服务，即刻生效：
+当你想禁用一条路由/服务上的 SkyWalking 插件的时候，很简单，在插件的配置中把对应的 JSON 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -203,7 +203,7 @@ plugins:
 
 然后重载 APISIX 即可。
 
-## 上游服务为 Java 的 SpringBoot 示例代码
+## 上游服务为 SpringBoot 的示例代码
 
 ```java
 package com.lenovo.ai.controller;
