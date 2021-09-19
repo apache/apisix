@@ -84,7 +84,7 @@ jobs:
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix -v /tmp:/tmp --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test
