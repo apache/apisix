@@ -35,6 +35,8 @@ local apiserver_schema = ""
 local apiserver_host = ""
 local apiserver_port = 0
 local apiserver_token = ""
+local namespace_selector_string = ""
+local namespace_selector_function
 local default_weight = 0
 
 local endpoint_lrucache = core.lrucache.new({
@@ -50,17 +52,30 @@ local function sort_by_ip(a, b)
     return a.ip < b.ip
 end
 
-local function on_endpoint_deleted(endpoint)
+local function on_endpoint_deleted(endpoint, selector_check)
+    if selector_check then
+        if namespace_selector_function and
+                not namespace_selector_function(endpoint.metadata.namespace) then
+            return
+        end
+    end
+
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
     endpoints_shared:delete(endpoint_key .. "#version")
     endpoints_shared:delete(endpoint_key)
 end
 
 local function on_endpoint_modified(endpoint)
+    if namespace_selector_function and
+            not namespace_selector_function(endpoint.metadata.namespace) then
+        return
+    end
+
     if endpoint.subsets == nil or #endpoint.subsets == 0 then
         return on_endpoint_deleted(endpoint)
     end
 
+    core.table.clear(endpoint_cache)
     local subsets = endpoint.subsets
     for _, subset in ipairs(subsets) do
         if subset.addresses ~= nil then
@@ -127,6 +142,8 @@ local function list_resource(httpc, resource, continue)
         }
     })
 
+    core.log.debug("--raw=" .. resource:list_path() .. "?" .. resource:list_query(continue))
+
     if not res then
         return false, "RequestError", err or ""
     end
@@ -173,6 +190,8 @@ local function watch_resource(httpc, resource)
         }
     })
 
+    core.log.debug("--raw=" .. resource:watch_path() .. "?" .. resource:watch_query(watch_seconds))
+
     if err then
         return false, "RequestError", err
     end
@@ -202,7 +221,7 @@ local function watch_resource(httpc, resource)
             body = remainder_body .. body
         end
 
-        gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jiao")
+        gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
         if not gmatch_iterator then
             return false, "GmatchError", err
         end
@@ -332,6 +351,10 @@ local port_patterns = {
     { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
 }
 
+local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
+
+local namespace_regex_pattern = [[^[\x21-\x7e]*$]]
+
 local schema = {
     type = "object",
     properties = {
@@ -390,6 +413,42 @@ local schema = {
             default = 50,
             minimum = 0,
         },
+        namespace_selector = {
+            type = "object",
+            properties = {
+                equal = {
+                    type = "string",
+                    pattern = namespace_pattern,
+                },
+                not_equal = {
+                    type = "string",
+                    pattern = namespace_pattern,
+                },
+                match = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        pattern = namespace_regex_pattern
+                    },
+                    minItems = 1
+                },
+                not_match = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        pattern = namespace_regex_pattern
+                    },
+                    minItems = 1
+                },
+            },
+            oneOf = {
+                { required = { } },
+                { required = { "equal" } },
+                { required = { "not_equal" } },
+                { required = { "match" } },
+                { required = { "not_match" } }
+            },
+        },
     },
     default = {
         service = {
@@ -404,7 +463,7 @@ local schema = {
     }
 }
 
-local function load_value(key)
+local function load_api_context(key)
     if #key > 3 then
         local a, b = string.byte(key, 1, 2)
         local c = string.byte(key, #key, #key)
@@ -421,11 +480,57 @@ local function load_value(key)
     return true, key, nil
 end
 
+local function build_namespace_selector(conf)
+    namespace_selector_string = ""
+    namespace_selector_function = nil
+
+    if conf.namespace_selector == nil then
+        return
+    end
+
+    local ns = conf.namespace_selector
+    if ns.equal then
+        namespace_selector_string = "&fieldSelector=metadata.namespace%3D" .. ns.equal
+    elseif ns.not_equal then
+        namespace_selector_string = "&fieldSelector=metadata.namespace%21%3D" .. ns.not_equal
+    elseif ns.match then
+        namespace_selector_function = function(namespace)
+            local match = conf.namespace_selector.match
+            local m, err
+            for _, v in ipairs(match) do
+                m, err = ngx.re.match(namespace, v, "j")
+                if m and m[0] == namespace then
+                    return true
+                end
+                if err then
+                    core.log.error("ngx.re.match failed: ", err)
+                end
+            end
+            return false
+        end
+    elseif ns.not_match then
+        namespace_selector_function = function(namespace)
+            local not_match = conf.namespace_selector.not_match
+            local m, err
+            for _, v in ipairs(not_match) do
+                m, err = ngx.re.match(namespace, v, "j")
+                if m and m[0] == namespace then
+                    return false
+                end
+                if err then
+                    return false
+                end
+            end
+            return true
+        end
+    end
+end
+
 local function read_conf(conf)
     apiserver_schema = conf.service.schema
 
     local ok, value, message
-    ok, value, message = load_value(conf.service.host)
+    ok, value, message = load_api_context(conf.service.host)
     if not ok then
         return false, message
     end
@@ -434,7 +539,7 @@ local function read_conf(conf)
         return false, "get empty host value"
     end
 
-    ok, value, message = load_value(conf.service.port)
+    ok, value, message = load_api_context(conf.service.port)
     if not ok then
         return false, message
     end
@@ -445,13 +550,13 @@ local function read_conf(conf)
 
     -- we should not check if the apiserver_token is empty here
     if conf.client.token then
-        ok, value, message = load_value(conf.client.token)
+        ok, value, message = load_api_context(conf.client.token)
         if not ok then
             return false, message
         end
         apiserver_token = value
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        ok, value, message = load_value(conf.client.token_file)
+        ok, value, message = load_api_context(conf.client.token_file)
         if not ok then
             return false, message
         end
@@ -468,6 +573,8 @@ local function read_conf(conf)
 
     default_weight = conf.default_weight or 50
 
+    build_namespace_selector(conf)
+
     return true, nil
 end
 
@@ -477,7 +584,7 @@ local _M = {
 
 function _M.nodes(service_name)
     local pattern = "^(.*):(.*)$"
-    local match, _ = ngx.re.match(service_name, pattern, "jiao")
+    local match, _ = ngx.re.match(service_name, pattern, "jo")
     if not match then
         core.log.info("get unexpected upstream service_name:　", service_name)
         return nil
@@ -517,9 +624,9 @@ local function fill_pending_resources()
 
         list_query = function(self, continue)
             if continue == nil or continue == "" then
-                return "limit=32"
+                return "limit=32" .. namespace_selector_string
             else
-                return "limit=32&continue=" .. continue
+                return "limit=32" .. namespace_selector_string .. "&continue=" .. continue
             end
         end,
 
@@ -529,7 +636,7 @@ local function fill_pending_resources()
 
         watch_query = function(self, timeout)
             return "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. timeout ..
-                    "&resourceVersion=" .. self.newest_resource_version
+                    "&resourceVersion=" .. self.newest_resource_version .. namespace_selector_string
         end,
 
         pre_list_callback = function(self)
