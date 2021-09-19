@@ -34,13 +34,14 @@ title: SkyWalking
 ## Name
 
 [**SkyWalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.
-The SkyWalking server can support both HTTP and gRPC protocols. The APISIX client only supports the HTTP protocol.
+
+The SkyWalking server can support both HTTP and gRPC protocols. Currently, the APISIX client only supports the HTTP protocol.
 
 ## Attributes
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| sample_ratio | number | required    | 1        | [0.00001, 1] | the ratio of sample                                                  |
+| sample_ratio | number | required    | 1        | [0.00001, 1] | The ratio of sample                                                  |
 
 ## How To Enable
 
@@ -53,7 +54,7 @@ plugins:
   - skywalking
 ```
 
-Then reload APISIX, a background timer will be created to report data to the SkyWalking server.
+Then reload APISIX, a background timer will be created to report data to the SkyWalking OAP server.
 
 Here's an example, enable the SkyWalking plugin on the specified route:
 
@@ -82,15 +83,15 @@ You also can complete the above operation through the web interface, first add a
 
 ![ ](../../../assets/images/plugin/skywalking-1.png)
 
-## How to set endpoint
+## How to Set Endpoint
 
-We can set the endpoint by specified the configuration in `conf/config.yaml`.
+We can set the endpoint by specifying the configuration in `conf/config.yaml`.
 
 | Name         | Type   | Default  | Description                                                          |
 | ------------ | ------ | -------- | -------------------------------------------------------------------- |
 | service_name | string | "APISIX" | service name for SkyWalking reporter                                 |
 | service_instance_name | string |"APISIX Instance Name" | service instance name for SkyWalking reporter，  set it to `$hostname` to get local hostname directly.|
-| endpoint_addr | string | "http://127.0.0.1:12800" | the http endpoint of SkyWalking, for example: http://127.0.0.1:12800 |
+| endpoint_addr | string | "http://127.0.0.1:12800" | the HTTP endpoint of SkyWalking, for example: http://127.0.0.1:12800 |
 | report_interval | integer | use the value in the SkyWalking client library | the report interval, in seconds |
 
 Here is an example:
@@ -105,48 +106,48 @@ plugin_attr:
 
 ## Test Plugin
 
-### Run SkyWalking Example
+### Running SkyWalking
 
-#### e.g.
+#### An Example:
 
-1. Run SkyWalking Server:
-    - By default, use H2 storage, start SkyWalking directly
+1. Start the SkyWalking OAP Server:
+    - By default, SkyWalking uses H2 storage, start SkyWalking directly by
 
         ```shell
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server:8.7.0-es6
         ```
 
-    - Of Course, you can use Elasticsearch storage
+    - Of Course, you may want to use Elasticsearch storage instead
 
-        1. Firstly, you should install Elasticsearch:
+        1. First, you should install Elasticsearch:
 
             ```shell
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
             ```
 
-        2. You can install ElasticSearch management page: elasticsearch-hq(Optional)
+        2. Optionally, you can install ElasticSearch management page: elasticsearch-hq
 
             ```shell
             sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
             ```
 
-        3. Run SkyWalking server:
+        3. Finally, run SkyWalking OAP server:
 
             ```shell
             sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server:8.7.0-es6
             ```
 
-2. SkyWalking WebUI:
+2. SkyWalking Web UI:
     1. Run SkyWalking web UI Server:
 
         ```shell
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
 
-    2. Open the web UI of SkyWalking:
-        You can open dashboard with a browser: http://10.110.149.175:8080. It will show a successful installation as follows:
+    2. Access the web UI of SkyWalking:
+        You can access the dashboard with a browser: http://10.110.149.175:8080. It will show a successful installation as follows:
         ![ ](../../../assets/images/plugin/skywalking-3.png)
-
+    
 3. Test:
 
     - Access to upstream services through access APISIX:
@@ -158,7 +159,7 @@ plugin_attr:
         ...
         ```
 
-    - Open the webUI of SkyWalking:
+    - Open the web UI of SkyWalking:
 
         ```shell
         http://10.110.149.175:8080/
@@ -166,7 +167,7 @@ plugin_attr:
 
         You can see the topology of all services\
         ![ ](../../../assets/images/plugin/skywalking-4.png)\
-        You can also see the tracer of all services\
+        You can also see the traces from all services\
         ![ ](../../../assets/images/plugin/skywalking-5.png)
 
 ## Disable Plugin
@@ -193,10 +194,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-The SkyWalking plugin has been disabled now. It works for other plugins.
+The SkyWalking plugin has been disabled now. The step works in the same fashion for other plugins.
 
-If you want to disable SkyWalking plugin totally, for example, stop the background report timer,
-you need to comment out in the `config.yaml`:
+If you want to disable SkyWalking plugin totally, for example, stopping the background report timer,
+you will need to comment out the plugin in the `config.yaml`:
 
 ```yaml
 plugins:
@@ -206,7 +207,7 @@ plugins:
 
 And then reload APISIX.
 
-## Upstream services(Code With SpringBoot)
+## Upstream Services(Code With SpringBoot)
 
 ```java
 package com.lenovo.ai.controller;
@@ -231,8 +232,9 @@ public class TestController {
 }
 ```
 
-Configuring the SkyWalking agent, when starting the service.
-update the file of `agent/config/agent.config`
+Configure the SkyWalking agent when starting the service.
+
+Update the file of `agent/config/agent.config`
 
 ```shell
 agent.service_name=yourservername
