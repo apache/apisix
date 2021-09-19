@@ -16,11 +16,8 @@
 #
 
 BEGIN {
-    $ENV{KUBERNETES_SERVICE_HOST} = "127.0.0.1";
-    $ENV{KUBERNETES_SERVICE_PORT} = "6443";
-
     my $token_var_file = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-    my $token_from_var = eval { `cat ${token_var_file} 2>/dev/null` };
+    my $token_from_var = eval { `cat $token_var_file 2>/dev/null` };
     if ($token_from_var){
 
       our $yaml_config = <<_EOC_;
@@ -31,15 +28,16 @@ apisix:
 discovery:
   k8s: {}
 _EOC_
+      our $token_file = $token_var_file;
+      our $token_value = $token_from_var;
 
-      $ENV{KUBERNETES_CLIENT_TOKEN}=$token_from_var;
-      $ENV{KUBERNETES_CLIENT_TOKEN_FILE}=$token_var_file;
-    }else {
-      my $token_tmp_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
-      my $token_from_tmp = eval { `cat ${token_tmp_file} 2>/dev/null` };
-      if ($token_from_tmp) {
+    }
 
-        our $yaml_config = <<_EOC_;
+    my $token_tmp_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
+    my $token_from_tmp = eval { `cat $token_tmp_file 2>/dev/null` };
+    if ($token_from_tmp) {
+
+      our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
@@ -49,9 +47,8 @@ discovery:
     client:
       token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
 _EOC_
-        $ENV{KUBERNETES_CLIENT_TOKEN}=$token_from_tmp;
-        $ENV{KUBERNETES_CLIENT_TOKEN_FILE}=$token_tmp_file;
-      }
+      our $token_file = $token_tmp_file;
+      our $token_value = $token_from_tmp;
     }
 
     our $scale_ns_c = <<_EOC_;
@@ -100,10 +97,10 @@ _EOC_
     $block->set_value("apisix_yaml", $apisix_yaml);
 
     my $main_config = $block->main_config // <<_EOC_;
-env KUBERNETES_SERVICE_HOST;
-env KUBERNETES_SERVICE_PORT;
-env KUBERNETES_CLIENT_TOKEN;
-env KUBERNETES_CLIENT_TOKEN_FILE;
+env KUBERNETES_SERVICE_HOST=127.0.0.1;
+env KUBERNETES_SERVICE_PORT=6443;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
+env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
 _EOC_
 
     $block->set_value("main_config", $main_config);
