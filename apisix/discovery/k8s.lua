@@ -31,6 +31,11 @@ local local_conf = require("apisix.core.config_local").local_conf()
 local http = require("resty.http")
 local endpoints_shared = ngx.shared.discovery
 
+local AddedEventType = "ADDED"
+local ModifiedEventType = "MODIFIED"
+local DeletedEventType = "DELETED"
+local BookmarkEventType = "BOOKMARK"
+
 local apiserver_schema = ""
 local apiserver_host = ""
 local apiserver_port = 0
@@ -72,7 +77,7 @@ local function on_endpoint_modified(endpoint)
     end
 
     if endpoint.subsets == nil or #endpoint.subsets == 0 then
-        return on_endpoint_deleted(endpoint)
+        return on_endpoint_deleted(endpoint, false)
     end
 
     core.table.clear(endpoint_cache)
@@ -164,7 +169,7 @@ local function list_resource(httpc, resource, continue)
     resource.newest_resource_version = data.metadata.resourceVersion
 
     for _, item in ipairs(data.items or empty_table) do
-        resource:event_dispatch("ADDED", item, "list")
+        resource:event_dispatch(AddedEventType, item, "list")
     end
 
     if data.metadata.continue ~= nil and data.metadata.continue ~= "" then
@@ -241,7 +246,7 @@ local function watch_resource(httpc, resource)
             end
 
             resource.newest_resource_version = v.object.metadata.resource_version
-            if v.type ~= "BOOKMARK" then
+            if v.type ~= BookmarkEventType then
                 resource:event_dispatch(v.type, v.object, "watch")
             end
         end
@@ -657,18 +662,18 @@ local function fill_pending_resources()
         end,
 
         deleted_callback = function(self, object)
-            on_endpoint_deleted(object)
+            on_endpoint_deleted(object, true)
         end,
 
         event_dispatch = function(self, event, object, drive)
-            if event == "DELETED" or object.deletionTimestamp ~= nil then
+            if event == DeletedEventType or object.deletionTimestamp ~= nil then
                 self:deleted_callback(object)
                 return
             end
 
-            if event == "ADDED" then
+            if event == AddedEventType then
                 self:added_callback(object, drive)
-            elseif event == "MODIFIED" then
+            elseif event == ModifiedEventType then
                 self:modified_callback(object)
             end
         end,
