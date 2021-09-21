@@ -41,7 +41,7 @@ local floor = math.floor
 local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
-
+local str_format = string.format
 
 local _M = {}
 
@@ -308,6 +308,13 @@ local function init(env)
               .. 'development environments and it is dangerous to do so. '
               .. 'It is recommended to run APISIX in a directory '
               .. 'other than /root.')
+    end
+
+    if env.ulimit <= 1024 then
+        print(str_format("Warning! Current maximum number of open file "
+                .. "descriptors [%d] is too small, please increase user limits by "
+                .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
+                .. " is low.", env.ulimit))
     end
 
     -- read_yaml_conf
