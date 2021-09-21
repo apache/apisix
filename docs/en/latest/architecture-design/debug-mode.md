@@ -104,4 +104,4 @@ Dynamically enable advanced debugging mode in a particular request like this:
 curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
-Notice: We can not only hook the `apisix.http_access_phase` module in particular requests. Because the request enters the `apisix.http_access_phase` module before it determines whether advanced debug mode is dynamically enabled.
+Notice: We can not hook the `apisix.http_access_phase` module for particular requests, since whether the advanced debug mode is enabled is determined after these requests enter such phase.
