@@ -26,8 +26,9 @@ title: skywalking
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
+- [**How to set endpoint**](#how-to-set-endpoint)
 - [**Test Plugin**](#test-plugin)
-- [**Running SkyWalking**](#running-skywalking)
+  - [**Running SkyWalking**](#running-skywalking)
 - [**Disable Plugin**](#disable-plugin)
 - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
@@ -148,7 +149,7 @@ plugin_attr:
         You can access the dashboard from a browser: http://10.110.149.175:8080 It will show the following
         if the installation is successful.
         ![ ](../../../assets/images/plugin/skywalking-3.png)
-    
+
 3. Test:
 
     - Access to upstream services through accessing APISIX:
