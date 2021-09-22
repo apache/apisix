@@ -1,5 +1,5 @@
 ---
-title: SkyWalking
+title: skywalking
 ---
 
 <!--
@@ -83,7 +83,7 @@ You also can complete the above operation through the web interface, first add a
 
 ![ ](../../../assets/images/plugin/skywalking-1.png)
 
-## How to Set Endpoint
+## How to set endpoint
 
 We can set the endpoint by specifying the configuration in `conf/config.yaml`.
 
@@ -208,7 +208,7 @@ plugins:
 
 And then reload APISIX.
 
-## Upstream Services(Code With SpringBoot)
+## Upstream services(Code With SpringBoot)
 
 ```java
 package com.lenovo.ai.controller;
