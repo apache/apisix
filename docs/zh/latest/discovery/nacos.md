@@ -21,17 +21,17 @@ title: nacos
 #
 -->
 
-## Service discovery via Nacos
+## 基于 [Nacos](https://nacos.io/zh-cn/docs/what-is-nacos.html) 的服务发现
 
-This is experimental discovery module for Nacos.
+Nacos 服务发现模块目前是实验性的。
 
-The performance of this module needs to be improved:
+当前模块的性能有待改进：
 
-1. send the request parallelly.
+1. 并行发送请求。
 
-### Configuration for Nacos
+### Nacos 配置
 
-Add following configuration in `conf/config.yaml` :
+在文件 `conf/config.yaml`  中添加以下配置到：
 
 ```yaml
 discovery:
@@ -47,7 +47,7 @@ discovery:
       read: 5000          # default 5000 ms
 ```
 
-And you can config it in short by default value:
+也可以这样简洁配置（未配置项使用默认值）：
 
 ```yaml
 discovery:
@@ -56,9 +56,10 @@ discovery:
       - "http://192.168.33.1:8848"
 ```
 
-### Upstream setting
+### Upstream 设置
 
-Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
+例如，转发 URI 匹配 "/nacos/*" 的请求到一个上游服务，
+该服务在 Nacos 中的服务名是 APISIX-NACOS ，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS ，创建路由时指定服务发现类型为 nacos 。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -72,7 +73,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The formatted response as below:
+响应如下：
 
 ```json
 {
@@ -99,16 +100,17 @@ The formatted response as below:
 }
 ```
 
-### discovery_args
+### 参数
 
-| Name         | Type   | Requirement | Default | Valid | Description                                                  |
+| 名字         | 类型   | 可选项 | 默认值 | 有效值 | 说明                                                  |
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
-| group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
+| namespace_id | string | 可选    | public     |       | 服务所在的命名空间 |
+| group_name   | string | 可选    | DEFAULT_GROUP       |       | 服务所在的组 |
 
-#### Specify the namespace
+#### 指定命名空间
 
-Example of routing a request with an URI of "/nacosWithNamespaceId/*" to a service which name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry:
+例如，转发 URI 匹配 "/nacosWithNamespaceId/*" 的请求到一个上游服务，
+该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns ，创建路由时指定服务发现类型为 nacos 。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -125,7 +127,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The formatted response as below:
+响应如下：
 
 ```json
 {
@@ -155,9 +157,10 @@ The formatted response as below:
 }
 ```
 
-#### Specify the group
+#### 指定组
 
-Example of routing a request with an URI of "/nacosWithGroupName/*" to a service which name, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group" and use nacos discovery client in the registry:
+例如，转发 URI 匹配 "/nacosWithGroupName/*" 的请求到一个上游服务，
+该服务在 Nacos 中的服务名是 APISIX-NACOS，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group ，创建路由时指定服务发现类型为 nacos 。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -174,7 +177,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The formatted response as below:
+响应如下：
 
 ```json
 {
@@ -204,9 +207,10 @@ The formatted response as below:
 }
 ```
 
-#### Specify the namespace and group
+#### 同时指定命名空间和组
 
-Example of routing a request with an URI of "/nacosWithNamespaceIdAndGroupName/*" to a service which name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group" and use nacos discovery client in the registry:
+例如，转发 URI 匹配 "/nacosWithNamespaceIdAndGroupName/*" 的请求到一个上游服务，
+该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group ，创建路由时指定服务发现类型为 nacos 。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -224,7 +228,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-The formatted response as below:
+响应如下：
 
 ```json
 {

@@ -1,3 +1,8 @@
+---
+title: eureka
+---
+
+<!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,23 +19,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-basic:
-  enable: false
-http_filter:
-  enable: false         # enable or disable this feature
-  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
-hook_conf:
-  enable: false                 # enable or disable this feature
-  name: hook_phase              # the name of module and function list
-  log_level: warn               # log level
-  is_print_input_args: true     # print the input arguments
-  is_print_return_value: true   # print the return value
+-->
 
-hook_phase:                     # module and function list, name: hook_phase
-  apisix:                       # required module name
-    - http_access_phase         # function name
-    - http_header_filter_phase
-    - http_body_filter_phase
-    - http_log_phase
-
-#END
+Apache APISIX 支持使用 [Eureka](https://github.com/Netflix/eureka#eureka) 做服务发现。
+详情请阅读 [支持的服务注册发现](../discovery.md#当前支持的注册中心) 。

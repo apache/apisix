@@ -99,6 +99,9 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -189,6 +192,11 @@ http {
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
     # for custom shared dict
+    {% if http.custom_lua_shared_dict then %}
+    {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
+    lua_shared_dict {*cache_key*} {*cache_size*};
+    {% end %}
+    {% end %}
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
     lua_shared_dict {*cache_key*} {*cache_size*};
@@ -333,6 +341,9 @@ http {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
 
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }

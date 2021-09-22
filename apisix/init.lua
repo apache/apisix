@@ -30,6 +30,7 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
+local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -113,6 +114,8 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    require("apisix.debug").init_worker()
+
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
@@ -123,7 +126,6 @@ function _M.http_init_worker()
         core.config.init_worker()
     end
 
-    require("apisix.debug").init_worker()
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
@@ -353,6 +355,8 @@ function _M.http_access_phase()
     ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then

@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
+local enable_debug  = require("apisix.debug").enable_debug
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
@@ -167,8 +168,7 @@ local function load(plugin_names)
 
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
-        if local_conf and local_conf.apisix
-           and local_conf.apisix.enable_debug then
+        if enable_debug() then
             core.log.warn("loaded plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -209,8 +209,7 @@ local function load_stream(plugin_names)
 
     for i, plugin in ipairs(stream_local_plugins) do
         stream_local_plugins_hash[plugin.name] = plugin
-        if local_conf and local_conf.apisix
-           and local_conf.apisix.enable_debug then
+        if enable_debug() then
             core.log.warn("loaded stream plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -280,7 +279,7 @@ end
 
 
 local function trace_plugins_info_for_debug(ctx, plugins)
-    if not (local_conf and local_conf.apisix.enable_debug) then
+    if not enable_debug() then
         return
     end
 

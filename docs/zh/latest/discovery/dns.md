@@ -21,26 +21,24 @@ title: DNS
 #
 -->
 
-* [service discovery via DNS](#service-discovery-via-dns)
-    * [SRV record](#srv-record)
+* [基于 DNS 的服务发现](#基于-dns-的服务发现)
+    * [SRV 记录](#srv-记录)
 
-## service discovery via DNS
+## 基于 DNS 的服务发现
 
-Some service discovery system, like Consul, support exposing service information
-via DNS. Therefore we can use this way to discover service directly.
+某些服务发现系统如 Consul，支持通过 DNS 提供系统信息。我们可以使用这种方法直接实现服务发现。
 
-First of all, we need to configure the address of DNS servers:
+首先我们需要配置 DNS 服务器的地址：
 
 ```yaml
-# add this to config.yaml
+# 添加到 config.yaml
 discovery:
    dns:
      servers:
-       - "127.0.0.1:8600"          # use the real address of your dns server
+       - "127.0.0.1:8600"          # 使用 DNS 服务器的真实地址
 ```
 
-Unlike configuring the domain in the Upstream's `nodes` field, service discovery via
-DNS will return all records. For example, with upstream configuration:
+与在 Upstream 的 `nodes` 对象中配置域名不同的是，DNS 服务发现将返回所有的记录。例如按照以下的 upstream 配置：
 
 ```json
 {
@@ -51,7 +49,7 @@ DNS will return all records. For example, with upstream configuration:
 }
 ```
 
-and `test.consul.service` be resolved as `1.1.1.1` and `1.1.1.2`, this result will be the same as:
+之后 `test.consul.service` 将被解析为 `1.1.1.1` 和 `1.1.1.2`，这个结果等同于：
 
 ```json
 {
@@ -64,13 +62,13 @@ and `test.consul.service` be resolved as `1.1.1.1` and `1.1.1.2`, this result wi
 }
 ```
 
-Note that all the IPs from `test.consul.service` share the same weight.
+注意所有来自 `test.consul.service` 的 IP 都有相同的权重。
 
-The resolved records will be cached according to their TTL.
-For service whose record is not in the cache, we will query it in the order of `SRV -> A -> AAAA -> CNAME`.
-When we refresh the cache record, we will try from the last previously successful type.
+解析的记录将根据它们的 TTL 来进行缓存。
+对于记录不在缓存中的服务，我们将按照 `SRV -> A -> AAAA -> CNAME` 的顺序进行查询。
+刷新缓存记录时，我们将从上次成功的类型开始尝试。
 
-If you want to specify the port for the upstream server, you can add it to the `service_name`:
+如果你想指定 upstream 服务器的端口，可以把以下内容添加到 `service_name`：
 
 ```json
 {
@@ -81,13 +79,13 @@ If you want to specify the port for the upstream server, you can add it to the `
 }
 ```
 
-Another way to do it is via the SRV record, see below.
+另一种方法是通过 SRV 记录，见如下。
 
-### SRV record
+### SRV 记录
 
-By using SRV record you can specify the port and the weight of a service.
+通过使用 SRV 记录你可以指定一个服务的端口和权重。
 
-Assumed you have the SRV record like this:
+假设你有一条这样的 SRV 记录：
 
 ```
 ; under the section of blah.service
@@ -100,7 +98,7 @@ srv     86400 IN    SRV     10          60      1980 A
 srv     86400 IN    SRV     20          20      1981 B
 ```
 
-Upstream configuration like:
+Upstream 配置是这样的：
 
 ```json
 {
@@ -111,7 +109,7 @@ Upstream configuration like:
 }
 ```
 
-is the same as:
+效果等同于：
 
 ```json
 {
@@ -125,16 +123,11 @@ is the same as:
 }
 ```
 
-Note that two records of domain B split the weight evenly.
-For SRV record, nodes with lower priority are chosen first, so the final priority is negative.
+注意 B 域名的两条记录均分权重。
+对于 SRV 记录，低优先级的节点被先选中，所以最后一项的优先级是负数。
 
-As for 0 weight SRV record, the [RFC 2782](https://www.ietf.org/rfc/rfc2782.txt) says:
+关于 0 权重的 SRV 记录，在 [RFC 2782](https://www.ietf.org/rfc/rfc2782.txt) 中是这么描述的：
 
-> Domain administrators SHOULD use Weight 0 when there isn't any server
-selection to do, to make the RR easier to read for humans (less
-noisy).  In the presence of records containing weights greater
-than 0, records with weight 0 should have a very small chance of
-being selected.
+> 当没有任何候选服务器时，域管理员应使用权重为 0 的，使 RR 更为易读（噪音更少）。当存在权重大于 0 的记录时，权重为 0 的记录被选中的可能性很小。
 
-We treat weight 0 record has a weight of 1 so the node "have a very small chance of
-being selected", which is also the common way to treat this type of record.
+我们把权重为 0 的记录当作权重为 1，因此节点“被选中的可能性很小”，这也是处理此类记录的常用方法。

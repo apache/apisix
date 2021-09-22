@@ -132,6 +132,10 @@
         {
           "type": "doc",
           "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
         }
       ]
     },
@@ -147,7 +151,10 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/dns",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
         },
         {
@@ -157,6 +164,10 @@
         {
           "type": "doc",
           "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
         },
         {
           "type": "doc",
