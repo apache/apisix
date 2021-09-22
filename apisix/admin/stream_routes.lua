@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
-local schema_plugin = require("apisix.admin.plugins").stream_check_schema
+local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 
 
@@ -69,11 +69,9 @@ local function check_conf(id, conf, need_id)
         end
     end
 
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
-        end
+    local ok, err = stream_route_checker(conf)
+    if not ok then
+        return nil, {error_msg = err}
     end
 
     return need_id and id or true

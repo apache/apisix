@@ -80,6 +80,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
             api_ctx.curr_req_matched = match_opts.matched
+            api_ctx.real_curr_req_matched_path = match_opts.matched._path
         end
     }
 
@@ -162,6 +163,10 @@ function _M.match(api_ctx)
         local host_uri = api_ctx.var.host
         local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx, match_opts)
         if ok then
+            if api_ctx.real_curr_req_matched_path then
+                api_ctx.curr_req_matched._path = api_ctx.real_curr_req_matched_path
+                api_ctx.real_curr_req_matched_path = nil
+            end
             return true
         end
     end

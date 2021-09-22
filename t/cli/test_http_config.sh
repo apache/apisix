@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,23 +16,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-basic:
-  enable: false
-http_filter:
-  enable: false         # enable or disable this feature
-  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
-hook_conf:
-  enable: false                 # enable or disable this feature
-  name: hook_phase              # the name of module and function list
-  log_level: warn               # log level
-  is_print_input_args: true     # print the input arguments
-  is_print_return_value: true   # print the return value
 
-hook_phase:                     # module and function list, name: hook_phase
-  apisix:                       # required module name
-    - http_access_phase         # function name
-    - http_header_filter_phase
-    - http_body_filter_phase
-    - http_log_phase
+. ./t/cli/common.sh
 
-#END
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    custom_lua_shared_dict:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: define custom shdict"
+    exit 1
+fi
+
+echo "passed: define custom shdict"
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dicts:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: define custom shdict in the old way"
+    exit 1
+fi
+
+echo "passed: define custom shdict in the old way"

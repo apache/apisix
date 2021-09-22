@@ -54,7 +54,7 @@ title: server-info
 
 ## 插件接口
 
-该插件在 [Control API](../../../en/latest/control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
+该插件在 [Control API](../control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
 
 ## 启用插件
 

@@ -52,7 +52,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
 | host                             | string  | optional    |                                |         | (`Deprecated`, use `tcp.host` instead) IP address or the Hostname of the TCP server.               |
 | port                             | integer | optional    |                                | [0,...] | (`Deprecated`, use `tcp.port` instead) Target upstream port.                                       |
-| tls                              | boolean | optional    | false                          |         | (`Deprecated`, use `tcp.tls` instread) Control whether to perform SSL verification.                 |
+| tls                              | boolean | optional    | false                          |         | (`Deprecated`, use `tcp.tls` instead) Control whether to perform SSL verification.                 |
 | tls_server_name                  | string  | optional    |                                |         | (`Deprecated`, use `tcp.tls_server_name` instead) The server name for the new TLS extension SNI.   |
 | timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
 | keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |

@@ -41,7 +41,7 @@ local floor = math.floor
 local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
-
+local str_format = string.format
 
 local _M = {}
 
@@ -152,6 +152,9 @@ local config_schema = {
             properties = {
                 config_center = {
                     enum = {"etcd", "yaml"},
+                },
+                lua_module_hook = {
+                    pattern = "^[a-zA-Z._-]+$",
                 },
                 proxy_protocol = {
                     type = "object",
@@ -265,7 +268,7 @@ local config_schema = {
         http = {
             type = "object",
             properties = {
-                lua_shared_dicts = {
+                custom_lua_shared_dict = {
                     type = "object",
                 }
             }
@@ -305,6 +308,13 @@ local function init(env)
               .. 'development environments and it is dangerous to do so. '
               .. 'It is recommended to run APISIX in a directory '
               .. 'other than /root.')
+    end
+
+    if env.ulimit <= 1024 then
+        print(str_format("Warning! Current maximum number of open file "
+                .. "descriptors [%d] is too small, please increase user limits by "
+                .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
+                .. " is low.", env.ulimit))
     end
 
     -- read_yaml_conf
@@ -748,6 +758,11 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
+    end
+
+    if sys_conf["http"]["lua_shared_dicts"] then
+        stderr:write("lua_shared_dicts is deprecated, " ..
+                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()
