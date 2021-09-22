@@ -303,9 +303,6 @@ local function fetch_full_registry(premature)
         data, err = get_url(base_uri, query_path)
         if err then
             log.error('get_url:', query_path, ' err:', err)
-            if not applications then
-                applications = up_apps
-            end
             goto CONTINUE
         end
 
