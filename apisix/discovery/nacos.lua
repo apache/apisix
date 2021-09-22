@@ -297,8 +297,8 @@ local function fetch_full_registry(premature)
     end
     local data, err
     for _, service_info in ipairs(infos) do
-        local namespace_id = service_info.namespace_id  or default_namespace_id
-        local group_name = service_info.group_name or default_group_name
+        local namespace_id = service_info.namespace_id
+        local group_name = service_info.group_name
         local namespace_param = get_namespace_param(namespace_id)
         local group_name_param = get_group_name_param(group_name)
         data, err = get_url(base_uri, instance_list_path .. service_info.service_name
@@ -321,11 +321,11 @@ local function fetch_full_registry(premature)
 
         for _, host in ipairs(data.hosts) do
             local nodes = up_apps[namespace_id]
-            [group_name][service_info.service_name]
+                [group_name][service_info.service_name]
             if not nodes then
                 nodes = {}
                 up_apps[namespace_id]
-                [group_name][service_info.service_name] = nodes
+                    [group_name][service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
