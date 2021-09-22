@@ -369,3 +369,67 @@ passed
 qr/call\srequire\(\"apisix.plugin\"\).filter\(\)\sreturn.*GET\s\/mysleep\?seconds\=1\sHTTP\/1.1/
 --- no_error_log eval
 qr/call\srequire\(\"apisix.plugin\"\).filter\(\)\sreturn.*GET\s\/mysleep\?seconds\=0.1\sHTTP\/1.1/
+
+
+
+=== TEST 6: hook function with ctx as param
+--- debug_config
+http_filter:
+  enable: true         # enable or disable this feature
+  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
+hook_conf:
+  enable: true                  # enable or disable this feature
+  name: hook_test               # the name of module and function list
+  log_level: warn               # log level
+  is_print_input_args: true     # print the input arguments
+  is_print_return_value: true   # print the return value
+
+hook_test:                      # module and function list, name: hook_test
+    apisix.balancer:              # required module name
+    - pick_server                    # function name
+
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            ngx.sleep(0.6) -- wait for sync
+
+            local headers = {}
+            headers["X-APISIX-Dynamic-Debug"] = ""
+            local code, body = t('/hello',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- wait: 2
+--- response_body
+passed
+--- error_log
+call require("apisix.balancer").pick_server() args:{
+call require("apisix.balancer").pick_server() return:{
