@@ -30,6 +30,7 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
+local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -354,6 +355,8 @@ function _M.http_access_phase()
     ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
