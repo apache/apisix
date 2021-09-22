@@ -125,5 +125,5 @@ hello world
 --- no_error_log
 [error]
 --- error_log
-filter(): call require("apisix.plugin").filter() args:[{
-filter(): call require("apisix.plugin").filter() return:[[{
+filter(): call require("apisix.plugin").filter() args:{
+filter(): call require("apisix.plugin").filter() return:{
