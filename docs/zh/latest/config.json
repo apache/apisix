@@ -50,7 +50,8 @@
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
-            "plugins/fault-injection"
+            "plugins/fault-injection",
+            "plugins/xml-json-conversion"
           ]
         },
         {
