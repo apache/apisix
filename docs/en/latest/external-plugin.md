@@ -52,6 +52,7 @@ plugins. Like other plugins, they can be enabled and reconfigured on the fly.
 - Java: https://github.com/apache/apisix-java-plugin-runner
 - Go: https://github.com/apache/apisix-go-plugin-runner
 - Python: https://github.com/apache/apisix-python-plugin-runner
+- JavaScript: https://github.com/zenozeng/apisix-javascript-plugin-runner
 
 ## Configuration for plugin runner in APISIX
 

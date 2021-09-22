@@ -46,6 +46,7 @@ APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内
 - Java: https://github.com/apache/apisix-java-plugin-runner
 - Go: https://github.com/apache/apisix-go-plugin-runner
 - Python: https://github.com/apache/apisix-python-plugin-runner
+- JavaScript: https://github.com/zenozeng/apisix-javascript-plugin-runner
 
 ## 在 APISIX 中配置 Plugin Runner
 
