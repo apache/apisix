@@ -321,11 +321,11 @@ local function fetch_full_registry(premature)
 
         for _, host in ipairs(data.hosts) do
             local nodes = up_apps[namespace_id]
-            [group_name][service_info.service_name]
+                [group_name][service_info.service_name]
             if not nodes then
                 nodes = {}
                 up_apps[namespace_id]
-                [group_name][service_info.service_name] = nodes
+                    [group_name][service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
