@@ -91,12 +91,13 @@ The configures in `checks` are belong to health check, the type of `checks`
 contains: `active` or `passive`.
 
 * `active`: To enable active health checks, you need to specify the configuration items under `checks.active` in the Upstream object configuration.
-
+  * `active.type`: The type of active health check, supports `http`, `https`, `tcp`, default: `http`.
   * `active.timeout`: Socket timeout for active checks (in seconds), support decimals. For example `1.01` means `1010` milliseconds, `2` means `2000` milliseconds.
-
+  * `active.concurrency`: Number of targets to check concurrently in active health checks, default: `10`.
   * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
   * `active.host`: The HTTP request host used to detect if the upstream is healthy.
   * `active.port`: The customize health check host port (optional), this will override the port in the `upstream` node.
+  * `active.https_verify_certificate`: Whether to check the validity of the SSL certificate of the remote host when performing active health checks using HTTPS. Default: `true`.
 
   The threshold fields of `healthy` are:
   * `active.healthy.interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
