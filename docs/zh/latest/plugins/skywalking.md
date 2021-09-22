@@ -26,6 +26,7 @@ title: skywalking
 - [名字](#名字)
 - [属性](#属性)
 - [如何启用](#如何启用)
+- [如何设置 Endpoint](#如何设置-Endpoint)
 - [测试插件](#测试插件)
   - [运行 SkyWalking 实例](#运行-SkyWalking-实例)
 - [禁用插件](#禁用插件)
