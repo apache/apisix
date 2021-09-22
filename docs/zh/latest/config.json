@@ -38,6 +38,8 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
+            "plugins/real-ip",
             "plugins/server-info"
           ]
         },
