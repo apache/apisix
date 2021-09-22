@@ -242,6 +242,18 @@ function _M.enable_debug()
 end
 
 
+function _M.export_ctx(api_ctx)
+    if not check() then
+        return
+    end
+    if debug_yaml.http_filter.log_ctx then
+        local log_level = debug_yaml and debug_yaml.hook_conf and debug_yaml.hook_conf.log_level
+                          or "warn"
+        log[log_level]("api_ctx : ", inspect(api_ctx))
+    end
+end
+
+
 function _M.init_worker()
     local process = require("ngx.process")
     if process.type() ~= "worker" then

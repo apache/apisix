@@ -105,3 +105,20 @@ curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
 Notice: We can not hook the `apisix.http_access_phase` module for particular requests, since whether the advanced debug mode is enabled is determined after these requests enter such phase.
+
+#### log the ctx of the current request
+
+The advanced debug mode supports logging the ctx of the current request.
+
+Example:
+
+```yaml
+http_filter:
+  enable: true # Enable/Disable Advanced Debug Mode Dynamically
+  enable_header_name: X-APISIX-Dynamic-Debug # Trace for the request with this header
+  log_ctx: false # log the ctx of the current request
+......
+#END
+```
+
+Enables the same way as dynamic advanced debugging mode.
