@@ -291,20 +291,22 @@ local function fetch_full_registry(premature)
         applications = up_apps
         return
     end
-    local data, err
+
     for _, service_info in ipairs(infos) do
+        local data, err
         local namespace_id = service_info.namespace_id
         local group_name = service_info.group_name
-        local namespace_param = get_namespace_param(namespace_id)
-        local group_name_param = get_group_name_param(group_name)
-        data, err = get_url(base_uri, instance_list_path .. service_info.service_name
-                            .. token_param .. namespace_param .. group_name_param)
+        local namespace_param = get_namespace_param(service_info.namespace_id)
+        local group_name_param = get_group_name_param(service_info.group_name)
+        local query_path = instance_list_path .. service_info.service_name
+                           .. token_param .. namespace_param .. group_name_param
+        data, err = get_url(base_uri, query_path)
         if err then
-            log.error('get_url:', instance_list_path, ' err:', err)
+            log.error('get_url:', query_path, ' err:', err)
             if not applications then
                 applications = up_apps
             end
-            return
+            goto CONTINUE
         end
 
         if not up_apps[namespace_id] then
@@ -329,6 +331,8 @@ local function fetch_full_registry(premature)
                 weight = host.weight or default_weight,
             })
         end
+
+        ::CONTINUE::
     end
     local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
     local old_apps_md5sum = ngx.md5(core.json.encode(applications))
