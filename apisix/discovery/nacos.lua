@@ -235,15 +235,11 @@ local function iter_and_add_service(services, values)
             up = conf
         end
 
-        local namespace_id
-        if up.discovery_args then
-            namespace_id = up.discovery_args.namespace_id or default_namespace_id
-        end
+        local namespace_id = (up.discovery_args and up.discovery_args.namespace_id)
+                             or default_namespace_id
 
-        local group_name
-        if up.discovery_args then
-            group_name = up.discovery_args.group_name or default_group_name
-        end
+        local group_name = (up.discovery_args and up.discovery_args.group_name)
+                           or default_group_name
 
         if up.discovery_type == 'nacos' then
             core.table.insert(services, {
