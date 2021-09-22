@@ -27,7 +27,7 @@ title: SkyWalking
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
-  - [**Run SkyWalking Example**](#running-skywalking)
+- [**Running SkyWalking**](#running-skywalking)
 - [**Disable Plugin**](#disable-plugin)
 - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
