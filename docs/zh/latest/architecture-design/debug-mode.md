@@ -107,22 +107,3 @@ curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
 注意：动态高级调试模式无法调试 `apisix.http_access_phase`， 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。
-
-#### 记录当前请求的 ctx
-
-动态高级调试模式支持输出当前请求的 ctx。
-
-设置 `conf/debug.yaml` 中的选项。
-
-示例：
-
-```yaml
-http_filter:
-  enable: true # 是否动态开启高级调试模式
-  enable_header_name: X-APISIX-Dynamic-Debug # 追踪携带此 header 的请求
-  log_ctx: true # 启用或禁用记录当前请求的 ctx
-......
-#END
-```
-
-开启方式与动态高级调试模式相同。

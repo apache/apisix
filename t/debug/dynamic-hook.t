@@ -372,12 +372,11 @@ qr/call\srequire\(\"apisix.plugin\"\).filter\(\)\sreturn.*GET\s\/mysleep\?second
 
 
 
-=== TEST 6: log ctx
+=== TEST 6: hook function with ctx as param
 --- debug_config
 http_filter:
   enable: true         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
-  log_ctx: true
 hook_conf:
   enable: true                  # enable or disable this feature
   name: hook_test               # the name of module and function list
@@ -386,8 +385,8 @@ hook_conf:
   is_print_return_value: true   # print the return value
 
 hook_test:                      # module and function list, name: hook_test
-    apisix.plugin:              # required module name
-    - filter                    # function name
+    apisix.balancer:              # required module name
+    - pick_server                    # function name
 
 #END
 --- config
@@ -432,4 +431,5 @@ GET /t
 --- response_body
 passed
 --- error_log
-api_ctx : {
+call require("apisix.balancer").pick_server() args:{
+call require("apisix.balancer").pick_server() return:{

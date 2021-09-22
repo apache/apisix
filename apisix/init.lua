@@ -540,7 +540,6 @@ function _M.http_access_phase()
     if api_ctx.dubbo_proxy_enabled then
         return ngx.exec("@dubbo_pass")
     end
-    debug.export_ctx(api_ctx)
 end
 
 
