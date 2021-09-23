@@ -86,6 +86,7 @@ passed
 [error]
 
 
+
 === TEST 3: test for unsupported operation
 --- request
 GET /hello
@@ -102,6 +103,8 @@ Content-Type: text/html
 {"message":"Operation not supported"}
 --- no_error_log
 [error]
+
+
 
 === TEST 4: test for unsupported operation
 --- request
@@ -120,6 +123,8 @@ Content-Type: application/json
 --- no_error_log
 [error]
 
+
+
 === TEST 5: xml to json
 --- request
 GET /hello
@@ -134,6 +139,7 @@ Content-Type: text/xml
 qr/\{"people":\{"person":\{"name":"Manoel"\}\}\}/
 --- no_error_log
 [error]
+
 
 
 === TEST 6: create a route with the plugin which set from=json and to=xml
@@ -173,6 +179,7 @@ passed
 [error]
 
 
+
 === TEST 7: test for unsupported operation
 --- request
 GET /json-to-xml
@@ -184,6 +191,7 @@ Content-Type: text/xml
 {"message":"Operation not supported"}
 --- no_error_log
 [error]
+
 
 
 === TEST 8: verify plugin:json to xml
