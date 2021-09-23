@@ -97,17 +97,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
   * `active.host`: 用于发现 upstream 节点健康可用的 HTTP 请求主机名。
   * `active.port`: 用于发现 upstream 节点健康可用的自定义主机端口（可选），配置此项会覆盖 `upstream` 节点中的端口。
   * `active.https_verify_certificate`: 使用HTTPS进行主动健康检查时是否检查远程主机的SSL证书的有效性，默认值：`true`。
+  * `active.req_headers`: 主动健康检查发送 HTTP 检查请求时，额外的请求头信息，数组格式，支持多个请求头。
 
   `healthy`的阀值字段：
 
   * `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为 1。
+  * `active.healthy.http_statuses`: 使用 HTTP 请求检查节点健康状态时，如果响应状态码匹配到设置的状态码，则将节点设置为 `healthy` 状态，数组格式，默认值：`[200, 302]`。
   * `active.healthy.successes`: 确定目标是否健康的成功次数，最小值为 1。
 
   `unhealthy`的阀值字段：
 
   * `active.unhealthy.interval`: 针对不健康目标节点的健康检查之间的间隔（以秒为单位），最小值为 1。
-  * `active.unhealthy.http_failures`: 确定目标节点不健康的 http 请求失败次数，最小值为 1。
-  * `active.req_headers`: 其他请求标头。数组格式，可以填写多个标题。
+  * `active.unhealthy.http_statuses`: 使用 HTTP 请求检查节点健康状态时，如果响应状态码匹配到设置的状态码，则将节点设置为 `unhealthy` 状态，数组格式，默认值：`[429, 404, 500, 501, 502, 503, 504, 505]`。
+  * `active.unhealthy.http_failures`: 确定目标节点不健康的 http 请求失败次数，默认值：`5`。
+  * `active.unhealthy.tcp_failures`: 确定目标节点不健康的 tcp 请求失败次数，默认值：`5`。
+  * `active.unhealthy.timeouts`: 确定目标节点不健康的超时请求次数，默认值：`3`。
 
 * `passive`: 要启用被动健康检查，需要在 upstream 配置中的 `checks.passive` 添加如下配置项。
 

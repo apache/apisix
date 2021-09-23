@@ -97,16 +97,20 @@ contains: `active` or `passive`.
   * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
   * `active.host`: The HTTP request host used to detect if the upstream is healthy.
   * `active.port`: The customize health check host port (optional), this will override the port in the `upstream` node.
-  * `active.https_verify_certificate`: Whether to check the validity of the SSL certificate of the remote host when performing active health checks using HTTPS. Default: `true`.
+  * `active.https_verify_certificate`: Whether to check the validity of the SSL certificate of the remote host when performing active health checks using HTTPS. default: `true`.
+  * `active.req_headers`: When the active health check sends an HTTP check request, additional request header information, array format, supports setting multiple request headers.
 
   The threshold fields of `healthy` are:
   * `active.healthy.interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
+  * `active.healthy.http_statuses`: When using an HTTP request to check the health status of a node, if the response status code matches the set status code, the node is set to the `healthy` status, array format, default: `[200, 302]`.
   * `active.healthy.successes`: The number of success times to determine the target is healthy, the minimum is 1.
 
   The threshold fields of  `unhealthy` are:
   * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
-  * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
-  * `active.req_headers`: Additional request headers. Array format, so you can fill in multiple headers.
+  * `active.unhealthy.http_statuses`: When using an HTTP request to check the health status of a node, if the response status code matches the set status code, the node is set to the `unhealthy` status, array format, default: `[429, 404, 500, 501, 502, 503, 504, 505]`。
+  * `active.unhealthy.http_failures`: Determine the number of unhealthy http request failures on the target node, default: `5`.
+  * `active.unhealthy.tcp_failures`: Determine the number of unhealthy tcp request failures on the target node, default: `5`.
+  * `active.unhealthy.timeouts`: Determine the number of timeout requests for unhealthy target nodes, default: `3`.
 
 * `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
 
