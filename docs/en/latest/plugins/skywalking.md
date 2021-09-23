@@ -28,7 +28,7 @@ title: skywalking
 - [**How To Enable**](#how-to-enable)
 - [**How to set endpoint**](#how-to-set-endpoint)
 - [**Test Plugin**](#test-plugin)
-  - [**Running SkyWalking**](#running-skywalking)
+  - [**Run SkyWalking Example**](#run-skywalking-example)
 - [**Disable Plugin**](#disable-plugin)
 - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
@@ -42,7 +42,7 @@ The SkyWalking server can support both HTTP and gRPC protocols. Currently, the A
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| sample_ratio | number | required    | 1        | [0.00001, 1] | The ratio of sampling                                               |
+| sample_ratio | number | required    | 1        | [0.00001, 1] | the ratio of sampling                                               |
 
 ## How To Enable
 
@@ -107,9 +107,7 @@ plugin_attr:
 
 ## Test Plugin
 
-### Running SkyWalking
-
-#### An Example:
+### Run SkyWalking Example
 
 1. Start the SkyWalking OAP Server:
     - By default, SkyWalking uses H2 storage, start SkyWalking directly by
