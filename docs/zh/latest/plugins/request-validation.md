@@ -43,6 +43,7 @@ title: request-validation
 | header_schema    | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
 | body_schema      | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
 | rejected_message | string | 可选        |         |       | 自定义拒绝信息的 `schema` 数据结构  |
+
 ## 如何启用
 
 创建一条路由并在该路由上启用 `request-validation` 插件：
