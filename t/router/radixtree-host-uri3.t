@@ -244,3 +244,111 @@ Host: foo.com
 qr/matched uri: \/\S+,/
 --- grep_error_log_out
 matched uri: /*,
+
+
+
+=== TEST 6: check matched._host
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "hosts": ["foo.com"],
+                    "plugins": {
+                        "serverless-post-function": {
+                            "functions" : ["return function(conf, ctx)
+                                        ngx.log(ngx.WARN, 'matched host: ', ctx.curr_req_matched._host);
+                                        end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: hit
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- grep_error_log eval
+qr/func\(\): matched host: [^,]+/
+--- grep_error_log_out
+func(): matched host: foo.com
+
+
+
+=== TEST 8: check matched._host, wildcard
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "hosts": ["*.com"],
+                    "plugins": {
+                        "serverless-post-function": {
+                            "functions" : ["return function(conf, ctx)
+                                        ngx.log(ngx.WARN, 'matched host: ', ctx.curr_req_matched._host);
+                                        end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- grep_error_log eval
+qr/func\(\): matched host: [^,]+/
+--- grep_error_log_out
+func(): matched host: *.com
