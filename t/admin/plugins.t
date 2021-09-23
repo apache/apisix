@@ -314,6 +314,7 @@ plugins:
   - error-log-logger
   - server-info
   - example-plugin
+  - node-status
 --- config
     location /t {
         content_by_lua_block {
@@ -341,6 +342,6 @@ plugins:
         }
     }
 --- response_body
-{"batch-requests":"global","error-log-logger":"global","server-info":"global"}
+{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
 --- no_error_log
 [error]
