@@ -141,5 +141,3 @@ plugins:
     }
 --- response_body
 {"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
---- no_error_log
-[error]
