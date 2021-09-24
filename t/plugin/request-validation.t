@@ -1452,7 +1452,7 @@ passed
 
 
 
-=== TEST 35: add route (test request validation `header_schema.required` failed with custom reject message)
+=== TEST 35: add route (test request validation `header_schema.required` success with custom reject message)
 --- config
     location /t {
         content_by_lua_block {
@@ -1491,9 +1491,57 @@ passed
     }
 --- request
 GET /t
---- response_body_like eval
-qr/customize reject message/
+--- response_body
+passed
 --- error_code chomp
-400
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: add route (test request validation `body_schema.required` success with custom reject message)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            },
+                            "rejected_message": "customize reject message"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
 --- no_error_log
 [error]
