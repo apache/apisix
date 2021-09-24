@@ -1545,3 +1545,51 @@ passed
 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 37: add route (test request validation `header_schema.required` failure with custom reject message)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            },
+                            "rejected_message": "customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/string too long/
+--- error_code chomp
+400
+--- no_error_log
+[error]

@@ -26,7 +26,7 @@ local schema = {
     properties = {
         header_schema = {type = "object"},
         body_schema = {type = "object"},
-        rejected_message = {type = "string"}
+        rejected_message = {type = "string", minLength = 1, maxLength = 256}
     },
     anyOf = {
         {required = {"header_schema"}},
