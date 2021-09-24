@@ -48,6 +48,7 @@ function _M.get(name)
             metadata_schema = true,
             consumer_schema = true,
             type = true,
+            scope = true,
         })
 
         if arg["subsystem"] == "stream" then
