@@ -37,6 +37,7 @@ function _M.schema()
         metadata_schema = true,
         consumer_schema = true,
         type = true,
+        scope = true,
     })
     local schema = {
         main = {
