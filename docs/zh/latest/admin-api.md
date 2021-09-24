@@ -985,8 +985,8 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | 名字             | 可选项| 类型     | 说明  | 示例 |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | 可选  | IP       |  客户端 IP 地址 | "127.0.0.1" |
-| server_addr      | 可选  | IP       | 服务端 IP 地址 | "127.0.0.1"  |
+| remote_addr      | 可选  | IP/CIDR  | 客户端 IP 地址 | "127.0.0.1/32" 或 "127.0.0.1" |
+| server_addr      | 可选  | IP/CIDR  | 服务端 IP 地址 | "127.0.0.1/32" 或 "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 服务端端口 | 9090  |
 | sni              | 可选  | Host     | 服务器名称指示| "test.com"  |
 | upstream | 可选 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |  |
