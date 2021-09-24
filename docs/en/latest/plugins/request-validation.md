@@ -39,6 +39,8 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 
 ## Attributes
 
+> Note that at least one of `header_schema` and `body_schema` must be filled in.
+
 | Name             | Type   | Requirement | Default | Valid | Description                |
 | ---------------- | ------ | ----------- | ------- | ----- | -------------------------- |
 | header_schema    | object | optional    |         |       | schema for the header data |
@@ -84,7 +86,7 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-If the schema is violated the plugin will yield a `400` bad request with reject response.
+If the schema is violated the plugin will yield a `400` bad request with the reject response.
 
 ## Disable Plugin
 
