@@ -61,9 +61,8 @@ done
     }
 --- request
 GET /t
---- response_body
-object matches none of the requireds: ["body_schema"] or ["header_schema"]
-done
+--- response_body_like eval
+qr/object matches none of the requireds/
 --- no_error_log
 [error]
 
