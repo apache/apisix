@@ -76,7 +76,6 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.9/apisi
   cd apisix-2.9
   # 创建依赖
   make deps
-  
   # 安装 apisix 命令
   make install
   ```
