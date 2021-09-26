@@ -166,7 +166,7 @@ reload: default
 
 ### install-by-luarocks:	Install the apisix (only for luarocks)
 .PHONY: install-by-luarocks
-install: default
+install-by-luarocks: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
