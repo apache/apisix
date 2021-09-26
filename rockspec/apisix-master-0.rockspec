@@ -85,6 +85,7 @@ build = {
         OPENSSL_INCDIR="$(OPENSSL_INCDIR)",
         OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
+    install_target = "install-by-luarocks",
     install_variables = {
         INST_PREFIX="$(PREFIX)",
         INST_BINDIR="$(BINDIR)",

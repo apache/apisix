@@ -164,8 +164,8 @@ reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
-### install:          Install the apisix (only for luarocks)
-.PHONY: install
+### install-by-luarocks:	Install the apisix (only for luarocks)
+.PHONY: install-by-luarocks
 install: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
