@@ -38,7 +38,7 @@ title: request-validation
 
 ## 属性
 
-> 注意, `header_schema` 与 `body_schema` 必须至少填写其中一个
+> 注意, `header_schema` 与 `body_schema` 至少填写其中一个
 
 | Name             | Type   | Requirement | Default | Valid | Description                       |
 | ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
