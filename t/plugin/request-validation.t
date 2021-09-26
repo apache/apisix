@@ -1431,7 +1431,7 @@ passed
                                 },
                                 "required": ["test"]
                             },
-                            "rejected_message": "customize reject message"
+                            "rejected_msg": "customize reject message for header_schema.required"
                         }
                     },
                     "upstream": {
@@ -1440,7 +1440,7 @@ passed
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/plugin/request/validation"
+                    "uri": "/opentracing"
                 }]])
             if code >= 300 then
                 ngx.status = code
@@ -1457,7 +1457,44 @@ passed
 
 
 
-=== TEST 36: add route (test request validation `body_schema.required` success with custom reject message)
+=== TEST 36: hit TEST 35 rule with empty header
+--- request
+GET /opentracing
+--- error_code: 400
+--- response_body chomp
+customize reject message for header_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 37: hit TEST 35 rule with bad header value
+--- request
+GET /opentracing
+--- more_headers
+test: abc
+--- error_code: 400
+--- response_body chomp
+customize reject message for header_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 38: pass TEST 35 rule
+--- request
+GET /opentracing
+--- more_headers
+test: a
+--- error_code: 200
+--- response_body eval
+qr/opentracing/
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: add route (test request validation `body_schema.required` success with custom reject message)
 --- config
     location /t {
         content_by_lua_block {
@@ -1477,7 +1514,7 @@ passed
                                 },
                                 "required": ["test"]
                             },
-                            "rejected_message": "customize reject message"
+                            "rejected_msg": "customize reject message for body_schema.required"
                         }
                     },
                     "upstream": {
@@ -1486,7 +1523,7 @@ passed
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/plugin/request/validation"
+                    "uri": "/opentracing"
                 }]])
             if code >= 300 then
                 ngx.status = code
@@ -1503,7 +1540,42 @@ passed
 
 
 
-=== TEST 37: add route (test request validation `header_schema.required` failure with custom reject message)
+=== TEST 40: hit TEST 39 rule with empty body
+--- request
+GET /opentracing
+--- error_code: 500
+--- response_body chomp
+customize reject message for body_schema.required
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: hit TEST 39 rule with bad body value
+--- request
+POST /opentracing
+{"test":"abc"}
+--- error_code: 400
+--- response_body chomp
+customize reject message for body_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 42: pass TEST 39 rule
+--- request
+POST /opentracing
+{"test":"a"}
+--- error_code: 200
+--- response_body eval
+qr/opentracing/
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: add route (test request validation `header_schema.required` failure with custom reject message)
 --- config
     location /t {
         content_by_lua_block {
@@ -1523,7 +1595,7 @@ passed
                                 },
                                 "required": ["test"]
                             },
-                            "rejected_message": "customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message"
+                            "rejected_msg": "customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message"
                         }
                     },
                     "upstream": {
@@ -1551,7 +1623,7 @@ qr/string too long/
 
 
 
-=== TEST 38: add route (test request validation schema with custom reject message only)
+=== TEST 44: add route (test request validation schema with custom reject message only)
 --- config
     location /t {
         content_by_lua_block {

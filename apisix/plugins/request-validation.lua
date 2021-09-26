@@ -75,7 +75,7 @@ function _M.rewrite(conf)
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
-            return 400, err
+            return 400, conf.rejected_msg or err
         end
     end
 
