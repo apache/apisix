@@ -109,7 +109,7 @@ local function parse_resource_ttl(cc)
     local max_age = cc["s-maxage"] or cc["max-age"]
 
     if not max_age then
-        local expires = ngx.var.sent_http_expires
+        local expires = ctx.var.upstream_http_expires
 
         -- if multiple Expires headers are present, last one wins
         if type(expires) == "table" then
@@ -174,7 +174,7 @@ end
 
 
 function _M.access(conf, ctx)
-    local cc = parse_directive_header(ngx.var.http_cache_control)
+    local cc = parse_directive_header(ctx.var.http_cache_control)
 
     if ctx.var.request_method ~= "PURGE" then
         local ret, msg = cacheable_request(conf, ctx, cc)
@@ -273,7 +273,7 @@ function _M.header_filter(conf, ctx)
         end
     end
 
-    local cc = parse_directive_header(ngx.var.sent_http_cache_control)
+    local cc = parse_directive_header(ctx.var.upstream_http_cache_control)
 
     if cacheable_response(conf, ctx, cc) then
         cache.res_headers = res_headers
