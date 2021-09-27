@@ -24,6 +24,8 @@ title: Global rule
 [Plugin](plugin.md) 只能绑定在 [Service](service.md) 或者 [Route](route.md) 上，如果我们需要一个能作用于所有请求的 [Plugin](plugin.md) 该怎么办呢？
 这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](plugin.md):
 
+当 `Route` 和 `Service` 都开启同一个插件时，APISIX 只会执行 `Route` 上的插件，`Service` 上的插件被覆盖。但是 `GlobalRule` 上的插件一定会执行，无论 `Route` 和 `Service` 上是否开启同一个插件。
+
 ```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
@@ -43,9 +45,6 @@ curl -X PUT \
 ```
 
 如上所注册的 `limit-count` 插件将会作用于所有的请求。
-
-我们可以通过以下接口查看所有的 `GlobalRule`:
-当 `Route` 和 `Service` 都开启同一个插件时，Route 参数的优先级是高于 Service 的。但是`GlobalRule`优先级高于`Route`和`Service`
 
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'

@@ -24,6 +24,8 @@ title: Global rule
 [Plugin](plugin.md) just can be bound to [Service](service.md) or [Route](route.md), if we want a [Plugin](plugin.md) work on all requests, how to do it?
 We can register a global [Plugin](plugin.md) with `GlobalRule`:
 
+When the same plugin is enabled on both `Route` and `Service`, APISIX will only execute the plugin on `Route` and the plugin on `Service` is overwritten. But the plugin on `GlobalRule` will always be executed, regardless of whether the same plugin is enabled on `Route` and `Service`.
+
 ```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
