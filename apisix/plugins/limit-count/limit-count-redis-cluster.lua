@@ -74,8 +74,11 @@ function _M.new(plugin_name, limit, window, conf)
     end
 
     local self = {
-        limit = limit, window = window, conf = conf,
-        plugin_name = plugin_name, red_cli =red_cli
+        limit = limit,
+        window = window,
+        conf = conf,
+        plugin_name = plugin_name,
+        red_cli = red_cli,
     }
 
     return setmetatable(self, mt)

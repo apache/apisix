@@ -51,7 +51,7 @@ local function check_conf(id, conf, need_id)
     conf.id = id
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
+    core.log.info("conf: ", core.json.delay_encode(conf))
 
     local ok, err = apisix_upstream.check_upstream_conf(conf)
     if not ok then
@@ -73,13 +73,13 @@ function _M.put(id, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("upstream", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put upstream[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -95,7 +95,7 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get upstream[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     utils.fix_count(res.body, id)
@@ -114,7 +114,7 @@ function _M.post(id, conf)
     local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post upstream[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -160,7 +160,7 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete upstream[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -186,7 +186,7 @@ function _M.patch(id, conf, sub_path)
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get upstream [", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     if res_old.status ~= 200 then
@@ -204,11 +204,11 @@ function _M.patch(id, conf, sub_path)
         if code then
             return code, err
         end
+        utils.inject_timestamp(new_value, nil, true)
     else
         new_value = core.table.merge(new_value, conf);
+        utils.inject_timestamp(new_value, nil, conf)
     end
-
-    utils.inject_timestamp(new_value, nil, conf)
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 
@@ -220,7 +220,7 @@ function _M.patch(id, conf, sub_path)
     local res, err = core.etcd.atomic_set(key, new_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new upstream[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

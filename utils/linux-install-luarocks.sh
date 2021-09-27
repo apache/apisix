@@ -39,8 +39,7 @@ fi
     > build.log 2>&1 || (cat build.log && exit 1)
 
 make build > build.log 2>&1 || (cat build.log && exit 1)
-msg="rerun this script with 'sudo' if you failed to make install because of privilege problem."
-make install > build.log 2>&1 || (cat build.log && echo "$msg" && exit 1)
+sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
 rm -rf luarocks-3.4.0
 

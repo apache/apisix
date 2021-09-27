@@ -114,6 +114,22 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | body    | string  | Http 请求的响应体   |
 | headers | object  | Http 请求的响应头   |
 
+## 如何修改自定义 uri
+
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 配置项中修改默认的 `uri`
+
+| 名称       | 类型   | 必选项	| 默认值                       | 描述           |
+| --------- | ------ | ------ | ---------------------------- | -------------- |
+| uri       | string |  可选  |"/apisix/batch-requests"     | `batch-requests` 插件的自定义 uri    |
+
+配置示例:
+
+```yaml
+plugin_attr:
+  batch-requests:
+    uri: "/api-gw/batch"
+```
+
 ## 测试插件
 
 你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。

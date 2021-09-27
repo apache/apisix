@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
+local enable_debug  = require("apisix.debug").enable_debug
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
@@ -167,8 +168,7 @@ local function load(plugin_names)
 
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
-        if local_conf and local_conf.apisix
-           and local_conf.apisix.enable_debug then
+        if enable_debug() then
             core.log.warn("loaded plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -209,8 +209,7 @@ local function load_stream(plugin_names)
 
     for i, plugin in ipairs(stream_local_plugins) do
         stream_local_plugins_hash[plugin.name] = plugin
-        if local_conf and local_conf.apisix
-           and local_conf.apisix.enable_debug then
+        if enable_debug() then
             core.log.warn("loaded stream plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)
@@ -231,7 +230,13 @@ function _M.load(config)
 
     if not config then
         -- called during starting or hot reload in admin
-        local_conf = core.config.local_conf(true)
+        local err
+        local_conf, err = core.config.local_conf(true)
+        if not local_conf then
+            -- the error is unrecoverable, so we need to raise it
+            error("failed to load the configuration file: ", err)
+        end
+
         http_plugin_names = local_conf.plugins
         stream_plugin_names = local_conf.stream_plugins
     else
@@ -273,8 +278,8 @@ function _M.load(config)
 end
 
 
-local function trace_plugins_info_for_debug(plugins)
-    if not (local_conf and local_conf.apisix.enable_debug) then
+local function trace_plugins_info_for_debug(ctx, plugins)
+    if not enable_debug() then
         return
     end
 
@@ -293,35 +298,54 @@ local function trace_plugins_info_for_debug(plugins)
         core.table.insert(t, plugins[i].name)
     end
     if is_http and not ngx.headers_sent then
-        core.response.add_header("Apisix-Plugins", core.table.concat(t, ", "))
+        if ctx then
+            local debug_headers = ctx.debug_headers
+            if not debug_headers then
+                debug_headers = core.table.new(0, 5)
+            end
+            for i, v in ipairs(t) do
+                debug_headers[v] = true
+            end
+            ctx.debug_headers = debug_headers
+        end
     else
         core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))
     end
 end
 
 
-function _M.filter(user_route, plugins)
-    local user_plugin_conf = user_route.value.plugins
+function _M.filter(ctx, conf, plugins, route_conf)
+    local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        trace_plugins_info_for_debug(nil)
+        trace_plugins_info_for_debug(nil, nil)
         -- when 'plugins' is given, always return 'plugins' itself instead
         -- of another one
-        return plugins or core.empty_tab
+        return plugins or core.tablepool.fetch("plugins", 0, 0)
     end
 
+    local route_plugin_conf = route_conf and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" and not plugin_conf.disable then
+            if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
+                local plugin_conf_in_route = route_plugin_conf[name]
+                if plugin_conf_in_route and not plugin_conf_in_route.disable then
+                    goto continue
+                end
+            end
+
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
+
+            ::continue::
         end
     end
 
-    trace_plugins_info_for_debug(plugins)
+    trace_plugins_info_for_debug(ctx, plugins)
 
     return plugins
 end
@@ -331,7 +355,7 @@ function _M.stream_filter(user_route, plugins)
     plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
-        trace_plugins_info_for_debug(nil)
+        trace_plugins_info_for_debug(nil, nil)
         return plugins
     end
 
@@ -345,7 +369,7 @@ function _M.stream_filter(user_route, plugins)
         end
     end
 
-    trace_plugins_info_for_debug(plugins)
+    trace_plugins_info_for_debug(nil, plugins)
 
     return plugins
 end
@@ -389,6 +413,13 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.value.name = route_conf.value.name
     else
         new_conf.value.name = nil
+    end
+
+    if route_conf.value.hosts then
+        new_conf.value.hosts = route_conf.value.hosts
+    end
+    if not new_conf.value.hosts and route_conf.value.host then
+        new_conf.value.host = route_conf.value.host
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
@@ -505,21 +536,22 @@ end
 
 
 function _M.get_all(attrs)
-    local plugins = {}
+    local http_plugins = {}
+    local stream_plugins = {}
 
     if local_plugins_hash then
         for name, plugin_obj in pairs(local_plugins_hash) do
-            plugins[name] = core.table.pick(plugin_obj, attrs)
+            http_plugins[name] = core.table.pick(plugin_obj, attrs)
         end
     end
 
     if stream_local_plugins_hash then
         for name, plugin_obj in pairs(stream_local_plugins_hash) do
-            plugins[name] = core.table.pick(plugin_obj, attrs)
+            stream_plugins[name] = core.table.pick(plugin_obj, attrs)
         end
     end
 
-    return plugins
+    return http_plugins, stream_plugins
 end
 
 
@@ -622,6 +654,7 @@ end
 
 
 function _M.run_plugin(phase, plugins, api_ctx)
+    local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
     if not api_ctx then
         return
@@ -639,6 +672,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         for i = 1, #plugins, 2 do
             local phase_func = plugins[i][phase]
             if phase_func then
+                plugin_run = true
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
                     if is_http then
@@ -657,17 +691,18 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
             end
         end
-        return api_ctx
+        return api_ctx, plugin_run
     end
 
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         if phase_func then
+            plugin_run = true
             phase_func(plugins[i + 1], api_ctx)
         end
     end
 
-    return api_ctx
+    return api_ctx, plugin_run
 end
 
 
@@ -684,13 +719,14 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = global_rules.values
+        local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
             api_ctx.conf_version = global_rule.modifiedIndex
             api_ctx.conf_id = global_rule.value.id
 
             core.table.clear(plugins)
-            plugins = _M.filter(global_rule, plugins)
+            plugins = _M.filter(api_ctx, global_rule, plugins, route)
             if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)

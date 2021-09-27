@@ -149,7 +149,7 @@ The result of this example is as follows:
     "port" : 8761,
     "weight" : 100,
     "metadata" : {
-      "management.port": "8761",
+      "management.port": "8761"
     }
   }
 ]

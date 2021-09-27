@@ -25,7 +25,6 @@ local ipairs = ipairs
 
 local schema = {
     type = "object",
-    additionalProperties = false,
 }
 
 
@@ -34,6 +33,7 @@ local _M = {
     priority = 1000,
     name = plugin_name,
     schema = schema,
+    scope = "global",
 }
 
 

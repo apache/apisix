@@ -23,6 +23,9 @@
 
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/apache/apisix)](https://github.com/apache/apisix/graphs/commit-activity)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Percentage of issues still open")
 
 **Apache APISIX** is a dynamic, real-time, high-performance API gateway.
 
@@ -40,16 +43,19 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 578997126
-- [Slack Workspace](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg) - join `#apisix` on our Slack to meet the team and ask questions
+- Slack Workspace - Please [subscribe the mailing list](https://apisix.apache.org/docs/general/subscribe-guide) then ask for invitation link
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
-  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Docker distribution for APISIX](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX®](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX® dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Docker distribution for Apache APISIX®](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Java Plugin Runner](https://github.com/apache/apisix-java-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Go Plugin Runner](https://github.com/apache/apisix-go-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+  - [Apache APISIX® Python Plugin Runner](https://github.com/apache/apisix-python-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -102,7 +108,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Security**
 
-  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
+  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md), [casbin](docs/en/latest/plugins/authz-casbin.md), [keycloak](docs/en/latest/plugins/authz-keycloak.md)
   - [IP Whitelist/Blacklist](docs/en/latest/plugins/ip-restriction.md)
   - [Referer Whitelist/Blacklist](docs/en/latest/plugins/referer-restriction.md)
   - [IdP](docs/en/latest/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
@@ -118,9 +124,9 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
   - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
   - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
-  - works with external service discovery：In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
+  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
-  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/).
+  - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
@@ -135,119 +141,36 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
-  - [Plugin can be writtern in Java/Go](docs/en/latest/external-plugin.md)
+  - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
 ## Get Started
 
-### Configure and Installation
+1. Installation
 
 APISIX Installed and tested in the following systems:
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-There are several ways to install the Apache Release version of APISIX:
-
-1. Source code compilation (applicable to all systems)
-
-   - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](docs/en/latest/install-dependencies.md)
-   - Download the latest source code release package:
-
-     ```shell
-     $ mkdir apisix-2.6
-     $ wget https://downloads.apache.org/apisix/2.6/apache-apisix-2.6-src.tgz
-     $ tar zxvf apache-apisix-2.6-src.tgz -C apisix-2.6
-     ```
-
-   - Install the dependencies：
-
-     ```shell
-     $ make deps
-     ```
-
-   - check version of APISIX:
-
-     ```shell
-     $ ./bin/apisix version
-     ```
-
-   - start APISIX:
-
-     ```shell
-     $ ./bin/apisix start
-     ```
-
-2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
-
-   By default, the latest Apache release package will be pulled:
-
-   ```shell
-   $ docker pull apache/apisix
-   ```
-
-   The Docker image does not include `etcd`; you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
-
-3. RPM package（only for CentOS 7）
-
-   - Installation runtime dependencies: OpenResty, etcd and OpenSSL develop library, refer to [install dependencies documentation](docs/en/latest/install-dependencies.md#centos-7)
-   - install APISIX：
-
-   ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.6/apisix-2.6-0.x86_64.rpm
-   ```
-
-   - check the version of APISIX:
-
-     ```shell
-     $ apisix version
-     ```
-
-   - start APISIX:
-
-     ```shell
-     $ apisix start
-     ```
-
-**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, and the minimum etcd version supported is v3.4.0. Please update etcd when needed. If you need to migrate your data from etcd v2 to v3, please follow [etcd migration guide](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/).
-
-### For Developer
-
-1. For developers, you can use the latest master branch to experience more features
-
-   - build from source code
-
-   ```shell
-   $ git clone git@github.com:apache/apisix.git
-   $ cd apisix
-   $ make deps
-   ```
-
-   - Docker image
-
-   ```shell
-   $ git clone https://github.com/apache/apisix-docker.git
-   $ cd apisix-docker
-   $ sudo docker build -f alpine-dev/Dockerfile .
-   ```
+Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
 
    The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
 
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins.md).
+   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins).
 
 3. Admin API
 
-   Apache APISIX provides [REST Admin API](docs/en/latest/admin-api.md) to dynamic control the Apache APISIX cluster.
+   Apache APISIX provides [REST Admin API](docs/en/latest/admin-api.md) to dynamically control the Apache APISIX cluster.
 
 4. Plugin development
 
-   You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and [sample plugin `echo`](docs/en/latest/plugins/echo.md) documentation and code implementation.
+   You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and sample plugin `example-plugin`'s code implementation.
+   Reading [plugin concept](docs/en/latest/architecture-design/plugin.md) would help you learn more about the plugin.
 
-   Please note that Apache APISIX plugins' added, updated, deleted, etc., are hot-loaded without restarting the service.
-
-For more documents, please refer to [Apache APISIX Document Index](README.md)
+For more documents, please refer to [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/)
 
 ## Benchmark
 
@@ -312,9 +235,10 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 ## User Stories
 
+- [Sina Weibo: the road to customization of Sina Weibo API gateway based on Apache APISIX(Chinese)](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
 - [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
 - [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
 - [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller? (Chinese)](https://www.upyun.com/opentalk/448.html)
 - [aispeech: Why we create a new k8s ingress controller? (Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)

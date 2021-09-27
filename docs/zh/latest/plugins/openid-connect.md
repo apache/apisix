@@ -52,6 +52,10 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | introspection_endpoint_auth_method | string  | 可选   | "client_secret_basic" |         | 令牌自省的认证方法名称                         |
 | public_key                         | string  | 可选   |                       |         | 验证令牌的公钥                                 |
 | token_signing_alg_values_expected  | string  | 可选   |                       |         | 用于对令牌进行签名的算法                       |
+| set_access_token_header              | boolean | 可选    | true               |         | 在请求头设置访问令牌                        |
+| access_token_in_authorization_header | boolean | 可选    | false              |         | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。|
+| set_id_token_header                  | boolean | 可选    | true               |         | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`    |
+| set_userinfo_header                  | boolean | 可选    | true               |         | 是否将用户信息对象设置到请求头参数 `X-Userinfo`    |
 
 ### 令牌自省
 
@@ -124,9 +128,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "bearer_only":true,
             "realm":"master",
             "token_signing_alg_values_expected":"RS256",
-            "public_key":"-----BEGIN CERTIFICATE-----
+            "public_key":"-----BEGIN PUBLIC KEY-----
             {public_key}
-            -----END CERTIFICATE-----"
+            -----END PUBLIC KEY-----"
         }
     },
     "upstream":{
@@ -137,6 +141,43 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+#### 通过 OIDC 依赖方认证流程进行身份验证
+
+当一个请求在请求头或会话 Cookie 中不包含访问令牌时，
+插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 OIDC 授权代码流程；
+请参阅 https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth 。
+一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。
+该信息当前存储在会话 cookie 中，该插件将识别 cookie 并使用其中的信息，以避免再次执行认证流程。
+
+以下命令将此操作模式添加到路由：
+
+```bash
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "uri": "/get",
+  "plugins": {
+    "proxy-rewrite": {
+      "scheme": "https"
+    },
+    "openid-connect": {
+      "client_id": "api_six_client_id",
+      "client_secret": "client_secret_code",
+      "discovery": "full_URL_of_the_discovery_endpoint",
+      "bearer_only": false,
+      "realm": "master"
+}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:443": 1
+    }
+  }
+}'
+```
+
+在该例子中，插件可以强制在各自配置的请求头中设置访问令牌、ID 令牌和 UserInfo 对象。
 
 ## 故障排除
 

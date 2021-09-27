@@ -15,20 +15,29 @@
 # limitations under the License.
 #
 
+import http.client
 import subprocess
 import os
+from functools import wraps
+from pathlib import Path
 import psutil
-from boofuzz import *
+from boofuzz import FuzzLoggerText, Session, TCPSocketConnection, Target
 
 def cur_dir():
     return os.path.split(os.path.realpath(__file__))[0]
 
+def apisix_pwd():
+    return os.environ.get("APISIX_FUZZING_PWD") or \
+            (str(Path.home()) + "/work/apisix/apisix")
+
 def check_log():
     boofuzz_log = cur_dir() + "/test.log"
-    apisix_errorlog = "~/work/apisix/apisix/logs/error.log"
-    apisix_accesslog = "~/work/apisix/apisix/logs/access.log"
+    apisix_errorlog = apisix_pwd() + "/logs/error.log"
+    apisix_accesslog = apisix_pwd() + "/logs/access.log"
 
-    cmds = ['cat %s | grep -a "fail"'%boofuzz_log, 'cat %s | grep -a "error" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
+    cmds = ['cat %s | grep -a "error" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
+    if os.path.exists(boofuzz_log):
+        cmds.append('cat %s | grep -a "fail"'%boofuzz_log)
     for cmd in cmds:
         r = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         err = r.stdout.read().strip()
@@ -36,10 +45,9 @@ def check_log():
         assert err == b""
 
 def check_process():
-    cmd = "ps -ef | grep apisix/conf/nginx.conf | grep master | grep -v grep| awk '{print $2}'"
-    p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
-    p.wait()
-    parent = psutil.Process(int(p.stdout.read().strip()))
+    with open(apisix_pwd() + "/logs/nginx.pid") as f:
+        pid = int(f.read().strip())
+    parent = psutil.Process(pid)
     children = parent.children(recursive=True)
     process = {p.pid for p in children if "cache loader process" not in p.cmdline()[0]}
     process.add(parent.pid)
@@ -56,6 +64,62 @@ def initfuzz():
         keep_web_open=False,
     )
     return session
+
+def sum_memory():
+    pmap = {}
+    for p in check_process():
+        proc = psutil.Process(p)
+        pmap[proc] = proc.memory_full_info()
+    return sum(m.rss for m in pmap.values())
+
+def get_linear_regression_sloped(samples):
+    n = len(samples)
+    avg_x = (n + 1) / 2
+    avg_y = sum(samples) / n
+    avg_xy = sum([(i + 1) * v for i, v in enumerate(samples)]) / n
+    avg_x2 = sum([i * i for i in range(1, n + 1)]) / n
+    denom = avg_x2 - avg_x * avg_x
+    if denom == 0:
+        return None
+    return (avg_xy - avg_x * avg_y) / denom
+
+def gc():
+    conn = http.client.HTTPConnection("127.0.0.1", port=9090)
+    conn.request("POST", "/v1/gc")
+    conn.close()
+
+def leak_count():
+    return int(os.environ.get("APISIX_FUZZING_LEAK_COUNT") or 100)
+
+LEAK_COUNT = leak_count()
+
+def check_leak(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        global LEAK_COUNT
+
+        samples = []
+        for i in range(LEAK_COUNT):
+            f(*args, **kwds)
+            gc()
+            samples.append(sum_memory())
+        count = 0
+        for i in range(1, LEAK_COUNT):
+            if samples[i - 1] < samples[i]:
+                count += 1
+        print(samples)
+        sloped = get_linear_regression_sloped(samples)
+        print(sloped)
+        print(count / LEAK_COUNT)
+
+        if os.environ.get("CI"): # CI is not stable
+            return
+
+        # the threshold is chosen so that we can find leaking a table per request
+        if sloped > 10000 and (count / LEAK_COUNT) > 0.2:
+            raise AssertionError("memory leak")
+
+    return wrapper
 
 def run_test(create_route, run):
     # before test

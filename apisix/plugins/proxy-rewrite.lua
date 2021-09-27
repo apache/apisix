@@ -62,7 +62,6 @@ local schema = {
         },
     },
     minProperties = 1,
-    additionalProperties = false,
 }
 
 

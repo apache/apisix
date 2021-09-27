@@ -51,7 +51,8 @@ local schema = {
                 type = "string",
                 minLength = 1, maxLength = 100
             },
-            uniqueItems = true
+            uniqueItems = true,
+            default = {}
         },
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
@@ -337,7 +338,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
         return 500, "Unable to determine token endpoint."
     end
 
-    local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":"
+    local session = authz_keycloak_cache_get("access-tokens", token_endpoint .. ":"
                                              .. client_id)
 
     if session then
@@ -425,7 +426,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                                                                           json.refresh_expires_in)
                     end
 
-                    authz_keycloak_cache_set("access_tokens",
+                    authz_keycloak_cache_set("access-tokens",
                                              token_endpoint .. ":" .. client_id,
                                              core.json.encode(session), ttl)
                 end
@@ -500,7 +501,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
         end
 
-        authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. client_id,
+        authz_keycloak_cache_set("access-tokens", token_endpoint .. ":" .. client_id,
                                  core.json.encode(session), ttl)
     end
 

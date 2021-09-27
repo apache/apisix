@@ -69,7 +69,8 @@ local function parse_graphql(ctx)
 end
 
 
-local function get_parsed_graphql(ctx)
+local function get_parsed_graphql()
+    local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
         return ctx._graphql
     end
@@ -111,7 +112,11 @@ end
 do
     local var_methods = {
         method = ngx.req.get_method,
-        cookie = function () return ck:new() end
+        cookie = function ()
+            if ngx.var.http_cookie then
+                return ck:new()
+            end
+        end
     }
 
     local ngx_var_names = {
@@ -153,9 +158,20 @@ do
                 if cookie then
                     local err
                     val, err = cookie:get(sub_str(key, 8))
-                    if not val then
+                    if err then
                         log.warn("failed to fetch cookie value by key: ",
                                  key, " error: ", err)
+                    end
+                end
+
+            elseif core_str.has_prefix(key, "arg_") then
+                local arg_key = sub_str(key, 5)
+                local args = request.get_uri_args()[arg_key]
+                if args then
+                    if type(args) == "table" then
+                        val = args[1]
+                    else
+                        val = args
                     end
                 end
 
@@ -167,7 +183,7 @@ do
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
-                val = get_parsed_graphql(t)[key]
+                val = get_parsed_graphql()[key]
 
             elseif key == "route_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id

@@ -38,7 +38,6 @@ local function new()
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
     etcd_conf.api_prefix = "/v3"
-    etcd_conf.ssl_verify = true
 
     -- default to verify etcd cluster certificate
     etcd_conf.ssl_verify = true
@@ -310,6 +309,9 @@ function _M.push(key, value, ttl)
     -- manually add suffix
     local index = res.body.header.revision
     index = string.format("%020d", index)
+
+    -- set the basic id attribute
+    value.id = index
 
     res, err = set(key .. "/" .. index, value, ttl)
     if not res then

@@ -16,7 +16,7 @@
 #
 BEGIN {
     if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
+        $SkipReason = "unavailable for the check leak tests";
 
     } else {
         $ENV{TEST_NGINX_USE_HUP} = 1;
@@ -107,3 +107,204 @@ GET /mysleep?seconds=0.1
 request latency is 0.1
 --- response_body
 0.1
+
+
+
+=== TEST 3: set both global and route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: hit route
+--- log_level: debug
+--- request
+GET /hello
+--- grep_error_log eval
+qr/request latency is/
+--- grep_error_log_out
+request latency is
+request latency is
+
+
+
+=== TEST 5: set only_use_default_delay option to true in specific route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello1",
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "only_use_default_delay": true,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: hit route
+--- log_level: debug
+--- request
+GET /hello1
+--- grep_error_log eval
+qr/request latency is nil/
+--- grep_error_log_out
+request latency is nil
+
+
+
+=== TEST 7: invalid route: wrong rejected_msg type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": true
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
+
+
+
+=== TEST 8: invalid route: wrong rejected_msg length
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": ""
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}

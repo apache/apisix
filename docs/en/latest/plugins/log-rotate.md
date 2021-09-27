@@ -34,6 +34,7 @@ When the number of log files exceeds the remaining number, the old files are aut
 | -------- | ------- | ----------- | ------- | ----- | -------------------------------------------------------------------------------------------------------------------- |
 | interval | integer | required    | 60 * 60 |       | How often to rotate the log in seconds                                                                               |
 | max_kept | integer | required    | 24 * 7  |       | How many historical logs can be kept at most. When this number is exceeded, old files will be deleted automatically. |
+| enable_compression | boolean | optional    | false |       | Whether to enable log file compression(gzip). This feature requires `tar` installed.                                                                              |
 
 After this plug-in is enabled, the log file will be automatically rotated according to the configuration.
 For example, the following example is a sample based on `interval: 10` and `max_kept: 10`.
@@ -65,6 +66,21 @@ total 44K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
+When enable log file compression, log file will be like below.
+
+```shell
+$ ll logs
+total 10.5K
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_error.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-34-00_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-00_error.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-10_access.log.tar.gz
+-rw-r--r--. 1 resty resty  1.5K Mar 20 20:34 2020-03-20_20-34-10_error.log.tar.gz
+-rw-r--r--. 1 resty resty    0 Mar 20 20:34 access.log
+-rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
+```
+
 ### Example
 
 #### Enable plugin
@@ -83,6 +99,7 @@ plugin_attr:
     log-rotate:
         interval: 3600    # rotate interval (unit: second)
         max_kept: 168     # max number of log files will be kept
+        enable_compression: false    # enable log file compression(gzip) or not, default false
 ```
 
 #### Disable plugin

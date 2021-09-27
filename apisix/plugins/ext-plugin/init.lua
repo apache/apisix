@@ -24,6 +24,10 @@ local http_req_call_resp = require("A6.HTTPReqCall.Resp")
 local http_req_call_action = require("A6.HTTPReqCall.Action")
 local http_req_call_stop = require("A6.HTTPReqCall.Stop")
 local http_req_call_rewrite = require("A6.HTTPReqCall.Rewrite")
+local extra_info = require("A6.ExtraInfo.Info")
+local extra_info_req = require("A6.ExtraInfo.Req")
+local extra_info_var = require("A6.ExtraInfo.Var")
+local extra_info_resp = require("A6.ExtraInfo.Resp")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -42,7 +46,6 @@ local band = bit.band
 local lshift = bit.lshift
 local rshift = bit.rshift
 local ffi = require("ffi")
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 local socket_tcp = ngx.socket.tcp
 local worker_id = ngx.worker.id
@@ -55,6 +58,7 @@ local str_sub = string.sub
 local error = error
 local ipairs = ipairs
 local pairs = pairs
+local tostring = tostring
 local type = type
 
 
@@ -251,11 +255,50 @@ local function build_headers(var, builder, key, val)
 end
 
 
+local function handle_extra_info(ctx, input)
+    -- exact request
+    local buf = flatbuffers.binaryArray.New(input)
+    local req = extra_info_req.GetRootAsReq(buf, 0)
+
+    local res
+    local info_type = req:InfoType()
+    if info_type == extra_info.Var then
+        local info = req:Info()
+        local var_req = extra_info_var.New()
+        var_req:Init(info.bytes, info.pos)
+
+        local var_name = var_req:Name()
+        res = ctx.var[var_name]
+    else
+        return nil, "unsupported info type: " .. info_type
+    end
+
+    -- build response
+    builder:Clear()
+
+    local packed_res
+    if res then
+        -- ensure to pass the res in string type
+        res = tostring(res)
+        packed_res = builder:CreateByteVector(res)
+    end
+    extra_info_resp.Start(builder)
+    if packed_res then
+        extra_info_resp.AddResult(builder, packed_res)
+    end
+    local resp = extra_info_resp.End(builder)
+    builder:Finish(resp)
+    return builder:Output()
+end
+
+
 local rpc_call
 local rpc_handlers = {
     nil,
-    function (conf, ctx, sock)
+    function (conf, ctx, sock, unique_key)
         builder:Clear()
+
+        local key = builder:CreateString(unique_key)
 
         local conf_vec
         if conf.conf then
@@ -278,6 +321,7 @@ local rpc_handlers = {
         end
 
         prepare_conf_req.Start(builder)
+        prepare_conf_req.AddKey(builder, key)
         if conf_vec then
             prepare_conf_req.AddConf(builder, conf_vec)
         end
@@ -305,9 +349,11 @@ local rpc_handlers = {
         core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
         return token
     end,
-    function (conf, ctx, sock)
-        local token, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, rpc_call,
-                                                    constants.RPC_PREPARE_CONF, conf, ctx)
+    function (conf, ctx, sock, entry)
+        local lrucache_id = core.lrucache.plugin_ctx_id(ctx, entry)
+        local token, err = core.lrucache.plugin_ctx(lrucache, ctx, entry, rpc_call,
+                                                    constants.RPC_PREPARE_CONF, conf, ctx,
+                                                    lrucache_id)
         if not token then
             return nil, err
         end
@@ -334,7 +380,7 @@ local rpc_handlers = {
         local path = builder:CreateString(uri)
 
         local bin_addr = var.binary_remote_addr
-        local src_ip = builder.CreateByteVector(builder, bin_addr)
+        local src_ip = builder:CreateByteVector(bin_addr)
 
         local args = core.request.get_uri_args(ctx)
         local textEntries = {}
@@ -395,9 +441,26 @@ local rpc_handlers = {
             return nil, "failed to send RPC_HTTP_REQ_CALL: " .. err
         end
 
-        local ty, resp = receive(sock)
-        if ty == nil then
-            return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
+        local ty, resp
+        while true do
+            ty, resp = receive(sock)
+            if ty == nil then
+                return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
+            end
+
+            if ty ~= constants.RPC_EXTRA_INFO then
+                break
+            end
+
+            local out, err = handle_extra_info(ctx, resp)
+            if not out then
+                return nil, "failed to handle RPC_EXTRA_INFO: " .. err
+            end
+
+            local ok, err = send(sock, constants.RPC_EXTRA_INFO, out)
+            if not ok then
+                return nil, "failed to reply RPC_EXTRA_INFO: " .. err
+            end
         end
 
         if ty ~= constants.RPC_HTTP_REQ_CALL then
@@ -425,13 +488,14 @@ local rpc_handlers = {
             local len = stop:BodyLength()
             if len > 0 then
                 -- TODO: support empty body
-                body = ffi_new("unsigned char[?]", len)
-                for i = 1, len do
-                    body[i - 1] = stop:Body(i)
-                end
-                body = ffi_str(body, len)
+                body = stop:BodyAsString()
             end
-            return true, nil, stop:Status(), body
+            local code = stop:Status()
+            -- avoid using 0 as the default http status code
+            if code == 0 then
+                 code = 200
+            end
+            return true, nil, code, body
         end
 
         if action_type == http_req_call_action.Rewrite then
@@ -498,17 +562,17 @@ local rpc_handlers = {
 }
 
 
-rpc_call = function (ty, conf, ctx)
+rpc_call = function (ty, conf, ctx, ...)
     local path = helper.get_path()
 
     local sock = socket_tcp()
-    sock:settimeouts(1000, 5000, 5000)
+    sock:settimeouts(1000, 60000, 60000)
     local ok, err = sock:connect(path)
     if not ok then
         return nil, "failed to connect to the unix socket " .. path .. ": " .. err
     end
 
-    local res, err, code, body = rpc_handlers[ty + 1](conf, ctx, sock)
+    local res, err, code, body = rpc_handlers[ty + 1](conf, ctx, sock, ...)
     if not res then
         sock:close()
         return nil, err
@@ -535,12 +599,12 @@ local function create_lrucache()
 end
 
 
-function _M.communicate(conf, ctx)
+function _M.communicate(conf, ctx, plugin_name)
     local ok, err, code, body
     local tries = 0
     while tries < 3 do
         tries = tries + 1
-        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx)
+        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx, plugin_name)
         if ok then
             if code then
                 return code, body

@@ -21,7 +21,7 @@ local ngx = ngx
 local math = math
 local error = error
 
-local shared_buffer = ngx.shared['plugin-'.. plugin_name]
+local shared_buffer = ngx.shared["plugin-".. plugin_name]
 if not shared_buffer then
     error("failed to get ngx.shared dict when load plugin " .. plugin_name)
 end

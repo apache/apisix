@@ -21,11 +21,13 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
+UNAME_MACHINE ?= $(shell uname -m)
 OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS ?= luarocks
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
+HOMEBREW_PREFIX ?= /usr/local
 
 # OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
 ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes)
@@ -33,6 +35,9 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(UNAME), Darwin)
+ifeq ($(UNAME_MACHINE), arm64)
+	HOMEBREW_PREFIX=/opt/homebrew
+endif
 LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
 ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
 	OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl
@@ -210,6 +215,12 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ip-restriction
+	$(INSTALL) apisix/plugins/ip-restriction/*.lua $(INST_LUADIR)/apisix/plugins/ip-restriction/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-conn
+	$(INSTALL) apisix/plugins/limit-conn/*.lua $(INST_LUADIR)/apisix/plugins/limit-conn/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
 	$(INSTALL) apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/plugins/limit-count/
 
@@ -250,11 +261,7 @@ test:
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
 license-check:
-ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
-	git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-	cp ci/ASF* ci/openwhisk-utilities/scancode/
-endif
-	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
+	docker run -it --rm -v $(shell pwd):/github/workspace apache/skywalking-eyes header check
 
 .PHONY: release-src
 release-src: compress-tar

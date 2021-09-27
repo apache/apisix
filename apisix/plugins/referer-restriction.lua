@@ -32,11 +32,24 @@ local schema = {
         whitelist = {
             type = "array",
             items = core.schema.host_def,
-            minItems = 1
+            minItems = 1,
+        },
+        blacklist = {
+            type = "array",
+            items = core.schema.host_def,
+            minItems = 1,
+        },
+        message = {
+            type = "string",
+            minLength = 1,
+            maxLength = 1024,
+            default = "Your referer host is not allowed",
         },
     },
-    required = {"whitelist"},
-    additionalProperties = false,
+    oneOf = {
+        {required = {"whitelist"}},
+        {required = {"blacklist"}},
+    },
 }
 
 
@@ -111,12 +124,16 @@ function _M.access(conf, ctx)
 
     elseif conf.whitelist then
         local matcher = lrucache(conf.whitelist, nil,
-                                 create_host_matcher, conf.whitelist)
+            create_host_matcher, conf.whitelist)
         block = not match_host(matcher, referer)
+    elseif conf.blacklist then
+        local matcher = lrucache(conf.blacklist, nil,
+            create_host_matcher, conf.blacklist)
+        block = match_host(matcher, referer)
     end
 
     if block then
-        return 403, { message = "Your referer host is not allowed" }
+        return 403, { message = conf.message }
     end
 end
 

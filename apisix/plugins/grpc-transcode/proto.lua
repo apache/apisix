@@ -17,12 +17,33 @@
 local core        = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local protoc      = require("protoc")
+local pcall       = pcall
 local protos
 
 
 local lrucache_proto = core.lrucache.new({
     ttl = 300, count = 100
 })
+
+
+local function compile_proto(content)
+    local _p  = protoc.new()
+    -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
+    -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
+    -- name to keep the code below unchanged, or we can create our own load function with returning
+    -- the loaded DescriptorProto table additionally, see more details in
+    -- https://github.com/apache/apisix/pull/4368
+    local ok, res = pcall(_p.load, _p, content, "filename for loaded")
+    if not ok then
+        return nil, res
+    end
+
+    if not res or not _p.loaded then
+        return nil, "failed to load proto content"
+    end
+
+    return _p.loaded
+end
 
 
 local function create_proto_obj(proto_id)
@@ -42,24 +63,14 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local _p  = protoc.new()
-    -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
-    -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
-    -- name to keep the code below unchanged, or we can create our own load function with returning
-    -- the loaded DescriptorProto table additionally, see more details in
-    -- https://github.com/apache/apisix/pull/4368
-    local res = _p:load(content, "filename for loaded")
-
-    if not res or not _p.loaded then
-        return nil, "failed to load proto content"
-    end
-
-
-    return _p.loaded
+    return compile_proto(content)
 end
 
 
-local _M = {version = 0.1}
+local _M = {
+    version = 0.1,
+    compile_proto = compile_proto,
+}
 
 
 function _M.fetch(proto_id)

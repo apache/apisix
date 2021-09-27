@@ -139,15 +139,16 @@ end
 global_lru_fun = new_lru_fun()
 
 
-local plugin_ctx
+local plugin_ctx, plugin_ctx_id
 do
     local key_buf = {
         nil,
         nil,
         nil,
+        nil,
     }
 
-    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
+    local function plugin_ctx_key_and_ver(api_ctx, extra_key)
         key_buf[1] = api_ctx.conf_type
         key_buf[2] = api_ctx.conf_id
 
@@ -159,7 +160,17 @@ do
             key = concat(key_buf, "#", 1, 2)
         end
 
-        return lrucache(key, api_ctx.conf_version, create_obj_func, ...)
+        return key, api_ctx.conf_version
+    end
+
+    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
+        local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
+        return lrucache(key, ver, create_obj_func, ...)
+    end
+
+    function plugin_ctx_id(api_ctx, extra_key)
+        local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
+        return key .. "#" .. ver
     end
 end
 
@@ -169,6 +180,7 @@ local _M = {
     new = new_lru_fun,
     global = global_lru_fun,
     plugin_ctx = plugin_ctx,
+    plugin_ctx_id = plugin_ctx_id,
 }
 
 

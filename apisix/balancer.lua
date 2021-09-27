@@ -19,9 +19,12 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local ipairs            = ipairs
+local is_http           = ngx.config.subsystem == "http"
+local enable_keepalive = balancer.enable_keepalive and is_http
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
+local ngx_now          = ngx.now
 
 
 local module_name = "balancer"
@@ -160,6 +163,9 @@ local function set_balancer_opts(route, ctx)
     end
 
     if retries > 0 then
+        if up_conf.retry_timeout and up_conf.retry_timeout > 0 then
+            ctx.proxy_retry_deadline = ngx_now() + up_conf.retry_timeout
+        end
         local ok, err = set_more_tries(retries)
         if not ok then
             core.log.error("could not set upstream retries: ", err)
@@ -253,7 +259,52 @@ end
 _M.pick_server = pick_server
 
 
-function _M.run(route, ctx)
+local set_current_peer
+do
+    local pool_opt = {}
+    local default_keepalive_pool
+
+    function set_current_peer(server, ctx)
+        local up_conf = ctx.upstream_conf
+        local keepalive_pool = up_conf.keepalive_pool
+
+        if enable_keepalive then
+            if not keepalive_pool then
+                if not default_keepalive_pool then
+                    local local_conf = core.config.local_conf()
+                    local up_keepalive_conf =
+                        core.table.try_read_attr(local_conf, "nginx_config",
+                                                 "http", "upstream")
+                    default_keepalive_pool = {}
+                    default_keepalive_pool.idle_timeout =
+                        core.config_util.parse_time_unit(up_keepalive_conf.keepalive_timeout)
+                    default_keepalive_pool.size = up_keepalive_conf.keepalive
+                    default_keepalive_pool.requests = up_keepalive_conf.keepalive_requests
+                end
+
+                keepalive_pool = default_keepalive_pool
+            end
+
+            local idle_timeout = keepalive_pool.idle_timeout
+            local size = keepalive_pool.size
+            local requests = keepalive_pool.requests
+
+            pool_opt.pool_size = size
+            local ok, err = balancer.set_current_peer(server.host, server.port,
+                                                      pool_opt)
+            if not ok then
+                return ok, err
+            end
+
+            return balancer.enable_keepalive(idle_timeout, requests)
+        end
+
+        return balancer.set_current_peer(server.host, server.port)
+    end
+end
+
+
+function _M.run(route, ctx, plugin_funcs)
     local server, err
 
     if ctx.picked_server then
@@ -264,6 +315,12 @@ function _M.run(route, ctx)
         set_balancer_opts(route, ctx)
 
     else
+        if ctx.proxy_retry_deadline and ctx.proxy_retry_deadline < ngx_now() then
+            -- retry count is (try count - 1)
+            core.log.error("proxy retry timeout, retry count: ", (ctx.balancer_try_count or 1) - 1,
+                           ", deadline: ", ctx.proxy_retry_deadline, " now: ", ngx_now())
+            return core.response.exit(502)
+        end
         -- retry
         server, err = pick_server(route, ctx)
         if not server then
@@ -271,19 +328,27 @@ function _M.run(route, ctx)
             return core.response.exit(502)
         end
 
+        local header_changed
         local pass_host = ctx.pass_host
         if pass_host == "node" and balancer.recreate_request then
             local host = server.domain or server.host
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
                 ctx.var.upstream_host = host
-                balancer.recreate_request()
+                header_changed = true
             end
+        end
+
+        local _, run = plugin_funcs("before_proxy")
+        -- always recreate request as the request may be changed by plugins
+        if (run or header_changed) and balancer.recreate_request then
+            balancer.recreate_request()
         end
     end
 
     core.log.info("proxy request to ", server.host, ":", server.port)
-    local ok, err = balancer.set_current_peer(server.host, server.port)
+
+    local ok, err = set_current_peer(server, ctx)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
                        server.port, "] err: ", err)

@@ -17,6 +17,7 @@
 local require            = require
 local local_conf         = require("apisix.core.config_local").local_conf()
 local core               = require("apisix.core")
+local core_sleep         = require("apisix.core.utils").sleep
 local resty_consul       = require('resty.consul')
 local cjson              = require('cjson')
 local http               = require('resty.http')
@@ -307,7 +308,7 @@ local function show_dump_file()
 end
 
 
-function _M.connect(premature, consul_server)
+function _M.connect(premature, consul_server, retry_delay)
     if premature then
         return
     end
@@ -330,6 +331,15 @@ function _M.connect(premature, consul_server)
             " by key: ", consul_server.consul_key,
             ", got result: ", json_delay_encode(result, true),
             ", with error: ", error_info)
+
+        if not retry_delay then
+            retry_delay = 1
+        else
+            retry_delay = retry_delay * 4
+        end
+
+        log.warn("retry connecting consul after ", retry_delay, " seconds")
+        core_sleep(retry_delay)
 
         goto ERR
     end
@@ -370,7 +380,7 @@ function _M.connect(premature, consul_server)
     :: ERR ::
     local keepalive = consul_server.keepalive
     if keepalive then
-        local ok, err = ngx_timer_at(0, _M.connect, consul_server)
+        local ok, err = ngx_timer_at(0, _M.connect, consul_server, retry_delay)
         if not ok then
             log.error("create ngx_timer_at got error: ", err)
             return
@@ -458,11 +468,12 @@ function _M.init_worker()
     end
 
     log.notice("consul_conf: ", core.json.encode(consul_conf))
+    default_weight = consul_conf.weight
     -- set default service, used when the server node cannot be found
     if consul_conf.default_service then
         default_service = consul_conf.default_service
+        default_service.weight = default_weight
     end
-    default_weight = consul_conf.weight
     default_prefix_rule = "(" .. consul_conf.prefix .. "/.*/)([a-zA-Z0-9.]+):([0-9]+)"
     log.info("default params, default_weight: ", default_weight,
             ", default_prefix_rule: ", default_prefix_rule)

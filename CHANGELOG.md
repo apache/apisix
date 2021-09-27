@@ -23,6 +23,9 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.9.0](#290)
+- [2.8.0](#280)
+- [2.7.0](#270)
 - [2.6.0](#260)
 - [2.5.0](#250)
 - [2.4.0](#240)
@@ -41,6 +44,109 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.9.0
+
+### Change
+
+- change: rename plugin's balancer method to before_proxy [#4697](https://github.com/apache/apisix/pull/4697)
+
+### Core
+
+- :sunrise: feat: increase timers limitation [#4843](https://github.com/apache/apisix/pull/4843)
+- :sunrise: feat: make A/B test APISIX easier by removing "additionalProperties = false" [#4797](https://github.com/apache/apisix/pull/4797)
+- :sunrise: feat: support dash in args (#4519) [#4676](https://github.com/apache/apisix/pull/4676)
+- :sunrise: feat(admin): reject invalid proto [#4750](https://github.com/apache/apisix/pull/4750)
+
+### Plugin
+
+- :sunrise: feat(ext-plugin): support ExtraInfo [#4835](https://github.com/apache/apisix/pull/4835)
+- :sunrise: feat(gzip): support special * to match any type [#4817](https://github.com/apache/apisix/pull/4817)
+- :sunrise: feat(real-ip): implement the first version [#4813](https://github.com/apache/apisix/pull/4813)
+- :sunrise: feat(limit-*): add custom reject-message for traffic control [#4808](https://github.com/apache/apisix/pull/4808)
+- :sunrise: feat: Request-ID plugin add snowflake algorithm [#4559](https://github.com/apache/apisix/pull/4559)
+- :sunrise: feat: Added authz-casbin plugin and doc and tests for it [#4710](https://github.com/apache/apisix/pull/4710)
+- :sunrise: feat: add error log skywalking reporter [#4633](https://github.com/apache/apisix/pull/4633)
+- :sunrise: feat(ext-plugin): send the idempotent key when preparing conf [#4736](https://github.com/apache/apisix/pull/4736)
+
+### Bugfix
+
+- fix: the issue that plugins in global rule may be cached to route [#4867](https://github.com/apache/apisix/pull/4867)
+- fix(grpc-transcode): support converting nested message [#4859](https://github.com/apache/apisix/pull/4859)
+- fix(authz-keycloak): set permissions as empty table when lazy_load_path is false [#4845](https://github.com/apache/apisix/pull/4845)
+- fix(proxy-cache): keep cache_method same with nginx's proxy_cache_methods [#4814](https://github.com/apache/apisix/pull/4814)
+- fix(admin): inject updatetime when the requst is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
+- fix(admin): check username for updating consumer [#4756](https://github.com/apache/apisix/pull/4756)
+- fix(error-log-logger): avoid sending stale error log [#4690](https://github.com/apache/apisix/pull/4690)
+- fix(grpc-transcode): handle enum type [#4706](https://github.com/apache/apisix/pull/4706)
+- fix: when a request caused a 500 error, the status was converted to 405 [#4696](https://github.com/apache/apisix/pull/4696)
+
+## 2.8.0
+
+### Change
+
+- change: enable stream proxy only by default [#4580](https://github.com/apache/apisix/pull/4580)
+
+### Core
+
+- :sunrise: feat: allow user-defined balancer with metadata in node [#4605](https://github.com/apache/apisix/pull/4605)
+- :sunrise: feat: Add option retry_timeout that like nginx's proxy_next_upstream_timeout [#4574](https://github.com/apache/apisix/pull/4574)
+- :sunrise: feat: enable balancer phase for plugins [#4549](https://github.com/apache/apisix/pull/4549)
+- :sunrise: feat: allow setting separate keepalive pool [#4506](https://github.com/apache/apisix/pull/4506)
+- :sunrise: feat: enable etcd health-check [#4191](https://github.com/apache/apisix/pull/4191)
+
+### Plugin
+
+- :sunrise: feat: add gzip plugin [#4640](https://github.com/apache/apisix/pull/4640)
+- :sunrise: feat(plugin): Add new plugin ua-restriction for bot spider restriction [#4587](https://github.com/apache/apisix/pull/4587)
+- :sunrise: feat(stream): add ip-restriction [#4602](https://github.com/apache/apisix/pull/4602)
+- :sunrise: feat(stream): add limit-conn [#4515](https://github.com/apache/apisix/pull/4515)
+- :sunrise: feat: increase ext-plugin timeout to 60s [#4557](https://github.com/apache/apisix/pull/4557)
+- :sunrise: feat(key-auth): supporting key-auth plugin to get key from query string [#4490](https://github.com/apache/apisix/pull/4490)
+- :sunrise: feat(kafka-logger): support for specified the log formats via admin API. [#4483](https://github.com/apache/apisix/pull/4483)
+
+### Bugfix
+
+- fix(stream): sni router is broken when session reuses [#4607](https://github.com/apache/apisix/pull/4607)
+- fix: the limit-conn plugin cannot effectively intercept requests in special scenarios [#4585](https://github.com/apache/apisix/pull/4585)
+- fix: ref check while deleting proto via Admin API [#4575](https://github.com/apache/apisix/pull/4575)
+- fix(skywalking): handle conflict between global rule and route [#4589](https://github.com/apache/apisix/pull/4589)
+- fix: `ctx.var.cookie_*` cookie not found log [#4564](https://github.com/apache/apisix/pull/4564)
+- fix(request-id): we can use different ids with the same request [#4479](https://github.com/apache/apisix/pull/4479)
+
+## 2.7.0
+
+### Change
+
+- change: check metadata_schema with check_schema like the other schema [#4381](https://github.com/apache/apisix/pull/4381)
+- change(echo): remove odd auth_value [#4055](https://github.com/apache/apisix/pull/4055)
+- fix(admin): correct the resources' count field and change its type to integer [#4385](https://github.com/apache/apisix/pull/4385)
+
+### Core
+
+- :sunrise: feat(stream): support client certificate verification [#4445](https://github.com/apache/apisix/pull/4445)
+- :sunrise: feat(stream): accept tls over tcp [#4409](https://github.com/apache/apisix/pull/4409)
+- :sunrise: feat(stream): support domain in the upstream [#4386](https://github.com/apache/apisix/pull/4386)
+- :sunrise: feat(cli): wrap nginx quit cmd [#4360](https://github.com/apache/apisix/pull/4360)
+- :sunrise: feat: allow to set custom timeout for route [#4340](https://github.com/apache/apisix/pull/4340)
+- :sunrise: feat: nacos discovery support group [#4325](https://github.com/apache/apisix/pull/4325)
+- :sunrise: feat: nacos discovery support namespace [#4313](https://github.com/apache/apisix/pull/4313)
+
+### Plugin
+
+- :sunrise: feat(client-control): set client_max_body_size dynamically [#4423](https://github.com/apache/apisix/pull/4423)
+- :sunrise: feat(ext-plugin): stop the runner with SIGTERM [#4367](https://github.com/apache/apisix/pull/4367)
+- :sunrise: feat(limit-req) support nodelay [#4395](https://github.com/apache/apisix/pull/4395)
+- :sunrise: feat(mqtt-proxy): support domain [#4391](https://github.com/apache/apisix/pull/4391)
+- :sunrise: feat(redirect): support appending query string [#4298](https://github.com/apache/apisix/pull/4298)
+
+### Bugfix
+
+- fix: solve memory leak when the client aborts [#4405](https://github.com/apache/apisix/pull/4405)
+- fix(etcd): check res.body.error before accessing the data [#4371](https://github.com/apache/apisix/pull/4371)
+- fix(ext-plugin): when token is stale, refresh token and try again [#4345](https://github.com/apache/apisix/pull/4345)
+- fix(ext-plugin): pass environment variables [#4349](https://github.com/apache/apisix/pull/4349)
+- fix: ensure the plugin is always reloaded [#4319](https://github.com/apache/apisix/pull/4319)
 
 ## 2.6.0
 

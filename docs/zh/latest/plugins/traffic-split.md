@@ -59,7 +59,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | weighted_upstreams.weight      | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
 
 目前在 `weighted_upstreams.upstream` 的配置中，不支持的字段有：
-service_name、discovery_type、checks、retries、desc、scheme、labels、create_time 和 update_time。但是你可以通过 `weighted_upstreams.upstream_id` 绑定 `upstream` 对象来实现他们。
+service_name、discovery_type、checks、retries、retry_timeout、desc、scheme、labels、create_time 和 update_time。但是你可以通过 `weighted_upstreams.upstream_id` 绑定 `upstream` 对象来实现他们。
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 

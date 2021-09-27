@@ -30,6 +30,7 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
+local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -42,6 +43,7 @@ local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local pairs           = pairs
 local control_api_router
 
 local is_http = false
@@ -112,6 +114,8 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    require("apisix.debug").init_worker()
+
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
@@ -122,7 +126,6 @@ function _M.http_init_worker()
         core.config.init_worker()
     end
 
-    require("apisix.debug").init_worker()
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
@@ -226,7 +229,9 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value)
+    -- Here we copy the whole route instead of part of it,
+    -- so that we can avoid going back from route.value to route during copying.
+    route.dns_value = core.table.deepcopy(route).value
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -297,7 +302,7 @@ local function get_upstream_by_id(up_id)
             end
         end
 
-        core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+        core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
         return upstream.dns_value or upstream.value
     end
 end
@@ -321,6 +326,23 @@ local function verify_tls_client(ctx)
 end
 
 
+local function common_phase(phase_name)
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+
+    if api_ctx.script_obj then
+        script.run(phase_name, api_ctx)
+        return api_ctx, true
+    end
+
+    return plugin.run_plugin(phase_name, nil, api_ctx)
+end
+
+
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
@@ -333,6 +355,8 @@ function _M.http_access_phase()
     ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
@@ -355,11 +379,11 @@ function _M.http_access_phase()
 
     router.router_http.match(api_ctx)
 
-    -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
     local route = api_ctx.matched_route
     if not route then
+        -- run global rule
+        plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
         core.log.info("not find any matched route")
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
@@ -409,11 +433,15 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    -- run global rule
+    plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
     if route.value.script then
         script.load(route, api_ctx)
         script.run("access", api_ctx)
+
     else
-        local plugins = plugin.filter(route)
+        local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
 
         plugin.run_plugin("rewrite", plugins, api_ctx)
@@ -429,8 +457,9 @@ function _M.http_access_phase()
                           ", config changed: ", changed)
 
             if changed then
+                api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -496,6 +525,9 @@ function _M.http_access_phase()
 
     set_upstream_headers(api_ctx, server)
 
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
+
     local ref = ctxdump.stash_ngx_ctx()
     core.log.info("stash ngx ctx: ", ref)
     ngx_var.ctx_ref = ref
@@ -541,24 +573,6 @@ function _M.grpc_access_phase()
 end
 
 
-local function common_phase(phase_name)
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
-
-    if api_ctx.script_obj then
-        script.run(phase_name, api_ctx)
-    else
-        plugin.run_plugin(phase_name, nil, api_ctx)
-    end
-
-    return api_ctx
-end
-
-
 local function set_resp_upstream_status(up_status)
     core.response.set_header("X-APISIX-Upstream-Status", up_status)
     core.log.info("X-APISIX-Upstream-Status: ", up_status)
@@ -599,6 +613,20 @@ function _M.http_header_filter_phase()
     end
 
     common_phase("header_filter")
+
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    local debug_headers = api_ctx.debug_headers
+    if debug_headers then
+        local deduplicate = core.table.new(#debug_headers, 0)
+        for k, v in pairs(debug_headers) do
+            core.table.insert(deduplicate, k)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
+    end
 end
 
 
@@ -687,7 +715,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
+    if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
@@ -706,7 +734,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 
@@ -747,6 +775,7 @@ function _M.http_admin()
         router = admin_init.get()
     end
 
+    core.response.set_header("Server", ver_header)
     -- add cors rsp header
     cors_admin()
 
@@ -905,6 +934,9 @@ function _M.stream_preread_phase()
     end
 
     api_ctx.picked_server = server
+
+    -- run the before_proxy method in preread phase first to avoid always reinit request
+    common_phase("before_proxy")
 end
 
 
@@ -916,7 +948,7 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx)
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 

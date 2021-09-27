@@ -18,7 +18,7 @@ jobs:
         export OPENRESTY_VERSION=default
 
         ./utils/linux-install-openresty.sh
-        sudo ./utils/linux-install-luarocks.sh
+        ./utils/linux-install-luarocks.sh
         sudo luarocks install luacheck
 
     - name: Script

@@ -46,6 +46,7 @@ title: kafka-logger
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
 | producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
+| required_acks          | integer | 可选    | 1              | [0, 1, -1] | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。这个参数是为了保证发送请求的可靠性。语义同 kafka 生产者的 acks 参数（如果设置 `acks=0`，则 producer 不会等待服务器的反馈。该消息会被立刻添加到 socket buffer 中并认为已经发送完成。如果设置 `acks=1`，leader 节点会将记录写入本地日志，并且在所有 follower 节点反馈之前就先确认成功。如果设置 `acks=-1`，这就意味着 leader 节点会等待所有同步中的副本确认之后再确认这条记录是否发送完成。）。         |
 | key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
@@ -56,6 +57,7 @@ title: kafka-logger
 | max_retry_count  | integer | 可选   | 0              | [0,...] | 从处理管道中移除之前的最大重试次数。             |
 | retry_delay      | integer | 可选   | 1              | [0,...] | 如果执行失败，则应延迟执行流程的秒数。           |
 | include_req_body | boolean | 可选   | false          | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。|
+| cluster_name     | integer | 可选   | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
 
 ### meta_format 参考示例
 
@@ -138,7 +140,7 @@ title: kafka-logger
 1. 为特定路由启用 kafka-logger 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "kafka-logger": {
@@ -171,12 +173,48 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
+## 插件元数据设置
+
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 http-logger 的 Route 或 Service 生效。 |
+
+**APISIX 变量**
+
+|       变量名      |           描述          |      使用示例    |
+|------------------|-------------------------|----------------|
+| route_id         | `route` 的 id           | $route_id      |
+| route_name       | `route` 的 name         | $route_name    |
+| service_id       | `service` 的 id         | $service_id    |
+| service_name     | `service` 的 name       | $service_name  |
+| consumer_name    | `consumer` 的 username  | $consumer_name |
+
+### 设置日志格式示例
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
 ## 禁用插件
 
 当您要禁用`kafka-logger`插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -113,7 +113,7 @@ return function(plugin_name, priority)
         call_funcs('access', conf, ctx)
     end
 
-    function _M.balancer(conf, ctx)
+    function _M.before_proxy(conf, ctx)
         call_funcs('balancer', conf, ctx)
     end
 

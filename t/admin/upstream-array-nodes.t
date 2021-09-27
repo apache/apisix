@@ -292,7 +292,7 @@ no valid upstream node
 
 
 
-=== TEST 9: no additional properties is valid
+=== TEST 9: additional properties is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -307,19 +307,19 @@ no valid upstream node
                           "weight": 1
                     }],
                     "type": "roundrobin",
-                    "invalid_property": "/index.html"
+                    "_service_name": "xyz",
+                    "_discovery_type": "nacos"
                 }]]
                 )
 
             ngx.status = code
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: additional properties forbidden, found invalid_property"}
+passed
 --- no_error_log
 [error]
 

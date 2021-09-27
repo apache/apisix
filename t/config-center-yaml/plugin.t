@@ -29,7 +29,6 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
-    enable_debug: true
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -52,6 +51,9 @@ _EOC_
     }
 });
 
+our $debug_config = t::APISIX::read_file("conf/debug.yaml");
+$debug_config =~ s/basic:\n  enable: false/basic:\n  enable: true/;
+
 run_tests();
 
 __DATA__
@@ -63,8 +65,22 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
 hello world
 --- error_log
@@ -88,7 +104,6 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
-    enable_debug: true
 plugins:
     - ip-restriction
     - jwt-auth
@@ -100,8 +115,22 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
 hello world
 --- grep_error_log eval

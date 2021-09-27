@@ -280,7 +280,6 @@ local health_checker = {
             }
         }
     },
-    additionalProperties = false,
     anyOf = {
         {required = {"active"}},
         {required = {"active", "passive"}},
@@ -331,6 +330,37 @@ local nodes_schema = {
         }
     }
 }
+_M.discovery_nodes = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            host = {
+                description = "domain or ip",
+            },
+            port = {
+                description = "port of node",
+                type = "integer",
+                minimum = 1,
+            },
+            weight = {
+                description = "weight of node",
+                type = "integer",
+                minimum = 0,
+            },
+            priority = {
+                description = "priority of node",
+                type = "integer",
+            },
+            metadata = {
+                description = "metadata of node",
+                type = "object",
+            }
+        },
+        -- nodes from DNS discovery may not contain port
+        required = {"host", "weight"},
+    },
+}
 
 
 local certificate_scheme = {
@@ -353,6 +383,10 @@ local upstream_schema = {
             type = "integer",
             minimum = 0,
         },
+        retry_timeout = {
+            type = "number",
+            minimum = 0,
+        },
         timeout = timeout_def,
         tls = {
             type = "object",
@@ -362,10 +396,29 @@ local upstream_schema = {
             },
             required = {"client_cert", "client_key"},
         },
+        keepalive_pool = {
+            type = "object",
+            properties = {
+                size = {
+                    type = "integer",
+                    default = 320,
+                    minimum = 1,
+                },
+                idle_timeout = {
+                    type = "number",
+                    default = 60,
+                    minimum = 0,
+                },
+                requests = {
+                    type = "integer",
+                    default = 1000,
+                    minimum = 1,
+                },
+            },
+        },
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin", "ewma", "least_conn"}
         },
         checks = health_checker,
         hash_on = {
@@ -425,7 +478,6 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
-    additionalProperties = false,
 }
 
 -- TODO: add more nginx variable support
@@ -589,7 +641,6 @@ _M.route = {
             {required = {"script", "plugin_config_id"}},
         }
     },
-    additionalProperties = false,
 }
 
 
@@ -610,9 +661,13 @@ _M.service = {
             description = "enable websocket for request",
             type        = "boolean",
         },
-
+        hosts = {
+            type = "array",
+            items = host_def,
+            minItems = 1,
+            uniqueItems = true,
+        },
     },
-    additionalProperties = false,
 }
 
 
@@ -630,7 +685,6 @@ _M.consumer = {
         desc = desc_def,
     },
     required = {"username"},
-    additionalProperties = false,
 }
 
 
@@ -695,7 +749,6 @@ _M.ssl = {
         {required = {"sni", "key", "cert"}},
         {required = {"snis", "key", "cert"}}
     },
-    additionalProperties = false,
 }
 
 
@@ -712,7 +765,6 @@ _M.proto = {
         }
     },
     required = {"content"},
-    additionalProperties = false,
 }
 
 
@@ -725,7 +777,6 @@ _M.global_rule = {
         update_time = timestamp_def
     },
     required = {"plugins"},
-    additionalProperties = false,
 }
 
 
@@ -770,7 +821,6 @@ _M.plugins = {
             stream = {
                 type = "boolean"
             },
-            additionalProperties = false,
         },
         required = {"name"}
     }
@@ -788,7 +838,6 @@ _M.plugin_config = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
-    additionalProperties = false,
 }
 
 

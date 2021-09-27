@@ -42,6 +42,8 @@ title: 安装依赖
 
 - 警告：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 openresty-openssl-devel，而不是 openresty-openssl111-devel。
 
+- OpenResty 是 APISIX 的一个依赖项，如果是第一次部署 APISIX 并且不需要使用 OpenResty 部署其他服务，可以在 OpenResty 安装完成后停止并禁用 OpenResty，这不会影响 APISIX 的正常工作，请根据自己的业务谨慎操作。例如 Ubuntu：`systemctl stop openresty && systemctl disable openresty`。
+
 ## CentOS 7
 
 ```shell
@@ -56,7 +58,7 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -79,7 +81,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel
+sudo yum install -y openresty curl git gcc openresty-openssl111-devel pcre pcre-devel
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -105,7 +107,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc
+sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -136,7 +138,7 @@ tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具
-sudo apt-get install -y git openresty curl make openresty-openssl111-dev
+sudo apt-get install -y git openresty curl make openresty-openssl111-dev libpcre3 libpcre3-dev
 
 # 安装 LuaRocks
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
@@ -149,11 +151,8 @@ nohup etcd &
 
 ```shell
 # 安装 OpenResty, etcd 和 编译工具
-brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git
+brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre
 
 # 开启 etcd server
 brew services start etcd
-
-# 为 etcd 服务启用 TLS
-etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
 ```

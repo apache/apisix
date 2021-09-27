@@ -78,7 +78,7 @@ upstreams:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            ngx.sleep(2)
+            ngx.sleep(2.2)
 
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
@@ -141,7 +141,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            ngx.sleep(2)
+            ngx.sleep(2.2)
 
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
@@ -209,7 +209,7 @@ services:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            ngx.sleep(2)
+            ngx.sleep(2.2)
 
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)

@@ -40,7 +40,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function","ext-plugin-post-req"\]/
+qr/\["real-ip","client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","ua-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","authz-casbin","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","gzip","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function","ext-plugin-post-req"\]/
 --- no_error_log
 [error]
 
@@ -90,7 +90,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"type":"object"}
                 ]]
                 )
 
@@ -111,7 +111,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"type":"object"}
                 ]]
                 )
 
@@ -132,7 +132,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
                 ]]
                 )
 
@@ -153,7 +153,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
                 ]]
                 )
 
@@ -191,7 +191,7 @@ plugins:
         }
     }
 --- response_body eval
-qr/\{"metadata_schema":\{"additionalProperties":false,"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
 --- no_error_log
 [error]
 
@@ -266,6 +266,82 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530
         }
     }
 --- response_body eval
-qr/\{"additionalProperties":false,"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: confirm the name, priority, schema, type and version of stream plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true&subsystem=stream',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            for k, v in pairs(res) do
+                if k == "limit-conn" then
+                    ngx.say(json.encode(v))
+                end
+            end
+        }
+    }
+--- response_body
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"enum":["remote_addr","server_addr"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: confirm the scope of plugin
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - batch-requests
+  - error-log-logger
+  - server-info
+  - example-plugin
+  - node-status
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local global_plugins = {}
+            for k, v in pairs(res) do
+                if v.scope == "global" then
+                    global_plugins[k] = v.scope
+                end
+            end
+            ngx.say(json.encode(global_plugins))
+        }
+    }
+--- response_body
+{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
 --- no_error_log
 [error]

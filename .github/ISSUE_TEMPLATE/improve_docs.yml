@@ -1,0 +1,28 @@
+name: "Improve Docs"
+description: Improve docs for Apache APISIX.
+title: "docs: "
+labels: [doc]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The more information you fill in, the better we can help you.
+
+        - Please use English on public channel.
+        - Encourage using words rather than pictures to describe errors.
+        - Encourage pre-searching with keywords in the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Improved or typo fixed.
+      description: Please describe which part of docs should be improved or typo fixed.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution
+      description: Describe the solution you'd like.
+    validations:
+      required: true

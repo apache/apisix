@@ -661,3 +661,157 @@ passed
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: set proto with enum
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc SayHello (HelloRequest) returns (HelloReply) {}
+                      }
+                      enum Gender {
+                        GENDER_UNKNOWN = 0;
+                        GENDER_MALE = 1;
+                        GENDER_FEMALE = 2;
+                      }
+                      message HelloRequest {
+                          string name = 1;
+                          repeated string items = 2;
+                          Gender gender = 3;
+                      }
+                      message HelloReply {
+                          string message = 1;
+                          repeated string items = 2;
+                          Gender gender = 3;
+                      }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: hit route, no gender
+--- request
+POST /grpctest
+{"name":"world"}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"gender":"GENDER_UNKNOWN"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: hit route, gender is a value
+--- request
+POST /grpctest
+{"name":"world","gender":2}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"gender":"GENDER_FEMALE"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: hit route, gender is a name
+--- request
+POST /grpctest
+{"name":"world","gender":"GENDER_MALE"}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"gender":"GENDER_MALE"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: hit route, bad gender
+--- request
+POST /grpctest
+{"name":"world","gender":"GENDER_MA"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+failed to encode request data to protobuf
+
+
+
+=== TEST 28: set routes(decode enum as value)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET", "POST"],
+                    "uri": "/grpctest",
+                    "service_protocol": "grpc",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayHello",
+                            "pb_option":["enum_as_value"]
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: hit route
+--- request
+POST /grpctest
+{"name":"world","gender":2}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"gender":2/
+--- no_error_log
+[error]

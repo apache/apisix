@@ -79,7 +79,7 @@ GET /not_found
 GET /hello
 --- error_code_like: ^(?:50\d)$
 --- response_body eval
-qr/502 Bad Gateway|500 Internal Server Error/
+qr/502 Bad Gateway|503 Service Temporarily Unavailable/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval

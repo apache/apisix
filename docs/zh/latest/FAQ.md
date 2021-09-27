@@ -501,3 +501,70 @@ $ acme.sh --renew --domain demo.domain
 ```
 
 详细步骤，可以参考博客 https://juejin.cn/post/6965778290619449351
+
+## 如何在路径匹配时剪除请求路径前缀
+
+在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过插件 `proxy-rewrite` 实现。
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/foo/*",
+    "plugins": {
+        "proxy-rewrite": {
+            "regex_uri": ["^/foo/(.*)","/$1"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+测试请求：
+
+```shell
+$ curl http://127.0.0.1:9080/foo/get -i
+HTTP/1.1 200 OK
+...
+{
+  ...
+  "url": "http://127.0.0.1/get"
+}
+```
+
+## 如何解决 `unable to get local issuer certificate` 错误
+
+修改 `conf/config.yaml`
+
+```yaml
+# ... 忽略其余无关项
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
+# ... 忽略其余无关项
+```
+
+**注意:**
+
+尝试使用 cosocket 连接任何 TLS 服务时，如果 APISIX 不信任对端 TLS 服务证书，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
+
+举例：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议， 即 Nacos 配置的 `host` 是 `https://` 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
+
+## 如何解决 `module 'resty.worker.events' not found` 错误
+
+在 `/root` 目录下安装 APISIX 会导致这个问题。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。需要移动 APISIX 安装目录，推荐安装在 `/usr/local` 目录下。
+
+## `plugin-metadata` 和 `plugin-configs` 有什么区别
+
+`plugin-metadata` 是插件的元数据，由插件的所有配置实例共享。在编写插件时，如果有一些属性变化需要对该插件的所有配置实例生效，那么放在 `plugin-metadata` 合适。
+
+`plugin-configs` 是指多个不同插件的配置实例的组合，如果你想要复用一组通用的插件配置实例，你可以把它们提取成一个 Plugin Config，并绑定到对应的路由上。
+
+`plugin-metadata` 和 `plugin-configs` 的区别在于：
+
+ - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的的插件配置实例。
+ - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。

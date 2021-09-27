@@ -281,6 +281,7 @@ function _M.log(conf, ctx)
 
     if ctx.zipkin_ctx then
         core.tablepool.release("zipkin_ctx", ctx.zipkin_ctx)
+        ctx.zipkin_ctx = nil
     end
 end
 

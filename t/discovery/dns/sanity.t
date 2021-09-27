@@ -284,3 +284,17 @@ qr/proxy request to \S+/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1979
 proxy request to 127.0.0.2:1980
+
+
+
+=== TEST 14: prefer SRV than A
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- error_log
+proxy request to 127.0.0.1:1980
+--- response_body
+hello world

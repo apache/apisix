@@ -1,0 +1,3 @@
+p, *, /, GET
+p, admin, *, *
+g, alice, admin

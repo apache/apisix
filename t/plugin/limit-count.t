@@ -317,7 +317,7 @@ GET /t
 
 
 
-=== TEST 11: invalid service: missing key
+=== TEST 11: invalid service: missing count
 --- config
     location /t {
         content_by_lua_block {

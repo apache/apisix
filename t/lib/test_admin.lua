@@ -67,7 +67,7 @@ local methods = {
 
 function _M.test_ipv6(uri)
     local sock = ngx.socket.tcp()
-    local ok, err = sock:connect("[::1]", 12345)
+    local ok, err = sock:connect("[::1]", 1984)
     if not ok then
         ngx.say("failed to connect: ", err)
         return

@@ -11,7 +11,7 @@ on:
       - 'docs/**'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -89,7 +89,7 @@ jobs:
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -131,8 +131,6 @@ jobs:
             -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
             -e ETCD_CERT_FILE=/certs/etcd.pem \
             -e ETCD_KEY_FILE=/certs/etcd.key \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
@@ -147,8 +145,6 @@ jobs:
             -e ETCD_KEY_FILE=/certs/mtls_server.key \
             -e ETCD_CLIENT_CERT_AUTH=true \
             -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 

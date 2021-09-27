@@ -66,10 +66,23 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
-    lua_shared_dict lrucache-lock-stream   10m;
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
+    lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
+    lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
+    lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
     resolver_timeout {*resolver_timeout*};
+
+    {% if ssl.ssl_trusted_certificate ~= nil then %}
+    lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
 
     # stream configuration snippet starts
     {% if stream_configuration_snippet then %}
@@ -86,6 +99,9 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -132,6 +148,7 @@ stream {
 }
 {% end %}
 
+{% if not (stream_proxy and stream_proxy.only ~= false) then %}
 http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
@@ -141,32 +158,45 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
-    lua_shared_dict internal_status      10m;
-    lua_shared_dict plugin-limit-req     10m;
-    lua_shared_dict plugin-limit-count   10m;
-    lua_shared_dict prometheus-metrics   10m;
-    lua_shared_dict plugin-limit-conn    10m;
-    lua_shared_dict upstream-healthcheck 10m;
-    lua_shared_dict worker-events        10m;
-    lua_shared_dict lrucache-lock        10m;
-    lua_shared_dict balancer_ewma        10m;
-    lua_shared_dict balancer_ewma_locks  10m;
-    lua_shared_dict balancer_ewma_last_touched_at 10m;
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-    lua_shared_dict tracing_buffer       10m; # plugin: skywalking
-    lua_shared_dict plugin-api-breaker   10m;
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
+    lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
+    lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
+    lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
+    lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
+    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
+    lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
+    lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
+    lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
+    lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
+    lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
+    lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
+    lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
     # for openid-connect and authz-keycloak plugin
-    lua_shared_dict discovery             1m; # cache for discovery metadata documents
+    lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
 
     # for openid-connect plugin
-    lua_shared_dict jwks                  1m; # cache for JWKs
-    lua_shared_dict introspection        10m; # cache for JWT verification results
+    lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
+    lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
 
     # for authz-keycloak
-    lua_shared_dict access_tokens         1m; # cache for service account access tokens
+    lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
     # for custom shared dict
+    {% if http.custom_lua_shared_dict then %}
+    {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
+    lua_shared_dict {*cache_key*} {*cache_size*};
+    {% end %}
+    {% end %}
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
     lua_shared_dict {*cache_key*} {*cache_size*};
@@ -272,6 +302,17 @@ http {
 
     upstream apisix_backend {
         server 0.0.0.1;
+
+        {% if use_apisix_openresty then %}
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
+        # we put the static configuration above so that we can override it in the Lua code
+
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+        {% else %}
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
@@ -279,6 +320,7 @@ http {
         keepalive {* http.upstream.keepalive *};
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
+        {% end %}
     }
 
     {% if enabled_plugins["dubbo-proxy"] then %}
@@ -288,13 +330,20 @@ http {
             apisix.http_balancer_phase()
         }
 
+        # dynamical keepalive doesn't work with dubbo as the connection here
+        # is managed by ngx_multi_upstream_module
         multi {* dubbo_upstream_multiplex_count *};
-        keepalive 320;
+        keepalive {* http.upstream.keepalive *};
+        keepalive_requests {* http.upstream.keepalive_requests *};
+        keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
     {% end %}
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
 
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
@@ -328,7 +377,9 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
         }
     }
     {% end %}
@@ -356,10 +407,10 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and port_admin then %}
+    {% if enable_admin and admin_server_addr then %}
     server {
         {%if https_admin then%}
-        listen {* port_admin *} ssl;
+        listen {* admin_server_addr *} ssl;
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -379,7 +430,7 @@ http {
         {% end %}
 
         {% else %}
-        listen {* port_admin *};
+        listen {* admin_server_addr *};
         {%end%}
         log_not_found off;
 
@@ -410,18 +461,20 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
         }
     }
     {% end %}
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen {* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, item in ipairs(ssl.listen) do %}
+        listen {* item.ip *}:{* item.port *} ssl default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
@@ -430,17 +483,6 @@ http {
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
-
-        {% if enable_ipv6 then %}
-        {% for _, item in ipairs(node_listen) do %}
-        listen [::]:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
-        {% end %}
-        {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen [::]:{* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
-        {% end %}
-        {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
 
@@ -475,7 +517,7 @@ http {
         }
         {% end %}
 
-        {% if enable_admin and not port_admin then %}
+        {% if enable_admin and not admin_server_addr then %}
         location /apisix/admin {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
@@ -568,7 +610,7 @@ http {
             proxy_cache                         $upstream_cache_zone;
             proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
             proxy_cache_min_uses                1;
-            proxy_cache_methods                 GET HEAD;
+            proxy_cache_methods                 GET HEAD POST;
             proxy_cache_lock_timeout            5s;
             proxy_cache_use_stale               off;
             proxy_cache_key                     $upstream_cache_key;
@@ -659,7 +701,9 @@ http {
 
         location @50x.html {
             set $from_error_page 'true';
-            try_files /50x.html $uri;
+            content_by_lua_block {
+                require("apisix.error_handling").handle_500()
+            }
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -675,4 +719,5 @@ http {
     {% end %}
     # http end configuration snippet ends
 }
+{% end %}
 ]=]

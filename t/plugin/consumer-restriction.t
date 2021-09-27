@@ -1476,7 +1476,240 @@ passed
 
 
 
-=== TEST 47: delete: route (id: 1)
+=== TEST 47: update consumer with plugin hmac-auth and consumer-restriction, and set whitelist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key"
+                        },
+                        "consumer-restriction": {
+                            "type": "route_id",
+                            "whitelist": [ "1" ],
+                            "rejected_code": 401
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key",
+                                    "secret_key": "my-secret-key",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 0
+                                },
+                                "consumer-restriction": {
+                                    "type": "route_id",
+                                    "whitelist": [ "1" ],
+                                    "rejected_code": 401
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: verify: valid whitelist `route_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time()
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+        local secret_key = "my-secret-key"
+        local gmt = ngx_http_time(ngx_time)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: update consumer with plugin hmac-auth and consumer-restriction, and set blacklist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key"
+                        },
+                        "consumer-restriction": {
+                            "type": "route_id",
+                            "blacklist": [ "1" ],
+                            "rejected_code": 401
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key",
+                                    "secret_key": "my-secret-key",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 0
+                                },
+                                "consumer-restriction": {
+                                    "type": "route_id",
+                                    "blacklist": [ "1" ],
+                                    "rejected_code": 401
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 50: verify: valid blacklist `route_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/\{"message":"The route_id is forbidden."\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: delete: route (id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1496,7 +1729,7 @@ passed
 
 
 
-=== TEST 48: delete: `service_id` is 1
+=== TEST 52: delete: `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -1516,7 +1749,7 @@ passed
 
 
 
-=== TEST 49: delete: `service_id` is 2
+=== TEST 53: delete: `service_id` is 2
 --- config
     location /t {
         content_by_lua_block {

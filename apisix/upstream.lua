@@ -221,30 +221,36 @@ function _M.set_by_route(route, api_ctx)
 
     local up_conf = api_ctx.matched_upstream
     if not up_conf then
-        return 500, "missing upstream configuration in Route or Service"
+        return 503, "missing upstream configuration in Route or Service"
     end
     -- core.log.info("up_conf: ", core.json.delay_encode(up_conf, true))
 
     if up_conf.service_name then
         if not discovery then
-            return 500, "discovery is uninitialized"
+            return 503, "discovery is uninitialized"
         end
         if not up_conf.discovery_type then
-            return 500, "discovery server need appoint"
+            return 503, "discovery server need appoint"
         end
 
         local dis = discovery[up_conf.discovery_type]
         if not dis then
-            return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
+            local err = "discovery " .. up_conf.discovery_type .. " is uninitialized"
+            return 503, err
         end
 
-        local new_nodes, err = dis.nodes(up_conf.service_name)
+        local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
         if not new_nodes then
             return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
+            local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
+            if not pass then
+                return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
+            end
+
             up_conf.nodes = new_nodes
             local new_up_conf = core.table.clone(up_conf)
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",

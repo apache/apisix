@@ -42,7 +42,9 @@ title: limit-req
 | burst         | integer | 必须   |        | burst >= 0                                                              | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
 | key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
 | rejected_code | integer | 可选   | 503    | [200,...,599]                                                              | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
+| rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
 | nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
+| allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
 **key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
 
@@ -74,13 +76,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-req 插件：
 
-![添加路由](../../../assets/images/plugin/limit-req-1.png)
-
-然后在 route 页面中添加 limit-req 插件：
-
-![添加插件](../../../assets/images/plugin/limit-req-2.png)
+![添加插件](../../../assets/images/plugin/limit-req-1.png)
 
 **测试插件**
 
@@ -106,6 +104,18 @@ Server: APISIX web server
 <hr><center>openresty</center>
 </body>
 </html>
+```
+
+同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."` ，当你超过，就会收到如下的响应体：
+
+```shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Content-Type: text/html
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"Requests are too frequent, please try again later."}
 ```
 
 这就表示 limit req 插件生效了。

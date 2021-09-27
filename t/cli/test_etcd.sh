@@ -34,8 +34,8 @@ etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 echo '
 etcd:
   host:
-    - "http://127.0.0.1:2379"
-  prefix: "/apisix"
+    - http://127.0.0.1:2379
+  prefix: /apisix
   timeout: 30
   user: root
   password: apache-api6
@@ -86,8 +86,8 @@ git checkout conf/config.yaml
 echo '
 etcd:
   host:
-    - "http://127.0.0.1:2389"
-  prefix: "/apisix"
+    - http://127.0.0.1:2389
+  prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -104,8 +104,8 @@ git checkout conf/config.yaml
 echo '
 etcd:
   host:
-    - "http://127.0.0.1:2389"
-  prefix: "/apisix"
+    - http://127.0.0.1:2389
+  prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -131,8 +131,8 @@ etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 echo '
 etcd:
   host:
-    - "http://127.0.0.1:2379"
-  prefix: "/apisix"
+    - http://127.0.0.1:2379
+  prefix: /apisix
   timeout: 30
   user: root
   password: apache-api7

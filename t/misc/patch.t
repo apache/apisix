@@ -139,7 +139,7 @@ apisix:
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
-            local res, err = httpc:request_uri("http://apisix")
+            local res, err = httpc:request_uri("http://apisix", {headers={Host="apisix.apache.org"}})
             if not res then
                 ngx.log(ngx.ERR, err)
                 return
@@ -150,7 +150,7 @@ apisix:
 --- request
 GET /t
 --- response_body
-301
+200
 
 
 
@@ -171,7 +171,7 @@ apisix:
         end
         local http = require("resty.http")
         local httpc = http.new()
-        local res, err = httpc:request_uri("http://apisix")
+        local res, err = httpc:request_uri("http://apisix", {headers={Host="apisix.apache.org"}})
         if not res then
             ngx.log(ngx.ERR, err)
             return ngx.exit(-1)
@@ -180,7 +180,47 @@ apisix:
     }
 --- stream_request eval
 m
---- stream_response: 301
-
+--- stream_response: 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: resolve host by ourselves (UDP)
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_resolv_search_opt: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.udp()
+            local res, err = sock:setpeername("apisix", 80)
+            if not res then
+                ngx.log(ngx.ERR, err)
+            end
+        }
+    }
+
+
+
+=== TEST 7: ensure our patch works with unix socket
+--- stream_server_config
+    content_by_lua_block {
+    }
+--- stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+        content_by_lua_block {
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.udp()
+            local res, err = sock:setpeername("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not res then
+                ngx.log(ngx.ERR, err)
+            end
+        }
+    }

@@ -39,7 +39,7 @@ title: Admin API
 
 The Admin API is a group of APIs served for the Apache APISIX, we could pass parameters to APIs to control APISIX Nodes. To have a better understanding about how it works, please see [the architecture design](./architecture-design/apisix.md).
 
-When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](../../../conf/config.yaml) file.
+When Apache APISIX launches, the Admin API will listen on `9080` port by default (`9443` port for HTTPS). You could take another port by modifying the [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) file.
 
 The `X-API-KEY` appearing below refers to the `apisix.admin_key.key` in the `conf/config.yaml` file, which is the access token of the Admin API.
 
@@ -73,24 +73,24 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 
 | Parameter        | Required                                 | Type        | Description                                                                                                                                                                                                                                                                                                                                                                                                                        | Example                                              |
 | ---------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| name             | False                                    | Auxiliary   | Identifies route names.                                                                                                                                                                                                                                                                                                                                                                                                            | customer-xxxx                                        |
-| desc             | False                                    | Auxiliary   | route description, usage scenarios, and more.                                                                                                                                                                                                                                                                                                                                                                                      | customer xxxx                                        |
+| name             | False                                    | Auxiliary   | Identifies route names.                                                                                                                                                                                                                                                                                                                                                                                                            | route-xxxx                                        |
+| desc             | False                                    | Auxiliary   | route description, usage scenarios, and more.                                                                                                                                                                                                                                                                                                                                                                                      | route xxxx                                        |
 | uri              | True, can't be used with `uris`          | Match Rules | In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design/router.md) allows more advanced matching, see [Router](architecture-design/router.md) for more.                                                                                                                                                                                                                         | "/hello"                                             |
 | uris             | True, can't be used with `uri`           | Match Rules | The `uri` in the form of a non-empty list means that multiple different uris are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                               | ["/hello", "/word"]                                  |
 | host             | False, can't be used with `hosts`        | Match Rules | Currently requesting a domain name, such as `foo.com`; PAN domain names such as `*.foo.com` are also supported.                                                                                                                                                                                                                                                                                                                    | "foo.com"                                            |
-| hosts            | False, can't be used with `host`         | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                             | {"foo.com", "*.bar.com"}                             |
+| hosts            | False, can't be used with `host`         | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                             | ["foo.com", "*.bar.com"]                             |
 | remote_addr      | False, can't be used with `remote_addrs` | Match Rules | The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.                                                                                                                                                                                                               | "192.168.1.0/24"                                     |
-| remote_addrs     | False, can't be used with `remote_addr`  | Match Rules | The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.                                                                                                                                                                                                                                                                                           | {"127.0.0.1", "192.0.0.0/8", "::1"}                  |
-| methods          | False                                    | Match Rules | If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.                                                                                                                                                                                                                                          | {"GET", "POST"}                                      |
+| remote_addrs     | False, can't be used with `remote_addr`  | Match Rules | The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.                                                                                                                                                                                                                                                                                           | ["127.0.0.1", "192.0.0.0/8", "::1"]                  |
+| methods          | False                                    | Match Rules | If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.                                                                                                                                                                                                                                          | ["GET", "POST"]                                      |
 | priority         | False                                    | Match Rules | If different routes contain the same `uri`, determine which route is matched first based on the attribute `priority`. Larger value means higher priority. The default value is 0.                                                                                                                                                                                                                                                  | priority = 10                                        |
-| vars             | False                                    | Match Rules | A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) | {{"arg_name", "==", "json"}, {"arg_age", ">", 18}}   |
+| vars             | False                                    | Match Rules | A list of one or more `[var, operator, val]` elements, like this: `[[var, operator, val], [var, operator, val], ...]]`. For example: `["arg_name", "==", "json"]` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
 | filter_func      | False                                    | Match Rules | User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.                                                                                                                                                                                                                | function(vars) return vars["arg_name"] == "json" end |
 | plugins          | False                                    | Plugin      | See [Plugin](architecture-design/plugin.md) for more                                                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | script           | False                                    | Script      | See [Script](architecture-design/script.md) for more                                                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | upstream         | False                                    | Upstream    | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                           |                                                      |
 | upstream_id      | False                                    | Upstream    | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                                      |                                                      |
-| service_id       | False                                    | Service     | Binded Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
-| plugin_config_id | False, can't be used with `script`       | Plugin      | Binded plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
+| service_id       | False                                    | Service     | Bound Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
+| plugin_config_id | False, can't be used with `script`       | Plugin      | Bound plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
 | labels           | False                                    | Match Rules | Key/value pairs to specify attributes                                                                                                                                                                                                                                                                                                                                                                                              | {"version":"v2","build":"16","env":"production"}     |
 | timeout          | False                                    | Auxiliary   | Set the upstream timeout for connecting, sending and receiving messages of the route. This option will overwrite the [timeout](#upstream) option which set in upstream configuration.                                                                                                                                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | False                                    | Auxiliary   | enable `websocket`(boolean), default `false`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                      |
@@ -319,16 +319,17 @@ Return response from etcd currently.
 | plugins          | False    | Plugin      | See [Plugin](architecture-design/plugin.md) for more                                     |                                                  |
 | upstream         | False    | Upstream    | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more |                                                  |
 | upstream_id      | False    | Upstream    | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more            |                                                  |
-| name             | False    | Auxiliary   | Identifies service names.                                                                | customer-xxxx                                    |
-| desc             | False    | Auxiliary   | service usage scenarios, and more.                                                       | customer xxxx                                    |
+| name             | False    | Auxiliary   | Identifies service names.                                                                | service-xxxx                                    |
+| desc             | False    | Auxiliary   | service usage scenarios, and more.                                                       | service xxxx                                   |
 | labels           | False    | Match Rules | Key/value pairs to specify attributes                                                    | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | enable `websocket`(boolean), default `false`.                                            |                                                  |
+| hosts            | False    | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.| ["foo.com", "*.bar.com"]                             |
 | create_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 | update_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 
 Config Example:
 
-```shell
+```json
 {
     "id": "1",          # id
     "plugins": {},      # Bound plugin
@@ -337,6 +338,7 @@ Config Example:
     "name": "service-test",
     "desc": "hello world",
     "enable_websocket": true,
+    "hosts": ["foo.com"]
 }
 ```
 
@@ -536,27 +538,31 @@ Return response from etcd currently.
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|Name            |Optional|Description|
-|----------------|--------|-----------|
-|type            |required|the balancer algorithm|
-|nodes           |required, can't be used with `service_name` |Hash table or array. If it is a hash table, the key of the internal element is the upstream machine address list, the format is `Address + (optional) Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. The value is the weight of node. If it is an array, each item is a hash table with key `host`/`weight` and optional `port`/`priority`. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
-|service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|
-|discovery_type  |required, if `service_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
-|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
-|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
-|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of available backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.|
-|timeout         |optional| Set the timeout for connecting, sending and receiving messages. |
-|name            |optional|Identifies upstream names|
-|desc            |optional|upstream usage scenarios, and more.|
-|pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.|
-|upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.|
-|scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.|
+|Name            |Optional|Description|Example|
+|----------------|--------|-----------|-----------|
+|type            |required|the balancer algorithm||
+|nodes           |required, can't be used with `service_name` |Hash table or array. If it is a hash table, the key of the internal element is the upstream machine address list, the format is `Address + (optional) Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. The value is the weight of node. If it is an array, each item is a hash table with key `host`/`weight` and optional `port`/`priority`. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |`192.168.1.100:80`|
+|service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|`a-bootiful-client`|
+|discovery_type  |required, if `service_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|`eureka`|
+|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.||
+|key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.||
+|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).||
+|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of available backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.||
+|retry_timeout   |optional|Configure a number to limit the amount of seconds that retries can be continued, and do not continue retries if the previous request and retry requests have taken too long. `0` means disable retry timeout mechanism.||
+|timeout         |optional| Set the timeout for connecting, sending and receiving messages. ||
+|name            |optional|Identifies upstream names||
+|desc            |optional|upstream usage scenarios, and more.||
+|pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.||
+|upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.||
+|scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.||
 |labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
-|create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
-|update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
-|tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details|
-|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details|
+|create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
+|update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
+|tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details||
+|tls.client_key  |optional| Set the client private key when connecting to TLS upstream, see below for more details||
+|keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details||
+|keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details||
+|keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details||
 
 `type` can be one of:
 
@@ -564,6 +570,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 * `chash`: consistent hash
 * `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
 * `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
+* user-defined balancer which can be loaded via `require("apisix.balancer.your_balancer")`.
 
 `hash_on` can be set to different types:
 
@@ -576,7 +583,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-build-openresty-for-apisix).
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
+
+`keepalive_pool` allows the upstream to have its separate connection pool.
+Its children fields, like `requests`, can be used to configure the upstream keepalive options.
+This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 **Config Example:**
 
@@ -590,7 +601,7 @@ This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#6-bu
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    # is the same as "nodes": { {"host": "host", "port": 80, "weight": 100} },
+    # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
     "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
@@ -611,9 +622,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 {
     "type":"roundrobin",
     "nodes":{
-        "127.0.0.1:80":1,
-        "127.0.0.2:80":2,
-        "foo.com:80":3
+        "39.97.63.215:80": 1
     }
 }'
 HTTP/1.1 201 Created
@@ -761,7 +770,7 @@ For example:
 ```
 
 Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
-Therefore it is the backup of `127.0.0.1`.
+Therefore, it is the backup of `127.0.0.1`.
 
 ### Response Parameters
 
@@ -932,11 +941,19 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
+By default, this API only returns the http plugins. If you need stream plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+
 ### Request Methods
 
 | Method | Request URI                    | Request Body | Description    |
 | ------ | ------------------------------ | ------------ | -------------- |
 | GET    | /apisix/admin/plugins?all=true | NULL         | Fetch resource |
+
+### Request Arguments
+
+| Name      | Description                    | Default |
+| --------- | ------------------------------ | ------------ |
+| subsystem | the subsystem of plugins       | http         |
 
 [Back to TOC](#table-of-contents)
 
@@ -960,9 +977,11 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | Parameter        | Required | Type     | Description | Example  |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | False  | IP       | client IP | "127.0.0.1"  |
-| server_addr      | False  | IP       | server IP | "127.0.0.1"  |
+| remote_addr      | False  | IP/CIDR  | client IP | "127.0.0.1/32" or "127.0.0.1" |
+| server_addr      | False  | IP/CIDR  | server IP | "127.0.0.1/32" or "127.0.0.1"  |
 | server_port      | False  | Integer  | server port | 9090  |
 | sni              | False  | Host     | server name indication | "test.com"  |
+| upstream | False | Upstream | Upstream configuration, see [Upstream](architecture-design/upstream.md) for more details |  |
+| upstream_id | False | Upstream | specify the upstream id, see [Upstream](architecture-design/upstream.md) for more details |             |
 
 [Back to TOC](#table-of-contents)

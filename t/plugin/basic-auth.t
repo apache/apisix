@@ -51,8 +51,9 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.basic-auth")
-            local ok, err = plugin.check_schema({username = 123, password = "bar"})
+            local ok, err = plugin.check_schema({username = 123, password = "bar"}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -62,10 +63,9 @@ done
     }
 --- request
 GET /t
---- response_body_like eval
-qr/additional properties forbidden, found (username|password)
+--- response_body
+property "username" validation failed: wrong type: expected string, got number
 done
-/
 --- no_error_log
 [error]
 
@@ -302,7 +302,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -324,7 +324,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -346,7 +346,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code

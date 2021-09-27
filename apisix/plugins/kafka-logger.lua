@@ -18,6 +18,8 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
+local plugin = require("apisix.plugin")
+
 local math     = math
 local pairs    = pairs
 local type     = type
@@ -27,7 +29,6 @@ local stale_timer_running = false
 local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
-
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -42,13 +43,27 @@ local schema = {
             enum = {"default", "origin"},
         },
         broker_list = {
-            type = "object"
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                [".*"] = {
+                    description = "the port of kafka broker",
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 65535,
+                },
+            },
         },
         kafka_topic = {type = "string"},
         producer_type = {
             type = "string",
             default = "async",
             enum = {"async", "sync"},
+        },
+        required_acks = {
+            type = "integer",
+            default = 1,
+            enum = { 0, 1, -1 },
         },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -58,9 +73,19 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        -- in lua-resty-kafka, cluster_name is defined as number
+        -- see https://github.com/doujiang24/lua-resty-kafka#new-1
+        cluster_name = {type = "integer", minimum = 1, default = 1},
     },
     required = {"broker_list", "kafka_topic"}
+}
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
 }
 
 local _M = {
@@ -68,10 +93,14 @@ local _M = {
     priority = 403,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
 end
 
@@ -121,24 +150,21 @@ local function remove_stale_objects(premature)
 end
 
 
-local function create_producer(broker_list, broker_config)
+local function create_producer(broker_list, broker_config, cluster_name)
     core.log.info("create new kafka producer instance")
-    return producer:new(broker_list, broker_config)
+    return producer:new(broker_list, broker_config, cluster_name)
 end
 
 
 local function send_kafka_data(conf, log_message, prod)
-    if core.table.nkeys(conf.broker_list) == 0 then
-        core.log.error("failed to identify the broker specified")
-    end
-
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     core.log.info("partition_id: ",
                   core.log.delay_exec(get_partition_id,
                                       prod, conf.kafka_topic, log_message))
 
     if not ok then
-        return nil, "failed to send data to Kafka topic: " .. err
+        return false, "failed to send data to Kafka topic: " .. err ..
+                ", brokers: " .. core.json.encode(conf.broker_list)
     end
 
     return true
@@ -152,8 +178,17 @@ function _M.log(conf, ctx)
         -- core.log.info("origin entry: ", entry)
 
     else
-        entry = log_util.get_full_log(ngx, conf)
-        core.log.info("full log entry: ", core.json.delay_encode(entry))
+        local metadata = plugin.plugin_metadata(plugin_name)
+        core.log.info("metadata: ", core.json.delay_encode(metadata))
+        if metadata and metadata.value.log_format
+          and core.table.nkeys(metadata.value.log_format) > 0
+        then
+            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+            core.log.info("custom log format entry: ", core.json.delay_encode(entry))
+        else
+            entry = log_util.get_full_log(ngx, conf)
+            core.log.info("full log entry: ", core.json.delay_encode(entry))
+        end
     end
 
     if not stale_timer_running then
@@ -173,21 +208,21 @@ function _M.log(conf, ctx)
     local broker_config = {}
 
     for host, port in pairs(conf.broker_list) do
-        if type(host) == 'string'
-                and type(port) == 'number' then
-            local broker = {
-                host = host,
-                port = port
-            }
-            core.table.insert(broker_list, broker)
-        end
+        local broker = {
+            host = host,
+            port = port
+        }
+        core.table.insert(broker_list, broker)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
+    broker_config["required_acks"] = conf.required_acks
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
-                                               broker_list, broker_config)
+                                               broker_list, broker_config, conf.cluster_name)
+    core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ",
+                  prod.client.broker_list[1].port)
     if err then
         return nil, "failed to identify the broker specified: " .. err
     end

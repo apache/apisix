@@ -1,5 +1,5 @@
 {
-  "version": 2.6,
+  "version": 2.9,
   "sidebar": [
     {
       "type": "category",
@@ -71,6 +71,7 @@
             "plugins/cors",
             "plugins/uri-blocker",
             "plugins/ip-restriction",
+            "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction"
           ]
@@ -131,6 +132,10 @@
         {
           "type": "doc",
           "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
         }
       ]
     },
@@ -146,12 +151,23 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/dns",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
           "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
         },
         {
           "type": "doc",

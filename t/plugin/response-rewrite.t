@@ -483,36 +483,7 @@ GET /t
 
 
 
-=== TEST 16:  additional property
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.response-rewrite")
-            local ok, err = plugin.check_schema({
-                body = 'Hello world',
-                headers = {
-                    ["X-Server-id"] = 3
-                },
-                invalid_att = "invalid",
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- request
-GET /t
---- response_body
-additional properties forbidden, found invalid_att
---- no_error_log
-[error]
-
-
-
-=== TEST 17: add validate vars
+=== TEST 16: add validate vars
 --- config
     location /t {
         content_by_lua_block {
@@ -539,7 +510,7 @@ done
 
 
 
-=== TEST 18: add plugin with invalidate vars
+=== TEST 17: add plugin with invalidate vars
 --- config
     location /t {
         content_by_lua_block {
@@ -566,7 +537,7 @@ failed to validate the 'vars' expression: rule too short
 
 
 
-=== TEST 19: set route with http status code as expr
+=== TEST 18: set route with http status code as expr
 --- config
     location /t {
         content_by_lua_block {
@@ -608,7 +579,7 @@ passed
 
 
 
-=== TEST 20: check http code that matches http_status
+=== TEST 19: check http code that matches http_status
 --- request
 GET /server_error
 --- response_body
@@ -620,7 +591,7 @@ new body3
 
 
 
-=== TEST 21: check http code that not matches http_status
+=== TEST 20: check http code that not matches http_status
 --- request
 GET /hello
 --- response_body
@@ -632,7 +603,7 @@ hello world
 
 
 
-=== TEST 22: set an empty body with setting body_base64 to true
+=== TEST 21: set an empty body with setting body_base64 to true
 --- config
     location /t {
         content_by_lua_block {
@@ -656,7 +627,7 @@ invalid base64 content
 
 
 
-=== TEST 23: set an nil body with setting body_base64 to true
+=== TEST 22: set an nil body with setting body_base64 to true
 --- config
     location /t {
         content_by_lua_block {
@@ -679,7 +650,7 @@ invalid base64 content
 
 
 
-=== TEST 24: rewrite header with variables
+=== TEST 23: rewrite header with variables
 --- config
     location /t {
         content_by_lua_block {
@@ -720,7 +691,7 @@ passed
 
 
 
-=== TEST 25: hit
+=== TEST 24: hit
 --- request
 GET /with_header
 --- response_headers

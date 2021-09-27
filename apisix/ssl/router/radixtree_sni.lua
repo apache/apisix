@@ -25,6 +25,7 @@ local type             = type
 local error            = error
 local str_find         = core.string.find
 local str_gsub         = string.gsub
+local str_lower        = string.lower
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -128,7 +129,7 @@ function _M.match_and_set(api_ctx)
     end
 
     local sni
-    sni, err = ngx_ssl.server_name()
+    sni, err = apisix_ssl.server_name()
     if type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated protocol" ..
                        ". If you need to report an issue, " ..
@@ -170,8 +171,6 @@ function _M.match_and_set(api_ctx)
             return false
         end
     end
-
-    api_ctx.sni_rev = sni_rev
 
     local matched_ssl = api_ctx.matched_ssl
     core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
@@ -228,6 +227,21 @@ function _M.ssls()
 end
 
 
+local function ssl_filter(ssl)
+    if not ssl.value then
+        return
+    end
+
+    if ssl.value.sni then
+        ssl.value.sni = str_lower(ssl.value.sni)
+    elseif ssl.value.snis then
+        for i, v in ipairs(ssl.value.snis) do
+            ssl.value.snis[i] = str_lower(v)
+        end
+    end
+end
+
+
 function _M.init_worker()
     local err
     ssl_certificates, err = core.config.new("/ssl", {
@@ -236,6 +250,7 @@ function _M.init_worker()
         checker = function (item, schema_type)
             return apisix_ssl.check_ssl_conf(true, item)
         end,
+        filter = ssl_filter,
     })
     if not ssl_certificates then
         error("failed to create etcd instance for fetching ssl certificates: "

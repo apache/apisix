@@ -33,8 +33,15 @@ local function inject_timestamp(conf, prev_conf, patch_conf)
         end
     end
 
-    -- For PATCH request, the modification is passed as 'patch_conf'
-    if not conf.update_time or (patch_conf and patch_conf.update_time == nil) then
+    if not conf.update_time or
+        -- For PATCH request, the modification is passed as 'patch_conf'
+        -- If the sub path is used, the 'patch_conf' will be a placeholder `true`
+        (patch_conf and (patch_conf == true or patch_conf.update_time == nil))
+    then
+        -- reset the update_time if:
+        -- 1. PATCH request, with sub path
+        -- 2. PATCH request, update_time not given
+        -- 3. Other request, update_time not given
         conf.update_time = ngx_time()
     end
 end

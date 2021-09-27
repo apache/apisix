@@ -43,7 +43,8 @@ Note that the control API server should not be configured to listen to the publi
 ## Control API Added via plugin
 
 Plugin can add its control API when it is enabled.
-If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
+Some plugins in APISIX have added their own control APIs. If you are interested in these APIs,
+please refer to their documentation.
 
 ## Plugin independent Control API
 
@@ -74,6 +75,12 @@ Return the jsonschema used by this APISIX instance in the format below:
             "type": ...,
             "priority": 0,
             "version": 0.1
+        },
+        ...
+    },
+    "stream-plugins": {
+        "mqtt-proxy": {
+            ...
         },
         ...
     }
@@ -189,5 +196,90 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
     ],
     "src_id": "1",
     "src_type": "upstreams"
+}
+```
+
+### POST /v1/gc
+
+Introduced since `v2.8`.
+
+Trigger a full GC in the http subsystem.
+Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
+
+### Get /v1/routes
+
+Introduced since `v3.0`.
+
+Return all routes info in the format below:
+
+```json
+[
+  {
+    "update_count": 0,
+    "value": {
+      "priority": 0,
+      "uris": [
+        "/hello"
+      ],
+      "id": "1",
+      "upstream": {
+        "scheme": "http",
+        "pass_host": "pass",
+        "nodes": [
+          {
+            "port": 1980,
+            "host": "127.0.0.1",
+            "weight": 1
+          }
+        ],
+        "type": "roundrobin",
+        "hash_on": "vars"
+      },
+      "status": 1
+    },
+    "clean_handlers": {},
+    "has_domain": false,
+    "orig_modifiedIndex": 1631193445,
+    "modifiedIndex": 1631193445,
+    "key": "/routes/1"
+  }
+]
+```
+
+### Get /v1/route/{route_id}
+
+Introduced since `v3.0`.
+
+Return specific route info with **route_id** in the format below:
+
+```json
+{
+  "update_count": 0,
+  "value": {
+    "priority": 0,
+    "uris": [
+      "/hello"
+    ],
+    "id": "1",
+    "upstream": {
+      "scheme": "http",
+      "pass_host": "pass",
+      "nodes": [
+        {
+          "port": 1980,
+          "host": "127.0.0.1",
+          "weight": 1
+        }
+      ],
+      "type": "roundrobin",
+      "hash_on": "vars"
+    },
+    "status": 1
+  },
+  "clean_handlers": {},
+  "has_domain": false,
+  "orig_modifiedIndex": 1631193445,
+  "modifiedIndex": 1631193445,
+  "key": "/routes/1"
 }
 ```

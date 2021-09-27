@@ -26,7 +26,7 @@ title: limit-req
   - [Introduction](#introduction)
   - [Attributes](#attributes)
   - [Example](#example)
-    - [How to enable on the `route` or `serivce`](#how-to-enable-on-the-route-or-serivce)
+    - [How to enable on the `route` or `service`](#how-to-enable-on-the-route-or-service)
     - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
   - [Disable Plugin](#disable-plugin)
 
@@ -42,13 +42,15 @@ limit request rate using the "leaky bucket" method.
 | burst         | integer | required    |         | burst >= 0                                                               | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
 | key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
 | rejected_code | integer | optional    | 503     | [200,...,599]                                                            | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
+| rejected_msg       | string | optional                                |            | non-empty                                | The response body returned when the request exceeds the threshold is rejected.                                                                                                                                                                                                             |
 | nodelay       | boolean | optional    | false   |                                                                          | If nodelay flag is true, bursted requests will not get delayed  |
+| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-req function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## Example
 
-### How to enable on the `route` or `serivce`
+### How to enable on the `route` or `service`
 
 Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route.
 
@@ -74,13 +76,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-
-![add route](../../../assets/images/plugin/limit-req-1.png)
-
-Then add limit-req plugin:
-
-![add plugin](../../../assets/images/plugin/limit-req-2.png)
+You also can complete the above operation through the web interface, first add a route, then add limit-req plugin:
+![add plugin](../../../assets/images/plugin/limit-req-1.png)
 
 **Test Plugin**
 
@@ -106,6 +103,18 @@ Server: APISIX web server
 <hr><center>openresty</center>
 </body>
 </html>
+```
+
+At the same time, you set the property `rejected_msg` to `"Requests are too frequent, please try again later."` , when you exceed, you will receive a response body like below:
+
+```shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Content-Type: text/html
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"Requests are too frequent, please try again later."}
 ```
 
 This means that the limit req plugin is in effect.

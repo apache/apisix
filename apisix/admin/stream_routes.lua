@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
-local schema_plugin = require("apisix.admin.plugins").stream_check_schema
+local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 
 
@@ -69,11 +69,9 @@ local function check_conf(id, conf, need_id)
         end
     end
 
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
-        end
+    local ok, err = stream_route_checker(conf)
+    if not ok then
+        return nil, {error_msg = err}
     end
 
     return need_id and id or true
@@ -90,13 +88,13 @@ function _M.put(id, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("stream_routes", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put stream route[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -112,7 +110,7 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get stream route[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     utils.fix_count(res.body, id)
@@ -127,13 +125,11 @@ function _M.post(id, conf)
     end
 
     local key = "/stream_routes"
-
     utils.inject_timestamp(conf)
-
-    local res, err = core.etcd.push("/stream_routes", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post stream route[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -150,7 +146,7 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete stream route[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

@@ -41,15 +41,21 @@ end
 function _M.get(name)
     local arg = get_uri_args()
     if arg and arg["all"] == "true" then
-        local all_attributes = plugin_get_all({
+        local http_plugins, stream_plugins = plugin_get_all({
             version = true,
             priority = true,
             schema = true,
             metadata_schema = true,
             consumer_schema = true,
             type = true,
+            scope = true,
         })
-        return 200, all_attributes
+
+        if arg["subsystem"] == "stream" then
+            return 200, stream_plugins
+        end
+
+        return 200, http_plugins
     end
 
     if not name then

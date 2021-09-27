@@ -180,7 +180,7 @@ Host: foo.com
                         "type": "roundrobin"
                     },
                     "host": "foo.com",
-                    "uri": "/hello_"
+                    "uri": "/hello_chunked"
                 }]],
                 nil
                 )
@@ -221,7 +221,7 @@ Host: foo.com
     }
 --- pipelined_requests eval
 ["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /status", "GET /delete", "GET /status",
-"GET /add2", "GET /hello_", "GET /update2", "GET /hello_", "GET /hello1", "GET /delete", "GET /hello1"]
+"GET /add2", "GET /hello_chunked", "GET /update2", "GET /hello_chunked", "GET /hello1", "GET /delete", "GET /hello1"]
 --- more_headers
 Host: foo.com
 --- error_code eval

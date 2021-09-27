@@ -31,7 +31,6 @@ local default_report_ttl = 7200
 
 local schema = {
     type = "object",
-    additionalProperties = false,
 }
 local attr_schema = {
     type = "object",
@@ -53,9 +52,9 @@ local attr_schema = {
     }
 }
 
-local internal_status = ngx.shared.internal_status
+local internal_status = ngx.shared["internal-status"]
 if not internal_status then
-    error("lua_shared_dict \"internal_status\" not configured")
+    error("lua_shared_dict \"internal-status\" not configured")
 end
 
 
@@ -64,6 +63,7 @@ local _M = {
     priority = 990,
     name = plugin_name,
     schema = schema,
+    scope = "global",
 }
 
 

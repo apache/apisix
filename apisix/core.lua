@@ -44,11 +44,11 @@ return {
     ctx         = require("apisix.core.ctx"),
     timer       = require("apisix.core.timer"),
     id          = require("apisix.core.id"),
+    ip          = require("apisix.core.ip"),
     utils       = utils,
     dns_client  = require("apisix.core.dns.client"),
     etcd        = require("apisix.core.etcd"),
     tablepool   = require("tablepool"),
     resolver    = require("apisix.core.resolver"),
     os          = require("apisix.core.os"),
-    empty_tab   = {},
 }

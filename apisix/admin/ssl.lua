@@ -76,13 +76,13 @@ function _M.put(id, conf)
 
     local ok, err = utils.inject_conf_with_prev_conf("ssl", key, conf)
     if not ok then
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put ssl[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -98,7 +98,7 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get ssl[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     -- not return private key for security
@@ -127,12 +127,11 @@ function _M.post(id, conf)
     end
 
     local key = "/ssl"
-    -- core.log.info("key: ", key)
     utils.inject_timestamp(conf)
-    local res, err = core.etcd.push("/ssl", conf)
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post ssl[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -149,7 +148,7 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete ssl[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -177,7 +176,7 @@ function _M.patch(id, conf, sub_path)
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get ssl [", key, "] in etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     if res_old.status ~= 200 then
@@ -204,6 +203,7 @@ function _M.patch(id, conf, sub_path)
         if code then
             return code, err
         end
+        utils.inject_timestamp(node_value, nil, true)
     else
         if conf.key then
             conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
@@ -216,10 +216,8 @@ function _M.patch(id, conf, sub_path)
         end
 
         node_value = core.table.merge(node_value, conf);
+        utils.inject_timestamp(node_value, nil, conf)
     end
-
-
-    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new ssl conf: ", core.json.delay_encode(node_value, true))
 
@@ -231,7 +229,7 @@ function _M.patch(id, conf, sub_path)
     local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new ssl[", key, "] to etcd: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

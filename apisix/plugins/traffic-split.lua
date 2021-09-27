@@ -85,11 +85,9 @@ local schema = {
                     match = match_schema,
                     weighted_upstreams = upstreams_schema
                 },
-                additionalProperties = false
             }
         }
     },
-    additionalProperties = false
 }
 
 local plugin_name = "traffic-split"

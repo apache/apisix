@@ -69,7 +69,7 @@ local function check_conf(plugin_name, conf)
     schema.properties.interceptors = api_router.interceptors_schema
 
     core.log.info("schema: ", core.json.delay_encode(schema))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
+    core.log.info("conf: ", core.json.delay_encode(conf))
 
     local ok, err
     if schema['$comment'] == injected_mark
@@ -100,7 +100,7 @@ function _M.put(plugin_name, conf)
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put plugin metadata[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -116,7 +116,7 @@ function _M.get(key)
     local res, err = core.etcd.get(path, not key)
     if not res then
         core.log.error("failed to get metadata[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body
@@ -137,7 +137,7 @@ function _M.delete(key)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete metadata[", key, "]: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     return res.status, res.body

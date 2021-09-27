@@ -23,6 +23,7 @@
 echo "
 apisix:
     stream_proxy:
+        only: false
         tcp:
             - addr: 9100
               tls: true

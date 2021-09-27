@@ -22,7 +22,7 @@ local schema = {
     properties = {
         type = {
             type = "string",
-            enum = {"consumer_name", "service_id"},
+            enum = {"consumer_name", "service_id", "route_id"},
             default = "consumer_name"
         },
         blacklist = {
@@ -70,6 +70,9 @@ local _M = {
 }
 
 local fetch_val_funcs = {
+    ["route_id"] = function(ctx)
+        return ctx.route_id
+    end,
     ["service_id"] = function(ctx)
         return ctx.service_id
     end,
