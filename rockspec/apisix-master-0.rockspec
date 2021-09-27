@@ -34,7 +34,7 @@ dependencies = {
     "lua-resty-ctxdump = 0.1-0",
     "lua-resty-dns-client = 5.2.0",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.5.4",
+    "lua-resty-etcd = 1.5.5",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.5.2",
@@ -70,6 +70,7 @@ dependencies = {
     "ext-plugin-proto = 0.3.0",
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
+    "inspect == 3.1.1",
 }
 
 build = {

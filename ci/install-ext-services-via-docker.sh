@@ -64,6 +64,10 @@ docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NAC
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with namespaceId=test_ns and group=test_group
 docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group --env SUFFIX_NUM=1 -p 18005:18001 --name nacos-service5 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with namespaceId=test_ns and group=test_group2
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group2 --env SUFFIX_NUM=3 -p 18006:18001 --name nacos-service6 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with namespaceId=test_ns2 and group=test_group
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns2 --env GROUP=test_group --env SUFFIX_NUM=4 -p 18007:18001 --name nacos-service7 nacos-test-service:1.0-SNAPSHOT
 
 url="127.0.0.1:18005/hello"
 until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do

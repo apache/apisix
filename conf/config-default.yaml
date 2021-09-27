@@ -30,7 +30,6 @@ apisix:
   #     enable_http2: true
   enable_admin: true
   enable_admin_cors: true          # Admin API support CORS response headers.
-  enable_debug: false
   enable_dev_mode: false           # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
@@ -51,6 +50,7 @@ apisix:
   # configurations to load third party code and/or override the builtin one.
   extra_lua_path: ""               # extend lua_package_path to load third party code
   extra_lua_cpath: ""              # extend lua_package_cpath to load third party code
+  #lua_module_hook: "my_project.my_hook"  # the hook module which will be used to inject third party code into APISIX
 
   proxy_cache:                     # Proxy Caching configuration
     cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time (disk)
@@ -220,7 +220,7 @@ nginx_config:                     # config for render the template to generate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - "unix:"
-    #lua_shared_dicts:             # add custom shared cache to nginx.conf
+    #custom_lua_shared_dict:       # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)

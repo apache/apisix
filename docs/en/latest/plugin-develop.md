@@ -69,6 +69,21 @@ apisix:
 
 Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like `require "apisix.plugins.jwt-auth"` will load the `jwt-auth` plugin.
 
+Sometimes you may want to override a method instead of a whole file. In this case, you can configure `lua_module_hook` in `conf/config.yaml`
+to introduce your hook.
+
+Assumed your configuration is:
+
+```yaml
+apisix:
+    ...
+    extra_lua_path: "/path/to/example/?.lua"
+    lua_module_hook: "my_hook"
+```
+
+The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX.
+The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
+
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it

@@ -977,8 +977,8 @@ By default, this API only returns the http plugins. If you need stream plugins, 
 
 | Parameter        | Required | Type     | Description | Example  |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | False  | IP       | client IP | "127.0.0.1"  |
-| server_addr      | False  | IP       | server IP | "127.0.0.1"  |
+| remote_addr      | False  | IP/CIDR  | client IP | "127.0.0.1/32" or "127.0.0.1" |
+| server_addr      | False  | IP/CIDR  | server IP | "127.0.0.1/32" or "127.0.0.1"  |
 | server_port      | False  | Integer  | server port | 9090  |
 | sni              | False  | Host     | server name indication | "test.com"  |
 | upstream | False | Upstream | Upstream configuration, see [Upstream](architecture-design/upstream.md) for more details |  |
