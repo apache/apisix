@@ -105,7 +105,7 @@ local function parse_directive_header(h)
 end
 
 
-local function parse_resource_ttl(cc)
+local function parse_resource_ttl(ctx, cc)
     local max_age = cc["s-maxage"] or cc["max-age"]
 
     if not max_age then
@@ -165,7 +165,7 @@ local function cacheable_response(conf, ctx, cc)
         return false
     end
 
-    if conf.cache_control and parse_resource_ttl(cc) <= 0 then
+    if conf.cache_control and parse_resource_ttl(ctx, cc) <= 0 then
         return false
     end
 
@@ -277,7 +277,7 @@ function _M.header_filter(conf, ctx)
 
     if cacheable_response(conf, ctx, cc) then
         cache.res_headers = res_headers
-        cache.ttl = conf.cache_control and parse_resource_ttl(cc) or conf.cache_ttl
+        cache.ttl = conf.cache_control and parse_resource_ttl(ctx, cc) or conf.cache_ttl
     else
         ctx.cache = nil
     end
