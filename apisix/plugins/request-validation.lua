@@ -87,11 +87,11 @@ function _M.rewrite(conf)
         if not body then
             local filename = ngx.req.get_body_file()
             if not filename then
-                return 500, conf.rejected_msg or nil
+                return 500, conf.rejected_msg
             end
             local fd = io.open(filename, 'rb')
             if not fd then
-                return 500, conf.rejected_msg or nil
+                return 500, conf.rejected_msg
             end
             body = fd:read('*a')
         end

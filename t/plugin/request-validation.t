@@ -1457,7 +1457,7 @@ passed
 
 
 
-=== TEST 36: hit TEST 35 rule with empty header
+=== TEST 36: use empty header to hit `header_schema.required with custom reject message` rule
 --- request
 GET /opentracing
 --- error_code: 400
@@ -1468,7 +1468,7 @@ qr/schema validation failed/
 
 
 
-=== TEST 37: hit TEST 35 rule with bad header value
+=== TEST 37: use bad header value to hit `header_schema.required with custom reject message` rule
 --- request
 GET /opentracing
 --- more_headers
@@ -1481,7 +1481,7 @@ qr/schema validation failed/
 
 
 
-=== TEST 38: pass TEST 35 rule
+=== TEST 38: pass `header_schema.required with custom reject message` rule
 --- request
 GET /opentracing
 --- more_headers
@@ -1540,7 +1540,7 @@ passed
 
 
 
-=== TEST 40: hit TEST 39 rule with empty body
+=== TEST 40: use empty body to hit `body_schema.required with custom reject message` rule
 --- request
 GET /opentracing
 --- error_code: 500
@@ -1551,7 +1551,7 @@ customize reject message for body_schema.required
 
 
 
-=== TEST 41: hit TEST 39 rule with bad body value
+=== TEST 41: use bad body value to hit `body_schema.required with custom reject message` rule
 --- request
 POST /opentracing
 {"test":"abc"}
@@ -1563,7 +1563,7 @@ qr/schema validation failed/
 
 
 
-=== TEST 42: pass TEST 39 rule
+=== TEST 42: pass `body_schema.required with custom reject message` rule
 --- request
 POST /opentracing
 {"test":"a"}
