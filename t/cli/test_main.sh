@@ -759,9 +759,11 @@ echo '
 apisix:
   proxy_cache:
     zones:
-      - disk_path: /tmp/disk_cache_one
-      - disk_size: 100m
-      - cache_levels: 1:2
+      - name: disk_cache_one
+        disk_path: /tmp/disk_cache_one
+        disk_size: 100m
+        memory_size: 20m
+        cache_levels: 1:2
 ' > conf/config.yaml
 
 make init
