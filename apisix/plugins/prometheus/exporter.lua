@@ -155,7 +155,7 @@ function _M.log(conf, ctx)
         apisix_latency =  apisix_latency - upstream_latency
 
         -- The latency might be negative, as Nginx uses different time measurements in
-        -- different metrics. 
+        -- different metrics.
         -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
         if apisix_latency < 0 then
             apisix_latency = 0
