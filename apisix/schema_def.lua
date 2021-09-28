@@ -438,7 +438,7 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http", "https","http_auto"}
+            enum = {"grpc", "grpcs", "http", "https", "http_auto"}
         },
         labels = labels_def,
         discovery_type = {
