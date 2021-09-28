@@ -61,9 +61,8 @@ done
     }
 --- request
 GET /t
---- response_body
-object matches none of the requireds: ["body_schema"] or ["header_schema"]
-done
+--- response_body_like eval
+qr/object matches none of the requireds/
 --- no_error_log
 [error]
 
@@ -375,8 +374,6 @@ hello1 world
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -415,8 +412,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -455,8 +450,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -495,8 +488,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -535,8 +526,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -575,8 +564,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -615,8 +602,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -655,8 +640,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -787,8 +770,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -881,8 +862,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -939,8 +918,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -979,8 +956,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1019,8 +994,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1059,8 +1032,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1099,8 +1070,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1139,8 +1108,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1179,8 +1146,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1219,8 +1184,6 @@ passed
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1351,8 +1314,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- error_code chomp
-200
 --- no_error_log
 [error]
 
@@ -1445,7 +1406,255 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: add route (test request validation `header_schema.required` success with custom reject message)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            },
+                            "rejected_msg": "customize reject message for header_schema.required"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: use empty header to hit `header_schema.required with custom reject message` rule
+--- request
+GET /opentracing
+--- error_code: 400
+--- response_body chomp
+customize reject message for header_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 37: use bad header value to hit `header_schema.required with custom reject message` rule
+--- request
+GET /opentracing
+--- more_headers
+test: abc
+--- error_code: 400
+--- response_body chomp
+customize reject message for header_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 38: pass `header_schema.required with custom reject message` rule
+--- request
+GET /opentracing
+--- more_headers
+test: a
+--- error_code: 200
+--- response_body eval
+qr/opentracing/
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: add route (test request validation `body_schema.required` success with custom reject message)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            },
+                            "rejected_msg": "customize reject message for body_schema.required"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: use empty body to hit `body_schema.required with custom reject message` rule
+--- request
+GET /opentracing
+--- error_code: 500
+--- response_body chomp
+customize reject message for body_schema.required
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: use bad body value to hit `body_schema.required with custom reject message` rule
+--- request
+POST /opentracing
+{"test":"abc"}
+--- error_code: 400
+--- response_body chomp
+customize reject message for body_schema.required
+--- error_log eval
+qr/schema validation failed/
+
+
+
+=== TEST 42: pass `body_schema.required with custom reject message` rule
+--- request
+POST /opentracing
+{"test":"a"}
+--- error_code: 200
+--- response_body eval
+qr/opentracing/
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: add route (test request validation `header_schema.required` failure with custom reject message)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            },
+                            "rejected_msg": "customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message customize reject message"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/string too long/
 --- error_code chomp
-200
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: add route (test request validation schema with custom reject message only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "rejected_message": "customize reject message"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/object matches none of the requireds/
+--- error_code chomp
+400
 --- no_error_log
 [error]
