@@ -1,0 +1,104 @@
+name: CLI Test
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-18.04
+        job_name:
+          - linux_apisix_master_luarocks
+          - linux_apisix_current_luarocks
+
+    runs-on: ${{ matrix.platform }}
+    env:
+      SERVER_NAME: ${{ matrix.job_name }}
+      OPENRESTY_VERSION: default
+
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.2
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+      old_etcd:
+        image: bitnami/etcd:3.3.8
+        ports:
+          - 3379:2379
+          - 3380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v2.1.6
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+      - name: Linux Get dependencies
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
+
+      - name: Running etcd server with TLS
+        run: |
+            sudo docker run -d -p 12379:12379 -p 12380:12380 \
+            -e ALLOW_NONE_AUTHENTICATION=yes \
+            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
+            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
+            -e ETCD_CERT_FILE=/certs/etcd.pem \
+            -e ETCD_KEY_FILE=/certs/etcd.key \
+            -v ${{ github.workspace }}/t/certs:/certs \
+            bitnami/etcd:3.4.0
+
+      - name: Running etcd server with mTLS
+        run: |
+            sudo docker run -d --rm --name etcd_mtls \
+            -p 22379:22379 -p 22380:22380 \
+            -e ALLOW_NONE_AUTHENTICATION=yes \
+            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
+            -e ETCD_CERT_FILE=/certs/mtls_server.crt \
+            -e ETCD_KEY_FILE=/certs/mtls_server.key \
+            -e ETCD_CLIENT_CERT_AUTH=true \
+            -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
+            -v ${{ github.workspace }}/t/certs:/certs \
+            bitnami/etcd:3.4.0
+
+      - name: Linux Install
+        run: |
+            sudo --preserve-env=OPENRESTY_VERSION \
+            ./ci/${{ matrix.job_name }}_runner.sh do_install
+
+      - name: Linux Script
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
