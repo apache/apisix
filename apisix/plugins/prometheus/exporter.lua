@@ -153,6 +153,12 @@ function _M.log(conf, ctx)
         metrics.latency:observe(upstream_latency,
             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
         apisix_latency =  apisix_latency - upstream_latency
+
+        -- TODO: bug founded, ref to `https://github.com/apache/apisix/issues/5146`
+        if apisix_latency < 0 then
+            apisix_latency = 0
+        end
+
     end
     metrics.latency:observe(apisix_latency,
         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
@@ -165,9 +171,10 @@ function _M.log(conf, ctx)
 end
 
 
-    local ngx_status_items = {"active", "accepted", "handled", "total",
-                             "reading", "writing", "waiting"}
-    local label_values = {}
+local ngx_status_items = {"active", "accepted", "handled", "total",
+                         "reading", "writing", "waiting"}
+local label_values = {}
+
 local function nginx_status()
     local res = ngx_capture("/apisix/nginx_status")
     if not res or res.status ~= 200 then
