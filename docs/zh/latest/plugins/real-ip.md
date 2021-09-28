@@ -44,7 +44,7 @@ title: real-ip
 | source      | string        | 必填    |            | 任何 Nginx 变量，如 `arg_realip` 或 `http_x_forwarded_for` | 根据变量的值 `APISIX` 动态设置客户端的 `IP` 和端口。如果该值不包含端口，则不会更改客户端的端口。 |
 | trusted_addresses| array[string] | 可选    |            | `IP` 或 `CIDR` 范围列表 | 动态设置 `set_real_ip_from` 指令 |
 
-如果 `source` 远程地址设置缺失或无效，该插件则直接放行，不会更改客户端地址。
+如果 `source` 设置的远程地址缺失或无效，该插件则直接放行，不会更改客户端地址。
 
 ## 如何启用
 
