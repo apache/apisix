@@ -33,7 +33,7 @@ docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --z
 docker exec -i kafka-server2 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
 
 # start skywalking
-docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server:8.3.0-es6
+docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server:8.7.0-es6
 # start consul servers
 docker run --rm --name consul_1 -d -p 8500:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
 docker run --rm --name consul_2 -d -p 8600:8500 consul:1.7 consul agent -server -bootstrap-expect=1 -client 0.0.0.0 -log-level info -data-dir=/consul/data
@@ -56,14 +56,18 @@ mkdir tmp
 cd tmp
 wget https://raw.githubusercontent.com/api7/nacos-test-service/main/spring-nacos-1.0-SNAPSHOT.jar
 curl https://raw.githubusercontent.com/api7/nacos-test-service/main/Dockerfile | docker build -t nacos-test-service:1.0-SNAPSHOT -f - .
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env DISCOVERY_PORT=18001 --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env DISCOVERY_PORT=18002 --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=1 -p 18001:18001 --name nacos-service1 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env SUFFIX_NUM=2 -p 18002:18001 --name nacos-service2 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with namespaceId=test_ns
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env DISCOVERY_PORT=18003 --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env SUFFIX_NUM=1 -p 18003:18001 --name nacos-service3 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env SUFFIX_NUM=1 -p 18003:18001 --name nacos-service3 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with group=test_group
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env DISCOVERY_PORT=18004 --env NACOS_ADDR=nacos2:8848 --env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env GROUP=test_group --env SUFFIX_NUM=1 -p 18004:18001 --name nacos-service4 nacos-test-service:1.0-SNAPSHOT
 # register nacos service with namespaceId=test_ns and group=test_group
-docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env DISCOVERY_PORT=18005 --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group --env SUFFIX_NUM=1 -p 18005:18001 --name nacos-service5 nacos-test-service:1.0-SNAPSHOT
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group --env SUFFIX_NUM=1 -p 18005:18001 --name nacos-service5 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with namespaceId=test_ns and group=test_group2
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns --env GROUP=test_group2 --env SUFFIX_NUM=3 -p 18006:18001 --name nacos-service6 nacos-test-service:1.0-SNAPSHOT
+# register nacos service with namespaceId=test_ns2 and group=test_group
+docker run -d --rm --network nacos_net --env SERVICE_NAME=APISIX-NACOS --env NACOS_ADDR=nacos2:8848 --env NAMESPACE=test_ns2 --env GROUP=test_group --env SUFFIX_NUM=4 -p 18007:18001 --name nacos-service7 nacos-test-service:1.0-SNAPSHOT
 
 url="127.0.0.1:18005/hello"
 until  [[ "$(curl -s -o /dev/null -w ''%{http_code}'' $url)"  == "200" ]]; do

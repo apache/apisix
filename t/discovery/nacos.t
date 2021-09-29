@@ -758,3 +758,187 @@ discovery:
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: same namespace_id and service_name, different group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+           -- use nacos-service5
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                          "namespace_id": "test_ns",
+                          "group_name": "test_group"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            -- use nacos-service6
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello1",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                          "namespace_id": "test_ns",
+                          "group_name": "test_group2"
+                        }
+                    },
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri1, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            res, err = httpc:request_uri(uri2, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+server 1
+server 3
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: same group_name and service_name, different namespace_id
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+           -- use nacos-service5
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                          "namespace_id": "test_ns",
+                          "group_name": "test_group"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            -- use nacos-service7
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello1",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                          "namespace_id": "test_ns2",
+                          "group_name": "test_group"
+                        }
+                    },
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri1, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            res, err = httpc:request_uri(uri2, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+server 1
+server 4
+--- no_error_log
+[error]

@@ -48,6 +48,7 @@ local _M = {
     priority = 100,
     name = plugin_name,
     schema = schema,
+    scope = "global",
 }
 
 
