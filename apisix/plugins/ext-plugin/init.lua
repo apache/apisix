@@ -24,6 +24,10 @@ local http_req_call_resp = require("A6.HTTPReqCall.Resp")
 local http_req_call_action = require("A6.HTTPReqCall.Action")
 local http_req_call_stop = require("A6.HTTPReqCall.Stop")
 local http_req_call_rewrite = require("A6.HTTPReqCall.Rewrite")
+local extra_info = require("A6.ExtraInfo.Info")
+local extra_info_req = require("A6.ExtraInfo.Req")
+local extra_info_var = require("A6.ExtraInfo.Var")
+local extra_info_resp = require("A6.ExtraInfo.Resp")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -54,6 +58,7 @@ local str_sub = string.sub
 local error = error
 local ipairs = ipairs
 local pairs = pairs
+local tostring = tostring
 local type = type
 
 
@@ -250,6 +255,43 @@ local function build_headers(var, builder, key, val)
 end
 
 
+local function handle_extra_info(ctx, input)
+    -- exact request
+    local buf = flatbuffers.binaryArray.New(input)
+    local req = extra_info_req.GetRootAsReq(buf, 0)
+
+    local res
+    local info_type = req:InfoType()
+    if info_type == extra_info.Var then
+        local info = req:Info()
+        local var_req = extra_info_var.New()
+        var_req:Init(info.bytes, info.pos)
+
+        local var_name = var_req:Name()
+        res = ctx.var[var_name]
+    else
+        return nil, "unsupported info type: " .. info_type
+    end
+
+    -- build response
+    builder:Clear()
+
+    local packed_res
+    if res then
+        -- ensure to pass the res in string type
+        res = tostring(res)
+        packed_res = builder:CreateByteVector(res)
+    end
+    extra_info_resp.Start(builder)
+    if packed_res then
+        extra_info_resp.AddResult(builder, packed_res)
+    end
+    local resp = extra_info_resp.End(builder)
+    builder:Finish(resp)
+    return builder:Output()
+end
+
+
 local rpc_call
 local rpc_handlers = {
     nil,
@@ -338,7 +380,7 @@ local rpc_handlers = {
         local path = builder:CreateString(uri)
 
         local bin_addr = var.binary_remote_addr
-        local src_ip = builder.CreateByteVector(builder, bin_addr)
+        local src_ip = builder:CreateByteVector(bin_addr)
 
         local args = core.request.get_uri_args(ctx)
         local textEntries = {}
@@ -399,9 +441,26 @@ local rpc_handlers = {
             return nil, "failed to send RPC_HTTP_REQ_CALL: " .. err
         end
 
-        local ty, resp = receive(sock)
-        if ty == nil then
-            return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
+        local ty, resp
+        while true do
+            ty, resp = receive(sock)
+            if ty == nil then
+                return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
+            end
+
+            if ty ~= constants.RPC_EXTRA_INFO then
+                break
+            end
+
+            local out, err = handle_extra_info(ctx, resp)
+            if not out then
+                return nil, "failed to handle RPC_EXTRA_INFO: " .. err
+            end
+
+            local ok, err = send(sock, constants.RPC_EXTRA_INFO, out)
+            if not ok then
+                return nil, "failed to reply RPC_EXTRA_INFO: " .. err
+            end
         end
 
         if ty ~= constants.RPC_HTTP_REQ_CALL then

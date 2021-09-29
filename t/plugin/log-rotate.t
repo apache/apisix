@@ -72,7 +72,7 @@ __DATA__
                 end
             end
 
-            if not has_split_error_file or not has_split_error_file then
+            if not has_split_access_file or not has_split_error_file then
                ngx.status = 500
             else
                ngx.status = 200

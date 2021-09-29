@@ -14,10 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local ip_restriction = require("apisix.plugins.ip-restriction.init")
+local core = require("apisix.core")
+local base = require("apisix.plugins.ip-restriction.init")
 
 
-ip_restriction.access = ip_restriction.restrict
+-- avoid unexpected data sharing
+local ip_restriction = core.table.clone(base)
+ip_restriction.access = base.restrict
 
 
 return ip_restriction

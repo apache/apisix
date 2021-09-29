@@ -20,10 +20,16 @@
 #
 
 apisix:
-  node_listen: 9080                # APISIX listening port
+  # node_listen: 9080              # APISIX listening port
+  node_listen:                     # This style support multiple ports
+    - 9080
+  #   - port: 9081
+  #     enable_http2: true         # If not set, the default value is `false`.
+  #   - ip: 127.0.0.2              # Specific IP, If not set, the default value is `0.0.0.0`.
+  #     port: 9082
+  #     enable_http2: true
   enable_admin: true
   enable_admin_cors: true          # Admin API support CORS response headers.
-  enable_debug: false
   enable_dev_mode: false           # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
@@ -44,6 +50,7 @@ apisix:
   # configurations to load third party code and/or override the builtin one.
   extra_lua_path: ""               # extend lua_package_path to load third party code
   extra_lua_cpath: ""              # extend lua_package_cpath to load third party code
+  #lua_module_hook: "my_project.my_hook"  # the hook module which will be used to inject third party code into APISIX
 
   proxy_cache:                     # Proxy Caching configuration
     cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
@@ -63,7 +70,10 @@ apisix:
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
     #- "::/64"
-  #port_admin: 9180             # use a separate port
+  #admin_listen:                # use a separate port
+  #  ip: 127.0.0.1              # Specific IP, if not set, the default value is `0.0.0.0`.
+  #  port: 9180
+  #port_admin: 9180             # Not recommend: This parameter should be set via the `admin_listen`.
   #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
@@ -113,8 +123,15 @@ apisix:
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
-    enable_http2: true
-    listen_port: 9443
+    listen:                       # APISIX listening port in https.
+      - 9443
+    #   - port: 9444
+    #     enable_http2: true      # If not set, the default value is `false`.
+    #   - ip: 127.0.0.3           # Specific IP, If not set, the default value is `0.0.0.0`.
+    #     port: 9445
+    #     enable_http2: true
+    enable_http2: true            # Not recommend: This parameter should be set via the `listen`.
+    # listen_port: 9443           # Not recommend: This parameter should be set via the `listen`.
     #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
@@ -122,9 +139,12 @@ apisix:
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
                                             #  ref: https://github.com/mozilla/server-side-tls/issues/135
+
     key_encrypt_salt: edd1c9f0985e76a2      #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+
+    #fallback_sni: "my.default.domain"      # If set this, when the client doesn't send SNI during handshake, the fallback SNI will be used instead
   enable_control: true
   #control:
   #  ip: 127.0.0.1
@@ -141,6 +161,10 @@ nginx_config:                     # config for render the template to generate n
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
+
+  max_pending_timers: 16384       # increase it if you see "too many pending timers" error
+  max_running_timers: 4096        # increase it if you see "lua_max_running_timers are not enough" error
+
   event:
     worker_connections: 10620
   #envs:                          # allow to get a list of environment variables
@@ -193,7 +217,7 @@ nginx_config:                     # config for render the template to generate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - "unix:"
-    #lua_shared_dicts:             # add custom shared cache to nginx.conf
+    #custom_lua_shared_dict:       # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
@@ -271,6 +295,7 @@ graphql:
   #cmd: ["ls", "-l"]
 
 plugins:                          # plugin list (sorted by priority)
+  - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011

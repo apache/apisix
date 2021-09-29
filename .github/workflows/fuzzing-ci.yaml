@@ -79,6 +79,7 @@ jobs:
       run: |
         python $PWD/t/fuzzing/vars_route_test.py
 
-    - name: run client abort test
+    - name: run check leak test
       run: |
         python $PWD/t/fuzzing/client_abort.py
+        python $PWD/t/fuzzing/simple_http.py

@@ -86,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ## Delete Plugin
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
+$ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
 The `mqtt-proxy` plugin has been deleted now.

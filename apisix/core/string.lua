@@ -16,6 +16,7 @@
 --
 local error = error
 local type = type
+local str_byte = string.byte
 local str_find = string.find
 local ffi         = require("ffi")
 local C           = ffi.C
@@ -63,6 +64,17 @@ function _M.has_suffix(s, suffix)
     end
     local rc = C.memcmp(ffi_cast("char *", s) + #s - #suffix, suffix, #suffix)
     return rc == 0
+end
+
+
+function _M.rfind_char(s, ch, idx)
+    local b = str_byte(ch)
+    for i = idx or #s, 1, -1 do
+        if str_byte(s, i, i) == b then
+            return i
+        end
+    end
+    return nil
 end
 
 

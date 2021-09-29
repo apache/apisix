@@ -164,7 +164,7 @@ Sending multiple requests concurrently:
             local t = {}
             local ports_count = {}
             for i = 1, 180 do
-                local th = assert(ngx.thread.spawn(function(i))
+                local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
                     local res, err = httpc:request_uri(uri..i, {method = "GET"})
                     if not res then

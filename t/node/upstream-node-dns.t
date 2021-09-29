@@ -505,3 +505,72 @@ qr/call \/hello
 dns resolver domain: test.com to 127.0.0.1
 proxy request to 127.0.0.(1:1980|5:1981)
 /
+
+
+
+=== TEST 15: route with upstream node, the domain's IP is changed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    local count = 0
+    utils.dns_parse = function (domain)  -- mock: DNS parser
+        count = count + 1
+        if domain == "test.com" then
+            return {address = "127.0.0." .. count}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        t('/hello', ngx.HTTP_GET)
+        -- avoid adding more "dns_value" into the route
+        t('/hello', ngx.HTTP_GET)
+    }
+}
+
+--- request
+GET /t
+--- grep_error_log eval
+qr/parse route which contain domain: .+("dns_value":.+){3}/
+--- grep_error_log_out

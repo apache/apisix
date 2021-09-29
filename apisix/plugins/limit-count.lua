@@ -184,11 +184,11 @@ function _M.access(conf, ctx)
             return conf.rejected_code
         end
 
-        core.log.error("failed to limit req: ", err)
+        core.log.error("failed to limit count: ", err)
         if conf.allow_degradation then
             return
         end
-        return 500, {error_msg = "failed to limit count: " .. err}
+        return 500, {error_msg = "failed to limit count"}
     end
 
     if conf.show_limit_quota_header then

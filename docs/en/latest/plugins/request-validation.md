@@ -39,10 +39,13 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 
 ## Attributes
 
-| Name          | Type   | Requirement | Default | Valid | Description                |
-| ------------- | ------ | ----------- | ------- | ----- | -------------------------- |
-| header_schema | object | optional    |         |       | schema for the header data |
-| body_schema   | object | optional    |         |       | schema for the body data   |
+> Note that at least one of `header_schema` and `body_schema` must be filled in.
+
+| Name             | Type   | Requirement | Default | Valid | Description                |
+| ---------------- | ------ | ----------- | ------- | ----- | -------------------------- |
+| header_schema    | object | optional    |         |       | schema for the header data |
+| body_schema      | object | optional    |         |       | schema for the body data   |
+| rejected_message | string | optional    |         |       | the custom rejected message |
 
 ## How To Enable
 
@@ -60,7 +63,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 "properties": {
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
-                }
+                },
+                "rejected_message": "customize reject message"
             }
         }
     },
@@ -82,7 +86,7 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-If the schema is violated the plugin will yield a `400` bad request.
+If the schema is violated the plugin will yield a `400` bad request with the reject response.
 
 ## Disable Plugin
 
@@ -250,5 +254,32 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             }
         }
     }
+}
+```
+
+**Custom rejected message:**
+
+```json
+{
+  "uri": "/get",
+  "plugins": {
+    "request-validation": {
+      "body_schema": {
+        "type": "object",
+        "required": ["required_payload"],
+        "properties": {
+          "required_payload": {"type": "string"},
+          "boolean_payload": {"type": "boolean"}
+        },
+        "rejected_message": "customize reject message"
+      }
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:8080": 1
+    }
+  }
 }
 ```

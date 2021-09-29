@@ -16,6 +16,7 @@
 --
 local config_local   = require("apisix.core.config_local")
 local core_str       = require("apisix.core.string")
+local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
@@ -122,17 +123,6 @@ _M.set_resolver = set_resolver
 
 function _M.get_resolver(resolvers)
     return dns_resolvers
-end
-
-
-local function rfind_char(s, ch, idx)
-    local b = str_byte(ch)
-    for i = idx or #s, 1, -1 do
-        if str_byte(s, i, i) == b then
-            return i
-        end
-    end
-    return nil
 end
 
 

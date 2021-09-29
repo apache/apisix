@@ -30,6 +30,15 @@ local _M = {}
 
 
 function _M.schema()
+    local http_plugins, stream_plugins = plugin.get_all({
+        version = true,
+        priority = true,
+        schema = true,
+        metadata_schema = true,
+        consumer_schema = true,
+        type = true,
+        scope = true,
+    })
     local schema = {
         main = {
             consumer = core.schema.consumer,
@@ -45,14 +54,8 @@ function _M.schema()
             upstream_hash_header_schema = core.schema.upstream_hash_header_schema,
             upstream_hash_vars_schema = core.schema.upstream_hash_vars_schema,
         },
-        plugins = plugin.get_all({
-            version = true,
-            priority = true,
-            schema = true,
-            metadata_schema = true,
-            consumer_schema = true,
-            type = true,
-        }),
+        plugins = http_plugins,
+        stream_plugins = stream_plugins,
     }
     return 200, schema
 end
@@ -154,6 +157,43 @@ function _M.get_health_checker()
     return 200, info
 end
 
+local function iter_add_get_routes_info(values, route_id)
+    local infos = {}
+    for _, route in core.config_util.iterate_values(values) do
+        local new_route = core.table.deepcopy(route)
+        if new_route.value.upstream and new_route.value.upstream.parent then
+            new_route.value.upstream.parent = nil
+        end
+        core.table.insert(infos, new_route)
+        -- check the roude id
+        if route_id and route.value.id == route_id then
+            return new_route
+        end
+    end
+    if not route_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_routes_info()
+    local routes = get_routes()
+    local infos, _ = iter_add_get_routes_info(routes, nil)
+    return 200, infos
+end
+
+function _M.dump_route_info()
+    local routes = get_routes()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local route_id = uri_segs[4]
+    local route = iter_add_get_routes_info(routes, route_id)
+    if not route then
+        return 404, {error_msg = str_format("route[%s] not found", route_id)}
+    end
+    return 200, route
+end
+
+
 
 function _M.trigger_gc()
     -- TODO: find a way to trigger GC in the stream subsystem
@@ -187,4 +227,16 @@ return {
         uris = {"/gc"},
         handler = _M.trigger_gc,
     },
+    -- /v1/routes
+    {
+        methods = {"GET"},
+        uris = {"/routes"},
+        handler = _M.dump_all_routes_info,
+    },
+    --- /v1/
+    {
+        methods = {"GET"},
+        uris = {"/route/*"},
+        handler = _M.dump_route_info,
+    }
 }

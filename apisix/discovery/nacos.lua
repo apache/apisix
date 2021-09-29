@@ -38,6 +38,8 @@ local default_weight
 local applications
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
+local default_namespace_id = "public"
+local default_group_name = "DEFAULT_GROUP"
 
 local events
 local events_list
@@ -233,15 +235,11 @@ local function iter_and_add_service(services, values)
             up = conf
         end
 
-        local namespace_id
-        if up.discovery_args then
-            namespace_id = up.discovery_args.namespace_id
-        end
+        local namespace_id = (up.discovery_args and up.discovery_args.namespace_id)
+                             or default_namespace_id
 
-        local group_name
-        if up.discovery_args then
-            group_name = up.discovery_args.group_name
-        end
+        local group_name = (up.discovery_args and up.discovery_args.group_name)
+                           or default_group_name
 
         if up.discovery_type == 'nacos' then
             core.table.insert(services, {
@@ -293,25 +291,36 @@ local function fetch_full_registry(premature)
         applications = up_apps
         return
     end
-    local data, err
+
     for _, service_info in ipairs(infos) do
+        local data, err
+        local namespace_id = service_info.namespace_id
+        local group_name = service_info.group_name
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
-        data, err = get_url(base_uri, instance_list_path .. service_info.service_name
-                            .. token_param .. namespace_param .. group_name_param)
+        local query_path = instance_list_path .. service_info.service_name
+                           .. token_param .. namespace_param .. group_name_param
+        data, err = get_url(base_uri, query_path)
         if err then
-            log.error('get_url:', instance_list_path, ' err:', err)
-            if not applications then
-                applications = up_apps
-            end
-            return
+            log.error('get_url:', query_path, ' err:', err)
+            goto CONTINUE
+        end
+
+        if not up_apps[namespace_id] then
+            up_apps[namespace_id] = {}
+        end
+
+        if not up_apps[namespace_id][group_name] then
+            up_apps[namespace_id][group_name] = {}
         end
 
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[service_info.service_name]
+            local nodes = up_apps[namespace_id]
+                [group_name][service_info.service_name]
             if not nodes then
                 nodes = {}
-                up_apps[service_info.service_name] = nodes
+                up_apps[namespace_id]
+                    [group_name][service_info.service_name] = nodes
             end
             core.table.insert(nodes, {
                 host = host.ip,
@@ -319,6 +328,8 @@ local function fetch_full_registry(premature)
                 weight = host.weight or default_weight,
             })
         end
+
+        ::CONTINUE::
     end
     local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
     local old_apps_md5sum = ngx.md5(core.json.encode(applications))
@@ -335,7 +346,12 @@ local function fetch_full_registry(premature)
 end
 
 
-function _M.nodes(service_name)
+function _M.nodes(service_name, discovery_args)
+    local namespace_id = discovery_args and
+            discovery_args.namespace_id or default_namespace_id
+    local group_name = discovery_args
+            and discovery_args.group_name or default_group_name
+
     local logged = false
     -- maximum waiting time: 5 seconds
     local waiting_time = 5
@@ -348,7 +364,11 @@ function _M.nodes(service_name)
         ngx.sleep(step)
         waiting_time = waiting_time - step
     end
-    return applications[service_name]
+
+    if not applications[namespace_id] or not applications[namespace_id][group_name] then
+        return nil
+    end
+    return applications[namespace_id][group_name][service_name]
 end
 
 

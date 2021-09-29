@@ -36,7 +36,7 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisix-2.8-0.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/apisix-2.10.0-0.el7.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -49,16 +49,16 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisi
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.8` 的目录。
+1. 创建一个名为 `apisix-2.10.0` 的目录。
 
   ```shell
-  mkdir apisix-2.8
+  mkdir apisix-2.10.0
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.8/apache-apisix-2.8-src.tgz
+  wget https://downloads.apache.org/apisix/2.10.0/apache-apisix-2.10.0-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -66,14 +66,14 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.8/apisi
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.8-src.tgz -C apisix-2.8
+  tar zxvf apache-apisix-2.10.0-src.tgz -C apisix-2.10.0
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.8 目录
-  cd apisix-2.8
+  # 切换到 apisix-2.10.0 目录
+  cd apisix-2.10.0
   # 创建依赖
   make deps
   ```
@@ -235,7 +235,9 @@ Content-Type: text/html
 
 ## 步骤6：为 Apache APISIX 构建 OpenResty
 
-有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。如果您需要这些功能，你可以用[这个脚本](https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh)构建 OpenResty。
+有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
+如果您需要这些功能，您可以构建 APISIX OpenResty。
+您可以根据[api7/apisix-build-tools](https://github.com/api7/apisix-build-tools)里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
 ## 步骤7：为 Apache APISIX 添加 systemd 配置文件
 

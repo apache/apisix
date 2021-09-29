@@ -395,7 +395,54 @@ Content-Encoding: gzip
 
 
 
-=== TEST 15: vary
+=== TEST 15: match all types
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "gzip": {
+                            "types": "*"
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 16: hit
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip
+Content-Type: video/3gpp
+--- response_headers
+Content-Encoding: gzip
+
+
+
+=== TEST 17: vary
 --- config
     location /t {
         content_by_lua_block {
@@ -429,7 +476,7 @@ passed
 
 
 
-=== TEST 16: hit
+=== TEST 18: hit
 --- request
 POST /echo
 0123456789
@@ -441,3 +488,59 @@ Content-Type: text/html
 --- response_headers
 Content-Encoding: gzip
 Vary: upstream, Accept-Encoding
+
+
+
+=== TEST 19: schema check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, case in ipairs({
+                {input = {
+                    types = {}
+                }},
+                {input = {
+                    min_length = 0
+                }},
+                {input = {
+                    comp_level = 10
+                }},
+                {input = {
+                    http_version = 2
+                }},
+                {input = {
+                    buffers = {
+                        number = 0,
+                    }
+                }},
+                {input = {
+                    buffers = {
+                        size = 0,
+                    }
+                }},
+                {input = {
+                    vary = 0
+                }}
+            }) do
+                local code, body = t('/apisix/admin/global_rules/1',
+                    ngx.HTTP_PUT,
+                    {
+                        id = "1",
+                        plugins = {
+                            ["gzip"] = case.input
+                        }
+                    }
+                )
+                ngx.print(body)
+            end
+    }
+}
+--- response_body
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"types\" validation failed: object matches none of the requireds"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"min_length\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"comp_level\" validation failed: expected 10 to be smaller than 9"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"http_version\" validation failed: matches none of the enum values"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}

@@ -25,8 +25,6 @@ jobs:
           - linux_openresty
           - linux_openresty_1_17
           - linux_tengine
-          - linux_apisix_master_luarocks
-          - linux_apisix_current_luarocks
           - linux_openresty_mtls
 
     runs-on: ${{ matrix.platform }}
@@ -37,19 +35,10 @@ jobs:
 
     services:
       etcd:
-        image: bitnami/etcd:3.4.0
+        image: bitnami/etcd:3.4.2
         ports:
           - 2379:2379
           - 2380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
-      old_etcd:
-        image: bitnami/etcd:3.3.8
-        ports:
-          - 3379:2379
-          - 3380:2380
         env:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
@@ -77,13 +66,13 @@ jobs:
           echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
 
       - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
           export VERSION=${{ steps.branch_env.outputs.version }}
           make compress-tar
 
       - name: Remove source code
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
@@ -131,8 +120,6 @@ jobs:
             -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
             -e ETCD_CERT_FILE=/certs/etcd.pem \
             -e ETCD_KEY_FILE=/certs/etcd.key \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 
@@ -147,8 +134,6 @@ jobs:
             -e ETCD_KEY_FILE=/certs/mtls_server.key \
             -e ETCD_CLIENT_CERT_AUTH=true \
             -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
             -v ${{ github.workspace }}/t/certs:/certs \
             bitnami/etcd:3.4.0
 

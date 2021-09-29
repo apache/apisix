@@ -55,6 +55,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.intsig.com/" rel="nofollow">intsig 上海合合信息科技股份有限公司</a>
 1. <a href="https://www.jiandanxinli.com/" rel="nofollow">jiandanxinli 简单心理</a>
 1. <a href="https://jr.ly.com/" rel="nofollow">jr.ly 同程金服</a>
+1. <a href="https://www.kaishustory.com/" rel="nofollow">凯叔讲故事</a>
 1. <a href="https://www.ke.com/" rel="nofollow">ke.com 贝壳找房</a>
 1. <a href="https://www.meizu.com/" rel="nofollow">Meizu 魅族</a>
 1. <a href="https://www.mingyuanyun.com/" rel="nofollow">明源云客</a>

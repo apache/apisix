@@ -34,9 +34,7 @@ title: kafka-logger
 
 `kafka-logger` is a plugin which works as a Kafka client driver for the ngx_lua nginx module.
 
-This will provide the ability to send Log data requests as JSON objects to external Kafka clusters.
-
-This plugin provides the ability to push Log data as a batch to you're external Kafka topics. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability to push requests log data as JSON objects to your external Kafka clusters. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
@@ -48,6 +46,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | broker_list      | object  | required    |                |         | An array of Kafka brokers.                                                               |
 | kafka_topic      | string  | required    |                |         | Target  topic to push data.                                                              |
 | producer_type    | string  | optional    | async          | ["async", "sync"]        | Producer's mode of sending messages.          |
+| required_acks          | integer | optional    | 1              | [0, 1, -1] | The number of acknowledgments the producer requires the leader to have received before considering a request complete. This controls the durability of records that are sent. Semantics is the same as kafka producer acks(If set `acks=0`  then the producer will not wait for any acknowledgment from the server at all. The record will be immediately added to the socket buffer and considered sent. `acks=1` This will mean the leader will write the record to its local log but will respond without awaiting full acknowledgement from all followers. `acks=-1` This means the leader will wait for the full set of in-sync replicas to acknowledge the record.).      |
 | key              | string  | optional    |                |         | Used for partition allocation of messages.                                               |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor.                                     |
@@ -58,6 +57,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | max_retry_count  | integer | optional    | 0              | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
 | retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
 | include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+| cluster_name     | integer | optional    | 1              | [0,...] | the name of the cluster. When there are two or more kafka clusters, you can specify different names. And this only works with async producer_type.|
 
 ### examples of meta_format
 
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-*success:
+success:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
@@ -220,7 +220,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

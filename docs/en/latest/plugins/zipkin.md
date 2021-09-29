@@ -93,13 +93,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
 
 ![](../../../assets/images/plugin/zipkin-1.png)
-
-Then add zipkin plugin:
-
-![](../../../assets/images/plugin/zipkin-2.png)
 
 ## Test Plugin
 
@@ -136,7 +132,7 @@ When you want to disable the zipkin plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

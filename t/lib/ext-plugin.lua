@@ -29,10 +29,21 @@ local http_req_call_resp = require("A6.HTTPReqCall.Resp")
 local http_req_call_action = require("A6.HTTPReqCall.Action")
 local http_req_call_stop = require("A6.HTTPReqCall.Stop")
 local http_req_call_rewrite = require("A6.HTTPReqCall.Rewrite")
+local extra_info = require("A6.ExtraInfo.Info")
+local extra_info_req = require("A6.ExtraInfo.Req")
+local extra_info_var = require("A6.ExtraInfo.Var")
+local extra_info_resp = require("A6.ExtraInfo.Resp")
 
 
 local _M = {}
 local builder = flatbuffers.Builder(0)
+
+
+local function build_extra_info(info, ty)
+    extra_info_req.Start(builder)
+    extra_info_req.AddInfoType(builder, ty)
+    extra_info_req.AddInfo(builder, info)
+end
 
 
 local function build_action(action, ty)
@@ -160,6 +171,44 @@ function _M.go(case)
             assert(entry:Value() == "z")
         else
             assert(call_req:Method() == a6_method.GET)
+        end
+
+        if case.extra_info then
+            for _, action in ipairs(case.extra_info) do
+                if action.type == "closed" then
+                    ngx.exit(-1)
+                    return
+                end
+
+                if action.type == "var" then
+                    local name = builder:CreateString(action.name)
+                    extra_info_var.Start(builder)
+                    extra_info_var.AddName(builder, name)
+                    local var_req = extra_info_var.End(builder)
+                    build_extra_info(var_req, extra_info.Var)
+                    local req = extra_info_req.End(builder)
+                    builder:Finish(req)
+                    data = builder:Output()
+                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
+                    if not ok then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    ngx.log(ngx.WARN, "send extra info req successfully")
+
+                    local ty, data = ext.receive(sock)
+                    if not ty then
+                        ngx.log(ngx.ERR, data)
+                        return
+                    end
+
+                    assert(ty == constants.RPC_EXTRA_INFO, ty)
+                    local buf = flatbuffers.binaryArray.New(data)
+                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
+                    local res = resp:ResultAsString()
+                    assert(res == action.result, res)
+                end
+            end
         end
 
         if case.stop == true then

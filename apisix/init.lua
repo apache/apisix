@@ -30,6 +30,7 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
+local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -42,6 +43,7 @@ local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local pairs           = pairs
 local control_api_router
 
 local is_http = false
@@ -112,6 +114,8 @@ function _M.http_init_worker()
 
     require("apisix.timers").init_worker()
 
+    require("apisix.debug").init_worker()
+
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
@@ -122,7 +126,6 @@ function _M.http_init_worker()
         core.config.init_worker()
     end
 
-    require("apisix.debug").init_worker()
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
@@ -226,7 +229,9 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value)
+    -- Here we copy the whole route instead of part of it,
+    -- so that we can avoid going back from route.value to route during copying.
+    route.dns_value = core.table.deepcopy(route).value
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -351,6 +356,8 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
+    debug.dynamic_debug(api_ctx)
+
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
         if str_byte(uri, #uri) == str_byte("/") then
@@ -434,7 +441,7 @@ function _M.http_access_phase()
         script.run("access", api_ctx)
 
     else
-        local plugins = plugin.filter(route)
+        local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
 
         plugin.run_plugin("rewrite", plugins, api_ctx)
@@ -452,7 +459,7 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -606,6 +613,20 @@ function _M.http_header_filter_phase()
     end
 
     common_phase("header_filter")
+
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    local debug_headers = api_ctx.debug_headers
+    if debug_headers then
+        local deduplicate = core.table.new(#debug_headers, 0)
+        for k, v in pairs(debug_headers) do
+            core.table.insert(deduplicate, k)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
+    end
 end
 
 
@@ -694,7 +715,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
+    if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 

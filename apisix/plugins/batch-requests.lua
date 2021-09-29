@@ -120,6 +120,7 @@ local _M = {
     schema = schema,
     metadata_schema = metadata_schema,
     attr_schema = attr_schema,
+    scope = "global",
 }
 
 
