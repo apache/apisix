@@ -19,6 +19,8 @@
 
 . ./t/cli/common.sh
 
+exit_if_not_customed_nginx
+
 # enable dubbo
 echo '
 plugins:
