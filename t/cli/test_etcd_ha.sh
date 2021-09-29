@@ -65,4 +65,4 @@ else
 fi
 
 # stop etcd docker container
-docker-compose down
+docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml down
