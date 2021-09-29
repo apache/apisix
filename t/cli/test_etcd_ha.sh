@@ -17,8 +17,6 @@
 # limitations under the License.
 #
 
-. ./t/cli/common.sh
-
 ETCD_NAME_0=etcd0
 ETCD_NAME_1=etcd1
 ETCD_NAME_2=etcd2
