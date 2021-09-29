@@ -32,6 +32,7 @@ local tonumber = tonumber
 local str_format = string.format
 local str_sub = string.sub
 local table_concat = table.concat
+local table_insert = table.insert
 
 local _M = {}
 
@@ -187,6 +188,7 @@ function _M.init(env, args)
     end
 
     -- check the etcd cluster version
+    local etcd_healthy_hosts = {}
     for index, host in ipairs(yaml_conf.etcd.host) do
         local version_url = host .. "/version"
         local errmsg
@@ -207,8 +209,8 @@ function _M.init(env, args)
         end
 
         if not res then
-            errmsg = str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err)
-            util.die(errmsg)
+            print(str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err))
+            goto continue
         end
 
         local body, _, err = dkjson.decode(res)
@@ -225,10 +227,18 @@ function _M.init(env, args)
                      env.min_etcd_version,
                      ", please upgrade your etcd cluster\n")
         end
+
+        table_insert(etcd_healthy_hosts, host)
+
+        :: continue ::
+    end
+
+    if host_count >= 2 and #etcd_healthy_hosts < 2 then
+        util.die("etcd cluster must have two or more healthy nodes\n")
     end
 
     local etcd_ok = false
-    for index, host in ipairs(yaml_conf.etcd.host) do
+    for index, host in ipairs(etcd_healthy_hosts) do
         local is_success = true
 
         local errmsg
@@ -358,7 +368,7 @@ function _M.init(env, args)
     end
 
     if not etcd_ok then
-        util.die("none of the configured etcd works well")
+        util.die("none of the configured etcd works well\n")
     end
 end
 
