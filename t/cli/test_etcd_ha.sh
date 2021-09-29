@@ -33,6 +33,7 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
 # case 1: stop one etcd nodes (result: start successful)
 docker stop ${ETCD_NAME_0}
+sleep 3
 
 out=$(make init 2>&1)
 if echo "$out" | grep "23790" | grep "connection refused"; then
@@ -44,6 +45,7 @@ fi
 
 # case 2: stop two etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_1}
+sleep 3
 
 out=$(make init 2>&1)
 if echo "$out" | grep "etcd cluster must have two or more healthy nodes"; then
@@ -55,6 +57,7 @@ fi
 
 # case 3: stop all etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_2}
+sleep 3
 
 out=$(make init 2>&1)
 if echo "$out" | grep "all etcd nodes are unavailable"; then
