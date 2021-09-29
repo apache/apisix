@@ -76,6 +76,8 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   cd apisix-2.10.0
   # Create dependencies
   make deps
+  # Install apisix command
+  make install
   ```
 
 ## Step 3: Manage Apache APISIX Server
