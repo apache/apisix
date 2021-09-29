@@ -233,6 +233,10 @@ function _M.init(env, args)
         :: continue ::
     end
 
+    if #etcd_healthy_hosts <= 0 then
+        util.die("all etcd nodes are unavailable\n")
+    end
+
     if host_count >= 2 and #etcd_healthy_hosts < 2 then
         util.die("etcd cluster must have two or more healthy nodes\n")
     end

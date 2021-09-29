@@ -36,41 +36,35 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 # case 1: stop one etcd nodes (result: start successful)
 docker stop ${ETCD_NAME_0}
 
-make init && make run
-
-if [ "$?" != 0 ]; then
-    echo "FAIL: stop only one etcd node APISIX should start normally"
+out=$(make init 2>&1)
+if echo "$out" | grep "23790" | grep "connection refused"; then
+    echo "passed: APISIX successfully to start, stop only one etcd node"
+else
+    echo "failed: stop only one etcd node APISIX should start normally"
     exit 1
 fi
-
-echo "OK: APISIX successfully to start, stop only one etcd node"
-
-make stop
 
 # case 2: stop two etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_1}
 
-make init && make run
-
-if [ "$?" == 0 ]; then
-    echo "FAIL: etcd has stopped two nodes, APISIX should fail to start"
+out=$(make init 2>&1)
+if echo "$out" | grep "etcd cluster must have two or more healthy nodes"; then
+    echo "passed: APISIX failed to start, etcd cluster must have two or more healthy nodes"
+else
+    echo "failed: etcd has stopped two nodes, APISIX should fail to start"
     exit 1
 fi
-
-echo "OK: APISIX failed to start, etcd cluster must have two or more healthy nodes"
-
 
 # case 3: stop all etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_2}
 
-make init && make run
-
-if [ "$?" == 0 ]; then
-    echo "FAIL: all etcd nodes have stopped, APISIX should not be able to start"
+out=$(make init 2>&1)
+if echo "$out" | grep "all etcd nodes are unavailable"; then
+    echo "passed: APISIX failed to start, all etcd nodes have stopped"
+else
+    echo "failed: all etcd nodes have stopped, APISIX should not be able to start"
     exit 1
 fi
-
-echo "OK: APISIX failed to start, all etcd nodes have stopped"
 
 # stop etcd docker container
 docker-compose down
