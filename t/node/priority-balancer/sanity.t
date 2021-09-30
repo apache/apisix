@@ -236,7 +236,7 @@ upstreams:
     nodes:
         - host: 127.0.0.1
           port: 1979
-          weight: 2
+          weight: 1000
           priority: 1
         - host: 127.0.0.2
           port: 1979
@@ -244,7 +244,7 @@ upstreams:
           priority: 1
         - host: 127.0.0.3
           port: 1979
-          weight: 2
+          weight: 1000
           priority: -1
         - host: 127.0.0.4
           port: 1979
