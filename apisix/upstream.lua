@@ -14,17 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require = require
-local core = require("apisix.core")
-local discovery = require("apisix.discovery.init").discovery
+local require       = require
+local core          = require("apisix.core")
+local discovery     = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
-local apisix_ssl = require("apisix.ssl")
-local balancer = require("ngx.balancer")
-local error = error
-local tostring = tostring
-local ipairs = ipairs
-local pairs = pairs
-local is_http = ngx.config.subsystem == "http"
+local apisix_ssl    = require("apisix.ssl")
+local balancer      = require("ngx.balancer")
+local error         = error
+local tostring      = tostring
+local ipairs        = ipairs
+local pairs         = pairs
+local is_http       = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
@@ -40,7 +40,6 @@ else
 end
 
 
-local HTTP_CODE_UPSTREAM_UNAVAILABLE = 503
 local _M = {}
 
 
@@ -241,14 +240,14 @@ function _M.set_by_route(route, api_ctx)
 
         local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
         if not new_nodes then
-            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
+            return 503, "no valid upstream node: " .. (err or "nil")
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
-                return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
+                return 503, "invalid nodes format: " .. err
             end
 
             up_conf.nodes = new_nodes
@@ -273,7 +272,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
+        return 503, "no valid upstream node"
     end
 
     if not is_http then
