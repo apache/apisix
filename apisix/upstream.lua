@@ -81,7 +81,7 @@ end
 _M.get_healthchecker_name = get_healthchecker_name
 
 
-local function create_checker(upstream)
+local function create_checker(upstream, hostheader)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
@@ -112,7 +112,7 @@ local function create_checker(upstream)
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     for _, node in ipairs(upstream.nodes) do
-        local ok, err = checker:add_target(node.host, port or node.port, host)
+        local ok, err = checker:add_target(node.host, port or node.port, host, true, hostheader)
         if not ok then
             core.log.error("failed to add new health check target: ", node.host, ":",
                     port or node.port, " err: ", err)
@@ -128,12 +128,12 @@ local function create_checker(upstream)
 end
 
 
-local function fetch_healthchecker(upstream)
+local function fetch_healthchecker(upstream, hostheader)
     if not upstream.checks then
         return nil
     end
 
-    return create_checker(upstream)
+    return create_checker(upstream, hostheader)
 end
 
 
@@ -293,7 +293,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf)
+        local checker = fetch_healthchecker(up_conf, api_ctx.var.upstream_host)
         api_ctx.up_checker = checker
     end
 
