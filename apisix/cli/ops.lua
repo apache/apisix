@@ -310,11 +310,12 @@ local function init(env)
               .. 'other than /root.')
     end
 
-    if env.ulimit <= 1024 then
+    local min_ulimit = 1024
+    if env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
-                .. "descriptors [%d] is too small, please increase user limits by "
+                .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
-                .. " is low.", env.ulimit))
+                .. " is low.", env.ulimit, min_ulimit))
     end
 
     -- read_yaml_conf
