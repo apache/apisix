@@ -61,8 +61,13 @@ script() {
     # install test dependencies
     sudo pip install requests
 
+    # dismiss "maximum number of open file descriptors too small" warning
+    ulimit -n 10240
+    ulimit -n -S
+    ulimit -n -H
+
     for f in ./t/cli/test_*.sh; do
-        sudo PATH="$PATH" "$f"
+        PATH="$PATH" "$f"
     done
 }
 
