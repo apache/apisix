@@ -208,29 +208,26 @@ function _M.init(env, args)
                              version_url, err, retry_time))
         end
 
-        if not res then
+        if res then
+            local body, _, err = dkjson.decode(res)
+            if err or (body and not body["etcdcluster"]) then
+                errmsg = str_format("got malformed version message: \"%s\" from etcd \"%s\"\n", res,
+                        version_url)
+                util.die(errmsg)
+            end
+
+            local cluster_version = body["etcdcluster"]
+            if compare_semantic_version(cluster_version, env.min_etcd_version) then
+                util.die("etcd cluster version ", cluster_version,
+                        " is less than the required version ",
+                        env.min_etcd_version,
+                        ", please upgrade your etcd cluster\n")
+            end
+
+            table_insert(etcd_healthy_hosts, host)
+        else
             print(str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err))
-            goto continue
         end
-
-        local body, _, err = dkjson.decode(res)
-        if err or (body and not body["etcdcluster"]) then
-            errmsg = str_format("got malformed version message: \"%s\" from etcd \"%s\"\n", res,
-                                version_url)
-            util.die(errmsg)
-        end
-
-        local cluster_version = body["etcdcluster"]
-        if compare_semantic_version(cluster_version, env.min_etcd_version) then
-            util.die("etcd cluster version ", cluster_version,
-                     " is less than the required version ",
-                     env.min_etcd_version,
-                     ", please upgrade your etcd cluster\n")
-        end
-
-        table_insert(etcd_healthy_hosts, host)
-
-        :: continue ::
     end
 
     if #etcd_healthy_hosts <= 0 then
