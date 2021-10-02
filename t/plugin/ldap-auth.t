@@ -20,7 +20,20 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
-run_tests;
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
+run_tests();
+
 
 __DATA__
 
@@ -38,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -60,14 +69,10 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/wrong type: expected string, got number
 done
 /
---- no_error_log
-[error]
 
 
 
@@ -105,13 +110,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
-
 
 
 === TEST 4: enable basic auth plugin using admin api
@@ -145,12 +145,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -160,8 +156,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing authorization in request"}
---- no_error_log
-[error]
 
 
 
@@ -173,8 +167,6 @@ Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
---- no_error_log
-[error]
 
 
 
@@ -185,8 +177,6 @@ GET /hello
 Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 find consumer user01
 
@@ -223,12 +213,8 @@ find consumer user01
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -239,73 +225,40 @@ GET /hello
 Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 find consumer user01
 
 
 
-=== TEST 10: invalid schema, not field given
+=== TEST 10: invalid schema
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "foo",
-                    "plugins": {
-                        "ldap-auth": {
-                        }
+            for _, case in ipairs({
+                {},
+                "blah"
+            }) do
+                local code, body = t('/apisix/admin/consumers',
+                    ngx.HTTP_PUT,
+                    {
+                        username = "foo",
+                        plugins = {
+                            ["ldap-auth"] = case
+                        } 
                     }
-                }]]
                 )
-
-            ngx.status = code
-            ngx.print(body)
+                ngx.print(body)
+            end
         }
     }
---- request
-GET /t
---- error_code: 400
---- response_body_like eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin ldap-auth err: property \\"(user_dn)\\" is required"\}/
---- no_error_log
-[error]
-
-
-
-=== TEST 11: invalid schema, not a table
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "foo",
-                    "plugins": {
-                        "ldap-auth": "blah"
-                    }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
 --- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin ldap-auth err: property \"user_dn\" is required"}
 {"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [ldap-auth]"}
---- no_error_log
-[error]
 
 
 
-=== TEST 12: get the default schema
+=== TEST 11: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -320,14 +273,10 @@ GET /t
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
-=== TEST 13: get the schema by schema_type
+=== TEST 12: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -342,14 +291,10 @@ GET /t
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
-=== TEST 14: get the schema by error schema_type
+=== TEST 13: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -363,7 +308,3 @@ GET /t
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
