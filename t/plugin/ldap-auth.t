@@ -114,6 +114,7 @@ done
 passed
 
 
+
 === TEST 4: enable basic auth plugin using admin api
 --- config
     location /t {
@@ -245,7 +246,7 @@ find consumer user01
                         username = "foo",
                         plugins = {
                             ["ldap-auth"] = case
-                        } 
+                        }
                     }
                 )
                 ngx.print(body)
