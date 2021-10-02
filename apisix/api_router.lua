@@ -46,7 +46,7 @@ _M.interceptors_schema = {
         properties = {
             name = {
                 type = "string",
-                enum = {"ip-restriction"},
+                enum = {},
             },
             conf = {
                 type = "object",

@@ -93,13 +93,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 zipkin 插件：
 
 ![](../../../assets/images/plugin/zipkin-1.png)
-
-然后在 route 页面中添加 zipkin 插件：
-
-![](../../../assets/images/plugin/zipkin-2.png)
 
 ## 测试插件
 

@@ -110,6 +110,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,
+    scope = "global",
 }
 
 

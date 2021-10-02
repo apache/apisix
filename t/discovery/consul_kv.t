@@ -514,3 +514,51 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
+
+
+
+=== TEST 12: retry when Consul can't be reached (long connect type)
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:8501"
+    keepalive: true
+    fetch_interval: 3
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+#END
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: http://127.0.0.1:8501/v1/kv/upstreams/webpages/
+      discovery_type: consul_kv
+      type: roundrobin
+#END
+--- timeout: 4
+--- config
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- request
+GET /sleep?sec=3
+--- response_body
+ok
+--- grep_error_log eval
+qr/retry connecting consul after \d seconds/
+--- grep_error_log_out
+retry connecting consul after 1 seconds
+retry connecting consul after 4 seconds

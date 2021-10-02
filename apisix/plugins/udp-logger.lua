@@ -64,7 +64,7 @@ local function send_udp_data(conf, log_message)
     local ok, err = sock:setpeername(conf.host, conf.port)
 
     if not ok then
-        return nil, "failed to connect to UDP server: host[" .. conf.host
+        return false, "failed to connect to UDP server: host[" .. conf.host
                     .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 

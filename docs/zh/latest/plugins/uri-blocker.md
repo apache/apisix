@@ -40,6 +40,7 @@ title: uri-blocker
 | block_rules   | array[string] | 必须   |        |            | 正则过滤数组。它们都是正则规则，如果当前请求 URI 命中任何一个，请将响应代码设置为 rejected_code 以退出当前用户请求。例如: `["root.exe", "root.m+"]`。 |
 | rejected_code | integer       | 可选   | 403    | [200, ...] | 当请求 URI 命中`block_rules`中的任何一个时，将返回的 HTTP 状态代码。 |
 | rejected_msg | string       | 可选    |      | 非空 | 当请求 URI 命中`block_rules`中的任何一个时，将返回的 HTTP 响应体。 |
+| case_insensitive | boolean       | 可选    | false     |  | 是否忽略大小写。当值为 true 时，在匹配请求 URI 时将忽略大小写。默认值是 false 。 |
 
 ## 启用方式
 

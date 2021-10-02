@@ -29,7 +29,6 @@ apisix:
     node_listen: 1984
     config_center: yaml
     enable_admin: false
-    enable_debug: true
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);

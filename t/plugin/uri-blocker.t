@@ -436,3 +436,52 @@ GET /hello?aa=1
 {"error_msg":"access is not allowed"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 19: one block rule, with case insensitive
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "plugins": {
+                    "uri-blocker": {
+                        "block_rules": ["AA"],
+                        "rejected_msg": "access is not allowed",
+                        "case_insensitive": true
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.print(body)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: hit block rule
+--- request
+GET /hello?aa=1
+--- error_code: 403
+--- response_body
+{"error_msg":"access is not allowed"}
+--- no_error_log
+[error]

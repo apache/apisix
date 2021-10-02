@@ -299,3 +299,292 @@ GET /file:xx
 --- error_code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: inherit hosts from services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "hosts": ["bar.com"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello1"}
+                        },
+                        "service_id": "1",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "priority": -1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: hit
+--- more_headers
+Host: www.foo.com
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: change hosts in services
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "hosts": ["foo.com"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {headers = {Host = "foo.com"}})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "hosts": ["bar.com"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {headers = {Host = "foo.com"}})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello1 world
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: unbind services
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello1"}
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {headers = {Host = "foo.com"}})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello1 world
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: host from route is preferred
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "hosts": ["foo.com"],
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello1"}
+                        },
+                        "service_id": "1",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            for _, h in ipairs({"foo.com", "bar.com"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {Host = h}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.print(res.body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "host": "foo.com",
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello1"}
+                        },
+                        "service_id": "1",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            for _, h in ipairs({"foo.com", "bar.com"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {Host = h}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.print(res.body)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello1 world
+hello world
+hello1 world
+hello world
+--- no_error_log
+[error]

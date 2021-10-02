@@ -40,6 +40,10 @@ local schema = {
             type = "string",
             minLength = 1
         },
+        case_insensitive = {
+            type = "boolean",
+            default = false
+        },
     },
     required = {"block_rules"},
 }
@@ -85,6 +89,9 @@ function _M.rewrite(conf, ctx)
         end
 
         conf.block_rules_concat = core.table.concat(block_rules, "|")
+        if conf.case_insensitive then
+            conf.block_rules_concat = "(?i)" .. conf.block_rules_concat
+        end
         core.log.info("concat block_rules: ", conf.block_rules_concat)
     end
 

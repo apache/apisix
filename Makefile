@@ -261,11 +261,7 @@ test:
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
 license-check:
-ifeq ("$(wildcard ci/openwhisk-utilities/scancode/scanCode.py)", "")
-	git clone https://github.com/apache/openwhisk-utilities.git ci/openwhisk-utilities
-	cp ci/ASF* ci/openwhisk-utilities/scancode/
-endif
-	ci/openwhisk-utilities/scancode/scanCode.py --config ci/ASF-Release.cfg ./
+	docker run -it --rm -v $(shell pwd):/github/workspace apache/skywalking-eyes header check
 
 .PHONY: release-src
 release-src: compress-tar

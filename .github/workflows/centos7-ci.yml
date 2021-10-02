@@ -47,9 +47,14 @@ jobs:
       run: |
         export VERSION=${{ steps.branch_env.outputs.version }}
         sudo gem install --no-document fpm
-        git clone https://github.com/api7/apisix-build-tools.git
+        git clone -b v2.2.1 https://github.com/api7/apisix-build-tools.git
+
+        # move codes under build tool
+        mkdir ./apisix-build-tools/apisix
+        for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
+
         cd apisix-build-tools
-        make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7
+        make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
         cd ..
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
@@ -79,8 +84,6 @@ jobs:
         -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
         -e ETCD_CERT_FILE=/certs/etcd.pem \
         -e ETCD_KEY_FILE=/certs/etcd.key \
-        -e GITHUB_ACTIONS=true \
-        -e CI=true \
         -v /home/runner/work/apisix/apisix/t/certs:/certs \
         bitnami/etcd:3.4.0
 

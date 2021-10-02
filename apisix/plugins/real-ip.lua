@@ -18,12 +18,18 @@ local core = require("apisix.core")
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
+local ipairs = ipairs
 local type = type
 
 
 local schema = {
     type = "object",
     properties = {
+        trusted_addresses = {
+            type = "array",
+            items = {anyOf = core.schema.ip_def},
+            minItems = 1
+        },
         source = {
             type = "string",
             minLength = 1
@@ -45,7 +51,19 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    if conf.trusted_addresses then
+        for _, cidr in ipairs(conf.trusted_addresses) do
+            if not core.ip.validate_cidr_or_ip(cidr) then
+                return false, "invalid ip address: " .. cidr
+            end
+        end
+    end
+    return true
 end
 
 
@@ -84,6 +102,18 @@ function _M.rewrite(conf, ctx)
     if not is_apisix_or then
         core.log.error("need to build APISIX-OpenResty to support setting real ip")
         return 501
+    end
+
+    if conf.trusted_addresses then
+        if not conf.matcher then
+            conf.matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
+        end
+
+        local remote_addr = ctx.var.remote_addr
+        local trusted = conf.matcher:match(remote_addr)
+        if not trusted then
+            return
+        end
     end
 
     local addr = get_addr(conf, ctx)
