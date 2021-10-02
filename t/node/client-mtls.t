@@ -303,4 +303,4 @@ GET /mtls3
 Host: localhost
 --- error_code: 400
 --- error_log
-clent certificate verification is not passed: FAILED:self signed certificate
+client certificate verification is not passed: FAILED:self signed certificate
