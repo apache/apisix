@@ -179,19 +179,17 @@ function _M.hold_body_chunk(ctx)
     end
 
     if type(chunk) == "string" and chunk ~= "" then
-        if not eof then
-            body_buffer = ctx._body_buffer
-            if not body_buffer then
-                body_buffer = {
-                    chunk,
-                    n = 1
-                }
-                ctx._body_buffer = body_buffer
-            else
-                local n = body_buffer.n + 1
-                body_buffer.n = n
-                body_buffer[n] = chunk
-            end
+        body_buffer = ctx._body_buffer
+        if not body_buffer then
+            body_buffer = {
+                chunk,
+                n = 1
+            }
+            ctx._body_buffer = body_buffer
+        else
+            local n = body_buffer.n + 1
+            body_buffer.n = n
+            body_buffer[n] = chunk
         end
     end
 
