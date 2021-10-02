@@ -163,7 +163,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local err = response(proto_obj, conf.service, conf.method, conf.pb_option)
+    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option)
     if err then
         core.log.error("transform response error: ", err)
         return
