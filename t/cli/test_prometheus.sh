@@ -60,7 +60,7 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
-make stop
+IP=127.0.0.1 PORT=9092 make stop
 
 echo "passed: should listen at configured prometheus address"
 
@@ -88,7 +88,7 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
-make stop
+IP=127.0.0.1 PORT=9092 make stop
 
 echo "passed: should listen at previous prometheus address"
 

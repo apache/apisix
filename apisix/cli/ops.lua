@@ -893,6 +893,8 @@ end
 
 local function quit(env)
     cleanup()
+    -- reinit nginx.conf
+    init(env)
 
     local cmd = env.openresty_args .. [[ -s quit]]
     util.execute_cmd(cmd)
@@ -901,6 +903,8 @@ end
 
 local function stop(env)
     cleanup()
+    -- reinit nginx.conf
+    init(env)
 
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)
@@ -932,6 +936,23 @@ local function reload(env)
 end
 
 
+local function test(env)
+    -- reinit nginx.conf
+    init(env)
+
+    local test_cmd = env.openresty_args .. [[ -t -q ]]
+    -- When success,
+    -- On linux, os.execute returns 0,
+    -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
+    local test_ret = execute((test_cmd))
+    if (test_ret == 0 or test_ret == true) then
+        print("configuration test is successful")
+        return
+    end
+
+    print("configuration test failed")
+end
+
 
 local action = {
     help = help,
@@ -943,6 +964,7 @@ local action = {
     quit = quit,
     restart = restart,
     reload = reload,
+    test = test,
 }
 
 
