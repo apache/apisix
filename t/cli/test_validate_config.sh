@@ -101,8 +101,6 @@ fi
 
 echo "pass: apisix test"
 
-git checkout conf/config.yaml
-
 ./bin/apisix start
 sleep 1 # wait for apisix starts
 
