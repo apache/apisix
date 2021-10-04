@@ -64,10 +64,6 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console.
-
-then add ldap-auth plugin in the Consumer page
-
 ### 2. add a Route or add a Service, and enable the `ldap-auth` plugin
 
 ```shell
