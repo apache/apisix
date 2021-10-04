@@ -896,7 +896,7 @@ local function test(env, backup_ngx_conf)
     local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
     local ngx_conf_exist = io_open(ngx_conf_path)
     if ngx_conf_exist then
-        err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. " " .. ngx_conf_path .. ".bak")
+        local err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. " " .. ngx_conf_path .. ".bak")
         if #err > 0 then
             util.die("failed to backup nginx.conf, error: ", err)
         end
@@ -910,7 +910,7 @@ local function test(env, backup_ngx_conf)
 
     -- restore nginx.conf
     if ngx_conf_exist then
-        err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. ".bak " .. ngx_conf_path)
+        local err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. ".bak " .. ngx_conf_path)
         if #err > 0 then
             util.die("failed to restore original nginx.conf, error: ", err)
         end
