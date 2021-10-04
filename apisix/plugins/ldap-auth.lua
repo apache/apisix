@@ -19,7 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local ipairs = ipairs
 local consumer_mod = require("apisix.consumer")
-local lualdap = require "lualdap"
+local lualdap = require("lualdap")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -35,7 +35,6 @@ local schema = {
         uid = { type = "string" }
     },
     required = {"base_dn","ldap_uri"},
-    additionalProperties = false,
 }
 
 local consumer_schema = {
@@ -45,7 +44,6 @@ local consumer_schema = {
         user_dn = { type = "string" },
     },
     required = {"user_dn"},
-    additionalProperties = false,
 }
 
 local plugin_name = "ldap-auth"
@@ -70,11 +68,11 @@ function _M.check_schema(conf, schema_type)
     return ok, err
 end
 
-local create_consume_cache
+local create_consumer_cache
 do
     local consumer_names = {}
 
-    function create_consume_cache(consumers)
+    function create_consumer_cache(consumers)
         core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
@@ -118,7 +116,7 @@ local function extract_auth_header(authorization)
 end
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
     local auth_header = core.request.header(ctx, "Authorization")
@@ -149,7 +147,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+        create_consumer_cache, consumer_conf)
     local consumer = consumers[userdn]
     if not consumer then
         return 401, {message = "Invalid API key in request"}
