@@ -101,42 +101,20 @@ fi
 
 echo "pass: apisix test"
 
-echo '
-nginx_config:
-    main_configuration_snippet: |
-        notexist on;
-' > conf/config.yaml
-
-out=$(./bin/apisix test 2>&1 || true)
-if ! echo "$out" | grep "configuration test failed"; then
-    echo "failed: should test failed when configuration invalid"
-    exit 1
-fi
-
-echo "passed: apisix test(failure scenario)"
-
-# apisix stop and restart
 git checkout conf/config.yaml
 
 ./bin/apisix start
 sleep 1 # wait for apisix starts
 
+# set invalid configuration
 echo '
 nginx_config:
     main_configuration_snippet: |
         notexist on;
 ' > conf/config.yaml
 
-out=$(./bin/apisix stop 2>&1 || true)
-if ! echo "$out" | grep "\[emerg\] unknown directive \"notexist\""; then
-    echo "failed: should stop failed when configuration invalid"
-    exit 1
-fi
-
-echo "passed: apisix stop"
-
-
-out=$(./bin/apisix stop 2>&1 || true)
+# apisix restart
+out=$(./bin/apisix restart 2>&1 || true)
 if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "APISIX is running"); then
     echo "failed: should restart failed when configuration invalid"
     exit 1
@@ -144,5 +122,18 @@ fi
 
 echo "passed: apisix restart"
 
-git checkout conf/config.yaml
-./bin/apisix stop
+# apisix test - failure scenario
+out=$(./bin/apisix test 2>&1 || true)
+if ! echo "$out" | grep "configuration test failed"; then
+    echo "failed: should test failed when configuration invalid"
+    exit 1
+fi
+
+# apisix test failure should not affect apisix stop
+out=$(./bin/apisix stop 2>&1 || true)
+if echo "$out" | grep "\[emerg\] unknown directive \"notexist\""; then
+    echo "failed: `apisix test` failure should not affect `apisix stop`"
+    exit 1
+fi
+
+echo "passed: apisix test(failure scenario)"
