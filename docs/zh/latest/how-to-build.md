@@ -93,6 +93,15 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/ap
 apisix init
 ```
 
+### 测试配置文件
+
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+
+```shell
+# generate `nginx.conf` from `config.yaml` and test it
+apisix test
+```
+
 ### 启动 Apache APISIX
 
 运行以下命令启动 Apache APISIX。
