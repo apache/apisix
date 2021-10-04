@@ -105,7 +105,7 @@ local function extract_auth_header(authorization)
     if err then
         return nil, "split authorization err:" .. err
     end
-    if err or #res < 2 then
+    if #res < 2 then
         return nil, "split authorization length is invalid"
     end
 
