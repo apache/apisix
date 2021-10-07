@@ -34,6 +34,7 @@ local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
+local os_rename = os.rename
 local table_insert = table.insert
 local getenv = os.getenv
 local max = math.max
@@ -894,11 +895,10 @@ end
 local function test(env, backup_ngx_conf)
     -- backup nginx.conf
     local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
-    local ngx_conf_exist = io_open(ngx_conf_path)
+    local ngx_conf_exist = util.is_file_exist(ngx_conf_path)
     if ngx_conf_exist then
-        local err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. " "
-            .. ngx_conf_path .. ".bak")
-        if #err > 0 then
+        local ok, err = os_rename(ngx_conf_path, ngx_conf_path .. ".bak")
+        if not ok then
             util.die("failed to backup nginx.conf, error: ", err)
         end
     end
@@ -911,8 +911,8 @@ local function test(env, backup_ngx_conf)
 
     -- restore nginx.conf
     if ngx_conf_exist then
-        local err = util.execute_cmd_with_error("mv " .. ngx_conf_path .. ".bak " .. ngx_conf_path)
-        if #err > 0 then
+        local ok, err = os_rename(ngx_conf_path .. ".bak", ngx_conf_path)
+        if not ok then
             util.die("failed to restore original nginx.conf, error: ", err)
         end
     end
