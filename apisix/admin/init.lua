@@ -124,7 +124,7 @@ local function run()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg="failed to check token"})
+        core.response.exit(401, {error_msg = "failed to check token"})
     end
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
@@ -141,12 +141,12 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg="not found"})
+        core.response.exit(404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
     if not resource[method] then
-        core.response.exit(404, {error_msg="not found"})
+        core.response.exit(404, {error_msg = "not found"})
     end
 
     local req_body, err = core.request.get_body(MAX_REQ_BODY)
@@ -190,15 +190,15 @@ local function run_stream()
 
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
-        core.log.warn("stream mode is disabled, can not to add any stream ",
-                      "route")
-        core.response.exit(400, {error_msg="stream mode is disabled, can not " ..
-                                           "to add stream"})
+        core.log.warn("stream mode is disabled, can not add any stream ",
+                      "routes")
+        core.response.exit(400, {error_msg = "stream mode is disabled, " ..
+                                             "can not add stream routes"})
     end
 
     local ok, err = check_token(api_ctx)
     if not ok then
-        core.response.exit(401, {error_msg="failed to check token"})
+        core.log.warn("failed to check token: ", err)
     end
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
@@ -215,12 +215,12 @@ local function run_stream()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg="not found"})
+        core.response.exit(404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
     if not resource[method] then
-        core.response.exit(404, {error_msg="not found"})
+        core.response.exit(404, {error_msg = "not found"})
     end
 
     req_read_body()
@@ -262,7 +262,7 @@ local function get_plugins_list()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg="failed to check token"})
+        core.response.exit(401, {error_msg = "failed to check token"})
     end
 
     local plugins = resources.plugins.get_plugins_list()
@@ -278,13 +278,12 @@ local function post_reload_plugins()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg="failed to check token"})
+        core.response.exit(401, {error_msg = "failed to check token"})
     end
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
         core.response.exit(503, err)
-
     end
 
     core.response.exit(200, "done")
