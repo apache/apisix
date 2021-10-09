@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,21 +16,6 @@
 # limitations under the License.
 #
 
-# 'make init' operates scripts and related configuration files in the current directory
-# The 'apisix' command is a command in the /usr/local/apisix,
-# and the configuration file for the operation is in the /usr/local/apisix/conf
 
-set -ex
-
-clean_up() {
-    make stop || true
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-exit_if_not_customed_nginx() {
-    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
-}
-
-unset APISIX_PROFILE
+export OPENRESTY_VERSION=source
+. ./ci/linux_apisix_current_luarocks_runner.sh

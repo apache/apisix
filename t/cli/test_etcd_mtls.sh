@@ -19,6 +19,8 @@
 
 . ./t/cli/common.sh
 
+exit_if_not_customed_nginx
+
 # The 'admin.apisix.dev' is injected by utils/set-dns.sh
 
 # etcd mTLS verify
