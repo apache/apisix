@@ -626,10 +626,10 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         nodes = {
-                          ["foo.com:80"] = 0
+                          ["apiseven.com:80"] = 0
                         }
                       },
-                      weight = 2
+                      weight = 100000
                     }, {
                       weight = 1
                     } }
@@ -667,7 +667,7 @@ passed
 GET /server_port
 --- error_code: 502
 --- error_log eval
-qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: apiseven.com to \d+.\d+.\d+.\d+/
 
 
 
