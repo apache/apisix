@@ -96,8 +96,8 @@ local function extract_auth_header(authorization)
 
     local decoded, err = ngx.decode_base64(m[1])
 
-    if err then
-        return nil, "failed to decode authentication header"
+    if not decoded or err then
+        return nil, "failed to decode authentication header: " .. m[1]
     end
 
     local res
@@ -106,7 +106,7 @@ local function extract_auth_header(authorization)
         return nil, "split authorization err:" .. err
     end
     if #res < 2 then
-        return nil, "split authorization length is invalid"
+        return nil, "split authorization err: invalid decoded data: " .. decoded
     end
 
     obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
