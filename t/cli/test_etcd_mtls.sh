@@ -86,3 +86,42 @@ if echo "$out" | grep "ouch"; then
 fi
 
 echo "passed: certificate verify with CA success expectedly"
+
+# etcd mTLS in stream subsystem
+echo '
+apisix:
+  stream_proxy:
+    tcp:
+        - addr: 9100
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://admin.apisix.dev:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+  ' > conf/config.yaml
+
+out=$(make init 2>&1 || echo "ouch")
+if echo "$out" | grep "certificate verify failed"; then
+    echo "failed: apisix should not echo \"certificate verify failed\""
+    exit 1
+fi
+
+if echo "$out" | grep "ouch"; then
+    echo "failed: apisix should not fail"
+    exit 1
+fi
+
+rm logs/error.log
+make run
+sleep 1
+make stop
+
+if grep "\[error\]" logs/error.log; then
+    echo "failed: veirfy etcd certificate during sync should not fail"
+fi
+
+echo "passed: certificate verify in stream subsystem successfully"
