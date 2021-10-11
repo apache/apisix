@@ -94,9 +94,9 @@ local function extract_auth_header(authorization)
         return nil, err
     end
 
-    local decoded, err = ngx.decode_base64(m[1])
+    local decoded = ngx.decode_base64(m[1])
 
-    if not decoded or err then
+    if not decoded then
         return nil, "failed to decode authentication header: " .. m[1]
     end
 
