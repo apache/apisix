@@ -42,6 +42,8 @@ luac.out
 # develop
 *.log
 *.pid
+*.orig
+*.rej
 t/servroot
 conf/apisix.uid
 conf/nginx.conf

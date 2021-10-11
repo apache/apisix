@@ -1,5 +1,5 @@
 {
-  "version": 2.9,
+  "version": "2.10.0",
   "sidebar": [
     {
       "type": "category",
@@ -38,6 +38,8 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
+            "plugins/real-ip",
             "plugins/server-info"
           ]
         },

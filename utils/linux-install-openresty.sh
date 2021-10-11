@@ -26,9 +26,9 @@ sudo apt-get update
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.2.1/build-apisix-openresty.sh
-    chmod +x build-apisix-openresty.sh
-    ./build-apisix-openresty.sh latest
+    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.4.0/build-apisix-base.sh
+    chmod +x build-apisix-base.sh
+    ./build-apisix-base.sh latest
 
     sudo apt-get install openresty-openssl111-debug-dev
     exit 0
