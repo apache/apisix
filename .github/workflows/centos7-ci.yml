@@ -78,14 +78,7 @@ jobs:
 
     - name: Running etcd server with TLS
       run: |
-        sudo docker run -d -p 12379:12379 -p 12380:12380 \
-        -e ALLOW_NONE_AUTHENTICATION=yes \
-        -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
-        -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
-        -e ETCD_CERT_FILE=/certs/etcd.pem \
-        -e ETCD_KEY_FILE=/certs/etcd.key \
-        -v /home/runner/work/apisix/apisix/t/certs:/certs \
-        bitnami/etcd:3.4.0
+        ./ci/start-etcd-tls.sh /home/runner/work/apisix/apisix
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
