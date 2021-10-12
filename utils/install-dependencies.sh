@@ -18,24 +18,24 @@
 #
 
 # Install dependencies on centos and fedora
-function install_dependencies_on_centos_and_fedora() {
+function install_dependencies_with_yum() {
     # add OpenResty source
     sudo yum install yum-utils
-    sudo yum-config-manager --add-repo https://openresty.org/package/${DISTRO}/openresty.repo
+    sudo yum-config-manager --add-repo https://openresty.org/package/"${1}"/openresty.repo
 
     # install OpenResty and some compilation tools
     sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
 }
 
 # Install dependencies on ubuntu and debian
-function install_dependencies_on_ubuntu_and_debian() {
+function install_dependencies_with_apt() {
     # add OpenResty source
     sudo apt-get update
-    sudo apt-get -y install software-properties-common wget
+    sudo apt-get -y install software-properties-common wget lsb-release
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    if [[ $DISTRO == "ubuntu" ]]; then
+    if [[ "${1}" == "ubuntu" ]]; then
         sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-    elif [[ $DISTRO == "debian" ]]; then
+    elif [[ "${1}" == "debian" ]]; then
         sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_release -sc) openresty"
     fi
     sudo apt-get update
@@ -56,17 +56,13 @@ function install_dependencies_on_mac_osx() {
 # Identify the different distributions and call the corresponding function
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
-        DISTRO="centos"
-        install_dependencies_on_centos_and_fedora
+        install_dependencies_with_yum "centos"
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
-        DISTRO="fedora"
-        install_dependencies_on_centos_and_fedora
+        install_dependencies_with_yum "fedora"
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
-        DISTRO="debian"
-        install_dependencies_on_ubuntu_and_debian
+        install_dependencies_with_apt "debian"
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
-        DISTRO="ubuntu"
-        install_dependencies_on_ubuntu_and_debian
+        install_dependencies_with_apt "ubuntu"
     else
         echo "Non-supported operating system version"
     fi
