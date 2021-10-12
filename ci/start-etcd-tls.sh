@@ -15,29 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-set -euo pipefail
-
-wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-sudo apt-get -y update --fix-missing
-sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
-
-sudo apt-get update
-
-if [ "$OPENRESTY_VERSION" == "source" ]; then
-    cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.4.0/build-apisix-base.sh
-    chmod +x build-apisix-base.sh
-    ./build-apisix-base.sh latest
-
-    sudo apt-get install openresty-openssl111-debug-dev
-    exit 0
-fi
-
-if [ "$OPENRESTY_VERSION" == "default" ]; then
-    openresty='openresty-debug'
+if [ $# -gt 0 ]; then
+    APISIX_DIR="$1"
 else
-    openresty="openresty-debug=$OPENRESTY_VERSION*"
+    APISIX_DIR="$PWD"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev
+docker run -d --rm --name etcd_tls \
+    -p 12379:12379 -p 12380:12380 \
+    -e ALLOW_NONE_AUTHENTICATION=yes \
+    -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
+    -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
+    -e ETCD_CERT_FILE=/certs/etcd.pem \
+    -e ETCD_KEY_FILE=/certs/etcd.key \
+    -v "$APISIX_DIR"/t/certs:/certs \
+    bitnami/etcd:3.4.0
