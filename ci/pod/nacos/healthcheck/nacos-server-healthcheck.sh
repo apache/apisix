@@ -17,7 +17,7 @@
 #
 
 
-#set -ex
+set -ex
 
 # nacos server healthcheck
 REQ_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${CHECK_URI}")

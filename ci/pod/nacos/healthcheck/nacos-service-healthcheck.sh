@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-#set -ex
+set -ex
 
 # nacos service healthcheck
 URI_LIST=(
