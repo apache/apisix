@@ -208,3 +208,24 @@ if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; th
 fi
 
 echo "passed: Admin API can only be used with etcd config_center"
+
+# disable Admin API and init plugins syncer
+echo '
+apisix:
+  enable_admin: false
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+make init
+
+if grep -E "failed to fetch data from etcd" logs/error.log; then
+    echo "failed: should sync /apisix/plugins from etcd when disabling admin normal"
+    exit 1
+fi
+
+make stop
+
+echo "pass: sync /apisix/plugins from etcd when disabling admin successfully"
