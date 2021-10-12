@@ -57,6 +57,11 @@ apisix:
 etcd:
   host:
     - "https://127.0.0.1:2379"
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -105,6 +110,11 @@ apisix:
 etcd:
   host:
     - "https://127.0.0.1:12379"
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -244,6 +254,11 @@ etcd:
   timeout: 1
   user: root                    # root username for etcd
   password: 5tHkHhYkjr6cQY      # root password for etcd
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
