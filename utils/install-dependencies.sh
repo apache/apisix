@@ -17,63 +17,31 @@
 # limitations under the License.
 #
 
-# Install dependencies on centos
-function install_dependencies_on_centos() {
+# Install dependencies on centos and fedora
+function install_dependencies_on_centos_and_fedora() {
     # add OpenResty source
     sudo yum install yum-utils
-    sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    sudo yum-config-manager --add-repo https://openresty.org/package/${DISTRO}/openresty.repo
 
     # install OpenResty and some compilation tools
     sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
-
-    # install LuaRocks
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
 }
 
-# Install dependencies on fedora
-function install_dependencies_on_fedora() {
-    # add OpenResty source
-    sudo yum install yum-utils
-    sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
-
-    # install OpenResty and some compilation tools
-    sudo yum install -y openresty curl git gcc openresty-openssl111-devel pcre pcre-devel
-
-    # install LuaRocks
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-}
-
-# Install dependencies on ubuntu
-function install_dependencies_on_ubuntu() {
+# Install dependencies on ubuntu and debian
+function install_dependencies_on_ubuntu_and_debian() {
     # add OpenResty source
     sudo apt-get update
     sudo apt-get -y install software-properties-common wget
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    if [[ $DISTRO == "ubuntu" ]]; then
+        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    elif [[ $DISTRO == "debian" ]]; then
+        sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_release -sc) openresty"
+    fi
     sudo apt-get update
 
     # install OpenResty and some compilation tools
     sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
-
-    # install OpenResty and some compilation tools
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-}
-
-# Install dependencies on debian
-function install_dependencies_on_debian() {
-    # add OpenResty source
-    sudo apt-get update
-    sudo apt-get -y install wget
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_release -sc) openresty"
-    sudo apt-get update
-
-    # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl make openresty-openssl111-dev libpcre3 libpcre3-dev
-
-    # install LuaRocks
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
 }
 
 # Install dependencies on mac osx
@@ -88,13 +56,17 @@ function install_dependencies_on_mac_osx() {
 # Identify the different distributions and call the corresponding function
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
-        install_dependencies_on_centos
+        DISTRO="centos"
+        install_dependencies_on_centos_and_fedora
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
-        install_dependencies_on_fedora
+        DISTRO="fedora"
+        install_dependencies_on_centos_and_fedora
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
-        install_dependencies_on_debian
+        DISTRO="debian"
+        install_dependencies_on_ubuntu_and_debian
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
-        install_dependencies_on_ubuntu
+        DISTRO="ubuntu"
+        install_dependencies_on_ubuntu_and_debian
     else
         echo "Non-supported operating system version"
     fi
@@ -110,11 +82,17 @@ function install_etcd() {
     nohup etcd &
 }
 
+# Install LuaRocks
+function install_luarocks() {
+    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
+}
+
 # Entry
 function main() {
     OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
     if [[ ${OS_NAME} == "linux" ]]; then
         multi_distro_installation
+        install_luarocks
         install_etcd
     elif [[ ${OS_NAME} == "darwin" ]]; then
         install_dependencies_on_mac_osx
