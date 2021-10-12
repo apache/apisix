@@ -53,3 +53,9 @@ Supported OS versions: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 
 ```
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
 ```
+
+If you have cloned the APISIX project, execute in the APISIX root directory: 
+
+```
+bash utils/install-dependencies.sh
+```
