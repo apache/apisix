@@ -71,6 +71,7 @@ dependencies = {
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
+    "xml2lua = 1.5-2",
 }
 
 build = {
