@@ -92,7 +92,7 @@ echo '
 apisix:
   stream_proxy:
     tcp:
-        - addr: 9100
+      - addr: 9100
   ssl:
     ssl_trusted_certificate: t/certs/mtls_ca.crt
 etcd:
