@@ -44,115 +44,12 @@ title: Install Dependencies
 
 - OpenResty is a dependency of APISIX. If it is your first time to deploy APISIX and you don't need to use OpenResty to deploy other services, you can stop and disable OpenResty after installation since it will not affect the normal work of APISIX. Please operate carefully according to your service. For example in Ubuntu: `systemctl stop openresty && systemctl disable openresty`.
 
-## CentOS 7
+## Install
 
-```shell
-# install etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
-    cd etcd-v3.4.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
+Run the following command to install apisix's dependencies on a supported operating system.
 
-# add OpenResty source
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+Supported OS versions: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Mac OSX
 
-# install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
-
-# install LuaRocks
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-
-# start etcd server
-nohup etcd &
 ```
-
-## Fedora 31 & 32
-
-```shell
-# add OpenResty source
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
-
-# install etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
-    cd etcd-v3.4.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
-
-# install OpenResty and some compilation tools
-sudo yum install -y openresty curl git gcc openresty-openssl111-devel pcre pcre-devel
-
-# install LuaRocks
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-
-# start etcd server
-nohup etcd &
-```
-
-## Ubuntu 16.04 & 18.04
-
-```shell
-# add OpenResty source
-wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-sudo apt-get update
-sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-sudo apt-get update
-
-# install etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
-    cd etcd-v3.4.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
-
-# install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
-
-# install LuaRocks
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-
-# start etcd server
-nohup etcd &
-```
-
-## Debian 9 & 10
-
-```shell
-# optional
-sed -i 's|^deb http://deb.debian.org/debian|deb http://mirrors.huaweicloud.com/debian|g' /etc/apt/sources.list
-sed -i 's|^deb http://security.debian.org/debian-security|deb http://mirrors.huaweicloud.com/debian-security|g' /etc/apt/sources.list
-apt update
-apt install wget gnupg -y
-
-# add OpenResty source
-wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_release -sc) openresty"
-sudo apt-get update
-
-# install etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
-    cd etcd-v3.4.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
-
-# install OpenResty and some compilation tools
-sudo apt-get install -y git openresty curl make openresty-openssl111-dev libpcre3 libpcre3-dev
-
-# install LuaRocks
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-
-# start etcd server
-nohup etcd &
-```
-
-## Mac OSX
-
-```shell
-# install OpenResty, etcd and some compilation tools
-brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre
-
-# start etcd server
-brew services start etcd
+curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
 ```
