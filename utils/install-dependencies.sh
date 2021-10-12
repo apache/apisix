@@ -28,7 +28,6 @@ function install_dependencies_on_centos() {
 
     # install LuaRocks
     curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-
 }
 
 # Install dependencies on fedora
@@ -42,7 +41,6 @@ function install_dependencies_on_fedora() {
 
     # install LuaRocks
     curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-  
 }
 
 # Install dependencies on ubuntu
@@ -104,20 +102,21 @@ function multi_distro_installation() {
 
 # Install etcd
 function install_etcd() {
-    wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-    tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
-        cd etcd-v3.4.13-linux-amd64 && \
+    ETCD_VERSION='3.4.13'
+    wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+    tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+        cd etcd-v${ETCD_VERSION}-linux-amd64 && \
         sudo cp -a etcd etcdctl /usr/bin/
     nohup etcd &
 }
 
 # Entry
-function main() {  
-    a=`uname -s`
-    if [[ ${a} == "Linux" ]]; then
+function main() {
+    OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
+    if [[ ${OS_NAME} == "linux" ]]; then
         multi_distro_installation
         install_etcd
-    elif [[ ${a} == "Darwin" ]]; then
+    elif [[ ${OS_NAME} == "darwin" ]]; then
         install_dependencies_on_mac_osx
     else
         echo "Non-surported distribution"
