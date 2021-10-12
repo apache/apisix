@@ -244,11 +244,14 @@ function _M.load(config)
         http_plugin_names = {}
         stream_plugin_names = {}
         local plugins_conf = config.value
-        for _, conf in ipairs(plugins_conf) do
-            if conf.stream then
-                core.table.insert(stream_plugin_names, conf.name)
-            else
-                core.table.insert(http_plugin_names, conf.name)
+        -- plugins_conf can be nil when another instance writes into etcd key "/apisix/plugins/"
+        if plugins_conf then
+            for _, conf in ipairs(plugins_conf) do
+                if conf.stream then
+                    core.table.insert(stream_plugin_names, conf.name)
+                else
+                    core.table.insert(http_plugin_names, conf.name)
+                end
             end
         end
     end
