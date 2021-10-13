@@ -219,13 +219,15 @@ function _M.init(env, args)
 
             local cluster_version = body["etcdcluster"]
             if compare_semantic_version(cluster_version, env.min_etcd_version) then
-                util.die("etcd cluster version ", cluster_version, " is less than the required version ",
-                        env.min_etcd_version, ", please upgrade your etcd cluster\n")
+                errmsg = str_format("etcd cluster version %s is less than the required version %s,
+                 please upgrade your etcd cluster\n", cluster_version, env.min_etcd_version)
+                util.die(errmsg)
             end
 
             table_insert(etcd_healthy_hosts, host)
         else
-            io_stderr:write(str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err))
+            io_stderr:write(str_format("request etcd endpoint \'%s\' error, %s\n", version_url,
+                    err))
         end
     end
 
