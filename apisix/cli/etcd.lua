@@ -220,8 +220,8 @@ function _M.init(env, args)
             local cluster_version = body["etcdcluster"]
             if compare_semantic_version(cluster_version, env.min_etcd_version) then
                 util.die("etcd cluster version ", cluster_version,
-                        " is less than the required version ", env.min_etcd_version,
-                        ", please upgrade your etcd cluster\n")
+                        " is less than the required version ",
+                        env.min_etcd_version, ", please upgrade your etcd cluster\n")
             end
 
             table_insert(etcd_healthy_hosts, host)
@@ -235,7 +235,7 @@ function _M.init(env, args)
         util.die("all etcd nodes are unavailable\n")
     end
 
-    if host_count >= 2 and (#etcd_healthy_hosts / host_count * 100) < 50 then
+    if (#etcd_healthy_hosts / host_count * 100) <= 50 then
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
