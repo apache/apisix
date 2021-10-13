@@ -15,18 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-if [ $# -gt 0 ]; then
-    APISIX_DIR="$1"
-else
-    APISIX_DIR="$PWD"
-fi
 
-docker run -d --rm --name etcd_tls \
-    -p 12379:12379 -p 12380:12380 \
-    -e ALLOW_NONE_AUTHENTICATION=yes \
-    -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
-    -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
-    -e ETCD_CERT_FILE=/certs/etcd.pem \
-    -e ETCD_KEY_FILE=/certs/etcd.key \
-    -v "$APISIX_DIR"/t/certs:/certs \
-    bitnami/etcd:3.4.0
+
+set -ex
+
+# nacos server healthcheck
+REQ_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${CHECK_URI}")
+
+if [ "${REQ_STATUS}" -ne "200" ]; then
+  exit 1;
+fi
