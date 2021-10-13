@@ -141,7 +141,7 @@ etcd:
     key: t/certs/mtls_client.key
   ' > conf/config.yaml
 
-rm logs/error.log
+rm logs/error.log || true
 make init
 make run
 sleep 1
@@ -168,10 +168,10 @@ etcd:
   tls:
     cert: t/certs/mtls_client.crt
     key: t/certs/mtls_client.key
-  sni: "admin.apisix.dev"
+    sni: "admin.apisix.dev"
   ' > conf/config.yaml
 
-rm logs/error.log
+rm logs/error.log || true
 make init
 make run
 sleep 1
