@@ -21,16 +21,6 @@ jobs:
     name: run fuzzing
     runs-on: ubuntu-latest
 
-    services:
-      etcd:
-        image: bitnami/etcd:3.4.0
-        ports:
-          - 2379:2379
-          - 2380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
     steps:
     - name: Check out code
       uses: actions/checkout@v2.3.4
@@ -44,6 +34,10 @@ jobs:
       with:
         path: deps
         key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+    - name: Linux launch common services
+      run: |
+        project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
     - name: run apisix
       run: |

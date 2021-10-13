@@ -16,14 +16,6 @@
 # limitations under the License.
 #
 
-docker run -d --rm --name etcd_mtls \
-    -p 22379:22379 -p 22380:22380 \
-    -e ALLOW_NONE_AUTHENTICATION=yes \
-    -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
-    -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
-    -e ETCD_CERT_FILE=/certs/mtls_server.crt \
-    -e ETCD_KEY_FILE=/certs/mtls_server.key \
-    -e ETCD_CLIENT_CERT_AUTH=true \
-    -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-    -v "$PWD"/t/certs:/certs \
-    bitnami/etcd:3.4.0
+docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
+docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 3 --topic test3
+docker exec -i apache-apisix_kafka-server2_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
