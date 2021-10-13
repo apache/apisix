@@ -109,6 +109,7 @@ end
 
 
 function _M.status()
+    ngx.log(ngx.WARN, "client request host: ", ngx.var.http_host)
     ngx.say("ok")
 end
 

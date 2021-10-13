@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,21 +16,14 @@
 # limitations under the License.
 #
 
-# 'make init' operates scripts and related configuration files in the current directory
-# The 'apisix' command is a command in the /usr/local/apisix,
-# and the configuration file for the operation is in the /usr/local/apisix/conf
-
-set -ex
-
-clean_up() {
-    make stop || true
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-exit_if_not_customed_nginx() {
-    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
-}
-
-unset APISIX_PROFILE
+docker run -d --rm --name etcd_mtls \
+    -p 22379:22379 -p 22380:22380 \
+    -e ALLOW_NONE_AUTHENTICATION=yes \
+    -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
+    -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
+    -e ETCD_CERT_FILE=/certs/mtls_server.crt \
+    -e ETCD_KEY_FILE=/certs/mtls_server.key \
+    -e ETCD_CLIENT_CERT_AUTH=true \
+    -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
+    -v "$PWD"/t/certs:/certs \
+    bitnami/etcd:3.4.0

@@ -67,7 +67,8 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/hmac-auth",
-            "plugins/authz-casbin"
+            "plugins/authz-casbin",
+            "plugins/ldap-auth"
           ]
         },
         {
