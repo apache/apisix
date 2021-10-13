@@ -31,7 +31,7 @@ etcd:
 
 docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
-# case 1: stop one etcd nodes (result: start successful)
+# case 1: stop one etcd node (result: start successful)
 docker stop ${ETCD_NAME_0}
 
 out=$(make init 2>&1)
@@ -49,7 +49,7 @@ out=$(make init 2>&1)
 if echo "$out" | grep "23791" | grep "connection refused"; then
     echo "passed: APISIX failed to start, etcd cluster must have two or more healthy nodes"
 else
-    echo "failed: etcd has stopped two nodes, APISIX should fail to start"
+    echo "failed: two etcd nodes have been stopped, APISIX should fail to start"
     exit 1
 fi
 

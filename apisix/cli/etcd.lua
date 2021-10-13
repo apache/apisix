@@ -33,6 +33,7 @@ local str_format = string.format
 local str_sub = string.sub
 local table_concat = table.concat
 local table_insert = table.insert
+local io_stderr = io.stderr
 
 local _M = {}
 
@@ -218,15 +219,13 @@ function _M.init(env, args)
 
             local cluster_version = body["etcdcluster"]
             if compare_semantic_version(cluster_version, env.min_etcd_version) then
-                util.die("etcd cluster version ", cluster_version,
-                        " is less than the required version ",
-                        env.min_etcd_version,
-                        ", please upgrade your etcd cluster\n")
+                util.die("etcd cluster version ", cluster_version, " is less than the required version ",
+                        env.min_etcd_version, ", please upgrade your etcd cluster\n")
             end
 
             table_insert(etcd_healthy_hosts, host)
         else
-            print(str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err))
+            io_stderr:write(str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err))
         end
     end
 
@@ -234,8 +233,8 @@ function _M.init(env, args)
         util.die("all etcd nodes are unavailable\n")
     end
 
-    if host_count >= 2 and #etcd_healthy_hosts < 2 then
-        util.die("etcd cluster must have two or more healthy nodes\n")
+    if host_count >= 2 and (#etcd_healthy_hosts / host_count * 100) < 50 then
+        util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
     local etcd_ok = false
