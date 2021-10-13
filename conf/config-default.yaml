@@ -313,6 +313,7 @@ plugins:                          # plugin list (sorted by priority)
   - openid-connect                 # priority: 2599
   - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
+  - ldap-auth                      # priority: 2540
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
