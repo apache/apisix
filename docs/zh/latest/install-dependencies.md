@@ -42,15 +42,15 @@ title: 安装依赖
 
 ## 安装
 
-在支持的操作系统上运行以下指令即可安装 Apache APISIX dependencies.
+在支持的操作系统上运行以下指令即可安装 Apache APISIX dependencies。
 
-支持的操作系统版本: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Mac OSX
+支持的操作系统版本: CentOS 7, Fedora 31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Mac OSX。
 
 ```
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
 ```
 
-如果你已经克隆了Apache APISIX仓库，在根目录运行已下指令安装 Apache APISIX dependencies:
+如果你已经克隆了 Apache APISIX 仓库，在根目录运行以下指令安装 Apache APISIX dependencies。
 
 ```
 bash utils/install-dependencies.sh
