@@ -306,6 +306,12 @@ local function store_token(key, token)
 end
 
 
+local function flush_token()
+    core.log.warn("flush conf token in shared dict")
+    dict:flush_all()
+end
+
+
 local rpc_call
 local rpc_handlers = {
     nil,
@@ -607,6 +613,8 @@ end
 
 
 local function create_lrucache()
+    flush_token()
+
     if lrucache then
         core.log.warn("flush conf token lrucache")
     end
