@@ -27,7 +27,7 @@ function install_dependencies_with_yum() {
     sudo yum check-update
 
     # install OpenResty and some compilation tools
-    sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
+    sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel libldap2-dev
 }
 
 # Install dependencies on ubuntu and debian
@@ -44,13 +44,13 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev
+    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev
 }
 
 # Install dependencies on mac osx
 function install_dependencies_on_mac_osx() {
     # install OpenResty, etcd and some compilation tools
-    brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre
+    brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre openldap
 
     # start etcd server
     brew services start etcd
