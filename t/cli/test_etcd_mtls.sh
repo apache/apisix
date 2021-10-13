@@ -125,3 +125,62 @@ if grep "\[error\]" logs/error.log; then
 fi
 
 echo "passed: certificate verify in stream subsystem successfully"
+
+# use host in etcd.host as sni by default
+git checkout conf/config.yaml
+echo '
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://127.0.0.1:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+  ' > conf/config.yaml
+
+rm logs/error.log || true
+make init
+make run
+sleep 1
+make stop
+
+if ! grep -E 'certificate host mismatch' logs/error.log; then
+    echo "failed: should got certificate host mismatch when use host in etcd.host as sni"
+    exit 1
+fi
+
+
+echo "passed: use host in etcd.host as sni by default"
+
+# specify custom sni instead of using etcd.host
+git checkout conf/config.yaml
+echo '
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://127.0.0.1:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+    sni: "admin.apisix.dev"
+  ' > conf/config.yaml
+
+rm logs/error.log || true
+make init
+make run
+sleep 1
+make stop
+
+if grep -E 'certificate host mismatch' logs/error.log; then
+    echo "failed: should use specify custom sni"
+    exit 1
+fi
+
+echo "passed: specify custom sni instead of using etcd.host"
+
