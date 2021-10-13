@@ -24,6 +24,7 @@ function install_dependencies_with_yum() {
     # add OpenResty source
     sudo yum install yum-utils
     sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
+    sudo yum check-update
 
     # install OpenResty and some compilation tools
     sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
