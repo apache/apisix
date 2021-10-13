@@ -35,26 +35,34 @@ ENV_APISIX             ?= $(CURDIR)/bin/apisix
 ENV_GIT                ?= git
 ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
-ENV_NGINX              ?= nginx -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
+ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
+ENV_NGINX_EXEC         ?= $(shell which openresty || which nginx)
+ENV_INSTALL            ?= install
+ENV_LUAROCKS           ?= luarocks
+ENV_TAR                ?= tar
+ENV_HOMEBREW_PREFIX    ?= /usr/local
 
 
-# OSX archive `._` cache file
 ifeq ($(ENV_OS_NAME), darwin)
-	ENV_TAR ?= COPYFILE_DISABLE=1 tar
-else
-	ENV_TAR ?= tar
+	ifeq ($(ENV_OS_ARCH), arm64)
+		HOMEBREW_PREFIX = /opt/homebrew
+	endif
+
+	# OSX archive `._` cache file
+	ENV_TAR      := COPYFILE_DISABLE=1 $(ENV_TAR)
+	ENV_LUAROCKS := $(ENV_LUAROCKS) --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
+
+	ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
+    	OPENSSL_PREFIX := $(HOMEBREW_PREFIX)/opt/openresty-openssl
+    endif
+
 endif
 
 
 # OLD VAR
 INST_PREFIX ?= /usr
-INST_LIBDIR ?= $(INST_PREFIX)/lib64/lua/5.1
 INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
-INSTALL ?= install
-OR_EXEC ?= $(shell which openresty || which nginx)
-LUAROCKS ?= luarocks
-LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 OR_PREFIX ?= $(shell $(OR_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 OPENSSL_PREFIX ?= $(addprefix $(OR_PREFIX), openssl)
 HOMEBREW_PREFIX ?= /usr/local
@@ -65,9 +73,6 @@ ifeq ($(shell test -d $(addprefix $(OR_PREFIX), openssl111) && echo -n yes), yes
 endif
 
 ifeq ($(ENV_OS_NAME), darwin)
-	ifeq ($(ENV_OS_ARCH), arm64)
-		HOMEBREW_PREFIX=/opt/homebrew
-	endif
 	LUAROCKS=luarocks --lua-dir=$(HOMEBREW_PREFIX)/opt/lua@5.1
 	ifeq ($(shell test -d $(HOMEBREW_PREFIX)/opt/openresty-openssl && echo yes), yes)
 		OPENSSL_PREFIX=$(HOMEBREW_PREFIX)/opt/openresty-openssl
@@ -145,23 +150,23 @@ help:
 ### deps : Installation dependencies
 .PHONY: deps
 deps: runtime
-ifeq ($(LUAROCKS_VER),luarocks 3.)
+ifeq ($(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami),root)
-	$(LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
-	$(LUAROCKS) config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
+	$(ENV_LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(ENV_LUAROCKS) config variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 else
-	$(LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
-	$(LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
+	$(ENV_LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(OPENSSL_PREFIX), /lib)
+	$(ENV_LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(OPENSSL_PREFIX), /include)
 endif
-	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
+	$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
 	@echo "variables = {"
 	@echo "    OPENSSL_LIBDIR=$(addprefix $(OPENSSL_PREFIX), /lib)"
 	@echo "    OPENSSL_INCDIR=$(addprefix $(OPENSSL_PREFIX), /include)"
 	@echo "}"
-	$(LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
+	$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(LUAROCKS_SERVER_OPT)
 endif
 
 
@@ -247,90 +252,91 @@ reload: runtime
 ### install : Install the apisix (only for luarocks)
 .PHONY: install
 install: runtime
-	$(INSTALL) -d /usr/local/apisix/
-	$(INSTALL) -d /usr/local/apisix/logs/
-	$(INSTALL) -d /usr/local/apisix/conf/cert
-	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
-	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
-	$(INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
-	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_INSTALL) -d /usr/local/apisix/
+	$(ENV_INSTALL) -d /usr/local/apisix/logs/
+	$(ENV_INSTALL) -d /usr/local/apisix/conf/cert
+	$(ENV_INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
+	$(ENV_INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
+	$(ENV_INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
+	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix
-	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix
+	$(ENV_INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/admin
-	$(INSTALL) apisix/admin/*.lua $(INST_LUADIR)/apisix/admin/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/admin
+	$(ENV_INSTALL) apisix/admin/*.lua $(INST_LUADIR)/apisix/admin/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
-	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/balancer
+	$(ENV_INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/control
-	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(ENV_INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/core
-	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/core
+	$(ENV_INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/core/dns
-	$(INSTALL) apisix/core/dns/*.lua $(INST_LUADIR)/apisix/core/dns
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/core/dns
+	$(ENV_INSTALL) apisix/core/dns/*.lua $(INST_LUADIR)/apisix/core/dns
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
-	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/cli
+	$(ENV_INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
-	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/discovery
+	$(ENV_INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/http
-	$(INSTALL) apisix/http/*.lua $(INST_LUADIR)/apisix/http/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/http
+	$(ENV_INSTALL) apisix/http/*.lua $(INST_LUADIR)/apisix/http/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/http/router
-	$(INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/http/router
+	$(ENV_INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins
-	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins
+	$(ENV_INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin
-	$(INSTALL) apisix/plugins/ext-plugin/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/ext-plugin
+	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(INST_LUADIR)/apisix/plugins/ext-plugin/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
-	$(INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/grpc-transcode
+	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/plugins/grpc-transcode/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/ip-restriction
-	$(INSTALL) apisix/plugins/ip-restriction/*.lua $(INST_LUADIR)/apisix/plugins/ip-restriction/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/ip-restriction
+	$(ENV_INSTALL) apisix/plugins/ip-restriction/*.lua $(INST_LUADIR)/apisix/plugins/ip-restriction/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-conn
-	$(INSTALL) apisix/plugins/limit-conn/*.lua $(INST_LUADIR)/apisix/plugins/limit-conn/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-conn
+	$(ENV_INSTALL) apisix/plugins/limit-conn/*.lua $(INST_LUADIR)/apisix/plugins/limit-conn/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
-	$(INSTALL) apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/plugins/limit-count/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
+	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/plugins/limit-count/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/prometheus
-	$(INSTALL) apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/plugins/prometheus/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/prometheus
+	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/plugins/prometheus/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
-	$(INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
+	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
-	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
+	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
-	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
+	$(ENV_INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
-	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
+	$(ENV_INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/router
-	$(INSTALL) apisix/stream/router/*.lua $(INST_LUADIR)/apisix/stream/router/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/stream/router
+	$(ENV_INSTALL) apisix/stream/router/*.lua $(INST_LUADIR)/apisix/stream/router/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/utils
-	$(INSTALL) apisix/utils/*.lua $(INST_LUADIR)/apisix/utils/
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/utils
+	$(ENV_INSTALL) apisix/utils/*.lua $(INST_LUADIR)/apisix/utils/
 
-	$(INSTALL) README.md $(INST_CONFDIR)/README.md
-	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
+	$(ENV_INSTALL) README.md $(INST_CONFDIR)/README.md
+	$(ENV_INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
-	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
-
+	$(ENV_INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
+	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 ### test : Run the test case
 .PHONY: test
@@ -351,6 +357,7 @@ license-check:
 
 .PHONY: release-src
 release-src: compress-tar
+	@$(call func_echo_status, "$@ -> [ Start ]")
 	gpg --batch --yes --armor --detach-sig $(project_release_name).tgz
 	shasum -a 512 $(project_release_name).tgz > $(project_release_name).tgz.sha512
 
@@ -358,6 +365,7 @@ release-src: compress-tar
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
 .PHONY: compress-tar
@@ -375,7 +383,7 @@ compress-tar:
 
 
 ### container
-### ci-env-up : launch ci env
+### ci-env-up : Launch CI env
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
@@ -383,7 +391,7 @@ ci-env-up:
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
-### ci-env-ps : ci env ps
+### ci-env-ps : CI env ps
 .PHONY: ci-env-ps
 ci-env-ps:
 	@$(call func_echo_status, "$@ -> [ Start ]")
@@ -391,7 +399,7 @@ ci-env-ps:
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
-### ci-env-rebuild : ci env image rebuild
+### ci-env-rebuild : CI env image rebuild
 .PHONY: ci-env-rebuild
 ci-env-rebuild:
 	@$(call func_echo_status, "$@ -> [ Start ]")
@@ -399,7 +407,7 @@ ci-env-rebuild:
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
-### ci-env-down : destroy ci env
+### ci-env-down : Destroy ci env
 .PHONY: ci-env-down
 ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
