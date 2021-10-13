@@ -22,11 +22,7 @@ title: Install Dependencies
 -->
 
 - [Note](#note)
-- [CentOS 7](#centos-7)
-- [Fedora 31 & 32](#fedora-31--32)
-- [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
-- [Debian 9 & 10](#debian-9--10)
-- [Mac OSX](#mac-osx)
+- [Install](#install)
 
 ## Note
 
@@ -46,7 +42,7 @@ title: Install Dependencies
 
 ## Install
 
-Run the following command to install apisix's dependencies on a supported operating system.
+Run the following command to install Apache APISIX's dependencies on a supported operating system.
 
 Supported OS versions: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Mac OSX
 
@@ -54,7 +50,7 @@ Supported OS versions: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
 ```
 
-If you have cloned the APISIX project, execute in the APISIX root directory:
+If you have cloned the Apache APISIX project, execute in the Apache APISIX root directory:
 
 ```
 bash utils/install-dependencies.sh
