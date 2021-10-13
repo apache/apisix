@@ -40,7 +40,7 @@ title: 批处理机
 以下代码显示了如何使用批处理程序的示例。批处理处理器将要执行的功能作为第一个参数，将批处理配置作为第二个参数。
 
 ```lua
-local bp = require("apisix.plugins.batch-processor")
+local bp = require("apisix.utils.batch-processor")
 local func_to_execute = function(entries)
             -- serialize to json array core.json.encode(entries)
             -- process/send data

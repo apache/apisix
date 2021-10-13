@@ -43,7 +43,7 @@ The following code shows an example of how to use a batch processor. The batch p
 argument and the batch configuration as the second parameter.
 
 ```lua
-local bp = require("apisix.plugins.batch-processor")
+local bp = require("apisix.utils.batch-processor")
 local func_to_execute = function(entries)
             -- serialize to json array core.json.encode(entries)
             -- process/send data
