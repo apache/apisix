@@ -34,6 +34,7 @@ local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
+local os_rename = os.rename
 local table_insert = table.insert
 local getenv = os.getenv
 local max = math.max
@@ -310,11 +311,12 @@ local function init(env)
               .. 'other than /root.')
     end
 
-    if env.ulimit <= 1024 then
+    local min_ulimit = 1024
+    if env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
-                .. "descriptors [%d] is too small, please increase user limits by "
+                .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
-                .. " is low.", env.ulimit))
+                .. " is low.", env.ulimit, min_ulimit))
     end
 
     -- read_yaml_conf
@@ -890,6 +892,43 @@ local function cleanup()
 end
 
 
+local function test(env, backup_ngx_conf)
+    -- backup nginx.conf
+    local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
+    local ngx_conf_exist = util.is_file_exist(ngx_conf_path)
+    if ngx_conf_exist then
+        local ok, err = os_rename(ngx_conf_path, ngx_conf_path .. ".bak")
+        if not ok then
+            util.die("failed to backup nginx.conf, error: ", err)
+        end
+    end
+
+    -- reinit nginx.conf
+    init(env)
+
+    local test_cmd = env.openresty_args .. [[ -t -q ]]
+    local test_ret = execute((test_cmd))
+
+    -- restore nginx.conf
+    if ngx_conf_exist then
+        local ok, err = os_rename(ngx_conf_path .. ".bak", ngx_conf_path)
+        if not ok then
+            util.die("failed to restore original nginx.conf, error: ", err)
+        end
+    end
+
+    -- When success,
+    -- On linux, os.execute returns 0,
+    -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
+    if (test_ret == 0 or test_ret == true) then
+        print("configuration test is successful")
+        return
+    end
+
+    util.die("configuration test failed")
+end
+
+
 local function quit(env)
     cleanup()
 
@@ -907,6 +946,8 @@ end
 
 
 local function restart(env)
+  -- test configuration
+  test(env)
   stop(env)
   start(env)
 end
@@ -942,6 +983,7 @@ local action = {
     quit = quit,
     restart = restart,
     reload = reload,
+    test = test,
 }
 
 
