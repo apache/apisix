@@ -45,6 +45,8 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 make init && make run
 
 docker stop ${ETCD_NAME_0}
+# wait to etcd health check marks ETCD_NAME_0 as unhealthy
+sleep 1
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
