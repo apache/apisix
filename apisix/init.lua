@@ -315,7 +315,7 @@ local function verify_tls_client(ctx)
             if res == "NONE" then
                 core.log.error("client certificate was not present")
             else
-                core.log.error("clent certificate verification is not passed: ", res)
+                core.log.error("client certificate verification is not passed: ", res)
             end
 
             return false

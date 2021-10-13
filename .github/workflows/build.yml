@@ -78,7 +78,7 @@ jobs:
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -114,28 +114,11 @@ jobs:
 
       - name: Running etcd server with TLS
         run: |
-            sudo docker run -d -p 12379:12379 -p 12380:12380 \
-            -e ALLOW_NONE_AUTHENTICATION=yes \
-            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
-            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
-            -e ETCD_CERT_FILE=/certs/etcd.pem \
-            -e ETCD_KEY_FILE=/certs/etcd.key \
-            -v ${{ github.workspace }}/t/certs:/certs \
-            bitnami/etcd:3.4.0
+          ./ci/start-etcd-tls.sh
 
       - name: Running etcd server with mTLS
         run: |
-            sudo docker run -d --rm --name etcd_mtls \
-            -p 22379:22379 -p 22380:22380 \
-            -e ALLOW_NONE_AUTHENTICATION=yes \
-            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
-            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
-            -e ETCD_CERT_FILE=/certs/mtls_server.crt \
-            -e ETCD_KEY_FILE=/certs/mtls_server.key \
-            -e ETCD_CLIENT_CERT_AUTH=true \
-            -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-            -v ${{ github.workspace }}/t/certs:/certs \
-            bitnami/etcd:3.4.0
+          ./ci/start-etcd-mtls.sh
 
       - name: Linux Install
         run: |

@@ -36,7 +36,7 @@ dependencies = {
     "lua-resty-template = 2.0",
     "lua-resty-etcd = 1.5.5",
     "api7-lua-resty-http = 0.2.0",
-    "lua-resty-balancer = 0.02rc5",
+    "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
     "lua-resty-healthcheck-api7 = 2.2.0",
@@ -71,6 +71,7 @@ dependencies = {
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
+    "lualdap = 1.2.6-1",
     "xml2lua = 1.5-2",
 }
 

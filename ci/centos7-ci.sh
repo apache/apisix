@@ -23,7 +23,7 @@ install_dependencies() {
 
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        curl git which sudo
+        curl git which sudo openldap-devel
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo

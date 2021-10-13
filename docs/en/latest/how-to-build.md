@@ -93,6 +93,15 @@ Run the following command to initialize the NGINX configuration file and etcd.
 apisix init
 ```
 
+### Test configuration file
+
+Run the following command to test the configuration file. APISIX will generate `nginx.conf` from `config.yaml` and check whether the syntax of `nginx.conf` is correct.
+
+```shell
+# generate `nginx.conf` from `config.yaml` and test it
+apisix test
+```
+
 ### Start Apache APISIX
 
 Run the following command to start Apache APISIX.
