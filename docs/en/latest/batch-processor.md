@@ -32,7 +32,7 @@ or when the buffer duration exceeds.
 
 |Name           |Requirement    |Description|
 |-------        |-----          |------|
-|id             |optional       |A unique identifier to identity the batch processor|
+|name           |optional       |A unique identifier to identity the batch processor|
 |batch_max_size |optional       |Max size of each batch, default is 1000|
 |inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
@@ -43,7 +43,7 @@ The following code shows an example of how to use a batch processor. The batch p
 argument and the batch configuration as the second parameter.
 
 ```lua
-local bp = require("apisix.plugins.batch-processor")
+local bp = require("apisix.utils.batch-processor")
 local func_to_execute = function(entries)
             -- serialize to json array core.json.encode(entries)
             -- process/send data
