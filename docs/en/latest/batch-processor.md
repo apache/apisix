@@ -32,7 +32,7 @@ or when the buffer duration exceeds.
 
 |Name           |Requirement    |Description|
 |-------        |-----          |------|
-|id             |optional       |A unique identifier to identity the batch processor|
+|name           |optional       |A unique identifier to identity the batch processor|
 |batch_max_size |optional       |Max size of each batch, default is 1000|
 |inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
