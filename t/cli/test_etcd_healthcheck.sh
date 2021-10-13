@@ -36,6 +36,7 @@ etcd:
     - "http://127.0.0.1:23791"
     - "http://127.0.0.1:23792"
   health_check_timeout: '"$HEALTH_CHECK_RETRY_TIMEOUT"'
+  timeout: 2
 ' > conf/config.yaml
 
 docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
@@ -44,6 +45,8 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 make init && make run
 
 docker stop ${ETCD_NAME_0}
+# wait to etcd health check marks ETCD_NAME_0 as unhealthy
+sleep 3
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
@@ -52,6 +55,9 @@ fi
 docker start ${ETCD_NAME_0}
 
 docker stop ${ETCD_NAME_1}
+# after 2 rounds of timeout, etcd health check marks ETCD_NAME_1 as unhealthy,
+# and ETCD_NAME_1 is in fail_timeout state, it won't be selected to create a new etcd connection
+sleep 5
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
