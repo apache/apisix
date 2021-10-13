@@ -17,11 +17,13 @@
 # limitations under the License.
 #
 
+set -ex
+
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
     # add OpenResty source
     sudo yum install yum-utils
-    sudo yum-config-manager --add-repo https://openresty.org/package/"${1}"/openresty.repo
+    sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
 
     # install OpenResty and some compilation tools
     sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel
@@ -86,11 +88,11 @@ function install_luarocks() {
 # Entry
 function main() {
     OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    if [[ ${OS_NAME} == "linux" ]]; then
+    if [[ "${OS_NAME}" == "linux" ]]; then
         multi_distro_installation
         install_luarocks
         install_etcd
-    elif [[ ${OS_NAME} == "darwin" ]]; then
+    elif [[ "${OS_NAME}" == "darwin" ]]; then
         install_dependencies_on_mac_osx
     else
         echo "Non-surported distribution"
