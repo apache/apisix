@@ -20,7 +20,7 @@ local clone_tab        = require("table.clone")
 local ipairs           = ipairs
 local string           = string
 local tonumber         = tonumber
-
+local health_check     = require("resty.etcd.health_check")
 local _M = {}
 
 
@@ -54,6 +54,14 @@ local function new()
         if etcd_conf.tls.sni then
             etcd_conf.sni = etcd_conf.tls.sni
         end
+    end
+
+    -- enable etcd health check retry for curr worker
+    if not health_check.conf then
+        health_check.init({
+            max_fails = #etcd_conf.http_host,
+            retry = true,
+        })
     end
 
     local etcd_cli
