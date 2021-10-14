@@ -331,6 +331,12 @@ install: runtime
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
 	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
+.PHONY: uninstall
+uninstall:
+	rm -rf $(INST_LUADIR)/apisix
+	rm -rf /usr/local/apisix/
+	rm -rf $(INST_BINDIR)/apisix
+	rm -rf $(INST_CONFDIR)/README.md
 
 ### test : Run the test case
 .PHONY: test
