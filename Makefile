@@ -331,6 +331,7 @@ install: runtime
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
 	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
+### uninstall : Uninstall the apisix
 .PHONY: uninstall
 uninstall:
 	rm -rf $(INST_LUADIR)/apisix
