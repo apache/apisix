@@ -322,6 +322,7 @@ local rpc_handlers = {
 
         local token = fetch_token(key)
         if token then
+            core.log.info("fetch token from shared dict")
             return token
         end
 
