@@ -220,8 +220,8 @@ function _M.init(env, args)
             local cluster_version = body["etcdcluster"]
             if compare_semantic_version(cluster_version, env.min_etcd_version) then
                 util.die("etcd cluster version ", cluster_version,
-                        " is less than the required version ",
-                        env.min_etcd_version, ", please upgrade your etcd cluster\n")
+                         " is less than the required version ", env.min_etcd_version,
+                         ", please upgrade your etcd cluster\n")
             end
 
             table_insert(etcd_healthy_hosts, host)
