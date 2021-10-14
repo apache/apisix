@@ -22,6 +22,7 @@ no_long_string();
 no_root_location();
 no_shuffle();
 log_level("info");
+worker_connections(1024);
 
 $ENV{"PATH"} = $ENV{PATH} . ":" . $ENV{TEST_NGINX_HTML_DIR};
 
@@ -115,25 +116,27 @@ passed
         content_by_lua_block {
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local function r()
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri)
-                if not res then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
-            end
 
-            for i = 1, 20 do
-                r()
-                ngx.sleep(0.001)
+            local t = {}
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri)
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
             end
             ngx.say("done")
         }
     }
 --- response_body
 done
---- timeout: 5
 --- error_log
 fetch token from shared dict
 --- no_error_log
