@@ -64,7 +64,7 @@ services:
       kafka_net:
 
   kafka-server1:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
@@ -79,7 +79,7 @@ services:
       kafka_net:
 
   kafka-server2:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
@@ -138,7 +138,7 @@ services:
 
   ## OpenLDAP
   openldap:
-    image: bitnami/openldap:latest
+    image: bitnami/openldap:2.5.8
     environment:
       LDAP_ADMIN_USERNAME: amdin
       LDAP_ADMIN_PASSWORD: adminpassword
