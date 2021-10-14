@@ -111,7 +111,7 @@ fi
 # case 5: stop two etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_1}
 
-out=$(make init 2>&1)
+out=$(make init 2>&1 || true)
 if echo "$out" | grep "23791" | grep "connection refused"; then
     echo "passed: APISIX failed to start, etcd cluster must have two or more healthy nodes"
 else
@@ -122,7 +122,7 @@ fi
 # case 6: stop all etcd nodes (result: start failure)
 docker stop ${ETCD_NAME_2}
 
-out=$(make init 2>&1)
+out=$(make init 2>&1 || true)
 if echo "$out" | grep "23792" | grep "connection refused"; then
     echo "passed: APISIX failed to start, all etcd nodes have stopped"
 else
