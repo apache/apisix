@@ -32,6 +32,8 @@ local tonumber = tonumber
 local str_format = string.format
 local str_sub = string.sub
 local table_concat = table.concat
+local table_insert = table.insert
+local io_stderr = io.stderr
 
 local _M = {}
 
@@ -187,6 +189,7 @@ function _M.init(env, args)
     end
 
     -- check the etcd cluster version
+    local etcd_healthy_hosts = {}
     for index, host in ipairs(yaml_conf.etcd.host) do
         local version_url = host .. "/version"
         local errmsg
@@ -206,29 +209,38 @@ function _M.init(env, args)
                              version_url, err, retry_time))
         end
 
-        if not res then
-            errmsg = str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err)
-            util.die(errmsg)
-        end
+        if res then
+            local body, _, err = dkjson.decode(res)
+            if err or (body and not body["etcdcluster"]) then
+                errmsg = str_format("got malformed version message: \"%s\" from etcd \"%s\"\n", res,
+                        version_url)
+                util.die(errmsg)
+            end
 
-        local body, _, err = dkjson.decode(res)
-        if err or (body and not body["etcdcluster"]) then
-            errmsg = str_format("got malformed version message: \"%s\" from etcd \"%s\"\n", res,
-                                version_url)
-            util.die(errmsg)
-        end
+            local cluster_version = body["etcdcluster"]
+            if compare_semantic_version(cluster_version, env.min_etcd_version) then
+                util.die("etcd cluster version ", cluster_version,
+                         " is less than the required version ", env.min_etcd_version,
+                         ", please upgrade your etcd cluster\n")
+            end
 
-        local cluster_version = body["etcdcluster"]
-        if compare_semantic_version(cluster_version, env.min_etcd_version) then
-            util.die("etcd cluster version ", cluster_version,
-                     " is less than the required version ",
-                     env.min_etcd_version,
-                     ", please upgrade your etcd cluster\n")
+            table_insert(etcd_healthy_hosts, host)
+        else
+            io_stderr:write(str_format("request etcd endpoint \'%s\' error, %s\n", version_url,
+                    err))
         end
     end
 
+    if #etcd_healthy_hosts <= 0 then
+        util.die("all etcd nodes are unavailable\n")
+    end
+
+    if (#etcd_healthy_hosts / host_count * 100) <= 50 then
+        util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
+    end
+
     local etcd_ok = false
-    for index, host in ipairs(yaml_conf.etcd.host) do
+    for index, host in ipairs(etcd_healthy_hosts) do
         local is_success = true
 
         local errmsg
@@ -358,7 +370,7 @@ function _M.init(env, args)
     end
 
     if not etcd_ok then
-        util.die("none of the configured etcd works well")
+        util.die("none of the configured etcd works well\n")
     end
 end
 
