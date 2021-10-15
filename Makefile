@@ -130,6 +130,8 @@ endif
 
 
 ### help : Show Makefile rules
+### 	If there're awk failures, please make sure
+### 	you are using awk or gawk
 .PHONY: help
 help:
 	@$(call func_echo_success_status, "Makefile rules:")
