@@ -37,7 +37,11 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# Will install apisix-2.10.0, only 2.10.0 is included for now
+# View apisix package information, only 2.10.0 is included for now
+sudo yum info -y apisix
+sudo yum --showduplicates list apisix
+
+# Will install apisix-2.10.0
 sudo yum install apisix
 ```
 
