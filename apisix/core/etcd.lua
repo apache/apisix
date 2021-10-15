@@ -50,6 +50,10 @@ local function new()
             etcd_conf.ssl_cert_path = etcd_conf.tls.cert
             etcd_conf.ssl_key_path = etcd_conf.tls.key
         end
+
+        if etcd_conf.tls.sni then
+            etcd_conf.sni = etcd_conf.tls.sni
+        end
     end
 
     local etcd_cli
