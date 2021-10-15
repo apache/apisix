@@ -59,7 +59,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/apisix-2.10.0-0.el7.x86_64.rpm
 ```
 
-> 您也可以通过 `https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm` 安装。
+> 您也可以运行 `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm` 命令安装。
 
 ### 通过 Docker 安装
 

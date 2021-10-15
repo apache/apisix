@@ -59,7 +59,7 @@ This installation method is suitable for CentOS 7, please run the following comm
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/apisix-2.10.0-0.el7.x86_64.rpm
 ```
 
-> You can also install the RPM package from `https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm`.
+> You can also install the RPM package via running `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm`.
 
 ### Installation via Docker
 
