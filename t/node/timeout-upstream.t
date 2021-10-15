@@ -131,7 +131,6 @@ timed out) while reading response header from upstream
 
 
 
-
 === TEST 5: set route inherit hosts from service
 --- config
     location /t {
@@ -185,6 +184,7 @@ passed
 [error]
 
 
+
 === TEST 6: hit service route (timeout)
 --- request
 GET /mysleep?seconds=1
@@ -195,4 +195,3 @@ Host: foo.com
 qr/504 Gateway Time-out/
 --- error_log
 timed out) while reading response header from upstream
-
