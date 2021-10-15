@@ -42,6 +42,7 @@ ENV_NGINX_EXEC         ?= $(shell which openresty 2>/dev/null || which nginx 2>/
 ENV_NGINX_PREFIX       ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl)
 ENV_LUAROCKS           ?= luarocks
+## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
 ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
@@ -138,7 +139,7 @@ help:
 ### deps : Installation dependencies
 .PHONY: deps
 deps: runtime
-ifeq ($(shell $(ENV_LUAROCKS) --version | grep -E -o  "luarocks [0-9]+."),luarocks 3.)
+ifeq ($(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."),luarocks 3.)
 	mkdir -p ~/.luarocks
 ifeq ($(shell whoami), root)
 	$(ENV_LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib)
