@@ -19,16 +19,6 @@ jobs:
     name: run ci on centos7
     runs-on: ubuntu-latest
 
-    services:
-      etcd:
-        image: bitnami/etcd:3.4.0
-        ports:
-          - 2379:2379
-          - 2380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
     steps:
     - name: Check out code
       uses: actions/checkout@v2.3.4
@@ -41,6 +31,10 @@ jobs:
       shell: bash
       run: |
         echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+
+    - name: Linux launch common services
+      run: |
+        project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
     - name: Build rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -58,28 +52,6 @@ jobs:
         cd ..
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
-    - name: Install Redis Cluster
-      run: |
-        docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
-      env:
-        MASTER1_PORT: 5000
-        MASTER2_PORT: 5001
-        MASTER3_PORT: 5002
-        SLAVE1_PORT: 5003
-        SLAVE2_PORT: 5004
-        SLAVE3_PORT: 5005
-
-    - name: Running Redis Cluster Test
-      run: |
-        sudo apt-get install -y redis-tools
-        docker ps -a
-        redis-cli -h 127.0.0.1 -p 5000 ping
-        redis-cli -h 127.0.0.1 -p 5000 cluster nodes
-
-    - name: Running etcd server with TLS
-      run: |
-        ./ci/start-etcd-tls.sh /home/runner/work/apisix/apisix
-
     - name: Run centos7 docker and mapping apisix into container
       run: |
         docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
@@ -87,7 +59,8 @@ jobs:
 
     - name: Run other docker containers for test
       run: |
-        ./ci/install-ext-services-via-docker.sh
+        make ci-env-up
+        ./ci/linux-ci-init-service.sh
 
     - name: Install dependencies
       run: |

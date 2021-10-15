@@ -14,33 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-header:
-  license:
-    spdx-id: Apache-2.0
-    copyright-owner: Apache Software Foundation
 
-  paths-ignore:
-    - '.gitignore'
-    - 'LICENSE'
-    - 'NOTICE'
-    - '**/*.json'
-    - '**/*.key'
-    - '**/*.crt'
-    - '**/*.pem'
-    - '.github/'
-    - 'conf/mime.types'
-    # Exclude CI env_file
-    - 'ci/pod/**/*.env'
-    # eyes has some limitation to handle git pattern
-    - '**/*.log'
-    # Exclude test toolkit files
-    - 't/toolkit'
-    - 't/chaos/go.mod'
-    - 't/chaos/go.sum'
-    # Exclude non-Apache licensed files
-    - 'apisix/balancer/ewma.lua'
-    # Exclude plugin-specific configuration files
-    - 't/plugin/authz-casbin'
-    - 't/coredns'
+FROM alpine:latest
 
-  comment: on-failure
+# change workdir to /
+WORKDIR /
+
+# install curl
+RUN apk --no-cache add bash curl
+
+# add healthcheck script
+COPY *.sh /
+
+# add hosted process
+CMD ["cat"]

@@ -24,24 +24,13 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_tengine
           - linux_openresty_mtls
+          - linux_tengine
 
     runs-on: ${{ matrix.platform }}
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
-
-
-    services:
-      etcd:
-        image: bitnami/etcd:3.4.2
-        ports:
-          - 2379:2379
-          - 2380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
     steps:
       - name: Check out code
@@ -64,6 +53,10 @@ jobs:
         run: |
           echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
           echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
+
+      - name: Linux launch common services
+        run: |
+          project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -91,34 +84,6 @@ jobs:
           mvn package
           cd dubbo-backend-provider/target
           java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
-
-      - name: Install Redis Cluster
-        if: startsWith(matrix.os_name, 'linux_openresty')
-        run: |
-          docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
-        env:
-          MASTER1_PORT: 5000
-          MASTER2_PORT: 5001
-          MASTER3_PORT: 5002
-          SLAVE1_PORT: 5003
-          SLAVE2_PORT: 5004
-          SLAVE3_PORT: 5005
-
-      - name: Running Redis Cluster Test
-        if: startsWith(matrix.os_name, 'linux_openresty')
-        run: |
-          sudo apt-get install -y redis-tools
-          docker ps -a
-          redis-cli -h 127.0.0.1 -p 5000 ping
-          redis-cli -h 127.0.0.1 -p 5000 cluster nodes
-
-      - name: Running etcd server with TLS
-        run: |
-          ./ci/start-etcd-tls.sh
-
-      - name: Running etcd server with mTLS
-        run: |
-          ./ci/start-etcd-mtls.sh
 
       - name: Linux Install
         run: |
