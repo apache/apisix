@@ -143,13 +143,11 @@ help:
 deps: runtime
 ifeq ($(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."),luarocks 3.)
 	mkdir -p ~/.luarocks
-ifeq ($(shell whoami), root)
-	$(ENV_LUAROCKS) config variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib)
-	$(ENV_LUAROCKS) config variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include)
-else
-	$(ENV_LUAROCKS) config --local variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib)
-	$(ENV_LUAROCKS) config --local variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include)
+ifneq ($(shell whoami), root)
+	$(eval ENV_LUAROCKS_FLAG_LOCAL := --local)
 endif
+	$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib)
+	$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include)
 	$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT)
 else
 	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
@@ -346,6 +344,7 @@ license-check:
 
 .PHONY: release-src
 release-src: compress-tar
+	@$(call func_echo_status, "$@ -> [ Start ]")
 	gpg --batch --yes --armor --detach-sig $(project_release_name).tgz
 	shasum -a 512 $(project_release_name).tgz > $(project_release_name).tgz.sha512
 
@@ -353,6 +352,7 @@ release-src: compress-tar
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
 .PHONY: compress-tar
