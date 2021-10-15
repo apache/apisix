@@ -76,6 +76,8 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   cd apisix-2.10.0
   # Create dependencies
   make deps
+  # Install apisix command
+  make install
   ```
 
 ## Step 3: Manage Apache APISIX Server
@@ -89,6 +91,15 @@ Run the following command to initialize the NGINX configuration file and etcd.
 ```shell
 # initialize NGINX config file and etcd
 apisix init
+```
+
+### Test configuration file
+
+Run the following command to test the configuration file. APISIX will generate `nginx.conf` from `config.yaml` and check whether the syntax of `nginx.conf` is correct.
+
+```shell
+# generate `nginx.conf` from `config.yaml` and test it
+apisix test
 ```
 
 ### Start Apache APISIX

@@ -29,6 +29,8 @@ header:
     - '**/*.pem'
     - '.github/'
     - 'conf/mime.types'
+    # Exclude CI env_file
+    - 'ci/pod/**/*.env'
     # eyes has some limitation to handle git pattern
     - '**/*.log'
     # Exclude test toolkit files

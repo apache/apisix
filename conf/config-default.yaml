@@ -272,6 +272,7 @@ etcd:
 
     verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
+    #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
 
 #discovery:                       # service discovery center
 #  dns:
@@ -312,6 +313,7 @@ plugins:                          # plugin list (sorted by priority)
   - openid-connect                 # priority: 2599
   - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
+  - ldap-auth                      # priority: 2540
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510

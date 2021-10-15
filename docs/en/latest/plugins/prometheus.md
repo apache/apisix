@@ -106,6 +106,7 @@ For example like this:
 ```yaml
 scrape_configs:
   - job_name: 'apisix'
+    scrape_interval: 15s # This value will be related to the time range of the rate function in Prometheus QL. The time range in the rate function should be at least twice this value.
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
     - targets: ['127.0.0.1:9091']

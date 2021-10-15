@@ -76,11 +76,13 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/ap
   cd apisix-2.10.0
   # 创建依赖
   make deps
+  # 安装 apisix 命令
+  make install
   ```
 
 ## 步骤3：管理 Apache APISIX 服务
 
-我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `make help` 命令查看所有命令和对应的功能。
+我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `apisix help` 命令查看所有命令和对应的功能。
 
 ### 初始化依赖
 
@@ -88,7 +90,16 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/ap
 
 ```shell
 # initialize NGINX config file and etcd
-make init
+apisix init
+```
+
+### 测试配置文件
+
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+
+```shell
+# generate `nginx.conf` from `config.yaml` and test it
+apisix test
 ```
 
 ### 启动 Apache APISIX
@@ -97,34 +108,34 @@ make init
 
 ```shell
 # start Apache APISIX server
-make run
+apisix start
 ```
 
 ### 停止运行 Apache APISIX
 
-优雅停机 `make quit` 和强制停机 `make stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
+优雅停机 `apisix quit` 和强制停机 `apisix stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
 
 执行优雅停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server gracefully
-make quit
+apisix quit
 ```
 
 执行强制停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server immediately
-make stop
+apisix stop
 ```
 
 ### 查看其他操作
 
-运行 `make help` 命令，查看返回结果，获取其他操作的命令和描述。
+运行 `apisix help` 命令，查看返回结果，获取其他操作的命令和描述。
 
 ```shell
 # more actions find by `help`
-make help
+apisix help
 ```
 
 ## 步骤4：运行测试案例

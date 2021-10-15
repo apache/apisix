@@ -19,6 +19,8 @@
 
 . ./t/cli/common.sh
 
+exit_if_not_customed_nginx
+
 # The 'admin.apisix.dev' is injected by utils/set-dns.sh
 
 # etcd mTLS verify
@@ -84,3 +86,101 @@ if echo "$out" | grep "ouch"; then
 fi
 
 echo "passed: certificate verify with CA success expectedly"
+
+# etcd mTLS in stream subsystem
+echo '
+apisix:
+  stream_proxy:
+    tcp:
+      - addr: 9100
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://admin.apisix.dev:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+  ' > conf/config.yaml
+
+out=$(make init 2>&1 || echo "ouch")
+if echo "$out" | grep "certificate verify failed"; then
+    echo "failed: apisix should not echo \"certificate verify failed\""
+    exit 1
+fi
+
+if echo "$out" | grep "ouch"; then
+    echo "failed: apisix should not fail"
+    exit 1
+fi
+
+rm logs/error.log
+make run
+sleep 1
+make stop
+
+if grep "\[error\]" logs/error.log; then
+    echo "failed: veirfy etcd certificate during sync should not fail"
+fi
+
+echo "passed: certificate verify in stream subsystem successfully"
+
+# use host in etcd.host as sni by default
+git checkout conf/config.yaml
+echo '
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://127.0.0.1:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+  ' > conf/config.yaml
+
+rm logs/error.log || true
+make init
+make run
+sleep 1
+make stop
+
+if ! grep -E 'certificate host mismatch' logs/error.log; then
+    echo "failed: should got certificate host mismatch when use host in etcd.host as sni"
+    exit 1
+fi
+
+
+echo "passed: use host in etcd.host as sni by default"
+
+# specify custom sni instead of using etcd.host
+git checkout conf/config.yaml
+echo '
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+etcd:
+  host:
+    - "https://127.0.0.1:22379"
+  prefix: "/apisix"
+  tls:
+    cert: t/certs/mtls_client.crt
+    key: t/certs/mtls_client.key
+    sni: "admin.apisix.dev"
+  ' > conf/config.yaml
+
+rm logs/error.log || true
+make init
+make run
+sleep 1
+make stop
+
+if grep -E 'certificate host mismatch' logs/error.log; then
+    echo "failed: should use specify custom sni"
+    exit 1
+fi
+
+echo "passed: specify custom sni instead of using etcd.host"
+
