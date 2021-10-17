@@ -301,8 +301,14 @@ end
 local function store_token(key, token)
     local exp = helper.get_conf_token_cache_time()
     -- early expiry, lrucache in critical state sends prepare_conf_req as original behaviour
-    exp = exp - 1
-    dict:set(key, token, exp)
+    exp = exp * 0.9
+    local success, err, forcible = dict:set(key, token, exp)
+    if not success then
+        core.log.error("ext-plugin:failed to set conf token, err: ", err)
+    end
+    if forcible then
+        core.log.warn("ext-plugin:set valid items forcibly overwritten")
+    end
 end
 
 
@@ -322,7 +328,7 @@ local rpc_handlers = {
 
         local token = fetch_token(key)
         if token then
-            core.log.info("fetch token from shared dict")
+            core.log.info("fetch token from shared dict, token: ", token)
             return token
         end
 
