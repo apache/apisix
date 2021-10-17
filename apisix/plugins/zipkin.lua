@@ -279,9 +279,9 @@ function _M.log(conf, ctx)
 
     opentracing.request_span:finish(log_end_time)
 
-    if ctx.zipkin_ctx then
-        core.tablepool.release("zipkin_ctx", ctx.zipkin_ctx)
-        ctx.zipkin_ctx = nil
+    if ctx.zipkin then
+        core.tablepool.release("zipkin_ctx", ctx.zipkin)
+        ctx.zipkin = nil
     end
 end
 
