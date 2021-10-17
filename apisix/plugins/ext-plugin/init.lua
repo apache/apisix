@@ -294,27 +294,40 @@ end
 
 
 local function fetch_token(key)
-    return dict:get(key)
+    if dict then
+        return dict:get(key)
+    else
+        core.log.error('shm "ext-plugin" not found')
+        return nil
+    end
 end
 
 
 local function store_token(key, token)
-    local exp = helper.get_conf_token_cache_time()
-    -- early expiry, lrucache in critical state sends prepare_conf_req as original behaviour
-    exp = exp * 0.9
-    local success, err, forcible = dict:set(key, token, exp)
-    if not success then
-        core.log.error("ext-plugin:failed to set conf token, err: ", err)
-    end
-    if forcible then
-        core.log.warn("ext-plugin:set valid items forcibly overwritten")
+    if dict then
+        local exp = helper.get_conf_token_cache_time()
+        -- early expiry, lrucache in critical state sends prepare_conf_req as original behaviour
+        exp = exp * 0.9
+        local success, err, forcible = dict:set(key, token, exp)
+        if not success then
+            core.log.error("ext-plugin:failed to set conf token, err: ", err)
+        end
+        if forcible then
+            core.log.warn("ext-plugin:set valid items forcibly overwritten")
+        end
+    else
+        core.log.error('shm "ext-plugin" not found')
     end
 end
 
 
 local function flush_token()
-    core.log.warn("flush conf token in shared dict")
-    dict:flush_all()
+    if dict then
+        core.log.warn("flush conf token in shared dict")
+        dict:flush_all()
+    else
+        core.log.error('shm "ext-plugin" not found')
+    end
 end
 
 
