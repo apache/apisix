@@ -34,7 +34,7 @@ dependencies = {
     "lua-resty-ctxdump = 0.1-0",
     "lua-resty-dns-client = 5.2.0",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.5.5",
+    "lua-resty-etcd = 1.6.0",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
@@ -71,6 +71,7 @@ dependencies = {
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
+    "lualdap = 1.2.6-1",
 }
 
 build = {

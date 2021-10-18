@@ -30,7 +30,7 @@ title: 批处理机
 
 |名称           |需求    |描述|
 |-------        |-----          |------|
-|id             |可选的       |标识批处理者的唯一标识符|
+|name           |可选的       |标识批处理者的唯一标识符|
 |batch_max_size |可选的       |每批的最大大小，默认为1000|
 |inactive_timeout|可选的      |如果不活动，将刷新缓冲区的最大时间（以秒为单位），默认值为5s|
 |buffer_duration|可选的       |必须先处理批次中最旧条目的最大期限（以秒为单位），默认是5|
@@ -40,7 +40,7 @@ title: 批处理机
 以下代码显示了如何使用批处理程序的示例。批处理处理器将要执行的功能作为第一个参数，将批处理配置作为第二个参数。
 
 ```lua
-local bp = require("apisix.plugins.batch-processor")
+local bp = require("apisix.utils.batch-processor")
 local func_to_execute = function(entries)
             -- serialize to json array core.json.encode(entries)
             -- process/send data
