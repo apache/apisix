@@ -16,13 +16,13 @@
 #
 use t::APISIX 'no_plan';
 
-workers(8);
+workers(3);
 repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
 log_level("info");
-worker_connections(10240);
+worker_connections(1024);
 
 $ENV{"PATH"} = $ENV{PATH} . ":" . $ENV{TEST_NGINX_HTML_DIR};
 
@@ -109,8 +109,6 @@ passed
 
 
 === TEST 2: share conf token in different workers
---- ext_plugin_cmd
-["t/plugin/ext-plugin/runner.sh", "3600"]
 --- config
     location /t {
         content_by_lua_block {
@@ -118,7 +116,7 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
 
             local t = {}
-            for i = 1, 180 do
+            for i = 1, 16 do
                 local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
                     local res, err = httpc:request_uri(uri)
