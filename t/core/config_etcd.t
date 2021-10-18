@@ -316,3 +316,30 @@ passed
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: Test ETCD health check mode switch during APISIX startup
+apisix:
+  node_listen: 1984
+  admin_key: null
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  tls:
+    verify: false
+  prefix: "/apisix"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log_out
+healthy check use round robin
+healthy check use ngx.shared dict
+--- ONLY
