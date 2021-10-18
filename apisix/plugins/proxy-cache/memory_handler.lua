@@ -72,6 +72,15 @@ local function overwritable_header(header)
 end
 
 
+-- The following format can accept:
+--      Cache-Control: no-cache
+--      Cache-Control: no-store
+--      Cache-Control: max-age=3600
+--      Cache-Control: max-stale=3600
+--      Cache-Control: min-fresh=3600
+--      Cache-Control: private, max-age=600
+--      Cache-Control: public, max-age=31536000
+-- Refer to: https://www.holisticseo.digital/pagespeed/cache-control/
 local function parse_directive_header(h)
     if not h then
         return {}
@@ -290,26 +299,24 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local chunk = ngx.arg[1]
-    local eof   = ngx.arg[2]
+    local res_body = core.response.hold_body_chunk(ctx)
+    if not res_body then
+        return
+    end
 
-    cache.res_body = (cache.res_body or "") .. (chunk or "")
+    local res = {
+        status    = ngx.status,
+        body      = res_body,
+        body_len  = #res_body,
+        headers   = cache.res_headers,
+        ttl       = cache.ttl,
+        timestamp = time(),
+        version   = CACHE_VERSION,
+    }
 
-    if eof then
-        local res = {
-            status    = ngx.status,
-            body      = cache.res_body,
-            body_len  = #cache.res_body,
-            headers   = cache.res_headers,
-            ttl       = cache.ttl,
-            timestamp = time(),
-            version   = CACHE_VERSION,
-        }
-
-        local res, err = cache.memory:set(ctx.var.upstream_cache_key, res, cache.ttl)
-        if not res then
-            core.log.error("failed to set cache, err: ", err)
-        end
+    local res, err = cache.memory:set(ctx.var.upstream_cache_key, res, cache.ttl)
+    if not res then
+        core.log.error("failed to set cache, err: ", err)
     end
 end
 
