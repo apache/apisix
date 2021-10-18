@@ -283,3 +283,85 @@ Return specific route info with **route_id** in the format below:
   "key": "/routes/1"
 }
 ```
+
+### Get /v1/services
+
+Introduced since `v2.11`.
+
+Return all services info in the format below:
+
+```json
+[
+  {
+    "has_domain": false,
+    "clean_handlers": {},
+    "modifiedIndex": 671,
+    "key": "/apisix/services/200",
+    "createdIndex": 671,
+    "value": {
+      "upstream": {
+          "scheme": "http",
+          "hash_on": "vars",
+          "pass_host": "pass",
+          "type": "roundrobin",
+          "nodes": [
+            {
+              "port": 80,
+              "weight": 1,
+              "host": "39.97.63.215"
+            }
+          ]
+      },
+      "create_time": 1634552648,
+      "id": "200",
+      "plugins": {
+        "limit-count": {
+          "key": "remote_addr",
+          "time_window": 60,
+          "redis_timeout": 1000,
+          "allow_degradation": false,
+          "show_limit_quota_header": true,
+          "policy": "local",
+          "count": 2,
+          "rejected_code": 503
+        }
+      },
+      "update_time": 1634552648
+    }
+  }
+]
+```
+
+### Get /v1/service/{service_id}
+
+Introduced since `v2.11`.
+
+Return specific service info with **service_id** in the format below:
+
+```json
+{
+  "has_domain": false,
+  "clean_handlers": {},
+  "modifiedIndex": 728,
+  "key": "/apisix/services/5",
+  "createdIndex": 728,
+  "value": {
+    "create_time": 1634554563,
+    "id": "5",
+    "upstream": {
+      "scheme": "http",
+      "hash_on": "vars",
+      "pass_host": "pass",
+      "type": "roundrobin",
+      "nodes": [
+        {
+          "port": 80,
+          "weight": 1,
+          "host": "39.97.63.215"
+        }
+      ]
+    },
+    "update_time": 1634554563
+  }
+}
+```
