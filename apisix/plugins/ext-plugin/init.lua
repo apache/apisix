@@ -60,6 +60,7 @@ local ipairs = ipairs
 local pairs = pairs
 local tostring = tostring
 local type = type
+local dict = ngx.shared["ext-plugin"]
 
 
 local events_list
@@ -293,6 +294,44 @@ local function handle_extra_info(ctx, input)
 end
 
 
+local function fetch_token(key)
+    if dict then
+        return dict:get(key)
+    else
+        core.log.error('shm "ext-plugin" not found')
+        return nil
+    end
+end
+
+
+local function store_token(key, token)
+    if dict then
+        local exp = helper.get_conf_token_cache_time()
+        -- early expiry, lrucache in critical state sends prepare_conf_req as original behaviour
+        exp = exp * 0.9
+        local success, err, forcible = dict:set(key, token, exp)
+        if not success then
+            core.log.error("ext-plugin:failed to set conf token, err: ", err)
+        end
+        if forcible then
+            core.log.warn("ext-plugin:set valid items forcibly overwritten")
+        end
+    else
+        core.log.error('shm "ext-plugin" not found')
+    end
+end
+
+
+local function flush_token()
+    if dict then
+        core.log.warn("flush conf token in shared dict")
+        dict:flush_all()
+    else
+        core.log.error('shm "ext-plugin" not found')
+    end
+end
+
+
 local rpc_call
 local rpc_handlers = {
     nil,
@@ -300,6 +339,12 @@ local rpc_handlers = {
         builder:Clear()
 
         local key = builder:CreateString(unique_key)
+
+        local token = fetch_token(key)
+        if token then
+            core.log.info("fetch token from shared dict, token: ", token)
+            return token
+        end
 
         local conf_vec
         if conf.conf then
@@ -345,9 +390,10 @@ local rpc_handlers = {
 
         local buf = flatbuffers.binaryArray.New(resp)
         local pcr = prepare_conf_resp.GetRootAsResp(buf, 0)
-        local token = pcr:ConfToken()
+        token = pcr:ConfToken()
 
         core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
+        store_token(key, token)
         return token
     end,
     function (conf, ctx, sock, entry)
@@ -471,7 +517,6 @@ local rpc_handlers = {
         local buf = flatbuffers.binaryArray.New(resp)
         local call_resp = http_req_call_resp.GetRootAsResp(buf, 0)
         local action_type = call_resp:ActionType()
-
         if action_type == http_req_call_action.Stop then
             local action = call_resp:Action()
             local stop = http_req_call_stop.New()
@@ -589,6 +634,8 @@ end
 
 
 local function create_lrucache()
+    flush_token()
+
     if lrucache then
         core.log.warn("flush conf token lrucache")
     end
