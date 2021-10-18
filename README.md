@@ -149,11 +149,11 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 1. Installation
 
-APISIX Installed and tested in the following systems:
+   APISIX Installed and tested in the following systems:
 
-CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
+   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-Please refer to [install documentation](docs/en/latest/how-to-build.md).
+   Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
 
