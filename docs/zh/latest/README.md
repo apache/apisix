@@ -149,11 +149,11 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 1. 安装
 
-APISIX 在以下操作系统中可顺利安装并做过测试：
+   APISIX 在以下操作系统中可顺利安装并做过测试：
 
-CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
+   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-请参考[安装文档](./how-to-build.md)。
+   请参考[安装文档](./how-to-build.md)。
 
 2. 入门指南
 
