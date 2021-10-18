@@ -339,6 +339,9 @@ etcd:
 GET /t
 --- response_body
 passed
+--- grep_error_log eval
+qr/healthy check use \S+ \w+/
 --- grep_error_log_out
 healthy check use round robin
+healthy check use ngx.shared dict
 healthy check use ngx.shared dict
