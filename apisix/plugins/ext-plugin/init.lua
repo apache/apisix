@@ -40,6 +40,7 @@ if is_http then
     ngx_pipe = require("ngx.pipe")
     events = require("resty.worker.events")
 end
+local resty_lock = require("resty.lock")
 local resty_signal = require "resty.signal"
 local bit = require("bit")
 local band = bit.band
@@ -60,7 +61,6 @@ local ipairs = ipairs
 local pairs = pairs
 local tostring = tostring
 local type = type
-local dict = ngx.shared["ext-plugin"]
 
 
 local events_list
@@ -69,6 +69,8 @@ local lrucache = core.lrucache.new({
     invalid_stale = true,
     ttl = helper.get_conf_token_cache_time(),
 })
+local shdict_name = "ext-plugin"
+local shdict = ngx.shared[shdict_name]
 
 local schema = {
     type = "object",
@@ -295,8 +297,8 @@ end
 
 
 local function fetch_token(key)
-    if dict then
-        return dict:get(key)
+    if shdict then
+        return shdict:get(key)
     else
         core.log.error('shm "ext-plugin" not found')
         return nil
@@ -305,11 +307,11 @@ end
 
 
 local function store_token(key, token)
-    if dict then
+    if shdict then
         local exp = helper.get_conf_token_cache_time()
         -- early expiry, lrucache in critical state sends prepare_conf_req as original behaviour
         exp = exp * 0.9
-        local success, err, forcible = dict:set(key, token, exp)
+        local success, err, forcible = shdict:set(key, token, exp)
         if not success then
             core.log.error("ext-plugin:failed to set conf token, err: ", err)
         end
@@ -323,9 +325,9 @@ end
 
 
 local function flush_token()
-    if dict then
+    if shdict then
         core.log.warn("flush conf token in shared dict")
-        dict:flush_all()
+        shdict:flush_all()
     else
         core.log.error('shm "ext-plugin" not found')
     end
@@ -336,16 +338,32 @@ local rpc_call
 local rpc_handlers = {
     nil,
     function (conf, ctx, sock, unique_key)
-        builder:Clear()
-
-        local key = builder:CreateString(unique_key)
-
-        local token = fetch_token(key)
+        local token = fetch_token(unique_key)
         if token then
             core.log.info("fetch token from shared dict, token: ", token)
             return token
         end
 
+        local lock, err = resty_lock:new(shdict_name)
+        if not lock then
+            return nil, "failed to create lock: " .. err
+        end
+
+        local elapsed, err = lock:lock("prepare_conf")
+        if not elapsed then
+            return nil, "failed to acquire the lock: " .. err
+        end
+
+        local token = fetch_token(unique_key)
+        if token then
+            lock:unlock()
+            core.log.info("fetch token from shared dict, token: ", token)
+            return token
+        end
+
+        builder:Clear()
+
+        local key = builder:CreateString(unique_key)
         local conf_vec
         if conf.conf then
             local len = #conf.conf
@@ -376,15 +394,18 @@ local rpc_handlers = {
 
         local ok, err = send(sock, constants.RPC_PREPARE_CONF, builder:Output())
         if not ok then
+            lock:unlock()
             return nil, "failed to send RPC_PREPARE_CONF: " .. err
         end
 
         local ty, resp = receive(sock)
         if ty == nil then
+            lock:unlock()
             return nil, "failed to receive RPC_PREPARE_CONF: " .. resp
         end
 
         if ty ~= constants.RPC_PREPARE_CONF then
+            lock:unlock()
             return nil, "failed to receive RPC_PREPARE_CONF: unexpected type " .. ty
         end
 
@@ -393,7 +414,10 @@ local rpc_handlers = {
         token = pcr:ConfToken()
 
         core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
-        store_token(key, token)
+        store_token(unique_key, token)
+
+        lock:unlock()
+
         return token
     end,
     function (conf, ctx, sock, entry)
