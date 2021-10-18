@@ -77,6 +77,8 @@ services:
 --- response_body
 {"id":"200","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}
 
+
+
 === TEST 2:  get service with id 5
 --- apisix_yaml
 services:
@@ -114,6 +116,8 @@ services:
     }
 --- response_body
 {"id":"5","plugins":{"limit-count":{"allow_degradation":false,"count":2,"key":"remote_addr","policy":"local","rejected_code":503,"show_limit_quota_header":true,"time_window":60}},"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+
+
 
 === TEST 3: services with invalid id
 --- apisix_yaml
