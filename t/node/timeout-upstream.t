@@ -128,3 +128,70 @@ GET /mysleep?seconds=1
 qr/504 Gateway Time-out/
 --- error_log
 timed out) while reading response header from upstream
+
+
+
+=== TEST 5: set route inherit hosts from service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local scode, sbody = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                       "desc":"test-service",
+                       "hosts": ["foo.com"]
+                }]]
+                )
+
+            if scode >= 300 then
+                ngx.status = scode
+            end
+            ngx.say(sbody)
+
+            local rcode, rbody = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "service_id": "1",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin",
+                            "timeout": {
+                                "connect": 0.5,
+                                "send": 0.5,
+                                "read": 0.5
+                            }
+                        },
+                        "uri": "/mysleep"
+                }]]
+                )
+
+            if rcode >= 300 then
+                ngx.status = rcode
+            end
+            ngx.say(rbody)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: hit service route (timeout)
+--- request
+GET /mysleep?seconds=1
+--- more_headers
+Host: foo.com
+--- error_code: 504
+--- response_body eval
+qr/504 Gateway Time-out/
+--- error_log
+timed out) while reading response header from upstream
