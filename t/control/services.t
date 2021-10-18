@@ -62,7 +62,6 @@ services:
             local t = require("lib.test_admin")
             local code, body, res = t.test('/v1/services',
                 ngx.HTTP_GET)
-            
             res = json.decode(res)
             if res[1] then
                 local data = {}
@@ -102,7 +101,6 @@ services:
             local t = require("lib.test_admin")
             local code, body, res = t.test('/v1/service/5',
                 ngx.HTTP_GET)
-            
             res = json.decode(res)
             if res then
                 local data = {}
