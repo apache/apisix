@@ -66,7 +66,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### 如何配置
 
-你需要构建 [APISIX-Openresty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
+你需要构建 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
 ```yaml
 etcd:
