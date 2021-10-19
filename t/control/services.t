@@ -78,7 +78,49 @@ services:
 
 
 
-=== TEST 2:  get service with id 5
+=== TEST 2: multiple services
+--- apisix_yaml
+services:
+  -
+    id: 200
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+  -
+    id: 201
+    upstream:
+      nodes:
+        "127.0.0.2:1980": 1
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local code, body, res = t.test('/v1/services',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            local g_data = {}
+            for _, r in core.config_util.iterate_values(res) do
+                local data = {}
+                data.id = r.value.id
+                data.plugins = r.value.plugins
+                data.upstream = r.value.upstream
+                core.table.insert(g_data, data)
+            end
+            ngx.say(json.encode(g_data))
+            return
+        }
+    }
+--- response_body
+[{"id":"200","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}},{"id":"201","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.2","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}]
+
+
+
+=== TEST 3:  get service with id 5
 --- apisix_yaml
 services:
   -
@@ -117,7 +159,7 @@ services:
 
 
 
-=== TEST 3: services with invalid id
+=== TEST 4: services with invalid id
 --- apisix_yaml
 services:
   -
