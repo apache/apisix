@@ -318,6 +318,8 @@ function _M.body_filter(conf, ctx)
     if not res then
         core.log.error("failed to set cache, err: ", err)
     end
+
+    ngx.arg[1] = res_body
 end
 
 
