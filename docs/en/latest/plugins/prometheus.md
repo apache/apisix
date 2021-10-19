@@ -116,7 +116,7 @@ And we can check the status at prometheus console:
 
 ![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
-![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus02.png)
+![prometheus apisix in-depth metric view](../../../assets/images/plugin/prometheus02.png)
 
 ## How to specify export uri
 

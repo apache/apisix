@@ -124,7 +124,7 @@ http://127.0.0.1:9411/zipkin
 
 ![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
-![zipkin web-ui](../../../assets/images/plugin/zipkin-2.jpg)
+![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
 
 ## Disable Plugin
 

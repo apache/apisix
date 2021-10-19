@@ -115,7 +115,7 @@ scrape_configs:
 
 ![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
-![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus02.png)
+![prometheus apisix in-depth metric view](../../../assets/images/plugin/prometheus02.png)
 
 ## 如何修改暴露指标的 uri
 

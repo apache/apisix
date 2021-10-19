@@ -119,7 +119,7 @@ You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to co
 then add jwt-auth plugin in the Consumer page:
 ![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
 
-1. Create a Route or Service object and enable the jwt-auth plugin:
+2. Create a Route or Service object and enable the jwt-auth plugin:
 
 ![enabling jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
