@@ -18,12 +18,12 @@
 # Makefile basic env setting
 .DEFAULT_GOAL := help
 # add pipefail support for default shell
-SHELL := /bin/bash -o pipefail -x
+SHELL := /bin/bash -o pipefail
 
 
 # Project basic setting
 project_name           ?= apache-apisix
-project_version        ?= latest
+project_version        ?= master
 project_compose_ci     ?= ci/pod/docker-compose.yml
 project_release_name   ?= $(project_name)-$(project_version)-src
 
@@ -48,13 +48,20 @@ ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_HOMEBREW_PREFIX    ?= /usr/local
 
-ifneq ($(ENV_LUAROCKS_SERVER), )
+ifneq ($(shell whoami), root)
+	ENV_LUAROCKS_FLAG_LOCAL := --local
+endif
+
+ifdef ENV_LUAROCKS_SERVER
 	ENV_LUAROCKS_SERVER_OPT := --server $(ENV_LUAROCKS_SERVER)
 endif
 
-# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
-ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl111) && echo -n yes), yes)
-	ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl111)
+# Execute only in the presence of ENV_NGINX_EXEC to avoid unexpected error output
+ifneq ($(ENV_NGINX_EXEC), )
+	# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl111) && echo -n yes), yes)
+		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl111)
+	endif
 endif
 
 # ENV patch for darwin
@@ -141,22 +148,20 @@ help:
 ### deps : Installation dependencies
 .PHONY: deps
 deps: runtime
-ifeq ($(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."),luarocks 3.)
-	mkdir -p ~/.luarocks
-ifneq ($(shell whoami), root)
-	$(eval ENV_LUAROCKS_FLAG_LOCAL := --local)
-endif
-	$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib)
-	$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include)
-	$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT)
-else
-	@echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"
-	@echo "variables = {"
-	@echo "    OPENSSL_LIBDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /lib)"
-	@echo "    OPENSSL_INCDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /include)"
-	@echo "}"
-	$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT)
-endif
+	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
+	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
+		mkdir -p ~/.luarocks; \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
+		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
+	else \
+		echo "WARN: You're not using LuaRocks 3.x, please add the following items to your LuaRocks config file:"; \
+		echo "variables = {"; \
+		echo "    OPENSSL_LIBDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /lib)"; \
+		echo "    OPENSSL_INCDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /include)"; \
+		echo "}"; \
+		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
+	fi
 
 
 ### utils : Installation tools
@@ -327,7 +332,7 @@ install: runtime
 
 ### test : Run the test case
 .PHONY: test
-test:
+test: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_GIT) submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
@@ -348,7 +353,7 @@ release-src: compress-tar
 	gpg --batch --yes --armor --detach-sig $(project_release_name).tgz
 	shasum -a 512 $(project_release_name).tgz > $(project_release_name).tgz.sha512
 
-	mkdir -p release
+	$(call func_check_folder,release)
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512

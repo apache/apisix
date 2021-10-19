@@ -56,13 +56,12 @@ jobs:
 
       - name: Linux launch common services
         run: |
-          project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          make compress-tar
+          make compress-tar project_version=${{ steps.branch_env.outputs.version }}
 
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
