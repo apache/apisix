@@ -202,7 +202,7 @@ apisix help
 
 出现`Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
 
-确保将 Openresty 设置为默认的 NGINX，并按如下所示导出路径：
+确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
 * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
   * Linux 默认安装路径：

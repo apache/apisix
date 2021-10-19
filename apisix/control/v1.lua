@@ -178,7 +178,7 @@ end
 
 function _M.dump_all_routes_info()
     local routes = get_routes()
-    local infos, _ = iter_add_get_routes_info(routes, nil)
+    local infos = iter_add_get_routes_info(routes, nil)
     return 200, infos
 end
 
@@ -193,7 +193,45 @@ function _M.dump_route_info()
     return 200, route
 end
 
+local function iter_add_get_upstream_info(values, upstream_id)
+    if not values then
+        return nil
+    end
 
+    local infos = {}
+    for _, upstream in core.config_util.iterate_values(values) do
+        local new_upstream = core.table.deepcopy(upstream)
+        core.table.insert(infos, new_upstream)
+        if new_upstream.value and new_upstream.value.parent then
+            new_upstream.value.parent = nil
+        end
+        -- check the upstream id
+        if upstream_id and upstream.value.id == upstream_id then
+            return new_upstream
+        end
+    end
+    if not upstream_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_upstreams_info()
+    local upstreams = get_upstreams()
+    local infos = iter_add_get_upstream_info(upstreams, nil)
+    return 200, infos
+end
+
+function _M.dump_upstream_info()
+    local upstreams = get_upstreams()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local upstream_id = uri_segs[4]
+    local upstream = iter_add_get_upstream_info(upstreams, upstream_id)
+    if not upstream then
+        return 404, {error_msg = str_format("upstream[%s] not found", upstream_id)}
+    end
+    return 200, upstream
+end
 
 function _M.trigger_gc()
     -- TODO: find a way to trigger GC in the stream subsystem
@@ -287,5 +325,17 @@ return {
         methods = {"GET"},
         uris = {"/service/*"},
         handler = _M.dump_service_info
+    },
+    -- /v1/upstreams
+    {
+        methods = {"GET"},
+        uris = {"/upstreams"},
+        handler = _M.dump_all_upstreams_info,
+    },
+    -- /v1/upstream/*
+    {
+        methods = {"GET"},
+        uris = {"/upstream/*"},
+        handler = _M.dump_upstream_info,
     }
 }

@@ -365,3 +365,83 @@ Return specific service info with **service_id** in the format below:
   }
 }
 ```
+
+### Get /v1/upstreams
+
+Introduced since `v2.11.0`.
+
+Dump all upstreams in the format below:
+
+```json
+[
+   {
+      "value":{
+         "scheme":"http",
+         "pass_host":"pass",
+         "nodes":[
+            {
+               "host":"127.0.0.1",
+               "port":80,
+               "weight":1
+            },
+            {
+               "host":"foo.com",
+               "port":80,
+               "weight":2
+            }
+         ],
+         "hash_on":"vars",
+         "update_time":1634543819,
+         "key":"remote_addr",
+         "create_time":1634539759,
+         "id":"1",
+         "type":"chash"
+      },
+      "has_domain":true,
+      "key":"\/apisix\/upstreams\/1",
+      "clean_handlers":{
+      },
+      "createdIndex":938,
+      "modifiedIndex":1225
+   }
+]
+```
+
+### Get /v1/upstream/{upstream_id}
+
+Introduced since `v2.11.0`.
+
+Dump specific upstream info with **upstream_id** in the format below:
+
+```json
+{
+   "value":{
+      "scheme":"http",
+      "pass_host":"pass",
+      "nodes":[
+         {
+            "host":"127.0.0.1",
+            "port":80,
+            "weight":1
+         },
+         {
+            "host":"foo.com",
+            "port":80,
+            "weight":2
+         }
+      ],
+      "hash_on":"vars",
+      "update_time":1634543819,
+      "key":"remote_addr",
+      "create_time":1634539759,
+      "id":"1",
+      "type":"chash"
+   },
+   "has_domain":true,
+   "key":"\/apisix\/upstreams\/1",
+   "clean_handlers":{
+   },
+   "createdIndex":938,
+   "modifiedIndex":1225
+}
+```
