@@ -170,11 +170,13 @@ function _M.hold_body_chunk(ctx)
     if eof then
         body_buffer = ctx._body_buffer
         if not body_buffer then
-            return chunk
+            body_buffer = chunk
+        else
+            body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
+            ctx._body_buffer = nil
         end
 
-        body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
-        ctx._body_buffer = nil
+        arg[1] = body_buffer
         return body_buffer
     end
 
