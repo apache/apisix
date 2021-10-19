@@ -69,7 +69,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-conn 插件：
-![](../../../assets/images/plugin/limit-conn-1.png)
+![enabling limit-conn plugin](../../../assets/images/plugin/limit-conn-1.png)
 
 #### test plugin
 

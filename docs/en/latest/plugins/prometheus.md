@@ -84,11 +84,11 @@ You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to co
 
 First, add a Route:
 
-![](../../../assets/images/plugin/prometheus-1.png)
+![create route](../../../assets/images/plugin/prometheus-1.png)
 
 Then add prometheus plugin:
 
-![](../../../assets/images/plugin/prometheus-2.png)
+![enabling prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
 
 ## How to fetch the metric data
 
@@ -114,9 +114,9 @@ scrape_configs:
 
 And we can check the status at prometheus console:
 
-![](../../../assets/images/plugin/prometheus01.png)
+![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
-![](../../../assets/images/plugin/prometheus02.png)
+![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus02.png)
 
 ## How to specify export uri
 
@@ -142,13 +142,13 @@ Downloads [Grafana dashboard meta](https://github.com/apache/apisix/blob/master/
 
 Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
 
-![](../../../assets/images/plugin/grafana-1.png)
+![Grafana chart-1](../../../assets/images/plugin/grafana-1.png)
 
-![](../../../assets/images/plugin/grafana-2.png)
+![Grafana chart-2](../../../assets/images/plugin/grafana-2.png)
 
-![](../../../assets/images/plugin/grafana-3.png)
+![Grafana chart-3](../../../assets/images/plugin/grafana-3.png)
 
-![](../../../assets/images/plugin/grafana-4.png)
+![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
 ### Available metrics
 

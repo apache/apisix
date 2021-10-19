@@ -27,7 +27,7 @@ title: Running APISIX in AWS with AWS CDK
 
 This reference architecture walks you through building **APISIX** as a serverless container API Gateway on top of AWS Fargate with AWS CDK.
 
-![](../../assets/images/aws-fargate-cdk.png)
+![APISIX Serverless Architecture](../../assets/images/aws-fargate-cdk.png)
 
 ## Generate an AWS CDK project with `projen`
 
@@ -208,15 +208,15 @@ Address: 44.226.102.63
 
 Configure the IP addresses returned as your upstream nodes in your **APISIX** dashboard followed by the **Services** and **Routes** configuration. Let's say we have a `/index.php` as the URI for the first route for our first **Service** from the **Upstream** IP addresses.
 
-![](../../assets/images/aws-nlb-ip-addr.png)
-![](../../assets/images/aws-define-service.png)
-![](../../assets/images/aws-define-route.png)
+![Upstream with AWS NLB IP Addresses](../../assets/images/aws-nlb-ip-addr.png)
+![Service with Created Upstream](../../assets/images/aws-define-service.png)
+![Define Route with Service and URI](../../assets/images/aws-define-route.png)
 
 ## Validation
 
 OK. Let's test the `/index.php` on `{apiSix.ApiSixServiceServiceURL}/index.php`
 
-![](../../assets/images/aws-caddy-php-welcome-page.png)
+![Testing APISIX on AWS Fargate](../../assets/images/aws-caddy-php-welcome-page.png)
 
 Now we have been successfully running **APISIX** in AWS Fargate as serverless container API Gateway service.
 
