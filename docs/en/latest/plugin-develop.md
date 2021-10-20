@@ -26,7 +26,7 @@ title: Plugin Develop
 - [table of contents](#table-of-contents)
 - [where to put your plugins](#where-to-put-your-plugins)
 - [check dependencies](#check-dependencies)
-- [name and config](#name-and-config)
+- [name, priority and the others](#name-priority-and-the-others)
 - [schema and check](#schema-and-check)
 - [choose phase to run](#choose-phase-to-run)
 - [implement the logic](#implement-the-logic)
@@ -311,7 +311,7 @@ end
 
 ## choose phase to run
 
-Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
+Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
 In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
