@@ -165,7 +165,7 @@ local function iter_add_get_routes_info(values, route_id)
             new_route.value.upstream.parent = nil
         end
         core.table.insert(infos, new_route)
-        -- check the roude id
+        -- check the route id
         if route_id and route.value.id == route_id then
             return new_route
         end
@@ -240,6 +240,43 @@ function _M.trigger_gc()
 end
 
 
+local function iter_add_get_services_info(values, svc_id)
+    local infos = {}
+    for _, svc in core.config_util.iterate_values(values) do
+        local new_svc = core.table.deepcopy(svc)
+        if new_svc.value.upstream and new_svc.value.upstream.parent then
+            new_svc.value.upstream.parent = nil
+        end
+        core.table.insert(infos, new_svc)
+        -- check the service id
+        if svc_id and svc.value.id == svc_id then
+            return new_svc
+        end
+    end
+    if not svc_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_services_info()
+    local services = get_services()
+    local infos = iter_add_get_services_info(services, nil)
+    return 200, infos
+end
+
+function _M.dump_service_info()
+    local services = get_services()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local svc_id = uri_segs[4]
+    local info = iter_add_get_services_info(services, svc_id)
+    if not info then
+        return 404, {error_msg = str_format("service[%s] not found", svc_id)}
+    end
+    return 200, info
+end
+
+
 return {
     -- /v1/schema
     {
@@ -271,11 +308,23 @@ return {
         uris = {"/routes"},
         handler = _M.dump_all_routes_info,
     },
-    --- /v1/route/*
+    -- /v1/route/*
     {
         methods = {"GET"},
         uris = {"/route/*"},
         handler = _M.dump_route_info,
+    },
+    -- /v1/services
+    {
+        methods = {"GET"},
+        uris = {"/services"},
+        handler = _M.dump_all_services_info
+    },
+    -- /v1/service/*
+    {
+        methods = {"GET"},
+        uris = {"/service/*"},
+        handler = _M.dump_service_info
     },
     -- /v1/upstreams
     {
