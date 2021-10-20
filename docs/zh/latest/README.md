@@ -54,9 +54,9 @@ Apache APISIX 的技术架构如下图所示：
   - [Apache APISIX® Go Plugin Runner](https://github.com/apache/apisix-go-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
   - [Apache APISIX® Python Plugin Runner](https://github.com/apache/apisix-python-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
 - **微信公众号**
-   <br/>![](../../assets/images/OA.jpg)
+   <br/>![wechat official account](../../assets/images/OA.jpg)
 - **微信视频号**
-   <br/>![](../../assets/images/MA.jpeg)
+   <br/>![wechat video account](../../assets/images/MA.jpeg)
 
 ## 特性
 

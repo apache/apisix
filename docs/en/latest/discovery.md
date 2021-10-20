@@ -25,7 +25,7 @@ title: Integration service discovery registry
 
 When system traffic changes, the number of servers of the upstream service also increases or decreases, or the server needs to be replaced due to its hardware failure. If the gateway maintains upstream service information through configuration, the maintenance costs in the microservices architecture pattern are unpredictable. Furthermore, due to the untimely update of these information, will also bring a certain impact for the business, and the impact of human error operation can not be ignored. So it is very necessary for the gateway to automatically get the latest list of service instances through the service registry。As shown in the figure below：
 
-![](../../assets/images/discovery.png)
+![discovery through service registry](../../assets/images/discovery.png)
 
 1. When the service starts, it will report some of its information, such as the service name, IP, port and other information to the registry. The services communicate with the registry using a mechanism such as a heartbeat, and if the registry and the service are unable to communicate for a long time, the instance will be cancel.When the service goes offline, the registry will delete the instance information.
 2. The gateway gets service instance information from the registry in near-real time.

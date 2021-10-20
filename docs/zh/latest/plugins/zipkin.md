@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 zipkin 插件：
 
-![](../../../assets/images/plugin/zipkin-1.png)
+![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png)
 
 ## 测试插件
 
@@ -121,9 +121,9 @@ HTTP/1.1 200 OK
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../../assets/images/plugin/zipkin-1.jpg)
+![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
-![](../../../assets/images/plugin/zipkin-2.jpg)
+![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
 
 ## 禁用插件
 
