@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
 
-![enabling zipkin plugin](../../../assets/images/plugin/zipkin-1.png)
+![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png)
 
 ## Test Plugin
 

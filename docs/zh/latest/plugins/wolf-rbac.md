@@ -82,10 +82,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
 ```
 
 你也可以通过 web 界面来完成上面的操作，先增加一个 consumer：
-![adding a consumer](../../../assets/images/plugin/wolf-rbac-1.png)
+![add a consumer](../../../assets/images/plugin/wolf-rbac-1.png)
 
 然后在 consumer 页面中添加 wolf-rbac 插件：
-![enabling wolf-rbac plugin](../../../assets/images/plugin/wolf-rbac-2.png)
+![enable wolf-rbac plugin](../../../assets/images/plugin/wolf-rbac-2.png)
 
 注意: 上面填写的 `appid` 需要在 wolf 控制台中已经存在的.
 

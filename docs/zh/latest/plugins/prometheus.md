@@ -84,11 +84,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 先增加一个 Route：
 
-![create route](../../../assets/images/plugin/prometheus-1.png)
+![create a route](../../../assets/images/plugin/prometheus-1.png)
 
 然后在 route 页面中添加 prometheus 插件：
 
-![enabling prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
+![enable prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
 
 ## 如何提取指标数据
 

@@ -84,11 +84,11 @@ You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to co
 
 First, add a Route:
 
-![create route](../../../assets/images/plugin/prometheus-1.png)
+![create a route](../../../assets/images/plugin/prometheus-1.png)
 
 Then add prometheus plugin:
 
-![enabling prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
+![enable prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
 
 ## How to fetch the metric data
 
