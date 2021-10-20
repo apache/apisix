@@ -74,6 +74,7 @@ build-cache/
 t/fuzzing/__pycache__/
 boofuzz-results/
 *.pyc
+*.wasm
 # release tar package
 *.tgz
 release/*
