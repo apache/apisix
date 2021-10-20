@@ -18,7 +18,7 @@
 local ngx = ngx
 local ngx_shared = ngx.shared
 local setmetatable = setmetatable
-local cjson = require("cjson.safe")
+local core = require("apisix.core")
 
 local _M = {}
 local mt = { __index = _M }
@@ -32,7 +32,7 @@ end
 
 
 function _M:set(key, obj, ttl)
-    local obj_json = cjson.encode(obj)
+    local obj_json = core.json.encode(obj)
     if not obj_json then
         return nil, "could not encode object"
     end
@@ -53,7 +53,7 @@ function _M:get(key)
         end
     end
 
-    local res_obj, err = cjson.decode(res_json)
+    local res_obj, err = core.json.decode(res_json)
     if not res_obj then
         return nil, err
     end

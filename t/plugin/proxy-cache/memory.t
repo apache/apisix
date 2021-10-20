@@ -70,6 +70,10 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -117,8 +121,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err: property \\"cache_strategy\\" validation failed: matches none of the enum values/
---- no_error_log
-[error]
 
 
 
@@ -163,8 +165,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err: cache_zone invalid_cache_zone not found"/
---- no_error_log
-[error]
 
 
 
@@ -210,8 +210,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -222,8 +220,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -234,8 +230,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: HIT
---- no_error_log
-[error]
 
 
 
@@ -246,8 +240,6 @@ GET /hello?bypass=1
 hello world!
 --- response_headers
 Apisix-Cache-Status: BYPASS
---- no_error_log
-[error]
 
 
 
@@ -255,8 +247,6 @@ Apisix-Cache-Status: BYPASS
 --- request
 PURGE /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -267,8 +257,6 @@ GET /hello?no_cache=1
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -281,8 +269,6 @@ hello world!
 Apisix-Cache-Status: MISS
 --- raw_response_headers_unlike
 Expires:
---- no_error_log
-[error]
 
 
 
@@ -293,8 +279,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: HIT
---- no_error_log
-[error]
 
 
 
@@ -306,8 +290,6 @@ GET /hello-not-found
 qr/404 Not Found/
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -319,8 +301,6 @@ GET /hello-not-found
 qr/404 Not Found/
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -330,8 +310,6 @@ HEAD /hello-world
 --- error_code: 200
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -341,8 +319,6 @@ HEAD /hello-world
 --- error_code: 200
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -350,8 +326,6 @@ Apisix-Cache-Status: MISS
 --- request
 PURGE /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -359,8 +333,6 @@ PURGE /hello
 --- request
 PURGE /hello-world
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -406,8 +378,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -420,8 +390,6 @@ hello world!
 Apisix-Cache-Status: MISS
 --- response_headers_like
 Cache-Control:
---- no_error_log
-[error]
 
 
 
@@ -453,8 +421,6 @@ Cache-Control:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -469,8 +435,6 @@ Expires: any
 Apisix-Cache-Status: Foo
 Cache-Control: bar
 Expires: any
---- no_error_log
-[error]
 
 
 
@@ -516,8 +480,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -528,8 +490,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -540,8 +500,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: HIT
---- no_error_log
-[error]
 --- wait: 2
 
 
@@ -553,8 +511,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -601,8 +557,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -615,8 +569,6 @@ Cache-Control: max-age=60
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 --- wait: 1
 
 
@@ -630,8 +582,6 @@ Cache-Control: max-age=1
 hello world!
 --- response_headers
 Apisix-Cache-Status: STALE
---- no_error_log
-[error]
 
 
 
@@ -644,8 +594,6 @@ Cache-Control: min-fresh=300
 hello world!
 --- response_headers
 Apisix-Cache-Status: STALE
---- no_error_log
-[error]
 --- wait: 1
 
 
@@ -654,8 +602,6 @@ Apisix-Cache-Status: STALE
 --- request
 PURGE /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -668,8 +614,6 @@ Cache-Control: no-store
 hello world!
 --- response_headers
 Apisix-Cache-Status: BYPASS
---- no_error_log
-[error]
 
 
 
@@ -682,8 +626,6 @@ Cache-Control: no-cache
 hello world!
 --- response_headers
 Apisix-Cache-Status: BYPASS
---- no_error_log
-[error]
 
 
 
@@ -694,8 +636,6 @@ GET /hello?cc=private
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -706,8 +646,6 @@ GET /hello?cc=no-store
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -718,8 +656,6 @@ GET /hello?cc=no-cache
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -729,5 +665,3 @@ GET /hello
 --- more_headers
 Cache-Control: only-if-cached
 --- error_code: 504
---- no_error_log
-[error]

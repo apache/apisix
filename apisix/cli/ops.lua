@@ -174,6 +174,51 @@ local config_schema = {
                         },
                     }
                 },
+                proxy_cache = {
+                    type = "object",
+                    properties = {
+                        zones = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "object",
+                                properties = {
+                                    name = {
+                                        type = "string",
+                                    },
+                                    memory_size = {
+                                        type = "string",
+                                    },
+                                    disk_size = {
+                                        type = "string",
+                                    },
+                                    disk_path = {
+                                        type = "string",
+                                    },
+                                    cache_levels = {
+                                        type = "string",
+                                    },
+                                },
+                                required = { "name" },
+                                dependencies = {
+                                    name = {
+                                        oneOf = {
+                                            {
+                                                required = {"memory_size"},
+                                                maxProperties = 2,
+                                            },
+                                            {
+                                                required = {"memory_size", "disk_size",
+                                                    "disk_path", "cache_levels"},
+                                            }
+                                        }
+                                    }
+                                },
+                            },
+                            uniqueItems = true,
+                        }
+                    }
+                },
                 port_admin = {
                     type = "integer",
                 },
