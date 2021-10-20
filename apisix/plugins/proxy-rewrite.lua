@@ -34,6 +34,13 @@ local schema = {
             maxLength   = 4096,
             pattern     = [[^\/.*]],
         },
+        method = {
+            description = "proxy route method",
+            type        = "string",
+            enum        = {"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS",
+                           "MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND",
+                           "LOCK", "UNLOCK", "PATCH", "TRACE"}
+        },
         regex_uri = {
             description = "new uri that substitute from client uri " ..
                           "for upstream, lower priority than uri property",
@@ -132,6 +139,51 @@ do
         core.table.insert(upstream_names, name)
     end
 
+    local switch = {
+        ["GET"] = function()
+            ngx.req.set_method(ngx.HTTP_GET)
+        end,
+        ["POST"] = function()
+            ngx.req.set_method(ngx.HTTP_POST)
+        end,
+        ["PUT"] = function()
+            ngx.req.set_method(ngx.HTTP_PUT)
+        end,
+        ["HEAD"] = function()
+            ngx.req.set_method(ngx.HTTP_HEAD)
+        end,
+        ["DELETE"] = function()
+            ngx.req.set_method(ngx.HTTP_DELETE)
+        end,
+        ["OPTIONS"] = function()
+            ngx.req.set_method(ngx.HTTP_OPTIONS)
+        end,
+        ["MKCOL"] = function()
+            ngx.req.set_method(ngx.HTTP_MKCOL)
+        end,
+        ["COPY"] = function()
+            ngx.req.set_method(ngx.HTTP_COPY)
+        end,
+        ["MOVE"] = function()
+            ngx.req.set_method(ngx.HTTP_MOVE)
+        end,
+        ["PROPFIND"] = function()
+            ngx.req.set_method(ngx.HTTP_PROPFIND)
+        end,
+        ["LOCK"] = function()
+            ngx.req.set_method(ngx.HTTP_LOCK)
+        end,
+        ["UNLOCK"] = function()
+            ngx.req.set_method(ngx.HTTP_UNLOCK)
+        end,
+        ["PATCH"] = function()
+            ngx.req.set_method(ngx.HTTP_PATCH)
+        end,
+        ["TRACE"] = function()
+            ngx.req.set_method(ngx.HTTP_TRACE)
+        end,
+    }
+
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -195,6 +247,10 @@ function _M.rewrite(conf, ctx)
     for i = 1, field_cnt, 2 do
         ngx.req.set_header(conf.headers_arr[i],
                            core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
+    end
+
+    if conf.method then
+        switch[conf.method]()
     end
 end
 
