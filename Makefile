@@ -130,6 +130,8 @@ endif
 
 
 ### help : Show Makefile rules
+### 	If there're awk failures, please make sure
+### 	you are using awk or gawk
 .PHONY: help
 help:
 	@$(call func_echo_success_status, "Makefile rules:")
@@ -325,7 +327,6 @@ install: runtime
 	$(INSTALL) -d $(INST_LUADIR)/apisix/utils
 	$(INSTALL) apisix/utils/*.lua $(INST_LUADIR)/apisix/utils/
 
-	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog

@@ -270,6 +270,7 @@ sending rpc type: 1 data length:
 receiving rpc type: 1 data length:
 --- error_log
 flush conf token lrucache
+flush conf token in shared dict
 --- no_error_log
 [error]
 
@@ -382,6 +383,7 @@ hello world
     }
 --- error_log
 refresh cache and try again
+flush conf token in shared dict
 --- no_error_log
 [error]
 

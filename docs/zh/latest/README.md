@@ -54,9 +54,9 @@ Apache APISIX 的技术架构如下图所示：
   - [Apache APISIX® Go Plugin Runner](https://github.com/apache/apisix-go-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
   - [Apache APISIX® Python Plugin Runner](https://github.com/apache/apisix-python-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
 - **微信公众号**
-   <br/>![](../../assets/images/OA.jpg)
+   <br/>![wechat official account](../../assets/images/OA.jpg)
 - **微信视频号**
-   <br/>![](../../assets/images/MA.jpeg)
+   <br/>![wechat video account](../../assets/images/MA.jpeg)
 
 ## 特性
 
@@ -149,11 +149,11 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 1. 安装
 
-APISIX 在以下操作系统中可顺利安装并做过测试：
+   APISIX 在以下操作系统中可顺利安装并做过测试：
 
-CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
+   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-请参考[安装文档](./how-to-build.md)。
+   请参考[安装文档](./how-to-build.md)。
 
 2. 入门指南
 

@@ -29,7 +29,27 @@ Before installing Apache APISIX, please install dependencies according to the op
 
 ## Step 2: Install Apache APISIX
 
-You can install Apache APISIX via RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
+You can install Apache APISIX via RPM Repository, RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
+
+### Installation via RPM Repository(CentOS 7)
+
+This installation method is suitable for CentOS 7. For now, the Apache APISIX RPM repository for CentOS 7 is already supported. Please run the following commands to install the repository and Apache APISIX.
+
+```shell
+sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+# View apisix package information, only 2.10.0 is included for now
+sudo yum info -y apisix
+sudo yum --showduplicates list apisix
+
+# Will install apisix-2.10.0
+sudo yum install apisix
+```
+
+If the official OpenResty repository is not installed yet, the following command will help you automatically install both the repositories of OpenResty and Apache APISIX.
+
+```shell
+sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+```
 
 ### Installation via RPM Package(CentOS 7)
 
@@ -38,6 +58,8 @@ This installation method is suitable for CentOS 7, please run the following comm
 ```shell
 sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/apisix-2.10.0-0.el7.x86_64.rpm
 ```
+
+> You can also install the RPM package via running `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm`.
 
 ### Installation via Docker
 
@@ -182,7 +204,7 @@ apisix help
 
 The solution to the `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` error is as shown below.
 
-Ensure that Openresty is set to the default NGINX, and export the path as follows:
+Ensure that OpenResty is set to the default NGINX, and export the path as follows:
 
 * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
   * Linux default installation path:

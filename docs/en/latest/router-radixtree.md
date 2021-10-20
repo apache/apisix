@@ -29,7 +29,7 @@ APISIX using libradixtree as route dispatching library.
 
 ### How to use libradixtree in APISIX?
 
-This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
+This is Lua-OpenResty implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
 Let's take a look at a few examples and have an intuitive understanding.
 

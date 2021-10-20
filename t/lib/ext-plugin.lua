@@ -54,7 +54,7 @@ end
 
 
 function _M.go(case)
-    local sock = ngx.req.socket()
+    local sock = ngx.req.socket(true)
     local ty, data = ext.receive(sock)
     if not ty then
         ngx.log(ngx.ERR, data)

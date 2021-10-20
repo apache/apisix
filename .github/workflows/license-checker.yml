@@ -31,8 +31,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.5
       - name: Check License Header
-        uses: apache/skywalking-eyes@v0.1.0
+        uses: apache/skywalking-eyes@v0.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
