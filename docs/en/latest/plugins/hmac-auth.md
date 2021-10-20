@@ -29,8 +29,10 @@ title: hmac-auth
 - [How To Enable](#how-to-enable)
 - [Test Plugin](#test-plugin)
   - [generate signature:](#generate-signature)
+  - [Request body checking](#request-body-checking)
   - [Use the generated signature to try the request](#use-the-generated-signature-to-try-the-request)
 - [Custom header key](#custom-header-key)
+  - [Enable request body checking](#enable-request-body-checking)
 - [Disable Plugin](#disable-plugin)
 - [Generate Signature Examples](#generate-signature-examples)
 
@@ -76,10 +78,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 The default `keep_headers` is false and `encode_uri_params` is true.
 
 You can visit the dashboard to complete the above operations through the web interface, first add a consumer:
-![](../../../assets/images/plugin/hmac-auth-1.png)
+![create a consumer](../../../assets/images/plugin/hmac-auth-1.png)
 
 Then add the hmac-auth plugin to the consumer page:
-![](../../../assets/images/plugin/hmac-auth-2.png)
+![enable hmac plugin](../../../assets/images/plugin/hmac-auth-2.png)
 
 2. add a Route or add a Service, and enable the `hmac-auth` plugin
 
