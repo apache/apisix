@@ -34,7 +34,7 @@ for (( i = 0; i <= 100; i++ )); do
     sleep 1
 done
 
-#set ssl
+# set ssl
 curl http://127.0.0.1:9080/apisix/admin/ssl/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "cert": "-----BEGIN CERTIFICATE-----\nMIIEojCCAwqgAwIBAgIJAK253pMhgCkxMA0GCSqGSIb3DQEBCwUAMFYxCzAJBgNV\nBAYTAkNOMRIwEAYDVQQIDAlHdWFuZ0RvbmcxDzANBgNVBAcMBlpodUhhaTEPMA0G\nA1UECgwGaXJlc3R5MREwDwYDVQQDDAh0ZXN0LmNvbTAgFw0xOTA2MjQyMjE4MDVa\nGA8yMTE5MDUzMTIyMTgwNVowVjELMAkGA1UEBhMCQ04xEjAQBgNVBAgMCUd1YW5n\nRG9uZzEPMA0GA1UEBwwGWmh1SGFpMQ8wDQYDVQQKDAZpcmVzdHkxETAPBgNVBAMM\nCHRlc3QuY29tMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAyCM0rqJe\ncvgnCfOw4fATotPwk5Ba0gC2YvIrO+gSbQkyxXF5jhZB3W6BkWUWR4oNFLLSqcVb\nVDPitz/Mt46Mo8amuS6zTbQetGnBARzPLtmVhJfoeLj0efMiOepOSZflj9Ob4yKR\n2bGdEFOdHPjm+4ggXU9jMKeLqdVvxll/JiVFBW5smPtW1Oc/BV5terhscJdOgmRr\nabf9xiIis9/qVYfyGn52u9452V0owUuwP7nZ01jt6iMWEGeQU6mwPENgvj1olji2\nWjdG2UwpUVp3jp3l7j1ekQ6mI0F7yI+LeHzfUwiyVt1TmtMWn1ztk6FfLRqwJWR/\nEvm95vnfS3Le4S2ky3XAgn2UnCMyej3wDN6qHR1onpRVeXhrBajbCRDRBMwaNw/1\n/3Uvza8QKK10PzQR6OcQ0xo9psMkd9j9ts/dTuo2fzaqpIfyUbPST4GdqNG9NyIh\n/B9g26/0EWcjyO7mYVkaycrtLMaXm1u9jyRmcQQI1cGrGwyXbrieNp63AgMBAAGj\ncTBvMB0GA1UdDgQWBBSZtSvV8mBwl0bpkvFtgyiOUUcbszAfBgNVHSMEGDAWgBSZ\ntSvV8mBwl0bpkvFtgyiOUUcbszAMBgNVHRMEBTADAQH/MB8GA1UdEQQYMBaCCHRl\nc3QuY29tggoqLnRlc3QuY29tMA0GCSqGSIb3DQEBCwUAA4IBgQAHGEul/x7ViVgC\ntC8CbXEslYEkj1XVr2Y4hXZXAXKd3W7V3TC8rqWWBbr6L/tsSVFt126V5WyRmOaY\n1A5pju8VhnkhYxYfZALQxJN2tZPFVeME9iGJ9BE1wPtpMgITX8Rt9kbNlENfAgOl\nPYzrUZN1YUQjX+X8t8/1VkSmyZysr6ngJ46/M8F16gfYXc9zFj846Z9VST0zCKob\nrJs3GtHOkS9zGGldqKKCj+Awl0jvTstI4qtS1ED92tcnJh5j/SSXCAB5FgnpKZWy\nhme45nBQj86rJ8FhN+/aQ9H9/2Ib6Q4wbpaIvf4lQdLUEcWAeZGW6Rk0JURwEog1\n7/mMgkapDglgeFx9f/XztSTrkHTaX4Obr+nYrZ2V4KOB4llZnK5GeNjDrOOJDk2y\nIJFgBOZJWyS93dQfuKEj42hA79MuX64lMSCVQSjX+ipR289GQZqFrIhiJxLyA+Ve\nU/OOcSRr39Kuis/JJ+DkgHYa/PWHZhnJQBxcqXXk1bJGw9BNbhM=\n-----END CERTIFICATE-----\n",
@@ -42,7 +42,7 @@ curl http://127.0.0.1:9080/apisix/admin/ssl/1  -H 'X-API-KEY: edd1c9f034335f136f
     "sni": "test.com"
 }'
 
-#test grpc proxy
+# test grpc proxy
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["POST"],
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
 
-#test grpcs proxy
+# test grpcs proxy
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["POST"],
@@ -100,7 +100,7 @@ if ! openresty -V 2>&1 | grep "apisix-nginx-module"; then
     exit 0
 fi
 
-#test grpcs with mTLS proxy
+# test grpcs with mTLS proxy
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["POST"],
@@ -119,4 +119,94 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 
 ./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHello | grep 'Hello apisix'
+
+# test server side streaming
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHelloMultiReply",
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+
+serv_stream_resp=$(./build-cache/grpcurl -plaintext -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHelloMultiReply)
+
+# by default server side streaming example sends 5 response
+if [[ `echo $serv_stream_resp | grep -c "Hello apisix"` -ne '5' ]] ; then
+    echo "Server side streaming isn't working!"
+    exit 1
+fi
+
+serv_stream_resp=$(./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHelloMultiReply)
+
+if [[ `echo $serv_stream_resp | grep -c "Hello apisix"` -ne '5' ]] ; then
+    echo "Server side streaming isn't working!"
+    exit 1
+fi
+
+# client side streaming
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHelloMultiReq",
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+
+client_stream_resp=$(./build-cache/grpcurl -plaintext -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"} {"name":"apisix"} {"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHelloMultiReq)
+
+# this client side streaming sends 3 messages (space separated) to the proxy and response { ["Hello apisix!"]*num_request } as string concat.
+if [[ `echo $client_stream_resp | sed "s/\!/\!\n/g" | grep -c "Hello apisix"` -ne '3' ]] ; then
+    echo "Client side streaming isn't working!"
+    exit 1
+fi
+
+serv_stream_resp=$(./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"} {"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHelloMultiReq)
+
+if [[ `echo $client_stream_resp | sed "s/\!/\!\n/g" | grep -c "Hello apisix"` -ne '2' ]] ; then
+    echo "Client side streaming isn't working!"
+    exit 1
+fi
+
+# bidirectional streaming
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["POST"],
+    "uri": "/helloworld.Greeter/SayHelloMulti",
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+
+bidi_stream_resp=$(./build-cache/grpcurl -plaintext -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"} {"name":"apisix"} {"name":"apisix"}' 127.0.0.1:9081 helloworld.Greeter.SayHelloMulti)
+
+# in test example repo, for the biderectional streaming, the server will send "Hello apisix" for number of times it receives requests from the client stream. And at the end there will be a '{ "message": "stream ended" } ' message.
+if [[ `echo $bidi_stream_resp | grep -c "Hello apisix"` -ne '3' ||
+`echo $bidi_stream_resp | grep -c "stream ended"` -ne '1' ]];then
+    echo "Bidirectional streaming isn't working!"
+    exit 1
+fi
+
+bidi_stream_resp=$(./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"} {"name":"apisix"}' test.com:9443 helloworld.Greeter.SayHelloMulti)
+
+if [[ `echo $bidi_stream_resp | grep -c "Hello apisix"` -ne '2' ||
+`echo $bidi_stream_resp | grep -c "stream ended"` -ne '1' ]];then
+    echo "Bidirectional streaming isn't working!"
+    exit 1
+fi
+
 clean_up
