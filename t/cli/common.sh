@@ -28,4 +28,8 @@ clean_up() {
 
 trap clean_up EXIT
 
+exit_if_not_customed_nginx() {
+    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
+}
+
 unset APISIX_PROFILE

@@ -30,6 +30,15 @@ local _M = {}
 
 
 function _M.schema()
+    local http_plugins, stream_plugins = plugin.get_all({
+        version = true,
+        priority = true,
+        schema = true,
+        metadata_schema = true,
+        consumer_schema = true,
+        type = true,
+        scope = true,
+    })
     local schema = {
         main = {
             consumer = core.schema.consumer,
@@ -45,14 +54,8 @@ function _M.schema()
             upstream_hash_header_schema = core.schema.upstream_hash_header_schema,
             upstream_hash_vars_schema = core.schema.upstream_hash_vars_schema,
         },
-        plugins = plugin.get_all({
-            version = true,
-            priority = true,
-            schema = true,
-            metadata_schema = true,
-            consumer_schema = true,
-            type = true,
-        }),
+        plugins = http_plugins,
+        stream_plugins = stream_plugins,
     }
     return 200, schema
 end
@@ -154,11 +157,123 @@ function _M.get_health_checker()
     return 200, info
 end
 
+local function iter_add_get_routes_info(values, route_id)
+    local infos = {}
+    for _, route in core.config_util.iterate_values(values) do
+        local new_route = core.table.deepcopy(route)
+        if new_route.value.upstream and new_route.value.upstream.parent then
+            new_route.value.upstream.parent = nil
+        end
+        core.table.insert(infos, new_route)
+        -- check the route id
+        if route_id and route.value.id == route_id then
+            return new_route
+        end
+    end
+    if not route_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_routes_info()
+    local routes = get_routes()
+    local infos = iter_add_get_routes_info(routes, nil)
+    return 200, infos
+end
+
+function _M.dump_route_info()
+    local routes = get_routes()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local route_id = uri_segs[4]
+    local route = iter_add_get_routes_info(routes, route_id)
+    if not route then
+        return 404, {error_msg = str_format("route[%s] not found", route_id)}
+    end
+    return 200, route
+end
+
+local function iter_add_get_upstream_info(values, upstream_id)
+    if not values then
+        return nil
+    end
+
+    local infos = {}
+    for _, upstream in core.config_util.iterate_values(values) do
+        local new_upstream = core.table.deepcopy(upstream)
+        core.table.insert(infos, new_upstream)
+        if new_upstream.value and new_upstream.value.parent then
+            new_upstream.value.parent = nil
+        end
+        -- check the upstream id
+        if upstream_id and upstream.value.id == upstream_id then
+            return new_upstream
+        end
+    end
+    if not upstream_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_upstreams_info()
+    local upstreams = get_upstreams()
+    local infos = iter_add_get_upstream_info(upstreams, nil)
+    return 200, infos
+end
+
+function _M.dump_upstream_info()
+    local upstreams = get_upstreams()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local upstream_id = uri_segs[4]
+    local upstream = iter_add_get_upstream_info(upstreams, upstream_id)
+    if not upstream then
+        return 404, {error_msg = str_format("upstream[%s] not found", upstream_id)}
+    end
+    return 200, upstream
+end
 
 function _M.trigger_gc()
     -- TODO: find a way to trigger GC in the stream subsystem
     collectgarbage()
     return 200
+end
+
+
+local function iter_add_get_services_info(values, svc_id)
+    local infos = {}
+    for _, svc in core.config_util.iterate_values(values) do
+        local new_svc = core.table.deepcopy(svc)
+        if new_svc.value.upstream and new_svc.value.upstream.parent then
+            new_svc.value.upstream.parent = nil
+        end
+        core.table.insert(infos, new_svc)
+        -- check the service id
+        if svc_id and svc.value.id == svc_id then
+            return new_svc
+        end
+    end
+    if not svc_id then
+        return infos
+    end
+    return nil
+end
+
+function _M.dump_all_services_info()
+    local services = get_services()
+    local infos = iter_add_get_services_info(services, nil)
+    return 200, infos
+end
+
+function _M.dump_service_info()
+    local services = get_services()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local svc_id = uri_segs[4]
+    local info = iter_add_get_services_info(services, svc_id)
+    if not info then
+        return 404, {error_msg = str_format("service[%s] not found", svc_id)}
+    end
+    return 200, info
 end
 
 
@@ -187,4 +302,40 @@ return {
         uris = {"/gc"},
         handler = _M.trigger_gc,
     },
+    -- /v1/routes
+    {
+        methods = {"GET"},
+        uris = {"/routes"},
+        handler = _M.dump_all_routes_info,
+    },
+    -- /v1/route/*
+    {
+        methods = {"GET"},
+        uris = {"/route/*"},
+        handler = _M.dump_route_info,
+    },
+    -- /v1/services
+    {
+        methods = {"GET"},
+        uris = {"/services"},
+        handler = _M.dump_all_services_info
+    },
+    -- /v1/service/*
+    {
+        methods = {"GET"},
+        uris = {"/service/*"},
+        handler = _M.dump_service_info
+    },
+    -- /v1/upstreams
+    {
+        methods = {"GET"},
+        uris = {"/upstreams"},
+        handler = _M.dump_all_upstreams_info,
+    },
+    -- /v1/upstream/*
+    {
+        methods = {"GET"},
+        uris = {"/upstream/*"},
+        handler = _M.dump_upstream_info,
+    }
 }

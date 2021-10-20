@@ -52,10 +52,17 @@ function _M.merge(route_conf, plugin_config)
 
     if not route_conf.value.plugins then
         route_conf.value.plugins = {}
-    elseif not route_conf.orig_plugins then
-        route_conf.orig_plugins = route_conf.value.plugins
-        route_conf.value.plugins = core.table.clone(route_conf.value.plugins)
     end
+
+    if route_conf.orig_plugins then
+        -- recover
+        route_conf.value.plugins = route_conf.orig_plugins
+    else
+        -- backup in the first time
+        route_conf.orig_plugins = route_conf.value.plugins
+    end
+
+    route_conf.value.plugins = core.table.clone(route_conf.value.plugins)
 
     for name, value in pairs(plugin_config.value.plugins) do
         route_conf.value.plugins[name] = value

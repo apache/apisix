@@ -1,5 +1,5 @@
 {
-  "version": 2.8,
+  "version": "2.10.0",
   "sidebar": [
     {
       "type": "category",
@@ -38,6 +38,8 @@
             "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
+            "plugins/gzip",
+            "plugins/real-ip",
             "plugins/server-info"
           ]
         },
@@ -132,6 +134,10 @@
         {
           "type": "doc",
           "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
         }
       ]
     },
@@ -147,12 +153,23 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/dns",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
           "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
         },
         {
           "type": "doc",

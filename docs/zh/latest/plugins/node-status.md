@@ -58,26 +58,6 @@ plugins:                          # plugin list
 
 启动 `APISIX` 之后，即可访问该插件提供的接口，获得基本的状态信息。
 
-2. 在创建 route 时添加插件 `node-status`
-
-```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/route1",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "192.168.1.100:80:": 1
-        }
-    },
-    "plugins": {
-        "node-status":{}
-    }
-}'
-```
-
-发送该请求的前提是 `apisix/conf/config.yaml` 中已经配置 `node-status`，此时 `node-status` 插件对该请求处理无影响，所以一般不会将 `node-status` 插件设置到路由中。
-
 ## 测试插件
 
 1. 发送请求

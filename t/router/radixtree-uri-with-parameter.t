@@ -212,3 +212,90 @@ GET /json/bbb/foo
 {"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: inherit hosts from services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "hosts": ["bar.com"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello1"}
+                        },
+                        "service_id": "1",
+                        "uri": "/:name/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "proxy-rewrite":{"uri":"/hello"}
+                        },
+                        "uri": "/:name/hello",
+                        "priority": -1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit
+--- more_headers
+Host: www.foo.com
+--- request
+GET /john/hello
+--- response_body
+hello world
+--- no_error_log
+[error]

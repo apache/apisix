@@ -68,11 +68,11 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-![](../../../assets/images/plugin/key-auth-1.png)
+You also can complete the above operation through the web interface, first add a route:
+![create a consumer](../../../assets/images/plugin/key-auth-1.png)
 
 Then add key-auth plugin:
-![](../../../assets/images/plugin/key-auth-2.png)
+![enable key-auth plugin](../../../assets/images/plugin/key-auth-2.png)
 
 2. creates a route or service object, and enable plugin `key-auth`.
 

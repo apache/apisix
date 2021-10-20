@@ -112,6 +112,24 @@ local function tinyyaml_type(t)
 end
 
 
+local function path_is_multi_type(path, type_val)
+    if str_sub(path, 1, 14) == "nginx_config->" and
+            (type_val == "number" or type_val == "string") then
+        return true
+    end
+
+    if path == "apisix->node_listen" and type_val == "number" then
+        return true
+    end
+
+    if path == "apisix->ssl->listen_port" and type_val == "number" then
+        return true
+    end
+
+    return false
+end
+
+
 local function merge_conf(base, new_tab, ppath)
     ppath = ppath or ""
 
@@ -143,12 +161,11 @@ local function merge_conf(base, new_tab, ppath)
             if base[key] == nil then
                 base[key] = val
             elseif type(base[key]) ~= type_val then
-                if (ppath == "nginx_config" or str_sub(ppath, 1, 14) == "nginx_config->") and
-                    (type_val == "number" or type_val == "string")
-                then
+                local path = ppath == "" and key or ppath .. "->" .. key
+
+                if path_is_multi_type(path, type_val) then
                     base[key] = val
                 else
-                    local path = ppath == "" and key or ppath .. "->" .. key
                     return nil, "failed to merge, path[" .. path ..  "] expect: " ..
                                 type(base[key]) .. ", but got: " .. type_val
                 end

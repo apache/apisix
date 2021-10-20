@@ -17,10 +17,10 @@
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd             = require("resty.etcd")
 local clone_tab        = require("table.clone")
+local health_check     = require("resty.etcd.health_check")
 local ipairs           = ipairs
 local string           = string
 local tonumber         = tonumber
-
 local _M = {}
 
 
@@ -50,6 +50,18 @@ local function new()
             etcd_conf.ssl_cert_path = etcd_conf.tls.cert
             etcd_conf.ssl_key_path = etcd_conf.tls.key
         end
+
+        if etcd_conf.tls.sni then
+            etcd_conf.sni = etcd_conf.tls.sni
+        end
+    end
+
+    -- enable etcd health check retry for curr worker
+    if not health_check.conf then
+        health_check.init({
+            max_fails = #etcd_conf.http_host,
+            retry = true,
+        })
     end
 
     local etcd_cli

@@ -125,6 +125,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 `ngx.exit`将中断当前请求的执行，并返回状态码给 Nginx。
 
-![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
 
 但是很多人可能会对`ngx.exit`理解出现偏差，即如果你在`access`阶段执行`ngx.exit`，只是中断了请求处理阶段，响应阶段仍然会处理。比如，如果你配置了`response-rewrite`插件，它会强制覆盖你的响应信息（如响应代码）。

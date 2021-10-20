@@ -74,6 +74,12 @@ __DATA__
                             },
                             "metadata_schema": {"type":"object"}
                         },
+                        "basic-auth": {
+                            "type": "auth",
+                            "consumer_schema": {"type":"object"}
+                        }
+                    },
+                    "stream_plugins": {
                         "mqtt-proxy": {
                             "schema": {
                                 "type":"object",
@@ -82,10 +88,6 @@ __DATA__
                                 }
                             },
                             "priority": 1000
-                        },
-                        "basic-auth": {
-                            "type": "auth",
-                            "consumer_schema": {"type":"object"}
                         }
                     }
                 }]]
@@ -96,3 +98,46 @@ __DATA__
     }
 --- response_body
 passed
+
+
+
+=== TEST 2: confirm the scope of plugin
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - batch-requests
+  - error-log-logger
+  - server-info
+  - example-plugin
+  - node-status
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/v1/schema',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local global_plugins = {}
+            local plugins = res["plugins"]
+            for k, v in pairs(plugins) do
+                if v.scope == "global" then
+                    global_plugins[k] = v.scope
+                end
+            end
+            ngx.say(json.encode(global_plugins))
+        }
+    }
+--- response_body
+{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}

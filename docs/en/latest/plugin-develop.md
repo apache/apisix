@@ -26,7 +26,7 @@ title: Plugin Develop
 - [table of contents](#table-of-contents)
 - [where to put your plugins](#where-to-put-your-plugins)
 - [check dependencies](#check-dependencies)
-- [name and config](#name-and-config)
+- [name, priority and the others](#name-priority-and-the-others)
 - [schema and check](#schema-and-check)
 - [choose phase to run](#choose-phase-to-run)
 - [implement the logic](#implement-the-logic)
@@ -68,6 +68,21 @@ apisix:
 ```
 
 Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like `require "apisix.plugins.jwt-auth"` will load the `jwt-auth` plugin.
+
+Sometimes you may want to override a method instead of a whole file. In this case, you can configure `lua_module_hook` in `conf/config.yaml`
+to introduce your hook.
+
+Assumed your configuration is:
+
+```yaml
+apisix:
+    ...
+    extra_lua_path: "/path/to/example/?.lua"
+    lua_module_hook: "my_hook"
+```
+
+The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX.
+The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
 
 ## check dependencies
 
@@ -296,7 +311,7 @@ end
 
 ## choose phase to run
 
-Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
+Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
 In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.

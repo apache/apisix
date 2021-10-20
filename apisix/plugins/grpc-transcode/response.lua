@@ -19,55 +19,43 @@ local core   = require("apisix.core")
 local pb     = require("pb")
 local ngx    = ngx
 local string = string
-local table  = table
 local ipairs = ipairs
 
-return function(proto, service, method, pb_option)
+return function(ctx, proto, service, method, pb_option)
+    local buffer = core.response.hold_body_chunk(ctx)
+    if not buffer then
+        return nil
+    end
+
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "2.Undefined service method: " .. service .. "/" .. method
                       .. " end."
     end
 
-    local chunk, eof = ngx.arg[1], ngx.arg[2]
-    local buffered = ngx.ctx.buffered
-    if not buffered then
-        buffered = {}
-        ngx.ctx.buffered = buffered
+    if not ngx.req.get_headers()["X-Grpc-Web"] then
+        buffer = string.sub(buffer, 6)
     end
 
-    if chunk ~= "" then
-        core.table.insert(buffered, chunk)
-        ngx.arg[1] = nil
+    if pb_option then
+        for _, opt in ipairs(pb_option) do
+            pb.option(opt)
+        end
     end
 
-
-    if eof then
-        ngx.ctx.buffered = nil
-        local buffer = table.concat(buffered)
-        if not ngx.req.get_headers()["X-Grpc-Web"] then
-            buffer = string.sub(buffer, 6)
-        end
-
-        if pb_option then
-            for _, opt in ipairs(pb_option) do
-                pb.option(opt)
-            end
-        end
-
-        local decoded = pb.decode(m.output_type, buffer)
-        if not decoded then
-            ngx.arg[1] = "failed to decode response data by protobuf"
-            return "failed to decode response data by protobuf"
-        end
-
-        local response, err = core.json.encode(decoded)
-        if not response then
-            core.log.error("failed to call json_encode data: ", err)
-            response = "failed to json_encode response body"
-        end
-
-        ngx.arg[1] = response
+    local decoded = pb.decode(m.output_type, buffer)
+    if not decoded then
+        ngx.arg[1] = "failed to decode response data by protobuf"
+        return "failed to decode response data by protobuf"
     end
 
+    local response, err = core.json.encode(decoded)
+    if not response then
+        core.log.error("failed to call json_encode data: ", err)
+        response = "failed to json_encode response body"
+        return response
+    end
+
+    ngx.arg[1] = response
+    return nil
 end

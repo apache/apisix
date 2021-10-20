@@ -192,7 +192,7 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
                 ngx.say("failed to load plugins: ", err)
             end
 
-            local filter_plugins = plugin.filter({
+            local filter_plugins = plugin.filter(nil, {
                 value = {
                     plugins = {
                         ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},

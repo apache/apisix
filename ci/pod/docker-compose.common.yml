@@ -1,0 +1,89 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: "3.8"
+
+services:
+  ## Etcd
+  etcd_old:
+    image: bitnami/etcd:3.3.8
+    restart: unless-stopped
+    env_file:
+      - ci/pod/etcd/env/common.env
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+    ports:
+      - "3379:2379"
+      - "3380:2380"
+
+  etcd:
+    image: bitnami/etcd:3.4.0
+    restart: unless-stopped
+    env_file:
+      - ci/pod/etcd/env/common.env
+    environment:
+        ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+
+  etcd_tls:
+    image: bitnami/etcd:3.4.0
+    restart: unless-stopped
+    env_file:
+      - ci/pod/etcd/env/common.env
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: https://0.0.0.0:12379
+      ETCD_LISTEN_CLIENT_URLS: https://0.0.0.0:12379
+      ETCD_CERT_FILE: /certs/etcd.pem
+      ETCD_KEY_FILE: /certs/etcd.key
+    ports:
+      - "12379:12379"
+      - "12380:12380"
+    volumes:
+      - ./t/certs:/certs
+
+  etcd_mtls:
+    image: bitnami/etcd:3.4.0
+    restart: unless-stopped
+    env_file:
+      - ci/pod/etcd/env/common.env
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: https://0.0.0.0:22379
+      ETCD_LISTEN_CLIENT_URLS: https://0.0.0.0:22379
+      ETCD_CERT_FILE: /certs/mtls_server.crt
+      ETCD_KEY_FILE: /certs/mtls_server.key
+      ETCD_CLIENT_CERT_AUTH: "true"
+      ETCD_TRUSTED_CA_FILE: /certs/mtls_ca.crt
+    ports:
+      - "22379:22379"
+      - "22380:22380"
+    volumes:
+      - ./t/certs:/certs
+
+
+  ## Redis cluster
+  redis-cluster:
+    image: vishnunair/docker-redis-cluster:latest
+    restart: unless-stopped
+    ports:
+      - "5000:6379"
+      - "5002:6380"
+      - "5003:6381"
+      - "5004:6382"
+      - "5005:6383"
+      - "5006:6384"

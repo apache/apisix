@@ -43,7 +43,8 @@ Note that the control API server should not be configured to listen to the publi
 ## Control API Added via plugin
 
 Plugin can add its control API when it is enabled.
-If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
+Some plugins in APISIX have added their own control APIs. If you are interested in these APIs,
+please refer to their documentation.
 
 ## Plugin independent Control API
 
@@ -74,6 +75,12 @@ Return the jsonschema used by this APISIX instance in the format below:
             "type": ...,
             "priority": 0,
             "version": 0.1
+        },
+        ...
+    },
+    "stream-plugins": {
+        "mqtt-proxy": {
+            ...
         },
         ...
     }
@@ -198,3 +205,243 @@ Introduced since `v2.8`.
 
 Trigger a full GC in the http subsystem.
 Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
+
+### Get /v1/routes
+
+Introduced since `v3.0`.
+
+Return all routes info in the format below:
+
+```json
+[
+  {
+    "update_count": 0,
+    "value": {
+      "priority": 0,
+      "uris": [
+        "/hello"
+      ],
+      "id": "1",
+      "upstream": {
+        "scheme": "http",
+        "pass_host": "pass",
+        "nodes": [
+          {
+            "port": 1980,
+            "host": "127.0.0.1",
+            "weight": 1
+          }
+        ],
+        "type": "roundrobin",
+        "hash_on": "vars"
+      },
+      "status": 1
+    },
+    "clean_handlers": {},
+    "has_domain": false,
+    "orig_modifiedIndex": 1631193445,
+    "modifiedIndex": 1631193445,
+    "key": "/routes/1"
+  }
+]
+```
+
+### Get /v1/route/{route_id}
+
+Introduced since `v3.0`.
+
+Return specific route info with **route_id** in the format below:
+
+```json
+{
+  "update_count": 0,
+  "value": {
+    "priority": 0,
+    "uris": [
+      "/hello"
+    ],
+    "id": "1",
+    "upstream": {
+      "scheme": "http",
+      "pass_host": "pass",
+      "nodes": [
+        {
+          "port": 1980,
+          "host": "127.0.0.1",
+          "weight": 1
+        }
+      ],
+      "type": "roundrobin",
+      "hash_on": "vars"
+    },
+    "status": 1
+  },
+  "clean_handlers": {},
+  "has_domain": false,
+  "orig_modifiedIndex": 1631193445,
+  "modifiedIndex": 1631193445,
+  "key": "/routes/1"
+}
+```
+
+### Get /v1/services
+
+Introduced since `v2.11`.
+
+Return all services info in the format below:
+
+```json
+[
+  {
+    "has_domain": false,
+    "clean_handlers": {},
+    "modifiedIndex": 671,
+    "key": "/apisix/services/200",
+    "createdIndex": 671,
+    "value": {
+      "upstream": {
+          "scheme": "http",
+          "hash_on": "vars",
+          "pass_host": "pass",
+          "type": "roundrobin",
+          "nodes": [
+            {
+              "port": 80,
+              "weight": 1,
+              "host": "39.97.63.215"
+            }
+          ]
+      },
+      "create_time": 1634552648,
+      "id": "200",
+      "plugins": {
+        "limit-count": {
+          "key": "remote_addr",
+          "time_window": 60,
+          "redis_timeout": 1000,
+          "allow_degradation": false,
+          "show_limit_quota_header": true,
+          "policy": "local",
+          "count": 2,
+          "rejected_code": 503
+        }
+      },
+      "update_time": 1634552648
+    }
+  }
+]
+```
+
+### Get /v1/service/{service_id}
+
+Introduced since `v2.11`.
+
+Return specific service info with **service_id** in the format below:
+
+```json
+{
+  "has_domain": false,
+  "clean_handlers": {},
+  "modifiedIndex": 728,
+  "key": "/apisix/services/5",
+  "createdIndex": 728,
+  "value": {
+    "create_time": 1634554563,
+    "id": "5",
+    "upstream": {
+      "scheme": "http",
+      "hash_on": "vars",
+      "pass_host": "pass",
+      "type": "roundrobin",
+      "nodes": [
+        {
+          "port": 80,
+          "weight": 1,
+          "host": "39.97.63.215"
+        }
+      ]
+    },
+    "update_time": 1634554563
+  }
+}
+```
+
+### Get /v1/upstreams
+
+Introduced since `v2.11.0`.
+
+Dump all upstreams in the format below:
+
+```json
+[
+   {
+      "value":{
+         "scheme":"http",
+         "pass_host":"pass",
+         "nodes":[
+            {
+               "host":"127.0.0.1",
+               "port":80,
+               "weight":1
+            },
+            {
+               "host":"foo.com",
+               "port":80,
+               "weight":2
+            }
+         ],
+         "hash_on":"vars",
+         "update_time":1634543819,
+         "key":"remote_addr",
+         "create_time":1634539759,
+         "id":"1",
+         "type":"chash"
+      },
+      "has_domain":true,
+      "key":"\/apisix\/upstreams\/1",
+      "clean_handlers":{
+      },
+      "createdIndex":938,
+      "modifiedIndex":1225
+   }
+]
+```
+
+### Get /v1/upstream/{upstream_id}
+
+Introduced since `v2.11.0`.
+
+Dump specific upstream info with **upstream_id** in the format below:
+
+```json
+{
+   "value":{
+      "scheme":"http",
+      "pass_host":"pass",
+      "nodes":[
+         {
+            "host":"127.0.0.1",
+            "port":80,
+            "weight":1
+         },
+         {
+            "host":"foo.com",
+            "port":80,
+            "weight":2
+         }
+      ],
+      "hash_on":"vars",
+      "update_time":1634543819,
+      "key":"remote_addr",
+      "create_time":1634539759,
+      "id":"1",
+      "type":"chash"
+   },
+   "has_domain":true,
+   "key":"\/apisix\/upstreams\/1",
+   "clean_handlers":{
+   },
+   "createdIndex":938,
+   "modifiedIndex":1225
+}
+```
