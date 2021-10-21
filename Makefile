@@ -309,6 +309,9 @@ install: runtime
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/prometheus
 	$(INSTALL) apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/plugins/prometheus/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/proxy-cache
+	$(INSTALL) apisix/plugins/proxy-cache/*.lua $(INST_LUADIR)/apisix/plugins/proxy-cache/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
 	$(INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
 
