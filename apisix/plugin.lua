@@ -412,6 +412,10 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.value.script = route_conf.value.script
     end
 
+    if route_conf.value.timeout then
+        new_conf.value.timeout = route_conf.value.timeout
+    end
+
     if route_conf.value.name then
         new_conf.value.name = route_conf.value.name
     else

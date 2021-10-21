@@ -53,6 +53,10 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -122,8 +126,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -166,8 +168,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
 
 
 
@@ -211,8 +211,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
 
 
 
@@ -255,8 +253,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
 
 
 
@@ -299,8 +295,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
 
 
 
@@ -344,8 +338,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache/
---- no_error_log
-[error]
 
 
 
@@ -359,6 +351,7 @@ qr/failed to check the configuration of plugin proxy-cache/
                     [[{
                         "plugins": {
                             "proxy-cache": {
+                               "cache_key":["$host","$uri"],
                                "cache_zone": "disk_cache_one",
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": ["GET"],
@@ -388,8 +381,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -400,8 +391,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -414,8 +403,6 @@ hello world!
 Apisix-Cache-Status: HIT
 --- raw_response_headers_unlike
 Expires:
---- no_error_log
-[error]
 
 
 
@@ -426,8 +413,6 @@ GET /hello?bypass=1
 hello world!
 --- response_headers
 Apisix-Cache-Status: BYPASS
---- no_error_log
-[error]
 
 
 
@@ -435,8 +420,6 @@ Apisix-Cache-Status: BYPASS
 --- request
 PURGE /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -447,8 +430,6 @@ GET /hello?no_cache=1
 hello world!
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -461,8 +442,6 @@ hello world!
 Apisix-Cache-Status: MISS
 --- raw_response_headers_unlike
 Expires:
---- no_error_log
-[error]
 
 
 
@@ -473,8 +452,6 @@ GET /hello
 hello world!
 --- response_headers
 Apisix-Cache-Status: HIT
---- no_error_log
-[error]
 
 
 
@@ -486,8 +463,6 @@ GET /hello-not-found
 qr/404 Not Found/
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -499,8 +474,6 @@ GET /hello-not-found
 qr/404 Not Found/
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -510,8 +483,6 @@ HEAD /hello-world
 --- error_code: 200
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -521,8 +492,6 @@ HEAD /hello-world
 --- error_code: 200
 --- response_headers
 Apisix-Cache-Status: MISS
---- no_error_log
-[error]
 
 
 
@@ -565,8 +534,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -579,8 +546,6 @@ hello world!
 Apisix-Cache-Status: HIT
 --- response_headers_like
 Cache-Control:
---- no_error_log
-[error]
 
 
 
@@ -588,8 +553,6 @@ Cache-Control:
 --- request
 PURGE /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -597,8 +560,6 @@ PURGE /hello
 --- request
 PURGE /hello-world
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -641,8 +602,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/cache_zone invalid_disk_cache not found/
---- no_error_log
-[error]
 
 
 
@@ -686,8 +645,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err: cache_key variable \$request_method unsupported/
---- no_error_log
-[error]
 
 
 
@@ -719,8 +676,6 @@ qr/failed to check the configuration of plugin proxy-cache err: cache_key variab
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -735,8 +690,6 @@ Expires: any
 Apisix-Cache-Status: Foo
 Cache-Control: bar
 Expires: any
---- no_error_log
-[error]
 
 
 
@@ -779,5 +732,3 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err/
---- no_error_log
-[error]
