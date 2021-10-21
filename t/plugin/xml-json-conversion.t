@@ -17,11 +17,23 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-no_long_string();
+log_level('info');
 no_root_location();
 no_shuffle();
-log_level('info');
-run_tests;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
+run_tests();
 
 __DATA__
 
@@ -40,12 +52,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -78,12 +86,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -101,8 +105,6 @@ Content-Type: text/html
 --- error_code: 400
 --- response_body
 {"message":"Operation not supported"}
---- no_error_log
-[error]
 
 
 
@@ -120,8 +122,6 @@ Content-Type: application/json
 --- error_code: 400
 --- response_body
 {"message":"Operation not supported"}
---- no_error_log
-[error]
 
 
 
@@ -137,8 +137,6 @@ GET /hello
 Content-Type: text/xml
 --- response_body_like eval
 qr/\{"people":\{"person":\{"name":"Manoel"\}\}\}/
---- no_error_log
-[error]
 
 
 
@@ -171,12 +169,8 @@ qr/\{"people":\{"person":\{"name":"Manoel"\}\}\}/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +183,6 @@ Content-Type: text/xml
 --- error_code: 400
 --- response_body
 {"message":"Operation not supported"}
---- no_error_log
-[error]
 
 
 
@@ -202,5 +194,3 @@ GET /json-to-xml
 Content-Type: application/json
 --- response_body_like eval
 qr/<people><person><name>Manoel<\/name><\/person><\/people>/
---- no_error_log
-[error]

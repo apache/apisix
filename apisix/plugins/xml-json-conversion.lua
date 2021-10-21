@@ -17,12 +17,9 @@
 
 local core    = require("apisix.core")
 local handler = require("xmlhandler.tree")
-local string  = require("string")
 local parser  = require("xml2lua").parser
+local re_gsub = ngx.re.gsub
 local table_to_xml  = require("xml2lua").toXml
-local json_decode   = require('cjson.safe').decode
-local json_encode   = require('cjson.safe').encode
-
 
 local schema = {
     type = "object",
@@ -38,7 +35,6 @@ local schema = {
             default = "json"
         }
     },
-    additionalProperties = false,
 }
 
 local plugin_name = "xml-json-conversion"
@@ -58,18 +54,21 @@ local function xml2json(xml_data)
     local convert_handler = handler:new()
     local parser_handler = parser(convert_handler)
     parser_handler:parse(xml_data)
-    return 200, json_encode(convert_handler.root)
+    return 200, core.json.encode(convert_handler.root)
 end
 
 local function json2xml(table_data)
-    local xmlStr = table_to_xml(json_decode(table_data))
-    xmlStr = string.gsub(xmlStr, "%s+", "")
-    return 200, xmlStr
+    local xmlStr = table_to_xml(core.json.decode(table_data))
+    local res, _, err = re_gsub(xmlStr, "\\s+", "", "jo")
+    if not res then
+        return 400, err
+    end
+    return 200, res
 end
 
 local _switch_anonymous = {
     ["json"] = function(content_type, req_body, to)
-        if string.find(content_type, "application/json", 1, true) == nil then
+        if core.string.find(content_type, "application/json", 1, true) == nil then
             return 400, {message = "Operation not supported"}
         end
 
@@ -86,7 +85,7 @@ local _switch_anonymous = {
         end
     end,
     ["xml"] = function(content_type, req_body, to)
-        if string.find(content_type, "text/xml", 1, true) == nil then
+        if core.string.find(content_type, "text/xml", 1, true) == nil then
             return 400, {message = "Operation not supported"}
         end
         if to == 'json' then
@@ -122,28 +121,6 @@ function _M.access(conf, ctx)
     local to = conf.to
 
     return process(from, to)
-end
-
-local function conversion()
-    local args = core.request.get_uri_args()
-    if not args or not args.from or not args.to then
-        return core.response.exit(400)
-    end
-
-    local from = args.from
-    local to = args.to
-
-    return process(from, to)
-end
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/xml-json-conversion",
-            handler = conversion,
-        }
-    }
 end
 
 return _M
