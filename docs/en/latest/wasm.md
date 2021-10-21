@@ -45,14 +45,14 @@ The plugin supports the follwing concepts from Proxy WASM:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-* All plugin run in the same WASM VM, like the Lua plugin in the Lua VM
+* All plugins run in the same WASM VM, like the Lua plugin in the Lua VM
 * Each plugin has its own VMContext (the root ctx)
 * Each configured route/global rules has its own PluginContext (the plugin ctx).
-For example, if we have a service configures with WASM plugin, and two routes inherit from it,
+For example, if we have a service configuring with WASM plugin, and two routes inherit from it,
 there will be two plugin ctxs.
 * Each HTTP request which hits the configuration will have its own HttpContext (the HTTP ctx).
 For example, if we configure both global rules and route, the HTTP request will
-have two HTTP ctxs, one for the plugin ctx from global rules and another for the
+have two HTTP ctxs, one for the plugin ctx from global rules and the other for the
 plugin ctx from route.
 
 ## How to use
