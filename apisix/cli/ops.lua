@@ -199,19 +199,14 @@ local config_schema = {
                                         type = "string",
                                     },
                                 },
-                                required = { "name" },
-                                dependencies = {
-                                    name = {
-                                        oneOf = {
-                                            {
-                                                required = {"memory_size"},
-                                                maxProperties = 2,
-                                            },
-                                            {
-                                                required = {"memory_size", "disk_size",
-                                                    "disk_path", "cache_levels"},
-                                            }
-                                        }
+                                oneOf = {
+                                    {
+                                        required = {"name", "memory_size"},
+                                        maxProperties = 2,
+                                    },
+                                    {
+                                        required = {"name", "memory_size", "disk_size",
+                                            "disk_path", "cache_levels"},
                                     }
                                 },
                             },
