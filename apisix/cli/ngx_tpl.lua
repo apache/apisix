@@ -209,7 +209,11 @@ http {
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
     proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
     {% end %}
     {% end %}
 
@@ -217,7 +221,9 @@ http {
     # for proxy cache
     map $upstream_cache_zone $upstream_cache_zone_info {
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
         {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
     {% end %}
     }
     {% end %}
