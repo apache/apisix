@@ -33,7 +33,7 @@ local switch_map = {GET = ngx.HTTP_GET, POST = ngx.HTTP_POST, PUT = ngx.HTTP_PUT
                     TRACE = ngx.HTTP_TRACE,
                 }
 local schema_method_enum = {}
-for key, _ in pairs(switch_map) do
+for key in pairs(switch_map) do
     core.table.insert(schema_method_enum, key)
 end
 
