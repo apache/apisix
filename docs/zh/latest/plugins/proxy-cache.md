@@ -32,13 +32,16 @@ title: proxy-cache
 
 | 名称               | 类型           | 必选项 | 默认值                    | 有效值                                                                          | 描述                                                                                                                               |
 | ------------------ | -------------- | ------ | ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| cache_strategy     | string         | 可选   | disk                      | ["disk","memory"]                                                               | 缓存策略，指定缓存数据存储在磁盘还是内存中 |
 | cache_zone         | string         | 可选   |        disk_cache_one     |                                                                                 | 指定使用哪个缓存区域，不同的缓存区域可以配置不同的路径，在 conf/config.yaml 文件中可以预定义使用的缓存区域。当不使用默认值时，指定的缓存区域与 conf/config.yaml 文件中预定义的缓存区域不一致，缓存无效。   |
 | cache_key          | array[string]  | 可选   | ["$host", "$request_uri"] |                                                                                 | 缓存key，可以使用变量。例如：["$host", "$uri", "-cache-id"]                                                                        |
 | cache_bypass       | array[string]  | 可选   |                           |                                                                                 | 是否跳过缓存检索，即不在缓存中查找数据，可以使用变量，需要注意当此参数的值不为空或非'0'时将会跳过缓存的检索。例如：["$arg_bypass"] |
 | cache_method       | array[string]  | 可选   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求method决定是否需要缓存                                                                                                     |
 | cache_http_status  | array[integer] | 可选   | [200, 301, 404]           | [200, 599]                                                                      | 根据响应码决定是否需要缓存                                                                                                         |
 | hide_cache_headers | boolean        | 可选   | false                     |                                                                                 | 是否将 Expires 和 Cache-Control 响应头返回给客户端                                                                                 |
+| cache_control      | boolean        | 可选   | false                     |                                                                                 | 是否遵守 HTTP 协议规范中的 Cache-Control 的行为                                 |
 | no_cache           | array[string]  | 可选   |                           |                                                                                 | 是否缓存数据，可以使用变量，需要注意当此参数的值不为空或非'0'时将不会缓存数据                                                      |
+| cache_ttl          | integer        | 可选   | 300 秒                    |                                                                                 | 当选项 cache_control 未开启或开启以后服务端没有返回缓存控制头时，提供的默认缓存时间    |
 
 注：变量以$开头，也可以使用变量和字符串的结合，但是需要以数组的形式分开写，最终变量被解析后会和字符串拼接在一起。
 
