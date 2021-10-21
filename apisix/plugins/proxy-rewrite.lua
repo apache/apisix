@@ -24,6 +24,19 @@ local re_sub      = ngx.re.sub
 local sub_str     = string.sub
 local str_find    = core.string.find
 
+local switch_map = {GET = ngx.HTTP_GET, POST = ngx.HTTP_POST, PUT = ngx.HTTP_PUT,
+                    HEAD = ngx.HTTP_HEAD, DELETE = ngx.HTTP_DELETE,
+                    OPTIONS = ngx.HTTP_OPTIONS, MKCOL = ngx.HTTP_MKCOL,
+                    COPY = ngx.HTTP_COPY, MOVE = ngx.HTTP_MOVE,
+                    PROPFIND = ngx.HTTP_PROPFIND, LOCK = ngx.HTTP_LOCK,
+                    UNLOCK = ngx.HTTP_UNLOCK, PATCH = ngx.HTTP_PATCH,
+                    TRACE = ngx.HTTP_TRACE,
+                }
+local schema_method_enum = {}
+for key, _ in pairs(switch_map) do
+    core.table.insert(schema_method_enum, key)
+end
+
 local schema = {
     type = "object",
     properties = {
@@ -37,9 +50,7 @@ local schema = {
         method = {
             description = "proxy route method",
             type        = "string",
-            enum        = {"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS",
-                           "MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND",
-                           "LOCK", "UNLOCK", "PATCH", "TRACE"}
+            enum        = schema_method_enum
         },
         regex_uri = {
             description = "new uri that substitute from client uri " ..
@@ -139,51 +150,6 @@ do
         core.table.insert(upstream_names, name)
     end
 
-    local switch = {
-        ["GET"] = function()
-            ngx.req.set_method(ngx.HTTP_GET)
-        end,
-        ["POST"] = function()
-            ngx.req.set_method(ngx.HTTP_POST)
-        end,
-        ["PUT"] = function()
-            ngx.req.set_method(ngx.HTTP_PUT)
-        end,
-        ["HEAD"] = function()
-            ngx.req.set_method(ngx.HTTP_HEAD)
-        end,
-        ["DELETE"] = function()
-            ngx.req.set_method(ngx.HTTP_DELETE)
-        end,
-        ["OPTIONS"] = function()
-            ngx.req.set_method(ngx.HTTP_OPTIONS)
-        end,
-        ["MKCOL"] = function()
-            ngx.req.set_method(ngx.HTTP_MKCOL)
-        end,
-        ["COPY"] = function()
-            ngx.req.set_method(ngx.HTTP_COPY)
-        end,
-        ["MOVE"] = function()
-            ngx.req.set_method(ngx.HTTP_MOVE)
-        end,
-        ["PROPFIND"] = function()
-            ngx.req.set_method(ngx.HTTP_PROPFIND)
-        end,
-        ["LOCK"] = function()
-            ngx.req.set_method(ngx.HTTP_LOCK)
-        end,
-        ["UNLOCK"] = function()
-            ngx.req.set_method(ngx.HTTP_UNLOCK)
-        end,
-        ["PATCH"] = function()
-            ngx.req.set_method(ngx.HTTP_PATCH)
-        end,
-        ["TRACE"] = function()
-            ngx.req.set_method(ngx.HTTP_TRACE)
-        end,
-    }
-
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -250,7 +216,7 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.method then
-        switch[conf.method]()
+        ngx.req.set_method(switch_map[conf.method])
     end
 end
 
