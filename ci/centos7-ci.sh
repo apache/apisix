@@ -23,11 +23,30 @@ install_dependencies() {
 
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        curl git which sudo openldap-devel
+        git which sudo openldap-devel libev libev-devel zlib zlib-devel openssl openssl-devel
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+
+    # build curl with http2
+    mkdir -p build-cache && cd build-cache/
+    git clone https://github.com/tatsuhiro-t/nghttp2.git
+    cd nghttp2 && autoreconf -i && automake && autoconf && ./configure && make && make install
+    
+    # dynamic linking
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/custom-libs.conf
+    ldconfig
+    # build curl from source
+    cd .. && git clone https://github.com/bagder/curl.git
+    cd curl && ./buildconf
+    ./configure --with-nghttp2=/usr/local --with-ssl
+    make -j4 && make install
+    cp -f ./src/curl /bin
+    cp -f ./src/curl /usr/local/bin
+    cd ../..
+
+    curl --version # debug
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
