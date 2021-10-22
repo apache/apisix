@@ -66,7 +66,7 @@ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
 }
 ```
 
-> grpcurl 是一个 CLI 工具，类似于 curl，充当 gRPC 客户端并让您与 gRPC 服务器进行交互。安装请查看官方 [文件](https://github.com/fullstorydev/grpcurl#installation)
+> grpcurl 是一个 CLI 工具，类似于 curl，充当 gRPC 客户端并让您与 gRPC 服务器进行交互。安装方式请查看官方[文档](https://github.com/fullstorydev/grpcurl#installation)
 
 这表示已成功代理。
 
