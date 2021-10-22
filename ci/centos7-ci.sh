@@ -42,7 +42,11 @@ install_dependencies() {
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
+    # add go1.15 binary to the path
     mkdir build-cache
+    cd build-cache/ && wget https://golang.org/dl/go1.15.linux-amd64.tar.gz && tar -xvf go1.15.linux-amd64.tar.gz
+    export PATH=$PATH:go/bin
+    cd ..
     # install and start grpc_server_example
     cd t/grpc_server_example
 
