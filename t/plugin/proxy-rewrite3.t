@@ -71,16 +71,24 @@ __DATA__
             ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 2: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
 --- response_body
-passed
+hello world
+--- no_error_log
+[error]
 --- grep_error_log_out
 plugin_proxy_rewrite get method: POST
 
 
 
-=== TEST 2: set route(update rewrite method)
+=== TEST 3: set route(update rewrite method)
 --- config
     location /t {
         content_by_lua_block {
@@ -113,13 +121,33 @@ plugin_proxy_rewrite get method: POST
             ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 2: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
 --- response_body
-passed
+hello world
+--- no_error_log
+[error]
 --- grep_error_log_out
 plugin_proxy_rewrite get method: GET
 
+
+
+
+=== TEST 2: hit route(upstream uri: should be /hello)
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- grep_error_log_out
+plugin_proxy_rewrite get method: POST
 
 
 === TEST 3: wrong value of method key
