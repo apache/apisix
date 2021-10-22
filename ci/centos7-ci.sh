@@ -30,7 +30,7 @@ install_dependencies() {
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
 
     # build curl with http2
-    mkdir -p build-cache && cd build-cache/
+    mkdir -p tmp-cache && cd tmp-cache/
     git clone https://github.com/tatsuhiro-t/nghttp2.git
     cd nghttp2 && autoreconf -i && automake && autoconf && ./configure && make && make install
 
@@ -45,8 +45,6 @@ install_dependencies() {
     cp -f ./src/curl /bin
     cp -f ./src/curl /usr/local/bin
     cd ../..
-
-    curl --version # debug
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
