@@ -75,7 +75,7 @@ For China mainland users, you can use the `luarocks.cn` as the luarocks server.
 We already provide a wrapper in the Makefile to simplify your job:
 
 ```bash
-LUAROCKS_SERVER=https://luarocks.cn make deps
+make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.

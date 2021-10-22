@@ -87,10 +87,10 @@ build = {
         OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
-        INST_PREFIX="$(PREFIX)",
-        INST_BINDIR="$(BINDIR)",
-        INST_LIBDIR="$(LIBDIR)",
-        INST_LUADIR="$(LUADIR)",
-        INST_CONFDIR="$(CONFDIR)",
+        ENV_INST_PREFIX="$(PREFIX)",
+        ENV_INST_BINDIR="$(BINDIR)",
+        ENV_INST_LIBDIR="$(LIBDIR)",
+        ENV_INST_LUADIR="$(LUADIR)",
+        ENV_INST_CONFDIR="$(CONFDIR)",
     },
 }
