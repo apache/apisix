@@ -44,8 +44,8 @@ install_dependencies() {
 
     # add go1.15 binary to the path
     mkdir build-cache
-    cd build-cache/ && wget https://golang.org/dl/go1.15.linux-amd64.tar.gz && tar -xvf go1.15.linux-amd64.tar.gz
-    export PATH=$PATH:go/bin
+    cd build-cache/ && wget https://golang.org/dl/go1.15.linux-amd64.tar.gz && tar -xf go1.15.linux-amd64.tar.gz
+    export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
     cd t/grpc_server_example
