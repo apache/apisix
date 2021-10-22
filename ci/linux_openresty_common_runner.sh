@@ -44,18 +44,15 @@ do_install() {
     make utils
 
     mkdir -p build-cache
-    if [ ! -f "build-cache/grpc_server_example_$GRPC_SERVER_EXAMPLE_VER" ]; then
-        wget https://github.com/api7/grpc_server_example/releases/download/"$GRPC_SERVER_EXAMPLE_VER"/grpc_server_example-amd64.tar.gz
-        tar -xvf grpc_server_example-amd64.tar.gz
-        mv grpc_server_example build-cache/
+    # install and start grpc_server_example
+    cd t/grpc_server_example
 
-        git clone --depth 1 https://github.com/api7/grpc_server_example.git grpc_server_example
-        pushd grpc_server_example/ || exit 1
-        mv proto/ ../build-cache/
-        popd || exit 1
-
-        touch build-cache/grpc_server_example_"$GRPC_SERVER_EXAMPLE_VER"
-    fi
+    if [ ! "$(ls -A . )" ]; then # for local development only
+     git submodule init
+     git submodule update
+	fi
+    CGO_ENABLED=0 go build
+    cd ../../
 
     if [ ! -f "build-cache/grpcurl" ]; then
         wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
@@ -70,7 +67,7 @@ script() {
 
     ./utils/set-dns.sh
 
-    ./build-cache/grpc_server_example \
+    ./t/grpc_server_example/grpc_server_example \
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
