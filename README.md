@@ -142,6 +142,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
+  - [Plugin can be written with Proxy WASM SDK](docs/en/latest/wasm.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 

@@ -348,6 +348,10 @@ http {
     }
     {% end %}
 
+    {% if wasm then %}
+    wasm_vm wasmtime;
+    {% end %}
+
     init_by_lua_block {
         require "resty.core"
         {% if lua_module_hook then %}
