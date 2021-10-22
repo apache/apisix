@@ -63,7 +63,8 @@
             "plugins/jwt-auth",
             "plugins/basic-auth",
             "plugins/openid-connect",
-            "plugins/hmac-auth"
+            "plugins/hmac-auth",
+            "plugins/authz-casbin"
           ]
         },
         {
