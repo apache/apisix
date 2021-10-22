@@ -71,12 +71,8 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
-passed
---- no_error_log
-[error]
+method: POST
 
 
 
@@ -113,12 +109,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
-passed
---- no_error_log
-[error]
+method: GET
 
 
 
@@ -140,10 +132,6 @@ passed
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "method" validation failed: matches none of the enum values
 done
---- no_error_log
-[error]
