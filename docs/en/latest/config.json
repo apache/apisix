@@ -215,6 +215,10 @@
         },
         {
           "type": "doc",
+          "id": "wasm"
+        },
+        {
+          "type": "doc",
           "id": "plugin-interceptors"
         },
         {

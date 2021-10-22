@@ -35,8 +35,8 @@ header:
     - '**/*.log'
     # Exclude test toolkit files
     - 't/toolkit'
-    - 't/chaos/go.mod'
-    - 't/chaos/go.sum'
+    - 'go.mod'
+    - 'go.sum'
     # Exclude non-Apache licensed files
     - 'apisix/balancer/ewma.lua'
     # Exclude plugin-specific configuration files
