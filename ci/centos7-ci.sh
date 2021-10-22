@@ -33,7 +33,7 @@ install_dependencies() {
     mkdir -p build-cache && cd build-cache/
     git clone https://github.com/tatsuhiro-t/nghttp2.git
     cd nghttp2 && autoreconf -i && automake && autoconf && ./configure && make && make install
-    
+
     # dynamic linking
     echo '/usr/local/lib' > /etc/ld.so.conf.d/custom-libs.conf
     ldconfig
