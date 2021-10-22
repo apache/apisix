@@ -107,8 +107,8 @@ apisix:
     sleep 1
     cat logs/error.log
 
-    ./t/grpc-proxy-test.sh
-    sleep 1
+    # ./t/grpc-proxy-test.sh
+    # sleep 1
 
     ./bin/apisix stop
     sleep 1
