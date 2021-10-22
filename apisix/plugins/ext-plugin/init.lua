@@ -66,6 +66,7 @@ local type = type
 local events_list
 local lrucache = core.lrucache.new({
     type = "plugin",
+    invalid_stale = true,
     ttl = helper.get_conf_token_cache_time(),
 })
 local shdict_name = "ext-plugin"
