@@ -338,7 +338,31 @@ local config_schema = {
                     }
                 }
             }
-        }
+        },
+        wasm = {
+            type = "object",
+            properties = {
+                plugins = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "object",
+                        properties = {
+                            name = {
+                                type = "string"
+                            },
+                            file = {
+                                type = "string"
+                            },
+                            priority = {
+                                type = "integer"
+                            }
+                        },
+                        required = {"name", "file", "priority"}
+                    }
+                }
+            }
+        },
     }
 }
 
@@ -752,6 +776,7 @@ Please modify "admin_key" in conf/config.yaml .
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
+    sys_conf["wasm"] = yaml_conf.wasm
 
 
     local wrn = sys_conf["worker_rlimit_nofile"]
