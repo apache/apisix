@@ -66,7 +66,7 @@ GET /apisix/admin/plugins
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"rate":{"exclusiveMinimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200,"maximum":599}},"required":["rate","burst","key"],"type":"object"}
+                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"disable":{"type":"boolean"},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
                 ]]
                 )
 

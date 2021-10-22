@@ -693,11 +693,10 @@ passed
 === TEST 18: get "consumer_name" is empty
 --- request
 GET /hello
---- error_code: 500
 --- response_body
-{"message":"Consumer not found."}
+hello world
 --- error_log
-[error]
+bypass the limit req as the key is empty
 
 
 
