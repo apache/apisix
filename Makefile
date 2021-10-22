@@ -141,6 +141,7 @@ install: default
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
 	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
+	$(INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml	
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
