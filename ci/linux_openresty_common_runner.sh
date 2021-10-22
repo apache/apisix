@@ -57,11 +57,8 @@ do_install() {
         touch build-cache/grpc_server_example_"$GRPC_SERVER_EXAMPLE_VER"
     fi
 
-    if [ ! -f "build-cache/grpcurl" ]; then
-        wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
-        tar -xvf grpcurl-amd64.tar.gz
-        mv grpcurl build-cache/
-    fi
+    # installing grpcurl
+    go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
 }
 
 script() {
