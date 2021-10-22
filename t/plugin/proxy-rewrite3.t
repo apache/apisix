@@ -79,8 +79,6 @@ passed
 === TEST 2: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- response_body
-hello world
 --- no_error_log
 [error]
 --- grep_error_log_out
@@ -126,11 +124,9 @@ passed
 
 
 
-=== TEST 2: hit route(upstream uri: should be /hello)
+=== TEST 4: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- response_body
-hello world
 --- no_error_log
 [error]
 --- grep_error_log_out
@@ -138,19 +134,7 @@ plugin_proxy_rewrite get method: GET
 
 
 
-
-=== TEST 2: hit route(upstream uri: should be /hello)
---- request
-GET /hello
---- response_body
-hello world
---- no_error_log
-[error]
---- grep_error_log_out
-plugin_proxy_rewrite get method: POST
-
-
-=== TEST 3: wrong value of method key
+=== TEST 5: wrong value of method key
 --- config
     location /t {
         content_by_lua_block {
