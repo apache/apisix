@@ -71,8 +71,12 @@ __DATA__
             ngx.say(body)
         }
     }
+--- request
+GET /hello
 --- response_body
-method: POST
+passed
+--- grep_error_log_out
+plugin_proxy_rewrite get method: POST
 
 
 
@@ -109,8 +113,12 @@ method: POST
             ngx.say(body)
         }
     }
+--- request
+GET /hello
 --- response_body
-method: GET
+passed
+--- grep_error_log_out
+plugin_proxy_rewrite get method: GET
 
 
 
