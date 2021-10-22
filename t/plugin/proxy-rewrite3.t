@@ -129,7 +129,7 @@ passed
             local plugin = require("apisix.plugins.proxy-rewrite")
             local ok, err = plugin.check_schema({
                 uri = '/apisix/home',
-                "method": "GET1",
+                method = 'GET1',
                 host = 'apisix.iresty.com',
                 scheme = 'http'
             })
