@@ -34,7 +34,7 @@ jobs:
 
     - name: Linux launch common services
       run: |
-        project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+        make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
     - name: Build rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}

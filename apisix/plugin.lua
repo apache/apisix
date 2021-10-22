@@ -18,6 +18,7 @@ local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
+local wasm          = require("apisix.wasm")
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
@@ -67,9 +68,16 @@ local function sort_plugin(l, r)
 end
 
 
-local function unload_plugin(name, is_stream_plugin)
+local PLUGIN_TYPE_HTTP = 1
+local PLUGIN_TYPE_STREAM = 2
+local PLUGIN_TYPE_HTTP_WASM = 3
+local function unload_plugin(name, plugin_type)
+    if plugin_type == PLUGIN_TYPE_HTTP_WASM then
+        return
+    end
+
     local pkg_name = "apisix.plugins." .. name
-    if is_stream_plugin then
+    if plugin_type == PLUGIN_TYPE_STREAM then
         pkg_name = "apisix.stream.plugins." .. name
     end
 
@@ -82,13 +90,21 @@ local function unload_plugin(name, is_stream_plugin)
 end
 
 
-local function load_plugin(name, plugins_list, is_stream_plugin)
-    local pkg_name = "apisix.plugins." .. name
-    if is_stream_plugin then
-        pkg_name = "apisix.stream.plugins." .. name
+local function load_plugin(name, plugins_list, plugin_type)
+    local ok, plugin
+    if plugin_type == PLUGIN_TYPE_HTTP_WASM  then
+        -- for wasm plugin, we pass the whole attrs instead of name
+        ok, plugin = wasm.require(name)
+        name = name.name
+    else
+        local pkg_name = "apisix.plugins." .. name
+        if plugin_type == PLUGIN_TYPE_STREAM then
+            pkg_name = "apisix.stream.plugins." .. name
+        end
+
+        ok, plugin = pcall(require, pkg_name)
     end
 
-    local ok, plugin = pcall(require, pkg_name)
     if not ok then
         core.log.error("failed to load plugin [", name, "] err: ", plugin)
         return
@@ -140,25 +156,39 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
 end
 
 
-local function load(plugin_names)
+local function load(plugin_names, wasm_plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
         if processed[name] == nil then
             processed[name] = true
         end
     end
+    for _, attrs in ipairs(wasm_plugin_names) do
+        if processed[attrs.name] == nil then
+            processed[attrs.name] = attrs
+        end
+    end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    for name in pairs(local_plugins_hash) do
-        unload_plugin(name)
+    for name, plugin in pairs(local_plugins_hash) do
+        local ty = PLUGIN_TYPE_HTTP
+        if plugin.type == "wasm" then
+            ty = PLUGIN_TYPE_HTTP_WASM
+        end
+        unload_plugin(name, ty)
     end
 
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    for name in pairs(processed) do
-        load_plugin(name, local_plugins)
+    for name, value in pairs(processed) do
+        local ty = PLUGIN_TYPE_HTTP
+        if type(value) == "table" then
+            ty = PLUGIN_TYPE_HTTP_WASM
+            name = value
+        end
+        load_plugin(name, local_plugins, ty)
     end
 
     -- sort by plugin's priority
@@ -192,14 +222,14 @@ local function load_stream(plugin_names)
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
     for name in pairs(stream_local_plugins_hash) do
-        unload_plugin(name, true)
+        unload_plugin(name, PLUGIN_TYPE_STREAM)
     end
 
     core.table.clear(stream_local_plugins)
     core.table.clear(stream_local_plugins_hash)
 
     for name in pairs(processed) do
-        load_plugin(name, stream_local_plugins, true)
+        load_plugin(name, stream_local_plugins, PLUGIN_TYPE_STREAM)
     end
 
     -- sort by plugin's priority
@@ -260,7 +290,12 @@ function _M.load(config)
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
         else
-            local ok, err = load(http_plugin_names)
+            local wasm_plugin_names = {}
+            if local_conf.wasm then
+                wasm_plugin_names = local_conf.wasm.plugins
+            end
+
+            local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
             end

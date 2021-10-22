@@ -74,7 +74,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 我们已经封装好了选择服务地址的操作：
 
 ```bash
-LUAROCKS_SERVER=https://luarocks.cn make deps
+make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的

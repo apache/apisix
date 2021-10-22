@@ -59,6 +59,10 @@ install_dependencies() {
     # wait for grpc_server_example to fully start
     sleep 3
 
+    # installing grpcurl
+    wget https://github.com/fullstorydev/grpcurl/releases/download/v1.8.5/grpcurl_1.8.5_linux_x86_64.tar.gz
+    tar -xvf grpcurl_1.8.5_linux_x86_64.tar.gz -C /usr/local/bin
+
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make deps
