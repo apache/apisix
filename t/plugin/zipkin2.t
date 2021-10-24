@@ -31,6 +31,25 @@ add_block_preprocessor(sub {
     if (!$block->no_error_log && !$block->error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_by_lua = <<_EOC_;
+    local new = require("opentracing.tracer").new
+    local tracer_mt = getmetatable(new()).__index
+    local orig_func = tracer_mt.start_span
+    tracer_mt.start_span = function (...)
+        local orig = orig_func(...)
+        local mt = getmetatable(orig).__index
+        local old_start_child_span = mt.start_child_span
+        mt.start_child_span = function(self, name, time)
+            ngx.log(ngx.WARN, "zipkin start_child_span ", name, " time: ", time)
+            return old_start_child_span(self, name, time)
+        end
+        return orig
+    end
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+
 });
 
 run_tests;
@@ -83,6 +102,9 @@ x-b3-sampled: 1
 b3:
 --- error_log
 new span context: trace id: 80f198ee56343ba864fe8b2a57d3eff7, span id: e457b5a2e4d86bd1, parent span id: 05e3ac9a4f6e3b90
+--- grep_error_log eval
+qr/zipkin start_child_span apisix.response_span time: nil/
+--- grep_error_log_out
 
 
 
@@ -186,3 +208,6 @@ GET /t
 --- request
 GET /opentracing
 --- wait: 10
+--- grep_error_log eval
+qr/zipkin start_child_span apisix.response_span time: nil/
+--- grep_error_log_out
