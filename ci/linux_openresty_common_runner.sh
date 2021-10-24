@@ -58,8 +58,7 @@ do_install() {
     fi
 
     # installing grpcurl
-    wget https://github.com/fullstorydev/grpcurl/releases/download/v1.8.5/grpcurl_1.8.5_linux_x86_64.tar.gz
-    tar -xvf grpcurl_1.8.5_linux_x86_64.tar.gz -C /usr/local/bin
+    install_grpcurl
 }
 
 script() {
