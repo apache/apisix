@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.10.1](#2101)
 - [2.10.0](#2100)
 - [2.9.0](#290)
 - [2.8.0](#280)
@@ -45,6 +46,18 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.1
+
+### Bugfix
+
+- fix(zipkin): response_span doesn't have correct start time [#5295](https://github.com/apache/apisix/pull/5295)
+- fix(ext-plugin): don't use stale key [#5309](https://github.com/apache/apisix/pull/5309)
+- fix: route's timeout should not be overwrittern by service [#5219](https://github.com/apache/apisix/pull/5219)
+- fix: filter nil plugin conf triggered by etcd dir init [#5204](https://github.com/apache/apisix/pull/5204)
+- fix: pass correct host header to health checker target nodes [#5175](https://github.com/apache/apisix/pull/5175)
+- fix: upgrade lua-resty-balancer to 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
+- fix(prometheus): avoid negative latency caused by inconsistent Nginx metrics [#5150](https://github.com/apache/apisix/pull/5150)
 
 ## 2.10.0
 

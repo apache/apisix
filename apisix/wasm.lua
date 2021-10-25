@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
-local concat = table.concat
 
 
 local schema = {
@@ -36,18 +35,8 @@ local function check_schema(conf)
 end
 
 
-local get_plugin_ctx_key
-do
-    local key_buf = {
-        nil,
-        nil,
-    }
-
-    function get_plugin_ctx_key(ctx)
-        key_buf[1] = ctx.conf_type
-        key_buf[2] = ctx.conf_id
-        return concat(key_buf, "#", 1, 2)
-    end
+local function get_plugin_ctx_key(ctx)
+    return ctx.conf_type .. "#" .. ctx.conf_id
 end
 
 local function fetch_plugin_ctx(conf, ctx, plugin)
