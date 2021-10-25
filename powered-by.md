@@ -32,6 +32,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="http://www.cunw.com.cn/" rel="nofollow">cunw 湖南新云网</a>
 1. <a href="https://www.chaolian360.com/" rel="nofollow">Chaolian 超链云商</a>
 1. <a href="https://www.ccbft.com/" rel="nofollow">CCB Fintech 建信金科</a>
+1. <a href="https://www.ctrl.cn" rel="nofollow">CTRL 开创云</a>
 1. <a href="http://51tiangou.com/" rel="nofollow">51tiangou 大商天狗</a>
 1. <a href="https://www.daocloud.io/" rel="nofollow">DaoCloud</a>
 1. <a href="https://www.dasouche.com/" rel="nofollow">dasouche 大搜车</a>

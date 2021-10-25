@@ -54,11 +54,8 @@ do_install() {
     CGO_ENABLED=0 go build
     cd ../../
 
-    if [ ! -f "build-cache/grpcurl" ]; then
-        wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
-        tar -xvf grpcurl-amd64.tar.gz
-        mv grpcurl build-cache/
-    fi
+    # installing grpcurl
+    install_grpcurl
 }
 
 script() {
