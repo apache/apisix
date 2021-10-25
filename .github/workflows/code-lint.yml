@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 jobs:
   lint:
