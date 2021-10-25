@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.10.1](#2101)
 - [2.10.0](#2100)
 - [2.9.0](#290)
 - [2.8.0](#280)
@@ -45,6 +46,18 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.1
+
+### Bugfix
+
+- 更正 zipkin 插件 response_span 的开始时间 [#5295](https://github.com/apache/apisix/pull/5295)
+- 避免发送过期 key 给 plugin runner [#5309](https://github.com/apache/apisix/pull/5309)
+- 更正 route 的 timeout 被 service 覆盖的问题 [#5219](https://github.com/apache/apisix/pull/5219)
+- 过滤掉初始化 etcd 数据时产生的空 plugin conf [#5204](https://github.com/apache/apisix/pull/5204)
+- 健康检查特定情况下会发送错误的 Host header [#5175](https://github.com/apache/apisix/pull/5175)
+- 升级 lua-resty-balancer 到 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
+- prometheus 插件修复偶发的 latency 为负数的问题 [#5150](https://github.com/apache/apisix/pull/5150)
 
 ## 2.10.0
 

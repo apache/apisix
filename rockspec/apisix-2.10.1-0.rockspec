@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.10.1-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.10.1",
 }
 
 description = {
