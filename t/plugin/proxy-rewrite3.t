@@ -79,8 +79,6 @@ passed
 === TEST 2: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- no_error_log
-[error]
 --- grep_error_log_out
 plugin_proxy_rewrite get method: POST
 
@@ -127,8 +125,6 @@ passed
 === TEST 4: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- no_error_log
-[error]
 --- grep_error_log_out
 plugin_proxy_rewrite get method: GET
 
