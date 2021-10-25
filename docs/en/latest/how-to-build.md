@@ -56,7 +56,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
 This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.0/apisix-2.10.0-0.el7.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/apisix-2.10.1-0.el7.x86_64.rpm
 ```
 
 > You can also install the RPM package via running `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm`.
@@ -71,16 +71,16 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ### Installation via Source Release Package
 
-1. Create a directory named `apisix-2.10.0`.
+1. Create a directory named `apisix-2.10.1`.
 
   ```shell
-  mkdir apisix-2.10.0
+  mkdir apisix-2.10.1
   ```
 
 2. Download Apache APISIX Release source package.
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.10.0/apache-apisix-2.10.0-src.tgz
+  wget https://downloads.apache.org/apisix/2.10.1/apache-apisix-2.10.1-src.tgz
   ```
 
   You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
@@ -88,14 +88,14 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 3. Unzip the Apache APISIX Release source package.
 
   ```shell
-  tar zxvf apache-apisix-2.10.0-src.tgz -C apisix-2.10.0
+  tar zxvf apache-apisix-2.10.1-src.tgz -C apisix-2.10.1
   ```
 
 4. Install the runtime dependent Lua libraries.
 
   ```shell
-  # Switch to the apisix-2.10.0 directory
-  cd apisix-2.10.0
+  # Switch to the apisix-2.10.1 directory
+  cd apisix-2.10.1
   # Create dependencies
   make deps
   # Install apisix command
