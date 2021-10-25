@@ -33,7 +33,7 @@ via `VERSION=x.y.z make release-src`
 9. Update APISIX website
 10. Update APISIX docker
 11. Update APISIX rpm package
-12. Send the ANNOUNCE email to dev@apisix.apache.org & announce@apache.org
+12. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
 
 ### Release minor version
 
