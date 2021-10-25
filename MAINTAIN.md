@@ -30,7 +30,7 @@ via `VERSION=x.y.z make release-src`
 6. When the vote is passed, send the vote result email to dev@apisix.apache.org
 7. Move the vote artifact to Apache's apisix repo
 8. Create a GitHub release from the minor branch
-9. Update APISIX website
+9. Update [APISIX's website](https://github.com/apache/apisix-website/blob/master/website/docusaurus.config.js#L110-L123)
 10. Update APISIX docker
 11. Update APISIX rpm package
 12. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
