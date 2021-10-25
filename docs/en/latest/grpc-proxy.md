@@ -66,6 +66,8 @@ $ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"n
 }
 ```
 
+> grpcurl is a CLI tool, similar to curl, that acts as a gRPC client and lets you interact with a gRPC server. For installation, please check out the official [documentation](https://github.com/fullstorydev/grpcurl#installation).
+
 This means that the proxying is working.
 
 #### testing HTTP/2 with plaintext

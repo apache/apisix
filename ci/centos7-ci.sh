@@ -59,6 +59,9 @@ install_dependencies() {
     # wait for grpc_server_example to fully start
     sleep 3
 
+    # installing grpcurl
+    install_grpcurl
+
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make deps
