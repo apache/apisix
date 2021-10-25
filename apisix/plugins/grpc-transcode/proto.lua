@@ -25,6 +25,7 @@ local lrucache_proto = core.lrucache.new({
     ttl = 300, count = 100
 })
 
+local proto_fake_file = "filename for loaded"
 
 local function compile_proto(content)
     local _p  = protoc.new()
@@ -33,7 +34,7 @@ local function compile_proto(content)
     -- name to keep the code below unchanged, or we can create our own load function with returning
     -- the loaded DescriptorProto table additionally, see more details in
     -- https://github.com/apache/apisix/pull/4368
-    local ok, res = pcall(_p.load, _p, content, "filename for loaded")
+    local ok, res = pcall(_p.load, _p, content, proto_fake_file)
     if not ok then
         return nil, res
     end
@@ -45,6 +46,12 @@ local function compile_proto(content)
     return _p.loaded
 end
 
+
+local _M = {
+    version = 0.1,
+    compile_proto = compile_proto,
+    proto_fake_file = proto_fake_file
+}
 
 local function create_proto_obj(proto_id)
     if protos.values == nil then
@@ -65,12 +72,6 @@ local function create_proto_obj(proto_id)
 
     return compile_proto(content)
 end
-
-
-local _M = {
-    version = 0.1,
-    compile_proto = compile_proto,
-}
 
 
 function _M.fetch(proto_id)

@@ -14,31 +14,43 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local json     = core.json
-local pb       = require("pb")
-local ngx      = ngx
-local pairs    = pairs
-local ipairs   = ipairs
-local string   = string
-local tonumber = tonumber
-local type     = type
+local core              = require("apisix.core")
+local proto_fake_file   = require("apisix..plugins.grpc-transcode.proto").proto_fake_file
+local json              = core.json
+local pb                = require("pb")
+local ngx               = ngx
+local ipairs            = ipairs
+local string            = string
+local tonumber          = tonumber
+local type              = type
 
 
 local _M = {version = 0.1}
 
 
 function _M.find_method(protos, service, method)
-    for k, loaded in pairs(protos) do
-        if type(loaded) == 'table' then
-            local package = loaded.package
-            for _, s in ipairs(loaded.service or {}) do
-                if package .. "." .. s.name == service then
-                    for _, m in ipairs(s.method) do
-                        if m.name == method then
-                            return m
-                        end
-                    end
+    local loaded = protos[proto_fake_file]
+    if loaded == nil or type(loaded) ~= "table" then
+        return nil
+    end
+
+    local pkg, svc_name
+    for w in service:gmatch('([^.]+)') do
+        if pkg == nil then
+            pkg = w
+            if pkg ~= loaded.package then
+                return nil
+            end
+        else
+            svc_name = w
+        end
+    end
+
+    for _, s in ipairs(loaded.service or {}) do
+        if s.name == svc_name then
+            for _, m in ipairs(s.method) do
+                if m.name == method then
+                    return m
                 end
             end
         end
