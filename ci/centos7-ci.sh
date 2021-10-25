@@ -53,9 +53,9 @@ install_dependencies() {
     cd t/grpc_server_example
 
     if [ ! "$(ls -A . )" ]; then
-     git submodule init
-     git submodule update
-	fi
+        git submodule init
+        git submodule update
+    fi
     CGO_ENABLED=0 go build
     ./grpc_server_example \
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
