@@ -69,46 +69,15 @@ script() {
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
 
-    # listen 9081 for http2 with plaintext
-    echo '
-apisix:
-    node_listen:
-        - port: 9080
-          enable_http2: false
-        - port: 9081
-          enable_http2: true
-    ' > conf/config.yaml
-
-    ./bin/apisix help
-    ./bin/apisix init
-    ./bin/apisix init_etcd
-    ./bin/apisix start
-
-    #start again  --> fail
-    res=`./bin/apisix start`
-    if ! echo "$res" | grep "APISIX is running"; then
-        echo "failed: APISIX runs repeatedly"
-        exit 1
-    fi
-
-    #kill apisix
-    sudo kill -9 `ps aux | grep apisix | grep nginx | awk '{print $2}'`
-
-    #start -> ok
-    res=`./bin/apisix start`
-    if echo "$res" | grep "APISIX is running"; then
-        echo "failed: shouldn't stop APISIX running after kill the old process."
-        exit 1
-    fi
-
-    sleep 1
-    cat logs/error.log
-
-    # ./t/grpc-proxy-test.sh
-    # sleep 1
-
-    ./bin/apisix stop
-    sleep 1
+    # ensure grpc server example is already started
+    for (( i = 0; i <= 100; i++ )); do
+        if [[ "$i" -eq 100 ]]; then
+            echo "failed to start grpc_server_example in time"
+            exit 1
+        fi
+        nc -zv 127.0.0.1 50051 && break
+        sleep 1
+    done
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t

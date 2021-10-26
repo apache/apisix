@@ -46,16 +46,19 @@ install_dependencies() {
 
     # add go1.15 binary to the path
     mkdir build-cache
+    # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
     cd build-cache/ && wget https://golang.org/dl/go1.15.linux-amd64.tar.gz && tar -xf go1.15.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
     cd t/grpc_server_example
 
+    # unless pulled recursively, the submodule directory will remain empty. So it's better to initialize and set the submodule to the particular commit.
     if [ ! "$(ls -A . )" ]; then
         git submodule init
         git submodule update
     fi
+
     CGO_ENABLED=0 go build
     ./grpc_server_example \
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
