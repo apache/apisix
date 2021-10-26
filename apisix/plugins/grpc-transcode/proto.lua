@@ -70,7 +70,22 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    return compile_proto(content)
+    local compiled, res = compile_proto(content)
+
+    if compiled == nil then
+        return nil, res
+    end
+
+    local cache = {}
+    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
+        for _, m in ipairs(s.method) do
+            local k = compiled[proto_fake_file].package .. '.' .. s.name .. '.' .. m.name
+            cache[k] = m
+        end
+    end
+
+    compiled[proto_fake_file].cache = cache
+    return compiled
 end
 
 

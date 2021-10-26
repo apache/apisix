@@ -19,7 +19,6 @@ local proto_fake_file   = require("apisix..plugins.grpc-transcode.proto").proto_
 local json              = core.json
 local pb                = require("pb")
 local ngx               = ngx
-local ipairs            = ipairs
 local string            = string
 local tonumber          = tonumber
 local type              = type
@@ -34,29 +33,7 @@ function _M.find_method(protos, service, method)
         return nil
     end
 
-    local pkg, svc_name
-    for w in service:gmatch('([^.]+)') do
-        if pkg == nil then
-            pkg = w
-            if pkg ~= loaded.package then
-                return nil
-            end
-        else
-            svc_name = w
-        end
-    end
-
-    for _, s in ipairs(loaded.service or {}) do
-        if s.name == svc_name then
-            for _, m in ipairs(s.method) do
-                if m.name == method then
-                    return m
-                end
-            end
-        end
-    end
-
-    return nil
+    return loaded.cache[service .. '.' .. method]
 end
 
 
