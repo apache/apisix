@@ -18,6 +18,7 @@ local core        = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local protoc      = require("protoc")
 local pcall       = pcall
+local ipairs      = ipairs
 local protos
 
 
@@ -70,21 +71,23 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local compiled, res = compile_proto(content)
+    local compiled, err = compile_proto(content)
 
-    if compiled == nil then
-        return nil, res
+    if not compiled then
+        return nil, err
     end
 
-    local cache = {}
+    local index = {}
     for _, s in ipairs(compiled[proto_fake_file].service or {}) do
+        local method_index = {}
         for _, m in ipairs(s.method) do
-            local k = compiled[proto_fake_file].package .. '.' .. s.name .. '.' .. m.name
-            cache[k] = m
+            method_index[m.name] = m
         end
+
+        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
     end
 
-    compiled[proto_fake_file].cache = cache
+    compiled[proto_fake_file].index = index
     return compiled
 end
 
