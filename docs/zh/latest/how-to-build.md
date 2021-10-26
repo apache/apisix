@@ -96,8 +96,8 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
   ```shell
   # 切换到 apisix-2.10.1 目录
   cd apisix-2.10.1
-  # 创建依赖
-  make deps
+  # 安装依赖
+  LUAROCKS_SERVER=https://luarocks.cn make deps
   # 安装 apisix 命令
   make install
   ```
