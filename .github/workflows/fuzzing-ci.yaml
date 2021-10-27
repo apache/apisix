@@ -22,6 +22,7 @@ jobs:
   test_apisix:
     name: run fuzzing
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - name: Check out code
