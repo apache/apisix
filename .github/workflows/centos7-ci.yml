@@ -20,6 +20,7 @@ jobs:
   test_apisix:
     name: run ci on centos7
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
     - name: Check out code

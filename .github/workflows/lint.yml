@@ -6,6 +6,7 @@ jobs:
   trailing-whitespace:
     name: 🌌 Trailing whitespace
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
       - uses: actions/checkout@v2.3.5
       - name: 🧹 Check for trailing whitespace

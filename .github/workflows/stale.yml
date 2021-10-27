@@ -1,3 +1,5 @@
+name: Stable Test
+
 on:
   workflow_dispatch:
   schedule:
@@ -7,6 +9,7 @@ jobs:
   prune_stale:
     name: Prune Stale
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: Prune Stale
