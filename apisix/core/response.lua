@@ -164,7 +164,7 @@ end
 --  ...
 --
 -- Inspired by kong.response.get_raw_body()
-function _M.hold_body_chunk(ctx)
+function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
     if eof then
@@ -193,7 +193,10 @@ function _M.hold_body_chunk(ctx)
         end
     end
 
-    arg[1] = nil
+    if not hold_the_copy then
+        -- flush the origin body chunk
+        arg[1] = nil
+    end
     return nil
 end
 
