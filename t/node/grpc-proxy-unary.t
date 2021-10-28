@@ -57,7 +57,7 @@ routes:
             local opts= {
                 merge_stderr = true,
             }
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./build-cache/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello", opts)
+            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello", opts)
             if not proc then
                 ngx.say(err)
                 return
@@ -99,7 +99,7 @@ routes:
     location /t {
         content_by_lua_block {
             local ngx_pipe = require("ngx.pipe")
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./build-cache/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello")
+            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello")
             if not proc then
                 ngx.say(err)
                 return
@@ -141,7 +141,7 @@ routes:
     location /t {
         content_by_lua_block {
             local ngx_pipe = require("ngx.pipe")
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./build-cache/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello")
+            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello")
             if not proc then
                 ngx.say(err)
                 return
@@ -189,7 +189,7 @@ routes:
     location /t {
         content_by_lua_block {
             local ngx_pipe = require("ngx.pipe")
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./build-cache/proto -proto helloworld.proto -insecure -d '{\"name\":\"apisix\"}' test.com:1994 helloworld.Greeter.SayHello")
+            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -insecure -d '{\"name\":\"apisix\"}' test.com:1994 helloworld.Greeter.SayHello")
             if not proc then
                 ngx.say(err)
                 return
