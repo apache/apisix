@@ -217,7 +217,7 @@ script() {
     openresty -V
 
 
-    ./build-cache/grpc_server_example &
+    ./t/grpc_server_example/grpc_server_example &
 
     ./bin/apisix help
     ./bin/apisix init

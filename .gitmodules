@@ -4,3 +4,6 @@
 [submodule ".github/actions/action-tmate"]
 	path = .github/actions/action-tmate
 	url = https://github.com/mxschmitt/action-tmate
+[submodule "t/grpc_server_example"]
+	path = t/grpc_server_example
+	url = https://github.com/api7/grpc_server_example
