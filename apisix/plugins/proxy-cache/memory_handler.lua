@@ -299,7 +299,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local res_body = core.response.hold_body_chunk(ctx)
+    local res_body = core.response.hold_body_chunk(ctx, true)
     if not res_body then
         return
     end
@@ -318,8 +318,6 @@ function _M.body_filter(conf, ctx)
     if not res then
         core.log.error("failed to set cache, err: ", err)
     end
-
-    ngx.arg[1] = res_body
 end
 
 
