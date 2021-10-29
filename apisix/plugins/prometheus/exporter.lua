@@ -110,10 +110,7 @@ function _M.init()
 
 end
 
-
-function _M.log(conf, ctx)
-    local vars = ctx.var
-
+function _M.parse_info_from_ctx(conf, ctx)
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
     local service_id = ""
@@ -131,6 +128,13 @@ function _M.log(conf, ctx)
             end
         end
     end
+    return route_id, service_id, consumer_name, balancer_ip
+end
+
+function _M.log(conf, ctx)
+    local vars = ctx.var
+
+    local route_id, service_id, consumer_name, balancer_ip = _M.parse_info_from_ctx(conf, ctx)
 
     local matched_uri = ""
     local matched_host = ""
