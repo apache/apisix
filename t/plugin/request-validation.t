@@ -1633,7 +1633,7 @@ qr/string too long/
                  [[{
                     "plugins": {
                         "request-validation": {
-                            "rejected_message": "customize reject message"
+                            "rejected_msg": "customize reject message"
                         }
                     },
                     "upstream": {

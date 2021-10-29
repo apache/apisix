@@ -44,7 +44,7 @@ title: request-validation
 | ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
 | header_schema    | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
 | body_schema      | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
-| rejected_message | string | 可选        |         |       | 自定义拒绝信息 |
+| rejected_msg | string | 可选        |         |       | 自定义拒绝信息 |
 
 ## 如何启用
 
@@ -63,7 +63,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
                 },
-                "rejected_message": "customize reject message"
+                "rejected_msg": "customize reject message"
             }
         }
     },
@@ -269,7 +269,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
           "required_payload": {"type": "string"},
           "boolean_payload": {"type": "boolean"}
         },
-        "rejected_message": "customize reject message"
+        "rejected_msg": "customize reject message"
       }
     }
   },
