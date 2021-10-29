@@ -266,12 +266,21 @@ local function set_upstream_host(api_ctx, picked_server)
 end
 
 
+local upstream_proxy_headers = {
+    var_x_forwarded_proto = 'X-Forwarded-Proto',
+    var_x_forwarded_for = 'X-Forwarded-For',
+    var_x_forwarded_host = 'X-Forwarded-Host',
+    var_x_forwarded_port = 'X-Forwarded-Port',
+}
+
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
 
-    local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
-    if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+    for ngx_key, hdr_key in pairs(upstream_proxy_headers) do
+        local value = core.request.header(api_ctx, hdr_key)
+        if value then
+            api_ctx.var[ngx_key] = value
+        end
     end
 end
 
