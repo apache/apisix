@@ -175,3 +175,84 @@ GET /echo
 X-Forwarded-Proto: grpc
 --- response_headers
 X-Forwarded-Proto: https
+
+
+
+=== TEST 6: customize X-Forwarded-For
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-For: 1.1.1.1
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-For: 2.2.2.2
+--- response_headers
+X-Forwarded-For: 1.1.1.1
+
+
+
+=== TEST 7: customize X-Forwarded-Host
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Host: mydomain.com
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Host: 2.2.2.2
+--- response_headers
+X-Forwarded-Host: mydomain.com
+
+
+
+=== TEST 8: customize X-Forwarded-Port
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Port: 22238
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Port: 22237
+--- response_headers
+X-Forwarded-Port: 22238
