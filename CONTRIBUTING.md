@@ -126,6 +126,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
     * Use tool to check your test case style statically by command, eg: `make lint`.
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
+    * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## Do you have questions about the source code?
 
