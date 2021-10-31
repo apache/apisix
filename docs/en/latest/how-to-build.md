@@ -178,7 +178,7 @@ apisix help
   git clone https://github.com/iresty/test-nginx.git
   ```
 
-4. Load the test-nginx library with the `prove` command in `perl` and run the test case set in the `/t` directory.
+4. Here are two ways of running tests:
 
   - Append the current directory to the perl module directory: `export PERL5LIB=.:$PERL5LIB`, then run `make test` command.
 
@@ -219,6 +219,8 @@ Run the specified test case using the following command.
 ```shell
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
+
+For more details on the test cases, see the [testing framwork](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md).
 
 ## Step 5: Update Admin API token to Protect Apache APISIX
 

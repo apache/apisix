@@ -176,7 +176,7 @@ apisix help
   git clone https://github.com/iresty/test-nginx.git
   ```
 
-4. 通过 `perl` 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
+4. 有两种方法运行测试：
 
   - 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
 
@@ -217,6 +217,8 @@ apisix help
 ```shell
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
+
+关于测试用例的更多细节，参见[测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## 步骤5：修改 Admin API key
 
