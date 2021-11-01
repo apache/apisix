@@ -20,15 +20,28 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
+indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+[.gitmodules]
+indent_style = tab
 
 [Makefile]
 indent_style = tab
 
-[*.{lua,sh,t,rockspec}]
-indent_style = space
-
 [*.{yml,yaml}]
-indent_style = space
 indent_size = 2
+
+[*.go]
+indent_style = tab
+## ignore ASF license
+block_comment_start = /*
+block_comment = *
+block_comment_end = */
+
+[**go.mod]
+indent_style = tab
+
+[t/coredns/db.test.local]
+indent_style = unset

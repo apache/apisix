@@ -1,0 +1,34 @@
+name: ci-eclint
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/**'
+  pull_request:
+    branches:
+      - 'master'
+
+jobs:
+  ci-eclint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.3.5
+        with:
+          submodules: recursive
+
+      - name: Setup Nodejs env
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+
+      - name: debug
+        run: |
+          sudo npm install -g eclint
+
+      - name: Run eclint
+        run: |
+          eclint check
