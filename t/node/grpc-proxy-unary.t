@@ -68,7 +68,6 @@ routes:
                 return
             end
             ngx.say(data:sub(1, -2))
-            return
         }
     }
 --- response_body
@@ -110,7 +109,6 @@ routes:
                 return
             end
             ngx.say(data:sub(1, -2))
-            return
         }
     }
 --- response_body
@@ -152,7 +150,6 @@ routes:
                 return
             end
             ngx.say(data:sub(1, -2))
-            return
         }
     }
 --- response_body
@@ -200,7 +197,6 @@ routes:
                 return
             end
             ngx.say(data:sub(1, -2))
-            return
         }
     }
 --- response_body
