@@ -54,6 +54,7 @@ done
 
 
 === TEST 2: add plugin
+--- wait: 6
 --- config
     location /t {
         content_by_lua_block {
@@ -90,7 +91,9 @@ done
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "datadog": {}
+                            "datadog": {
+                                "batch_max_size" : 1
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -98,13 +101,15 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/datadog"
+                        "uri": "/index.html"
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "plugins": {
-                                "datadog": {}
+                                "datadog": {
+                                    "batch_max_size": 1
+                                }
                             },
                             "upstream": {
                                 "nodes": {
@@ -112,7 +117,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/datadog"
+                            "uri": "/index.html"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -126,9 +131,14 @@ done
                 return
             end
 
+            -- local code, _, body4 = t("/index.html", "GET")
+            -- if code >= 300 then
+            --    ngx.status = code
+            --    ngx.say("fail")
+            --    return
+            --end
             ngx.print(meta_body .. "\n")
             ngx.print(body .. "\n")
-
         }
     }
 --- response_body

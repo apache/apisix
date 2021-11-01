@@ -40,8 +40,8 @@ local schema = {
     properties = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 2},
-        batch_max_size = {type = "integer", minimum = 1, default = 1},
-        max_retry_count = {type = "integer", minimum = 1, default = 3},
+        batch_max_size = {type = "integer", minimum = 1, default = 5000},
+        max_retry_count = {type = "integer", minimum = 1, default = 1},
     }
 }
 
@@ -172,7 +172,7 @@ function _M.log(conf, ctx)
 
         core.log.info("datadog batch_entry: ", core.json.delay_encode(entries, true))
         for _, entry in ipairs(entries) do
-            local suffix = generate_tag(entry, metadata.value.tags)
+            local suffix = generate_tag(entry, metadata.value.constant_tags)
 
             -- request counter
             local ok, err = sock:send(format("%s:%s|%s%s", prefix ..

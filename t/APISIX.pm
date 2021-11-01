@@ -399,6 +399,13 @@ $stream_config
         listen 1985;
         $stream_server_config
     }
+    server {
+        listen 8125;
+        content_by_lua_block {
+            local mock = require("lib.mock-dogstastd")
+            mock.go()
+        }
+    }
 }
 _EOC_
     }
