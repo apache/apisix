@@ -37,11 +37,13 @@ This installation method is suitable for CentOS 7. For now, the Apache APISIX RP
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# View apisix package information, only 2.10.0 is included for now
+# View the information of the latest apisix package
 sudo yum info -y apisix
+
+# Will show the existing apisix packages
 sudo yum --showduplicates list apisix
 
-# Will install apisix-2.10.0
+# Will install the latest apisix package
 sudo yum install apisix
 ```
 
@@ -56,10 +58,8 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
 This installation method is suitable for CentOS 7, please run the following command to install Apache APISIX.
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/apisix-2.10.1-0.el7.x86_64.rpm
+sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.1-0.el7.x86_64.rpm
 ```
-
-> You can also install the RPM package via running `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm`.
 
 ### Installation via Docker
 
