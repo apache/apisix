@@ -29,22 +29,23 @@ local plugin_name = "datadog"
 local schema = {
     type = "object",
     properties = {
-        sample_rate = {type = "number", default = 1, minimum = 0, maximum = 1},
-        tags = {
-            type = "array",
-            items = {type = "string"},
-            default = {"source:apisix"}
-        }
     }
 }
 
 local metadata_schema = {
     type = "object",
     properties = {
-        host = {type = "string", default = "0.0.0.0"},
-        port = {type = "integer", minimum = 0, default = 8125},
+        host = {type = "string"},
+        port = {type = "integer", minimum = 0},
         namespace = {type = "string", default = "apisix.dev"},
+        sample_rate = {type = "number", default = 1, minimum = 0, maximum = 1},
+        tags = {
+            type = "array",
+            items = {type = "string"},
+            default = {"source:apisix"}
+        }
     },
+    required = {"host", "port"}
 }
 
 local _M = {
@@ -62,7 +63,8 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
-local function generate_tag(sample_rate, tag_arr, route_id, service_id, consumer_name, balancer_ip)
+local function generate_tag(sample_rate, tag_arr, route_id, service_id,
+        consumer_name, balancer_ip, http_status)
     local rate, tags = "", ""
 
     if sample_rate and sample_rate ~= 1 then
@@ -87,6 +89,9 @@ local function generate_tag(sample_rate, tag_arr, route_id, service_id, consumer
     if balancer_ip ~= "" then
         tags = tags .. "balancer_ip:" .. balancer_ip
     end
+    if http_status then
+        tags = tags .. "http_status:" .. http_status
+    end
 
     if tags ~= "" and tags:sub(1, 1) ~= "|" then
         tags = "|#" .. tags
@@ -97,8 +102,6 @@ local function generate_tag(sample_rate, tag_arr, route_id, service_id, consumer
 end
 
 function _M.log(conf, ctx)
-    core.log.error("conf: ", core.json.delay_encode(conf, true))
-    core.log.error("ctx: ", core.json.delay_encode(ctx, true))
     local metadata = plugin.plugin_metadata(plugin_name)
     if not metadata then
         core.log.error("received nil metadata")
@@ -110,14 +113,14 @@ function _M.log(conf, ctx)
     }
 
     local route_id, service_id, consumer_name, balancer_ip = fetch_info(conf, ctx)
-    local prefix = ""
+    local prefix = metadata.value.namespace
 
-    if metadata.value.namespace ~= "" then
+    if prefix ~= "" then
         prefix = prefix .. "."
     end
 
-    local suffix = generate_tag(conf.sample_rate, conf.tags,
-                    route_id, service_id, consumer_name, balancer_ip)
+    local suffix = generate_tag(metadata.value.sample_rate, metadata.value.tags,
+                    route_id, service_id, consumer_name, balancer_ip, ctx.var.status)
 
     -- request counter
     local ok, err = send_statsd(udp_conf,
