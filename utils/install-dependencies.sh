@@ -19,6 +19,29 @@
 
 set -ex
 
+function detect_aur_helper() {
+    if [[ $(which yay) ]]; then
+        AUR_HELPER=yay
+    elif [[ $(which pacaur) ]]; then
+        AUR_HELPER=pacaur
+    else
+        echo No available AUR helpers found. Please specify your AUR helper by AUR_HELPER.
+        exit -1
+    fi
+}
+
+function install_dependencies_with_aur() {
+    detect_aur_helper
+    $AUR_HELPER -S openresty --noconfirm
+    sudo pacman -S openssl --noconfirm
+
+    export OPENRESTY_PREFIX=/opt/openresty
+
+    sudo mkdir $OPENRESTY_PREFIX/openssl
+    sudo ln -s /usr/include $OPENRESTY_PREFIX/openssl/include
+    sudo ln -s /usr/lib $OPENRESTY_PREFIX/openssl/lib
+}
+
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
     # add OpenResty source
@@ -66,6 +89,8 @@ function multi_distro_installation() {
         install_dependencies_with_apt "debian"
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         install_dependencies_with_apt "ubuntu"
+    elif grep -Eqi "Arch" /etc/issue || grep -Eq "Arch" /etc/*-release; then
+        install_dependencies_with_aur
     else
         echo "Non-supported operating system version"
     fi
