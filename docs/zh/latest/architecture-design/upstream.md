@@ -36,7 +36,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 创建上游对象用例：
 
-```json
+```shell
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
