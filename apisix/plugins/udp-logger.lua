@@ -53,13 +53,11 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-function _M.send_udp_data(conf, log_message)
+local function send_udp_data(conf, log_message)
     local err_msg
     local res = true
     local sock = udp()
-    if not conf.timeout then
-        sock:settimeout(conf.timeout * 1000)
-    end
+    sock:settimeout(conf.timeout * 1000)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
 
@@ -132,7 +130,7 @@ function _M.log(conf, ctx)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        return _M.send_udp_data(conf, data)
+        return send_udp_data(conf, data)
     end
 
     local config = {

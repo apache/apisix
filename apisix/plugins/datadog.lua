@@ -16,36 +16,47 @@
 
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
-local send_statsd = require("apisix.plugins.udp-logger").send_udp_data
-local fetch_info = require("apisix.plugins.prometheus.exporter").parse_info_from_ctx
+local batch_processor = require("apisix.utils.batch-processor")
+local fetch_log = require("apisix.utils.log-util").get_full_log
+local ngx = ngx
+local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
-local tostring = tostring
-local ngx = ngx
-
+local buffers = {}
+local ipairs = ipairs
+local stale_timer_running = false
+local timer_at = ngx.timer.at
 
 local plugin_name = "datadog"
+local defaults = {
+    host = "127.0.0.1",
+    port = 8125,
+    namespace = "apisix",
+    constant_tags = {"source:apisix"}
+}
 
 local schema = {
     type = "object",
     properties = {
+        buffer_duration = {type = "integer", minimum = 1, default = 60},
+        inactive_timeout = {type = "integer", minimum = 1, default = 2},
+        batch_max_size = {type = "integer", minimum = 1, default = 1},
+        max_retry_count = {type = "integer", minimum = 1, default = 3},
     }
 }
 
 local metadata_schema = {
     type = "object",
     properties = {
-        host = {type = "string"},
-        port = {type = "integer", minimum = 0},
-        namespace = {type = "string", default = "apisix.dev"},
-        sample_rate = {type = "number", default = 1, minimum = 0, maximum = 1},
-        tags = {
+        host = {type = "string", default= defaults.host},
+        port = {type = "integer", minimum = 0, default = defaults.port},
+        namespace = {type = "string", default = defaults.namespace},
+        constant_tags = {
             type = "array",
             items = {type = "string"},
-            default = {"source:apisix"}
+            default = defaults.constant_tags
         }
     },
-    required = {"host", "port"}
 }
 
 local _M = {
@@ -63,116 +74,192 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
-local function generate_tag(sample_rate, tag_arr, route_id, service_id,
-        consumer_name, balancer_ip, http_status)
-    local rate, tags = "", ""
+local function generate_tag(conf, const_tags)
+    local tags = ""
 
-    if sample_rate and sample_rate ~= 1 then
-        rate = "|@" .. tostring(sample_rate)
+    if const_tags and #const_tags > 0 then
+        tags = concat(const_tags, ",") .. ","
     end
 
-    if tag_arr and #tag_arr > 0 then
-        tags = "|#" .. concat(tag_arr, ",")
+    if conf.route_id then
+        tags = tags .. "route_id:" .. conf.route_id .. ","
     end
 
-    if route_id ~= "" then
-        tags = tags .. "route_id:" .. route_id
+    if conf.service_id then
+        tags = tags .. "service_id:" .. conf.service_id .. ","
     end
 
-    if service_id ~= "" then
-        tags = tags .. "service_id:" .. service_id
+    if conf.consumer then
+        tags = tags .. "consumer:" .. conf.consumer .. ","
+    end
+    if conf.balancer_ip ~= "" then
+        tags = tags .. "balancer_ip:" .. conf.balancer_ip .. ","
+    end
+    if conf.response.status then
+        tags = tags .. "response_status:" .. conf.response.status .. ","
     end
 
-    if consumer_name ~= "" then
-        tags = tags .. "consumer_name:" .. consumer_name
-    end
-    if balancer_ip ~= "" then
-        tags = tags .. "balancer_ip:" .. balancer_ip
-    end
-    if http_status then
-        tags = tags .. "http_status:" .. http_status
+    if tags ~= "" then
+        tags = "|#" .. tags:sub(1, -2)
     end
 
-    if tags ~= "" and tags:sub(1, 1) ~= "|" then
-        tags = "|#" .. tags
+    return tags
+end
+
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
     end
 
-    return rate .. tags
+    for key, batch in ipairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
+            buffers[key] = nil
+        end
+    end
 
+    stale_timer_running = false
 end
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if not metadata then
-        core.log.error("received nil metadata")
+
+    if not stale_timer_running then
+        -- run the timer every 30 mins if any log is present
+        timer_at(1800, remove_stale_objects)
+        stale_timer_running = true
     end
 
-    local udp_conf = {
-        host = metadata.value.host,
-        port = metadata.value.port
+    local entry = fetch_log(ngx, {})
+    entry.upstream_latency = ctx.var.upstream_response_time * 1000
+    entry.balancer_ip = ctx.balancer_ip or ""
+
+    local log_buffer = buffers[conf]
+    if log_buffer then
+        log_buffer:push(entry)
+        return
+    end
+
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries, batch_max_size)
+        -- Fetching metadata details
+        local metadata = plugin.plugin_metadata(plugin_name)
+        if not metadata then
+            core.log.info("received nil metadata: using metadata defaults: ",
+                                core.json.delay_encode(defaults, true))
+            metadata = {}
+            metadata.value = defaults
+        end
+
+        -- Creating a udp socket
+        local sock = udp()
+        local host, port = metadata.value.host, metadata.value.port
+        core.log.info("sending batch metrics to dogstatsd: ", host, ":", port)
+
+        local ok, err = sock:setpeername(host, port)
+
+        if not ok then
+            return false, "failed to connect to UDP server: host[" .. host
+                        .. "] port[" .. tostring(port) .. "] err: " .. err
+        end
+
+        -- Generate prefix & suffix according dogstatsd udp data format.
+        local prefix = metadata.value.namespace
+        if prefix ~= "" then
+            prefix = prefix .. "."
+        end
+
+        core.log.info("datadog batch_entry: ", core.json.delay_encode(entries, true))
+        for _, entry in ipairs(entries) do
+            local suffix = generate_tag(entry, metadata.value.tags)
+
+            -- request counter
+            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                            "request.counter", 1, "c", suffix))
+            if not ok then
+                core.log.error("failed to report request count to dogstatsd server: host[" .. host
+                        .. "] port[" .. tostring(port) .. "] err: " .. err)
+            end
+
+
+            -- request latency histogram
+            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                        "request.latency", entry.latency, "h", suffix))
+            if not ok then
+                core.log.error("failed to report request latency to dogstatsd server: host["
+                        .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+            end
+
+            -- upstream latency
+            local apisix_latency = entry.latency
+            if entry.upstream_latency then
+                local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                        "upstream.latency", entry.upstream_latency, "h", suffix))
+                if not ok then
+                    core.log.error("failed to report upstream latency to dogstatsd server: host["
+                                .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+                end
+                apisix_latency =  apisix_latency - entry.upstream_latency
+                if apisix_latency < 0 then
+                    apisix_latency = 0
+                end
+            end
+
+            -- apisix_latency
+            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                            "apisix.latency", apisix_latency, "h", suffix))
+            if not ok then
+                core.log.error("failed to report apisix latency to dogstatsd server: host[" .. host
+                        .. "] port[" .. tostring(port) .. "] err: " .. err)
+            end
+
+            -- request body size timer
+            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                            "ingress.size", entry.request.size, "ms", suffix))
+            if not ok then
+                core.log.error("failed to report req body size to dogstatsd server: host[" .. host
+                        .. "] port[" .. tostring(port) .. "] err: " .. err)
+            end
+
+            -- response body size timer
+            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
+                                            "egress.size", entry.response.size, "ms", suffix))
+            if not ok then
+                core.log.error("failed to report response body size to dogstatsd server: host["
+                        .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+            end
+        end
+
+        -- Releasing the UDP socket desciptor
+        ok, err = sock:close()
+        if not ok then
+            core.log.error("failed to close the UDP connection, host[",
+                            host, "] port[", port, "] ", err)
+        end
+    end
+
+    local config = {
+        name = plugin_name,
+        retry_delay = conf.retry_delay,
+        batch_max_size = conf.batch_max_size,
+        max_retry_count = conf.max_retry_count,
+        buffer_duration = conf.buffer_duration,
+        inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
-    local route_id, service_id, consumer_name, balancer_ip = fetch_info(conf, ctx)
-    local prefix = metadata.value.namespace
+    local err
+    log_buffer, err = batch_processor:new(func, config)
 
-    if prefix ~= "" then
-        prefix = prefix .. "."
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
     end
 
-    local suffix = generate_tag(metadata.value.sample_rate, metadata.value.tags,
-                    route_id, service_id, consumer_name, balancer_ip, ctx.var.status)
-
-    -- request counter
-    local ok, err = send_statsd(udp_conf,
-                        format("%s:%s|%s%s", prefix .. "request.counter", 1, "c", suffix))
-    if not ok then
-        core.log.error("failed to send request_count metric to DogStatsD. err: " .. err)
-    end
-
-
-    -- request latency histogram
-    local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    local ok, err = send_statsd(udp_conf,
-                        format("%s:%s|%s%s", prefix .. "request.latency", latency, "h", suffix))
-    if not ok then
-        core.log.error("failed to send request latency metric to DogStatsD. err: " .. err)
-    end
-
-    -- upstream latency
-    local apisix_latency = latency
-    if ctx.var.upstream_response_time then
-        local upstream_latency = ctx.var.upstream_response_time * 1000
-        local ok, err = send_statsd(udp_conf,
-                format("%s:%s|%s%s", prefix .. "upstream.latency", upstream_latency, "h", suffix))
-        if not ok then
-            core.log.error("failed to send upstream latency metric to DogStatsD. err: " .. err)
-        end
-        apisix_latency =  apisix_latency - upstream_latency
-        if apisix_latency < 0 then
-            apisix_latency = 0
-        end
-    end
-
-    -- apisix_latency
-    local ok, err = send_statsd(udp_conf,
-            format("%s:%s|%s%s", prefix .. "apisix.latency", apisix_latency, "h", suffix))
-    if not ok then
-        core.log.error("failed to send apisix latency metric to DogStatsD. err: " .. err)
-    end
-
-    -- request body size timer
-    local ok, err = send_statsd(udp_conf,
-            format("%s:%s|%s%s", prefix .. "ingress.size", ctx.var.request_length, "ms", suffix))
-    if not ok then
-        core.log.error("failed to send request body size metric to DogStatsD. err: " .. err)
-    end
-
-    -- response body size timer
-    local ok, err = send_statsd(udp_conf,
-            format("%s:%s|%s%s", prefix .. "egress.size", ctx.var.bytes_sent, "ms", suffix))
-    if not ok then
-        core.log.error("failed to send response body size metric to DogStatsD. err: " .. err)
-    end
+    buffers[conf] = log_buffer
+    log_buffer:push(entry)
 end
 
 return _M

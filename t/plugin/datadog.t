@@ -19,6 +19,18 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+    if (!$block->no_error_log && !$block->error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -36,39 +48,12 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 2: missing host inside metadata
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.datadog")
-            local ok, err = plugin.check_schema({port = 8125}, 2)
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-property "host" is required
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 3: add plugin
+=== TEST 2: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -81,21 +66,20 @@ done
                         "port": 8125
                 }]],
                 [[{
-                    "action": "set",
                     "node": {
-                        "key": "/apisix/plugin_metadata/datadog",
                         "value": {
+                            "namespace": "apisix",
                             "host": "127.0.0.1",
-                            "namespace": "apisix.dev",
-                            "port": 8125,
-                            "tags": [
+                            "constant_tags": [
                                 "source:apisix"
                             ],
-                            "sample_rate": 1
-                        }
-                    }
+                            "port": 8125
+                        },
+                        "key": "/apisix/plugin_metadata/datadog"
+                    },
+                    "action": "set"
                 }]])
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail")
@@ -147,10 +131,6 @@ done
 
         }
     }
---- request
-GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
