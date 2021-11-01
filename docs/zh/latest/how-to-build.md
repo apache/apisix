@@ -37,11 +37,13 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# View apisix package information, only 2.10.0 is included for now
+# View the information of the latest apisix package
 sudo yum info -y apisix
+
+# Will show the existing apisix packages
 sudo yum --showduplicates list apisix
 
-# Will install apisix-2.10.0
+# Will install the latest apisix package
 sudo yum install apisix
 ```
 
@@ -56,10 +58,8 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
 这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/apisix-2.10.1-0.el7.x86_64.rpm
+sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.1-0.el7.x86_64.rpm
 ```
-
-> 您也可以运行 `sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.0-0.el7.x86_64.rpm` 命令安装。
 
 ### 通过 Docker 安装
 
