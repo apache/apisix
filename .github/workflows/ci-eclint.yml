@@ -17,15 +17,13 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2.3.5
-        with:
-          submodules: recursive
 
       - name: Setup Nodejs env
         uses: actions/setup-node@v2
         with:
           node-version: '12'
 
-      - name: debug
+      - name: Install eclint
         run: |
           sudo npm install -g eclint
 
