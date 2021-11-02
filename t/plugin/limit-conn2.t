@@ -308,3 +308,134 @@ request latency is nil
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
+
+
+
+=== TEST 9: set key type to var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 2,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "$http_a $http_b",
+                                "key_type": "var_combination"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-conn": {
+                                    "conn": 2,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "$http_a $http_b",
+                                    "key_type": "var_combination"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/limit_conn"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: Don't exceed the burst
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/limit_conn"
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = i}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- timeout: 10s
+--- response_body
+[200,200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: bypass empty key
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/limit_conn"
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200]
+--- error_log
+bypass the limit conn as the key is empty

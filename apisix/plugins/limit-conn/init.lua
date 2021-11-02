@@ -47,7 +47,30 @@ function _M.increase(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local conf_key = conf.key
+    local key
+    if conf.key_type == "var_combination" then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
+        end
+
+        if n_resolved == 0 then
+            key = nil
+        end
+    else
+        key = ctx.var[conf_key]
+    end
+
+    if key == nil then
+        core.log.info("bypass the limit conn as the key is empty")
+        -- Bypass the limit conn when the key is empty.
+        -- This behavior is the same as Nginx
+        return
+    end
+
+    key = key .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
