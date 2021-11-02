@@ -21,10 +21,10 @@ jobs:
           wget -O - -q https://git.io/misspell | sh -s -- -b .
       - name: Misspell
         run: |
-          git ls-files | grep -v "docs/es" | grep -v "t/toolkit" | xargs ./misspell -error
+          git grep --cached -l '' | xargs ./misspell -error
       - name: Merge conflict
         run: |
-          grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
+          grep "^<<<<<<< HEAD" $(git grep --cached -l '' | xargs) && exit 1 || true
       - name: Plugin Code
         run: |
           sudo bash ./utils/check-plugins-code.sh
