@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                 "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
             },
             "vars":[
-                [ "status","==","200" ]
+                [ "status","==",200 ]
             ]
         }
     },
