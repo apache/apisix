@@ -149,6 +149,7 @@ make stop
 
 if ! grep -E 'certificate host mismatch' logs/error.log; then
     echo "failed: should got certificate host mismatch when use host in etcd.host as sni"
+    cat logs/error.log
     exit 1
 fi
 
