@@ -74,7 +74,7 @@ install_dependencies() {
 
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    make deps
+    create_lua_deps
 }
 
 run_case() {

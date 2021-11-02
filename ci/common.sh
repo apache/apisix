@@ -26,6 +26,7 @@ export_or_prefix() {
 create_lua_deps() {
     echo "Create lua deps"
 
+    git config --global url.https://github.com/.insteadOf git://github.com/
     make deps
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
