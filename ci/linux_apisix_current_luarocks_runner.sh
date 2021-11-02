@@ -32,6 +32,8 @@ script() {
 
     sudo rm -rf /usr/local/apisix
 
+    git config --global url.https://github.com/.insteadOf git://github.com/
+
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
