@@ -143,11 +143,6 @@ local function parse_domain_for_node(node)
 end
 
 
-local function get_node_table_id(nodes)
-    return tostring(nodes):sub(#"table: " + 1)
-end
-
-
 local function set_upstream(upstream_info, ctx)
     local nodes = upstream_info.nodes
     local new_nodes = {}
