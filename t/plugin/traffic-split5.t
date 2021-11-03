@@ -95,7 +95,7 @@ __DATA__
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [==[{
                     "uri": "/hello",
                     "plugins": {
                         "traffic-split": {
@@ -165,7 +165,7 @@ __DATA__
                                 "127.0.0.1:1974": 1
                             }
                     }
-                }]=]
+                }]==]
             )
             if code >= 300 then
                 ngx.status = code
@@ -232,7 +232,7 @@ passed
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [==[{
                     "uri": "/hello",
                     "plugins": {
                         "traffic-split": {
@@ -302,7 +302,7 @@ passed
                                 "127.0.0.1:1974": 1
                             }
                     }
-                }]=]
+                }]==]
             )
             if code >= 300 then
                 ngx.status = code
