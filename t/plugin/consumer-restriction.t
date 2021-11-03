@@ -31,8 +31,8 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
             local conf = {
-		title = "whitelist",
-		whitelist = {
+        title = "whitelist",
+        whitelist = {
                     "jack1",
                     "jack2"
                 }
