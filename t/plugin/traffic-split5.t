@@ -95,7 +95,7 @@ __DATA__
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [==[{
+                [=[{
                     "uri": "/hello",
                     "plugins": {
                         "traffic-split": {
@@ -107,25 +107,7 @@ __DATA__
                                         }
                                     ],
                                     "weighted_upstreams": [
-                                        {
-                                            "upstream": {
-                                                "name": "upstream_A",
-                                                "type": "roundrobin",
-                                                "nodes": [
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1970,
-                                                        "weight": 1
-                                                    },
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1971,
-                                                        "weight": 1
-                                                    }
-                                                ]
-                                            },
-                                            "weight": 1
-                                        }
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1970":1, "127.0.0.1:1971":1}}, "weight": 1}
                                     ]
                                 },
                                 {
@@ -135,25 +117,7 @@ __DATA__
                                         }
                                     ],
                                     "weighted_upstreams": [
-                                        {
-                                            "upstream": {
-                                                "name": "upstream_B",
-                                                "type": "roundrobin",
-                                                "nodes": [
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1972,
-                                                        "weight": 1
-                                                    },
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1973,
-                                                        "weight": 1
-                                                    }
-                                                ]
-                                            },
-                                            "weight": 1
-                                        }
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1972":1, "127.0.0.1:1973":1}}, "weight": 1}
                                     ]
                                 }
                             ]
@@ -165,7 +129,7 @@ __DATA__
                                 "127.0.0.1:1974": 1
                             }
                     }
-                }]==]
+                }]=]
             )
             if code >= 300 then
                 ngx.status = code
@@ -232,7 +196,7 @@ passed
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [==[{
+                [=[{
                     "uri": "/hello",
                     "plugins": {
                         "traffic-split": {
@@ -244,25 +208,7 @@ passed
                                         }
                                     ],
                                     "weighted_upstreams": [
-                                        {
-                                            "upstream": {
-                                                "name": "upstream_A",
-                                                "type": "roundrobin",
-                                                "nodes": [
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1970,
-                                                        "weight": 2
-                                                    },
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1971,
-                                                        "weight": 1
-                                                    }
-                                                ]
-                                            },
-                                            "weight": 1
-                                        }
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1970":2, "127.0.0.1:1971":1}}, "weight": 1}
                                     ]
                                 },
                                 {
@@ -272,25 +218,7 @@ passed
                                         }
                                     ],
                                     "weighted_upstreams": [
-                                        {
-                                            "upstream": {
-                                                "name": "upstream_B",
-                                                "type": "roundrobin",
-                                                "nodes": [
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1972,
-                                                        "weight": 2
-                                                    },
-                                                    {
-                                                        "host": "127.0.0.1",
-                                                        "port": 1973,
-                                                        "weight": 1
-                                                    }
-                                                ]
-                                            },
-                                            "weight": 1
-                                        }
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1972":2, "127.0.0.1:1973":1}}, "weight": 1}
                                     ]
                                 }
                             ]
@@ -302,7 +230,7 @@ passed
                                 "127.0.0.1:1974": 1
                             }
                     }
-                }]==]
+                }]=]
             )
             if code >= 300 then
                 ngx.status = code
