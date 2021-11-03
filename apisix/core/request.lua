@@ -29,6 +29,7 @@ local io_open  = io.open
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 local req_get_body_file = ngx.req.get_body_file
+local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
 
@@ -147,6 +148,24 @@ function _M.set_uri_args(ctx, args)
 
     ctx.req_uri_args = nil
     return req_set_uri_args(args)
+end
+
+
+function _M.get_post_args(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+
+    if not ctx.req_post_args then
+        req_read_body()
+
+        -- use 0 to avoid truncated result and keep the behavior as the
+        -- same as other platforms
+        local args = req_get_post_args(0)
+        ctx.req_post_args = args
+    end
+
+    return ctx.req_post_args
 end
 
 
