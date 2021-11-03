@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 3
 
     steps:
-      - uses: actions/checkout@v2.3.5
+      - uses: actions/checkout@v2.4.0
       - name: Check License Header
         uses: apache/skywalking-eyes@v0.2.0
         env:
