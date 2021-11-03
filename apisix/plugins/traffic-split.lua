@@ -24,6 +24,7 @@ local pairs      = pairs
 local ipairs     = ipairs
 local type       = type
 local table_insert = table.insert
+local tostring   = tostring
 
 local lrucache = core.lrucache.new({
     ttl = 0, count = 512
@@ -142,6 +143,11 @@ local function parse_domain_for_node(node)
 end
 
 
+local function get_node_table_id(nodes)
+    return tostring(nodes):sub(#"table: " + 1)
+end
+
+
 local function set_upstream(upstream_info, ctx)
     local nodes = upstream_info.nodes
     local new_nodes = {}
@@ -187,7 +193,10 @@ local function set_upstream(upstream_info, ctx)
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
     local upstream_key = up_conf.type .. "#route_" ..
-                         matched_route.value.id .. "_" ..upstream_info.vid
+                         matched_route.value.id .. "_" .. upstream_info.vid
+    if upstream_info.node_tid then
+        upstream_key = upstream_key .. "_" .. upstream_info.node_tid
+    end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
 
@@ -203,6 +212,14 @@ local function new_rr_obj(weighted_upstreams)
         elseif upstream_obj.upstream then
             -- Add a virtual id field to uniquely identify the upstream key.
             upstream_obj.upstream.vid = i
+            if upstream_obj.upstream.nodes then
+                -- Get the table id of the nodes as part of the upstream_key,
+                -- avoid upstream_key duplicate because vid is the same in the loop
+                -- when multiple rules with multiple weighted_upstreams under each rule.
+                -- see https://github.com/apache/apisix/issues/5276
+                local node_tid = tostring(upstream_obj.upstream.nodes):sub(#"table: " + 1)
+                upstream_obj.upstream.node_tid = node_tid
+            end
             server_list[upstream_obj.upstream] = upstream_obj.weight
         else
             -- If the upstream object has only the weight value, it means
