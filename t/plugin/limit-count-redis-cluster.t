@@ -328,7 +328,7 @@ code: 200
                             "limit-count": {
                                 "count": ]] .. count .. [[,
                                 "time_window": 60,
-                                "key": "http_x_real_ip",
+                                "key": "remote_addr",
                                 "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
