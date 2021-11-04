@@ -180,10 +180,10 @@ Authorization: Bad_header YmFyOmJhcgo=
 --- request
 GET /hello
 --- more_headers
-Authorization: Basic aaaa
+Authorization: Basic aca_a
 --- error_code: 401
---- response_body eval
-qr/Split authorization err: invalid decoded data/
+--- response_body
+{"message":"Failed to decode authentication header: aca_a"}
 --- no_error_log
 [error]
 
