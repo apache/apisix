@@ -240,3 +240,73 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 11: parsed post args is cached under ctx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'find ctx.req_post_args: ', ctx.req_post_args ~= nil) end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "vars": [["post_arg_test", "==", "test"]]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit
+--- request
+POST /hello
+test=test
+--- response_body
+hello world
+--- error_log
+find ctx.req_post_args: true
+
+
+
+=== TEST 13: missed (post_arg_test is missing)
+--- request
+POST /hello
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 14: missed (post_arg_test is mismatch)
+--- request
+POST /hello
+test=tesy
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
