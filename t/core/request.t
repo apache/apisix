@@ -378,3 +378,41 @@ nil
 t
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: get_post_args
+--- config
+    location = /hello {
+        real_ip_header X-Real-IP;
+
+        set_real_ip_from 0.0.0.0/0;
+        set_real_ip_from ::/0;
+        set_real_ip_from unix:;
+
+        access_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+        }
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local args = core.request.get_post_args(ngx.ctx.api_ctx)
+            ngx.say(args["c"])
+            ngx.say(args["v"])
+        }
+    }
+--- request
+POST /hello
+c=z_z&v=x%20x
+--- response_body
+z_z
+x x
+--- no_error_log
+[error]
