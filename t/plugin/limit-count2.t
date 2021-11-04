@@ -194,7 +194,7 @@ GET /hello
                             "count": 2,
                             "time_window": 60,
                             "rejected_code": 503,
-                            "key": "$http_a",
+                            "key": "http_a",
                             "key_type": "var"
                         }
                     },
