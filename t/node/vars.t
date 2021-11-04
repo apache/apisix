@@ -359,7 +359,21 @@ POST /hello
 
 
 
-=== TEST 20: hit routes
+=== TEST 20: /not_found
+--- request
+POST /hello
+k=post_form
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: hit routes
 --- request
 POST /hello
 k=post_form
