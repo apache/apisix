@@ -181,7 +181,109 @@ GET /hello
 
 
 
-=== TEST 6: set key type to var_combination
+=== TEST 6: update plugin config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "$http_a",
+                            "key_type": "var"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: exceed the burst when key_type is var
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = 1}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,503,503]
+
+
+
+=== TEST 8: bypass empty key when key_type is var
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,200,200]
+
+
+
+=== TEST 9: set key type to var_combination
 --- config
     location /t {
         content_by_lua_block {
@@ -223,7 +325,7 @@ passed
 
 
 
-=== TEST 7: exceed the burst
+=== TEST 10: exceed the burst when key_type is var_combination
 --- config
     location /t {
         content_by_lua_block {
@@ -253,7 +355,7 @@ GET /t
 
 
 
-=== TEST 8: don`t exceed the burst
+=== TEST 11: don`t exceed the burst when key_type is var_combination
 --- config
     location /t {
         content_by_lua_block {
@@ -283,7 +385,7 @@ GET /t
 
 
 
-=== TEST 9: bypass empty key
+=== TEST 12: bypass empty key when key_type is var_combination
 --- config
     location /t {
         content_by_lua_block {

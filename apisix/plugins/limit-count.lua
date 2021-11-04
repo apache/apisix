@@ -183,7 +183,7 @@ function _M.access(conf, ctx)
             key = nil
         end
     else
-        key = (ctx.var[conf_key] or "")
+        key = ctx.var[conf_key]
     end
 
     if key == nil then
