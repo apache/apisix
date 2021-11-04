@@ -37,10 +37,6 @@ title: limit-conn
 | rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过 `conn` + `burst` 这个阈值时，返回的响应体。                                                                                                                                                                                                             |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
-**注：key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
-
-在 stream 代理中使用该插件时，只有 `remote_addr` 和 `server_addr` 可以被用作 key。另外设置 `rejected_code` 毫无意义。
-
 #### 如何启用
 
 下面是一个示例，在指定的 route 上开启了 limit-conn 插件:

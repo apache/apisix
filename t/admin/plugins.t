@@ -298,7 +298,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
         }
     }
 --- response_body
-{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"enum":["remote_addr","server_addr"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
 --- no_error_log
 [error]
 

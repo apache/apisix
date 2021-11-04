@@ -47,8 +47,6 @@ title: limit-req
 | nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
-
 ## 示例
 
 ### 如何在`route`或`service`上使用
