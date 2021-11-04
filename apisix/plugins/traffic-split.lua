@@ -207,14 +207,12 @@ local function new_rr_obj(weighted_upstreams)
         elseif upstream_obj.upstream then
             -- Add a virtual id field to uniquely identify the upstream key.
             upstream_obj.upstream.vid = i
-            if upstream_obj.upstream.nodes then
-                -- Get the table id of the nodes as part of the upstream_key,
-                -- avoid upstream_key duplicate because vid is the same in the loop
-                -- when multiple rules with multiple weighted_upstreams under each rule.
-                -- see https://github.com/apache/apisix/issues/5276
-                local node_tid = tostring(upstream_obj.upstream.nodes):sub(#"table: " + 1)
-                upstream_obj.upstream.node_tid = node_tid
-            end
+            -- Get the table id of the nodes as part of the upstream_key,
+            -- avoid upstream_key duplicate because vid is the same in the loop
+            -- when multiple rules with multiple weighted_upstreams under each rule.
+            -- see https://github.com/apache/apisix/issues/5276
+            local node_tid = tostring(upstream_obj.upstream.nodes):sub(#"table: " + 1)
+            upstream_obj.upstream.node_tid = node_tid
             server_list[upstream_obj.upstream] = upstream_obj.weight
         else
             -- If the upstream object has only the weight value, it means
