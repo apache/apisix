@@ -56,12 +56,12 @@ done
 
 
 
-=== TEST 2: wrong value of key
+=== TEST 2: set key empty
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.limit-count")
-            local ok, err = plugin.check_schema({count = 2, time_window = 60, rejected_code = 503, key = 'host'})
+            local ok, err = plugin.check_schema({count = 2, time_window = 60, rejected_code = 503})
             if not ok then
                 ngx.say(err)
             end
@@ -72,7 +72,6 @@ done
 --- request
 GET /t
 --- response_body
-property "key" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]

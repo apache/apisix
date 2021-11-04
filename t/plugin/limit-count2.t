@@ -178,3 +178,239 @@ GET /hello
 --- error_code: 503
 --- response_body
 {"error_msg":"Requests are too frequent, please try again later."}
+
+
+
+=== TEST 6: update route, use new limit configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "http_a",
+                            "key_type": "var"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: exceed the burst when key_type is var
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = 1}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,503,503]
+
+
+
+=== TEST 8: bypass empty key when key_type is var
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,200,200]
+
+
+
+=== TEST 9: update route, set key type to var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "$http_a $http_b",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: exceed the burst when key_type is var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = 1}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,503,503]
+
+
+
+=== TEST 11: don`t exceed the burst when key_type is var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = i}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[503,200]
+
+
+
+=== TEST 12: bypass empty key when key_type is var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200]
+--- error_log
+bypass the limit count as the key is empty
