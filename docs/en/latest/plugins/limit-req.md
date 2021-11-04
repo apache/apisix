@@ -47,8 +47,6 @@ limit request rate using the "leaky bucket" method.
 | nodelay       | boolean | optional    | false   |                                                                          | If nodelay flag is true, bursted requests will not get delayed  |
 | allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-req function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
-**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
-
 ## Example
 
 ### How to enable on the `route` or `service`
