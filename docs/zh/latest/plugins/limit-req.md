@@ -41,7 +41,7 @@ title: limit-req
 | rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
 | burst         | integer | 必须   |        | burst >= 0                                                              | 请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
 | key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
-| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。 |
+| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。如果 key 为空或者不合法，$remote_addr 会被作为默认 key。 |
 | rejected_code | integer | 可选   | 503    | [200,...,599]                                                              | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 | rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
 | nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
@@ -51,7 +51,7 @@ title: limit-req
 
 ### 如何在`route`或`service`上使用
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件。
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,7 +63,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
         }
     },
     "upstream": {

@@ -696,7 +696,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-bypass the limit req as the key is empty
+The key of limit req is empty or invalid, set $remote_addr as the key
 
 
 

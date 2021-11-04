@@ -226,7 +226,7 @@ GET /t
 
 
 
-=== TEST 8: bypass empty key
+=== TEST 8: request when key is missing
 --- config
     location /t {
         content_by_lua_block {
@@ -253,6 +253,81 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-[200,200]
+[200,503]
 --- error_log
-bypass the limit req as the key is empty
+The key of limit req is empty or invalid, set $remote_addr as the key
+
+
+
+=== TEST 9: update plugin to set invalid key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 0.1,
+                            "burst": 0.1,
+                            "rejected_code": 503,
+                            "key": "abcdefgh",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: request when key is invalid
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,503]
+--- error_log
+The key of limit req is empty or invalid, set $remote_addr as the key

@@ -32,14 +32,14 @@ title: limit-conn
 | default_conn_delay | number  | required |        | default_conn_delay > 0                                                                    | 默认的典型连接(或请求)的处理延迟时间。                                                                                                                                                                                                                                                                                                                                                                                                        |
 | only_use_default_delay  | boolean | optional | false  | [true,false]                                                                              | 延迟时间的严格模式。 如果设置为`true`的话，将会严格按照设置的时间来进行延迟                                                                                                                                                                                                                                                                                                                                                                           |
 | key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
-| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。 |
+| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。如果 key 为空或者不合法，$remote_addr 会被作为默认 key。 |
 | rejected_code      | string  | optional | 503    | [200,...,599]                                                                             | 当请求超过 `conn` + `burst` 这个阈值时，返回的 HTTP 状态码                                                                                                                                                                                                                                                                                                                                                                                    |
 | rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过 `conn` + `burst` 这个阈值时，返回的响应体。                                                                                                                                                                                                             |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
 #### 如何启用
 
-下面是一个示例，在指定的 route 上开启了 limit-conn 插件:
+下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -53,7 +53,35 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "burst": 0,
             "default_conn_delay": 0.1,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var_combination`:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
         }
     },
     "upstream": {

@@ -102,10 +102,9 @@ function _M.access(conf, ctx)
     end
 
     if key == nil then
-        core.log.info("bypass the limit req as the key is empty")
-        -- Bypass the limit req when the key is empty.
-        -- This behavior is the same as Nginx
-        return
+        core.log.info("The key of limit req is empty or invalid, set $remote_addr as the key")
+        -- When the key is empty or invalid, set $remote_addr as the default key
+        key = "remote_addr"
     end
 
     key = key .. ctx.conf_type .. ctx.conf_version

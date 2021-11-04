@@ -279,11 +279,11 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-[200,200,200,200]
+[200,200,503,503]
 
 
 
-=== TEST 9: update route, set key type to var_combination
+=== TEST 9: update plugin to set key_type to var_combination
 --- config
     location /t {
         content_by_lua_block {
@@ -385,7 +385,7 @@ GET /t
 
 
 
-=== TEST 12: bypass empty key when key_type is var_combination
+=== TEST 12: request when key is missing
 --- config
     location /t {
         content_by_lua_block {
@@ -394,7 +394,7 @@ GET /t
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/hello"
             local ress = {}
-            for i = 1, 2 do
+            for i = 1, 4 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri)
                 if not res then
@@ -411,6 +411,80 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-[200,200]
+[200,200,503,503]
 --- error_log
-bypass the limit count as the key is empty
+The key of limit count is empty or invalid, set $remote_addr as the key
+
+
+
+=== TEST 13: update plugin to set invalid key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "abcdefgh",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: request when key is invalid
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+[200,200,503,503]
+--- error_log
+The key of limit count is empty or invalid, set $remote_addr as the key

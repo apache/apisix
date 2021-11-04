@@ -329,8 +329,8 @@ GET /test_concurrency
 200
 200
 200
-200
-200
+503
+503
 --- error_log
-bypass the limit conn as the key is empty
+The key of limit conn is empty or invalid, set $remote_addr as the key
 --- stream_enable
