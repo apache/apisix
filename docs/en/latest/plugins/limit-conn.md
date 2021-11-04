@@ -47,10 +47,6 @@ Limiting request concurrency plugin.
 | rejected_msg       | string | optional                                |            | non-empty                                | the response body returned when the request exceeds `conn` + `burst` will be rejected.                                                                                                                                                                                                            |
 | allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-conn function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
-**Key can be customized by the user, only need to modify a line of code of the plug-in to complete. It is a security consideration that is not open in the plugin.**
-
-When used in the stream proxy, only `remote_addr` and `server_addr` can be used as key. And `rejected_code` is meaningless.
-
 ## How To Enable
 
 Here's an example, enable the limit-conn plugin on the specified route:
