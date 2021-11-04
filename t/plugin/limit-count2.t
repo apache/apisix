@@ -181,7 +181,7 @@ GET /hello
 
 
 
-=== TEST 6: update plugin config
+=== TEST 6: update route, use new limit configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -283,7 +283,7 @@ GET /t
 
 
 
-=== TEST 9: set key type to var_combination
+=== TEST 9: update route, set key type to var_combination
 --- config
     location /t {
         content_by_lua_block {
