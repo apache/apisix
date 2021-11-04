@@ -238,7 +238,7 @@ unlock with key route#1#redis-cluster
                         "limit-count": {
                             "count": 9999,
                             "time_window": 60,
-                            "key": "http_x_real_ip",
+                            "key": "remote_addr",
                             "policy": "redis-cluster",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -393,7 +393,7 @@ code: 503
                         "limit-count": {
                             "count": 9999,
                             "time_window": 60,
-                            "key": "http_x_real_ip",
+                            "key": "remote_addr",
                             "policy": "redis-cluster",
                             "allow_degradation": true,
                             "redis_cluster_nodes": [
