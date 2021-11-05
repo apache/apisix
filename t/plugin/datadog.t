@@ -117,6 +117,7 @@ done
                             },
                             "type": "roundrobin"
                         },
+                        "name": "datadog",
                         "uri": "/opentracing"
                 }]],
                 [[{
@@ -134,7 +135,8 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/opentracing"
+                            "uri": "/opentracing",
+                            "name": "datadog"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -180,12 +182,12 @@ opentracing
 --- grep_error_log eval
 qr/message received: apisix(.+?(?=, ))/
 --- grep_error_log_out eval
-qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
 
 
@@ -221,18 +223,18 @@ opentracing
 --- grep_error_log eval
 qr/message received: apisix(.+?(?=, ))/
 --- grep_error_log_out eval
-qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.request\.counter:1\|c\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.counter:1\|c\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
 
 
@@ -289,12 +291,12 @@ opentracing
 --- grep_error_log eval
 qr/message received: mycompany(.+?(?=, ))/
 --- grep_error_log_out eval
-qr/message received: mycompany\.request\.counter:1\|c\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: mycompany\.request\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: mycompany\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: mycompany\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: mycompany\.ingress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: mycompany\.egress\.size:[\d]+\|ms\|#source:apisix,route_id:1,balancer_ip:[\d.]+,response_status:200
+qr/message received: mycompany\.request\.counter:1\|c\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: mycompany\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: mycompany\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: mycompany\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: mycompany\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: mycompany\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
 
 
@@ -355,10 +357,10 @@ opentracing
 --- grep_error_log eval
 qr/message received: apisix(.+?(?=, ))/
 --- grep_error_log_out eval
-qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
-message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_id:1,balancer_ip:[\d.]+,response_status:200
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 /

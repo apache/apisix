@@ -83,7 +83,10 @@ local function generate_tag(conf, const_tags)
         tags = {}
     end
 
-    if conf.route_id and conf.route_id ~= "" then
+    -- priority on route name, if not found using the route id.
+    if conf.route_name ~= "" then
+        core.table.insert(tags, "route_name:" .. conf.route_name)
+    elseif conf.route_id and conf.route_id ~= "" then
         core.table.insert(tags, "route_id:" .. conf.route_id)
     end
 
@@ -100,12 +103,15 @@ local function generate_tag(conf, const_tags)
     if conf.response.status then
         core.table.insert(tags, "response_status:" .. conf.response.status)
     end
-
-    if tags ~= "" then
-        tags = "|#" .. concat(tags, ',')
+    if conf.scheme ~= "" then
+        core.table.insert(tags, "scheme:" .. conf.scheme)
     end
 
-    return tags
+    if #tags > 0 then
+        return "|#" .. concat(tags, ',')
+    end
+
+    return ""
 end
 
 -- remove stale objects from the memory after timer expires
@@ -136,6 +142,8 @@ function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
     entry.upstream_latency = ctx.var.upstream_response_time * 1000
     entry.balancer_ip = ctx.balancer_ip or ""
+    entry.route_name = ctx.route_name or ""
+    entry.scheme = ctx.upstream_scheme or ""
 
     local log_buffer = buffers[conf]
     if log_buffer then
