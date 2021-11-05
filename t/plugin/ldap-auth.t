@@ -160,7 +160,46 @@ GET /hello
 
 
 
-=== TEST 6: verify, invalid password
+=== TEST 6: verify, invalid basic authorization header
+--- request
+GET /hello
+--- more_headers
+Authorization: Bad_header Zm9vOmZvbwo=
+--- error_code: 401
+--- response_body
+{"message":"Invalid authorization header format"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: verify, invalid authorization value (bad base64 str)
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic aca_a
+--- error_code: 401
+--- response_body
+{"message":"Failed to decode authentication header: aca_a"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: verify, invalid authorization value (no password)
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9v
+--- error_code: 401
+--- response_body
+{"message":"Split authorization err: invalid decoded data: foo"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: verify, invalid password
 --- request
 GET /hello
 --- more_headers
@@ -171,7 +210,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 
-=== TEST 7: verify
+=== TEST 10: verify
 --- request
 GET /hello
 --- more_headers
@@ -183,7 +222,7 @@ find consumer user01
 
 
 
-=== TEST 8: enable basic auth plugin using admin api
+=== TEST 11: enable basic auth plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -219,7 +258,7 @@ passed
 
 
 
-=== TEST 9: verify
+=== TEST 12: verify
 --- request
 GET /hello
 --- more_headers
@@ -231,7 +270,7 @@ find consumer user01
 
 
 
-=== TEST 10: invalid schema
+=== TEST 13: invalid schema
 --- config
     location /t {
         content_by_lua_block {
@@ -259,7 +298,7 @@ find consumer user01
 
 
 
-=== TEST 11: get the default schema
+=== TEST 14: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -277,7 +316,7 @@ find consumer user01
 
 
 
-=== TEST 12: get the schema by schema_type
+=== TEST 15: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +334,7 @@ find consumer user01
 
 
 
-=== TEST 13: get the schema by error schema_type
+=== TEST 16: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
