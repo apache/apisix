@@ -696,7 +696,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-The key of limit req is empty or invalid, set $remote_addr as the key
+The value of the configured key is empty, use client IP instead
 
 
 
