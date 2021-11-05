@@ -41,7 +41,8 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-pre-req"
           ]
         },
         {
@@ -92,7 +93,8 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
-            "plugins/request-id"
+            "plugins/request-id",
+            "plugins/client-control"
           ]
         },
         {

@@ -1,5 +1,5 @@
 ---
-title: real-ip
+title: ext-plugin-pre-req
 ---
 
 <!--
@@ -31,45 +31,36 @@ title: real-ip
 
 ## 简介
 
-`real-ip` 插件用于动态改变传递到 `APISIX` 的客户端的 `IP` 和端口。
+`ext-plugin-pre-req` 在执行大多数内置 Lua 插件执行之前，在 Plugin Runner 内运行特定 External Plugin。
 
-它工作方式和 `Nginx` 里 `ngx_http_realip_module` 模块一样，并且更为灵活。
+为了理解什么是 Plugin Runner，请参考 [external plugin](../external-plugin.md) 部分。
 
-**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty) 上。**
+External Plugins 执行的结果会影响当前请求的行为。
 
 ## 属性
 
 | 名称      | 类型          | 必选项 | 默认值    | 有效值                                                                    | 描述                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| source      | string        | 必填    |            | 任何 Nginx 变量，如 `arg_realip` 或 `http_x_forwarded_for` | 根据变量的值 `APISIX` 动态设置客户端的 `IP` 和端口。如果该值不包含端口，则不会更改客户端的端口。 |
-| trusted_addresses| array[string] | 可选    |            | `IP` 或 `CIDR` 范围列表 | 动态设置 `set_real_ip_from` 指令 |
-
-如果 `source` 设置的远程地址缺失或无效，该插件则直接放行，不会更改客户端地址。
+| conf     | array        | 可选    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     在 Plugin Runner 内执行的插件列表的配置 |
 
 ## 如何启用
 
-下面是一个示例，在指定的 `route` 上开启了 `real-ip` 插件：
+以下是一个示例，在指定路由中启用插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
-        "real-ip": {
-            "source": "arg_realip",
-            "trusted_addresses": ["127.0.0.0/24"]
-        },
-        "response-rewrite": {
-            "headers": {
-                "remote_addr": "$remote_addr",
-                "remote_port": "$remote_port"
-            }
-        }
+        "ext-plugin-pre-req": {
+            "conf" : [
+                {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
+            ]
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "39.97.63.215:80": 1
         }
     }
 }'
@@ -77,18 +68,17 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 测试插件
 
-使用 `curl` 访问：
+使用 `curl` 去测试：
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?realip=1.2.3.4:9080' -I
-...
-remote-addr: 1.2.3.4
-remote-port: 9080
+curl -i http://127.0.0.1:9080/index.html
 ```
+
+你会看到配置的 Plugin Runner 将会被触发，同时 `ext-plugin-A` 插件将会被执行。
 
 ## 禁用插件
 
-想要禁用该插件时很简单，在路由 `plugins` 配置块中删除对应 `JSON` 配置，不需要重启服务，即可立即生效禁用该插件。
+当你想去掉 ext-plugin-pre-req 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -97,8 +87,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "39.97.63.215:80": 1
         }
     }
 }'
 ```
+
+现在就已经移除 `ext-plugin-pre-req` 插件了。其他插件的开启和移除也是同样的方法。
