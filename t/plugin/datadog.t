@@ -106,7 +106,8 @@ done
                  [[{
                         "plugins": {
                             "datadog": {
-                                "batch_max_size" : 1
+                                "batch_max_size" : 1,
+                                "max_retry_count": 1
                             }
                         },
                         "upstream": {
@@ -122,7 +123,8 @@ done
                         "value": {
                             "plugins": {
                                 "datadog": {
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1
                                 }
                             },
                             "upstream": {
@@ -177,12 +179,6 @@ opentracing
 --- grep_error_log eval
 qr/message received: apisix([.\w]+)/
 --- grep_error_log_out
-message received: apisix.request.counter
-message received: apisix.request.latency
-message received: apisix.upstream.latency
-message received: apisix.apisix.latency
-message received: apisix.ingress.size
-message received: apisix.egress.size
 message received: apisix.request.counter
 message received: apisix.request.latency
 message received: apisix.upstream.latency

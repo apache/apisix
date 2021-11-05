@@ -29,11 +29,14 @@ function _M.go()
         return
      end
 
-    for i = 1, 3 do
+    while true do
         local data, err = sock:receive()
 
         if not data then
-            core.log.error("socket error: ", err)
+            if err and err ~= "no more data" then
+                core.log.info("socket error, returning: ", err)
+            end
+
             return
         else
             core.log.warn("message received: ", data)

@@ -24,6 +24,7 @@ local format = string.format
 local concat = table.concat
 local buffers = {}
 local ipairs = ipairs
+local tostring = tostring
 local stale_timer_running = false
 local timer_at = ngx.timer.at
 
@@ -39,7 +40,7 @@ local schema = {
     type = "object",
     properties = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 2},
+        inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 5000},
         max_retry_count = {type = "integer", minimum = 1, default = 1},
     }
@@ -237,8 +238,10 @@ function _M.log(conf, ctx)
             core.log.error("failed to close the UDP connection, host[",
                             host, "] port[", port, "] ", err)
         end
-    end
 
+        -- Returning at the end and ensuring the resource has been released.
+        return true
+    end
     local config = {
         name = plugin_name,
         retry_delay = conf.retry_delay,
