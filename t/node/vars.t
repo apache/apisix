@@ -336,7 +336,7 @@ passed
 
 
 
-=== TEST 18: /not_found
+=== TEST 18: not_found (GET request)
 --- request
 GET /hello
 --- error_code: 404
@@ -347,7 +347,7 @@ GET /hello
 
 
 
-=== TEST 19: /not_found
+=== TEST 19: not_found (wrong request body)
 --- request
 POST /hello
 123
@@ -359,7 +359,7 @@ POST /hello
 
 
 
-=== TEST 20: /not_found
+=== TEST 20: not_found (wrong content type)
 --- request
 POST /hello
 k=post_form

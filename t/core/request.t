@@ -384,13 +384,7 @@ t
 === TEST 11: get_post_args
 --- config
     location = /hello {
-        real_ip_header X-Real-IP;
-
-        set_real_ip_from 0.0.0.0/0;
-        set_real_ip_from ::/0;
-        set_real_ip_from unix:;
-
-        access_by_lua_block {
+        content_by_lua_block {
             local core = require("apisix.core")
             local ngx_ctx = ngx.ctx
             local api_ctx = ngx_ctx.api_ctx
@@ -400,9 +394,7 @@ t
             end
 
             core.ctx.set_vars_meta(api_ctx)
-        }
-        content_by_lua_block {
-            local core = require("apisix.core")
+
             local args = core.request.get_post_args(ngx.ctx.api_ctx)
             ngx.say(args["c"])
             ngx.say(args["v"])
