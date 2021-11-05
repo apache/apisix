@@ -187,8 +187,8 @@ function _M.access(conf, ctx)
     end
 
     if key == nil then
-        core.log.info("The key of limit count is empty or invalid, set $remote_addr as the key")
-        -- When the key is empty or invalid, set $remote_addr as the default key
+        core.log.info("The value of the configured key is empty, use client IP instead")
+        -- When the value of key is empty, use client IP instead
         key = ctx.var["remote_addr"]
     end
 

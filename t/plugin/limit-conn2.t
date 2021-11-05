@@ -453,7 +453,7 @@ GET /test_concurrency
 --- no_error_log
 [error]
 --- error_log
-The key of limit conn is empty or invalid, set $remote_addr as the key
+The value of the configured key is empty, use client IP instead
 
 
 
@@ -538,4 +538,4 @@ GET /test_concurrency
 --- no_error_log
 [error]
 --- error_log
-The key of limit conn is empty or invalid, set $remote_addr as the key
+The value of the configured key is empty, use client IP instead
