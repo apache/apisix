@@ -260,7 +260,7 @@ GET /hello
                         "plugins": {
                             "serverless-pre-function": {
                                 "phase": "rewrite",
-                                "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'find ctx.req_post_args: ', ctx.req_post_args ~= nil) end"]
+                                "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'find ctx.req_post_args.test: ', ctx.req_post_args.test ~= nil) end"]
                             }
                         },
                         "uri": "/hello",
@@ -287,16 +287,20 @@ passed
 --- request
 POST /hello
 test=test
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
 --- response_body
 hello world
 --- error_log
-find ctx.req_post_args: true
+find ctx.req_post_args.test: true
 
 
 
 === TEST 13: missed (post_arg_test is missing)
 --- request
 POST /hello
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -307,6 +311,8 @@ POST /hello
 --- request
 POST /hello
 test=tesy
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
