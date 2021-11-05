@@ -22,10 +22,8 @@ local _M = {}
 
 function _M.go()
     local sock, err = socket()
-    if sock then
-        ngx.ctx.sock = sock
-     else
-        sock:send("failed to get the request socket: ", err)
+    if not sock then
+        core.log.error("failed to get the request socket: ", err)
         return
      end
 
@@ -34,7 +32,7 @@ function _M.go()
 
         if not data then
             if err and err ~= "no more data" then
-                core.log.info("socket error, returning: ", err)
+                core.log.error("socket error, returning: ", err)
             end
 
             return
