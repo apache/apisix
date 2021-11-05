@@ -76,32 +76,33 @@ function _M.check_schema(conf, schema_type)
 end
 
 local function generate_tag(conf, const_tags)
-    local tags = ""
-
+    local tags
     if const_tags and #const_tags > 0 then
-        tags = concat(const_tags, ",") .. ","
+        tags = core.table.deepcopy(const_tags)
+    else
+        tags = {}
     end
 
     if conf.route_id and conf.route_id ~= "" then
-        tags = tags .. "route_id:" .. conf.route_id .. ","
+        core.table.insert(tags, "route_id:" .. conf.route_id)
     end
 
     if conf.service_id and conf.service_id ~= "" then
-        tags = tags .. "service_id:" .. conf.service_id .. ","
+        core.table.insert(tags, "service_id:" .. conf.service_id)
     end
 
     if conf.consumer and conf.consumer ~= "" then
-        tags = tags .. "consumer:" .. conf.consumer .. ","
+        core.table.insert(tags, "consumer:" .. conf.consumer)
     end
     if conf.balancer_ip ~= "" then
-        tags = tags .. "balancer_ip:" .. conf.balancer_ip .. ","
+        core.table.insert(tags, "balancer_ip:" .. conf.balancer_ip)
     end
     if conf.response.status then
-        tags = tags .. "response_status:" .. conf.response.status .. ","
+        core.table.insert(tags, "response_status:" .. conf.response.status)
     end
 
     if tags ~= "" then
-        tags = "|#" .. tags:sub(1, -2)
+        tags = "|#" .. concat(tags, ',')
     end
 
     return tags
