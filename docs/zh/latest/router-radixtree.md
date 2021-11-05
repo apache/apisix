@@ -206,7 +206,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         ["cookie_device_id", "==", "a66f0cdc4ba2df8c096f74c9110163a9"],
         ["arg_name", "==", "json"],
         ["arg_age", ">", "18"],
-        ["arg_address", "~~", "China.*"]
+        ["arg_address", "~~", "China.*"],
+        ["post_arg_name", "==", "json"]
     ],
     "upstream": {
         "type": "roundrobin",
@@ -218,7 +219,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 这个路由需要请求头 `host` 等于 `iresty.com` ，
-请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
+请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。其中POST表单属性匹配需要您使用 Content-Type 为`application/x-www-form-urlencoded`的请求才可正常使用。
 
 ### 如何通过 GraphQL 属性过滤路由
 

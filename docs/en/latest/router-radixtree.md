@@ -205,7 +205,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         ["cookie_device_id", "==", "a66f0cdc4ba2df8c096f74c9110163a9"],
         ["arg_name", "==", "json"],
         ["arg_age", ">", "18"],
-        ["arg_address", "~~", "China.*"]
+        ["arg_address", "~~", "China.*"],
+        ["post_arg_name", "==", "json"]
     ],
     "upstream": {
         "type": "roundrobin",
@@ -216,7 +217,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
+This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc. And the POST form property match requires you to use `Content-Type: application/x-www-form-urlencoded` for the request to work properly.
 
 ### How to filter route by GraphQL attributes
 
