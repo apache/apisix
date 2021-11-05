@@ -41,6 +41,7 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
+            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req"
           ]
         },
