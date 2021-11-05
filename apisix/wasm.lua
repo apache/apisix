@@ -30,8 +30,18 @@ local schema = {
 local _M = {}
 
 
-local function check_schema(conf)
-    return core.schema.check(schema, conf)
+local function check_schema_wrapper(self, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    local plugin_ctx, err = wasm.on_configure(self.plugin, conf.conf)
+    if not plugin_ctx then
+        return false, err
+    end
+
+    return true
 end
 
 
@@ -93,10 +103,12 @@ function _M.require(attrs)
         name = name,
         priority = priority,
         schema = schema,
-        check_schema = check_schema,
         plugin = plugin,
         type = "wasm",
     }
+    mod.check_schema = function (conf)
+        return check_schema_wrapper(mod, conf)
+    end
     mod.access = function (conf, ctx)
         return access_wrapper(mod, conf, ctx)
     end

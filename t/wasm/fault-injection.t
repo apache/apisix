@@ -184,3 +184,41 @@ GET /hello
 --- error_code: 401
 --- response_body_like eval
 qr/<title>401 Authorization Required<\/title>/
+
+
+
+=== TEST 7: bad configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "conf": "{\"htp_status\":401}"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- error_log
+bad http_status
