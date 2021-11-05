@@ -22,17 +22,21 @@ local _M = {}
 
 function _M.go()
     local sock, err = socket()
-    if not sock then
-        core.log.error("failed to get the request socket: ", err)
+    if sock then
+        ngx.ctx.sock = sock
+     else
+        sock:send("failed to get the request socket: ", err)
         return
-    end
+     end
 
-    while true do
-        local data, err = sock:receive('*a')
+    for i = 1, 3 do
+        local data, err = sock:receive()
+
         if not data then
-            core.log.error("Socket error: ", err)
+            core.log.error("socket error: ", err)
+            return
         else
-            core.log.warn(data)
+            core.log.warn("message received: ", data)
         end
     end
 end

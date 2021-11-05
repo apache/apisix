@@ -23,6 +23,21 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+
+    $block->set_value("stream_conf_enable", 1);
+
+    if (!defined $block->extra_stream_config) {
+        my $stream_config = <<_EOC_;
+    server {
+        listen 8125 udp;
+        content_by_lua_block {
+            require("lib.mock_dogstatsd").go()
+        }
+    }
+_EOC_
+        $block->set_value("extra_stream_config", $stream_config);
+    }
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -54,7 +69,6 @@ done
 
 
 === TEST 2: add plugin
---- wait: 6
 --- config
     location /t {
         content_by_lua_block {
@@ -101,7 +115,7 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/index.html"
+                        "uri": "/opentracing"
                 }]],
                 [[{
                     "node": {
@@ -117,7 +131,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/index.html"
+                            "uri": "/opentracing"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -131,12 +145,7 @@ done
                 return
             end
 
-            -- local code, _, body4 = t("/index.html", "GET")
-            -- if code >= 300 then
-            --    ngx.status = code
-            --    ngx.say("fail")
-            --    return
-            --end
+
             ngx.print(meta_body .. "\n")
             ngx.print(body .. "\n")
         }
@@ -144,3 +153,39 @@ done
 --- response_body
 passed
 passed
+
+
+
+=== TEST 3: testing behaviour with mock suite
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, _, body = t("/opentracing", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body:sub(1, -2))
+        }
+    }
+--- wait: 3
+--- response_body
+opentracing
+--- grep_error_log eval
+qr/message received: apisix([.\w]+)/
+--- grep_error_log_out
+message received: apisix.request.counter
+message received: apisix.request.latency
+message received: apisix.upstream.latency
+message received: apisix.apisix.latency
+message received: apisix.ingress.size
+message received: apisix.egress.size
+message received: apisix.request.counter
+message received: apisix.request.latency
+message received: apisix.upstream.latency
+message received: apisix.apisix.latency
+message received: apisix.ingress.size
+message received: apisix.egress.size

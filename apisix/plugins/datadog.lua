@@ -81,15 +81,15 @@ local function generate_tag(conf, const_tags)
         tags = concat(const_tags, ",") .. ","
     end
 
-    if conf.route_id then
+    if conf.route_id and conf.route_id ~= "" then
         tags = tags .. "route_id:" .. conf.route_id .. ","
     end
 
-    if conf.service_id then
+    if conf.service_id and conf.service_id ~= "" then
         tags = tags .. "service_id:" .. conf.service_id .. ","
     end
 
-    if conf.consumer then
+    if conf.consumer and conf.consumer ~= "" then
         tags = tags .. "consumer:" .. conf.consumer .. ","
     end
     if conf.balancer_ip ~= "" then
