@@ -78,6 +78,15 @@ Apache APISIX agent, for every request response cycle, export the following metr
 
 ## How To Enable
 
+First of all, enable the datadog plugin in the `config.yaml`:
+
+```
+# Add this in config.yaml
+plugins:
+  - ... # plugin you need
+  - datadog
+```
+
 The following is an example on how to enable the datadog plugin for a specific route. We are assumming your datadog agent is already up an running.
 
 ```shell

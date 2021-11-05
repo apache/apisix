@@ -78,7 +78,7 @@ end
 local function generate_tag(conf, const_tags)
     local tags
     if const_tags and #const_tags > 0 then
-        tags = core.table.deepcopy(const_tags)
+        tags = core.table.clone(const_tags)
     else
         tags = {}
     end
