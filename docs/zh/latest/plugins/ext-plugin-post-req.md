@@ -21,7 +21,7 @@ title: ext-plugin-post-req
 #
 -->
 
-`ext-plugin-post-req` 插件功能几乎和 `ext-plugin-pre-req` 一样。
+`ext-plugin-post-req` 插件的功能与 `ext-plugin-pre-req` 插件类似。
 
 唯一不同的是：它在内置 Lua 插件执行之后且在请求到达上游之前工作。
 
