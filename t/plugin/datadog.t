@@ -54,8 +54,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.datadog")
-            local ok, err = plugin.check_schema({host = "127.0.0.1", port = 8125}, 2)
+            local ok, err = plugin.check_schema({host = "127.0.0.1", port = 8125}, core.schema.TYPE_METADATA)
             if not ok then
                 ngx.say(err)
             end
