@@ -334,10 +334,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 示例入参说明:
 
-| Variable | Value                    |
-| -------- | ------------------------ |
-| secret   | this is secret key       |
-| message  | this is signature string |
+| Variable | Value                      |
+| -------- | -------------------------- |
+| secret   | the shared secret key here |
+| message  | this is signature string   |
 
 示例出参说明：
 
