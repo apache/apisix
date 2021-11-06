@@ -345,10 +345,10 @@ Need to pay attention to the handling of newline characters in signature strings
 
 Example inputs:
 
-| Variable | Value                    |
-| -------- | ------------------------ |
-| secret   | this is secret key       |
-| message  | this is signature string |
+| Variable | Value                      |
+| -------- | -------------------------- |
+| secret   | the shared secret key here |
+| message  | this is signature string   |
 
 Example outputs:
 
