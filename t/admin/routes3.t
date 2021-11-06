@@ -700,3 +700,103 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 20: set route(id: 1, parameters with boolean values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "uri": "/index.html",
+                      "enable_websocket": true,
+                      "upstream": {
+                          "type": "roundrobin",
+                          "nodes": {
+                              "127.0.0.1:8080":1
+                          }
+                      }
+                  }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/index.html",
+                            "enable_websocket": true,
+                            "upstream": {
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:8080":1
+                                }
+                           }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: patch route(modify the boolean value of parameters to false)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/enable_websocket',
+                ngx.HTTP_PATCH,
+                'false',
+                [[{
+                    "node": {
+                        "value": {
+                            "enable_websocket": false
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: patch route(modify the boolean value of parameters to true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/enable_websocket',
+                ngx.HTTP_PATCH,
+                'true',
+                [[{
+                    "node": {
+                        "value": {
+                            "enable_websocket": true
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
