@@ -696,7 +696,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-bypass the limit req as the key is empty
+The value of the configured key is empty, use client IP instead
 
 
 
