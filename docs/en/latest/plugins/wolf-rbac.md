@@ -39,7 +39,7 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 
 | Name          | Type   | Requirement | Default                  | Valid | Description                                               |
 | ------------- | ------ | ----------- | ------------------------ | ----- | --------------------------------------------------------- |
-| server        | string | optional    | "http://127.0.0.1:10080" |       | Set the service address of `wolf-server`.                 |
+| server        | string | optional    | "http://127.0.0.1:12180" |       | Set the service address of `wolf-server`.                 |
 | appid         | string | optional    | "unset"                  |       | Set the app id. The app id must be added in wolf-console. |
 | header_prefix | string | optional    | "X-"                     |       | prefix of custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`. |
 
@@ -73,7 +73,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
   "username":"wolf_rbac",
   "plugins":{
     "wolf-rbac":{
-      "server":"http://127.0.0.1:10080",
+      "server":"http://127.0.0.1:12180",
       "appid":"restful"
     }
   },

@@ -39,7 +39,7 @@ rbac 功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更
 
 | 名称          | 类型   | 必选项 | 默认值                   | 有效值 | 描述                                                                                                                                               |
 | ------------- | ------ | ------ | ------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| server        | string | 可选   | "http://127.0.0.1:10080" |        | 设置 `wolf-server` 的访问地址                                                                                                                      |
+| server        | string | 可选   | "http://127.0.0.1:12180" |        | 设置 `wolf-server` 的访问地址                                                                                                                      |
 | appid         | string | 可选   | "unset"                  |        | 设置应用 id, 该应用 id, 需要是在 `wolf-console` 中已经添加的应用 id                                                                                |
 | header_prefix | string | 可选   | "X-"                     |        | 自定义 http 头的前缀。`wolf-rbac`在鉴权成功后, 会在请求头(用于传给后端)及响应头(用于传给前端)中添加 3 个头: `X-UserId`, `X-Username`, `X-Nickname` |
 
@@ -73,7 +73,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
   "username":"wolf_rbac",
   "plugins":{
     "wolf-rbac":{
-      "server":"http://127.0.0.1:10080",
+      "server":"http://127.0.0.1:12180",
       "appid":"restful"
     }
   },
