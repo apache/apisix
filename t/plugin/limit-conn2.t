@@ -34,6 +34,36 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+    my $port = $ENV{TEST_NGINX_SERVER_PORT};
+
+    my $config = $block->config // <<_EOC_;
+    location /access_root_dir {
+        content_by_lua_block {
+            local httpc = require "resty.http"
+            local hc = httpc:new()
+
+            local res, err = hc:request_uri('http://127.0.0.1:$port/limit_conn')
+            if res then
+                ngx.exit(res.status)
+            end
+        }
+    }
+
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 5 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
+    }
+_EOC_
+
+    $block->set_value("config", $config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -311,7 +341,7 @@ request latency is nil
 
 
 
-=== TEST 9: set key type to var_combination
+=== TEST 9: update plugin to set key_type to var_combination
 --- config
     location /t {
         content_by_lua_block {
@@ -321,8 +351,8 @@ request latency is nil
                  [[{
                         "plugins": {
                             "limit-conn": {
-                                "conn": 2,
-                                "burst": 1,
+                                "conn": 1,
+                                "burst": 0,
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "$http_a $http_b",
@@ -342,8 +372,8 @@ request latency is nil
                         "value": {
                             "plugins": {
                                 "limit-conn": {
-                                    "conn": 2,
-                                    "burst": 1,
+                                    "conn": 1,
+                                    "burst": 0,
                                     "default_conn_delay": 0.1,
                                     "rejected_code": 503,
                                     "key": "$http_a $http_b",
@@ -410,32 +440,77 @@ GET /t
 
 
 
-=== TEST 11: bypass empty key
+=== TEST 11: request when key is missing
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+503
+503
+503
+503
+--- no_error_log
+[error]
+--- error_log
+The value of the configured key is empty, use client IP instead
+
+
+
+=== TEST 12: update plugin to set invalid key
 --- config
     location /t {
         content_by_lua_block {
-            local json = require "t.toolkit.json"
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/limit_conn"
-            local ress = {}
-            for i = 1, 2 do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri)
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-                table.insert(ress, res.status)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 1,
+                                "burst": 0,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "abcdefgh",
+                                "key_type": "var_combination"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
             end
-            ngx.say(json.encode(ress))
+            ngx.say(body)
         }
     }
 --- request
 GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: request when key is invalid
+--- request
+GET /test_concurrency
+--- timeout: 10s
 --- response_body
-[200,200]
+200
+503
+503
+503
+503
+--- no_error_log
+[error]
 --- error_log
-bypass the limit conn as the key is empty
+The value of the configured key is empty, use client IP instead
