@@ -206,8 +206,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         ["cookie_device_id", "==", "a66f0cdc4ba2df8c096f74c9110163a9"],
         ["arg_name", "==", "json"],
         ["arg_age", ">", "18"],
-        ["arg_address", "~~", "China.*"],
-        ["post_arg_name", "==", "json"]
+        ["arg_address", "~~", "China.*"]
     ],
     "upstream": {
         "type": "roundrobin",
@@ -219,7 +218,31 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 这个路由需要请求头 `host` 等于 `iresty.com` ，
-请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。其中POST表单属性匹配需要您使用 Content-Type 为`application/x-www-form-urlencoded`的请求才可正常使用。
+请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
+
+### 如何通过 POST 表单属性过滤路由 {#post_args}
+
+APISIX 支持通过 POST 表单属性过滤路由，其中需要您使用 `Content-Type` = `application/x-www-form-urlencoded` 的 POST 请求。
+
+我们可以定义这样的路由：
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_post",
+    "vars": [
+        ["post_arg_name", "==", "json"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+当 POST 表单中包含 `name=json` 的属性时，将匹配到路由。
 
 ### 如何通过 GraphQL 属性过滤路由
 
