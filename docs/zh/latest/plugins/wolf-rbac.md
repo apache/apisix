@@ -113,13 +113,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 #### 首先进行登录获取 `wolf-rbac` token:
 
 下面的 `appid`, `username`, `password` 必须为 wolf 系统中真实存在的.
+`authType` 为认证类型, `1` 为密码认证, `2` 为 `LDAP` 认证. 默认为 `1`. `wolf` 从 0.5.0 版本开始支持了 `LDAP` 认证.
 
 * 以 POST application/json 方式登陆.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -H "Content-Type: application/json" \
--d '{"appid": "restful", "username":"test", "password":"user-password"}'
+-d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT

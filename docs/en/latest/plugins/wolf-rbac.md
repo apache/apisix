@@ -113,13 +113,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 #### Login and get `wolf-rbac` token:
 
 The following `appid`, `username`, and `password` must be real ones in the wolf system.
+`authType` is the authentication type, `1` is password authentication, `2` is `LDAP` authentication. The default is `1`.  `wolf` supports `LDAP` authentication since version 0.5.0
 
 * Login as `POST application/json`
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -H "Content-Type: application/json" \
--d '{"appid": "restful", "username":"test", "password":"user-password"}'
+-d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
