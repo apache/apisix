@@ -81,6 +81,7 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 > If there is no suitable value for any particular tag, the tag will simply be omitted.
 
 - **route_name**: Name specified in the route schema definition. If not present, it will fall back to the route id value.
+  - Note: If multiple routes have the same name duplicated, we suggest you to visualize graphs on the Datadog dashboard over multiple tags that could compositely pinpoint a particular route/service. If it's still insufficient for your needs, feel free to drop a feature request at [apisix/issues](https://github.com/apache/apisix/issues).
 - **service_id**: If a route has been created with the abstraction of service, the particular service id will be used.
 - **consumer**: If the route has a linked consumer, the consumer Username will be added as a tag.
 - **balancer_ip**: IP of the Upstream balancer that has processed the current request.
