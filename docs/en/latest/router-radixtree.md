@@ -218,7 +218,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
 
-### How to filter route by POST form attributes {#post_args}
+### How to filter route by POST form attributes
 
 APISIX supports filtering route by POST form attributes with `Content-Type` = `application/x-www-form-urlencoded`.
 

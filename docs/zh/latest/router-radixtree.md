@@ -220,7 +220,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 这个路由需要请求头 `host` 等于 `iresty.com` ，
 请求 cookie `_device_id` 等于 `a66f0cdc4ba2df8c096f74c9110163a9` 等。
 
-### 如何通过 POST 表单属性过滤路由 {#post_args}
+### 如何通过 POST 表单属性过滤路由
 
 APISIX 支持通过 POST 表单属性过滤路由，其中需要您使用 `Content-Type` = `application/x-www-form-urlencoded` 的 POST 请求。
 
