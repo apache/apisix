@@ -190,7 +190,7 @@ local function get_base_uri()
     local host = local_conf.discovery.nacos.host
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local auth_idx = str_find(url, '@')
+    local auth_idx = core.string.rfind_char(url, '@')
     local username, password
     if auth_idx then
         local protocol_idx = str_find(url, '://')
