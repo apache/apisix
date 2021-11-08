@@ -179,8 +179,8 @@ local function introspect(ctx, conf)
 
     -- If we get here, token was found in request.
 
-    if conf.public_key then
-        -- Validate token against public key.
+    if conf.public_key or conf.use_jwks then
+        -- Validate token against public key or jwks document of the oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
