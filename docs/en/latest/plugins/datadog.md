@@ -76,16 +76,18 @@ Apache APISIX agent, for every request response cycle, export the following metr
 | Ingress Size              | Timer         | Request body size in bytes. |
 | Egress Size               | Timer         | Response body size in bytes. |
 
+The metrics will be sent to the DogStatsD agent with the following tags:
+
+> If there is no suitable value for any particular tag, the tag will simply be omitted.
+
+- **route_name**: Name specified in the route schema definition. If not present, it will fall back to the route id value.
+- **service_id**: If a route has been created with the abstraction of service, the particular service id will be used.
+- **consumer**: If the route has a linked consumer, the consumer Username will be added as a tag.
+- **balancer_ip**: IP of the Upstream balancer that has processed the current request.
+- **response_status**: HTTP response status code.
+- **scheme**: Scheme that has been used to make the request. e.g. HTTP, gRPC, gRPCs etc.
+
 ## How To Enable
-
-First of all, enable the datadog plugin in the `config.yaml`:
-
-```
-# Add this in config.yaml
-plugins:
-  - ... # plugin you need
-  - datadog
-```
 
 The following is an example on how to enable the datadog plugin for a specific route. We are assumming your datadog agent is already up an running.
 

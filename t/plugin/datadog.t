@@ -252,20 +252,6 @@ message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:data
                         "host":"127.0.0.1",
                         "port": 8125,
                         "namespace": "mycompany"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "namespace": "mycompany",
-                            "host": "127.0.0.1",
-                            "constant_tags": [
-                                "source:apisix"
-                            ],
-                            "port": 8125
-                        },
-                        "key": "/apisix/plugin_metadata/datadog"
-                    },
-                    "action": "set"
                 }]])
 
             if code >= 300 then
@@ -301,7 +287,7 @@ message received: mycompany\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:d
 
 
 
-=== TEST 6: testing behaviour with different namespace
+=== TEST 6: testing behaviour with different constant tags
 --- config
     location /t {
         content_by_lua_block {
@@ -317,21 +303,6 @@ message received: mycompany\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:d
                                 "source:apisix",
                                 "new_tag:must"
                             ]
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "namespace": "apisix",
-                            "host": "127.0.0.1",
-                            "constant_tags": [
-                                "source:apisix",
-                                "new_tag:must"
-                            ],
-                            "port": 8125
-                        },
-                        "key": "/apisix/plugin_metadata/datadog"
-                    },
-                    "action": "set"
                 }]])
 
             if code >= 300 then
@@ -363,4 +334,64 @@ message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:mu
 message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:datadog,balancer_ip:[\d.]+,response_status:200,scheme:http
+/
+
+
+
+=== TEST 7: testing behaviour when route_name is missing - must fallback to route_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "datadog": {
+                                "batch_max_size" : 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- making a request to the route
+            local code, _, body = t("/opentracing", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix(.+?(?=, ))/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 /

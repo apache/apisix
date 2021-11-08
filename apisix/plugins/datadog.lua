@@ -75,7 +75,7 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
-local function generate_tag(conf, const_tags)
+local function generate_tag(entry, const_tags)
     local tags
     if const_tags and #const_tags > 0 then
         tags = core.table.clone(const_tags)
@@ -84,27 +84,27 @@ local function generate_tag(conf, const_tags)
     end
 
     -- priority on route name, if not found using the route id.
-    if conf.route_name ~= "" then
-        core.table.insert(tags, "route_name:" .. conf.route_name)
-    elseif conf.route_id and conf.route_id ~= "" then
-        core.table.insert(tags, "route_id:" .. conf.route_id)
+    if entry.route_name ~= "" then
+        core.table.insert(tags, "route_name:" .. entry.route_name)
+    elseif entry.route_id and entry.route_id ~= "" then
+        core.table.insert(tags, "route_name:" .. entry.route_id)
     end
 
-    if conf.service_id and conf.service_id ~= "" then
-        core.table.insert(tags, "service_id:" .. conf.service_id)
+    if entry.service_id and entry.service_id ~= "" then
+        core.table.insert(tags, "service_id:" .. entry.service_id)
     end
 
-    if conf.consumer and conf.consumer ~= "" then
-        core.table.insert(tags, "consumer:" .. conf.consumer)
+    if entry.consumer and entry.consumer ~= "" then
+        core.table.insert(tags, "consumer:" .. entry.consumer)
     end
-    if conf.balancer_ip ~= "" then
-        core.table.insert(tags, "balancer_ip:" .. conf.balancer_ip)
+    if entry.balancer_ip ~= "" then
+        core.table.insert(tags, "balancer_ip:" .. entry.balancer_ip)
     end
-    if conf.response.status then
-        core.table.insert(tags, "response_status:" .. conf.response.status)
+    if entry.response.status then
+        core.table.insert(tags, "response_status:" .. entry.response.status)
     end
-    if conf.scheme ~= "" then
-        core.table.insert(tags, "scheme:" .. conf.scheme)
+    if entry.scheme ~= "" then
+        core.table.insert(tags, "scheme:" .. entry.scheme)
     end
 
     if #tags > 0 then
