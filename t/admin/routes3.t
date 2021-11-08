@@ -711,34 +711,16 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                      "uri": "/index.html",
-                      "enable_websocket": true,
-                      "upstream": {
-                          "type": "roundrobin",
-                          "nodes": {
-                              "127.0.0.1:8080":1
-                          }
-                      }
-                  }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "enable_websocket": true,
-                            "upstream": {
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:8080":1
-                                }
-                           }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-            )
+                    "uri": "/index.html",
+                    "enable_websocket": true,
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8080":1
+                        }
+                    }
+                }]])
 
-            ngx.status = code
             ngx.say(body)
         }
     }
