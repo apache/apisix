@@ -105,7 +105,8 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
-            "plugins/node-status"
+            "plugins/node-status",
+            "plugins/datadog"
           ]
         },
         {
