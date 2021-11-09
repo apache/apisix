@@ -84,6 +84,13 @@ local function get_full_log(ngx, conf)
         service_id = var.host
     end
 
+    local consumer
+    if ctx.consumer then
+        consumer = {
+            username = ctx.consumer.username
+        }
+    end
+
     local log =  {
         request = {
             url = url,
@@ -105,7 +112,7 @@ local function get_full_log(ngx, conf)
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,
-        consumer = ctx.consumer,
+        consumer = consumer,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
         latency = (ngx.now() - ngx.req.start_time()) * 1000
