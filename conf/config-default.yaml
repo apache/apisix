@@ -341,6 +341,7 @@ plugins:                          # plugin list (sorted by priority)
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - prometheus                     # priority: 500
+  - datadog                        # priority: 495
   - echo                           # priority: 412
   - http-logger                    # priority: 410
   - sls-logger                     # priority: 406
