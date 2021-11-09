@@ -396,6 +396,8 @@ message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,r
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
 
+
+
 === TEST 8: testing behaviour with service id
 --- config
     location /t {
@@ -474,6 +476,7 @@ message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,ro
 /
 
 
+
 === TEST 9: testing behaviour with prefer_name is false and service name is nil
 --- config
     location /t {
@@ -530,4 +533,3 @@ message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must
 message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
-
