@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local batch_processor = require("apisix.utils.batch-processor")
 local fetch_log = require("apisix.utils.log-util").get_full_log
+local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local udp = ngx.socket.udp
 local format = string.format
@@ -43,6 +44,7 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 5000},
         max_retry_count = {type = "integer", minimum = 1, default = 1},
+        prefer_name = {type = "boolean", default = true}
     }
 }
 
@@ -83,15 +85,24 @@ local function generate_tag(entry, const_tags)
         tags = {}
     end
 
-    -- priority on route name, if not found using the route id.
-    if entry.route_name ~= "" then
+    -- priority on route_name & prefer_name, if not found fall back to the route id
+    if entry.prefer_name and entry.route_name ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_name)
     elseif entry.route_id and entry.route_id ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_id)
     end
 
     if entry.service_id and entry.service_id ~= "" then
-        core.table.insert(tags, "service_id:" .. entry.service_id)
+        local svc_id = entry.service_id
+
+        if entry.prefer_name then
+            local svc = service_fetch(svc_id)
+            -- if name is nil, fall back to service id (even if prefer name is enabled)
+            if svc and svc.value.name ~= "" then
+                svc_id = svc.value.name
+            end
+        end
+        core.table.insert(tags, "service_name:" .. svc_id)
     end
 
     if entry.consumer and entry.consumer ~= "" then
@@ -144,6 +155,7 @@ function _M.log(conf, ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.route_name = ctx.route_name or ""
     entry.scheme = ctx.upstream_scheme or ""
+    entry.prefer_name = conf.prefer_name
 
     local log_buffer = buffers[conf]
     if log_buffer then

@@ -395,3 +395,139 @@ message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must
 message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
+
+=== TEST 8: testing behaviour with service id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "name": "service-1",
+                        "plugins": {
+                            "datadog": {
+                                "batch_max_size" : 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- create a route with service level abstraction
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                       "name": "route-1",
+                       "uri": "/opentracing",
+                       "service_id": "1"
+
+                 }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- making a request to the route
+            local code, _, body = t("/opentracing", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+passed
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix(.+?(?=, ))/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:route-1,service_name:service-1,balancer_ip:[\d.]+,response_status:200,scheme:http
+/
+
+
+=== TEST 9: testing behaviour with prefer_name is false and service name is nil
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "datadog": {
+                                "batch_max_size" : 1,
+                                "prefer_name": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- making a request to the route
+            local code, _, body = t("/opentracing", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix(.+?(?=, ))/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
+/
+
