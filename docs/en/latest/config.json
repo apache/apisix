@@ -35,7 +35,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
@@ -120,6 +119,13 @@
             "plugins/log-rotate",
             "plugins/error-log-logger",
             "plugins/sls-logger"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Serverless",
+          "items": [
+            "plugins/serverless"
           ]
         },
         {
