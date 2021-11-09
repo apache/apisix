@@ -92,17 +92,11 @@ local function generate_tag(entry, const_tags)
         core.table.insert(tags, "route_name:" .. entry.route_id)
     end
 
-    if entry.service_id and entry.service_id ~= "" then
-        local svc_id = entry.service_id
-
-        if entry.prefer_name then
-            local svc = service_fetch(svc_id)
-            -- if name is nil, fall back to service id (even if prefer name is enabled)
-            if svc and svc.value.name ~= "" then
-                svc_id = svc.value.name
-            end
-        end
-        core.table.insert(tags, "service_name:" .. svc_id)
+    if entry.prefer_name and entry.service_name and entry.service_name ~= "" then
+        core.table.insert(tags, "service_name:" .. entry.service_name)
+    elseif entry.service_id and entry.service_id ~= "" then
+        -- if name is nil, fall back to service id (even if prefer name is enabled)
+        core.table.insert(tags, "service_name:" .. entry.service_id)
     end
 
     if entry.consumer and entry.consumer ~= "" then
@@ -156,6 +150,11 @@ function _M.log(conf, ctx)
     entry.route_name = ctx.route_name or ""
     entry.scheme = ctx.upstream_scheme or ""
     entry.prefer_name = conf.prefer_name
+    -- capture service name at request response cycle if prefer_name is set.
+    if entry.prefer_name and entry.service_id and entry.service_id ~= "" then
+       local svc = service_fetch(entry.service_id)
+       entry.service_name = svc and svc.value.name or ""
+    end
 
     local log_buffer = buffers[conf]
     if log_buffer then
