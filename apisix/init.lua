@@ -710,10 +710,6 @@ function _M.http_log_phase()
         api_ctx.server_picker.after_balance(api_ctx, false)
     end
 
-    if api_ctx.uri_parse_param then
-        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
-    end
-
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)
