@@ -119,6 +119,12 @@ do
         end
     }
 
+    local no_cacheable_var_names = {
+        -- var.args should not be cached as it can be changed via set_uri_args
+        args = true,
+        is_args = true,
+    }
+
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
@@ -224,7 +230,7 @@ do
                 val = get_var(key, t._request)
             end
 
-            if val ~= nil then
+            if val ~= nil and not no_cacheable_var_names[key] then
                 t._cache[key] = val
             end
 
