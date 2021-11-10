@@ -198,8 +198,6 @@ end
 
 
 function _M.get_body(max_size, ctx)
-    -- TODO: improve the check with set client_max_body dynamically
-    -- which requires to change Nginx source code
     if max_size then
         local var = ctx and ctx.var or ngx.var
         local content_length = tonumber(var.http_content_length)
