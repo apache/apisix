@@ -199,8 +199,6 @@ function _M.rewrite(conf, ctx)
         return
     end
 
-    -- reform header from object into array, so can avoid use pairs,
-    -- which is NYI
     if not conf.headers_arr then
         conf.headers_arr = {}
 
