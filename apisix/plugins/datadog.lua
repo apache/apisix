@@ -142,10 +142,9 @@ function _M.log(conf, ctx)
     entry.upstream_latency = ctx.var.upstream_response_time * 1000
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
-    entry.prefer_name = conf.prefer_name
 
     -- if prefer_name is set, fetch the service/route name. If the name is nil, fall back to id.
-    if entry.prefer_name then
+    if conf.prefer_name then
         if entry.service_id and entry.service_id ~= "" then
             local svc = service_fetch(entry.service_id)
 
