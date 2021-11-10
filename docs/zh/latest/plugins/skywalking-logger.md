@@ -41,7 +41,6 @@ title: http-logger
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | uri              | string  | 必须   |               |         | `SkyWalking OAp` 服务器的 URI。                   |
-
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "skywalking logger" |         | 标识 logger 的唯一标识符。                     |
 | batch_max_size   | integer | 可选   | 1000          | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `HTTP/HTTPS` 服务。 |
@@ -86,18 +85,15 @@ hello, world
 
 完成上述步骤后，在可以 SkyWalking UI 查看到相关日志。
 
-## Metadata
-
-`skywalking-logger` 也是制定日志格式，与 [http-logger](/http-logger.md) 插件类似。
-
 ## 插件元数据设置
 
+`skywalking-logger` 也是制定日志格式，与 [http-logger](./http-logger.md) 插件类似。
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。|
 
-特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 skywalking-logger 的 Route 或 Service 生效。 
+特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 skywalking-logger 的 Route 或 Service 生效。
 
 ## 禁用插件
 

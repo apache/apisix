@@ -89,7 +89,7 @@ Completion of the steps, could find the Log details on `SkyWalking UI`.
 
 ## Metadata
 
-`skywalking-logger` is also support to custom log format like [http-logger](/http-logger.md).
+`skywalking-logger` is also support to custom log format like [http-logger](./http-logger.md).
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
