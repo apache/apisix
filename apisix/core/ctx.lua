@@ -119,6 +119,12 @@ do
         end
     }
 
+    local no_cacheable_var_names = {
+        -- var.args should not be cached as it can be changed via set_uri_args
+        args = true,
+        is_args = true,
+    }
+
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
@@ -175,6 +181,20 @@ do
                     end
                 end
 
+            elseif core_str.has_prefix(key, "post_arg_") then
+                -- only match default post form
+                if request.header(nil, "Content-Type") == "application/x-www-form-urlencoded" then
+                    local arg_key = sub_str(key, 10)
+                    local args = request.get_post_args()[arg_key]
+                    if args then
+                        if type(args) == "table" then
+                            val = args[1]
+                        else
+                            val = args
+                        end
+                    end
+                end
+
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
@@ -210,7 +230,7 @@ do
                 val = get_var(key, t._request)
             end
 
-            if val ~= nil then
+            if val ~= nil and not no_cacheable_var_names[key] then
                 t._cache[key] = val
             end
 

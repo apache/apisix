@@ -17,27 +17,20 @@
 local core          = require("apisix.core")
 local plugin_name   = "request-validation"
 local ngx           = ngx
-local io           = io
+local io            = io
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 
 local schema = {
     type = "object",
+    properties = {
+        header_schema = {type = "object"},
+        body_schema = {type = "object"},
+        rejected_msg = {type = "string", minLength = 1, maxLength = 256}
+    },
     anyOf = {
-        {
-            title = "Body schema",
-            properties = {
-                body_schema = {type = "object"}
-            },
-            required = {"body_schema"}
-        },
-        {
-            title = "Header schema",
-            properties = {
-                header_schema = {type = "object"}
-            },
-            required = {"header_schema"}
-        }
+        {required = {"header_schema"}},
+        {required = {"body_schema"}}
     }
 }
 
@@ -82,7 +75,7 @@ function _M.rewrite(conf)
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
-            return 400, err
+            return 400, conf.rejected_msg or err
         end
     end
 
@@ -94,11 +87,11 @@ function _M.rewrite(conf)
         if not body then
             local filename = ngx.req.get_body_file()
             if not filename then
-                return 500
+                return 500, conf.rejected_msg
             end
             local fd = io.open(filename, 'rb')
             if not fd then
-                return 500
+                return 500, conf.rejected_msg
             end
             body = fd:read('*a')
         end
@@ -111,13 +104,13 @@ function _M.rewrite(conf)
 
         if not req_body then
           core.log.error('failed to decode the req body', error)
-          return 400, error
+          return 400, conf.rejected_msg or error
         end
 
         local ok, err = core.schema.check(conf.body_schema, req_body)
         if not ok then
           core.log.error("req schema validation failed", err)
-          return 400, err
+          return 400, conf.rejected_msg or err
         end
     end
 end

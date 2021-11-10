@@ -34,7 +34,7 @@ apisix:
 
 make init
 
-grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+grep "listen 0.0.0.0:9180 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: failed to enable https for admin"
     exit 1
@@ -52,6 +52,32 @@ make stop
 
 echo "passed: admin https enabled"
 
+echo '
+apisix:
+  enable_admin: true
+  admin_listen:
+    ip: 127.0.0.2
+    port: 9181
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 127.0.0.2:9181;" conf/nginx.conf > /dev/null; then
+    echo "failed: customize address for admin server"
+    exit 1
+fi
+
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9181/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+make stop
+
 # rollback to the default
 
 git checkout conf/config.yaml
@@ -60,7 +86,7 @@ make init
 
 set +ex
 
-grep "listen 9080 ssl" conf/nginx.conf > /dev/null
+grep "listen 0.0.0.0:9080 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 1 ]; then
     echo "failed: failed to rollback to the default admin config"
     exit 1
@@ -182,3 +208,24 @@ if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; th
 fi
 
 echo "passed: Admin API can only be used with etcd config_center"
+
+# disable Admin API and init plugins syncer
+echo '
+apisix:
+  enable_admin: false
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+make init
+
+if grep -E "failed to fetch data from etcd" logs/error.log; then
+    echo "failed: should sync /apisix/plugins from etcd when disabling admin normal"
+    exit 1
+fi
+
+make stop
+
+echo "pass: sync /apisix/plugins from etcd when disabling admin successfully"

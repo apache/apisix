@@ -46,13 +46,11 @@ title: limit-req
 | nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `burst`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
-
 ## 示例
 
 ### 如何在`route`或`service`上使用
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件。
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -64,6 +62,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
         }
     },
@@ -76,13 +75,34 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
 
-![添加路由](../../../assets/images/plugin/limit-req-1.png)
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
 
-然后在 route 页面中添加 limit-req 插件：
+你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-req 插件：
 
-![添加插件](../../../assets/images/plugin/limit-req-2.png)
+![添加插件](../../../assets/images/plugin/limit-req-1.png)
 
 **测试插件**
 

@@ -90,6 +90,8 @@ fi
 
 make stop
 
+echo "passed: should listen at previous prometheus address"
+
 echo '
 plugin_attr:
   prometheus:
@@ -115,9 +117,9 @@ plugin_attr:
 ' > conf/config.yaml
 
 out=$(IP=127.0.0.1 PORT=9092 make init 2>&1 || true)
-if ! echo "$out" | grep "node_listen port 9092 conflicts with prometheus"; then
+if ! echo "$out" | grep "http listen port 9092 conflicts with prometheus"; then
     echo "failed: can't detect port conflicts"
     exit 1
 fi
 
-echo "passed: should listen at previous prometheus address"
+echo "passed: should detect port conflicts"

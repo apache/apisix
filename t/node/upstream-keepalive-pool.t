@@ -215,3 +215,63 @@ lua balancer: keepalive create pool, crc32: \S+, size: 1
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 $/
+
+
+
+=== TEST 6: set upstream without keepalive_pool
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+        }
+    }
+
+
+
+=== TEST 7: should not override default value
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.print(res.body)
+            end
+        }
+    }
+--- response_body
+hello world
+hello world
+hello world
+--- grep_error_log eval
+qr/lua balancer: keepalive .*/
+--- grep_error_log_out eval
+qr/^lua balancer: keepalive create pool, crc32: \S+, size: 320
+lua balancer: keepalive no free connection, cpool: \S+
+lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
+lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
+lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
+lua balancer: keepalive reusing connection \S+, requests: 2, cpool: \S+
+lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
+$/

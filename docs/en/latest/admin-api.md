@@ -323,12 +323,13 @@ Return response from etcd currently.
 | desc             | False    | Auxiliary   | service usage scenarios, and more.                                                       | service xxxx                                   |
 | labels           | False    | Match Rules | Key/value pairs to specify attributes                                                    | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | enable `websocket`(boolean), default `false`.                                            |                                                  |
+| hosts            | False    | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.| ["foo.com", "*.bar.com"]                             |
 | create_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 | update_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 
 Config Example:
 
-```shell
+```json
 {
     "id": "1",          # id
     "plugins": {},      # Bound plugin
@@ -337,6 +338,7 @@ Config Example:
     "name": "service-test",
     "desc": "hello world",
     "enable_websocket": true,
+    "hosts": ["foo.com"]
 }
 ```
 
@@ -939,11 +941,19 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
+By default, this API only returns the http plugins. If you need stream plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+
 ### Request Methods
 
 | Method | Request URI                    | Request Body | Description    |
 | ------ | ------------------------------ | ------------ | -------------- |
 | GET    | /apisix/admin/plugins?all=true | NULL         | Fetch resource |
+
+### Request Arguments
+
+| Name      | Description                    | Default |
+| --------- | ------------------------------ | ------------ |
+| subsystem | the subsystem of plugins       | http         |
 
 [Back to TOC](#table-of-contents)
 
@@ -967,9 +977,11 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | Parameter        | Required | Type     | Description | Example  |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | False  | IP       | client IP | "127.0.0.1"  |
-| server_addr      | False  | IP       | server IP | "127.0.0.1"  |
+| remote_addr      | False  | IP/CIDR  | client IP | "127.0.0.1/32" or "127.0.0.1" |
+| server_addr      | False  | IP/CIDR  | server IP | "127.0.0.1/32" or "127.0.0.1"  |
 | server_port      | False  | Integer  | server port | 9090  |
 | sni              | False  | Host     | server name indication | "test.com"  |
+| upstream | False | Upstream | Upstream configuration, see [Upstream](architecture-design/upstream.md) for more details |  |
+| upstream_id | False | Upstream | specify the upstream id, see [Upstream](architecture-design/upstream.md) for more details |             |
 
 [Back to TOC](#table-of-contents)

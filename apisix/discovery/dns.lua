@@ -78,7 +78,7 @@ function _M.init_worker()
         hosts = {},
         resolvConf = {},
         nameservers = servers,
-        order = {"last", "A", "AAAA", "SRV", "CNAME"},
+        order = {"last", "SRV", "A", "AAAA", "CNAME"},
     }
 
     local client, err = core.dns_client.new(opts)

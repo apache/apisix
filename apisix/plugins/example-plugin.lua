@@ -44,7 +44,7 @@ local plugin_name = "example-plugin"
 
 local _M = {
     version = 0.1,
-    priority = 0,        -- TODO: add a type field, may be a good idea
+    priority = 0,
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,

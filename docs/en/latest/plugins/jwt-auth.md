@@ -25,8 +25,11 @@ title: jwt-auth
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)
+- [**API**](#api)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
+    - [get the token in `jwt-auth` plugin:](#get-the-token-in-jwt-auth-plugin)
+    - [try request with token](#try-request-with-token)
 - [**Disable Plugin**](#disable-plugin)
 
 ## Name
@@ -111,14 +114,14 @@ You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to co
 
 1. Add a Consumer through the web console:
 
-![](../../../assets/images/plugin/jwt-auth-1.png)
+![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
 
 then add jwt-auth plugin in the Consumer page:
-![](../../../assets/images/plugin/jwt-auth-2.png)
+![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
 
 2. Create a Route or Service object and enable the jwt-auth plugin:
 
-![](../../../assets/images/plugin/jwt-auth-3.png)
+![enable jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## Test Plugin
 

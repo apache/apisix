@@ -364,3 +364,72 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: check default log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-one"
+                        }
+                    }
+                }]]
+                )
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            },
+                            "key-auth": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: hit
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- grep_error_log eval
+qr/request log: \{.+\}/
+--- grep_error_log_out eval
+qr/\Q{"client_ip":"127.0.0.1","consumer":{"username":"jack"},"latency":\E[^,]+\Q,"request":{"headers":{"apikey":"auth-one","connection":"close","host":"localhost"},"method":"GET","querystring":{},"size":\E\d+\Q,"uri":"\/hello","url":"http:\/\/localhost:1984\/hello"},"response":{"headers":{"connection":"close","content-length":"\E\d+\Q","content-type":"text\/plain","server":"\E[^"]+\Q"},"size":\E\d+\Q,"status":200},"route_id":"1","server":{"hostname":"\E[^"]+\Q","version":"\E[^"]+\Q"},"service_id":"","start_time":\E\d+\Q,"upstream":"127.0.0.1:1982"}\E/
+--- wait: 0.5

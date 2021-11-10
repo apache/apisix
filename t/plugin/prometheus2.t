@@ -354,21 +354,21 @@ GET /apisix/prometheus/metrics
                         "plugins": {
                             "prometheus": {},
                             "syslog": {
-			                    "host": "127.0.0.1",
-			                    "include_req_body": false,
-			                    "max_retry_times": 1,
-			                    "tls": false,
-			                    "retry_interval": 1,
-			                    "batch_max_size": 1000,
-			                    "buffer_duration": 60,
-			                    "port": 1000,
-			                    "name": "sys-logger",
-			                    "flush_limit": 4096,
-			                    "sock_type": "tcp",
-			                    "timeout": 3,
-			                    "drop_limit": 1048576,
-			                    "pool_size": 5
-		                    }
+                                "host": "127.0.0.1",
+                                "include_req_body": false,
+                                "max_retry_times": 1,
+                                "tls": false,
+                                "retry_interval": 1,
+                                "batch_max_size": 1000,
+                                "buffer_duration": 60,
+                                "port": 1000,
+                                "name": "sys-logger",
+                                "flush_limit": 4096,
+                                "sock_type": "tcp",
+                                "timeout": 3,
+                                "drop_limit": 1048576,
+                                "pool_size": 5
+                            }
                         },
                         "upstream": {
                             "nodes": {

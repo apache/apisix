@@ -37,11 +37,11 @@ title: cors
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| allow_origins    | string  | optional    | "*"     |       | Which Origins is allowed to enable CORS, format as：`scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow any origin. you also can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
+| allow_origins    | string  | optional    | "*"     |       | Which Origins is allowed to enable CORS, format as: `scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow any origin. you also can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
 | allow_methods    | string  | optional    | "*"     |       | Which Method is allowed to enable CORS, such as: `GET`, `POST` etc. Multiple method use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any method. You also can allow any method forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
 | allow_headers    | string  | optional    | "*"     |       | Which headers are allowed to set in request when access cross-origin resource. Multiple value use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all request headers. You also can allow any header forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
-| expose_headers   | string  | optional    | "*"     |       | Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. |
-| max_age          | integer | optional    | 5       |       | Maximum number of seconds the results can be cached.. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details. |
+| expose_headers   | string  | optional    | "*"     |       | Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. When `allow_credential` is false, you can use `*` to indicate allow any header. You also can allow any header forcefully using `**` even already enable allow_credential, but it will bring some security risks.|
+| max_age          | integer | optional    | 5       |       | Maximum number of seconds the results can be cached. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details. |
 | allow_credential | boolean | optional    | false   |       | Enable request include credential (such as Cookie etc.). According to CORS specification, if you set this option to `true`, you can not use '*' for other options. |
 | allow_origins_by_regex | array | optional    | nil   |       | Use regex expressions to match which origin is allowed to enable CORS, for example, [".*\.test.com"] can use to match all subdomain of test.com  |
 
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/hello -v
 
 ## Disable Plugin
 
-Remove plugin from configuration.
+When you want to disable the `cors` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -103,3 +103,5 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+The `cors` plugin has been disabled now. It works for other plugins.

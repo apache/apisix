@@ -999,3 +999,118 @@ GET /t
 passed
 --- error_log eval
 qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
+
+
+
+=== TEST 24: check broker_list via schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    input = {
+                        broker_list = {},
+                        kafka_topic = "test",
+                        key= "key1",
+                    },
+                },
+                {
+                    input = {
+                        broker_list = {
+                            ["127.0.0.1"] = "9092"
+                        },
+                        kafka_topic = "test",
+                        key= "key1",
+                    },
+                },
+                {
+                    input = {
+                        broker_list = {
+                            ["127.0.0.1"] = 0
+                        },
+                        kafka_topic = "test",
+                        key= "key1",
+                    },
+                },
+                {
+                    input = {
+                        broker_list = {
+                            ["127.0.0.1"] = 65536
+                        },
+                        kafka_topic = "test",
+                        key= "key1",
+                    },
+                },
+            }
+
+            local plugin = require("apisix.plugins.kafka-logger")
+
+            local err_count = 0
+            for i in ipairs(data) do
+                local ok, err = plugin.check_schema(data[i].input)
+                if not ok then
+                    err_count = err_count + 1
+                    ngx.say(err)
+                end
+            end
+
+            assert(err_count == #data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "broker_list" validation failed: expect object to have at least 1 properties
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): wrong type: expected integer, got string
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 0 to be greater than 1
+property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be smaller than 65535
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: kafka brokers info in log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                             "kafka-logger": {
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.127":9092
+                                      },
+                                    "kafka_topic" : "test2",
+                                    "producer_type": "sync",
+                                    "key" : "key1",
+                                    "batch_max_size": 1,
+                                    "cluster_name": 10
+                             }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+        }
+    }
+--- request
+GET /t
+--- error_log_like eval
+qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.127"}]/
+qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/

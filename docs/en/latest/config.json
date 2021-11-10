@@ -1,5 +1,5 @@
 {
-  "version": 2.8,
+  "version": "2.10.1",
   "sidebar": [
     {
       "type": "category",
@@ -35,7 +35,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
@@ -66,7 +65,8 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/hmac-auth",
-            "plugins/authz-casbin"
+            "plugins/authz-casbin",
+            "plugins/ldap-auth"
           ]
         },
         {
@@ -104,7 +104,8 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
-            "plugins/node-status"
+            "plugins/node-status",
+            "plugins/datadog"
           ]
         },
         {
@@ -119,6 +120,13 @@
             "plugins/log-rotate",
             "plugins/error-log-logger",
             "plugins/sls-logger"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Serverless",
+          "items": [
+            "plugins/serverless"
           ]
         },
         {
@@ -211,6 +219,10 @@
         {
           "type": "doc",
           "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
         },
         {
           "type": "doc",

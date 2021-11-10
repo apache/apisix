@@ -20,17 +20,15 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    enable_debug: true
-_EOC_
+our $debug_config = t::APISIX::read_file("conf/debug.yaml");
+$debug_config =~ s/basic:\n  enable: false/basic:\n  enable: true/;
 
 run_tests;
 
 __DATA__
 
 === TEST 1: loaded plugin
+--- debug_config eval: $::debug_config
 --- config
     location /t {
         content_by_lua_block {
@@ -38,7 +36,6 @@ __DATA__
             ngx.say("done")
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -127,9 +124,9 @@ passed
 
 
 === TEST 3: hit routes
+--- debug_config eval: $::debug_config
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- response_headers
@@ -189,13 +186,32 @@ passed
 
 
 === TEST 5: hit routes
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local ngx_re = require("ngx.re")
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            local debug_header = res.headers["Apisix-Plugins"]
+            local arr = ngx_re.split(debug_header, ", ")
+            local hash = {}
+            for i, v in ipairs(arr) do
+                hash[v] = true
+            end
+            ngx.status = res.status
+            ngx.say(json.encode(hash))
+        }
+    }
 --- request
-GET /hello
---- yaml_config eval: $::yaml_config
+GET /t
 --- response_body
-hello world
---- response_headers
-Apisix-Plugins: limit-conn, limit-count
+{"limit-conn":true,"limit-count":true}
 --- no_error_log
 [error]
 
@@ -234,13 +250,32 @@ passed
 
 
 === TEST 7: hit routes
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local ngx_re = require("ngx.re")
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            local debug_header = res.headers["Apisix-Plugins"]
+            local arr = ngx_re.split(debug_header, ", ")
+            local hash = {}
+            for i, v in ipairs(arr) do
+                hash[v] = true
+            end
+            ngx.status = res.status
+            ngx.say(json.encode(hash))
+        }
+    }
 --- request
-GET /hello
---- yaml_config eval: $::yaml_config
---- response_headers
-Apisix-Plugins: response-rewrite, limit-conn, limit-count, response-rewrite, response-rewrite
+GET /t
 --- response_body
-yes
+{"limit-conn":true,"limit-count":true,"response-rewrite":true}
 --- error_log
 Apisix-Plugins: response-rewrite
 --- no_error_log
@@ -311,13 +346,13 @@ passed
 
 
 === TEST 10: hit route
---- yaml_config eval: $::yaml_config
+--- debug_config eval: $::debug_config
 --- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
 --- error_log
-Apisix-Plugins: mqtt-proxy
+mqtt client id: foo while prereading client data
 --- no_error_log
 [error]

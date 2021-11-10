@@ -344,7 +344,7 @@ passed
                 ngx.HTTP_PATCH,
                 [[{
                     "labels": {
-	                    "build": "17"
+                        "build": "17"
                     }
                 }]],
                 [[{
@@ -388,7 +388,7 @@ passed
                     },
                     "type": "roundrobin",
                     "labels": {
-	                    "env": ["production", "release"]
+                        "env": ["production", "release"]
                     }
                 }]]
                 )

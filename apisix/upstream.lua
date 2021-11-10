@@ -111,8 +111,12 @@ local function create_checker(upstream)
 
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
+    local up_hdr = upstream.pass_host == "rewrite" and upstream.upstream_host
+    local use_node_hdr = upstream.pass_host == "node"
     for _, node in ipairs(upstream.nodes) do
-        local ok, err = checker:add_target(node.host, port or node.port, host)
+        local host_hdr = up_hdr or (use_node_hdr and node.domain)
+        local ok, err = checker:add_target(node.host, port or node.port, host,
+                                           true, host_hdr)
         if not ok then
             core.log.error("failed to add new health check target: ", node.host, ":",
                     port or node.port, " err: ", err)
@@ -239,7 +243,7 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
-        local new_nodes, err = dis.nodes(up_conf.service_name)
+        local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
         if not new_nodes then
             return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end

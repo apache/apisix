@@ -29,7 +29,7 @@ APISIX using libradixtree as route dispatching library.
 
 ### How to use libradixtree in APISIX?
 
-This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
+This is Lua-OpenResty implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
 Let's take a look at a few examples and have an intuitive understanding.
 
@@ -217,6 +217,31 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc.
+
+### How to filter route by POST form attributes
+
+APISIX supports filtering route by POST form attributes with `Content-Type` = `application/x-www-form-urlencoded`.
+
+We can define the following route:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_post",
+    "vars": [
+        ["post_arg_name", "==", "json"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+The route will be matched when the POST form contains `name=json`.
 
 ### How to filter route by GraphQL attributes
 

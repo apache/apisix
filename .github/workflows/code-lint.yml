@@ -5,12 +5,14 @@ on:
     branches: [master]
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v2.4.0
     - name: Install
       run: |
         . ./ci/common.sh

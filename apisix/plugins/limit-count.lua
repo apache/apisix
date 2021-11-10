@@ -36,11 +36,10 @@ local schema = {
     properties = {
         count = {type = "integer", exclusiveMinimum = 0},
         time_window = {type = "integer",  exclusiveMinimum = 0},
-        key = {
-            type = "string",
-            enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for", "consumer_name", "service_id"},
-            default = "remote_addr",
+        key = {type = "string", default = "remote_addr"},
+        key_type = {type = "string",
+            enum = {"var", "var_combination"},
+            default = "var",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -171,7 +170,29 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local conf_key = conf.key
+    local key
+    if conf.key_type == "var_combination" then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
+        end
+
+        if n_resolved == 0 then
+            key = nil
+        end
+    else
+        key = ctx.var[conf_key]
+    end
+
+    if key == nil then
+        core.log.info("The value of the configured key is empty, use client IP instead")
+        -- When the value of key is empty, use client IP instead
+        key = ctx.var["remote_addr"]
+    end
+
+    key = key .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, remaining = lim:incoming(key, true)

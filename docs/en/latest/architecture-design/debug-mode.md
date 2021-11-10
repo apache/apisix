@@ -23,7 +23,14 @@ title: Debug Mode
 
 ### Basic Debug Mode
 
-Enable basic debug mode just by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
+Enable basic debug mode via `conf/debug.yaml` file:
+
+```
+basic:
+  enable: true
+```
+
+Note: before APISIX 2.10, we enabled basic debug mode by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
 
 e.g Using both `limit-conn` and `limit-count` plugins for a `/hello` request, there will have a response header called `Apisix-Plugins: limit-conn, limit-count`.
 
@@ -76,3 +83,25 @@ hook_phase: # Module Function List, Name: hook_phase
     - http_log_phase
 #END
 ```
+
+### Enable Advanced Debug Mode Dynamically
+
+The advanced debug mode can take effect in particular requests by dynamic rule.
+
+Example:
+
+```yaml
+http_filter:
+  enable: true # Enable/Disable Advanced Debug Mode Dynamically
+  enable_header_name: X-APISIX-Dynamic-Debug # Trace for the request with this header
+......
+#END
+```
+
+Dynamically enable advanced debugging mode in a particular request like this:
+
+```shell
+curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
+```
+
+Notice: We can not hook the `apisix.http_access_phase` module for particular requests, since whether the advanced debug mode is enabled is determined after these requests enter such phase.

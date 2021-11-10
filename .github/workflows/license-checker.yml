@@ -29,10 +29,11 @@ on:
 jobs:
   check-license:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - name: Check License Header
-        uses: apache/skywalking-eyes@v0.1.0
+        uses: apache/skywalking-eyes@v0.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

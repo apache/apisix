@@ -15,14 +15,14 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local core_ip  = require("apisix.core.ip")
 local config_util = require("apisix.core.config_util")
-local plugin_checker = require("apisix.plugin").stream_plugin_checker
+local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
-local ngx_ssl = require("ngx.ssl")
+local apisix_ssl = require("apisix.ssl")
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
-
 
 local user_routes
 local router_ver
@@ -31,16 +31,21 @@ local other_routes = {}
 local _M = {version = 0.1}
 
 
+
 local function match_addrs(route, vars)
     -- todo: use resty-ipmatcher to support multiple ip address
-    if route.value.remote_addr and
-       route.value.remote_addr ~= vars.remote_addr then
-        return false
+    if route.value.remote_addr then
+        local ok, _ = route.value.remote_addr_matcher:match(vars.remote_addr)
+        if not ok then
+            return false
+        end
     end
 
-    if route.value.server_addr and
-       route.value.server_addr ~= vars.server_addr then
-        return false
+    if route.value.server_addr then
+        local ok, _ = route.value.server_addr_matcher:match(vars.server_addr)
+        if not ok then
+            return false
+        end
     end
 
     -- todo: use resty-ipmatcher to support multiple ip address
@@ -71,6 +76,12 @@ do
             end
 
             local route = item.value
+            if item.value.remote_addr then
+                item.value.remote_addr_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
+            end
+            if item.value.server_addr then
+                item.value.server_addr_matcher = core_ip.create_ip_matcher({item.value.server_addr})
+            end
             if not route.sni then
                 other_routes[other_routes_idx] = item
                 other_routes_idx = other_routes_idx + 1
@@ -134,7 +145,7 @@ do
             router_ver = user_routes.conf_version
         end
 
-        local sni = ngx_ssl.server_name()
+        local sni = apisix_ssl.server_name()
         if sni and tls_router then
             local sni_rev = sni:reverse()
 
@@ -176,13 +187,35 @@ function _M.routes()
     return user_routes.values, user_routes.conf_version
 end
 
+local function stream_route_checker(item)
+    if item.plugins then
+        local err, message = stream_plugin_checker(item)
+        if not err then
+            return err, message
+        end
+    end
+    -- validate the address format when remote_address or server_address is not nil
+    if item.remote_addr then
+        if not core_ip.validate_cidr_or_ip(item.remote_addr) then
+            return false, "invalid remote_addr: " .. item.remote_addr
+        end
+    end
+    if item.server_addr then
+        if not core_ip.validate_cidr_or_ip(item.server_addr) then
+            return false, "invalid server_addr: " .. item.server_addr
+        end
+    end
+    return true
+end
+_M.stream_route_checker = stream_route_checker
+
 
 function _M.stream_init_worker(filter)
     local err
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
-            checker = plugin_checker,
+            checker = stream_route_checker,
             filter = filter,
         })
 

@@ -57,6 +57,11 @@ apisix:
 etcd:
   host:
     - "https://127.0.0.1:2379"
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -105,6 +110,11 @@ apisix:
 etcd:
   host:
     - "https://127.0.0.1:12379"
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -244,6 +254,11 @@ etcd:
   timeout: 1
   user: root                    # root username for etcd
   password: 5tHkHhYkjr6cQY      # root password for etcd
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -263,15 +278,6 @@ etcd auth failed
 
 
 === TEST 8: ensure add prefix automatically for _M.getkey
-apisix:
-  node_listen: 1984
-  admin_key: null
-etcd:
-  host:
-    - "http://127.0.0.1:2379"
-  tls:
-    verify: false
-  prefix: "/apisix"
 --- config
     location /t {
         content_by_lua_block {
@@ -301,3 +307,22 @@ passed
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: Test ETCD health check mode switch during APISIX startup
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/healthy check use \S+ \w+/
+--- grep_error_log_out eval
+qr/healthy check use round robin
+(healthy check use ngx.shared dict){1,}/

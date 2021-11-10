@@ -17,13 +17,13 @@
 local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
-local json         = require("apisix.core.json")
 local profile      = require("apisix.core.profile")
-local process      = require("ngx.process")
 local lfs          = require("lfs")
+local inspect      = require("inspect")
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
+local get_headers  = ngx.req.get_headers
 local type         = type
 local pairs        = pairs
 local setmetatable = setmetatable
@@ -124,15 +124,24 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
 
     function mt.__call(self, ...)
         local arg = {...}
+        local http_filter = debug_yaml.http_filter
+        local api_ctx = ngx.ctx.api_ctx
+        local enable_by_hook = not (http_filter and http_filter.enable)
+        local enable_by_header_filter = (http_filter and http_filter.enable)
+                and (api_ctx and api_ctx.enable_dynamic_debug)
         if hook_conf.is_print_input_args then
-            log[log_level]("call require(\"", file_path, "\").", fun_name,
-                           "() args:", json.delay_encode(arg, true))
+            if enable_by_hook or enable_by_header_filter then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() args:", inspect(arg))
+            end
         end
 
         local ret = {self.fun_org(...)}
         if hook_conf.is_print_return_value then
-            log[log_level]("call require(\"", file_path, "\").", fun_name,
-                           "() return:", json.delay_encode(ret, true))
+            if enable_by_hook or enable_by_header_filter then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() return:", inspect(ret))
+            end
         end
         return unpack(ret)
     end
@@ -200,7 +209,41 @@ local function sync_debug_status(premature)
 end
 
 
+local function check()
+    if not debug_yaml or not debug_yaml.http_filter then
+        return false
+    end
+
+    local http_filter = debug_yaml.http_filter
+    if not http_filter or not http_filter.enable_header_name or not http_filter.enable then
+        return false
+    end
+
+    return true
+end
+
+function _M.dynamic_debug(api_ctx)
+    if not check() then
+        return
+    end
+
+    if get_headers()[debug_yaml.http_filter.enable_header_name] then
+        api_ctx.enable_dynamic_debug = true
+    end
+end
+
+
+function _M.enable_debug()
+    if not debug_yaml or not debug_yaml.basic then
+        return false
+    end
+
+    return debug_yaml.basic.enable
+end
+
+
 function _M.init_worker()
+    local process = require("ngx.process")
     if process.type() ~= "worker" then
         return
     end

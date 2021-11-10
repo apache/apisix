@@ -376,3 +376,39 @@ GET /server_port
 Host: test.com
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: inherit hosts from services
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+services:
+  - id: 1
+    hosts:
+      - bar.com
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    service_id: 1
+    upstream_id: 1
+    uri: /hello
+    plugins:
+        proxy-rewrite:
+            uri: /hello1
+  -
+    upstream_id: 1
+    uri: /hello
+    priority: -1
+#END
+--- more_headers
+Host: www.foo.com
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
