@@ -22,11 +22,11 @@ local http            = require("resty.http")
 local url             = require("net.url")
 local plugin          = require("apisix.plugin")
 
-local base64          = require("ngx.base64") 
+local base64          = require("ngx.base64")
 local ngx_re          = require("ngx.re")
 
 local ngx      = ngx
-local tostring = tostring 
+local tostring = tostring
 local ipairs   = ipairs
 local timer_at = ngx.timer.at
 
@@ -157,16 +157,21 @@ function _M.log(conf, ctx)
     if not log_body.route_id then
         log_body.route_id = "no-matched"
     end
-    
-    local h, err = ngx.req.get_headers()
-    -- 1-TRACEID-SEGMENTID-3-PARENT_SERVICE-PARENT_INSTANCE-PARENT_ENDPOINT-IPPORT
-    local ids = ngx_re.split(h["sw8"], '-')
 
-    local trace_context = {
-        traceId = base64.decode_base64url(ids[2]),
-        traceSegment = base64.decode_base64url(ids[3]),
-        spanId = tonumber(ids[4])
-    }
+    local trace_context
+    local headers = ngx.req.get_headers()
+    if headers then
+        -- 1-TRACEID-SEGMENTID-3-PARENT_SERVICE-PARENT_INSTANCE-PARENT_ENDPOINT-IPPORT
+        local ids = ngx_re.split(headers["sw8"], '-')
+
+        trace_context = {
+            traceId = base64.decode_base64url(ids[2]),
+            traceSegment = base64.decode_base64url(ids[3]),
+            spanId = tonumber(ids[4])
+        }
+    else
+        trace_context = {}
+    end
 
     local entry = {
         traceContext = trace_context,
