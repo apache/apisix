@@ -85,10 +85,7 @@ local function generate_tag(entry, const_tags)
         tags = {}
     end
 
-    -- priority on route_name & prefer_name, if not found fall back to the route id
-    if entry.prefer_name and entry.route_name ~= "" then
-        core.table.insert(tags, "route_name:" .. entry.route_name)
-    elseif entry.route_id and entry.route_id ~= "" then
+    if entry.route_id and entry.route_id ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_id)
     end
 
@@ -144,17 +141,22 @@ function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
     entry.upstream_latency = ctx.var.upstream_response_time * 1000
     entry.balancer_ip = ctx.balancer_ip or ""
-    entry.route_name = ctx.route_name or ""
     entry.scheme = ctx.upstream_scheme or ""
     entry.prefer_name = conf.prefer_name
 
-    -- capture service name at request response cycle if prefer_name is set.
-    if entry.prefer_name and entry.service_id and entry.service_id ~= "" then
-       local svc = service_fetch(entry.service_id)
+    -- if prefer_name is set, fetch the service/route name. If the name is nil, fall back to id.
+    if entry.prefer_name then
+        if entry.service_id and entry.service_id ~= "" then
+            local svc = service_fetch(entry.service_id)
 
-       if svc and svc.value.name ~= "" then
-        entry.service_id =  svc.value.name
-       end
+            if svc and svc.value.name ~= "" then
+                entry.service_id =  svc.value.name
+            end
+        end
+
+        if ctx.route_name and ctx.route_name ~= "" then
+            entry.route_id = ctx.route_name
+        end
     end
 
     local log_buffer = buffers[conf]
