@@ -140,7 +140,7 @@ function _M.log(conf, ctx)
     end
 
     local entry = fetch_log(ngx, {})
-    entry.latency = latency_details(ctx)
+    entry.latency, entry.upstream_latency, entry.apisix_latency = latency_details(ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
 
@@ -209,16 +209,16 @@ function _M.log(conf, ctx)
 
             -- request latency histogram
             local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                        "request.latency", entry.latency.latency, "h", suffix))
+                                        "request.latency", entry.latency, "h", suffix))
             if not ok then
                 core.log.error("failed to report request latency to dogstatsd server: host["
                         .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
             end
 
             -- upstream latency
-            if entry.latency.upstream_latency then
+            if entry.upstream_latency then
                 local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                "upstream.latency", entry.latency.upstream_latency, "h", suffix))
+                                "upstream.latency", entry.upstream_latency, "h", suffix))
                 if not ok then
                     core.log.error("failed to report upstream latency to dogstatsd server: host["
                                 .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
@@ -227,7 +227,7 @@ function _M.log(conf, ctx)
 
             -- apisix_latency
             local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                    "apisix.latency", entry.latency.apisix_latency, "h", suffix))
+                                    "apisix.latency", entry.apisix_latency, "h", suffix))
             if not ok then
                 core.log.error("failed to report apisix latency to dogstatsd server: host[" .. host
                         .. "] port[" .. tostring(port) .. "] err: " .. err)

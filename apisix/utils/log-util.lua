@@ -169,11 +169,7 @@ function _M.latency_details_in_ms(ctx)
         end
     end
 
-    return {
-        latency = latency,
-        upstream_latency = upstream_latency,
-        apisix_latency = apisix_latency,
-    }
+    return latency, upstream_latency, apisix_latency
 end
 
 return _M

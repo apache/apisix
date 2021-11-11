@@ -144,16 +144,16 @@ function _M.log(conf, ctx)
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip))
 
-    local latency = latency_details(ctx)
-    metrics.latency:observe(latency.latency,
+    local latency, upstream_latency, apisix_latency = latency_details(ctx)
+    metrics.latency:observe(latency,
         gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
 
-    if latency.upstream_latency then
-        metrics.latency:observe(latency.upstream_latency,
+    if upstream_latency then
+        metrics.latency:observe(upstream_latency,
             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
     end
 
-    metrics.latency:observe(latency.apisix_latency,
+    metrics.latency:observe(apisix_latency,
         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
