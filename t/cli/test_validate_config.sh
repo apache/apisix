@@ -135,3 +135,20 @@ if echo "$out" | grep "\[emerg\] unknown directive \"notexist\""; then
 fi
 
 echo "passed: apisix test(failure scenario)"
+
+echo '
+plugins:
+- batch-requests
+nginx_config:
+    http:
+        real_ip_from:
+        - "127.0.0.2"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin batch-requests"; then
+    echo "failed: should check the realip configuration for batch-requests"
+    exit 1
+fi
+
+echo "passed: check the realip configuration for batch-requests"
