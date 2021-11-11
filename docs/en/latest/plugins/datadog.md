@@ -45,12 +45,13 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Attributes
 
-| Name             | Type   | Requirement  | Default      | Valid | Description                                                                                |
-| -----------      | ------ | -----------  | -------      | ----- | ------------------------------------------------------------                               |
-| batch_max_size   | integer | optional    | 5000         | [1,...] | Max buffer size of each batch                                                            |
-| inactive_timeout | integer | optional    | 5            | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60           | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 1            | [1,...] | Maximum number of retries if one entry fails to reach dogstatsd server                   |
+| Name             | Type   | Requirement  | Default      | Valid       | Description                                                                                |
+| -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
+| prefer_name      | boolean | optional    | true         | true/false  | If set to `false`, would use route/service id instead of name(default) with metric tags.   |
+| batch_max_size   | integer | optional    | 5000         | [1,...]     | Max buffer size of each batch                                                              |
+| inactive_timeout | integer | optional    | 5            | [1,...]     | Maximum age in seconds when the buffer will be flushed if inactive                         |
+| buffer_duration  | integer | optional    | 60           | [1,...]     | Maximum age in seconds of the oldest entry in a batch before the batch must be processed   |
+| max_retry_count  | integer | optional    | 1            | [1,...]     | Maximum number of retries if one entry fails to reach dogstatsd server                     |
 
 ## Metadata
 
@@ -80,13 +81,12 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 
 > If there is no suitable value for any particular tag, the tag will simply be omitted.
 
-- **route_name**: Name specified in the route schema definition. If not present, it will fall back to the route id value.
-  - Note: If multiple routes have the same name duplicated, we suggest you to visualize graphs on the Datadog dashboard over multiple tags that could compositely pinpoint a particular route/service. If it's still insufficient for your needs, feel free to drop a feature request at [apisix/issues](https://github.com/apache/apisix/issues).
-- **service_id**: If a route has been created with the abstraction of service, the particular service id will be used.
+- **route_name**: Name specified in the route schema definition. If not present or plugin attribute `prefer_name` is set to `false`, it will fall back to the route id value.
+- **service_name**: If a route has been created with the abstraction of service, the particular service name/id (based on plugin `prefer_name` attribute) will be used.
 - **consumer**: If the route has a linked consumer, the consumer Username will be added as a tag.
 - **balancer_ip**: IP of the Upstream balancer that has processed the current request.
 - **response_status**: HTTP response status code.
-- **scheme**: Scheme that has been used to make the request. e.g. HTTP, gRPC, gRPCs etc.
+- **scheme**: Scheme that has been used to make the request, such as HTTP, gRPC, gRPCs etc.
 
 ## How To Enable
 
