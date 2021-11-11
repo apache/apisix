@@ -416,6 +416,26 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
     end
 
+    if enabled_plugins["batch-requests"] then
+        local pass_real_client_ip = false
+        local real_ip_from = yaml_conf.nginx_config.http.real_ip_from
+        -- the real_ip_from is enabled by default, we just need to make sure it's
+        -- not disabled by the users
+        if real_ip_from then
+            for _, ip in ipairs(real_ip_from) do
+                -- TODO: handle cidr
+                if ip == "127.0.0.1" or ip == "0.0.0.0/0" then
+                    pass_real_client_ip = true
+                end
+            end
+        end
+
+        if not pass_real_client_ip then
+            util.die("missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin " ..
+                     "batch-requests\n")
+        end
+    end
+
     local ports_to_check = {}
 
     -- listen in admin use a separate port, support specific IP, compatible with the original style
