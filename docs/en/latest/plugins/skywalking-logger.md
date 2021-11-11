@@ -1,5 +1,5 @@
 ---
-title: http-logger
+title: skywalking-logger
 ---
 
 <!--

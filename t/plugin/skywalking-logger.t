@@ -41,6 +41,14 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -60,12 +68,6 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
 
 
 
@@ -90,12 +92,6 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
 
 
 
@@ -119,13 +115,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "endpoint_addr" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -188,12 +180,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -266,12 +254,8 @@ qr/failed to parse trace_context header:/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
