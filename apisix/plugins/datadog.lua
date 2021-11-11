@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local batch_processor = require("apisix.utils.batch-processor")
 local fetch_log = require("apisix.utils.log-util").get_full_log
+local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local udp = ngx.socket.udp
 local format = string.format
@@ -43,6 +44,7 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 5000},
         max_retry_count = {type = "integer", minimum = 1, default = 1},
+        prefer_name = {type = "boolean", default = true}
     }
 }
 
@@ -83,15 +85,12 @@ local function generate_tag(entry, const_tags)
         tags = {}
     end
 
-    -- priority on route name, if not found using the route id.
-    if entry.route_name ~= "" then
-        core.table.insert(tags, "route_name:" .. entry.route_name)
-    elseif entry.route_id and entry.route_id ~= "" then
+    if entry.route_id and entry.route_id ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_id)
     end
 
     if entry.service_id and entry.service_id ~= "" then
-        core.table.insert(tags, "service_id:" .. entry.service_id)
+        core.table.insert(tags, "service_name:" .. entry.service_id)
     end
 
     if entry.consumer and entry.consumer ~= "" then
@@ -142,8 +141,22 @@ function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
     entry.upstream_latency = ctx.var.upstream_response_time * 1000
     entry.balancer_ip = ctx.balancer_ip or ""
-    entry.route_name = ctx.route_name or ""
     entry.scheme = ctx.upstream_scheme or ""
+
+    -- if prefer_name is set, fetch the service/route name. If the name is nil, fall back to id.
+    if conf.prefer_name then
+        if entry.service_id and entry.service_id ~= "" then
+            local svc = service_fetch(entry.service_id)
+
+            if svc and svc.value.name ~= "" then
+                entry.service_id =  svc.value.name
+            end
+        end
+
+        if ctx.route_name and ctx.route_name ~= "" then
+            entry.route_id = ctx.route_name
+        end
+    end
 
     local log_buffer = buffers[conf]
     if log_buffer then
