@@ -27,6 +27,7 @@ local ngx_re          = require("ngx.re")
 
 local ngx      = ngx
 local tostring = tostring
+local tonumber = tonumber
 local ipairs   = ipairs
 local timer_at = ngx.timer.at
 
@@ -63,7 +64,7 @@ local metadata_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 410,
+    priority = 408,
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,
