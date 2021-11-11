@@ -207,6 +207,7 @@ Batch Processor[skywalking logger] successfully processed the entries
 --- wait: 0.5
 
 
+
 === TEST 6: test trace context header
 --- request
 GET /opentracing
