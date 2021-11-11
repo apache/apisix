@@ -183,7 +183,7 @@ function _M.log(conf, ctx)
         },
         service = conf.service_name,
         serviceInstance = conf.service_instance_name,
-        endpoint = ngx.var.uri,
+        endpoint = ctx.var.uri,
     }
 
     if not stale_timer_running then
