@@ -30,6 +30,13 @@ add_block_preprocessor(sub {
     if (!$block->no_error_log && !$block->error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - batch-requests
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
 });
 
 run_tests;
