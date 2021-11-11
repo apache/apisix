@@ -33,6 +33,7 @@ local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
+local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 
 
 
@@ -143,26 +144,16 @@ function _M.log(conf, ctx)
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip))
 
-    local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency,
+    local latency = latency_details(ctx)
+    metrics.latency:observe(latency.latency,
         gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
 
-    local apisix_latency = latency
-    if ctx.var.upstream_response_time then
-        local upstream_latency = ctx.var.upstream_response_time * 1000
-        metrics.latency:observe(upstream_latency,
+    if latency.upstream_latency then
+        metrics.latency:observe(latency.upstream_latency,
             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
-        apisix_latency =  apisix_latency - upstream_latency
-
-        -- The latency might be negative, as Nginx uses different time measurements in
-        -- different metrics.
-        -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
-        if apisix_latency < 0 then
-            apisix_latency = 0
-        end
-
     end
-    metrics.latency:observe(apisix_latency,
+
+    metrics.latency:observe(latency.apisix_latency,
         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,

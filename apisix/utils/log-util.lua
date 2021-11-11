@@ -153,4 +153,27 @@ function _M.get_req_original(ctx, conf)
 end
 
 
+function _M.latency_details_in_ms(ctx)
+    local latency = (ngx.now() - ngx.req.start_time()) * 1000
+    local upstream_latency, apisix_latency = nil, latency
+
+    if ctx.var.upstream_response_time then
+        upstream_latency = ctx.var.upstream_response_time * 1000
+        apisix_latency = apisix_latency - upstream_latency
+
+        -- The latency might be negative, as Nginx uses different time measurements in
+        -- different metrics.
+        -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
+        if apisix_latency < 0 then
+            apisix_latency = 0
+        end
+    end
+
+    return {
+        latency = latency,
+        upstream_latency = upstream_latency,
+        apisix_latency = apisix_latency,
+    }
+end
+
 return _M
