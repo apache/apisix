@@ -30,7 +30,7 @@ title: datadog
 - [Exported Metrics](#exported-metrics)
 - [How To Enable](#how-to-enable)
 - [Disable Plugin](#disable-plugin)
-- [Custom Conguration](#custom-conguration)
+- [Custom Configuration](#custom-configuration)
 
 ## Name
 
@@ -131,7 +131,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-## Custom Conguration
+## Custom Configuration
 
 In the default configuration, the plugin expects the dogstatsd service to be available at `127.0.0.1:8125`. If you wish to update the config, please update the plugin metadata. To know more about the fields of the datadog metadata, see [here](#metadata).
 
