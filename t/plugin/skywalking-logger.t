@@ -215,13 +215,26 @@ GET /opentracing
 sw8: 1-YWU3MDk3NjktNmUyMC00YzY4LTk3MzMtMTBmNDU1MjE2Y2M1-YWU3MDk3NjktNmUyMC00YzY4LTk3MzMtMTBmNDU1MjE2Y2M1-1-QVBJU0lY-QVBJU0lYIEluc3RhbmNlIE5hbWU=-L2dldA==-dXBzdHJlYW0gc2VydmljZQ==
 --- response_body
 opentracing
---- no_error_log eval
-qr/.*\"traceContext\":\{\"traceSegment\":\"ae709769-6e20-4c68-9733-10f455216cc5\",\"traceId\":\"ae709769-6e20-4c68-9733-10f455216cc5\",\"spanId\":1\}.*/
+--- error_log eval
+qr/.*\\\"traceContext\\\":\{(\\\"traceSegment\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"traceId\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"spanId\\\":1|,){5}\}.*/
 --- wait: 0.5
 
 
 
-=== TEST 7: add plugin metadata
+=== TEST 7: test wrong trace context header
+--- request
+GET /opentracing
+--- more_headers
+sw8: 1-YWU3MDk3NjktNmUyMC00YzY4LTk3MzMtMTBmNDU1MjE2Y2M1-YWU3MDk3NjktNmUyMC00YzY4LTk3MzMtMTBmNDU1MjE2Y2M1-1-QVBJU0lY-QVBJU0lYIEluc3RhbmNlIE5hbWU=-L2dldA==
+--- response_body
+opentracing
+--- error_log eval
+qr/failed to parse trace_context header:/
+--- wait: 0.5
+
+
+
+=== TEST 8: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -262,7 +275,7 @@ passed
 
 
 
-=== TEST 8: access local server and test log format
+=== TEST 9: access local server and test log format
 --- request
 GET /opentracing
 --- response_body

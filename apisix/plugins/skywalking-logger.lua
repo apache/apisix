@@ -155,23 +155,29 @@ function _M.log(conf, ctx)
         log_body = log_util.get_full_log(ngx, conf)
     end
 
-    if not log_body.route_id then
-        log_body.route_id = "no-matched"
-    end
-
     local trace_context
-    local headers = ngx.req.get_headers()
-    if headers then
-        -- 1-TRACEID-SEGMENTID-3-PARENT_SERVICE-PARENT_INSTANCE-PARENT_ENDPOINT-IPPORT
-        local ids = ngx_re.split(headers["sw8"], '-')
+    local sw_header = ngx.req.get_headers()["sw8"]
+    if sw_header then
+        -- 1-TRACEID-SEGMENTID-SPANID-PARENT_SERVICE-PARENT_INSTANCE-PARENT_ENDPOINT-IPPORT
+        local ids = ngx_re.split(sw_header, '-')
+        if #ids == 8 then
+            local trace_id, err = base64.decode_base64url(ids[2])
+            if not trace_id then
+                core.log.warn("invalid base64 content: trace_id", err)
+            end
+            local trace_segment, err = base64.decode_base64url(ids[3])
+            if not trace_id then
+                core.log.warn("invalid base64 content: trace_segment", err)
+            end
 
-        trace_context = {
-            traceId = base64.decode_base64url(ids[2]),
-            traceSegment = base64.decode_base64url(ids[3]),
-            spanId = tonumber(ids[4])
-        }
-    else
-        trace_context = {}
+            trace_context = {
+                traceId = trace_id,
+                traceSegment = trace_segment,
+                spanId = tonumber(ids[4])
+            }
+        else
+            core.log.warn("failed to parse trace_context header: ", sw_header)
+        end
     end
 
     local entry = {
