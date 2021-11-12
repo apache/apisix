@@ -163,7 +163,7 @@ function _M.log(conf, ctx)
         if #ids == 8 then
             trace_context = {
                 traceId = base64.decode_base64url(ids[2]),
-                traceSegment = base64.decode_base64url(ids[3]),
+                traceSegmentId = base64.decode_base64url(ids[3]),
                 spanId = tonumber(ids[4])
             }
         else
