@@ -49,7 +49,7 @@ local schema = {
         },
         server = {
             type = "string",
-            default = "http://127.0.0.1:10080"
+            default = "http://127.0.0.1:12180"
         },
         header_prefix = {
             type = "string",
