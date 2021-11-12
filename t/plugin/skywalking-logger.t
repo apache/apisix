@@ -204,7 +204,7 @@ sw8: 1-YWU3MDk3NjktNmUyMC00YzY4LTk3MzMtMTBmNDU1MjE2Y2M1-YWU3MDk3NjktNmUyMC00YzY4
 --- response_body
 opentracing
 --- error_log eval
-qr/.*\\\"traceContext\\\":\{(\\\"traceSegment\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"traceId\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"spanId\\\":1|,){5}\}.*/
+qr/.*\\\"traceContext\\\":\{(\\\"traceSegmentId\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"traceId\\\":\\\"ae709769-6e20-4c68-9733-10f455216cc5\\\"|\\\"spanId\\\":1|,){5}\}.*/
 --- wait: 0.5
 
 
