@@ -59,7 +59,7 @@ For the configuration center, configuration storage is only the most basic funct
 4. Change Notification
 5. High Performance
 
-See more [etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart).
+See more [etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart).
 
 ## Why is it that installing Apache APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
 
