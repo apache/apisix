@@ -30,6 +30,7 @@ title: datadog
 - [Exported Metrics](#exported-metrics)
 - [How To Enable](#how-to-enable)
 - [Disable Plugin](#disable-plugin)
+- [Custom Configuration](#custom-configuration)
 
 ## Name
 
@@ -128,4 +129,31 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         }
     }
 }'
+```
+
+## Custom Configuration
+
+In the default configuration, the plugin expects the dogstatsd service to be available at `127.0.0.1:8125`. If you wish to update the config, please update the plugin metadata. To know more about the fields of the datadog metadata, see [here](#metadata).
+
+Make a request to _/apisix/admin/plugin_metadata_ endpoint with the updated metadata as following:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "host": "172.168.45.29",
+    "port": 8126,
+    "constant_tags": [
+        "source:apisix",
+        "service:custom"
+    ],
+    "namespace": "apisix"
+}'
+```
+
+This HTTP PUT request will update the metadata and subsequent metrics will be pushed to the `172.168.45.29:8126` endpoint via UDP StatsD. Everything will be hot-loaded, there is no need to restart Apache APISIX instances.
+
+In case, if you wish to revert the datadog metadata schema to the default values, just make another PUT request to the same endpoint with an empty body. For example:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
 ```
