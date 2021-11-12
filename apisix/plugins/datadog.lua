@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local batch_processor = require("apisix.utils.batch-processor")
 local fetch_log = require("apisix.utils.log-util").get_full_log
+local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local udp = ngx.socket.udp
@@ -139,7 +140,7 @@ function _M.log(conf, ctx)
     end
 
     local entry = fetch_log(ngx, {})
-    entry.upstream_latency = ctx.var.upstream_response_time * 1000
+    entry.latency, entry.upstream_latency, entry.apisix_latency = latency_details(ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
 
@@ -215,23 +216,18 @@ function _M.log(conf, ctx)
             end
 
             -- upstream latency
-            local apisix_latency = entry.latency
             if entry.upstream_latency then
                 local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                        "upstream.latency", entry.upstream_latency, "h", suffix))
+                                "upstream.latency", entry.upstream_latency, "h", suffix))
                 if not ok then
                     core.log.error("failed to report upstream latency to dogstatsd server: host["
                                 .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
-                end
-                apisix_latency =  apisix_latency - entry.upstream_latency
-                if apisix_latency < 0 then
-                    apisix_latency = 0
                 end
             end
 
             -- apisix_latency
             local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                            "apisix.latency", apisix_latency, "h", suffix))
+                                    "apisix.latency", entry.apisix_latency, "h", suffix))
             if not ok then
                 core.log.error("failed to report apisix latency to dogstatsd server: host[" .. host
                         .. "] port[" .. tostring(port) .. "] err: " .. err)
