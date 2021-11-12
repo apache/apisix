@@ -113,6 +113,7 @@
           "label": "Loggers",
           "items": [
             "plugins/http-logger",
+            "plugins/skywalking-logger",
             "plugins/tcp-logger",
             "plugins/kafka-logger",
             "plugins/udp-logger",
