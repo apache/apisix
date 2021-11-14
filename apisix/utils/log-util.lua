@@ -123,12 +123,16 @@ local function get_full_log(ngx, conf)
 
         local log_request_body = true
 
-        if conf.request_body_expr then
-            local request_expr, err = expr.new(conf.request_body_expr)
-            if not request_expr then
-                core.log.error('generate log expr err ' .. err)
+        if conf.include_req_body_expr then
+
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate log expr err ' .. err)
+                    return log
+                end
+                conf.request_expr = request_expr
             end
-            conf.request_expr = request_expr
 
             local result = conf.request_expr:eval(ctx.var)
 

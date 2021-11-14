@@ -1131,7 +1131,7 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
                                   {
                                     "127.0.0.1":9092
                                   },
-                                "kafka_topic" : "test1",
+                                "kafka_topic" : "test",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "include_req_body": true,
@@ -1162,7 +1162,7 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
                                       {
                                         "127.0.0.1":9092
                                       },
-                                    "kafka_topic" : "test1",
+                                    "kafka_topic" : "test",
                                     "key" : "key1",
                                     "timeout" : 1,
                                     "batch_max_size": 1
@@ -1207,5 +1207,4 @@ hello world
 [error]
 --- error_log_like eval
 qr/send data to kafka: \{.*"body":"abcdef"/
---- wait: 2
 --- wait: 2

@@ -74,7 +74,7 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
-        request_body_expr = {
+        include_req_body_expr = {
             type = "array",
             items = {
                 type = "array",
