@@ -1116,6 +1116,7 @@ qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.
 qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
 
 
+
 === TEST 26: set route(id: 1,include_req_body = true,request_body_expr = array)
 --- config
     location /t {
@@ -1195,6 +1196,7 @@ passed
 [error]
 
 
+
 === TEST 27: hit route, report log to kafka
 --- request
 POST /hello
@@ -1207,4 +1209,3 @@ hello world
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
 --- wait: 2
-
