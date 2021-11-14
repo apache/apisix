@@ -58,6 +58,7 @@ title: kafka-logger
 | retry_delay      | integer | 可选   | 1              | [0,...] | 如果执行失败，则应延迟执行流程的秒数。           |
 | include_req_body | boolean | 可选   | false          | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。|
 | cluster_name     | integer | 可选   | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
+| request_body_expr | array  | 可选   |                |         | 是否采集请求body,基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。           |
 
 ### meta_format 参考示例
 

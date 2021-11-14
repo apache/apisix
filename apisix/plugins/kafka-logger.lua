@@ -74,6 +74,15 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
+        request_body_expr = {
+            type = "array",
+            items = {
+                type = "array",
+                items = {
+                    type = "string"
+                }
+            }
+        },
         -- in lua-resty-kafka, cluster_name is defined as number
         -- see https://github.com/doujiang24/lua-resty-kafka#new-1
         cluster_name = {type = "integer", minimum = 1, default = 1},

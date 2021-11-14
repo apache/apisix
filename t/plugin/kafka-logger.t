@@ -1114,3 +1114,97 @@ GET /t
 --- error_log_like eval
 qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.127"}]/
 qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
+
+
+=== TEST 26: set route(id: 1,include_req_body = true,request_body_expr = array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test1",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "include_req_body": true,
+                                "request_body_expr": [
+                                    [
+                                      "remote_addr",
+                                      "==",
+                                      "127.0.0.1"
+                                    ]
+                                ],
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                 "kafka-logger": {
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092
+                                      },
+                                    "kafka_topic" : "test1",
+                                    "key" : "key1",
+                                    "timeout" : 1,
+                                    "batch_max_size": 1
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+=== TEST 27: hit route, report log to kafka
+--- request
+POST /hello
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log_like eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2
+--- wait: 2
+

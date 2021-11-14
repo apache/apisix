@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 local ngx  = ngx
 local pairs = pairs
 local str_byte = string.byte
@@ -119,13 +120,32 @@ local function get_full_log(ngx, conf)
     }
 
     if conf.include_req_body then
-        local body = req_get_body_data()
-        if body then
-            log.request.body = body
-        else
-            local body_file = ngx.req.get_body_file()
-            if body_file then
-                log.request.body_file = body_file
+
+        local log_request_body = true
+
+        if conf.request_body_expr then
+            local request_expr, err = expr.new(conf.request_body_expr)
+            if not request_expr then
+                core.log.error('generate log expr err ' .. err)
+            end
+            conf.request_expr = request_expr
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                log_request_body = false
+            end
+        end
+
+        if log_request_body then
+            local body = req_get_body_data()
+            if body then
+                log.request.body = body
+            else
+                local body_file = ngx.req.get_body_file()
+                if body_file then
+                    log.request.body_file = body_file
+                end
             end
         end
     end
