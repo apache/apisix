@@ -142,3 +142,24 @@ aaa: bbb, bbb
 ccc: ddd
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: delete header
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.set_header("aaa", "bbb")
+            core.response.set_header("aaa", nil)
+            core.response.exit(200, "done\n")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- response_headers
+aaa:
+--- no_error_log
+[error]
