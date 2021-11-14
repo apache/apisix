@@ -80,10 +80,3 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-    - name: Publish Artifact
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-      uses: actions/upload-artifact@v2.2.4
-      with:
-        name: "rpm"
-        path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
