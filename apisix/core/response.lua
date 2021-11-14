@@ -100,7 +100,9 @@ local function set_header(append, ...)
     if count == 1 then
         local headers = select(1, ...)
         if type(headers) ~= "table" then
-            error("should be a table if only one argument", 2)
+            -- response.set_header(name, nil)
+            ngx_header[headers] = nil
+            return
         end
 
         for k, v in pairs(headers) do
