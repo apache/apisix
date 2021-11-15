@@ -60,7 +60,6 @@ title: CHANGELOG
 - 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
 - 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
 - basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
-- 更正 request-validation 插件的 rejected_message 为 rejected_msg [#5355](https://github.com/apache/apisix/pull/5355)
 
 ### Change
 
