@@ -58,10 +58,8 @@ title: Changelog
 - fix(hmac-auth): check if the X-HMAC-ALGORITHM header is missing [#5467](https://github.com/apache/apisix/pull/5467)
 - fix: prevent being hacked by untrusted request_uri [#5458](https://github.com/apache/apisix/pull/5458)
 - fix(admin): modify boolean parameters with PATCH [#5434](https://github.com/apache/apisix/pull/5432)
-- fix(auth-ldap): add handler for invalid basic auth header values [#5432](https://github.com/apache/apisix/pull/5432)
 - fix(traffic-split): multiple rules with multiple weighted_upstreams under each rule cause upstream_key duplicate [#5414](https://github.com/apache/apisix/pull/5414)
 - fix: add handler for invalid basic auth header values [#5419](https://github.com/apache/apisix/pull/5419)
-- fix: ldap deps in install-dependencies.sh [#5385](https://github.com/apache/apisix/pull/5385)
 - fix(request-validation): correct rejected_message to rejected_msg [#5355](https://github.com/apache/apisix/pull/5355)
 
 ### Change
