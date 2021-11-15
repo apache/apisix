@@ -2,8 +2,7 @@ name: Chaos Test
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
 

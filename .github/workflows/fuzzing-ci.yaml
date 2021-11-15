@@ -2,13 +2,11 @@ name: fuzzing
 
 on:
   push:
-    branches:
-      - master
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
   pull_request:
-    branches:
-      - master
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
 
