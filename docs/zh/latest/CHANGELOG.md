@@ -58,10 +58,8 @@ title: CHANGELOG
 - hmac-auth 插件检查是否缺少 X-HMAC-ALGORITHM header [#5467](https://github.com/apache/apisix/pull/5467)
 - 防止不可信的 request_uri [#5458](https://github.com/apache/apisix/pull/5458)
 - 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
-- auth-ldap 插件处理无效的 Authorization header [#5432](https://github.com/apache/apisix/pull/5432)
 - 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
 - basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
-- 修复 install-dependencies.sh 中的依赖 [#5385](https://github.com/apache/apisix/pull/5385)
 - 更正 request-validation 插件的 rejected_message 为 rejected_msg [#5355](https://github.com/apache/apisix/pull/5355)
 
 ### Change
