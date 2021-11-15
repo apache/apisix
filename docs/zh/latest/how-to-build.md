@@ -36,7 +36,7 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/apisix-2.10.1-0.el7.x86_64.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.2/apisix-2.10.2-0.el7.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -49,16 +49,16 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.10.1` 的目录。
+1. 创建一个名为 `apisix-2.10.2` 的目录。
 
   ```shell
-  mkdir apisix-2.10.1
+  mkdir apisix-2.10.2
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.10.1/apache-apisix-2.10.1-src.tgz
+  wget https://downloads.apache.org/apisix/2.10.2/apache-apisix-2.10.2-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -66,14 +66,14 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.10.1-src.tgz -C apisix-2.10.1
+  tar zxvf apache-apisix-2.10.2-src.tgz -C apisix-2.10.2
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.10.1 目录
-  cd apisix-2.10.1
+  # 切换到 apisix-2.10.2 目录
+  cd apisix-2.10.2
   # 创建依赖
   make deps
   ```
