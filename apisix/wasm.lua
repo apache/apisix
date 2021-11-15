@@ -22,7 +22,8 @@ local schema = {
     type = "object",
     properties = {
         conf = {
-            type = "string"
+            type = "string",
+            minLength = 1,
         },
     },
     required = {"conf"}
