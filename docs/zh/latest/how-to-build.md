@@ -29,14 +29,36 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 
 ## 步骤2：安装 Apache APISIX
 
-你可以通过 RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+你可以通过 RPM 仓库、RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+
+### 通过 RPM 仓库安装（CentOS 7）
+
+这种安装方式适用于 CentOS 7 操作系统。Apache APISIX 已经支持适用于 CentOS 7 的 RPM 仓库。请运行以下命令安装 RPM 仓库和 Apache APISIX。
+
+```shell
+sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+# View the information of the latest apisix package
+sudo yum info -y apisix
+
+# Will show the existing apisix packages
+sudo yum --showduplicates list apisix
+
+# Will install the latest apisix package
+sudo yum install apisix
+```
+
+如果尚未安装 OpenResty 的官方 RPM 仓库，以下命令可以帮助您自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
+
+```shell
+sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+```
 
 ### 通过 RPM 包安装（CentOS 7）
 
 这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/apisix-2.10.1-0.el7.x86_64.rpm
+sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.2-0.el7.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -49,16 +71,16 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.10.1` 的目录。
+1. 创建一个名为 `apisix-2.10.2` 的目录。
 
   ```shell
-  mkdir apisix-2.10.1
+  mkdir apisix-2.10.2
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.10.1/apache-apisix-2.10.1-src.tgz
+  wget https://downloads.apache.org/apisix/2.10.2/apache-apisix-2.10.2-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -66,21 +88,23 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.10.1-src.tgz -C apisix-2.10.1
+  tar zxvf apache-apisix-2.10.2-src.tgz -C apisix-2.10.2
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.10.1 目录
-  cd apisix-2.10.1
-  # 创建依赖
-  make deps
+  # 切换到 apisix-2.10.2 目录
+  cd apisix-2.10.2
+  # 安装依赖
+  LUAROCKS_SERVER=https://luarocks.cn make deps
+  # 安装 apisix 命令
+  make install
   ```
 
 ## 步骤3：管理 Apache APISIX 服务
 
-我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `make help` 命令查看所有命令和对应的功能。
+我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `apisix help` 命令查看所有命令和对应的功能。
 
 ### 初始化依赖
 
@@ -88,7 +112,16 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/2.10.1/ap
 
 ```shell
 # initialize NGINX config file and etcd
-make init
+apisix init
+```
+
+### 测试配置文件
+
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+
+```shell
+# generate `nginx.conf` from `config.yaml` and test it
+apisix test
 ```
 
 ### 启动 Apache APISIX
@@ -97,34 +130,34 @@ make init
 
 ```shell
 # start Apache APISIX server
-make run
+apisix start
 ```
 
 ### 停止运行 Apache APISIX
 
-优雅停机 `make quit` 和强制停机 `make stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
+优雅停机 `apisix quit` 和强制停机 `apisix stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
 
 执行优雅停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server gracefully
-make quit
+apisix quit
 ```
 
 执行强制停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server immediately
-make stop
+apisix stop
 ```
 
 ### 查看其他操作
 
-运行 `make help` 命令，查看返回结果，获取其他操作的命令和描述。
+运行 `apisix help` 命令，查看返回结果，获取其他操作的命令和描述。
 
 ```shell
 # more actions find by `help`
-make help
+apisix help
 ```
 
 ## 步骤4：运行测试案例
@@ -143,7 +176,7 @@ make help
   git clone https://github.com/iresty/test-nginx.git
   ```
 
-4. 通过 `perl` 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
+4. 有两种方法运行测试：
 
   - 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
 
@@ -169,7 +202,7 @@ make help
 
 出现`Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
 
-确保将 Openresty 设置为默认的 NGINX，并按如下所示导出路径：
+确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
 * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
   * Linux 默认安装路径：
@@ -184,6 +217,8 @@ make help
 ```shell
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
+
+关于测试用例的更多细节，参见[测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## 步骤5：修改 Admin API key
 

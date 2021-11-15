@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
 - [2.9.0](#290)
@@ -46,6 +47,26 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.2
+
+### Bugfix
+
+- 更正 response.set_header 行为，与 request.set_header 保持一致 [#5499](https://github.com/apache/apisix/pull/5499)
+- 修复 batch-requests 插件中 client ip 的问题 [#5476](https://github.com/apache/apisix/pull/5476)
+- 修复 upstream 被多条 routes 绑定时，负载不平衡的问题 [#5462](https://github.com/apache/apisix/pull/5462)
+- hmac-auth 插件检查是否缺少 X-HMAC-ALGORITHM header [#5467](https://github.com/apache/apisix/pull/5467)
+- 防止不可信的 request_uri [#5458](https://github.com/apache/apisix/pull/5458)
+- 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
+- auth-ldap 插件处理无效的 Authorization header [#5432](https://github.com/apache/apisix/pull/5432)
+- 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
+- basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
+- 修复 install-dependencies.sh 中的依赖 [#5385](https://github.com/apache/apisix/pull/5385)
+- 更正 request-validation 插件的 rejected_message 为 rejected_msg [#5355](https://github.com/apache/apisix/pull/5355)
+
+### Change
+
+- 只记录不敏感的 consumer 信息 [#5445](https://github.com/apache/apisix/pull/5445)
 
 ## 2.10.1
 
