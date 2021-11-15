@@ -273,4 +273,9 @@ function _M.get_http_version()
     return ngx.req.http_version()
 end
 
+
+function _M.get_method()
+    return ngx.req.get_method()
+end
+
 return _M
