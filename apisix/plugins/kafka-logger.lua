@@ -19,6 +19,7 @@ local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
+local expr        = require("resty.expr.v1")
 
 local math     = math
 local pairs    = pairs
@@ -76,6 +77,7 @@ local schema = {
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
+            minItems = 1,
             items = {
                 type = "array",
                 items = {
@@ -107,6 +109,14 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
+
+    if conf.vars then
+        local ok, err = expr.new(conf.vars)
+        if not ok then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
+        end
+    end
+
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end

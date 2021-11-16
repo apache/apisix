@@ -1124,7 +1124,7 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
+                 [=[{
                         "plugins": {
                             "kafka-logger": {
                                 "broker_list" :
@@ -1152,7 +1152,7 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]]
+                }]=]
                 )
             if code >= 300 then
                 ngx.status = code
