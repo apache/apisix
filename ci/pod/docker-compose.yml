@@ -356,9 +356,22 @@ services:
       apisix_net:
 
 
+  ## Apache OpenWhisk
+  openwhisk:
+    image: openwhisk/standalone:nightly
+    hostname: openwhisk
+    restart: unless-stopped
+    ports:
+      - "3233:3233"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      openwhisk_net:
+
 networks:
   apisix_net:
   consul_net:
   kafka_net:
   nacos_net:
   skywalk_net:
+  openwhisk_net:
