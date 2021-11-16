@@ -485,3 +485,39 @@ GET /hello?aa=1
 {"error_msg":"access is not allowed"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 21: add block rule with anchor
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "plugins": {
+                    "uri-blocker": {
+                        "block_rules": ["^/internal/"]
+                    }
+                },
+                "uri": "/internal/*"
+            }]])
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.print(body)
+    }
+}
+--- request
+GET /t
+
+
+
+=== TEST 22: can't bypass with url without normalization
+--- request
+GET /./internal/x?aa=1
+--- error_code: 403
+--- no_error_log
+[error]

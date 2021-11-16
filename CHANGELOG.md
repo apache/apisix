@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
 - [2.9.0](#290)
@@ -46,6 +47,23 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.2
+
+### Bugfix
+
+- fix: response.set_header should remove header like request.set_header [#5499](https://github.com/apache/apisix/pull/5499)
+- fix(batch-requests): correct the client ip in the pipeline [#5476](https://github.com/apache/apisix/pull/5476)
+- fix(upstream): load imbalance when it's referred by multiple routes [#5462](https://github.com/apache/apisix/pull/5462)
+- fix(hmac-auth): check if the X-HMAC-ALGORITHM header is missing [#5467](https://github.com/apache/apisix/pull/5467)
+- fix: prevent being hacked by untrusted request_uri [#5458](https://github.com/apache/apisix/pull/5458)
+- fix(admin): modify boolean parameters with PATCH [#5434](https://github.com/apache/apisix/pull/5432)
+- fix(traffic-split): multiple rules with multiple weighted_upstreams under each rule cause upstream_key duplicate [#5414](https://github.com/apache/apisix/pull/5414)
+- fix: add handler for invalid basic auth header values [#5419](https://github.com/apache/apisix/pull/5419)
+
+### Change
+
+- change: log insensitive consumer info only [#5445](https://github.com/apache/apisix/pull/5445)
 
 ## 2.10.1
 
