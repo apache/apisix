@@ -1137,9 +1137,9 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
                                 "include_req_body": true,
                                 "include_req_body_expr": [
                                     [
-                                      "remote_addr",
+                                      "arg_name",
                                       "==",
-                                      "127.0.0.1"
+                                      "qwerty"
                                     ]
                                 ],
                                 "batch_max_size": 1
@@ -1152,33 +1152,6 @@ qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                 "kafka-logger": {
-                                    "broker_list" :
-                                      {
-                                        "127.0.0.1":9092
-                                      },
-                                    "kafka_topic" : "test2",
-                                    "key" : "key1",
-                                    "timeout" : 1,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
@@ -1196,116 +1169,22 @@ passed
 [error]
 
 
-
-=== TEST 27: hit route, report log to kafka
+=== TEST 27: hit route, expr eval success
 --- request
-POST /hello
+POST /hello?name=qwerty
 abcdef
 --- response_body
 hello world
 --- no_error_log
 [error]
---- error_log_like eval
+--- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
 
 
-
-=== TEST 28: hit route, not trigger request_body_expr rule
+=== TEST 28: hit route,expr eval fail
 --- request
-GET /hello
---- response_body
-hello world
---- no_error_log eval
-qr/send data to kafka: \{.*"body":"abcdef"/
---- wait: 2
-
-
-
-=== TEST 29: set route(id: 1,include_req_body = true,include_req_body_expr = array) eval false
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "kafka-logger": {
-                                "broker_list" :
-                                  {
-                                    "127.0.0.1":9092
-                                  },
-                                "kafka_topic" : "test2",
-                                "key" : "key1",
-                                "timeout" : 1,
-                                "include_req_body": true,
-                                "include_req_body_expr": [
-                                    [
-                                      "remote_addr",
-                                      "==",
-                                      "0.0.0.0"
-                                    ]
-                                ],
-                                "batch_max_size": 1
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                 "kafka-logger": {
-                                    "broker_list" :
-                                      {
-                                        "127.0.0.1":9092
-                                      },
-                                    "kafka_topic" : "test2",
-                                    "key" : "key1",
-                                    "timeout" : 1,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
-
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
---- wait: 2
-
-
-
-=== TEST 30: hit route,not trigger request_body_expr rule eval false
---- request
-POST /hello
+POST /hello?name=zcxv
 abcdef
 --- response_body
 hello world
