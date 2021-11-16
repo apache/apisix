@@ -93,4 +93,4 @@ Attributes below can be configured in the plugin:
 
 | Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
 | --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-|  conf         | string | required |   |          | the plugin ctx configuration which can be fetched via Proxy WASM SDK |
+|  conf         | string | required |   |  != ""        | the plugin ctx configuration which can be fetched via Proxy WASM SDK |

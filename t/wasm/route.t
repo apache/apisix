@@ -65,6 +65,9 @@ __DATA__
                 {input = {
                     conf = {}
                 }},
+                {input = {
+                    conf = ""
+                }},
             }) do
                 local code, body = t('/apisix/admin/routes/1',
                     ngx.HTTP_PUT,
@@ -87,6 +90,7 @@ __DATA__
 --- response_body
 failed to check the configuration of plugin wasm_log err: property "conf" is required
 failed to check the configuration of plugin wasm_log err: property "conf" validation failed: wrong type: expected string, got table
+failed to check the configuration of plugin wasm_log err: property "conf" validation failed: string too short, expected at least 1, got 0
 
 
 
