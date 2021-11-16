@@ -186,7 +186,7 @@ local function load_full_data(self, dir_res, headers)
         end
 
         if data_valid and self.checker then
-            data_valid, err = self.checker(item.value)
+            data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -234,7 +234,7 @@ local function load_full_data(self, dir_res, headers)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item.value)
+                data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -376,7 +376,7 @@ local function sync_data(self)
             end
 
             if self.checker then
-                local ok, err = self.checker(res.value)
+                local ok, err = self.checker(res.value, res.key)
                 if not ok then
                     self:upgrade_version(res.modifiedIndex)
 
