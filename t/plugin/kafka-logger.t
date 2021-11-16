@@ -1169,6 +1169,7 @@ passed
 [error]
 
 
+
 === TEST 27: hit route, expr eval success
 --- request
 POST /hello?name=qwerty
@@ -1180,6 +1181,7 @@ hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
+
 
 
 === TEST 28: hit route,expr eval fail
