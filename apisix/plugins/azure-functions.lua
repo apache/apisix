@@ -37,7 +37,7 @@ local schema = {
             }
         },
         timeout = {type = "integer", minimum = 1000, default = 3000},
-        ssl_verify = {type = "boolean", default = false},
+        ssl_verify = {type = "boolean", default = true},
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5}
@@ -60,6 +60,7 @@ function _M.access(conf, ctx)
     local uri_args = core.request.get_uri_args(ctx)
     local headers = core.request.headers(ctx) or {}
     local req_body, _ = core.request.get_body()
+
 
     -- set authorization headers
     if conf.authorization then
@@ -84,8 +85,6 @@ function _M.access(conf, ctx)
         params.keepalive_timeout = conf.keepalive_timeout
         params.keepalive_pool = conf.keepalive_pool
     end
-
-    -- TODO: path processing
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
