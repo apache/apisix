@@ -60,7 +60,6 @@ title: Changelog
 - fix(admin): modify boolean parameters with PATCH [#5434](https://github.com/apache/apisix/pull/5432)
 - fix(traffic-split): multiple rules with multiple weighted_upstreams under each rule cause upstream_key duplicate [#5414](https://github.com/apache/apisix/pull/5414)
 - fix: add handler for invalid basic auth header values [#5419](https://github.com/apache/apisix/pull/5419)
-- fix(request-validation): correct rejected_message to rejected_msg [#5355](https://github.com/apache/apisix/pull/5355)
 
 ### Change
 
