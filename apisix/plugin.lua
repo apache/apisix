@@ -556,7 +556,12 @@ function _M.init_worker()
     end
 
     local plugin_metadatas, err = core.config.new("/plugin_metadata",
-        {automatic = true}
+        {
+            automatic = true,
+            checker = function(value, name)
+                return check_schema({name = value}, core.schema.TYPE_METADATA, false)
+            end
+        }
     )
     if not plugin_metadatas then
         error("failed to create etcd instance for fetching /plugin_metadatas : "
