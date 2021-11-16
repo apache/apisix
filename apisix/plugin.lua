@@ -558,7 +558,9 @@ function _M.init_worker()
     local plugin_metadatas, err = core.config.new("/plugin_metadata",
         {
             automatic = true,
-            checker = function(value, name)
+            checker = function(value, key)
+                local fields = core.string.split(key, "/")
+                local name = fields[#fields]
                 return check_schema({name = value}, core.schema.TYPE_METADATA, false)
             end
         }
