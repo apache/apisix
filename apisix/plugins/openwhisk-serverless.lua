@@ -75,7 +75,7 @@ function _M.access(conf, ctx)
     if core.request.header(ctx, "Content-Type") ~= "application/json" then
         return 400
     end
-    
+
     local params = {
         method = "POST",
         body = core.request.get_body(),
@@ -98,7 +98,8 @@ function _M.access(conf, ctx)
     end
 
     -- OpenWhisk action endpoint
-    local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace .. "/actions/" .. conf.action
+    local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace .. 
+        "/actions/" .. conf.action
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
