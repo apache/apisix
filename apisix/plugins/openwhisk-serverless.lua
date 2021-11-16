@@ -98,7 +98,7 @@ function _M.access(conf, ctx)
     end
 
     -- OpenWhisk action endpoint
-    local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace .. 
+    local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace ..
         "/actions/" .. conf.action
 
     local httpc = http.new()
