@@ -15,9 +15,10 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local http = require "resty.http"
+local core              = require("apisix.core")
+local http              = require "resty.http"
 local ngx_encode_base64 = ngx.encode_base64
+local tostring          = tostring
 
 local schema = {
     type = "object",
