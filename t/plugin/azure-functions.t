@@ -24,8 +24,6 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    # $block->set_value("stream_conf_enable", 1);
-
     if (!defined $block->additional_http_config) {
         my $inside_lua_block = $block->inside_lua_block // "";
         chomp($inside_lua_block);
