@@ -357,6 +357,10 @@ services:
 
 
   ## Apache OpenWhisk
+  openwhisk_nodejs_prepull:
+    image: openwhisk/action-nodejs-v14:nightly
+    restart: "no"
+
   openwhisk:
     image: openwhisk/standalone:nightly
     hostname: openwhisk
