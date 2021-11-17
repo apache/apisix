@@ -627,12 +627,9 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
-    my $additional_http_config = $block->additional_http_config // "";
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
-
-        $additional_http_config
 
         listen 1994 ssl http2;
         ssl_certificate             cert/apisix.crt;

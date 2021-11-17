@@ -24,20 +24,32 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!defined $block->additional_http_config) {
-        my $inside_lua_block = $block->inside_lua_block // "";
-        chomp($inside_lua_block);
-        my $test_config = <<_EOC_;
+    my $inside_lua_block = $block->inside_lua_block // "";
+    chomp($inside_lua_block);
+    my $http_config = $block->http_config // <<_EOC_;
 
+    server {
         listen 8765;
+
+        location /httptrigger {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local msg = "faas invoked"
+                ngx.header['Content-Length'] = #msg + 1
+                ngx.header['X-Extra-Header'] = "MUST"
+                ngx.say(msg)
+            }
+        }
+
         location /azure-demo {
             content_by_lua_block {
                 $inside_lua_block
             }
         }
-_EOC_
-        $block->set_value("additional_http_config", $test_config);
     }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -100,7 +112,7 @@ property "function_uri" is required
                  [[{
                         "plugins": {
                             "azure-functions": {
-                                "function_uri": "http://localhost:8765/azure-demo"
+                                "function_uri": "http://localhost:8765/httptrigger"
                             }
                         },
                         "upstream": {
@@ -121,7 +133,7 @@ property "function_uri" is required
                                     "ssl_verify": true,
                                     "keepalive_timeout": 60000,
                                     "keepalive_pool": 5,
-                                    "function_uri": "http://localhost:8765/azure-demo"
+                                    "function_uri": "http://localhost:8765/httptrigger"
                                 }
                             },
                             "upstream": {
@@ -157,20 +169,25 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local core = require("apisix.core")
 
-            local code, _, body = t("/azure", "GET")
+            local code, _, body, headers = t("/azure", "GET")
              if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
+
+            -- headers proxied 2 times -- one by plugin, another by this test case
+            core.response.set_header(headers)
             ngx.print(body)
         }
     }
---- inside_lua_block
-ngx.say("faas invoked")
 --- response_body
 faas invoked
+--- response_headers
+Content-Length: 13
+X-Extra-Header: MUST
 
 
 

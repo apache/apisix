@@ -59,16 +59,24 @@ end
 function _M.access(conf, ctx)
     local uri_args = core.request.get_uri_args(ctx)
     local headers = core.request.headers(ctx) or {}
-    local req_body, _ = core.request.get_body()
+    local req_body, err = core.request.get_body()
 
+    if err then
+        core.log.error("error while reading request body: " .. err)
+        return 400
+    end
 
-    -- set authorization headers
-    if conf.authorization then
-        headers["x-functions-key"] = conf.authorization.apikey or ""
-        headers["x-functions-clientid"] = conf.authorization.clientid or ""
-    else
-        headers["x-functions-key"] = getenv(env_key.API)
-        headers["x-functions-clientid"] = getenv(env_key.CLIENT_ID)
+    -- set authorization headers if not already set by the client
+    -- we are following not to overwrite the authz keys
+    if not headers["x-functions-key"] and
+            not headers["x-functions-clientid"] then
+        if conf.authorization then
+            headers["x-functions-key"] = conf.authorization.apikey or ""
+            headers["x-functions-clientid"] = conf.authorization.clientid or ""
+        else
+            headers["x-functions-key"] = getenv(env_key.API)
+            headers["x-functions-clientid"] = getenv(env_key.CLIENT_ID)
+        end
     end
 
     local params = {
@@ -92,7 +100,8 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(conf.function_uri, params)
 
     if not res or err then
-        return core.response.exit(500, "failed to process azure function, err: " .. err)
+        core.log.error("failed to process azure function, err: " .. err)
+        return 503
     end
 
     -- setting response headers
