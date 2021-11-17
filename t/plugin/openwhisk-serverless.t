@@ -95,8 +95,8 @@ property "api_host" validation failed: wrong type: expected string, got number
                  [[{
                         "plugins": {
                             "openwhisk-serverless": {
-                                "api_host": "http://127.0.0.1:3233"
-                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
                                 "namespace": "guest",
                                 "action": "test"
                             }
