@@ -110,10 +110,10 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
 
-    if conf.vars then
-        local ok, err = expr.new(conf.vars)
+    if conf.include_req_body_expr then
+        local ok, err = expr.new(conf.include_req_body_expr)
         if not ok then
-            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
+            return nil, {error_msg = "failed to validate the 'include_req_body_expr' expression: " .. err}
         end
     end
 
