@@ -31,7 +31,7 @@ local schema = {
                 clientid = {type = "string"}
             }
         },
-        timeout = {type = "integer", minimum = 1000, default = 3000},
+        timeout = {type = "integer", minimum = 100, default = 3000},
         ssl_verify = {type = "boolean", default = true},
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
