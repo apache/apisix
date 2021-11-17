@@ -93,6 +93,7 @@ local function get_full_log(ngx, conf)
 
     local log =  {
         request = {
+            id = var.request_id,
             url = url,
             uri = var.request_uri,
             method = ngx.req.get_method(),
