@@ -113,7 +113,8 @@ function _M.check_schema(conf, schema_type)
     if conf.include_req_body_expr then
         local ok, err = expr.new(conf.include_req_body_expr)
         if not ok then
-            return nil, {error_msg = "failed to validate the 'include_req_body_expr' expression: " .. err}
+            return nil,
+            {error_msg = "failed to validate the 'include_req_body_expr' expression: " .. err}
         end
     end
 
