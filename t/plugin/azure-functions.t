@@ -37,6 +37,7 @@ add_block_preprocessor(sub {
                 local msg = "faas invoked"
                 ngx.header['Content-Length'] = #msg + 1
                 ngx.header['X-Extra-Header'] = "MUST"
+                ngx.header['Connection'] = "Keep-Alive"
                 ngx.say(msg)
             }
         }
@@ -191,7 +192,35 @@ X-Extra-Header: MUST
 
 
 
-=== TEST 5: check authz header
+=== TEST 5: http2 check response body and headers
+--- http2
+--- exec
+curl -XGET --http2 --http2-prior-knowledge localhost:1984/azure
+--- response_body
+faas invoked
+
+
+
+=== TEST 6: check http2 response headers (must not contain any connection specific info)
+First fetch the header from curl with -I then check the count of Connection
+The full header looks like the format shown below
+
+HTTP/2 200
+content-type: text/plain
+x-extra-header: MUST
+content-length: 13
+date: Wed, 17 Nov 2021 13:53:08 GMT
+server: APISIX/2.10.2
+
+--- http2
+--- exec
+curl  -I --http2 --http2-prior-knowledge localhost:1984/azure
+--- response_body eval
+qr/(?!Connection)/
+
+
+
+=== TEST 7: check authz header
 --- config
     location /t {
         content_by_lua_block {
@@ -241,3 +270,103 @@ ngx.say("Authz-Header - " .. headers["x-functions-key"] or "")
 --- response_body
 passed
 Authz-Header - test_key
+
+
+
+=== TEST 8: check if apikey doesn't get overrided passed by client to the gateway
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local header = {}
+            header["x-functions-key"] = "must_not_be_overrided"
+
+            -- plugin schema already contains apikey with value "test_key" which won't be respected
+            local code, _, body = t("/azure", "GET", nil, nil, header)
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- inside_lua_block
+local headers = ngx.req.get_headers() or {}
+ngx.say("Authz-Header - " .. headers["x-functions-key"] or "")
+
+--- response_body
+Authz-Header - must_not_be_overrided
+
+
+
+=== TEST 9: fall back to metadata master key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, meta_body = t('/apisix/admin/plugin_metadata/azure-functions',
+                ngx.HTTP_PUT,
+                [[{
+                    "master_apikey":"metadata_key"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "master_apikey": "metadata_key",
+                            "master_clientid": ""
+                        },
+                        "key": "/apisix/plugin_metadata/azure-functions"
+                    },
+                    "action": "set"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(meta_body)
+
+            -- update plugin attribute
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "azure-functions": {
+                                "function_uri": "http://localhost:8765/azure-demo"
+                            }
+                        },
+                        "uri": "/azure"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- plugin schema already contains apikey with value "test_key" which won't be respected
+            local code, _, body = t("/azure", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- inside_lua_block
+local headers = ngx.req.get_headers() or {}
+ngx.say("Authz-Header - " .. headers["x-functions-key"] or "")
+
+--- response_body
+passed
+passed
+Authz-Header - metadata_key

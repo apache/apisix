@@ -16,14 +16,9 @@
 
 local core = require("apisix.core")
 local http = require("resty.http")
+local plugin = require("apisix.plugin")
 local ngx  = ngx
-local getenv = os.getenv
 local plugin_name = "azure-functions"
-
-local env_key = {
-    API = "AZURE_FUNCTIONS_APIKEY",
-    CLIENT_ID = "AZURE_FUNCTIONS_CLIENTID"
-}
 
 local schema = {
     type = "object",
@@ -45,14 +40,26 @@ local schema = {
     required = {"function_uri"}
 }
 
-local _M = {
-    version = 0.1,
-    priority = 505,
-    name = plugin_name,
-    schema = schema,
+local metadata_schema = {
+    type = "object",
+    properties = {
+        master_apikey = {type = "string", default = ""},
+        master_clientid = {type = "string", default = ""}
+    }
 }
 
-function _M.check_schema(conf)
+local _M = {
+    version = 0.1,
+    priority = -1900,
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema
+}
+
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
 end
 
@@ -71,14 +78,20 @@ function _M.access(conf, ctx)
     if not headers["x-functions-key"] and
             not headers["x-functions-clientid"] then
         if conf.authorization then
-            headers["x-functions-key"] = conf.authorization.apikey or ""
-            headers["x-functions-clientid"] = conf.authorization.clientid or ""
+            headers["x-functions-key"] = conf.authorization.apikey
+            headers["x-functions-clientid"] = conf.authorization.clientid
         else
-            headers["x-functions-key"] = getenv(env_key.API)
-            headers["x-functions-clientid"] = getenv(env_key.CLIENT_ID)
+            -- If neither api keys are set with the client request nor inside the plugin attributes
+            -- plugin will fallback to the master key (if any) present inside the metadata.
+            local metadata = plugin.plugin_metadata(plugin_name)
+            if metadata then
+                headers["x-functions-key"] = metadata.value.master_apikey
+                headers["x-functions-clientid"] = metadata.value.master_clientid
+            end
         end
     end
 
+    headers["Host"],  headers["host"] = nil, nil
     local params = {
         method = ngx.req.get_method(),
         body = req_body,
@@ -104,8 +117,19 @@ function _M.access(conf, ctx)
         return 503
     end
 
+    -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2, endpoint
+    -- must not generate any connection specific headers for HTTP/2 requests.
+    local response_headers = res.headers
+    if ngx.var.http2 then
+        response_headers["Connection"] = nil
+        response_headers["Keep-Alive"] = nil
+        response_headers["Proxy-Connection"] = nil
+        response_headers["Upgrade"] = nil
+        response_headers["Transfer-Encoding"] = nil
+    end
+
     -- setting response headers
-    core.response.set_header(res.headers)
+    core.response.set_header(response_headers)
 
     return res.status, res.body
 end
