@@ -69,12 +69,11 @@ end
 
 
 function _M.access(conf, ctx)
-    if core.request.get_method() ~= "POST" then
-        return 405
-    end
-
-    if core.request.header(ctx, "Content-Type") ~= "application/json" then
-        return 400
+    if core.request.get_method() == "POST" then
+        if core.request.header(ctx, "Content-Type") ~= "application/json" then
+            core.log.error("only support json request body")
+            return 400, "only support json request body"
+        end
     end
 
     local params = {
@@ -108,7 +107,8 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(endpoint, params)
 
     if not res or err then
-        return core.response.exit(500, "failed to process openwhisk action, err: " .. err)
+        core.log.error("failed to process openwhisk action, err: ", err)
+        return 503, "failed to process openwhisk action, err: " .. err
     end
 
     -- setting response headers
