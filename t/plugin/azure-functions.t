@@ -194,14 +194,14 @@ X-Extra-Header: MUST
 
 === TEST 5: http2 check response body and headers
 --- http2
---- exec
-curl -XGET --http2 --http2-prior-knowledge localhost:1984/azure
+--- request
+GET /azure
 --- response_body
 faas invoked
 
 
 
-=== TEST 6: check http2 response headers (must not contain any connection specific info)
+=== TEST 6: check HTTP/2 response headers (must not contain any connection specific info)
 First fetch the header from curl with -I then check the count of Connection
 The full header looks like the format shown below
 
@@ -213,10 +213,15 @@ date: Wed, 17 Nov 2021 13:53:08 GMT
 server: APISIX/2.10.2
 
 --- http2
---- exec
-curl  -I --http2 --http2-prior-knowledge localhost:1984/azure
---- response_body eval
-qr/(?!Connection)/
+--- request
+HEAD /azure
+--- response_headers
+Connection:
+Upgrade:
+Keep-Alive:
+content-type: text/plain
+x-extra-header: MUST
+content-length: 13
 
 
 
