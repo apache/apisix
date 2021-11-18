@@ -74,6 +74,7 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
+        include_resp_body = {type = "boolean", default = false},
         -- in lua-resty-kafka, cluster_name is defined as number
         -- see https://github.com/doujiang24/lua-resty-kafka#new-1
         cluster_name = {type = "integer", minimum = 1, default = 1},
@@ -168,6 +169,17 @@ local function send_kafka_data(conf, log_message, prod)
     end
 
     return true
+end
+
+
+function _M.body_filter(conf, ctx)
+    if conf.include_resp_body then
+        local final_body = core.response.hold_body_chunk(ctx, true)
+        if not final_body then
+            return
+        end
+        ctx.resp_body = final_body
+    end
 end
 
 

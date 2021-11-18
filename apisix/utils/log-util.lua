@@ -130,6 +130,13 @@ local function get_full_log(ngx, conf)
         end
     end
 
+    if conf.include_resp_body then
+        local body = ctx.resp_body
+        if body then
+            log.response.body = body
+        end
+    end
+
     return log
 end
 _M.get_full_log = get_full_log

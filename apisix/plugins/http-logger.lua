@@ -44,6 +44,7 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
+        include_resp_body = {type = "boolean", default = false},
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}}
     },
@@ -159,6 +160,17 @@ local function remove_stale_objects(premature)
     end
 
     stale_timer_running = false
+end
+
+
+function _M.body_filter(conf, ctx)
+    if conf.include_resp_body then
+        local final_body = core.response.hold_body_chunk(ctx, true)
+        if not final_body then
+            return
+        end
+        ctx.resp_body = final_body
+    end
 end
 
 
