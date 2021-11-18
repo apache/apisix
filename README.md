@@ -146,6 +146,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
+- **Multi-Language support**
+  - Apache APISIX is a multi-language gateway for plugin development and provides support via `WASM` and `RPC`.
+  ![Multi Language Support into Apache APISIX](docs/assets/images/apisix-multi-lang-support.png)
+  - The WASM or WebAssembly, is the modern way. If we look at the left part, APISIX can load and run WASM bytecode via APISIX wasm plugin, so developers only need to write the code according to the SDK and then compile it into a WASM bytecode file and put it in the APISIX folder. As of now, APISIX has support for Golang SDK and Rust SDK - more language SDKs will be supported in the future.
+  - The RPC way, is a traditional way. If we look at the right part, developers can choose the language according to their needs. After starting an independent process with the RPC, it exchanges data with APISIX through local RPC communication. Till this moment, APISIX has support for Java， Golang, Python and Node.js.
+
 ## Get Started
 
 1. Installation
