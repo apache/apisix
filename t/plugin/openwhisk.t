@@ -27,7 +27,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.openwhisk-serverless")
+            local plugin = require("apisix.plugins.openwhisk")
             local ok, err = plugin.check_schema({api_host = "http://127.0.0.1:3233", service_token = "test:test", namespace = "test", action = "test"})
             if not ok then
                 ngx.say(err)
@@ -49,7 +49,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.openwhisk-serverless")
+            local plugin = require("apisix.plugins.openwhisk")
             local ok, err = plugin.check_schema({service_token = "test:test", namespace = "test", action = "test"})
             if not ok then
                 ngx.say(err)
@@ -69,7 +69,7 @@ property "api_host" is required
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.openwhisk-serverless")
+            local plugin = require("apisix.plugins.openwhisk")
             local ok, err = plugin.check_schema({api_host = 3233, service_token = "test:test", namespace = "test", action = "test"})
             if not ok then
                 ngx.say(err)
@@ -94,7 +94,7 @@ property "api_host" validation failed: wrong type: expected string, got number
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "openwhisk-serverless": {
+                            "openwhisk": {
                                 "api_host": "http://127.0.0.1:3233",
                                 "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
                                 "namespace": "guest",
@@ -167,7 +167,7 @@ Content-Type: application/json
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "openwhisk-serverless": {
+                            "openwhisk": {
                                 "api_host": "http://127.0.0.1:3233",
                                 "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
                                 "namespace": "guest",
