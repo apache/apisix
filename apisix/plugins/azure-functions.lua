@@ -69,7 +69,7 @@ function _M.access(conf, ctx)
     local req_body, err = core.request.get_body()
 
     if err then
-        core.log.error("error while reading request body: " .. err)
+        core.log.error("error while reading request body: ", err)
         return 400
     end
 
@@ -113,7 +113,7 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(conf.function_uri, params)
 
     if not res or err then
-        core.log.error("failed to process azure function, err: " .. err)
+        core.log.error("failed to process azure function, err: ", err)
         return 503
     end
 
