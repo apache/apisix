@@ -155,3 +155,54 @@ Content-Type: application/json
 {"hello":"world"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: reset route to non-existent action
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk-serverless": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "non-existent"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: hit route (with non-existent action)
+--- request
+POST /hello
+{"name": "world"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 404
+--- no_error_log
+[error]
