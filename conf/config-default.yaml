@@ -338,7 +338,7 @@ plugins:                          # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
-  - openwhisk-serverless           # priority: 601
+  - openwhisk                      # priority: 601
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - prometheus                     # priority: 500
