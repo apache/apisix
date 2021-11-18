@@ -151,7 +151,7 @@ POST /hello
 {"name": "world"}
 --- more_headers
 Content-Type: application/json
---- response_body
+--- response_body chomp
 {"hello":"world"}
 --- no_error_log
 [error]
