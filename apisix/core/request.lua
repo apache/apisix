@@ -161,7 +161,12 @@ function _M.get_post_args(ctx)
 
         -- use 0 to avoid truncated result and keep the behavior as the
         -- same as other platforms
-        local args = req_get_post_args(0)
+        local args, err = req_get_post_args(0)
+        if not args then
+            -- do we need a way to handle huge post forms?
+            log.error("the post form is too large: ", err)
+            args = {}
+        end
         ctx.req_post_args = args
     end
 
