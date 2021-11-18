@@ -91,7 +91,7 @@ function _M.access(conf, ctx)
         end
     end
 
-    headers["Host"],  headers["host"] = nil, nil
+    headers["host"] = nil
     local params = {
         method = ngx.req.get_method(),
         body = req_body,
