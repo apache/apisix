@@ -30,7 +30,7 @@ title: serverless
 
 ## Description
 
-This plugin is used to support integration with the [Apache OpenWhisk](https://openwhisk.apache.org) serverless platform and can be set up on a route in place of Upstream, which will take over the request and send it to the OpenWhisk API endpoint.
+The `openwhisk` plugin is used to support integration with the [Apache OpenWhisk](https://openwhisk.apache.org) serverless platform and can be set up on a route in place of Upstream, which will take over the request and send it to the OpenWhisk API endpoint.
 
 Users can call the OpenWhisk action via APISIX, pass the request parameters via JSON and get the response content.
 
@@ -44,10 +44,14 @@ Users can call the OpenWhisk action via APISIX, pass the request parameters via 
 | namespace | string | yes |   |   | OpenWhisk  Namespace (eg. guest) |
 | action | string | yes |   |   | OpenWhisk Action (eg. hello) |
 | result | bool | no | true |   | Whether to get Action metadata (default to execute function and get response; false to get Action metadata but not execute Action, including runtime, function body, restrictions, etc.) |
-| timeout | integer | no | 60000ms |   |Functions and HTTP call timeout |
+| timeout | integer | no | 60000ms | [1, 60000]ms | OpenWhisk Action and HTTP call timeout. |
 | keepalive | bool | no | true |   | HTTP keepalive |
 | keepalive_timeout | integer | no | 60000ms |   | keepalive idle timeout |
 | keepalive_pool | integer | no | 5 |   | Connection pool limit |
+
+:::note
+-  The `timeout` property controls both the time taken by the OpenWhisk Action to execute and the timeout of the HTTP client in APISIX. OpenWhisk Action calls may consume time on pulling the runtime image and starting the container, so if you set the value too small, you may cause a large number of requests to fail. OpenWhisk supports timeouts ranging from 1ms to 60000ms, and we recommended to set at least 1000ms or more.
+:::
 
 ## Example
 
@@ -76,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/hello",
     "plugins": {
-        "openwhisk-serverless": {
+        "openwhisk": {
             "api_host": "http://localhost:3233",
             "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
             "namespace": "guest",

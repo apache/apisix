@@ -44,10 +44,14 @@ title: openwhisk
 | namespace | string | 是 |   |   | OpenWhisk 命名空间 |
 | action | string | 是 |   |   | OpenWhisk Action 名称（例：hello） |
 | result | bool | 否 | true |   | 是否获取 Action 元数据（默认为执行函数并获取响应值；设置为 false 时，获取元数据，包含运行时、程序内容、限制等） |
-| timeout | integer | 否 | 60000 |   | 函数和 HTTP 的超时时间 (ms) |
+| timeout | integer | 否 | 60000 |   | OpenWhisk Action 和 HTTP 的超时时间 (ms) |
 | keepalive | bool | 否 | true |   | 是否启用 HTTP 长连接以避免过多的请求 |
 | keepalive_timeout | integer | 否 | 60000 |   | HTTP 长连接超时时间 (ms) |
 | keepalive_pool | integer | 否 | 5 |   | 连接池连接数限制 |
+
+:::note
+- `timeout` 属性同时控制 OpenWhisk Action 执行耗时和 APISIX 中 HTTP 客户端的超时时间。其中 OpenWhisk Action 调用时有可能会进行拉去运行时镜像和启动容器的工作，因此如果你设置的值过小，将可能导致大量请求失败。OpenWhisk 支持的超时时间范围为1ms至60000ms，建议至少设置为1000ms以上。
+:::
 
 ## 使用示例
 
@@ -76,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/hello",
     "plugins": {
-        "openwhisk-serverless": {
+        "openwhisk": {
             "api_host": "http://localhost:3233",
             "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
             "namespace": "guest",
