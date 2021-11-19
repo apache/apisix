@@ -50,7 +50,9 @@ title: openwhisk
 | keepalive_pool | integer | 否 | 5 |   | 连接池连接数限制 |
 
 :::note
+
 - `timeout` 属性同时控制 OpenWhisk Action 执行耗时和 APISIX 中 HTTP 客户端的超时时间。其中 OpenWhisk Action 调用时有可能会进行拉去运行时镜像和启动容器的工作，因此如果你设置的值过小，将可能导致大量请求失败。OpenWhisk 支持的超时时间范围为1ms至60000ms，建议至少设置为1000ms以上。
+
 :::
 
 ## 使用示例
