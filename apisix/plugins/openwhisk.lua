@@ -70,7 +70,7 @@ end
 
 function _M.access(conf, ctx)
     if core.request.get_method() ~= "GET" then
-        if core.string.has_prefix(core.request.header(ctx, "Content-Type"), "application/json") then
+        if not core.string.has_prefix(core.request.header(ctx, "Content-Type"), "application/json") then
             core.log.error("only support json request body")
             return 415
         end
