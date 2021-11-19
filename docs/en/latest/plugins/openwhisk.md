@@ -51,7 +51,7 @@ Users can call the OpenWhisk action via APISIX, pass the request parameters via 
 
 :::note
 
--  The `timeout` property controls both the time taken by the OpenWhisk Action to execute and the timeout of the HTTP client in APISIX. OpenWhisk Action calls may consume time on pulling the runtime image and starting the container, so if you set the value too small, you may cause a large number of requests to fail. OpenWhisk supports timeouts ranging from 1ms to 60000ms, and we recommended to set at least 1000ms or more.
+- The `timeout` property controls both the time taken by the OpenWhisk Action to execute and the timeout of the HTTP client in APISIX. OpenWhisk Action calls may consume time on pulling the runtime image and starting the container, so if you set the value too small, you may cause a large number of requests to fail. OpenWhisk supports timeouts ranging from 1ms to 60000ms, and we recommended to set at least 1000ms or more.
 
 :::
 
