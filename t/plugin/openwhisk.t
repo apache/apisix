@@ -140,9 +140,9 @@ POST /hello
 test=test
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 400
---- no_error_log
-[error]
+--- error_code: 415
+--- error_log
+only support json request body
 
 
 
@@ -207,3 +207,54 @@ Content-Type: application/json
 --- error_code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: reset route to wrong api_host
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.0:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "non-existent"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit route (with wrong api_host)
+--- request
+POST /hello
+{"name": "world"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 503
+--- error_log
+failed to process openwhisk action, err:
