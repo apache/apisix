@@ -127,13 +127,14 @@ passed
 === TEST 5: hit route (with GET request)
 --- request
 GET /hello
---- error_code: 405
+--- response_body chomp
+{"hello":"test"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: hit route (with non-json format request body)
+=== TEST 6: hit route (with POST without non-json format request body)
 --- request
 POST /hello
 test=test
@@ -145,7 +146,7 @@ Content-Type: application/x-www-form-urlencoded
 
 
 
-=== TEST 7: hit route (with correct request body)
+=== TEST 7: hit route (with POST and correct request body)
 --- request
 POST /hello
 {"name": "world"}

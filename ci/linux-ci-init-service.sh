@@ -24,4 +24,4 @@ docker exec -i apache-apisix_kafka-server2_1 /opt/bitnami/kafka/bin/kafka-topics
 docker pull openwhisk/action-nodejs-v14:nightly
 docker run --rm -d -h openwhisk --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:nightly
 docker exec -i openwhisk waitready
-docker exec -i openwhisk bash -c "wsk action update test <(echo 'function main(args){return {"hello":args.name}}') --kind nodejs:14"
+docker exec -i openwhisk bash -c "wsk action update test <(echo 'function main(args){return {"hello":args.name || "test"}}') --kind nodejs:14"
