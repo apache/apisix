@@ -1778,7 +1778,7 @@ qr/opentracing/
 --- request
 GET /t
 --- response_body_like eval
-qr/string too long/
+qr/expected 10000 to be smaller than 599/
 --- error_code chomp
 400
 --- no_error_log
