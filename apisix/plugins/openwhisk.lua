@@ -69,10 +69,10 @@ end
 
 
 function _M.access(conf, ctx)
-    if core.request.get_method() == "POST" then
+    if core.request.get_method() ~= "GET" then
         if core.request.header(ctx, "Content-Type") ~= "application/json" then
             core.log.error("only support json request body")
-            return 400, "only support json request body"
+            return 415
         end
     end
 
@@ -108,7 +108,7 @@ function _M.access(conf, ctx)
 
     if not res or err then
         core.log.error("failed to process openwhisk action, err: ", err)
-        return 503, "failed to process openwhisk action, err: " .. err
+        return 503
     end
 
     -- setting response headers
