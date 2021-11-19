@@ -243,7 +243,8 @@ local function get_logger_entry(conf)
         timestamp = get_utc_timestamp(),
         resource = conf.resource,
         insertId = entry.request.id,
-        logName = core.string.format("projects/%s/logs/%s", auth_config_cache.project_id, conf.log_id)
+        logName = core.string.format("projects/%s/logs/%s", auth_config_cache.project_id,
+                conf.log_id)
     }
 
     return google_entry

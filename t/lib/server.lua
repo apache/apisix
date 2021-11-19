@@ -455,7 +455,8 @@ function _M.google_logging_token()
         return
     end
 
-    local scopes_valid = type(verify.payload.scope) == "string" and verify.payload.scope:find(access_scopes)
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scopes" }))
@@ -501,7 +502,8 @@ function _M.google_logging_entries()
         return
     end
 
-    local scopes_valid = type(verify.payload.scope) == "string" and verify.payload.scope:find(access_scopes)
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scopes" }))
