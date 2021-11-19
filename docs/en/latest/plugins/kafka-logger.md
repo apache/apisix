@@ -58,6 +58,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
 | include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 | include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
+| include_req_body_expr  | array  | optional    |          |         | Whether to logging request body, based on [lua-resty-expr](https://github.com/api7/lua-resty-expr), this option require to turn on `include_req_body` option.             |
 | cluster_name     | integer | optional    | 1              | [0,...] | the name of the cluster. When there are two or more kafka clusters, you can specify different names. And this only works with async producer_type.|
 
 ### examples of meta_format

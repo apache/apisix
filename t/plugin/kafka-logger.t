@@ -1114,3 +1114,82 @@ GET /t
 --- error_log_like eval
 qr/create new kafka producer instance, brokers: \[\{"port":9092,"host":"127.0.0.127"}]/
 qr/failed to send data to Kafka topic: .*, brokers: \{"127.0.0.127":9092}/
+
+
+
+=== TEST 26: set route(id: 1,include_req_body = true,include_req_body_expr = array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "include_req_body": true,
+                                "include_req_body_expr": [
+                                    [
+                                      "arg_name",
+                                      "==",
+                                      "qwerty"
+                                    ]
+                                ],
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: hit route, expr eval success
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2
+
+
+
+=== TEST 28: hit route,expr eval fail
+--- request
+POST /hello?name=zcxv
+abcdef
+--- response_body
+hello world
+--- no_error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2
