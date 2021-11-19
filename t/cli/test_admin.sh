@@ -229,3 +229,114 @@ fi
 make stop
 
 echo "pass: sync /apisix/plugins from etcd when disabling admin successfully"
+
+
+
+# ignore changes to /apisix/plugins/ due to init_etcd
+echo '
+apisix:
+  enable_admin: false
+plugins:
+  - node-status
+nginx_config:
+  error_log_level:  info
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+# first time check node status api
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
+if [ ! $code -eq 200 ]; then
+    echo "failed: first time check node status api failed"
+    exit 1
+fi
+
+# mock another instance init etcd dir
+make init
+sleep 1
+
+# second time check node status api
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
+if [ ! $code -eq 200 ]; then
+    echo "failed: second time check node status api failed"
+    exit 1
+fi
+
+make stop
+
+echo "pass: ignore changes to /apisix/plugins/ due to init_etcd successfully"
+
+
+# accept changes to /apisix/plugins when enable_admin is false
+echo '
+apisix:
+  enable_admin: false
+plugins:
+  - node-status
+stream_plugins:
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+# first time check node status api
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
+if [ ! $code -eq 200 ]; then
+    echo "failed: first time check node status api failed"
+    exit 1
+fi
+
+sleep 0.5
+
+# check http plugins load list
+if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
+    echo "failed: first time load http plugins list failed"
+    exit 1
+fi
+
+# check stream plugins(no plugins under stream, it will be added below)
+if ! grep -E 'failed to read stream plugin list from local file' logs/error.log; then
+    echo "failed: first time load stream plugins list failed"
+    exit 1
+fi
+
+# mock another instance add /apisix/plugins
+res=$(etcdctl put "/apisix/plugins" '[{"name":"node-status"},{"name":"example-plugin"},{"stream":true,"name":"mqtt-proxy"}]')
+if [[ $res != "OK" ]]; then
+    echo "failed: failed to set /apisix/plugins to add more plugins"
+    exit 1
+fi
+
+sleep 0.5
+
+# second time check node status api
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
+if [ ! $code -eq 200 ]; then
+    echo "failed: second time check node status api failed"
+    exit 1
+fi
+
+# check http plugins load list
+if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
+    echo "failed: second time load http plugins list failed"
+    exit 1
+fi
+
+# check stream plugins load list
+if ! grep -E 'new plugins: {.*example-plugin' logs/error.log; then
+    echo "failed: second time load stream plugins list failed"
+    exit 1
+fi
+
+
+if grep -E 'new plugins: {}' logs/error.log; then
+    echo "failed: second time load plugins list failed"
+    exit 1
+fi
+
+make stop
+
+echo "pass: ccept changes to /apisix/plugins successfully"
