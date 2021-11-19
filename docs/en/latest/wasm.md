@@ -100,5 +100,5 @@ Here is the mapping between Proxy WASM callbacks and APISIX's phases:
 
 * `proxy_on_configure`: run once there is not PluginContext for the new configuration.
 For example, when the first request hits the route which has WASM plugin configured.
-* `proxy_on_http_request_headers`: run in the access/rewrite phase, depends on the configuration of `http_request_phase`.
+* `proxy_on_http_request_headers`: run in the access phase.
 * `proxy_on_http_response_headers`: run in the header_filter phase.

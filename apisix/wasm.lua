@@ -127,6 +127,9 @@ function _M.require(attrs)
     mod.header_filter = function (conf, ctx)
         return header_filter_wrapper(mod, conf, ctx)
     end
+    mod.header_filter = function (conf, ctx)
+        return header_filter_wrapper(mod, conf, ctx)
+    end
 
     -- the returned values need to be the same as the Lua's 'require'
     return true, mod
