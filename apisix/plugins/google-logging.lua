@@ -46,7 +46,10 @@ local schema = {
             properties = {
                 private_key = { type = "string" },
                 project_id = { type = "string" },
-                token_uri = { type = "string" },
+                token_uri = {
+                    type = "string",
+                    default = "https://oauth2.googleapis.com/token"
+                },
                 -- https://developers.google.com/identity/protocols/oauth2/scopes#logging
                 scopes = {
                     type = "array",

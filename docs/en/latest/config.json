@@ -119,7 +119,8 @@
             "plugins/syslog",
             "plugins/log-rotate",
             "plugins/error-log-logger",
-            "plugins/sls-logger"
+            "plugins/sls-logger",
+            "plugins/google-logging"
           ]
         },
         {
