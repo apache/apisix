@@ -52,8 +52,8 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 601,
-    name = "openwhisk-serverless",
+    priority = -1901,
+    name = "openwhisk",
     schema = schema,
 }
 

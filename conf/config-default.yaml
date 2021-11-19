@@ -338,7 +338,6 @@ plugins:                          # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
-  - openwhisk                      # priority: 601
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - prometheus                     # priority: 500
@@ -357,6 +356,7 @@ plugins:                          # plugin list (sorted by priority)
   - example-plugin                 # priority: 0
   #- skywalking                    # priority: -1100
   - azure-functions                # priority: -1900
+  - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
 
