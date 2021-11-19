@@ -85,7 +85,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Hot Updates And Hot Plugins](docs/en/latest/architecture-design/plugin.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-  - [Serverless](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
   - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
@@ -146,6 +145,10 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
+- **Serverless**
+  - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): seamless integration with Azure Serverless Function as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud.
+  
 ## Get Started
 
 1. Installation
