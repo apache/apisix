@@ -56,7 +56,6 @@ title: google-logging
 | buffer_duration         | 可选   | 60                                                                                                                                                                                                | 必须先处理批次中最旧条目的最大期限（以秒为单位）                                                                   |
 | inactive_timeout        | 可选   | 10                                                                                                                                                                                                | 刷新缓冲区的最大时间（以秒为单位）                                                                                        |
 | batch_max_size          | 可选   | 100                                                                                                                                                                                               | 每个批处理队列可容纳的最大条目数                                                                                                                      |
-|                         |          |                                                                                                                                                                                                   |                                                                                                                                            |
 
 ## 如何开启
 

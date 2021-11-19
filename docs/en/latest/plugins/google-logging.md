@@ -31,7 +31,7 @@ title: google-logging
 
 ## Name
 
-`google-logging` plugin is used to send the request log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).
+`google-logging` plugin is used to send the access log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).
 
 This plugin provides the ability to push Log data as a batch to Google Cloud logging Service.
 
@@ -56,7 +56,6 @@ For more info on Batch-Processor in Apache APISIX please refer:
 | buffer_duration         | Optional      | 60                                                                                                                                                                                                | max age in seconds of the oldest entry in a batch before the batch must be processed                                                                                             |
 | inactive_timeout        | Optional      | 10                                                                                                                                                                                                | max age in seconds when the buffer will be flushed if inactive                                                                                                                   |
 | batch_max_size          | Optional      | 100                                                                                                                                                                                               | max size of each batch                                                                                                                                                           |
-|                         |               |                                                                                                                                                                                                   |                                                                                                                                                                                  |
 
 ## How To Enable
 

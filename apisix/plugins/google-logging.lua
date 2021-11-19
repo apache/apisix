@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local core = require("apisix.core")
 local ngx = ngx
 local tostring = tostring
 local ipairs = ipairs
@@ -25,7 +26,6 @@ local ngx_now = ngx.now
 local ngx_timer_at = ngx.timer.at
 local ngx_update_time = ngx.update_time
 
-local core = require("apisix.core")
 local http = require("resty.http")
 local log_util = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")

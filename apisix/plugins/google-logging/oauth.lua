@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local core = require("apisix.core")
 local type = type
 local setmetatable = setmetatable
 
@@ -22,7 +23,6 @@ local ngx_update_time = ngx.update_time
 local ngx_time = ngx.time
 local ngx_encode_args = ngx.encode_args
 
-local core = require("apisix.core")
 local http = require("resty.http")
 local jwt = require("resty.jwt")
 
