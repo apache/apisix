@@ -26,6 +26,7 @@ title: serverless
 - [**Description**](#description)
 - [**Attributes**](#attributes)
 - [**Example**](#example)
+- [**Notice**](#Notice)
 
 ## Description
 
@@ -94,3 +95,7 @@ Finally, you can send a request to this route and you will get the following res
 ```json
 {"ready": true}
 ```
+
+## Notice
+
+When you need to submit data, you need to use a request body in JSON format. Also you should pay attention to the request body size, request body exceeding the `client_body_buffer_size` setting will be discarded completely, its size defaults to 8KiB.

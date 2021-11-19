@@ -26,6 +26,7 @@ title: openwhisk
 - [**描述**](#描述)
 - [**属性**](#属性)
 - [**使用示例**](#使用示例)
+- [**注意**](#注意)
 
 ## 描述
 
@@ -94,3 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```json
 {"ready": true}
 ```
+
+## 注意
+
+当你需要提交数据时，你需要使用JSON格式的请求体。同时请注意请求体的大小，超过 `client_body_buffer_size` 设置的请求体将被完全丢弃，其值默认为 8KiB。
