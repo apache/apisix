@@ -306,7 +306,7 @@ fi
 # mock another instance add /apisix/plugins
 res=$(etcdctl put "/apisix/plugins" '[{"name":"node-status"},{"name":"example-plugin"},{"stream":true,"name":"mqtt-proxy"}]')
 if [[ $res != "OK" ]]; then
-    echo "failed: first time check node status api failed"
+    echo "failed: failed to set /apisix/plugins to add more plugins"
     exit 1
 fi
 
@@ -321,13 +321,13 @@ fi
 
 # check http plugins load list
 if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
-    echo "failed: first time load http plugins list failed"
+    echo "failed: second time load http plugins list failed"
     exit 1
 fi
 
 # check stream plugins load list
 if ! grep -E 'new plugins: {.*example-plugin' logs/error.log; then
-    echo "failed: first time load stream plugins list failed"
+    echo "failed: second time load stream plugins list failed"
     exit 1
 fi
 
