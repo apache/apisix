@@ -63,6 +63,10 @@ local schema = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     }
                 },
+                entries_uri = {
+                    type = "string",
+                    default = "https://logging.googleapis.com/v2/entries:write"
+                },
             },
             required = { "private_key", "project_id", "token_uri" }
         },
@@ -78,10 +82,6 @@ local schema = {
                 type = "global"
             },
             required = { "type" }
-        },
-        entries_uri = {
-            type = "string",
-            default = "https://logging.googleapis.com/v2/entries:write"
         },
         -- https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
         log_id = { type = "string", default = "apisix.apache.org%2Flogs" },
