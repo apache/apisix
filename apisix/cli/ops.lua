@@ -34,6 +34,7 @@ local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
+local os_rename = os.rename
 local table_insert = table.insert
 local getenv = os.getenv
 local max = math.max
@@ -41,7 +42,7 @@ local floor = math.floor
 local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
-
+local str_format = string.format
 
 local _M = {}
 
@@ -153,6 +154,9 @@ local config_schema = {
                 config_center = {
                     enum = {"etcd", "yaml"},
                 },
+                lua_module_hook = {
+                    pattern = "^[a-zA-Z._-]+$",
+                },
                 proxy_protocol = {
                     type = "object",
                     properties = {
@@ -168,6 +172,46 @@ local config_schema = {
                         enable_tcp_pp_to_upstream = {
                             type = "boolean",
                         },
+                    }
+                },
+                proxy_cache = {
+                    type = "object",
+                    properties = {
+                        zones = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "object",
+                                properties = {
+                                    name = {
+                                        type = "string",
+                                    },
+                                    memory_size = {
+                                        type = "string",
+                                    },
+                                    disk_size = {
+                                        type = "string",
+                                    },
+                                    disk_path = {
+                                        type = "string",
+                                    },
+                                    cache_levels = {
+                                        type = "string",
+                                    },
+                                },
+                                oneOf = {
+                                    {
+                                        required = {"name", "memory_size"},
+                                        maxProperties = 2,
+                                    },
+                                    {
+                                        required = {"name", "memory_size", "disk_size",
+                                            "disk_path", "cache_levels"},
+                                    }
+                                },
+                            },
+                            uniqueItems = true,
+                        }
                     }
                 },
                 port_admin = {
@@ -265,7 +309,7 @@ local config_schema = {
         http = {
             type = "object",
             properties = {
-                lua_shared_dicts = {
+                custom_lua_shared_dict = {
                     type = "object",
                 }
             }
@@ -294,7 +338,31 @@ local config_schema = {
                     }
                 }
             }
-        }
+        },
+        wasm = {
+            type = "object",
+            properties = {
+                plugins = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "object",
+                        properties = {
+                            name = {
+                                type = "string"
+                            },
+                            file = {
+                                type = "string"
+                            },
+                            priority = {
+                                type = "integer"
+                            }
+                        },
+                        required = {"name", "file", "priority"}
+                    }
+                }
+            }
+        },
     }
 }
 
@@ -305,6 +373,14 @@ local function init(env)
               .. 'development environments and it is dangerous to do so. '
               .. 'It is recommended to run APISIX in a directory '
               .. 'other than /root.')
+    end
+
+    local min_ulimit = 1024
+    if env.ulimit <= min_ulimit then
+        print(str_format("Warning! Current maximum number of open file "
+                .. "descriptors [%d] is not greater than %d, please increase user limits by "
+                .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
+                .. " is low.", env.ulimit, min_ulimit))
     end
 
     -- read_yaml_conf
@@ -404,6 +480,26 @@ Please modify "admin_key" in conf/config.yaml .
 
     if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
         util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
+    end
+
+    if enabled_plugins["batch-requests"] then
+        local pass_real_client_ip = false
+        local real_ip_from = yaml_conf.nginx_config.http.real_ip_from
+        -- the real_ip_from is enabled by default, we just need to make sure it's
+        -- not disabled by the users
+        if real_ip_from then
+            for _, ip in ipairs(real_ip_from) do
+                -- TODO: handle cidr
+                if ip == "127.0.0.1" or ip == "0.0.0.0/0" then
+                    pass_real_client_ip = true
+                end
+            end
+        end
+
+        if not pass_real_client_ip then
+            util.die("missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin " ..
+                     "batch-requests\n")
+        end
     end
 
     local ports_to_check = {}
@@ -700,6 +796,7 @@ Please modify "admin_key" in conf/config.yaml .
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
+    sys_conf["wasm"] = yaml_conf.wasm
 
 
     local wrn = sys_conf["worker_rlimit_nofile"]
@@ -748,6 +845,11 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
+    end
+
+    if sys_conf["http"]["lua_shared_dicts"] then
+        stderr:write("lua_shared_dicts is deprecated, " ..
+                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()
@@ -875,6 +977,43 @@ local function cleanup()
 end
 
 
+local function test(env, backup_ngx_conf)
+    -- backup nginx.conf
+    local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
+    local ngx_conf_exist = util.is_file_exist(ngx_conf_path)
+    if ngx_conf_exist then
+        local ok, err = os_rename(ngx_conf_path, ngx_conf_path .. ".bak")
+        if not ok then
+            util.die("failed to backup nginx.conf, error: ", err)
+        end
+    end
+
+    -- reinit nginx.conf
+    init(env)
+
+    local test_cmd = env.openresty_args .. [[ -t -q ]]
+    local test_ret = execute((test_cmd))
+
+    -- restore nginx.conf
+    if ngx_conf_exist then
+        local ok, err = os_rename(ngx_conf_path .. ".bak", ngx_conf_path)
+        if not ok then
+            util.die("failed to restore original nginx.conf, error: ", err)
+        end
+    end
+
+    -- When success,
+    -- On linux, os.execute returns 0,
+    -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
+    if (test_ret == 0 or test_ret == true) then
+        print("configuration test is successful")
+        return
+    end
+
+    util.die("configuration test failed")
+end
+
+
 local function quit(env)
     cleanup()
 
@@ -892,6 +1031,8 @@ end
 
 
 local function restart(env)
+  -- test configuration
+  test(env)
   stop(env)
   start(env)
 end
@@ -927,6 +1068,7 @@ local action = {
     quit = quit,
     restart = restart,
     reload = reload,
+    test = test,
 }
 
 

@@ -21,6 +21,17 @@ no_long_string();
 no_root_location();
 log_level("debug");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - batch-requests
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+});
+
 run_tests;
 
 __DATA__
@@ -67,6 +78,7 @@ __DATA__
                     "status": 200,
                     "body":"B",
                     "headers": {
+                        "Client-IP": "127.0.0.1",
                         "Base-Header": "base",
                         "Base-Query": "base_query",
                         "X-Res": "B",
@@ -80,6 +92,7 @@ __DATA__
                     "status": 201,
                     "body":"C",
                     "headers": {
+                        "Client-IP-From-Hdr": "127.0.0.1",
                         "Base-Header": "base",
                         "Base-Query": "base_query",
                         "X-Res": "C",
@@ -111,6 +124,7 @@ __DATA__
     location = /b {
         content_by_lua_block {
             ngx.status = 200
+            ngx.header["Client-IP"] = ngx.var.remote_addr
             ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
             ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Header1"] = ngx.req.get_headers()["Header1"]
@@ -124,6 +138,7 @@ __DATA__
     location = /c {
         content_by_lua_block {
             ngx.status = 201
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["X-Real-IP"]
             ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
             ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Res"] = "C"

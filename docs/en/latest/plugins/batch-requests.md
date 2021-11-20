@@ -51,7 +51,14 @@ You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
-Default enabled
+Enable the batch-requests plugin in the `config.yaml`:
+
+```
+# Add this in config.yaml
+plugins:
+  - ... # plugin you need
+  - batch-requests
+```
 
 ## How To Configure
 

@@ -40,7 +40,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["real-ip","client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","ua-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","authz-casbin","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","gzip","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function","ext-plugin-post-req"\]/
+qr/\["real-ip","client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","ua-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","authz-casbin","wolf-rbac","ldap-auth","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","gzip","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","datadog","echo","http-logger","skywalking-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","azure-functions","serverless-post-function","ext-plugin-post-req"\]/
 --- no_error_log
 [error]
 
@@ -66,7 +66,7 @@ GET /apisix/admin/plugins
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"rate":{"exclusiveMinimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200,"maximum":599}},"required":["rate","burst","key"],"type":"object"}
+                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"disable":{"type":"boolean"},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
                 ]]
                 )
 
@@ -232,7 +232,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
         }
     }
 --- response_body eval
-qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
+qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
 --- no_error_log
 [error]
 
@@ -298,6 +298,50 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
         }
     }
 --- response_body
-{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"enum":["remote_addr","server_addr"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: confirm the scope of plugin
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - batch-requests
+  - error-log-logger
+  - server-info
+  - example-plugin
+  - node-status
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local global_plugins = {}
+            for k, v in pairs(res) do
+                if v.scope == "global" then
+                    global_plugins[k] = v.scope
+                end
+            end
+            ngx.say(json.encode(global_plugins))
+        }
+    }
+--- response_body
+{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
 --- no_error_log
 [error]

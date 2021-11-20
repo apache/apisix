@@ -21,5 +21,5 @@ target_file=$1
 
 if [ ! -f "$target_file" ]; then
     cp  ./conf/config.yaml  $target_file
-	chmod 644 $target_file
+    chmod 644 $target_file
 fi

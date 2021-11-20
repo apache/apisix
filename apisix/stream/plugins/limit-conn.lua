@@ -26,9 +26,10 @@ local schema = {
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
-        key = {
-            type = "string",
-            enum = {"remote_addr", "server_addr"}
+        key = {type = "string"},
+        key_type = {type = "string",
+            enum = {"var", "var_combination"},
+            default = "var",
         },
     },
     required = {"conn", "burst", "default_conn_delay", "key"}

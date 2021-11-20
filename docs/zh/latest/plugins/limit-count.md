@@ -42,7 +42,8 @@ title: limit-count
 | ------------------- | ------- | --------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count               | integer | 必须                               |               | count > 0                                                                                               | 指定时间窗口内的请求数量阈值                                                                                                                                                                                                                                                                                                                                                                                          |
 | time_window         | integer | 必须                               |               | time_window > 0                                                                                         | 时间窗口的大小（以秒为单位），超过这个时间就会重置                                                                                                                                                                                                                                                                                                                                                                    |
-| key                 | string  | 可选                               | "remote_addr" | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | 用来做请求计数的有效值。<br />例如，可以使用主机名（或服务器区域）作为关键字，以便限制每个主机名规定时间内的请求次数。我们也可以使用客户端地址作为关键字，这样我们就可以避免单个客户端规定时间内多次的连接我们的服务。<br />当前接受的 key 有："remote_addr"（客户端 IP 地址）, "server_addr"（服务端 IP 地址）, 请求头中的"X-Forwarded-For" 或 "X-Real-IP", "consumer_name"（consumer 的 username）, "service_id" 。 |
+| key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
+| key           | string  | 可选   |    "remote_addr"    |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组。比如如果设置 "$remote_addr $consumer_name" 作为 keys，那么插件会同时受 remote_addr 和 consumer_name 两个 key 的约束。如果 key 的值为空，$remote_addr 会被作为默认 key。 |
 | rejected_code       | integer | 可选                               | 503           | [200,...,599]                                                                                           | 当请求超过阈值被拒绝时，返回的 HTTP 状态码                                                                                                                                                                                                                                                                                                                                                                            |
 | rejected_msg       | string | 可选                                |            | 非空                                                                                           | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
 | policy              | string  | 可选                               | "local"       | ["local", "redis", "redis-cluster"]                                                                     | 用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地，默认选项) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速)；以及`redis-cluster`，跟 redis 功能一样，只是使用 redis 集群方式。                                                                                                                                                        |
@@ -56,13 +57,11 @@ title: limit-count
 | redis_cluster_nodes | array   | 当 policy 为 `redis-cluster` 时必填|               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表（至少需要两个地址）。                                                                                                                                                                                                                                                                                                                                            |
 | redis_cluster_name  | string  | 当 policy 为 `redis-cluster` 时必填 |               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的名称。                                                                                                                                                                                                                                                                                                                                            |
 
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
-
 ## 如何使用
 
 ### 开启插件
 
-下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件:
+下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件，并设置 `key_type` 为 `var`：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -73,6 +72,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "count": 2,
             "time_window": 60,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
         }
     },
@@ -80,6 +80,30 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
         "type": "roundrobin",
         "nodes": {
             "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件，并设置  `key_type` 为 `var_combination`：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:9001": 1
         }
     }
 }'

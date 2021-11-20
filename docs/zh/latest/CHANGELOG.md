@@ -23,6 +23,9 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.10.2](#2102)
+- [2.10.1](#2101)
+- [2.10.0](#2100)
 - [2.9.0](#290)
 - [2.8.0](#280)
 - [2.7.0](#270)
@@ -44,6 +47,74 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.2
+
+### Bugfix
+
+- 更正 response.set_header 行为，与 request.set_header 保持一致 [#5499](https://github.com/apache/apisix/pull/5499)
+- 修复 batch-requests 插件中 client ip 的问题 [#5476](https://github.com/apache/apisix/pull/5476)
+- 修复 upstream 被多条 routes 绑定时，负载不平衡的问题 [#5462](https://github.com/apache/apisix/pull/5462)
+- hmac-auth 插件检查是否缺少 X-HMAC-ALGORITHM header [#5467](https://github.com/apache/apisix/pull/5467)
+- 防止不可信的 request_uri [#5458](https://github.com/apache/apisix/pull/5458)
+- 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
+- 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
+- basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
+
+### Change
+
+- 只记录不敏感的 consumer 信息 [#5445](https://github.com/apache/apisix/pull/5445)
+
+## 2.10.1
+
+### Bugfix
+
+- 更正 zipkin 插件 response_span 的开始时间 [#5295](https://github.com/apache/apisix/pull/5295)
+- 避免发送过期 key 给 plugin runner [#5309](https://github.com/apache/apisix/pull/5309)
+- 更正 route 的 timeout 被 service 覆盖的问题 [#5219](https://github.com/apache/apisix/pull/5219)
+- 过滤掉初始化 etcd 数据时产生的空 plugin conf [#5204](https://github.com/apache/apisix/pull/5204)
+- 健康检查特定情况下会发送错误的 Host header [#5175](https://github.com/apache/apisix/pull/5175)
+- 升级 lua-resty-balancer 到 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
+- prometheus 插件修复偶发的 latency 为负数的问题 [#5150](https://github.com/apache/apisix/pull/5150)
+
+## 2.10.0
+
+### Change
+
+- 将 enable_debug 配置从 config.yaml 移到 debug.yaml [#5046](https://github.com/apache/apisix/pull/5046)
+- 更改自定义 lua_shared_dict 配置的名称 [#5030](https://github.com/apache/apisix/pull/5030)
+- 不再提供 APISIX 安装 shell 脚本 [#4985](https://github.com/apache/apisix/pull/4985)
+
+### Core
+
+- :sunrise: debug-mode 支持动态请求过滤 [#5012](https://github.com/apache/apisix/pull/5012)
+- :sunrise: 支持注入逻辑到 APISIX 方法中 [#5068](https://github.com/apache/apisix/pull/5068)
+- :sunrise: 支持配置 fallback SNI [#5000](https://github.com/apache/apisix/pull/5000)
+- :sunrise: stream_route 支持在 IP 匹配中使用 CIDR [#4980](https://github.com/apache/apisix/pull/4980)
+- :sunrise: 支持 route 从 service 中继承 hosts [#4977](https://github.com/apache/apisix/pull/4977)
+- :sunrise: 改善数据面监听地址的配置 [#4856](https://github.com/apache/apisix/pull/4856)
+
+### Plugin
+
+- :sunrise: hmac-auth 支持校验请求体 [#5038](https://github.com/apache/apisix/pull/5038)
+- :sunrise: proxy-mirror 支持控制镜像流量的比例 [#4965](https://github.com/apache/apisix/pull/4965)
+- :sunrise: referer-restriction 增加黑名单和自定义信息 [#4916](https://github.com/apache/apisix/pull/4916)
+- :sunrise: kafka-logger 增加 cluster 支持 [#4876](https://github.com/apache/apisix/pull/4876)
+- :sunrise: kafka-logger 增加 required_acks 选项 [#4878](https://github.com/apache/apisix/pull/4878)
+- :sunrise: uri-blocker 支持大小写无关的匹配 [#4868](https://github.com/apache/apisix/pull/4868)
+
+### Bugfix
+
+- radixtree_host_uri 路由更正匹配结果的 host [#5124](https://github.com/apache/apisix/pull/5124)
+- radixtree_host_uri 路由更正匹配结果的 path [#5104](https://github.com/apache/apisix/pull/5104)
+- Nacos 服务发现，区分处于不同 group/namespace 的同名 service [#5083](https://github.com/apache/apisix/pull/5083)
+- Nacos 服务发现，当一个服务的地址获取失败后，继续处理剩下的服务 [#5112](https://github.com/apache/apisix/pull/5112)
+- 匹配 SNI 时需要大小写无关 [#5074](https://github.com/apache/apisix/pull/5074)
+- upstream 的 keepalive_pool 配置，缺省时不应覆盖默认的 keepalive 配置 [#5054](https://github.com/apache/apisix/pull/5054)
+- DNS 服务发现，优先查询 SRV 记录 [#4992](https://github.com/apache/apisix/pull/4992)
+- Consul 服务发现，重试前需等待一段时间 [#4979](https://github.com/apache/apisix/pull/4979)
+- 当 upstream domain 背后的 IP 改变时，避免复制多余数据 [#4952](https://github.com/apache/apisix/pull/4952)
+- 当 plugin_config 变化时，恢复之前被覆盖的配置 [#4888](https://github.com/apache/apisix/pull/4888)
 
 ## 2.9.0
 

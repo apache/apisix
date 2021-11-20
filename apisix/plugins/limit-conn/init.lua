@@ -47,7 +47,29 @@ function _M.increase(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local conf_key = conf.key
+    local key
+    if conf.key_type == "var_combination" then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
+        end
+
+        if n_resolved == 0 then
+            key = nil
+        end
+    else
+        key = ctx.var[conf_key]
+    end
+
+    if key == nil then
+        core.log.info("The value of the configured key is empty, use client IP instead")
+        -- When the value of key is empty, use client IP instead
+        key = ctx.var["remote_addr"]
+    end
+
+    key = key .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)

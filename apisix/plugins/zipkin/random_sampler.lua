@@ -24,8 +24,7 @@ local _M = {}
 local mt = { __index = _M }
 
 function _M.new(conf)
-    return setmetatable({
-	}, mt)
+    return setmetatable({}, mt)
 end
 
 function _M.sample(self, sample_ratio)

@@ -77,7 +77,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [gRPC transcoding](docs/en/latest/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
   - Proxy Websocket
   - Proxy Protocol
-  - Proxy Dubbo: Dubbo Proxy based on Tengine.
   - HTTP(S) Forward Proxy
   - [SSL](docs/en/latest/certificate.md): Dynamically load an SSL certificate.
 
@@ -86,7 +85,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Hot Updates And Hot Plugins](docs/en/latest/architecture-design/plugin.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-  - [Serverless](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
   - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
@@ -137,23 +135,29 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
   - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also, note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
   - External Loggers: Export access logs to external log management tools. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md))
+  - [Datadog](docs/en/latest/plugins/datadog.md): push custom metrics to the DogStatsD server, comes bundled with [Datadog agent](https://docs.datadoghq.com/agent/), over the UDP protocol. DogStatsD basically is an implementation of StatsD protocol which collects the custom metrics for Apache APISIX agent, aggregates it into a single data point and sends it to the configured Datadog server.
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
+  - [Plugin can be written with Proxy WASM SDK](docs/en/latest/wasm.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
+- **Serverless**
+  - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): seamless integration with Azure Serverless Function as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud.
+  
 ## Get Started
 
 1. Installation
 
-APISIX Installed and tested in the following systems:
+   APISIX Installed and tested in the following systems:
 
-CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
+   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-Please refer to [install documentation](docs/en/latest/how-to-build.md).
+   Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
 

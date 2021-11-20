@@ -38,21 +38,19 @@ title: limit-req
 
 | 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
 | ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
-| burst         | integer | 必须   |        | burst >= 0                                                              | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
+| rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `burst`）的请求会被加上延时。                                             |
+| burst         | integer | 必须   |        | burst >= 0                                                              | t请求速率超过 （`rate` + `burst`）的请求会被直接拒绝。                                                                                            |
 | key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
 | rejected_code | integer | 可选   | 503    | [200,...,599]                                                              | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 | rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
-| nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
+| nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `burst`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
-
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
 
 ## 示例
 
 ### 如何在`route`或`service`上使用
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件。
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -64,7 +62,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
         }
     },
     "upstream": {

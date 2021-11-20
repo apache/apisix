@@ -59,7 +59,7 @@ For the configuration center, configuration storage is only the most basic funct
 4. Change Notification
 5. High Performance
 
-See more [etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart).
+See more [etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart).
 
 ## Why is it that installing Apache APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
 
@@ -75,7 +75,7 @@ For China mainland users, you can use the `luarocks.cn` as the luarocks server.
 We already provide a wrapper in the Makefile to simplify your job:
 
 ```bash
-LUAROCKS_SERVER=https://luarocks.cn make deps
+make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.

@@ -24,6 +24,19 @@ local re_sub      = ngx.re.sub
 local sub_str     = string.sub
 local str_find    = core.string.find
 
+local switch_map = {GET = ngx.HTTP_GET, POST = ngx.HTTP_POST, PUT = ngx.HTTP_PUT,
+                    HEAD = ngx.HTTP_HEAD, DELETE = ngx.HTTP_DELETE,
+                    OPTIONS = ngx.HTTP_OPTIONS, MKCOL = ngx.HTTP_MKCOL,
+                    COPY = ngx.HTTP_COPY, MOVE = ngx.HTTP_MOVE,
+                    PROPFIND = ngx.HTTP_PROPFIND, LOCK = ngx.HTTP_LOCK,
+                    UNLOCK = ngx.HTTP_UNLOCK, PATCH = ngx.HTTP_PATCH,
+                    TRACE = ngx.HTTP_TRACE,
+                }
+local schema_method_enum = {}
+for key in pairs(switch_map) do
+    core.table.insert(schema_method_enum, key)
+end
+
 local schema = {
     type = "object",
     properties = {
@@ -33,6 +46,11 @@ local schema = {
             minLength   = 1,
             maxLength   = 4096,
             pattern     = [[^\/.*]],
+        },
+        method = {
+            description = "proxy route method",
+            type        = "string",
+            enum        = schema_method_enum
         },
         regex_uri = {
             description = "new uri that substitute from client uri " ..
@@ -181,8 +199,6 @@ function _M.rewrite(conf, ctx)
         return
     end
 
-    -- reform header from object into array, so can avoid use pairs,
-    -- which is NYI
     if not conf.headers_arr then
         conf.headers_arr = {}
 
@@ -195,6 +211,10 @@ function _M.rewrite(conf, ctx)
     for i = 1, field_cnt, 2 do
         ngx.req.set_header(conf.headers_arr[i],
                            core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
+    end
+
+    if conf.method then
+        ngx.req.set_method(switch_map[conf.method])
     end
 end
 

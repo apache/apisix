@@ -58,7 +58,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/website/blob/master/content/en/docs/next/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -74,7 +74,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 我们已经封装好了选择服务地址的操作：
 
 ```bash
-LUAROCKS_SERVER=https://luarocks.cn make deps
+make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的

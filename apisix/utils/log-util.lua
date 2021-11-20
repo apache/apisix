@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 local ngx  = ngx
 local pairs = pairs
 local str_byte = string.byte
@@ -84,6 +85,13 @@ local function get_full_log(ngx, conf)
         service_id = var.host
     end
 
+    local consumer
+    if ctx.consumer then
+        consumer = {
+            username = ctx.consumer.username
+        }
+    end
+
     local log =  {
         request = {
             url = url,
@@ -105,20 +113,43 @@ local function get_full_log(ngx, conf)
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,
-        consumer = ctx.consumer,
+        consumer = consumer,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
         latency = (ngx.now() - ngx.req.start_time()) * 1000
     }
 
     if conf.include_req_body then
-        local body = req_get_body_data()
-        if body then
-            log.request.body = body
-        else
-            local body_file = ngx.req.get_body_file()
-            if body_file then
-                log.request.body_file = body_file
+
+        local log_request_body = true
+
+        if conf.include_req_body_expr then
+
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate log expr err ' .. err)
+                    return log
+                end
+                conf.request_expr = request_expr
+            end
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                log_request_body = false
+            end
+        end
+
+        if log_request_body then
+            local body = req_get_body_data()
+            if body then
+                log.request.body = body
+            else
+                local body_file = ngx.req.get_body_file()
+                if body_file then
+                    log.request.body_file = body_file
+                end
             end
         end
     end
@@ -145,5 +176,24 @@ function _M.get_req_original(ctx, conf)
     return core.table.concat(headers, "")
 end
 
+
+function _M.latency_details_in_ms(ctx)
+    local latency = (ngx.now() - ngx.req.start_time()) * 1000
+    local upstream_latency, apisix_latency = nil, latency
+
+    if ctx.var.upstream_response_time then
+        upstream_latency = ctx.var.upstream_response_time * 1000
+        apisix_latency = apisix_latency - upstream_latency
+
+        -- The latency might be negative, as Nginx uses different time measurements in
+        -- different metrics.
+        -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
+        if apisix_latency < 0 then
+            apisix_latency = 0
+        end
+    end
+
+    return latency, upstream_latency, apisix_latency
+end
 
 return _M

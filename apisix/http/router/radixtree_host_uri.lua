@@ -80,6 +80,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
             api_ctx.curr_req_matched = match_opts.matched
+            api_ctx.real_curr_req_matched_path = match_opts.matched._path
         end
     }
 
@@ -97,9 +98,6 @@ local function push_host_router(route, host_routes, only_uri_routes)
         end
     end
 end
-
-
-local function empty_func() end
 
 
 local function create_radixtree_router(routes)
@@ -125,7 +123,9 @@ local function create_radixtree_router(routes)
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
             end,
-            handler = empty_func,
+            handler = function (api_ctx, match_opts)
+                api_ctx.real_curr_req_matched_host = match_opts.matched._path
+            end
         })
     end
     if #host_router_routes > 0 then
@@ -162,6 +162,14 @@ function _M.match(api_ctx)
         local host_uri = api_ctx.var.host
         local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx, match_opts)
         if ok then
+            if api_ctx.real_curr_req_matched_path then
+                api_ctx.curr_req_matched._path = api_ctx.real_curr_req_matched_path
+                api_ctx.real_curr_req_matched_path = nil
+            end
+            if api_ctx.real_curr_req_matched_host then
+                api_ctx.curr_req_matched._host = api_ctx.real_curr_req_matched_host:reverse()
+                api_ctx.real_curr_req_matched_host = nil
+            end
             return true
         end
     end

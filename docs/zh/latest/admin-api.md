@@ -588,11 +588,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6-为-Apache-APISIX-构建-OpenResty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)。
 
 **upstream 对象 json 配置内容：**
 
@@ -985,8 +985,8 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | 名字             | 可选项| 类型     | 说明  | 示例 |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | 可选  | IP       |  客户端 IP 地址 | "127.0.0.1" |
-| server_addr      | 可选  | IP       | 服务端 IP 地址 | "127.0.0.1"  |
+| remote_addr      | 可选  | IP/CIDR  | 客户端 IP 地址 | "127.0.0.1/32" 或 "127.0.0.1" |
+| server_addr      | 可选  | IP/CIDR  | 服务端 IP 地址 | "127.0.0.1/32" 或 "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 服务端端口 | 9090  |
 | sni              | 可选  | Host     | 服务器名称指示| "test.com"  |
 | upstream | 可选 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |  |

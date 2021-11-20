@@ -99,6 +99,9 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -188,7 +191,15 @@ http {
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
+    # for ext-plugin
+    lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+
     # for custom shared dict
+    {% if http.custom_lua_shared_dict then %}
+    {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
+    lua_shared_dict {*cache_key*} {*cache_size*};
+    {% end %}
+    {% end %}
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
     lua_shared_dict {*cache_key*} {*cache_size*};
@@ -198,7 +209,11 @@ http {
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
     proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
     {% end %}
     {% end %}
 
@@ -206,7 +221,9 @@ http {
     # for proxy cache
     map $upstream_cache_zone $upstream_cache_zone_info {
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
         {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
     {% end %}
     }
     {% end %}
@@ -331,8 +348,15 @@ http {
     }
     {% end %}
 
+    {% if wasm then %}
+    wasm_vm wasmtime;
+    {% end %}
+
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
 
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }

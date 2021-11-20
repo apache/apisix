@@ -26,9 +26,17 @@ export_or_prefix() {
 create_lua_deps() {
     echo "Create lua deps"
 
+    git config --global url.https://github.com/.insteadOf git://github.com/
     make deps
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+}
+
+install_grpcurl () {
+    # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
+    GRPCURL_VERSION="1.8.5"
+    wget https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz
+    tar -xvf grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz -C /usr/local/bin
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819
