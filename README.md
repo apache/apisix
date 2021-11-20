@@ -148,7 +148,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Serverless**
   - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
   - [Azure functions](docs/en/latest/plugins/azure-functions.md): seamless integration with Azure Serverless Function as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud.
-  
+
 ## Get Started
 
 1. Installation
