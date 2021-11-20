@@ -303,6 +303,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-logging
+	$(ENV_INSTALL) apisix/plugins/google-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-logging/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/prometheus
 	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(ENV_INST_LUADIR)/apisix/plugins/prometheus/
 
