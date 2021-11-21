@@ -23,7 +23,7 @@ title: 如何构建 Apache APISIX
 
 ## 步骤1：安装依赖
 
-Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考[安装依赖](install-dependencies.md)。
+Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考 [安装依赖](install-dependencies.md)。
 
 通过 Docker 或 Helm Chart 安装 Apache APISIX 时，已经包含了所需的 NGINX 和 etcd，请参照各自对应的文档。
 
