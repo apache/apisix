@@ -72,7 +72,7 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 - 已安装[Docker Compose 组件](https://docs.docker.com/compose/)。
 
-- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/)等，进行测试。
+- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/) 等，进行测试。
 
 <!--
 #
@@ -112,7 +112,7 @@ docker-compose -p docker-apisix up -d
 curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
-返回数据如下所示，表示Apache APISIX 成功启动：
+返回数据如下所示，表示 Apache APISIX 成功启动：
 
 ```json
 {
@@ -134,7 +134,7 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
 
-我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为[Upstream](./architecture-design/upstream.md)或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
+我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为 [Upstream](./architecture-design/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
 因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码是一个 Route 配置示例：
 
