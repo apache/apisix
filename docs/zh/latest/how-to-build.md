@@ -117,7 +117,7 @@ apisix init
 
 ### 测试配置文件
 
-运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
 
 ```shell
 # generate `nginx.conf` from `config.yaml` and test it
@@ -135,7 +135,7 @@ apisix start
 
 ### 停止运行 Apache APISIX
 
-优雅停机 `apisix quit` 和强制停机 `apisix stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
+优雅停机 `apisix quit` 和强制停机 `apisix stop` 都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
 
 执行优雅停机的命令如下所示：
 
@@ -200,7 +200,7 @@ apisix help
 
 **配置 NGINX 路径**
 
-出现`Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
+出现 `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
 
 确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
@@ -272,7 +272,7 @@ Content-Type: text/html
 
 有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
 如果您需要这些功能，您可以构建 APISIX OpenResty。
-您可以根据[api7/apisix-build-tools](https://github.com/api7/apisix-build-tools)里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
+您可以根据 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
 ## 步骤7：为 Apache APISIX 添加 systemd 配置文件
 

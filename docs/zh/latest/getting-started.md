@@ -40,8 +40,8 @@ title: 快速入门指南
 - Protocol：即网络传输协议，示例中使用的是最常见的 `HTTP` 协议。
 - Port：即端口，示例中使用的 `80` 端口。
 - Host：即宿主机，示例中的主机是 `httpbin.org`。
-- Path：即路径，示例中的路径是`/get`。
-- Query Parameters：即查询字符串，这里有两个字符串，分别是`foo1`和`foo2`。
+- Path：即路径，示例中的路径是 `/get`。
+- Query Parameters：即查询字符串，这里有两个字符串，分别是 `foo1` 和 `foo2`。
 
 运行以下命令，发送请求：
 
@@ -70,7 +70,7 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 前提条件
 
-- 已安装[Docker Compose 组件](https://docs.docker.com/compose/)。
+- 已安装 [Docker Compose 组件](https://docs.docker.com/compose/)。
 
 - 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/) 等，进行测试。
 
@@ -105,7 +105,7 @@ docker-compose -p docker-apisix up -d
 
 下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。
 
-下载完成后，在运行 Docker 的宿主机上执行`curl`命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
+下载完成后，在运行 Docker 的宿主机上执行 `curl` 命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
