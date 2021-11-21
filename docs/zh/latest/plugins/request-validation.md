@@ -44,7 +44,7 @@ title: request-validation
 | ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
 | header_schema    | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
 | body_schema      | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
-| rejected_code | integer | 可选        |   400      |    [200,...,599]   | 自定义拒绝状态码 |
+| rejected_code | integer | 可选        |         |    [200,...,599]   | 自定义拒绝状态码 |
 | rejected_msg | string | 可选        |         |       | 自定义拒绝信息 |
 
 ## 如何启用

@@ -45,7 +45,7 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 | ---------------- | ------ | ----------- | ------- | ----- | -------------------------- |
 | header_schema    | object | optional    |         |       | schema for the header data |
 | body_schema      | object | optional    |         |       | schema for the body data   |
-| rejected_code | integer | optional    |   400      |    [200,...,599]   | the custom rejected code |
+| rejected_code | integer | optional    |         |    [200,...,599]   | the custom rejected code |
 | rejected_msg | string | optional    |         |       | the custom rejected message |
 
 ## How To Enable
