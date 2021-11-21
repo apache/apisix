@@ -227,7 +227,7 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
 
-现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用[消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
+现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用 [消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
 
 首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥：
 
