@@ -83,7 +83,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
   wget https://downloads.apache.org/apisix/2.10.2/apache-apisix-2.10.2-src.tgz
   ```
 
-  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
+  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
 
 3. 解压 Apache APISIX Release 源码包：
 
@@ -218,7 +218,7 @@ apisix help
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-关于测试用例的更多细节，参见[测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
+关于测试用例的更多细节，参见 [测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## 步骤5：修改 Admin API key
 
