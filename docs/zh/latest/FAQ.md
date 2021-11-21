@@ -27,7 +27,7 @@ title: 常见问题
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
-APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者 MySQL 这类关系型数据库。
+APISIX 基于 etcd 来完成配置的保存和同步，而不是 Postgre 或者 MySQL 这类关系型数据库。
 这样不仅去掉了轮询，让代码更加的简洁，配置同步也更加实时。同时系统也不会存在单点，可用性更高。
 
 另外，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
@@ -46,7 +46,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
-[如何开发插件](plugin-develop.md)
+具体可参考：[如何开发插件](plugin-develop.md)
 
 ## 我们为什么选择 etcd 作为配置中心？
 
@@ -170,7 +170,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-3. 使用`serverless`插件：
+3. 使用 `serverless` 插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -213,18 +213,18 @@ Server: APISIX web server
 
 ## 如何修改日志等级
 
-默认的 APISIX 日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
+默认的 APISIX 日志等级为 `warn`，如果需要查看 `core.log.info` 的打印结果需要将日志等级调整为 `info`。
 
 具体步骤：
 
-1、修改 conf/config.yaml 中的 `nginx_config` 配置参数`error_log_level: "warn"` 为 `error_log_level: "info"`。
+1、修改 conf/config.yaml 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`。
 
 ```yaml
 nginx_config:
   error_log_level: "info"
 ```
 
-2、重启抑或 reload APISIX
+2、重启或 reload APISIX
 
 之后便可以在 logs/error.log 中查看到 info 的日志了。
 
@@ -238,7 +238,7 @@ Apache APISIX 的插件支持热加载。
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
 
-1. 修改 `conf/config.yaml` 中 HTTP 端口监听的参数`node_listen`，示例：
+1. 修改 `conf/config.yaml` 中 HTTP 端口监听的参数 `node_listen`，示例：
 
    ```
    apisix:
@@ -248,7 +248,7 @@ Apache APISIX 的插件支持热加载。
        - 9082
    ```
 
-   处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数`ssl.listen_port`，示例：
+   处理 HTTPS 请求也类似，修改 `conf/config.yaml` 中 HTTPS 端口监听的参数 `ssl.listen_port`，示例：
 
    ```
    apisix:
@@ -268,7 +268,7 @@ etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
 * 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
-* 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
+* 如果监听目录有数据更新：etcd 将立刻返回订阅（毫秒级）到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
 
@@ -407,7 +407,7 @@ HTTP/1.1 404 Not Found
 
 ## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址?
 
-这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`(一个 Kubernetes Service) 的示例：
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service） 的示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

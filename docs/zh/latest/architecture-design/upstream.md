@@ -32,7 +32,7 @@ Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑�
 
 ### 配置参数
 
-APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看这个[链接](../admin-api.md#upstream)。
+APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看这个 [链接](../admin-api.md#upstream)。
 
 创建上游对象用例：
 
@@ -119,9 +119,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-更多细节可以参考[健康检查的文档](../health-check.md)。
+更多细节可以参考 [健康检查的文档](../health-check.md)。
 
-下面是几个使用不同`hash_on`类型的配置示例：
+下面是几个使用不同 `hash_on` 类型的配置示例：
 
 #### Consumer
 
@@ -139,7 +139,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-新建路由，打开`key-auth`插件认证，`upstream`的`hash_on`类型为`consumer`：
+新建路由，打开 `key-auth` 插件认证，`upstream` 的 `hash_on` 类型为 `consumer`：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -159,7 +159,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-测试请求，认证通过后的`consumer_name`将作为负载均衡哈希算法的哈希值：
+测试请求，认证通过后的 `consumer_name` 将作为负载均衡哈希算法的哈希值：
 
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 
 ##### Cookie
 
-新建路由和`Upstream`，`hash_on`类型为`cookie`：
+新建路由和 `Upstream`，`hash_on` 类型为 `cookie`：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -185,7 +185,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-客户端请求携带`Cookie`：
+客户端请求携带 `Cookie`：
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_cookie -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
@@ -193,7 +193,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ##### Header
 
-新建路由和`Upstream`，`hash_on`类型为`header`， `key`为`content-type`：
+新建路由和 `Upstream`，`hash_on` 类型为 `header`，`key` 为 `content-type`：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -211,7 +211,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-客户端请求携带`content-type`的`header`：
+客户端请求携带 `content-type` 的 `header`：
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
