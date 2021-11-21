@@ -26,6 +26,7 @@ local schema = {
     properties = {
         header_schema = {type = "object"},
         body_schema = {type = "object"},
+        rejected_code = {type = "integer", minimum = 200, maximum = 599},
         rejected_msg = {type = "string", minLength = 1, maxLength = 256}
     },
     anyOf = {
@@ -75,7 +76,7 @@ function _M.rewrite(conf)
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
-            return 400, conf.rejected_msg or err
+            return conf.rejected_code or 400, conf.rejected_msg or err
         end
     end
 
@@ -87,11 +88,11 @@ function _M.rewrite(conf)
         if not body then
             local filename = ngx.req.get_body_file()
             if not filename then
-                return 500, conf.rejected_msg
+                return conf.rejected_code or 500, conf.rejected_msg
             end
             local fd = io.open(filename, 'rb')
             if not fd then
-                return 500, conf.rejected_msg
+                return conf.rejected_code or 500, conf.rejected_msg
             end
             body = fd:read('*a')
         end
@@ -104,13 +105,13 @@ function _M.rewrite(conf)
 
         if not req_body then
           core.log.error('failed to decode the req body', error)
-          return 400, conf.rejected_msg or error
+          return conf.rejected_code or 400, conf.rejected_msg or error
         end
 
         local ok, err = core.schema.check(conf.body_schema, req_body)
         if not ok then
           core.log.error("req schema validation failed", err)
-          return 400, conf.rejected_msg or err
+          return conf.rejected_code or 400, conf.rejected_msg or err
         end
     end
 end
