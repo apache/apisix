@@ -46,7 +46,7 @@ title: consumer-restriction
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
 * **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
-* **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
+* **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制 service 的访问，需要结合授权插件一起使用。
 
 ## 示例
 
@@ -118,7 +118,7 @@ HTTP/1.1 403 Forbidden
 
 ### 如何限制 `service_id`
 
-`service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
+`service_id` 方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
 1、创建两个 service
 
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-3、在 route 上开启 `key-auth` 插件并绑定 `service_id` 为`1`
+3、在 route 上开启 `key-auth` 插件并绑定 `service_id` 为 `1`
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
