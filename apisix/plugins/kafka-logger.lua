@@ -19,7 +19,6 @@ local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
-local expr        = require("resty.expr.v1")
 
 local math     = math
 local pairs    = pairs
@@ -75,8 +74,18 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
-        include_resp_body = {type = "boolean", default = false},
         include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array",
+                items = {
+                    type = "string"
+                }
+            }
+        },
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
             type = "array",
             minItems = 1,
             items = {
@@ -110,13 +119,9 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
-
-    if conf.include_req_body_expr then
-        local ok, err = expr.new(conf.include_req_body_expr)
-        if not ok then
-            return nil,
-            {error_msg = "failed to validate the 'include_req_body_expr' expression: " .. err}
-        end
+    local ok, err = log_util.check_log_scheme(conf)
+    if not ok then
+        return err
     end
 
     if schema_type == core.schema.TYPE_METADATA then
@@ -193,13 +198,7 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if conf.include_resp_body then
-        local final_body = core.response.hold_body_chunk(ctx, true)
-        if not final_body then
-            return
-        end
-        ctx.resp_body = final_body
-    end
+    log_util.collect_body(conf, ctx)
 end
 
 

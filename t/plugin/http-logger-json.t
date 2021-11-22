@@ -88,7 +88,61 @@ POST /hello
 
 
 
-=== TEST 3: json body with request_body and response_body
+=== TEST 3: json body with response_body and response_body expression
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+            include_resp_body: true
+            include_resp_body_expr:
+                - - arg_bar
+                  - ==
+                  - foo
+#END
+--- request
+POST /hello?bar=foo
+{"sample_payload":"hello"}
+--- error_log
+"response":{"body":"hello world\n"
+
+
+
+=== TEST 4: json body with response_body, expr not hit
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+            include_resp_body: true
+            include_resp_body_expr:
+                - - arg_bar
+                  - ==
+                  - foo
+#END
+--- request
+POST /hello?bar=bar
+{"sample_payload":"hello"}
+--- no_error_log
+"response":{"body":"hello world\n"
+
+
+
+=== TEST 5: json body with request_body and response_body
 --- apisix_yaml
 routes:
   -
@@ -112,7 +166,7 @@ qr/(.*"response":\{.*"body":"hello world\\n".*|.*\{\\\"sample_payload\\\":\\\"he
 
 
 
-=== TEST 4: json body without request_body or response_body
+=== TEST 6: json body without request_body or response_body
 --- apisix_yaml
 routes:
   -

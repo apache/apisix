@@ -45,6 +45,16 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array",
+                items = {
+                    type = "string"
+                }
+            }
+        },
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}}
     },
@@ -70,6 +80,11 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
+    local ok, err = log_util.check_log_scheme(conf)
+    if not ok then
+        return err
+    end
+
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
@@ -164,13 +179,7 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if conf.include_resp_body then
-        local final_body = core.response.hold_body_chunk(ctx, true)
-        if not final_body then
-            return
-        end
-        ctx.resp_body = final_body
-    end
+    log_util.collect_body(conf, ctx)
 end
 
 
