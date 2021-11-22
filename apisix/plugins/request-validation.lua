@@ -23,7 +23,7 @@ local schema = {
     properties = {
         header_schema = {type = "object"},
         body_schema = {type = "object"},
-        rejected_code = {type = "integer", minimum = 200, maximum = 599},
+        rejected_code = {type = "integer", minimum = 200, maximum = 599, default = 400},
         rejected_msg = {type = "string", minLength = 1, maxLength = 256}
     },
     anyOf = {
@@ -73,7 +73,7 @@ function _M.rewrite(conf)
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
-            return conf.rejected_code or 400, conf.rejected_msg or err
+            return conf.rejected_code, conf.rejected_msg or err
         end
     end
 
@@ -81,15 +81,10 @@ function _M.rewrite(conf)
         local req_body
         local body, err = core.request.get_body()
         if not body then
-            local filename = ngx.req.get_body_file()
-            if not filename then
-                return conf.rejected_code or 500, conf.rejected_msg
+            if err then
+                core.log.error("failed to get body: ", err)
             end
-            local fd = io.open(filename, 'rb')
-            if not fd then
-                return conf.rejected_code or 500, conf.rejected_msg
-            end
-            body = fd:read('*a')
+            return conf.rejected_code, conf.rejected_msg
         end
 
         if headers["content-type"] == "application/x-www-form-urlencoded" then
@@ -99,14 +94,14 @@ function _M.rewrite(conf)
         end
 
         if not req_body then
-          core.log.error('failed to decode the req body', error)
-          return conf.rejected_code or 400, conf.rejected_msg or error
+          core.log.error('failed to decode the req body', err)
+          return conf.rejected_code, conf.rejected_msg or err
         end
 
         local ok, err = core.schema.check(conf.body_schema, req_body)
         if not ok then
           core.log.error("req schema validation failed", err)
-          return conf.rejected_code or 400, conf.rejected_msg or err
+          return conf.rejected_code, conf.rejected_msg or err
         end
     end
 end
