@@ -126,8 +126,7 @@
           "type": "category",
           "label": "Serverless",
           "items": [
-            "plugins/serverless",
-            "plugins/openwhisk"
+            "plugins/serverless"
           ]
         },
         {
