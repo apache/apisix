@@ -30,9 +30,9 @@ via `VERSION=x.y.z make release-src`
    > After executing the `VERSION=x.y.z make release-src` command, the content of the vote email will be automatically generated in the `./release` directory named `apache-apisix-${x.y.z}-vote-contents`
 6. When the vote is passed, send the [vote result email](https://lists.apache.org/thread/k2frnvj4zj9oynsbr7h7nd6n6m3q5p89) to dev@apisix.apache.org
 7. Move the vote artifact to Apache's apisix repo
-8. Register the release info in https://reporter.apache.org/addrelease.html?apisix
-9. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.2) from the minor branch
-10. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
+8. Create a GitHub release from the minor branch
+9. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
+10. Update APISIX docker
 11. Update APISIX rpm package
     > Go to [apisix-build-tools](https://github.com/api7/apisix-build-tools) repository and create a new tag named `apisix-${x.y.z}` to automatically submit the
     package to yum repo
