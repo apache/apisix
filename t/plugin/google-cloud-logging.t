@@ -183,34 +183,41 @@ value should match only one schema, but matches none
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT, [[
-                    {
-                        "uri":"/hello",
-                        "upstream":{
-                            "type":"roundrobin",
-                            "nodes":{
-                                "127.0.0.1:1980":1
-                            }
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_config = {
+                            private_key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOwIBAAJBAKeXgPvU/dAfVhOPk5BTBXCaOXy/0S3mY9VHyqvWZBJ97g6tGbLZ
+psn6Gw0wC4mxDfEY5ER4YwU1NWCVtIr1XxcCAwEAAQJADkoowVBD4/8IA9r2JhQu
+Ho/H3w8r8tH2KTVZ3pUFK15WGJf8vCF9LznVNKCP0X1NMLGvf4yRELx8jjpwJztI
+gQIhANdWaJ3AGftJNaF5qXWwniFP1BcyCPSzn3q0rn19NhyHAiEAxz0HN8Yd+7vR
+pi0w/L2I/2nLqgPFtqSGpL2KkJYcXPECIQCdM/PD1k4haNzCOXNA++M1JnYLSPfI
+zKkMh4MrEZHDWQIhAKasRiKBaUnTCIJ04bs9L6NDtO4Ic9jj8ANW0Nk9yoJxAiAA
+tBXLQH7fw5H8RaxBN91yQUZombw6JnRBXKKohWHZ3Q==
+-----END RSA PRIVATE KEY-----]],
+                            project_id = "apisix",
+                            token_uri = "http://127.0.0.1:1980/google/logging/token",
+                            scopes = {
+                                "https://apisix.apache.org/logs:admin"
+                            },
+                            entries_uri = "http://127.0.0.1:1980/google/logging/entries",
                         },
-                        "plugins":{
-                            "google-cloud-logging":{
-                                "auth_config":{
-                                    "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOwIBAAJBAKeXgPvU/dAfVhOPk5BTBXCaOXy/0S3mY9VHyqvWZBJ97g6tGbLZ\npsn6Gw0wC4mxDfEY5ER4YwU1NWCVtIr1XxcCAwEAAQJADkoowVBD4/8IA9r2JhQu\nHo/H3w8r8tH2KTVZ3pUFK15WGJf8vCF9LznVNKCP0X1NMLGvf4yRELx8jjpwJztI\ngQIhANdWaJ3AGftJNaF5qXWwniFP1BcyCPSzn3q0rn19NhyHAiEAxz0HN8Yd+7vR\npi0w/L2I/2nLqgPFtqSGpL2KkJYcXPECIQCdM/PD1k4haNzCOXNA++M1JnYLSPfI\nzKkMh4MrEZHDWQIhAKasRiKBaUnTCIJ04bs9L6NDtO4Ic9jj8ANW0Nk9yoJxAiAA\ntBXLQH7fw5H8RaxBN91yQUZombw6JnRBXKKohWHZ3Q==\n-----END RSA PRIVATE KEY-----",
-                                    "project_id":"apisix",
-                                    "token_uri":"http://127.0.0.1:1980/google/logging/token",
-                                    "scopes": [
-                                        "https://apisix.apache.org/logs:admin"
-                                    ],
-                                    "entries_uri":"http://127.0.0.1:1980/google/logging/entries"
-                                },
-                                "inactive_timeout":1,
-                                "batch_max_size":1
-                            }
-                        }
-                     }
-                 ]])
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
 
             if code >= 300 then
                 ngx.status = code
@@ -246,31 +253,38 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT, [[
-                    {
-                        "uri":"/hello",
-                        "upstream":{
-                            "type":"roundrobin",
-                            "nodes":{
-                                "127.0.0.1:1980":1
-                            }
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_config = {
+                            private_key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv
+0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7
++pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL
+wQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF
+IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
+2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs
+YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
+-----END RSA PRIVATE KEY-----]],
+                            project_id = "apisix",
+                            token_uri = "http://127.0.0.1:1980/google/logging/token",
+                            entries_uri = "http://127.0.0.1:1980/google/logging/entries",
                         },
-                        "plugins":{
-                            "google-cloud-logging":{
-                                "auth_config":{
-                                    "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----",
-                                    "project_id":"apisix",
-                                    "token_uri":"http://127.0.0.1:1980/google/logging/token",
-                                    "entries_uri":"http://127.0.0.1:1980/google/logging/entries"
-                                },
-                                "inactive_timeout":1,
-                                "batch_max_size":1
-                            }
-                        }
-                     }
-                 ]])
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
 
             if code >= 300 then
                 ngx.status = code
@@ -306,34 +320,41 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT, [[
-                    {
-                        "uri":"/hello",
-                        "upstream":{
-                            "type":"roundrobin",
-                            "nodes":{
-                                "127.0.0.1:1980":1
-                            }
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_config = {
+                            private_key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv
+0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7
++pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL
+wQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF
+IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
+2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs
+YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
+-----END RSA PRIVATE KEY-----]],
+                            project_id = "apisix",
+                            token_uri = "http://127.0.0.1:1980/google/logging/token",
+                            scopes = {
+                                "https://apisix.apache.org/logs:admin"
+                            },
+                            entries_uri = "http://127.0.0.1:1980/google/logging/entries",
                         },
-                        "plugins":{
-                            "google-cloud-logging":{
-                                "auth_config":{
-                                    "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----",
-                                    "project_id":"apisix",
-                                    "token_uri":"http://127.0.0.1:1980/google/logging/token",
-                                    "scopes": [
-                                        "https://apisix.apache.org/logs:admin"
-                                    ],
-                                    "entries_uri":"http://127.0.0.1:1980/google/logging/entries"
-                                },
-                                "inactive_timeout":1,
-                                "batch_max_size":1
-                            }
-                        }
-                     }
-                 ]])
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
 
             if code >= 300 then
                 ngx.status = code
