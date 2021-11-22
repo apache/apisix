@@ -37,7 +37,7 @@ local schema = {
         },
         timeout = {
             type = "integer",
-            minimum = 1000,
+            minimum = 1,
             maximum = 60000,
             default = 3000,
             description = "timeout in milliseconds",
