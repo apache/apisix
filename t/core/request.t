@@ -443,7 +443,6 @@ the post form is too large: request body in temp file not supported
 === TEST 13: get_method
 --- config
     location = /hello {
-        client_body_in_file_only clean;
         content_by_lua_block {
             local core = require("apisix.core")
             local ngx_ctx = ngx.ctx
