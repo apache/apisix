@@ -38,16 +38,16 @@ Users can call the OpenWhisk action via APISIX, pass the request parameters via 
 
 | Name | Type | Requirement | Default | Valid | Description |
 | -- | -- | -- | -- | -- | -- |
-| api_host | string | yes |   |   | OpenWhisk API host (eg. https://localhost:3233) |
-| ssl_verify | bool | no | true |   | Whether to verify the certificate |
-| service_token | string | yes |   |   | OpenWhisk ServiceToken (The format is `xxx:xxx`，Passed through Basic Auth when calling the API) |
-| namespace | string | yes |   |   | OpenWhisk  Namespace (eg. guest) |
-| action | string | yes |   |   | OpenWhisk Action (eg. hello) |
-| result | bool | no | true |   | Whether to get Action metadata (default to execute function and get response; false to get Action metadata but not execute Action, including runtime, function body, restrictions, etc.) |
-| timeout | integer | no | 60000ms | [1, 60000]ms | OpenWhisk Action and HTTP call timeout. |
-| keepalive | bool | no | true |   | HTTP keepalive |
-| keepalive_timeout | integer | no | 60000ms |   | keepalive idle timeout |
-| keepalive_pool | integer | no | 5 |   | Connection pool limit |
+| api_host | string | required |   |   | OpenWhisk API host (eg. https://localhost:3233) |
+| ssl_verify | bool | no | optional |   | Whether to verify the certificate |
+| service_token | string | required |   |   | OpenWhisk ServiceToken (The format is `xxx:xxx`，Passed through Basic Auth when calling the API) |
+| namespace | string | required |   |   | OpenWhisk  Namespace (eg. guest) |
+| action | string | required |   |   | OpenWhisk Action (eg. hello) |
+| result | bool | optional | true |   | Whether to get Action metadata (default to execute function and get response; false to get Action metadata but not execute Action, including runtime, function body, restrictions, etc.) |
+| timeout | integer | optional | 60000ms | [1, 60000]ms | OpenWhisk Action and HTTP call timeout. |
+| keepalive | bool | optional | true |   | HTTP keepalive |
+| keepalive_timeout | integer | optional | 60000ms |   | keepalive idle timeout |
+| keepalive_pool | integer | optional | 5 |   | Connection pool limit |
 
 :::note
 
