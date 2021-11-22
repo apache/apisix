@@ -29,8 +29,8 @@ local schema = {
             default = true,
         },
         service_token = {type = "string"},
-        namespace = {type = "string"},
-        action = {type = "string"},
+        namespace = {type = "string", maxLength = 256},
+        action = {type = "string", maxLength = 256},
         result = {
             type = "boolean",
             default = true,
