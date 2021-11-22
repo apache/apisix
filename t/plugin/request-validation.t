@@ -1543,7 +1543,7 @@ passed
 === TEST 40: use empty body to hit `body_schema.required with custom reject message` rule
 --- request
 GET /opentracing
---- error_code: 500
+--- error_code: 400
 --- response_body chomp
 customize reject message for body_schema.required
 --- no_error_log
@@ -1616,8 +1616,7 @@ qr/opentracing/
 GET /t
 --- response_body_like eval
 qr/string too long/
---- error_code chomp
-400
+--- error_code: 400
 --- no_error_log
 [error]
 
@@ -1654,8 +1653,7 @@ qr/string too long/
 GET /t
 --- response_body_like eval
 qr/object matches none of the requireds/
---- error_code chomp
-400
+--- error_code: 400
 --- no_error_log
 [error]
 
@@ -1779,8 +1777,7 @@ qr/opentracing/
 GET /t
 --- response_body_like eval
 qr/expected 10000 to be smaller than 599/
---- error_code chomp
-400
+--- error_code: 400
 --- no_error_log
 [error]
 
@@ -1817,7 +1814,6 @@ qr/expected 10000 to be smaller than 599/
 GET /t
 --- response_body_like eval
 qr/object matches none of the requireds/
---- error_code chomp
-400
+--- error_code: 400
 --- no_error_log
 [error]
