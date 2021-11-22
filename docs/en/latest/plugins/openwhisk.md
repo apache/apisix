@@ -1,5 +1,5 @@
 ---
-title: serverless
+title: openwhisk
 ---
 
 <!--
