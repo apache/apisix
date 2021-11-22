@@ -15,21 +15,19 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local ngx = ngx
-local tostring = tostring
-local ipairs = ipairs
-local sub_str = string.sub
-local os_date = os.date
-
-local ngx_now = ngx.now
-local ngx_timer_at = ngx.timer.at
+local core            = require("apisix.core")
+local ngx             = ngx
+local tostring        = tostring
+local ipairs          = ipairs
+local os_date         = os.date
+local math_floor      = math.floor
+local ngx_now         = ngx.now
+local ngx_timer_at    = ngx.timer.at
 local ngx_update_time = ngx.update_time
-
-local http = require("resty.http")
-local log_util = require("apisix.utils.log-util")
+local http            = require("resty.http")
+local log_util        = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")
-local google_oauth = require("apisix.plugins.google-logging.oauth")
+local google_oauth    = require("apisix.plugins.google-cloud-logging.oauth")
 
 
 local buffers = {}
@@ -37,7 +35,7 @@ local auth_config_cache
 local stale_timer_running
 
 
-local plugin_name = "google-logging"
+local plugin_name = "google-cloud-logging"
 local schema = {
     type = "object",
     properties = {
@@ -70,6 +68,10 @@ local schema = {
                     type = "string",
                     default = "https://logging.googleapis.com/v2/entries:write"
                 },
+                ssl_verify = {
+                    type = "boolean",
+                    default = true
+                },
             },
             required = { "private_key", "project_id", "token_uri" }
         },
@@ -87,12 +89,35 @@ local schema = {
             required = { "type" }
         },
         -- https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
-        log_id = { type = "string", default = "apisix.apache.org%2Flogs" },
-        max_retry_count = { type = "integer", minimum = 0, default = 0 },
-        retry_delay = { type = "integer", minimum = 0, default = 1 },
-        buffer_duration = { type = "integer", minimum = 1, default = 60 },
-        inactive_timeout = { type = "integer", minimum = 1, default = 10 },
-        batch_max_size = { type = "integer", minimum = 1, default = 100 },
+        log_id = {
+            type = "string",
+            default = "apisix.apache.org%2Flogs"
+        },
+        max_retry_count = {
+            type = "integer",
+            minimum = 0,
+            default = 0
+        },
+        retry_delay = {
+            type = "integer",
+            minimum = 0,
+            default = 1
+        },
+        buffer_duration = {
+            type = "integer",
+            minimum = 1,
+            default = 60
+        },
+        inactive_timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 10
+        },
+        batch_max_size = {
+            type = "integer",
+            minimum = 1,
+            default = 100
+        },
     },
     oneOf = {
         { required = { "auth_config" } },
@@ -120,8 +145,13 @@ end
 
 local function send_to_google(oauth, entries)
     local http_new = http.new()
+    local access_token = oauth:generate_access_token()
+    if not access_token then
+        return nil, "failed to get google oauth token"
+    end
+
     local res, err = http_new:request_uri(oauth.entries_uri, {
-        ssl_verify = false,
+        ssl_verify = oauth.ssl_verify,
         method = "POST",
         body = core.json.encode({
             entries = entries,
@@ -129,12 +159,12 @@ local function send_to_google(oauth, entries)
         }),
         headers = {
             ["Content-Type"] = "application/json",
-            ["Authorization"] = "Bearer " .. oauth:get_access_token(),
+            ["Authorization"] = "Bearer " .. access_token,
         },
     })
 
     if err then
-        return nil, "failed to write log to google, ", err
+        return nil, "failed to write log to google, " .. err
     end
 
     if res.status ~= 200 then
@@ -146,25 +176,32 @@ end
 
 
 local function get_auth_config(config)
-    local err
-    local auth_config = {}
+    if auth_config_cache then
+        return auth_config_cache
+    end
+
     if config.auth_config then
-        auth_config = config.auth_config
+        auth_config_cache = config.auth_config
+        return auth_config_cache
     end
 
-    if config.auth_file then
-        local file_content
-        file_content, err = core.utils.get_file(config.auth_file)
-        if file_content then
-            auth_config = core.json.decode(file_content)
-        end
+    if not config.auth_file then
+        return nil, "configuration is not defined"
     end
 
-    if err then
-        return nil, err
+    local file_content, err = core.io.get_file(config.auth_file)
+    if not file_content then
+        return nil, "failed to read configuration, file: " .. config.auth_file .. " err:" .. err
     end
 
-    return auth_config
+    local config_data
+    config_data, err = core.json.decode(file_content)
+    if not config_data then
+        return nil, "config parse failure, data: " .. file_content .. " , err: " .. err
+    end
+
+    auth_config_cache = config.auth_config
+    return auth_config_cache
 end
 
 
@@ -198,26 +235,17 @@ end
 
 local function get_utc_timestamp()
     ngx_update_time()
-    local now = tostring(ngx_now())
-    local pos = core.string.rfind_char(now, ".", #now - 1)
-    local second = now
-    local millisecond = 0
-    if pos then
-        second = sub_str(now, 1, pos - 1)
-        millisecond = sub_str(now, pos + 1)
-    end
+    local now = ngx_now()
+    local second = math_floor(now)
+    local millisecond = math_floor((now - second) * 1000)
     return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
 end
 
 
-local function get_logger_entry(conf)
-    if not auth_config_cache then
-        local auth_config, err = get_auth_config(conf)
-        if err or not auth_config.project_id or not auth_config.private_key then
-            return nil, "failed to get google authentication configuration" .. err
-        end
-
-        auth_config_cache = auth_config
+local function get_logger_entry(conf, ctx)
+    local auth_config, err = get_auth_config(conf)
+    if err or not auth_config.project_id or not auth_config.private_key then
+        return nil, "failed to get google authentication configuration, " .. err
     end
 
     local entry = log_util.get_full_log(ngx, conf)
@@ -238,11 +266,11 @@ local function get_logger_entry(conf)
             service_id = entry.service_id,
         },
         labels = {
-            source = "apache-apisix-google-logging"
+            source = "apache-apisix-google-cloud-logging"
         },
         timestamp = get_utc_timestamp(),
         resource = conf.resource,
-        insertId = entry.request.id,
+        insertId = ctx.var.request_id,
         logName = core.string.format("projects/%s/logs/%s", auth_config_cache.project_id,
                 conf.log_id)
     }
@@ -265,7 +293,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry, err = get_logger_entry(conf)
+    local entry, err = get_logger_entry(conf, ctx)
     if err then
         core.log.error(err)
         return

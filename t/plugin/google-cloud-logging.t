@@ -20,8 +20,6 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-run_tests;
-
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -29,7 +27,14 @@ add_block_preprocessor(sub {
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
 });
+
+run_tests();
 
 __DATA__
 
@@ -37,7 +42,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.google-logging")
+            local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_file = "/path/to/apache/apisix/auth.json",
                 resource = {
@@ -61,12 +66,8 @@ __DATA__
             end
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -74,7 +75,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.google-logging")
+            local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_config = {
                     private_key = "private_key",
@@ -102,12 +103,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -115,7 +112,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.google-logging")
+            local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_file = "/path/to/apache/apisix/auth.json",
             })
@@ -127,12 +124,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -140,7 +133,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.google-logging")
+            local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_config = {
                     private_key = "private_key",
@@ -156,12 +149,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -169,7 +158,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.google-logging")
+            local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 log_id = "syslog",
                 max_retry_count = 0,
@@ -185,12 +174,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 value should match only one schema, but matches none
---- no_error_log
-[error]
 
 
 
@@ -210,7 +195,7 @@ value should match only one schema, but matches none
                             }
                         },
                         "plugins":{
-                            "google-logging":{
+                            "google-cloud-logging":{
                                 "auth_config":{
                                     "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOwIBAAJBAKeXgPvU/dAfVhOPk5BTBXCaOXy/0S3mY9VHyqvWZBJ97g6tGbLZ\npsn6Gw0wC4mxDfEY5ER4YwU1NWCVtIr1XxcCAwEAAQJADkoowVBD4/8IA9r2JhQu\nHo/H3w8r8tH2KTVZ3pUFK15WGJf8vCF9LznVNKCP0X1NMLGvf4yRELx8jjpwJztI\ngQIhANdWaJ3AGftJNaF5qXWwniFP1BcyCPSzn3q0rn19NhyHAiEAxz0HN8Yd+7vR\npi0w/L2I/2nLqgPFtqSGpL2KkJYcXPECIQCdM/PD1k4haNzCOXNA++M1JnYLSPfI\nzKkMh4MrEZHDWQIhAKasRiKBaUnTCIJ04bs9L6NDtO4Ic9jj8ANW0Nk9yoJxAiAA\ntBXLQH7fw5H8RaxBN91yQUZombw6JnRBXKKohWHZ3Q==\n-----END RSA PRIVATE KEY-----",
                                     "project_id":"apisix",
@@ -236,12 +221,8 @@ value should match only one schema, but matches none
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -255,6 +236,9 @@ hello world
 qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 --- grep_error_log_out
 {"error":"identity authentication failed"}
+--- error_log
+Batch Processor[google-cloud-logging] failed to process entries
+Batch Processor[google-cloud-logging] exceeded the max_retry_count
 
 
 
@@ -274,7 +258,7 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
                             }
                         },
                         "plugins":{
-                            "google-logging":{
+                            "google-cloud-logging":{
                                 "auth_config":{
                                     "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----",
                                     "project_id":"apisix",
@@ -297,12 +281,8 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -316,6 +296,9 @@ hello world
 qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 --- grep_error_log_out
 {"error":"no access to this scopes"}
+--- error_log
+Batch Processor[google-cloud-logging] failed to process entries
+Batch Processor[google-cloud-logging] exceeded the max_retry_count
 
 
 
@@ -335,7 +318,7 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
                             }
                         },
                         "plugins":{
-                            "google-logging":{
+                            "google-cloud-logging":{
                                 "auth_config":{
                                     "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----",
                                     "project_id":"apisix",
@@ -361,12 +344,8 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -376,5 +355,3 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- no_error_log
-[error]

@@ -36,7 +36,7 @@ end
 local _M = {}
 
 
-function _M:get_access_token()
+function _M:generate_access_token()
     if not self.access_token or get_timestamp() > self.access_token_expire_time - 60 then
         self:refresh_access_token()
     end
@@ -47,7 +47,7 @@ end
 function _M:refresh_access_token()
     local http_new = http.new()
     local res, err = http_new:request_uri(self.token_uri, {
-        ssl_verify = false,
+        ssl_verify = self.ssl_verify,
         method = "POST",
         body = ngx_encode_args({
             grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer",
@@ -68,7 +68,12 @@ function _M:refresh_access_token()
         return
     end
 
-    res = core.json.decode(res.body)
+    res, err = core.json.decode(res.body)
+    if not res then
+        core.log.error("failed to parse google oauth response data: ", err)
+        return
+    end
+
     self.access_token_expire_time = get_timestamp() + res.expires_in
     self.access_token = res.access_token
 end
@@ -103,6 +108,12 @@ function _M:new(config)
         access_token = nil,
         access_token_expire_time = 0,
     }
+
+    if config.ssl_verify == false then
+        oauth.ssl_verify = config.ssl_verify
+    else
+        oauth.ssl_verify = true
+    end
 
     if config.scopes then
         if type(config.scopes) == "string" then

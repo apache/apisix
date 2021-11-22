@@ -1,5 +1,5 @@
 ---
-title: google-logging
+title: google-cloud-logging
 ---
 
 <!--
@@ -31,7 +31,7 @@ title: google-logging
 
 ## 定义
 
-`google-logging` 插件用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
+`google-cloud-logging` 插件用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
 
 该插件提供了将请求的日志数据以批处理队列的形式推送到谷歌云日志服务的功能。
 
@@ -48,6 +48,7 @@ title: google-logging
 | auth_config.token_uri   | 可选   | https://oauth2.googleapis.com/token                                                                                                                                                               | 请求谷歌服务帐户的令牌的URI                                                                                                  |
 | auth_config.entries_uri | 可选   | https://logging.googleapis.com/v2/entries:write                                                                                                                                                   | 谷歌日志服务写入日志条目的API                                                                                                 |
 | auth_config.scopes      | 可选   | ["https://www.googleapis.com/auth/logging.read","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/logging.admin","https://www.googleapis.com/auth/cloud-platform"] | 谷歌服务账号的访问范围, 参考: [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging) |
+| auth_config.ssl_verify  | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证, 当设置为 `true` 时，服务器证书将根据 APISIX 主配置文件中的 `ssl.lua_ssl_trusted_certificate` 指令指定的 `CA` 证书进行验证|
 | auth_file               | 半可选 |                                                                                                                                                                                                   | 谷歌服务账号JSON文件的路径（必须配置 `auth_config` 或 `auth_file` 之一）                                                   |
 | resource                | 可选   | {"type": "global"}                                                                                                                                                                                | 谷歌监控资源，参考： [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)           |
 | log_id                  | 可选   | apisix.apache.org%2Flogs                                                                                                                                                                          | 谷歌日志ID，参考： [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)                                 |
@@ -59,7 +60,7 @@ title: google-logging
 
 ## 如何开启
 
-1. 下面例子展示了如何为指定路由开启 `google-logging` 插件。
+1. 下面例子展示了如何为指定路由开启 `google-cloud-logging` 插件。
 
 ### 完整配置
 
@@ -67,10 +68,10 @@ title: google-logging
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
-        "google-logging": {
+        "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
-                "private_key":"-----BEGIN RSA PRIVATE KEY-----KEY-----END RSA PRIVATE KEY-----",
+                "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
                 "scopes":[
                     "https://www.googleapis.com/auth/logging.admin"
@@ -80,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "resource":{
                 "type":"global"
             },
-            "log_id":"syslog",
+            "log_id":"apisix.apache.org%2Flogs",
             "inactive_timeout":10,
             "max_retry_count":0,
             "max_retry_count":0,
@@ -105,10 +106,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
-        "google-logging": {
+        "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
-                "private_key":"-----BEGIN RSA PRIVATE KEY-----KEY-----END RSA PRIVATE KEY-----"
+                "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----"
             }
         }
     },
@@ -139,7 +140,7 @@ hello, world
 
 ## 禁用插件
 
-禁用 `google-logging` 插件非常简单，只需将 `google-logging` 对应的 `JSON` 配置移除即可。
+禁用 `google-cloud-logging` 插件非常简单，只需将 `google-cloud-logging` 对应的 `JSON` 配置移除即可。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

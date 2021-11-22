@@ -1,5 +1,5 @@
 ---
-title: google-logging
+title: google-cloud-logging
 ---
 
 <!--
@@ -31,9 +31,9 @@ title: google-logging
 
 ## Name
 
-`google-logging` plugin is used to send the access log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).
+`google-cloud-logging` plugin is used to send the access log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).
 
-This plugin provides the ability to push Log data as a batch to Google Cloud logging Service.
+This plugin provides the ability to push log data as a batch to Google Cloud logging Service.
 
 For more info on Batch-Processor in Apache APISIX please refer:
 [Batch-Processor](../batch-processor.md)
@@ -48,6 +48,7 @@ For more info on Batch-Processor in Apache APISIX please refer:
 | auth_config.token_uri   | Optional      | https://oauth2.googleapis.com/token                                                                                                                                                               | the token uri parameters of the Google service account                                                                                                                           |
 | auth_config.entries_uri | Optional      | https://logging.googleapis.com/v2/entries:write                                                                                                                                                   | google logging service API                                                                                                                                                       |
 | auth_config.scopes      | Optional      | ["https://www.googleapis.com/auth/logging.read","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/logging.admin","https://www.googleapis.com/auth/cloud-platform"] | the access scopes parameters of the Google service account, refer to: [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging) |
+| auth_config.ssl_verify  | Optional      | true                                                                                                                                                                                              | enable `SSL` verification, when set to `true`, the server certificate will be verified according to the CA certificate specified by the `ssl.lua_ssl_trusted_certificate` directive in the APISIX main configuration file.|
 | auth_file               | Semi-optional |                                                                                                                                                                                                   | path to the google service account json file（Semi-optional, one of auth_config or auth_file must be configured）                                                              |
 | resource                | Optional      | {"type": "global"}                                                                                                                                                                                | the Google monitor resource, refer to: [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)                                         |
 | log_id                  | Optional      | apisix.apache.org%2Flogs                                                                                                                                                                          | google logging id, refer to: [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)                                                                     |
@@ -59,7 +60,7 @@ For more info on Batch-Processor in Apache APISIX please refer:
 
 ## How To Enable
 
-The following is an example on how to enable the `google-logging` for a specific route.
+The following is an example of how to enable the `google-cloud-logging` for a specific route.
 
 ### Full configuration
 
@@ -67,10 +68,10 @@ The following is an example on how to enable the `google-logging` for a specific
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
-        "google-logging": {
+        "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
-                "private_key":"-----BEGIN RSA PRIVATE KEY-----KEY-----END RSA PRIVATE KEY-----",
+                "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
                 "scopes":[
                     "https://www.googleapis.com/auth/logging.admin"
@@ -80,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "resource":{
                 "type":"global"
             },
-            "log_id":"syslog",
+            "log_id":"apisix.apache.org%2Flogs",
             "inactive_timeout":10,
             "max_retry_count":0,
             "buffer_duration":60,
@@ -104,10 +105,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
-        "google-logging": {
+        "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
-                "private_key":"-----BEGIN RSA PRIVATE KEY-----KEY-----END RSA PRIVATE KEY-----"
+                "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----"
             }
         }
     },
@@ -138,7 +139,7 @@ hello, world
 
 ## Disable Plugin
 
-Disabling the `google-logging` plugin is very simple, just remove the `JSON` configuration corresponding to `google-logging`.
+Disabling the `google-cloud-logging` plugin is very simple, just remove the `JSON` configuration corresponding to `google-cloud-logging`.
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

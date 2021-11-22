@@ -260,18 +260,6 @@ function _M.gethostname()
 end
 
 
-function _M.get_file(file_name)
-    local f, err = open(file_name, 'r')
-    if not f then
-        return nil, err
-    end
-
-    local req_body = f:read("*all")
-    f:close()
-    return req_body
-end
-
-
 local function sleep(sec)
     if sec <= max_sleep_interval then
         return ngx_sleep(sec)
