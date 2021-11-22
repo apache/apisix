@@ -77,8 +77,6 @@ function _M.access(conf, ctx)
         end
     end
 
-    -- Please avoid transferring large amounts of data or uploading files, which can
-    -- cause your requested data to be discarded. Depends on `client_body_buffer_size`.
     local params = {
         method = "POST",
         body = core.request.get_body(),
