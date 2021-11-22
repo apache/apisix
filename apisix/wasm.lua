@@ -65,11 +65,26 @@ end
 local function access_wrapper(self, conf, ctx)
     local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
     if not plugin_ctx then
-        core.log.error("failed to init wasm plugin ctx: ", err)
+        core.log.error("failed to fetch wasm plugin ctx: ", err)
         return 503
     end
 
     local ok, err = wasm.on_http_request_headers(plugin_ctx)
+    if not ok then
+        core.log.error("failed to run wasm plugin: ", err)
+        return 503
+    end
+end
+
+
+local function header_filter_wrapper(self, conf, ctx)
+    local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
+    if not plugin_ctx then
+        core.log.error("failed to fetch wasm plugin ctx: ", err)
+        return 503
+    end
+
+    local ok, err = wasm.on_http_response_headers(plugin_ctx)
     if not ok then
         core.log.error("failed to run wasm plugin: ", err)
         return 503
@@ -100,6 +115,9 @@ function _M.require(attrs)
     }
     mod.access = function (conf, ctx)
         return access_wrapper(mod, conf, ctx)
+    end
+    mod.header_filter = function (conf, ctx)
+        return header_filter_wrapper(mod, conf, ctx)
     end
 
     -- the returned values need to be the same as the Lua's 'require'
