@@ -85,7 +85,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Hot Updates And Hot Plugins](docs/en/latest/architecture-design/plugin.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-  - [Serverless](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
   - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
@@ -151,6 +150,10 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   ![Multi Language Support into Apache APISIX](docs/assets/images/apisix-multi-lang-support.png)
   - The WASM or WebAssembly, is the modern way. APISIX can load and run WASM bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a WASM bytecode that runs on WASM VM with APISIX.
   - The RPC way, is a traditional way. Developers can choose the language according to their needs and after starting an independent process with the RPC, it exchanges data with APISIX through local RPC communication. Till this moment, APISIX has support for [Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) and Node.js.
+
+- **Serverless**
+  - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): seamless integration with Azure Serverless Function as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud.
 
 ## Get Started
 
