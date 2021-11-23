@@ -141,8 +141,8 @@ test=test
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
---- response_body chomp
-"error":"The request content was malformed
+--- response_body_like eval
+qr/"error":"The request content was malformed/
 
 
 
