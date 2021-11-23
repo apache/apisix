@@ -69,7 +69,7 @@ jobs:
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
-          make compress-tar project_version=${{ steps.branch_env.outputs.version }}
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
 
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
