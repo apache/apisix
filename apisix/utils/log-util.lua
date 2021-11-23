@@ -154,7 +154,7 @@ local function get_full_log(ngx, conf)
         end
     end
 
-    if not ctx.resp_body then
+    if ctx.resp_body then
         log.response.body = ctx.resp_body
     end
 
@@ -224,7 +224,7 @@ function _M.collect_body(conf, ctx)
     if conf.include_resp_body then
         local log_response_body = true
 
-        if not conf.include_resp_body_expr then
+        if conf.include_resp_body_expr then
             if not conf.response_expr then
                 local response_expr, err = expr.new(conf.include_resp_body_expr)
                 if not response_expr then
