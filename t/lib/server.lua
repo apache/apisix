@@ -444,8 +444,6 @@ function _M._well_known_openid_configuration()
 end
 
 function _M.google_logging_token()
-    local args = ngx.req.get_uri_args()
-    local args_token_type = args.token_type or "Bearer"
     ngx.req.read_body()
     local data = ngx.decode_args(ngx.req.get_body_data())
     local jwt = require("resty.jwt")
@@ -478,13 +476,11 @@ function _M.google_logging_token()
     ngx.say(json_encode({
         access_token = jwt_token,
         expires_in = expire_time,
-        token_type = args_token_type
+        token_type = "Bearer"
     }))
 end
 
 function _M.google_logging_entries()
-    local args = ngx.req.get_uri_args()
-    local args_token_type = args.token_type or "Bearer"
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
     local jwt = require("resty.jwt")
@@ -498,7 +494,7 @@ function _M.google_logging_entries()
         return
     end
 
-    token = string.sub(token, string.len(args_token_type) + 2)
+    token = string.sub(token, string.len("Bearer") + 2)
     local verify = jwt:verify(rsa_public_key, token)
     if not verify.verified then
         ngx.status = 401
@@ -514,7 +510,7 @@ function _M.google_logging_entries()
         return
     end
 
-    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    local expire_time =  (verify.payload.exp or ngx.time()) - ngx.time()
     if expire_time <= 0 then
         ngx.status = 403
         ngx.say(json_encode({ error = "token has expired" }))

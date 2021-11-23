@@ -60,7 +60,7 @@ title: google-cloud-logging
 
 ## 如何开启
 
-下面例子展示了如何为指定路由开启 `google-cloud-logging` 插件。
+1. 下面例子展示了如何为指定路由开启 `google-cloud-logging` 插件。
 
 ### 完整配置
 
@@ -125,7 +125,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 向配置 `google-cloud-logging` 插件的路由发送请求
+* 成功的情况
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
