@@ -26,7 +26,6 @@ title: openwhisk
 - [**Description**](#description)
 - [**Attributes**](#attributes)
 - [**Example**](#example)
-- [**Notice**](#Notice)
 
 ## Description
 
@@ -39,7 +38,7 @@ Users can call the OpenWhisk action via APISIX, pass the request parameters via 
 | Name | Type | Requirement | Default | Valid | Description |
 | -- | -- | -- | -- | -- | -- |
 | api_host | string | required |   |   | OpenWhisk API host (eg. https://localhost:3233) |
-| ssl_verify | boolean | no | optional | true | Whether to verify the certificate |
+| ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | service_token | string | required |   |   | OpenWhisk ServiceToken (The format is `xxx:xxx`，Passed through Basic Auth when calling the API) |
 | namespace | string | required |   |   | OpenWhisk  Namespace (eg. guest) |
 | action | string | required |   |   | OpenWhisk Action (eg. hello) |
@@ -97,7 +96,3 @@ Finally, you can send a request to this route and you will get the following res
 ```json
 {"ready": true}
 ```
-
-## Notice
-
-When you need to submit data, you need to use a request body in JSON format. Also you should pay attention to the request body size, request body exceeding the `client_body_buffer_size` setting will be discarded completely, its size defaults to 8KiB.
