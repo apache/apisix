@@ -129,7 +129,7 @@ GET /hello
 
 
 
-=== TEST 6: hit route (with POST without non-json format request body)
+=== TEST 6: hit route (with POST method and non-json format request body)
 --- request
 POST /hello
 test=test
