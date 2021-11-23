@@ -121,7 +121,7 @@ GET /hello
 apikey: 123
 --- error_code: 401
 --- response_body
-{"message":"Invalid API key in request"}
+{"rejected_msg":"Invalid API key in request"}
 --- no_error_log
 [error]
 

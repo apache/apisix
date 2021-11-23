@@ -49,6 +49,8 @@ For route side:
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | header  | string | optional    | apikey        |       | the header we get the key from |
 | query   | string | optional    | apikey        |       | the querystring we get the key from, which priority is lower than header |
+| rejected_code  | integer | optional    | 401 |        | set the rejected code |
+| rejected_msg  | string | optional    |  |        | set the rejected message |
 
 ## How To Enable
 

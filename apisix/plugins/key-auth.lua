@@ -35,6 +35,17 @@ local schema = {
             type = "string",
             default = "apikey",
         },
+        rejected_code = {
+            type = "integer",
+            minimum = 200,
+            maximum = 599,
+            default = 401,
+        },
+        rejected_msg = {
+            type = "string",
+            minLength = 1,
+            maxLength = 256,
+        }
     },
 }
 
@@ -93,12 +104,14 @@ function _M.rewrite(conf, ctx)
     end
 
     if not key then
-        return 401, {message = "Missing API key found in request"}
+        local msg = (conf.rejected_msg or "Missing API key found in request")
+        return conf.rejected_code, {rejected_msg = msg }
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        local msg = (conf.rejected_msg or "Missing related consumer")
+        return conf.rejected_code, {rejected_msg = msg }
     end
 
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
@@ -106,7 +119,8 @@ function _M.rewrite(conf, ctx)
 
     local consumer = consumers[key]
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        local msg = (conf.rejected_msg or "Invalid API key in request")
+        return conf.rejected_code, {rejected_msg = msg}
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 

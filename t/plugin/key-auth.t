@@ -168,7 +168,7 @@ GET /hello
 apikey: 123
 --- error_code: 401
 --- response_body
-{"message":"Invalid API key in request"}
+{"rejected_msg":"Invalid API key in request"}
 --- no_error_log
 [error]
 
@@ -179,7 +179,7 @@ apikey: 123
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing API key found in request"}
+{"rejected_msg":"Missing API key found in request"}
 --- no_error_log
 [error]
 
@@ -355,5 +355,186 @@ passed
 GET /hello?auth=auth-one
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: add custom rejected_code and rejected_msg
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_code": 403,
+                            "rejected_msg": "custom rejected msg from key-auth"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: invalid consumer
+--- request
+GET /hello
+--- more_headers
+apikey: 123
+--- error_code: 403
+--- response_body
+{"rejected_msg":"custom rejected msg from key-auth"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: not found apikey header
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"rejected_msg":"custom rejected msg from key-auth"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: exceeds the maximum limit of rejected_msg
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_msg": "customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg customize reject rejected_msg"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/string too long/
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: rejected_msg that do not reach the minimum range
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_msg": ""
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/string too short, expected at least 1, got 0/
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: add rejected_code which is invalid
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_code": 10000
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/expected 10000 to be smaller than 599/
+--- error_code chomp
+400
 --- no_error_log
 [error]
