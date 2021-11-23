@@ -38,7 +38,7 @@ title: udp-logger
 
 此插件提供了将批处理数据批量推送到外部 UDP 服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志
 
-有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
+有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
 ## 属性列表

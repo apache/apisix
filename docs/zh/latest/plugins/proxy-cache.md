@@ -25,8 +25,8 @@ title: proxy-cache
 
 基于磁盘的缓存需要注意：
 
-1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存10秒钟
-2. 如果后端服务不可用， APISIX 将返回502或504，那么502或504将被缓存10秒钟
+1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存 10 秒钟
+2. 如果后端服务不可用， APISIX 将返回 502 或 504，那么 502 或 504 将被缓存 10 秒钟
 
 ### 参数
 
@@ -105,7 +105,7 @@ Apisix-Cache-Status: MISS
 hello
 ```
 
-> http status 返回`200`并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
+> http status 返回 `200` 并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
 
 2、验证数据是否被缓存，再次请求上边的地址：
 
@@ -182,7 +182,7 @@ Apisix-Cache-Status: MISS
 hello
 ```
 
-> http status 返回`200`并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
+> http status 返回 `200` 并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
 
 3、验证数据是否被缓存，再次请求上面的地址：
 
@@ -250,9 +250,9 @@ Connection: keep-alive
 Server: APISIX web server
 ```
 
-> 响应码为200即表示删除成功，如果缓存的数据未找到将返回404。
+> 响应码为 200 即表示删除成功，如果缓存的数据未找到将返回 404。
 
-再次请求，缓存数据未找到返回404：
+再次请求，缓存数据未找到返回 404：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello -X PURGE

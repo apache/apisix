@@ -70,7 +70,7 @@ title: error-log-logger
 ### 开启插件
 
 在 `conf/config.yaml` 中启用插件 `error-log-logger` 即可，不需要在任何 route 或 service 中绑定。
-下面是一个在`conf/config.yaml` 中添加插件信息的例子：
+下面是一个在 `conf/config.yaml` 中添加插件信息的例子：
 
 ```yaml
 plugins:                          # plugin list
@@ -83,7 +83,7 @@ plugins:                          # plugin list
 
 ### 禁用插件
 
-在 `conf/config.yaml` 中删除或注释掉插件 `error-log-logger`即可。
+在 `conf/config.yaml` 中删除或注释掉插件 `error-log-logger` 即可。
 
 ```yaml
 plugins:                          # plugin list

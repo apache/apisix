@@ -94,7 +94,7 @@ Server: APISIX web server
 Fault Injection!
 ```
 
-> http status 返回`200`并且响应`body`为`Fault Injection!`，表示该插件已启用。
+> http status 返回 `200` 并且响应 `body` 为 `Fault Injection!`，表示该插件已启用。
 
 示例2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
 
