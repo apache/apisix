@@ -15,6 +15,8 @@
 -- limitations under the License.
 
 local ngx  = ngx
+local require = require
+local type = type
 
 return function(plugin_name, version, priority, header_processor, authz_schema, metadata_schema)
     local core = require("apisix.core")
