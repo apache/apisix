@@ -19,7 +19,16 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-run_tests;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
+run_tests();
 
 __DATA__
 
@@ -40,8 +49,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -60,8 +67,6 @@ done
 GET /t
 --- response_body
 property "api_host" is required
---- no_error_log
-[error]
 
 
 
@@ -80,8 +85,6 @@ property "api_host" is required
 GET /t
 --- response_body
 property "api_host" validation failed: wrong type: expected string, got number
---- no_error_log
-[error]
 
 
 
@@ -119,8 +122,6 @@ property "api_host" validation failed: wrong type: expected string, got number
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -129,8 +130,6 @@ passed
 GET /hello
 --- response_body chomp
 {"hello":"test"}
---- no_error_log
-[error]
 
 
 
@@ -154,8 +153,6 @@ POST /hello
 Content-Type: application/json
 --- response_body chomp
 {"hello":"world"}
---- no_error_log
-[error]
 
 
 
@@ -193,8 +190,6 @@ Content-Type: application/json
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -205,8 +200,6 @@ POST /hello
 --- more_headers
 Content-Type: application/json
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -244,8 +237,6 @@ Content-Type: application/json
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
