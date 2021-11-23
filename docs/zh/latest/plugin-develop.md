@@ -41,7 +41,7 @@ title: 插件开发
 如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
 
 ```yaml
-# put this in config.yaml:
+# 在 config.yaml 中写入:
 nginx_config:
     http_configuration_snippet: |
         # for openid-connect plugin
@@ -78,7 +78,7 @@ local _M = {
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
-plugins:                          # plugin list
+plugins:                          # 插件列表
   - limit-req
   - limit-count
   - limit-conn

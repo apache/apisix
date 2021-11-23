@@ -49,7 +49,7 @@ title: Consumer
 如何对某个 Consumer 开启指定插件，可以看下面例子：
 
 ```shell
-# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+# 创建 Consumer，指定认证插件 key-auth，并开启特定插件 limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",

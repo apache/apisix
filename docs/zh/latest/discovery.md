@@ -180,16 +180,16 @@ discovery:
 ```yaml
 discovery:
   eureka:
-    host: # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+    host: # 在同一 eureka 集群指定多个 eureka hosts 地址
       - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
       - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
-    fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认30秒
-    weight: 100 # default weight for node
+    fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认 30 秒
+    weight: 100 # 节点默认的权重
     timeout:
-      connect: 2000 # 连接 eureka 的超时时间，默认2000ms
-      send: 2000 # 向 eureka 发送数据的超时时间，默认2000ms
-      read: 5000 # 从 eureka 读数据的超时时间，默认5000ms
+      connect: 2000 # 连接 eureka 的超时时间，默认 2000 ms
+      send: 2000 # 向 eureka 发送数据的超时时间，默认 2000 ms
+      read: 5000 # 从 eureka 读数据的超时时间，默认 5000 ms
 ```
 
 通过 `discovery.eureka.host` 配置 eureka 的服务器地址。

@@ -54,7 +54,7 @@ APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内
 
 ```yaml
 ext-plugin:
-  cmd: ["blah"] # replace it to the real runner executable according to the runner you choice
+  cmd: ["blah"] # 根据你选择的 runner，将其替换为真正执行的 runner
 ```
 
 APISIX 将以子进程的方式管理该 Plugin Runner 。

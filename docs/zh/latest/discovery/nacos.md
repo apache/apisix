@@ -39,12 +39,12 @@ discovery:
     host:
       - "http://${username}:${password}@${host1}:${port1}"
     prefix: "/nacos/v1/"
-    fetch_interval: 30    # default 30 sec
-    weight: 100           # default 100
+    fetch_interval: 30    # 默认为 30 s
+    weight: 100           # 默认权重为 100
     timeout:
-      connect: 2000       # default 2000 ms
-      send: 2000          # default 2000 ms
-      read: 5000          # default 5000 ms
+      connect: 2000       # 默认为 2000 ms
+      send: 2000          # 默认为 2000 ms
+      read: 5000          # 默认为 5000 ms
 ```
 
 也可以这样简洁配置（未配置项使用默认值）：

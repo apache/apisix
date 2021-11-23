@@ -37,7 +37,7 @@ title: APISIX
 
 ```yaml
 apisix:
-  node_listen: 8000 # APISIX listening port
+  node_listen: 8000 # APISIX 监听的端口
 ```
 
 比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，
@@ -45,7 +45,7 @@ apisix:
 
 ```yaml
 apisix:
-  node_listen: 8000 # APISIX listening port
+  node_listen: 8000 # APISIX 监听的端口
 
 etcd:
   host: "http://foo:2379" # etcd address

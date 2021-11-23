@@ -198,7 +198,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 
 ```yaml
 plugins:
-  - ... # plugin you need
+  - ... # 启用的插件
   #- skywalking
 ```
 

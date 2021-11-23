@@ -31,7 +31,7 @@ title: Service
 比如下面的例子，创建了一个启用限流插件的 Service，然后把 id 为 `100`、`101` 的 Route 都绑定在这个 Service 上。
 
 ```shell
-# create new Service
+# 创建一个 Service
 $ curl http://127.0.0.1:9080/apisix/admin/services/200 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -50,7 +50,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/200 -H 'X-API-KEY: edd1c9f034
     }
 }'
 
-# create new Route and reference the service by id `200`
+# 创建一个 Route 并将其绑定到 `id` 为 200 的 Service 上
 curl http://127.0.0.1:9080/apisix/admin/routes/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

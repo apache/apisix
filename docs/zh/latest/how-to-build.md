@@ -37,13 +37,13 @@ Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apach
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# View the information of the latest apisix package
+# 查看最新 apisix 包的相关信息
 sudo yum info -y apisix
 
-# Will show the existing apisix packages
+# 显示已存在的 apisix 包
 sudo yum --showduplicates list apisix
 
-# Will install the latest apisix package
+# 安装最新版本的 apisix 包
 sudo yum install apisix
 ```
 
@@ -111,7 +111,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
 运行以下命令初始化 NGINX 配置文件和 etcd。
 
 ```shell
-# initialize NGINX config file and etcd
+# 初始化 Nginx 配置文件 和 etcd
 apisix init
 ```
 
@@ -120,7 +120,7 @@ apisix init
 运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
 
 ```shell
-# generate `nginx.conf` from `config.yaml` and test it
+# 从 `config.yaml` 生成 `nginx.conf` 并测试
 apisix test
 ```
 
@@ -129,7 +129,7 @@ apisix test
 运行以下命令启动 Apache APISIX。
 
 ```shell
-# start Apache APISIX server
+# 启动 Apache APISIX
 apisix start
 ```
 
@@ -140,14 +140,14 @@ apisix start
 执行优雅停机的命令如下所示：
 
 ```shell
-# stop Apache APISIX server gracefully
+# 优雅停止 Apache APISIX
 apisix quit
 ```
 
 执行强制停机的命令如下所示：
 
 ```shell
-# stop Apache APISIX server immediately
+# 强制停止 Apache APISIX
 apisix stop
 ```
 
@@ -156,7 +156,7 @@ apisix stop
 运行 `apisix help` 命令，查看返回结果，获取其他操作的命令和描述。
 
 ```shell
-# more actions find by `help`
+# 通过 `help` 查看更多命令
 apisix help
 ```
 
@@ -232,7 +232,7 @@ apisix:
   admin_key
     -
       name: "admin"
-      key: abcdefghabcdefgh # 将原有的 key 修改为abcdefghabcdefgh
+      key: abcdefghabcdefgh # 将原有的 key 修改为 abcdefghabcdefgh
       role: admin
 ```
 

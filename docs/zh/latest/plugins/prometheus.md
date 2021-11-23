@@ -105,7 +105,7 @@ curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```yaml
 scrape_configs:
   - job_name: "apisix"
-    scrape_interval: 15s # 这个值会跟Prometheus QL中rate函数的时间范围有关系, rate函数中的时间范围应该至少两倍于该值.
+    scrape_interval: 15s # 这个值会跟 Prometheus QL 中 rate 函数的时间范围有关系, rate 函数中的时间范围应该至少两倍于该值.
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
       - targets: ["127.0.0.1:9091"]

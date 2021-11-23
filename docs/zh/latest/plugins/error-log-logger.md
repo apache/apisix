@@ -73,12 +73,12 @@ title: error-log-logger
 下面是一个在 `conf/config.yaml` 中添加插件信息的例子：
 
 ```yaml
-plugins:                          # plugin list
+plugins:                          # 插件列表
   ... ...
   - request-id
   - hmac-auth
   - api-breaker
-  - error-log-logger              # enable plugin `error-log-logger
+  - error-log-logger              # 启用 `error-log-logger` 插件
 ```
 
 ### 禁用插件
@@ -86,12 +86,12 @@ plugins:                          # plugin list
 在 `conf/config.yaml` 中删除或注释掉插件 `error-log-logger` 即可。
 
 ```yaml
-plugins:                          # plugin list
+plugins:                          # 插件列表
   ... ...
   - request-id
   - hmac-auth
   - api-breaker
-  #- error-log-logger              # enable plugin `error-log-logger
+  #- error-log-logger              # 启用 `error-log-logger` 插件
 ```
 
 ## 如何设置接收日志的 TCP 服务器

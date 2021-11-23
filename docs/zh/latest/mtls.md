@@ -40,9 +40,9 @@ title: TLS 双向认证
   https_admin: true
 
   admin_api_mtls:
-    admin_ssl_ca_cert: "/data/certs/mtls_ca.crt"              # Path of your self-signed ca cert.
-    admin_ssl_cert: "/data/certs/mtls_server.crt"             # Path of your self-signed server side cert.
-    admin_ssl_cert_key: "/data/certs/mtls_server.key"         # Path of your self-signed server side key.
+    admin_ssl_ca_cert: "/data/certs/mtls_ca.crt"              # 已签名的 ca cert 的路径
+    admin_ssl_cert: "/data/certs/mtls_server.crt"             # 已签名的 server 端 cert 的路径
+    admin_ssl_cert_key: "/data/certs/mtls_server.key"         # 已签名的 server 端 key 的路径
 ```
 
 3. 执行命令，使配置生效：
@@ -71,8 +71,8 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 ```yaml
 etcd:
   tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+    cert: /data/certs/etcd_client.pem       # etcd 客户端使用的证书的路径
+    key: /data/certs/etcd_client.key        # etcd 客户端使用的密钥的路径
 ```
 
 如果 APISIX 不信任 etcd server 使用的 CA 证书，我们需要设置 CA 证书。
@@ -80,7 +80,7 @@ etcd:
 ```yaml
 apisix:
   ssl:
-    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
+    ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # etcd 服务端使用的 CA 证书的路径
 ```
 
 ## 保护路由

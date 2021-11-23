@@ -84,14 +84,14 @@ total 10.5K
 
 ```yaml
 plugins:
-    # the plugins you enabled
+    # 你启动的插件
     - log-rotate
 
 plugin_attr:
     log-rotate:
-        interval: 3600    # rotate interval (unit: second)
-        max_kept: 168     # max number of log files will be kept
-        enable_compression: false    # enable log file compression(gzip) or not, default false
+        interval: 3600    # 轮询间隔时间 （单位: 秒）
+        max_kept: 168     # 将被保留的 log 文件的最大数量
+        enable_compression: false    # 是否启用 log 文件压缩（gzip），默认为否
 ```
 
 #### 禁用插件

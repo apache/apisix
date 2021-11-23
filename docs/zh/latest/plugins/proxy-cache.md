@@ -51,7 +51,7 @@ title: proxy-cache
 proxy_cache:                       # 代理缓存配置
     cache_ttl: 10s                 # 如果上游未指定缓存时间，则为默认缓存时间
     zones:                         # 缓存的参数
-    - name: disk_cache_one         # 缓存名称(缓存区域)，管理员可以通过admin api中的 cache_zone 字段指定要使用的缓存区域
+    - name: disk_cache_one         # 缓存名称(缓存区域)，管理员可以通过 admin api 中的 cache_zone 字段指定要使用的缓存区域
       memory_size: 50m             # 共享内存的大小，用于存储缓存索引
       disk_size: 1G                # 磁盘大小，用于存储缓存数据
       disk_path: "/tmp/disk_cache_one" # 存储缓存数据的路径
