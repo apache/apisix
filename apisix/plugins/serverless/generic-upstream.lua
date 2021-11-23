@@ -89,12 +89,12 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
         local res, err = httpc:request_uri(conf.function_uri, params)
 
         if not res or err then
-            core.log.error("failed to process azure function, err: ", err)
+            core.log.error("failed to process ", plugin_name, ", err: ", err)
             return 503
         end
 
-        -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2, endpoint
-        -- must not generate any connection specific headers for HTTP/2 requests.
+        -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2,
+        -- endpoint must not generate any connection specific headers for HTTP/2 requests.
         local response_headers = res.headers
         if ngx.var.http2 then
             response_headers["Connection"] = nil

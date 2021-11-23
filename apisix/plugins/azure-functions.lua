@@ -54,5 +54,5 @@ local function preprocess_headers(conf, ctx, headers)
 end
 
 
-require("apisix.plugins.serverless.generic-upstream")(plugin_name,
+return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
         plugin_version, priority, preprocess_headers, azure_authz_schema, metadata_schema)
