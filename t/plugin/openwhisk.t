@@ -140,9 +140,9 @@ POST /hello
 test=test
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 415
---- error_log
-only support json request body
+--- error_code: 400
+--- response_body chomp
+"error":"The request content was malformed
 
 
 
