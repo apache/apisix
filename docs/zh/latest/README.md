@@ -144,6 +144,16 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
 
+- **多语言支持**
+  - Apache APISIX 是一个通过`WASM`和`RPC`支持不同语言来进行插件开发的网关.
+  ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
+  - WASM或WebAssembly是比较现代的开发方式。 APISIX能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的WASM字节码。开发者仅需要使用该SDK编写代码，然后编译成WASM字节码，即可运行在APISIX中的WASM虚拟机中。
+  - RPC是一种比较传统的开发方式。开发者可以使用他们需要的语言来进行RPC服务的开发，该RPC通过本地通讯来跟APISIX进行数据交换。到目前为止，APISIX已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) and Node.js.
+
+- **Serverless**
+  - [Lua functions](plugins/serverless.md): 能在APISIX每个阶段调用lua函数.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): 能无缝整合进Azure Serverless Function中。作为动态上游，能将特定的URI请求全部代理到微软Azure云中。
+
 ## 立刻开始
 
 1. 安装
@@ -221,7 +231,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ### 贡献者变化
 
-![contributor-over-time](../../assets/images/contributor-over-time.png)
+> [访问这里](https://www.apiseven.com/contributor-graph)能生成最新贡献者变化.
+
+[![贡献者变化](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## 视频和文章
 
