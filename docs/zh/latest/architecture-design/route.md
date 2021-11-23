@@ -24,7 +24,7 @@ title: Route
 Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
 插件，并把请求转发给到指定 Upstream。
 
-Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
+Route 中主要包含三部分内容：匹配规则（比如 uri、host、remote_addr 等），插件配（限流限速等）和上游信息。
 请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
 ![路由示例](../../../assets/images/routes-example.png)

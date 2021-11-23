@@ -75,7 +75,7 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ### 使用 snowflake 算法生成ID
 
 > 支持使用 snowflake 算法来生成ID。
-> 在决定使用snowflake时，请优先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息。否则可能会导致生成重复ID。
+> 在决定使用 snowflake 时，请优先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息。否则可能会导致生成重复ID。
 
 snowflake 算法默认是不启用的，需要在 `conf/config.yaml` 中开启配置。
 

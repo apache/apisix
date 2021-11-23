@@ -22,10 +22,10 @@ SHELL := /bin/bash -o pipefail
 
 
 # Project basic setting
+VERSION                ?= master
 project_name           ?= apache-apisix
-project_version        ?= master
 project_compose_ci     ?= ci/pod/docker-compose.yml
-project_release_name   ?= $(project_name)-$(project_version)-src
+project_release_name   ?= $(project_name)-$(VERSION)-src
 
 
 # Hyperconverged Infrastructure
@@ -303,6 +303,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
+	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/prometheus
 	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(ENV_INST_LUADIR)/apisix/plugins/prometheus/
 
@@ -365,11 +368,13 @@ release-src: compress-tar
 
 .PHONY: compress-tar
 compress-tar:
+	# The $VERSION can be major.minor.patch (from developer)
+	# or major.minor (from the branch name in the CI)
 	$(ENV_TAR) -zcvf $(project_release_name).tgz \
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec/apisix-$(project_version)-*.rockspec \
+	./rockspec/apisix-$(VERSION)*.rockspec \
 	./rockspec/apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \

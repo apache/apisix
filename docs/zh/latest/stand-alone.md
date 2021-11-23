@@ -64,7 +64,7 @@ routes:
 #END
 ```
 
-*注意*：如果`conf/apisix.yaml`末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
+*注意*：如果 `conf/apisix.yaml` 末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
 
 ### 配置 Router
 

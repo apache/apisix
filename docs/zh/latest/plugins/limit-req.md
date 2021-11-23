@@ -75,7 +75,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
+这里以 `route` 为例（`service` 的使用是同样的方法），在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -130,7 +130,7 @@ Server: APISIX web server
 </html>
 ```
 
-同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."` ，当你超过，就会收到如下的响应体：
+同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."`，当你超过，就会收到如下的响应体：
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
@@ -144,11 +144,11 @@ Server: APISIX web server
 
 这就表示 limit req 插件生效了。
 
-### 如何在`consumer`上使用
+### 如何在 `consumer`上使用
 
-consumer上开启`limit-req`插件，需要与授权插件一起配合使用，这里以key-auth授权插件为例。
+consumer上开启 `limit-req` 插件，需要与授权插件一起配合使用，这里以 key-auth 授权插件为例。
 
-1、将`limit-req`插件绑定到consumer上
+1、将 `limit-req` 插件绑定到consumer上
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -168,7 +168,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-2、创建`route`并开启`key-auth`插件
+2、创建 `route` 并开启 `key-auth` 插件
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -191,7 +191,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件**
 
-未超过`rate + burst` 的值
+未超过 `rate + burst` 的值
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
@@ -199,7 +199,7 @@ HTTP/1.1 200 OK
 ......
 ```
 
-当超过`rate + burst` 的值
+当超过 `rate + burst` 的值
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
@@ -214,7 +214,7 @@ HTTP/1.1 403 Forbidden
 </html>
 ```
 
-说明绑在`consumer`上的 `limit-req`插件生效了
+说明绑在 `consumer`上的 `limit-req` 插件生效了
 
 ## 移除插件
 
@@ -234,7 +234,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-移除`consumer`上的 `limit-req` 插件
+移除 `consumer`上的 `limit-req` 插件
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

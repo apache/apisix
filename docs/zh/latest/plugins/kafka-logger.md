@@ -120,8 +120,8 @@ title: kafka-logger
 ## 工作原理
 
 消息将首先写入缓冲区。
-当缓冲区超过`batch_max_size`时，它将发送到 kafka 服务器，
-或每个`buffer_duration`刷新缓冲区。
+当缓冲区超过 `batch_max_size` 时，它将发送到 kafka 服务器，
+或每个 `buffer_duration` 刷新缓冲区。
 
 如果成功，则返回 `true`。
 如果出现错误，则返回 `nil`，并带有描述错误的字符串（`buffer overflow`）。
@@ -213,7 +213,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-K
 
 ## 禁用插件
 
-当您要禁用`kafka-logger`插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
+当您要禁用 `kafka-logger` 插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
