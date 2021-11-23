@@ -64,7 +64,7 @@ __DATA__
         }
     }
 --- response_body
-{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"rejected_msg":"User-Agent Forbidden"}
+{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"message":"Not allowed","rejected_msg":"User-Agent Forbidden"}
 
 
 
