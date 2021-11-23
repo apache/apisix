@@ -369,7 +369,7 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec/apisix-$(project_version).*.rockspec \
+	./rockspec/apisix-$(project_version)-*.rockspec \
 	./rockspec/apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \
