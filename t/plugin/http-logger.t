@@ -108,7 +108,42 @@ done
 
 
 
-=== TEST 4: add plugin
+=== TEST 4: check log schema(include_resp_body_expr)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.http-logger")
+            local ok, err = plugin.check_schema({auth_header = "Basic 123",
+                                                 timeout = 3,
+                                                 name = "http-logger",
+                                                 max_retry_count = 2,
+                                                 retry_delay = 2,
+                                                 buffer_duration = 2,
+                                                 inactive_timeout = 2,
+                                                 batch_max_size = 500,
+                                                 include_resp_body = true,
+                                                 include_resp_body_expr = {
+                                                     {"bar", "<>", "foo"}
+                                                 }
+                                                 })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -176,7 +211,7 @@ passed
 
 
 
-=== TEST 5: access local server
+=== TEST 6: access local server
 --- request
 GET /opentracing
 --- response_body
@@ -187,7 +222,7 @@ Batch Processor[http logger] successfully processed the entries
 
 
 
-=== TEST 6: set to the http external endpoint
+=== TEST 7: set to the http external endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -255,7 +290,7 @@ passed
 
 
 
-=== TEST 7: access external endpoint
+=== TEST 8: access external endpoint
 --- request
 GET /hello
 --- response_body
@@ -266,7 +301,7 @@ Batch Processor[http logger] successfully processed the entries
 
 
 
-=== TEST 8: set wrong https endpoint
+=== TEST 9: set wrong https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -334,7 +369,7 @@ passed
 
 
 
-=== TEST 9: access wrong https endpoint
+=== TEST 10: access wrong https endpoint
 --- request
 GET /hello1
 --- response_body
@@ -345,7 +380,7 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
 
 
 
-=== TEST 10: set correct https endpoint
+=== TEST 11: set correct https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -413,7 +448,7 @@ passed
 
 
 
-=== TEST 11: access correct https endpoint
+=== TEST 12: access correct https endpoint
 --- request
 GET /hello1
 --- response_body
@@ -424,7 +459,7 @@ Batch Processor[http logger] successfully processed the entries
 
 
 
-=== TEST 12: set batch max size to two
+=== TEST 13: set batch max size to two
 --- config
     location /t {
         content_by_lua_block {
@@ -492,7 +527,7 @@ passed
 
 
 
-=== TEST 13: access route with batch max size twice
+=== TEST 14: access route with batch max size twice
 --- config
     location /t {
         content_by_lua_block {
@@ -519,7 +554,7 @@ Batch Processor[http logger] successfully processed the entries
 
 
 
-=== TEST 14: set wrong port
+=== TEST 15: set wrong port
 --- config
     location /t {
         content_by_lua_block {
@@ -587,7 +622,7 @@ passed
 
 
 
-=== TEST 15: access wrong port
+=== TEST 16: access wrong port
 --- request
 GET /hello1
 --- response_body
@@ -598,7 +633,7 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
 
 
 
-=== TEST 16: check uri
+=== TEST 17: check uri
 --- config
     location /t {
         content_by_lua_block {
@@ -640,7 +675,7 @@ done
 
 
 
-=== TEST 17: check plugin configuration updating
+=== TEST 18: check plugin configuration updating
 --- config
     location /t {
         content_by_lua_block {

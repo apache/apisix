@@ -209,15 +209,13 @@ function _M.check_log_schema(conf)
     if conf.include_req_body_expr then
         local ok, err = expr.new(conf.include_req_body_expr)
         if not ok then
-            return nil,
-            {error_msg = "failed to validate the 'include_req_body_expr' expression: " .. err}
+            return nil, "failed to validate the 'include_req_body_expr' expression: " .. err
         end
     end
     if conf.include_resp_body_expr then
         local ok, err = expr.new(conf.include_resp_body_expr)
         if not ok then
-            return nil,
-            {error_msg = "failed to validate the 'include_resp_body_expr' expression: " .. err}
+            return nil, "failed to validate the 'include_resp_body_expr' expression: " .. err
         end
     end
     return true, nil
@@ -238,8 +236,8 @@ function _M.collect_body(conf, ctx)
                 conf.response_expr = response_expr
             end
 
-            local result = conf.response_expr:eval(ctx.var)
-            if not result then
+            if ctx.response_expr_eval == nil then
+                ctx.response_expr_eval = conf.response_expr:eval(ctx.var)
                 log_response_body = false
             end
         end

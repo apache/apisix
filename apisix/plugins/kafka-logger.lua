@@ -123,11 +123,11 @@ function _M.check_schema(conf, schema_type)
         return core.schema.check(metadata_schema, conf)
     end
 
-    local ok, err = log_util.check_log_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
-        return err
+        return nil, err
     end
-    return core.schema.check(schema, conf)
+    return log_util.check_log_schema(conf)
 end
 
 
