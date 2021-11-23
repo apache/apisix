@@ -40,7 +40,7 @@ The `ua-restriction` can restrict access to a Service or a Route by `allowlist` 
 | bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the User-Agent header is missing |
 | allowlist | array[string] | optional    |         |       | A list of allowed User-Agent headers. |
 | denylist | array[string] | optional    |         |       | A list of denied User-Agent headers. |
-| message | string | optional             | Not allowed. | length range: [1, 1024] | Message of deny reason. |
+| rejected_msg | string | optional             | Not allowed. | length range: [1, 256] | rejected_msg of deny reason. |
 
 Any of `allowlist` or `denylist` can be optional, and can work together in this order: allowlist->denylist
 
@@ -76,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Default returns `{"message":"Not allowed"}` when rejected. If you want to use a custom message, you can configure it in the plugin section.
+Default returns `{"rejected_msg":"Not allowed"}` when rejected. If you want to use a custom rejected_msg, you can configure it in the plugin section.
 
 ```json
 "plugins": {
@@ -85,7 +85,7 @@ Default returns `{"message":"Not allowed"}` when rejected. If you want to use a 
             "my-bot2",
             "(Twitterspider)/(\\d+)\\.(\\d+)"
         ],
-        "message": "Do you want to do something bad?"
+        "rejected_msg": "Do you want to do something bad?"
     }
 }
 ```

@@ -38,7 +38,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set allowlist, denylist, bypass_missing and user-defined message
+=== TEST 1: set allowlist, denylist, bypass_missing and user-defined rejected_msg
 --- config
     location /t {
         content_by_lua_block {
@@ -53,7 +53,7 @@ __DATA__
                     "my-bot1",
                     "my-bot2"
                },
-               message = "User-Agent Forbidden",
+               rejected_msg = "User-Agent Forbidden",
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -64,7 +64,7 @@ __DATA__
         }
     }
 --- response_body
-{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"message":"User-Agent Forbidden"}
+{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"rejected_msg":"User-Agent Forbidden"}
 
 
 
@@ -134,13 +134,13 @@ done
 
 
 
-=== TEST 5: message not string
+=== TEST 5: rejected_msg not string
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-                message = 100,
+                rejected_msg = 100,
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -151,7 +151,7 @@ done
         }
     }
 --- response_body
-property "message" validation failed: wrong type: expected string, got number
+property "rejected_msg" validation failed: wrong type: expected string, got number
 done
 
 
@@ -200,7 +200,7 @@ GET /hello
 User-Agent:my-bot1
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
@@ -212,7 +212,7 @@ User-Agent:my-bot1
 User-Agent:my-bot2
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
@@ -223,7 +223,7 @@ GET /hello
 User-Agent:Baiduspider/3.0
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
@@ -409,7 +409,7 @@ passed
 GET /hello
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
@@ -495,11 +495,11 @@ passed
 GET /hello
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
-=== TEST 24: message that do not reach the minimum range
+=== TEST 24: rejected_msg that do not reach the minimum range
 --- config
     location /t {
         content_by_lua_block {
@@ -516,7 +516,7 @@ GET /hello
                         },
                         "plugins": {
                             "ua-restriction": {
-                                 "message": ""
+                                 "rejected_msg": ""
                             }
                         }
                 }]]
@@ -530,7 +530,7 @@ qr/string too short, expected at least 1, got 0/
 
 
 
-=== TEST 25: exceeds the maximum limit of message
+=== TEST 25: exceeds the maximum limit of rejected_msg
 --- config
     location /t {
         content_by_lua_block {
@@ -550,7 +550,7 @@ qr/string too short, expected at least 1, got 0/
                         denylist = {
                            "my-bot1",
                         },
-                        message = ("-1Aa#"):rep(205)
+                        rejected_msg = ("-1Aa#"):rep(52)
                     }
                 }
             }
@@ -568,7 +568,7 @@ qr/string too long, expected at most 1024, got 1025/
 
 
 
-=== TEST 26: set custom message
+=== TEST 26: set custom rejected_msg
 --- config
     location /t {
         content_by_lua_block {
@@ -588,7 +588,7 @@ qr/string too long, expected at most 1024, got 1025/
                                 "denylist": [
                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
                                 ],
-                                "message": "Do you want to do something bad?"
+                                "rejected_msg": "Do you want to do something bad?"
                             }
                         }
                 }]]
@@ -606,14 +606,14 @@ passed
 
 
 
-=== TEST 27: test custom message
+=== TEST 27: test custom rejected_msg
 --- request
 GET /hello
 --- more_headers
 User-Agent:Baiduspider/1.0
 --- error_code: 403
 --- response_body
-{"message":"Do you want to do something bad?"}
+{"rejected_msg":"Do you want to do something bad?"}
 
 
 
@@ -663,7 +663,7 @@ GET /hello
 User-Agent:Baiduspider/1.0
 --- error_code: 403
 --- response_body
-{"message":"Not allowed"}
+{"rejected_msg":"Not allowed"}
 
 
 
