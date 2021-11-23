@@ -345,6 +345,7 @@ plugins:                          # plugin list (sorted by priority)
   - echo                           # priority: 412
   - http-logger                    # priority: 410
   - skywalking-logger              # priority: 408
+  - google-cloud-logging           # priority: 407
   - sls-logger                     # priority: 406
   - tcp-logger                     # priority: 405
   - kafka-logger                   # priority: 403
