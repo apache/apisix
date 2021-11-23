@@ -33,7 +33,7 @@ title: limit-count
 
 ## 简介
 
-和 [GitHub API 的限速](https://docs.github.com/en/rest/reference/rate-limit)类似，
+和 [GitHub API 的限速](https://docs.github.com/en/rest/reference/rate-limit) 类似，
 在指定的时间范围内，限制总的请求个数。并且在 HTTP 响应头中返回剩余可以请求的个数。
 
 ## 参数
@@ -53,7 +53,7 @@ title: limit-count
 | redis_port          | integer | 可选                               | 6379          | [1,...]                                                                                                 | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口                                                                                                                                                                                                                                                                                                                                                              |
 | redis_password      | string  | 可选                               |               |                                                                                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，该属性是 Redis 服务节点的密码。                                                                                                                                                                                                                                                                                                                                                            |
 | redis_database      | integer | 可选                               | 0             | redis_database >= 0                                                                                     | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点中使用的 database，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。                                                                                                                                                                                                                                                                 |
-| redis_timeout       | integer | 可选                               | 1000          | [1,...]                                                                                                 | 当使用 `redis`  或者 `redis-cluster`  限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间                                                                                                                                                                                                                                                                                                                                              |
+| redis_timeout       | integer | 可选                               | 1000          | [1,...]                                                                                                 | 当使用 `redis` 或者 `redis-cluster` 限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间                                                                                                                                                                                                                                                                                                                                              |
 | redis_cluster_nodes | array   | 当 policy 为 `redis-cluster` 时必填|               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表（至少需要两个地址）。                                                                                                                                                                                                                                                                                                                                            |
 | redis_cluster_name  | string  | 当 policy 为 `redis-cluster` 时必填 |               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的名称。                                                                                                                                                                                                                                                                                                                                            |
 
@@ -85,7 +85,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件，并设置  `key_type` 为 `var_combination`：
+下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件，并设置 `key_type` 为 `var_combination`：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

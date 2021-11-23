@@ -43,7 +43,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | discovery                          | string  | 必须   |                       |         | 身份服务器的发现端点的 URL                     |
 | scope                              | string  | 可选   | "openid"              |         | 用于认证                                       |
 | realm                              | string  | 可选   | "apisix"              |         | 用于认证                                       |
-| bearer_only                        | boolean | 可选   | false                 |         | 设置为`true`将检查请求中带有承载令牌的授权标头 |
+| bearer_only                        | boolean | 可选   | false                 |         | 设置为 `true` 将检查请求中带有承载令牌的授权标头 |
 | logout_path                        | string  | 可选   | "/logout"             |         |                                                |
 | redirect_uri                       | string  | 可选   | "ngx.var.request_uri" |         |                                                |
 | timeout                            | integer | 可选   | 3                     | [1,...] | 超时时间，单位为秒                             |
@@ -105,11 +105,11 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 具体细节参见：
 
 1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和代码。
-2. `exp` 字段的定义： [Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
+2. `exp` 字段的定义：[Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
 
 ### 公钥自省
 
-您还可以提供 JWT 令牌的公钥来验证令牌。 如果您提供了公共密钥和令牌自省端点，则将执行公共密钥工作流，而不是通过身份服务器进行验证。如果要减少额外的网络呼叫并加快过程，可以使用此方法。
+您还可以提供 JWT 令牌的公钥来验证令牌。如果您提供了公共密钥和令牌自省端点，则将执行公共密钥工作流，而不是通过身份服务器进行验证。如果要减少额外的网络呼叫并加快过程，可以使用此方法。
 
 以下配置显示了如何向路由添加公钥自省。
 
@@ -148,7 +148,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 OIDC 授权代码流程；
 请参阅 https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth 。
 一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。
-该信息当前存储在会话 cookie 中，该插件将识别 cookie 并使用其中的信息，以避免再次执行认证流程。
+该信息当前存储在会话 Cookie 中，该插件将识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
 
 以下命令将此操作模式添加到路由：
 
@@ -181,4 +181,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 故障排除
 
-如果 APISIX 无法解析/连接到身份提供者，请检查/修改 DNS 设置（`conf / config.yaml`）。
+如果 APISIX 无法解析/连接到身份提供者，请检查/修改 DNS 设置（`conf/config.yaml`）。

@@ -23,7 +23,7 @@ title: 如何构建 Apache APISIX
 
 ## 步骤1：安装依赖
 
-Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考[安装依赖](install-dependencies.md)。
+Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考 [安装依赖](install-dependencies.md)。
 
 通过 Docker 或 Helm Chart 安装 Apache APISIX 时，已经包含了所需的 NGINX 和 etcd，请参照各自对应的文档。
 
@@ -83,7 +83,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
   wget https://downloads.apache.org/apisix/2.10.2/apache-apisix-2.10.2-src.tgz
   ```
 
-  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
+  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
 
 3. 解压 Apache APISIX Release 源码包：
 
@@ -117,7 +117,7 @@ apisix init
 
 ### 测试配置文件
 
-运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
 
 ```shell
 # generate `nginx.conf` from `config.yaml` and test it
@@ -135,7 +135,7 @@ apisix start
 
 ### 停止运行 Apache APISIX
 
-优雅停机 `apisix quit` 和强制停机 `apisix stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
+优雅停机 `apisix quit` 和强制停机 `apisix stop` 都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
 
 执行优雅停机的命令如下所示：
 
@@ -200,7 +200,7 @@ apisix help
 
 **配置 NGINX 路径**
 
-出现`Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
+出现 `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
 
 确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
@@ -218,7 +218,7 @@ apisix help
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-关于测试用例的更多细节，参见[测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
+关于测试用例的更多细节，参见 [测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## 步骤5：修改 Admin API key
 
@@ -272,7 +272,7 @@ Content-Type: text/html
 
 有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
 如果您需要这些功能，您可以构建 APISIX OpenResty。
-您可以根据[api7/apisix-build-tools](https://github.com/api7/apisix-build-tools)里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
+您可以根据 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
 ## 步骤7：为 Apache APISIX 添加 systemd 配置文件
 
@@ -283,4 +283,4 @@ systemctl start apisix
 systemctl stop apisix
 ```
 
-如果通过其他方法安装，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service` 路径下。
+如果通过其他方法安装，可以参考 [配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service) 进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service` 路径下。

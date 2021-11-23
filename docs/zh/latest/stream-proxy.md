@@ -68,11 +68,11 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 例子中 APISIX 对客户端 IP 为 `127.0.0.1` 的请求代理转发到上游主机 `127.0.0.1:1995`。
-更多用例，请参照 [test case](../../../t/stream-node/sanity.t).
+更多用例，请参照 [test case](../../../t/stream-node/sanity.t)。
 
 ## 更多 route 匹配选项
 
-我们可以添加更多的选项来匹配 route 。
+我们可以添加更多的选项来匹配 route。
 
 例如
 
