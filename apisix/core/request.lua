@@ -17,6 +17,7 @@
 
 local lfs = require("lfs")
 local log = require("apisix.core.log")
+local io = require("apisix.core.io")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local clear_header = ngx.req.clear_header
@@ -25,7 +26,6 @@ local error    = error
 local type     = type
 local str_fmt  = string.format
 local str_lower = string.lower
-local io_open  = io.open
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 local req_get_body_file = ngx.req.get_body_file
@@ -174,18 +174,6 @@ function _M.get_post_args(ctx)
 end
 
 
-local function get_file(file_name)
-    local f, err = io_open(file_name, 'r')
-    if not f then
-        return nil, err
-    end
-
-    local req_body = f:read("*all")
-    f:close()
-    return req_body
-end
-
-
 local function check_size(size, max_size)
     if max_size and size > max_size then
         return nil, "request size " .. size .. " is greater than the "
@@ -252,7 +240,7 @@ function _M.get_body(max_size, ctx)
         end
     end
 
-    local req_body, err = get_file(file_name)
+    local req_body, err = io.get_file(file_name)
     return req_body, err
 end
 
