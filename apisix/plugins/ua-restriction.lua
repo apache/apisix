@@ -45,6 +45,11 @@ local schema = {
         rejected_msg = {
             type = "string",
             minLength = 1,
+            maxLength = 256
+        },
+        message = {
+            type = "string",
+            minLength = 1,
             maxLength = 256,
             default = "Not allowed"
         },
@@ -98,7 +103,7 @@ function _M.access(conf, ctx)
         if conf.bypass_missing then
             return
         else
-            return 403, { rejected_msg = conf.rejected_msg }
+            return 403, { rejected_msg = (conf.rejected_msg or conf.message) }
         end
     end
     local match = MATCH_NONE
@@ -116,7 +121,7 @@ function _M.access(conf, ctx)
     end
 
     if match > MATCH_ALLOW then
-        return 403, { rejected_msg = conf.rejected_msg }
+        return 403, { rejected_msg = (conf.rejected_msg or conf.message) }
     end
 end
 
