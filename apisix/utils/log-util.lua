@@ -201,7 +201,7 @@ function _M.latency_details_in_ms(ctx)
 end
 
 
-function _M.check_log_scheme(conf)
+function _M.check_log_schema(conf)
     if conf.include_req_body_expr then
         local ok, err = expr.new(conf.include_req_body_expr)
         if not ok then

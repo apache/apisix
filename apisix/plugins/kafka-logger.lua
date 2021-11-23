@@ -119,13 +119,13 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
-    local ok, err = log_util.check_log_scheme(conf)
-    if not ok then
-        return err
-    end
-
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
+    end
+
+    local ok, err = log_util.check_log_schema(conf)
+    if not ok then
+        return err
     end
     return core.schema.check(schema, conf)
 end
