@@ -26,6 +26,10 @@ add_block_preprocessor(sub {
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
 });
 
 run_tests();
@@ -45,8 +49,6 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 
@@ -63,8 +65,6 @@ done
             end
         }
     }
---- request
-GET /t
 --- response_body
 property "api_host" is required
 
@@ -81,8 +81,6 @@ property "api_host" is required
             end
         }
     }
---- request
-GET /t
 --- response_body
 property "api_host" validation failed: wrong type: expected string, got number
 
@@ -118,8 +116,6 @@ property "api_host" validation failed: wrong type: expected string, got number
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -186,8 +182,6 @@ Content-Type: application/json
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -233,8 +227,6 @@ Content-Type: application/json
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
