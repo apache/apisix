@@ -194,6 +194,8 @@ POST /hello
 --- more_headers
 Content-Type: application/json
 --- error_code: 404
+--- response_body_like eval
+qr/"error":"The requested resource does not exist."/
 
 
 
