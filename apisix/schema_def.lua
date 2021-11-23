@@ -277,6 +277,20 @@ local health_checker = {
                         },
                     }
                 }
+            },
+            default = {
+                type = "http",
+                healthy = {
+                    http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+                                      300, 301, 302, 303, 304, 305, 306, 307, 308 },
+                    successes = 5,
+                },
+                unhealthy = {
+                    http_statuses = { 429, 500, 503 },
+                    tcp_failures = 2,
+                    timeouts = 7,
+                    http_failures = 5,
+                },
             }
         }
     },
