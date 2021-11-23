@@ -32,7 +32,7 @@ via `VERSION=x.y.z make release-src`
 8. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.2) from the minor branch
 9. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
 10. Update APISIX rpm package
-11. Update APISIX docker
+11. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601), and create new branch form master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
 12. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
 
 ### Release minor version
@@ -41,12 +41,11 @@ via `VERSION=x.y.z make release-src`
 2. Package a vote artifact to Apache's dev-apisix repo. The artifact can be created
 via `VERSION=x.y.z make release-src`
 3. Send the [vote email](https://lists.apache.org/thread/q8zq276o20r5r9qjkg074nfzb77xwry9) to dev@apisix.apache.org
-   > After executing the `VERSION=x.y.z make release-src` command, the content of the vote email will be automatically generated in the `./release` directory named `apache-apisix-${x.y.z}-vote-contents`
 4. When the vote is passed, send the [vote result email](https://lists.apache.org/thread/p1m9s116rojlhb91g38cj8646393qkz7) to dev@apisix.apache.org
 5. Move the vote artifact to Apache's apisix repo
-6. Create a GitHub release from the minor branch
+6. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.0) from the minor branch
 7. Merge the pull request into master branch
-8. Update APISIX website
+8. Update [APISIX's website](https://github.com/apache/apisix-website/commit/7bf0ab5a1bbd795e6571c4bb89a6e646115e7ca3)
 9. Update APISIX rpm package
-10. Update APISIX docker
-11. Send the ANNOUNCE email to dev@apisix.apache.org & announce@apache.org
+10. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601), and create new branch form master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
+11. Send the [ANNOUNCE email](https://lists.apache.org/thread/4s4msqwl1tq13p9dnv3hx7skbgpkozw1) to dev@apisix.apache.org & announce@apache.org
