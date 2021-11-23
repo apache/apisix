@@ -233,15 +233,6 @@ local function get_logger_buffer(conf, ctx)
 end
 
 
-local function get_utc_timestamp()
-    ngx_update_time()
-    local now = ngx_now()
-    local second = math_floor(now)
-    local millisecond = math_floor((now - second) * 1000)
-    return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
-end
-
-
 local function get_logger_entry(conf, ctx)
     local auth_config, err = get_auth_config(conf)
     if err or not auth_config.project_id or not auth_config.private_key then
@@ -268,7 +259,7 @@ local function get_logger_entry(conf, ctx)
         labels = {
             source = "apache-apisix-google-cloud-logging"
         },
-        timestamp = get_utc_timestamp(),
+        timestamp = log_util.get_rfc3339_zulu_timestamp(),
         resource = conf.resource,
         insertId = ctx.var.request_id,
         logName = core.string.format("projects/%s/logs/%s", auth_config_cache.project_id,

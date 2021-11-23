@@ -18,7 +18,10 @@ local core = require("apisix.core")
 local expr = require("resty.expr.v1")
 local ngx  = ngx
 local pairs = pairs
+local ngx_now = ngx.now
+local os_date = os.date
 local str_byte = string.byte
+local math_floor = math.floor
 local req_get_body_data = ngx.req.get_body_data
 
 local lru_log_format = core.lrucache.new({
@@ -116,7 +119,7 @@ local function get_full_log(ngx, conf)
         consumer = consumer,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
-        latency = (ngx.now() - ngx.req.start_time()) * 1000
+        latency = (ngx_now() - ngx.req.start_time()) * 1000
     }
 
     if conf.include_req_body then
@@ -178,7 +181,7 @@ end
 
 
 function _M.latency_details_in_ms(ctx)
-    local latency = (ngx.now() - ngx.req.start_time()) * 1000
+    local latency = (ngx_now() - ngx.req.start_time()) * 1000
     local upstream_latency, apisix_latency = nil, latency
 
     if ctx.var.upstream_response_time then
@@ -195,5 +198,14 @@ function _M.latency_details_in_ms(ctx)
 
     return latency, upstream_latency, apisix_latency
 end
+
+
+function _M.get_rfc3339_zulu_timestamp(timestamp)
+    local now = timestamp or ngx_now()
+    local second = math_floor(now)
+    local millisecond = math_floor((now - second) * 1000)
+    return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
+end
+
 
 return _M
