@@ -237,7 +237,7 @@ local health_checker = {
                         },
                         successes = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         }
@@ -259,19 +259,19 @@ local health_checker = {
                         },
                         tcp_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 2
                         },
                         timeouts = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 7
                         },
                         http_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         },
@@ -283,13 +283,13 @@ local health_checker = {
                 healthy = {
                     http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
                                       300, 301, 302, 303, 304, 305, 306, 307, 308 },
-                    successes = 5,
+                    successes = 0,
                 },
                 unhealthy = {
                     http_statuses = { 429, 500, 503 },
-                    tcp_failures = 2,
-                    timeouts = 7,
-                    http_failures = 5,
+                    tcp_failures = 0,
+                    timeouts = 0,
+                    http_failures = 0,
                 },
             }
         }
