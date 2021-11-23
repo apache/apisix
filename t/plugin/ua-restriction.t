@@ -564,7 +564,7 @@ qr/string too short, expected at least 1, got 0/
         }
     }
 --- response_body_like eval
-qr/string too long, expected at most 1024, got 1025/
+qr/string too long, expected at most 256, got 260/
 
 
 
