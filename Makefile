@@ -22,10 +22,10 @@ SHELL := /bin/bash -o pipefail
 
 
 # Project basic setting
+VERSION                ?= master
 project_name           ?= apache-apisix
-project_version        ?= master
 project_compose_ci     ?= ci/pod/docker-compose.yml
-project_release_name   ?= $(project_name)-$(project_version)-src
+project_release_name   ?= $(project_name)-$(VERSION)-src
 
 
 # Hyperconverged Infrastructure
@@ -365,11 +365,13 @@ release-src: compress-tar
 
 .PHONY: compress-tar
 compress-tar:
+	# The $VERSION can be major.minor.patch (from developer)
+	# or major.minor (from the branch name in the CI)
 	$(ENV_TAR) -zcvf $(project_release_name).tgz \
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec/apisix-$(project_version)-*.rockspec \
+	./rockspec/apisix-$(project_version)*.rockspec \
 	./rockspec/apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \
