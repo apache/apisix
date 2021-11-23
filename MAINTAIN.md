@@ -32,7 +32,7 @@ via `VERSION=x.y.z make release-src`
 8. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.2) from the minor branch
 9. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
 10. Update APISIX rpm package
-11. Update APISIX docker
+11. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601), and create new branch form master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
 12. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
 
 ### Release minor version
