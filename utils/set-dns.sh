@@ -26,21 +26,25 @@ echo "127.0.0.1 admin.apisix.dev" | sudo tee -a /etc/hosts
 cat /etc/hosts # check GitHub Action's configuration
 
 # override DNS configures
-sudo pip3 install yq
-sleep 1
-tmp=$(mktemp)
-yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | \
-yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-domains"=false' | \
-yq -y '.network.ethernets.eth0.nameservers.addresses[0]="8.8.8.8"' | \
-yq -y '.network.ethernets.eth0.nameservers.search[0]="apache.org"' > $tmp
-mv $tmp /etc/netplan/50-cloud-init.yaml
-cat /etc/netplan/50-cloud-init.yaml
-sleep 1
-sudo netplan apply
-sudo mv /etc/resolv.conf /etc/resolv.conf.bak
-sudo ln -s /run/systemd/resolve/resolv.conf /etc/
+if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
+    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+    echo "search apache.org" | sudo tee -a /etc/resolv.conf
+else
+    sudo pip3 install yq
+    sleep 1
+    tmp=$(mktemp)
+    yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | \
+    yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-domains"=false' | \
+    yq -y '.network.ethernets.eth0.nameservers.addresses[0]="8.8.8.8"' | \
+    yq -y '.network.ethernets.eth0.nameservers.search[0]="apache.org"' > $tmp
+    mv $tmp /etc/netplan/50-cloud-init.yaml
+    cat /etc/netplan/50-cloud-init.yaml
+    sleep 1
+    sudo netplan apply
+    sudo mv /etc/resolv.conf /etc/resolv.conf.bak
+    sudo ln -s /run/systemd/resolve/resolv.conf /etc/
+if
 cat /etc/resolv.conf
-sleep 1
 
 mkdir -p build-cache
 
