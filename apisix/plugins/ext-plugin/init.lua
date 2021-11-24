@@ -274,7 +274,6 @@ local function handle_extra_info(ctx, input)
         local var_name = var_req:Name()
         if var_name == "request_body" then
             res = core.request.get_body()
-            ngx.log(ngx.WARN, "res : ", require("lualib.inspect")(res))
         else
             res = ctx.var[var_name]
         end
