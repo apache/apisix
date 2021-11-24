@@ -25,8 +25,17 @@ echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
 echo "127.0.0.1 admin.apisix.dev" | sudo tee -a /etc/hosts
 cat /etc/hosts # check GitHub Action's configuration
 
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-echo "search apache.org" | sudo tee -a /etc/resolv.conf
+# override DNS configures
+sudo apt install moreutils
+sudo pip3 install yq
+yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | sudo sponge /etc/netplan/50-cloud-init.yaml
+yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-domains"=false' /etc/netplan/50-cloud-init.yaml | sudo sponge /etc/netplan/50-cloud-init.yaml
+yq -y '.network.ethernets.eth0.nameservers.addresses[0]="8.8.8.8"' /etc/netplan/50-cloud-init.yaml | sudo sponge /etc/netplan/50-cloud-init.yaml
+yq -y '.network.ethernets.eth0.nameservers.search[0]="apache.org"' /etc/netplan/50-cloud-init.yaml | sudo sponge /etc/netplan/50-cloud-init.yaml
+sudo netplan apply
+sudo mv /etc/resolv.conf /etc/resolv.conf.bak
+sudo ln -s /run/systemd/resolve/resolv.conf /etc/
+cat /etc/resolv.conf
 
 mkdir -p build-cache
 
