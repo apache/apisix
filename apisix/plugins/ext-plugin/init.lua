@@ -272,7 +272,12 @@ local function handle_extra_info(ctx, input)
         var_req:Init(info.bytes, info.pos)
 
         local var_name = var_req:Name()
-        res = ctx.var[var_name]
+        if var_name == "request_body" then
+            res = core.request.get_body()
+            ngx.log(ngx.WARN, "res : ", require("lualib.inspect")(res))
+        else
+            res = ctx.var[var_name]
+        end
     else
         return nil, "unsupported info type: " .. info_type
     end

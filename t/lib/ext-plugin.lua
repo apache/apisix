@@ -169,6 +169,8 @@ function _M.go(case)
             local entry = call_req:Args(1)
             assert(entry:Name() == "x")
             assert(entry:Value() == "z")
+        elseif case.get_request_body then
+            assert(call_req:Method() == a6_method.POST)
         else
             assert(call_req:Method() == a6_method.GET)
         end
