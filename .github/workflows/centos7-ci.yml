@@ -68,7 +68,8 @@ jobs:
     - name: Install dependencies
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
-        docker exec centos7Instance bash -c "yum install -y python3 python3-pip"
+        docker exec centos7Instance bash -c "yum install -y python3 python3-pip epel-release"
+        docker exec centos7Instance bash -c "yum install -y jq"
 
     - name: Install rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
