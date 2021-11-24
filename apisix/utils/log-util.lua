@@ -236,8 +236,11 @@ function _M.collect_body(conf, ctx)
                 conf.response_expr = response_expr
             end
 
-            if ctx.response_expr_eval == nil then
-                ctx.response_expr_eval = conf.response_expr:eval(ctx.var)
+            if ctx.res_expr_eval_result == nil then
+                ctx.res_expr_eval_result = conf.response_expr:eval(ctx.var)
+            end
+
+            if not ctx.res_expr_eval_result then
                 log_response_body = false
             end
         end
