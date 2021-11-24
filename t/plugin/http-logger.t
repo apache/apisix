@@ -113,7 +113,8 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
-            local ok, err = plugin.check_schema({auth_header = "Basic 123",
+            local ok, err = plugin.check_schema({uri = "http://127.0.0.1",
+                                                 auth_header = "Basic 123",
                                                  timeout = 3,
                                                  name = "http-logger",
                                                  max_retry_count = 2,
