@@ -231,7 +231,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ### 贡献者变化
 
-> [访问这里](https://www.apiseven.com/contributor-graph)能生成最新贡献者变化.
+> [访问此处](https://www.apiseven.com/contributor-graph) 使用贡献者数据服务。
 
 [![贡献者变化](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
