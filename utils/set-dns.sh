@@ -43,7 +43,7 @@ else
     sudo netplan apply
     sudo mv /etc/resolv.conf /etc/resolv.conf.bak
     sudo ln -s /run/systemd/resolve/resolv.conf /etc/
-if
+fi
 cat /etc/resolv.conf
 
 mkdir -p build-cache
