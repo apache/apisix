@@ -15,6 +15,8 @@
 -- limitations under the License.
 
 local ngx  = ngx
+local require = require
+local type = type
 
 return function(plugin_name, version, priority, header_processor, authz_schema, metadata_schema)
     local core = require("apisix.core")
@@ -59,7 +61,6 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
         local uri_args = core.request.get_uri_args(ctx)
         local headers = core.request.headers(ctx) or {}
 
-        -- core.log.error("must---> ",core.json.delay_encode(ctx.curr_req_matched, true))
         local req_body, err = core.request.get_body()
 
         if err then
@@ -70,10 +71,10 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
         -- forward the url path came through the matched uri
         local url_decoded = url.parse(conf.function_uri)
         local path = url_decoded.path or "/"
-        
+
         if ctx.curr_req_matched and ctx.curr_req_matched["*"] then
             local end_path = ctx.curr_req_matched["*"]
-            
+
             if path:sub(-1, -1) == "/" or end_path:sub(1, 1) == "/" then
                 path = path .. end_path
             else
@@ -81,7 +82,7 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
             end
         end
 
-        
+
         headers["host"] = nil
         local params = {
             method = ngx.req.get_method(),
@@ -112,8 +113,8 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
             return 503
         end
 
-        -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2, endpoint
-        -- must not generate any connection specific headers for HTTP/2 requests.
+        -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2,
+        -- endpoint must not generate any connection specific headers for HTTP/2 requests.
         local response_headers = res.headers
         if ngx.var.http2 then
             response_headers["Connection"] = nil

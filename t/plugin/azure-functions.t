@@ -45,7 +45,7 @@ add_block_preprocessor(sub {
         location /api/httptrigger {
            content_by_lua_block {
                 ngx.say("success")
-            } 
+            }
         }
 
         location /azure-demo {
@@ -382,6 +382,8 @@ passed
 passed
 Authz-Header - metadata_key
 
+
+
 === TEST 10: check if url path being forwarded correctly by creating a semi correct path uri
 --- config
     location /t {
@@ -419,4 +421,3 @@ Authz-Header - metadata_key
 --- response_body
 passed
 success
-
