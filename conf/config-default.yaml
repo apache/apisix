@@ -356,6 +356,7 @@ plugins:                          # plugin list (sorted by priority)
   - example-plugin                 # priority: 0
   #- skywalking                    # priority: -1100
   - azure-functions                # priority: -1900
+  - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
 
