@@ -33,7 +33,8 @@ local metadata_schema = {
     }
 }
 
-local function preprocess_headers(conf, ctx, headers)
+local function preprocess_headers(conf, ctx, params)
+    local headers = params.headers or {}
     -- set authorization headers if not already set by the client
     -- we are following not to overwrite the authz keys
     if not headers["x-functions-key"] and
@@ -51,6 +52,8 @@ local function preprocess_headers(conf, ctx, headers)
             end
         end
     end
+
+    return headers
 end
 
 
