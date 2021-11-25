@@ -437,3 +437,30 @@ c=z_z&v=x%20x
 nil
 --- error_log
 the post form is too large: request body in temp file not supported
+
+
+
+=== TEST 13: get_method
+--- config
+    location = /hello {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+
+            local method = core.request.get_method(ngx.ctx.api_ctx)
+            ngx.say(method)
+        }
+    }
+--- request
+POST /hello
+--- response_body
+POST
+--- no_error_log
+[error]
