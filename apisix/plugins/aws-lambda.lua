@@ -14,26 +14,166 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-local plugin_name, plugin_version, priority = "aws-lambda", 0.1, -1901
+local ngx = ngx
+local pairs = pairs
+local concat = table.concat
+local url = require("net.url")
+local hmac = require("resty.hmac")
+local hex = require("resty.string")
+local resty_sha256 = require("resty.sha256")
+
+
+local plugin_name, plugin_version, priority = "aws-lambda", 0.1, -1899
+
+local ALGO = "AWS4-HMAC-SHA256"
+
+local function hmac256(key, msg)
+    return hmac:new(key, hmac.ALGOS.SHA256):final(msg)
+end
+
+local function sha256(msg)
+    local hash = resty_sha256:new()
+    hash:update(msg)
+    local digest = hash:final()
+    return hex.to_hex(digest)
+end
+
+local function getSignatureKey(key, datestamp, region, service)
+    local kDate = hmac256("AWS4" .. key, datestamp)
+    local kRegion = hmac256(kDate, region)
+    local kService = hmac256(kRegion, service)
+    local kSigning = hmac256(kService, "aws4_request")
+    return kSigning
+end
 
 local aws_authz_schema = {
     type = "object",
     properties = {
+        -- API Key based authorization
         apikey = {type = "string"},
-        -- more to be added soon
+        -- IAM role based authorization, works via aws v4 request signing
+        -- more at https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
+        iam = {
+            type = "object",
+            properties = {
+                accesskey = {
+                    type = "string",
+                    description = "access key id from from aws iam console"
+                },
+                secretkey = {
+                    type = "string",
+                    description = "secret access key from from aws iam console"
+                },
+                aws_region = {
+                    type = "string",
+                    default = "us-east-1",
+                    description = "the aws region that is receiving the request"
+                },
+                service = {
+                    type = "string",
+                    default = "execute-api",
+                    description = "service that is receiving the request"
+                }
+            },
+            required = {"accesskey", "secretkey"}
+        }
     }
 }
 
-local function preprocess_headers(conf, ctx, headers)
+local function request_processor(conf, ctx, params)
+    local headers = params.headers
     -- set authorization headers if not already set by the client
     -- we are following not to overwrite the authz keys
     if not headers["x-api-key"] then
-        if conf.authorization then
+        if conf.authorization and conf.authorization.apikey then
             headers["x-api-key"] = conf.authorization.apikey
+            return
         end
     end
+
+    -- performing aws v4 request signing for IAM authorization
+    -- visit https://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html
+    -- to look at the pseudocode in python.
+    if headers["authorization"] or not conf.authorization or not conf.authorization.iam then
+        return
+    end
+
+    -- create a date for headers and the credential string
+    local t = ngx.time()
+    local amzdate =  os.date("!%Y%m%dT%H%M%SZ", t)
+    local datestamp = os.date("!%Y%m%d", t) -- Date w/o time, used in credential scope
+    headers["X-Amz-Date"] = amzdate
+
+    -- computing canonical uri
+    local canonical_uri = params.path:gsub("//", "/")
+    if canonical_uri ~= "/" then
+        if canonical_uri:sub(-1, -1) == "/" then
+            canonical_uri = canonical_uri:sub(1, -2)
+        end
+        if canonical_uri:sub(1, 1) ~= "/" then
+            canonical_uri = "/" .. canonical_uri
+        end
+    end
+
+    -- computing canonical query string
+    local canonical_qs = {}
+    for k, v in pairs(params.query) do
+        canonical_qs[#canonical_qs+1] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
+    end
+
+    table.sort(canonical_qs)
+    canonical_qs = concat(canonical_qs, "&")
+
+    -- computing canonical and signed headers
+    local url_decoded = url.parse(conf.function_uri)
+    headers["host"] = url_decoded.host
+
+    local canonical_headers, signed_headers = {}, {}
+    for k, v in pairs(headers) do
+        k = k:lower()
+        if k ~= "connection" then
+            signed_headers[#signed_headers+1] = k
+            -- strip starting and trailing spaces including strip multiple spaces into single space
+            canonical_headers[k] =  v:gsub("^%s+", ""):gsub("%s+$", "")
+        end
+    end
+    table.sort(signed_headers)
+
+    for i = 1, #signed_headers do
+        local k = signed_headers[i]
+        canonical_headers[i] = k .. ":" .. canonical_headers[k] .. "\n"
+    end
+    canonical_headers = concat(canonical_headers, nil, 1, #signed_headers)
+    signed_headers = concat(signed_headers, ";")
+
+    -- combining elements to form the canonical request (step-1)
+    local canonical_request = params.method:upper() .. "\n"
+                        .. canonical_uri .. "\n"
+                        .. (canonical_qs or "") .. "\n"
+                        .. canonical_headers .. "\n"
+                        .. signed_headers .. "\n"
+                        .. sha256(params.body or "")
+
+    -- creating the string to sign for aws signature v4 (step-2)
+    local iam = conf.authorization.iam
+    local credential_scope = datestamp .. "/" .. iam.aws_region .. "/"
+                            .. iam.service .. "/aws4_request"
+    local string_to_sign = ALGO .. "\n"
+                        .. amzdate .. "\n"
+                        .. credential_scope .. "\n"
+                        .. sha256(canonical_request)
+
+    -- calculate the signature (step-3)
+    local signature_key = getSignatureKey(iam.secretkey, datestamp, iam.aws_region, iam.service)
+    local signature = hex.to_hex(hmac256(signature_key, string_to_sign))
+
+    -- add info to the headers (step-4)
+    headers["authorization"] = ALGO .. " Credential=" .. iam.accesskey
+                            .. "/" .. credential_scope
+                            .. ", SignedHeaders=" .. signed_headers
+                            .. ", Signature=" .. signature
 end
 
 
 return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
-        plugin_version, priority, preprocess_headers, aws_authz_schema)
+        plugin_version, priority, request_processor, aws_authz_schema)
