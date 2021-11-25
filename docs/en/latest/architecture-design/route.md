@@ -33,7 +33,7 @@ We configure all the parameters directly in the Route, it's easy to set up, and 
 
 The shortcomings mentioned above are independently abstracted in APISIX by the two concepts [Service](service.md) and [Upstream](upstream.md).
 
-The route example created below is to proxy the request with URL `/index.html` to the Upstream service with the address `39.97.63.215:80`:
+The route example created below is to proxy the request with URL `/index.html` to the Upstream service with the address `127.0.0.1:1980`:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -42,7 +42,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -54,7 +54,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
 When we receive a successful response, it indicates that the route was successfully created.
