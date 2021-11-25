@@ -26,10 +26,7 @@ echo "127.0.0.1 admin.apisix.dev" | sudo tee -a /etc/hosts
 cat /etc/hosts # check GitHub Action's configuration
 
 # override DNS configures
-if [ ! -f "/etc/netplan/50-cloud-init.yaml" ]; then
-    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-    echo "search apache.org" | sudo tee -a /etc/resolv.conf
-else
+if [ -f "/etc/netplan/50-cloud-init.yaml" ]; then
     sudo pip3 install yq
 
     tmp=$(mktemp)
