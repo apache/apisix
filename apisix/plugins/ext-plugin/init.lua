@@ -28,6 +28,7 @@ local extra_info = require("A6.ExtraInfo.Info")
 local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
 local extra_info_resp = require("A6.ExtraInfo.Resp")
+local extra_info_reqbody = require("A6.ExtraInfo.ReqBody")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -272,11 +273,13 @@ local function handle_extra_info(ctx, input)
         var_req:Init(info.bytes, info.pos)
 
         local var_name = var_req:Name()
-        if var_name == "request_body" then
-            res = core.request.get_body()
-        else
-            res = ctx.var[var_name]
-        end
+        res = ctx.var[var_name]
+    elseif info_type == extra_info.ReqBody then
+        local info = req:Info()
+        local reqbody_req = extra_info_reqbody.New()
+        reqbody_req:Init(info.bytes, info.pos)
+
+        res = core.request.get_body()
     else
         return nil, "unsupported info type: " .. info_type
     end

@@ -113,7 +113,7 @@ POST /hello
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             local actions = {
-                {type = "var", name = "request_body", result = "123"},
+                {type = "reqbody", result = "123"},
             }
             ext.go({extra_info = actions, stop = true, get_request_body = true})
         }
@@ -139,7 +139,7 @@ Content-Type: application/x-www-form-urlencoded
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             local actions = {
-                {type = "var", name = "request_body", result = "foo=bar"},
+                {type = "reqbody", result = "foo=bar"},
             }
             ext.go({extra_info = actions, stop = true, get_request_body = true})
         }
@@ -165,7 +165,7 @@ Content-Type: application/json
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             local actions = {
-                {type = "var", name = "request_body", result = "{\"foo\":\"bar\"}"},
+                {type = "reqbody", result = "{\"foo\":\"bar\"}"},
             }
             ext.go({extra_info = actions, stop = true, get_request_body = true})
         }
@@ -189,7 +189,7 @@ POST /hello
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             local actions = {
-                {type = "var", name = "request_body", result = nil},
+                {type = "reqbody", result = nil},
             }
             ext.go({extra_info = actions, stop = true, get_request_body = true})
         }
