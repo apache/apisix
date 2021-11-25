@@ -18,13 +18,14 @@ local ngx  = ngx
 local require = require
 local type = type
 
-return function(plugin_name, version, priority, header_processor, authz_schema, metadata_schema)
+return function(plugin_name, version, priority, request_processor, authz_schema, metadata_schema)
     local core = require("apisix.core")
     local http = require("resty.http")
+    local url = require("net.url")
 
-    if header_processor and type(header_processor) ~= "function" then
+    if request_processor and type(request_processor) ~= "function" then
         return "Failed to generate plugin due to invalid header processor type, " ..
-                    "expected: function, received: " .. type(header_processor)
+                    "expected: function, received: " .. type(request_processor)
     end
 
     local schema = {
@@ -66,8 +67,20 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
             return 400
         end
 
-        -- modify header info (if required)
-        header_processor(conf, ctx, headers)
+        -- forward the url path came through the matched uri
+        local url_decoded = url.parse(conf.function_uri)
+        local path = url_decoded.path or "/"
+
+        if ctx.curr_req_matched and ctx.curr_req_matched["*"] then
+            local end_path = ctx.curr_req_matched["*"]
+
+            if path:sub(-1, -1) == "/" or end_path:sub(1, 1) == "/" then
+                path = path .. end_path
+            else
+                path = path .. "/" .. end_path
+            end
+        end
+
 
         headers["host"] = nil
         local params = {
@@ -75,6 +88,7 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
             body = req_body,
             query = uri_args,
             headers = headers,
+            path = path,
             keepalive = conf.keepalive,
             ssl_verify = conf.ssl_verify
         }
@@ -84,6 +98,9 @@ return function(plugin_name, version, priority, header_processor, authz_schema, 
             params.keepalive_timeout = conf.keepalive_timeout
             params.keepalive_pool = conf.keepalive_pool
         end
+
+        -- modify request info (if required)
+        request_processor(conf, ctx, params)
 
         local httpc = http.new()
         httpc:set_timeout(conf.timeout)

@@ -42,6 +42,12 @@ add_block_preprocessor(sub {
             }
         }
 
+        location /api/httptrigger {
+           content_by_lua_block {
+                ngx.say("success")
+            }
+        }
+
         location /azure-demo {
             content_by_lua_block {
                 $inside_lua_block
@@ -375,3 +381,43 @@ ngx.say("Authz-Header - " .. headers["x-functions-key"] or "")
 passed
 passed
 Authz-Header - metadata_key
+
+
+
+=== TEST 10: check if url path being forwarded correctly by creating a semi correct path uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- creating a semi path route
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "azure-functions": {
+                                "function_uri": "http://localhost:8765/api"
+                            }
+                        },
+                        "uri": "/azure/**"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            local code, _, body = t("/azure/httptrigger", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+success

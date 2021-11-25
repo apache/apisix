@@ -33,7 +33,8 @@ local metadata_schema = {
     }
 }
 
-local function preprocess_headers(conf, ctx, headers)
+local function request_processor(conf, ctx, params)
+    local headers = params.headers or {}
     -- set authorization headers if not already set by the client
     -- we are following not to overwrite the authz keys
     if not headers["x-functions-key"] and
@@ -51,8 +52,10 @@ local function preprocess_headers(conf, ctx, headers)
             end
         end
     end
+
+    params.headers = headers
 end
 
 
 return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
-        plugin_version, priority, preprocess_headers, azure_authz_schema, metadata_schema)
+        plugin_version, priority, request_processor, azure_authz_schema, metadata_schema)
