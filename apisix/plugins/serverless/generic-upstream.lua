@@ -109,7 +109,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local res, err = httpc:request_uri(conf.function_uri, params)
 
         if not res or err then
-            core.log.error("failed to process azure function, err: ", err)
+            core.log.error("failed to process ", plugin_name, ", err: ", err)
             return 503
         end
 
