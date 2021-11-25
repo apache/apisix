@@ -28,7 +28,7 @@ read -p "Please enter release commit id: " COMMIT_ID
 vote_contents=$(cat <<EOF
 Hello, Community,
 
-This is a call for the vote to release Apache APISIX version 
+This is a call for the vote to release Apache APISIX version
 
 Release notes:
 
