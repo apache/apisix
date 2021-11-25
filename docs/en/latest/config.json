@@ -129,7 +129,8 @@
           "label": "Serverless",
           "items": [
             "plugins/serverless",
-            "plugins/azure-functions"
+            "plugins/azure-functions",
+            "plugins/openwhisk"
           ]
         },
         {
