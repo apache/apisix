@@ -17,6 +17,8 @@
 local ngx = ngx
 local pairs = pairs
 local concat = table.concat
+local sort = table.sort
+local os = os
 local url = require("net.url")
 local hmac = require("resty.hmac")
 local hex = require("resty.string")
@@ -121,7 +123,7 @@ local function request_processor(conf, ctx, params)
         canonical_qs[#canonical_qs+1] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
     end
 
-    table.sort(canonical_qs)
+    sort(canonical_qs)
     canonical_qs = concat(canonical_qs, "&")
 
     -- computing canonical and signed headers
@@ -137,7 +139,7 @@ local function request_processor(conf, ctx, params)
             canonical_headers[k] =  v:gsub("^%s+", ""):gsub("%s+$", "")
         end
     end
-    table.sort(signed_headers)
+    sort(signed_headers)
 
     for i = 1, #signed_headers do
         local k = signed_headers[i]
