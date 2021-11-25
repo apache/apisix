@@ -17,69 +17,76 @@
 # limitations under the License.
 #
 VERSION=$1
+
+SUBSTRING1=$(echo $VERSION| cut -d'.' -f 1)
+SUBSTRING2=$(echo $VERSION| cut -d'.' -f 2)
+BLOB_VERSION=$SUBSTRING1.$SUBSTRING2
+
 read -p "Please enter release note pr: " RELEASE_NOTE_PR
-read -p "Please enter commit id: " COMMIT_ID
+read -p "Please enter release commit id: " COMMIT_ID
 
-vote_contents="\n
-Hello, Community,\n
+vote_contents=$(cat <<EOF
+Hello, Community,
 
-This is a call for the vote to release Apache APISIX version $VERSION\n\n
+This is a call for the vote to release Apache APISIX version 
 
-Release notes:\n\n
+Release notes:
 
-$RELEASE_NOTE_PR\n\n
+$RELEASE_NOTE_PR
 
-The release candidates:\n\n
+The release candidates:
 
-https://dist.apache.org/repos/dist/dev/apisix/$VERSION/\n\n
+https://dist.apache.org/repos/dist/dev/apisix/$VERSION/
 
-Release Commit ID:\n\n
+Release Commit ID:
 
-https://github.com/apache/apisix/commit/$COMMIT_ID\n\n
+https://github.com/apache/apisix/commit/$COMMIT_ID
 
-Keys to verify the Release Candidate:\n\n
+Keys to verify the Release Candidate:
 
-https://dist.apache.org/repos/dist/dev/apisix/KEYS\n\n
+https://dist.apache.org/repos/dist/dev/apisix/KEYS
 
-Steps to validating the release:\n\n
+Steps to validating the release:
 
-1. Download the release\n\n
+1. Download the release
 
-wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz\n\n
+wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz
 
 2. Checksums and signatures
 
-wget https://dist.apache.org/repos/dist/dev/apisix/KEYS\n\n
+wget https://dist.apache.org/repos/dist/dev/apisix/KEYS
 
-wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz.asc\n\n
+wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz.asc
 
-wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz.sha512\n\n
+wget https://dist.apache.org/repos/dist/dev/apisix/$VERSION/apache-apisix-$VERSION-src.tgz.sha512
 
-gpg --import KEYS\n\n
+gpg --import KEYS
 
-shasum -c apache-apisix-$VERSION-src.tgz.sha512\n\n
+shasum -c apache-apisix-$VERSION-src.tgz.sha512
 
-gpg --verify apache-apisix-$VERSION-src.tgz.asc apache-apisix-$VERSION-src.tgz\n\n
+gpg --verify apache-apisix-$VERSION-src.tgz.asc apache-apisix-$VERSION-src.tgz
 
-3. Unzip and Check files\n\n
+3. Unzip and Check files
 
-tar zxvf apache-apisix-$VERSION-src.tgz\n\n
+tar zxvf apache-apisix-$VERSION-src.tgz
 
-4. Build Apache APISIX:\n\n
+4. Build Apache APISIX:
 
-https://github.com/apache/apisix/blob/release/$VERSION/docs/en/latest/how-to-build.md#installation-via-source-release-package\n\n
+https://github.com/apache/apisix/blob/release/$BLOB_VERSION/docs/en/latest/how-to-build.md#installation-via-source-release-package
 
 The vote will be open for at least 72 hours or until necessary number of
-votes are reached.\n\n
+votes are reached.
 
-Please vote accordingly:\n\n
+Please vote accordingly:
 
-[ ] +1 approve\n
-[ ] +0 no opinion\n
-[ ] -1 disapprove with the reason"
+[ ] +1 approve
+[ ] +0 no opinion
+[ ] -1 disapprove with the reason
+EOF
+)
 
 if [ ! -d release ];then
   mkdir release
 fi
-rm -rf ./release/vote-contents.txt
-echo $vote_contents >> ./release/apache-apisix-$VERSION-vote-contents.txt
+rm -rf ./release/apache-apisix-$VERSION-vote-contents.txt
+printf "$vote_contents" >> ./release/apache-apisix-$VERSION-vote-contents.txt
