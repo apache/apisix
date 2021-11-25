@@ -142,7 +142,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -158,7 +158,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -173,7 +173,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 1
+            "127.0.0.1:1981": 1
         }
     }
 }'
@@ -182,8 +182,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -192,7 +192,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 10
+            "127.0.0.1:1981": 10
         }
     }
 }'
@@ -201,8 +201,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -211,7 +211,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.215:80": null
+            "127.0.0.1:1980": null
         }
     }
 }'
@@ -220,7 +220,7 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
@@ -238,14 +238,14 @@ After successful execution, methods will not retain the original data, and the e
 # Replace upstream nodes of the Route -- sub path
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After successful execution, nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 
@@ -359,7 +359,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -373,7 +373,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 1
+            "127.0.0.1:1981": 1
         }
     }
 }'
@@ -382,8 +382,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -392,7 +392,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 10
+            "127.0.0.1:1981": 10
         }
     }
 }'
@@ -401,8 +401,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -411,7 +411,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.215:80": null
+            "127.0.0.1:1980": null
         }
     }
 }'
@@ -420,21 +420,21 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
 # Replace upstream nodes of the Service
 $ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After successful execution, upstream nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 ```
@@ -622,7 +622,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 {
     "type":"roundrobin",
     "nodes":{
-        "39.97.63.215:80": 1
+        "127.0.0.1:1980": 1
     }
 }'
 HTTP/1.1 201 Created
@@ -633,7 +633,7 @@ HTTP/1.1 201 Created
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.216:80": 1
+        "127.0.0.1:1981": 1
     }
 }'
 HTTP/1.1 200 OK
@@ -641,8 +641,8 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -650,7 +650,7 @@ After successful execution, nodes will be updated to:
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.216:80": 10
+        "127.0.0.1:1981": 10
     }
 }'
 HTTP/1.1 200 OK
@@ -658,8 +658,8 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -667,7 +667,7 @@ After successful execution, nodes will be updated to:
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.215:80": null
+        "127.0.0.1:1980": null
     }
 }'
 HTTP/1.1 200 OK
@@ -675,21 +675,21 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
 # Replace the nodes of the Upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After the execution is successful, nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 ```
@@ -750,7 +750,7 @@ For example:
         "type": "roundrobin",
         "nodes": [
             {"host": "127.0.0.1", "port": 1980, "weight": 2000},
-            {"host": "127.0.0.2", "port": 1980, "weight": 1, "priority": -1}
+            {"host": "127.0.0.1", "port": 1981, "weight": 1, "priority": -1}
         ],
         "checks": {
             "active": {
