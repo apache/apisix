@@ -281,7 +281,7 @@ local function handle_extra_info(ctx, input)
 
         local err
         res, err = core.request.get_body()
-        if not res then
+        if err then
             core.log.error("failed to read request body: ", err)
         end
 

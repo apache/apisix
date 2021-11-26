@@ -199,5 +199,3 @@ POST /hello
 qr/send extra info req successfully/
 --- grep_error_log_out
 send extra info req successfully
---- error_log
-failed to read request body: nil
