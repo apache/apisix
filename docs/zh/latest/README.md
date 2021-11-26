@@ -153,6 +153,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **Serverless**
   - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.
   - [Azure functions](docs/en/latest/plugins/azure-functions.md): 能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
+  - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): 与Apache OpenWhisk集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
 
 ## 立刻开始
 
