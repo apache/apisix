@@ -155,7 +155,7 @@ local function send_to_google(oauth, entries)
         }),
         headers = {
             ["Content-Type"] = "application/json",
-            ["Authorization"] = "Bearer " .. access_token,
+            ["Authorization"] = (oauth.access_token_type or "Bearer") .. " " .. access_token,
         },
     })
 
