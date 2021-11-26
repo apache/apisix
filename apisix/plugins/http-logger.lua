@@ -157,6 +157,11 @@ function _M.body_filter(conf, ctx)
 end
 
 
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
+
+
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
