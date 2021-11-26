@@ -44,6 +44,17 @@ local schema = {
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array",
+                items = {
+                    type = "string"
+                }
+            }
+        },
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}}
     },
@@ -72,7 +83,12 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    return core.schema.check(schema, conf)
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return nil, err
+    end
+    return log_util.check_log_schema(conf)
 end
 
 
@@ -159,6 +175,11 @@ local function remove_stale_objects(premature)
     end
 
     stale_timer_running = false
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

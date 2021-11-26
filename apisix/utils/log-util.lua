@@ -123,6 +123,10 @@ local function get_full_log(ngx, conf)
         latency = (ngx_now() - ngx.req.start_time()) * 1000
     }
 
+    if ctx.resp_body then
+        log.response.body = ctx.resp_body
+    end
+
     if conf.include_req_body then
 
         local log_request_body = true
@@ -132,7 +136,7 @@ local function get_full_log(ngx, conf)
             if not conf.request_expr then
                 local request_expr, err = expr.new(conf.include_req_body_expr)
                 if not request_expr then
-                    core.log.error('generate log expr err ' .. err)
+                    core.log.error('generate request expr err ' .. err)
                     return log
                 end
                 conf.request_expr = request_expr
@@ -198,6 +202,57 @@ function _M.latency_details_in_ms(ctx)
     end
 
     return latency, upstream_latency, apisix_latency
+end
+
+
+function _M.check_log_schema(conf)
+    if conf.include_req_body_expr then
+        local ok, err = expr.new(conf.include_req_body_expr)
+        if not ok then
+            return nil, "failed to validate the 'include_req_body_expr' expression: " .. err
+        end
+    end
+    if conf.include_resp_body_expr then
+        local ok, err = expr.new(conf.include_resp_body_expr)
+        if not ok then
+            return nil, "failed to validate the 'include_resp_body_expr' expression: " .. err
+        end
+    end
+    return true, nil
+end
+
+
+function _M.collect_body(conf, ctx)
+    if conf.include_resp_body then
+        local log_response_body = true
+
+        if conf.include_resp_body_expr then
+            if not conf.response_expr then
+                local response_expr, err = expr.new(conf.include_resp_body_expr)
+                if not response_expr then
+                    core.log.error('generate response expr err ' .. err)
+                    return
+                end
+                conf.response_expr = response_expr
+            end
+
+            if ctx.res_expr_eval_result == nil then
+                ctx.res_expr_eval_result = conf.response_expr:eval(ctx.var)
+            end
+
+            if not ctx.res_expr_eval_result then
+                log_response_body = false
+            end
+        end
+
+        if log_response_body then
+            local final_body = core.response.hold_body_chunk(ctx, true)
+            if not final_body then
+                return
+            end
+            ctx.resp_body = final_body
+        end
+    end
 end
 
 
