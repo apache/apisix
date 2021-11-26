@@ -286,3 +286,24 @@ ONLY:
 --- response_body
 {"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":{}}}
 ```
+
+### Executing Shell Commands
+
+It is possible to execute shell commands while writing tests in Test Nginx for apisix modules. We exeposes this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block and `stderr` (if any) can be captured by filtering error.log through `grep_error_log`. Here is an example:
+
+```
+=== TEST 1: check exec stdout
+--- exec
+echo hello world
+--- response_body
+hello world
+
+
+=== TEST 2: when exec returns an error
+--- exec
+echxo hello world
+--- grep_error_log eval
+qr/failed to execute the script [ -~]*/
+--- grep_error_log_out
+failed to execute the script with status: 127, reason: exit, stderr: /bin/sh: 1: echxo: not found
+```
