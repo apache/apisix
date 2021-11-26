@@ -72,10 +72,10 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local url_decoded = url.parse(conf.function_uri)
         local path = url_decoded.path or "/"
 
-        if ctx.curr_req_matched and ctx.curr_req_matched["*"] then
-            local end_path = ctx.curr_req_matched["*"]
+        if ctx.curr_req_matched and ctx.curr_req_matched[":ext"] then
+            local end_path = ctx.curr_req_matched[":ext"]
 
-            if path:sub(-1, -1) == "/" or end_path:sub(1, 1) == "/" then
+            if path:byte(-1) == string.byte("/") or end_path:byte(1) == string.byte("/") then
                 path = path .. end_path
             else
                 path = path .. "/" .. end_path
@@ -83,7 +83,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         end
 
 
-        headers["host"] = nil
+        headers["host"] = url_decoded.host
         local params = {
             method = ngx.req.get_method(),
             body = req_body,
