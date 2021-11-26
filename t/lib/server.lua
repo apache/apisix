@@ -497,7 +497,7 @@ function _M.google_logging_entries()
         ngx.say(json_encode({ error = "authentication header not exists" }))
         return
     end
-    
+
     token = string.sub(token, string.len(args_token_type) + 2)
     local verify = jwt:verify(rsa_public_key, token)
     if not verify.verified then
@@ -514,7 +514,7 @@ function _M.google_logging_entries()
         return
     end
 
-    local expire_time =  (verify.payload.exp or ngx.time()) - ngx.time()
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
     if expire_time <= 0 then
         ngx.status = 403
         ngx.say(json_encode({ error = "token has expired" }))
