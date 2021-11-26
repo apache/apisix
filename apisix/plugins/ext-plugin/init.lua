@@ -279,7 +279,12 @@ local function handle_extra_info(ctx, input)
         local reqbody_req = extra_info_reqbody.New()
         reqbody_req:Init(info.bytes, info.pos)
 
-        res = core.request.get_body()
+        local err
+        res, err = core.request.get_body()
+        if not res then
+            core.log.error("failed to read request body: ", err)
+        end
+
     else
         return nil, "unsupported info type: " .. info_type
     end
