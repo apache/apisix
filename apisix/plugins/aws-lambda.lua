@@ -74,7 +74,7 @@ local aws_authz_schema = {
                 service = {
                     type = "string",
                     default = "execute-api",
-                    description = "service that is receiving the request"
+                    description = "The service that is receiving the request"
                 }
             },
             required = {"accesskey", "secretkey"}
