@@ -82,7 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Now any requests (HTTP/1.1, HTTPS, HTTP2) to URI `/aws` will trigger an HTTP invocation to the aforesaid function URI and response body along with the response headers and response code will be proxied back to the client. For example ( here aws lambda function just take the `name` query param and returns `Hello $name` ) :
 
 ```shell
-$ curl -i -XGET localhost:9080/aws\?name=apisix                                                                  
+$ curl -i -XGET localhost:9080/aws\?name=apisix
 HTTP/1.1 200 OK
 Content-Type: application/json
 Connection: keep-alive
@@ -100,7 +100,7 @@ For requests where the mode of communication between the client and the Apache A
 
 ```shell
 $ curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=apisix
-HTTP/2 200 
+HTTP/2 200
 content-type: application/json
 content-length: 16
 x-amz-apigw-id: JdwulHHrIAMFoFg=
