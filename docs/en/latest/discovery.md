@@ -61,11 +61,13 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 ### the example of Eureka
 
-#### Implementation of eureka.lua
+#### Implementation of Eureka client
 
-First, add [`eureka.lua`](../../../apisix/discovery/eureka.lua) in the `apisix/discovery/` directory;
+First, create a directory `eureka` under `apisix/discovery`;
 
-Then implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes in `eureka.lua`:
+After that, add [`init.lua`](../../../apisix/discovery/eureka/init.lua) in the `apisix/discovery/eureka` directory;
+
+Then implement the `_M.init_worker()` function for initialization and the `_M.nodes(service_name)` function for obtaining the list of service instance nodes in `init.lua`:
 
   ```lua
   local _M = {
@@ -90,6 +92,8 @@ Then implement the `_M.init_worker()` function for initialization and the `_M.no
 
   return _M
   ```
+
+Finally, provide the schema for YAML configuration in the `schema.lua` under `apisix/discovery/eureka`.
 
 #### How convert Eureka's instance data to APISIX's node?
 

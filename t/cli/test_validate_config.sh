@@ -22,6 +22,31 @@
 . ./t/cli/common.sh
 
 echo '
+discovery:
+    nacos:
+        host: "127.0.0.1"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "host" validation failed: wrong type: expected array, got string'; then
+    echo "failed: should check discovery schema during init"
+    exit 1
+fi
+
+echo '
+discovery:
+    unknown:
+        host: "127.0.0.1"
+' > conf/config.yaml
+
+if ! make init; then
+    echo "failed: should ignore discovery without schema"
+    exit 1
+fi
+
+echo "passed: check discovery schema during init"
+
+echo '
 apisix:
   dns_resolver_valid: "/apisix"
 ' > conf/config.yaml
