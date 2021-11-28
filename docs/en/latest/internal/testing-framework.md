@@ -289,7 +289,7 @@ ONLY:
 
 ### Executing Shell Commands
 
-It is possible to execute shell commands while writing tests in Test Nginx for apisix modules. We exeposes this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block and `stderr` (if any) can be captured by filtering error.log through `grep_error_log`. Here is an example:
+It is possible to execute shell commands while writing tests in test-nginx for APISIX. We expose this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block and `stderr` (if any) can be captured by filtering error.log through `grep_error_log`. Here is an example:
 
 ```
 === TEST 1: check exec stdout
