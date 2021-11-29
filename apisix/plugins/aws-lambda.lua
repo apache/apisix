@@ -16,16 +16,17 @@
 
 local ngx = ngx
 local pairs = pairs
-local concat = table.concat
-local sort = table.sort
+local tab_concat = table.concat
+local tab_sort = table.sort
 local os = os
-local url = require("net.url")
 local hmac = require("resty.hmac")
-local hex = require("resty.string")
+local hexencode = require("resty.string").to_hex
 local resty_sha256 = require("resty.sha256")
 
 
-local plugin_name, plugin_version, priority = "aws-lambda", 0.1, -1899
+local plugin_name = "aws-lambda"
+local plugin_version = 0.1
+local priority = -1899
 
 local ALGO = "AWS4-HMAC-SHA256"
 
@@ -37,7 +38,7 @@ local function sha256(msg)
     local hash = resty_sha256:new()
     hash:update(msg)
     local digest = hash:final()
-    return hex.to_hex(digest)
+    return hexencode(digest)
 end
 
 local function getSignatureKey(key, datestamp, region, service)
@@ -74,7 +75,7 @@ local aws_authz_schema = {
                 service = {
                     type = "string",
                     default = "execute-api",
-                    description = "The service that is receiving the request"
+                    description = "the service that is receiving the request"
                 }
             },
             required = {"accesskey", "secretkey"}
@@ -123,12 +124,10 @@ local function request_processor(conf, ctx, params)
         canonical_qs[#canonical_qs+1] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
     end
 
-    sort(canonical_qs)
-    canonical_qs = concat(canonical_qs, "&")
+    tab_sort(canonical_qs)
+    canonical_qs = tab_concat(canonical_qs, "&")
 
     -- computing canonical and signed headers
-    local url_decoded = url.parse(conf.function_uri)
-    headers["host"] = url_decoded.host
 
     local canonical_headers, signed_headers = {}, {}
     for k, v in pairs(headers) do
@@ -139,14 +138,14 @@ local function request_processor(conf, ctx, params)
             canonical_headers[k] =  v:gsub("^%s+", ""):gsub("%s+$", "")
         end
     end
-    sort(signed_headers)
+    tab_sort(signed_headers)
 
     for i = 1, #signed_headers do
         local k = signed_headers[i]
         canonical_headers[i] = k .. ":" .. canonical_headers[k] .. "\n"
     end
-    canonical_headers = concat(canonical_headers, nil, 1, #signed_headers)
-    signed_headers = concat(signed_headers, ";")
+    canonical_headers = tab_concat(canonical_headers, nil, 1, #signed_headers)
+    signed_headers = tab_concat(signed_headers, ";")
 
     -- combining elements to form the canonical request (step-1)
     local canonical_request = params.method:upper() .. "\n"
@@ -167,7 +166,7 @@ local function request_processor(conf, ctx, params)
 
     -- calculate the signature (step-3)
     local signature_key = getSignatureKey(iam.secretkey, datestamp, iam.aws_region, iam.service)
-    local signature = hex.to_hex(hmac256(signature_key, string_to_sign))
+    local signature = hexencode(hmac256(signature_key, string_to_sign))
 
     -- add info to the headers (step-4)
     headers["authorization"] = ALGO .. " Credential=" .. iam.accesskey
@@ -177,5 +176,6 @@ local function request_processor(conf, ctx, params)
 end
 
 
-return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
-        plugin_version, priority, request_processor, aws_authz_schema)
+local serverless_obj = require("apisix.plugins.serverless.generic-upstream")
+
+return serverless_obj(plugin_name, plugin_version, priority, request_processor, aws_authz_schema)
