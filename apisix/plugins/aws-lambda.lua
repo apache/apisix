@@ -15,13 +15,15 @@
 -- limitations under the License.
 
 local ngx = ngx
+local hmac = require("resty.hmac")
+local hex_encode = require("resty.string").to_hex
+local resty_sha256 = require("resty.sha256")
+local str_strip = require("pl.stringx").strip
+local norm_path = require("pl.path").normpath
 local pairs = pairs
 local tab_concat = table.concat
 local tab_sort = table.sort
 local os = os
-local hmac = require("resty.hmac")
-local hexencode = require("resty.string").to_hex
-local resty_sha256 = require("resty.sha256")
 
 
 local plugin_name = "aws-lambda"
@@ -38,10 +40,10 @@ local function sha256(msg)
     local hash = resty_sha256:new()
     hash:update(msg)
     local digest = hash:final()
-    return hexencode(digest)
+    return hex_encode(digest)
 end
 
-local function getSignatureKey(key, datestamp, region, service)
+local function get_signature_key(key, datestamp, region, service)
     local kDate = hmac256("AWS4" .. key, datestamp)
     local kRegion = hmac256(kDate, region)
     local kService = hmac256(kRegion, service)
@@ -108,7 +110,7 @@ local function request_processor(conf, ctx, params)
     headers["X-Amz-Date"] = amzdate
 
     -- computing canonical uri
-    local canonical_uri = params.path:gsub("//", "/")
+    local canonical_uri = norm_path(params.path)
     if canonical_uri ~= "/" then
         if canonical_uri:sub(-1, -1) == "/" then
             canonical_uri = canonical_uri:sub(1, -2)
@@ -135,7 +137,7 @@ local function request_processor(conf, ctx, params)
         if k ~= "connection" then
             signed_headers[#signed_headers+1] = k
             -- strip starting and trailing spaces including strip multiple spaces into single space
-            canonical_headers[k] =  v:gsub("^%s+", ""):gsub("%s+$", "")
+            canonical_headers[k] =  str_strip(v)
         end
     end
     tab_sort(signed_headers)
@@ -165,8 +167,8 @@ local function request_processor(conf, ctx, params)
                         .. sha256(canonical_request)
 
     -- calculate the signature (step-3)
-    local signature_key = getSignatureKey(iam.secretkey, datestamp, iam.aws_region, iam.service)
-    local signature = hexencode(hmac256(signature_key, string_to_sign))
+    local signature_key = get_signature_key(iam.secretkey, datestamp, iam.aws_region, iam.service)
+    local signature = hex_encode(hmac256(signature_key, string_to_sign))
 
     -- add info to the headers (step-4)
     headers["authorization"] = ALGO .. " Credential=" .. iam.accesskey
@@ -178,8 +180,4 @@ end
 
 local serverless_obj = require("apisix.plugins.serverless.generic-upstream")
 
-return serverless_obj(plugin_name,
-                    plugin_version,
-                    priority,
-                    request_processor,
-                    aws_authz_schema)
+return serverless_obj(plugin_name, plugin_version, priority, request_processor, aws_authz_schema)

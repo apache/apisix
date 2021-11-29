@@ -60,7 +60,7 @@ At present, the plugin supports authorization via aws api key and aws IAM Secret
 
 ## How To Enable
 
-The following is an example of how to enable the aws-lambda faas plugin for a specific route URI. Calling the apisix route uri will make an invocation to the lambda function uri (the new upstream).  We are assuming your cloud function is already up and running.
+The following is an example of how to enable the aws-lambda faas plugin for a specific route URI. Calling the APISIX route uri will make an invocation to the lambda function uri (the new upstream).  We are assuming your cloud function is already up and running.
 
 ```shell
 # enable aws lambda for a route via api key authorization
@@ -82,7 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Now any requests (HTTP/1.1, HTTPS, HTTP2) to URI `/aws` will trigger an HTTP invocation to the aforesaid function URI and response body along with the response headers and response code will be proxied back to the client. For example ( here aws lambda function just take the `name` query param and returns `Hello $name` ) :
 
 ```shell
-$ curl -i -XGET localhost:9080/aws\?name=apisix
+$ curl -i -XGET localhost:9080/aws\?name=APISIX
 HTTP/1.1 200 OK
 Content-Type: application/json
 Connection: keep-alive
@@ -93,13 +93,13 @@ Content-Length: 16
 X-Amzn-Trace-Id: Root=1-61a22dca-600c552d1c05fec747fd6db0;Sampled=0
 Server: APISIX/2.10.2
 
-"Hello, apisix!"
+"Hello, APISIX!"
 ```
 
-For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in conf.yaml or uncomment port 9081 of `node_listen` field inside [config-default.yaml](../../../../conf/config-default.yaml) ) :
+For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in [config-default.yaml](../../../../conf/config-default.yaml). You can do it by uncommenting the port 9081 from `apisix.node_listen` field ) :
 
 ```shell
-$ curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=apisix
+$ curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=APISIX
 HTTP/2 200
 content-type: application/json
 content-length: 16
@@ -109,10 +109,10 @@ x-amzn-trace-id: Root=1-61a22e5d-342eb64077dc9877644860dd;Sampled=0
 x-amzn-requestid: a2c2b799-ecc6-44ec-b586-38c0e3b11fe4
 server: APISIX/2.10.2
 
-"Hello, apisix!"
+"Hello, APISIX!"
 ```
 
-Similarly, the lambda can be triggered via AWS API Gateway by using AWS `IAM` permissions to authorize access to your API via apisix aws-lambda plugin. Plugin includes authentication signatures in their HTTP calls via aws v4 request signing. Here is an example:
+Similarly, the lambda can be triggered via AWS API Gateway by using AWS `IAM` permissions to authorize access to your API via APISIX aws-lambda plugin. Plugin includes authentication signatures in their HTTP calls via aws v4 request signing. Here is an example:
 
 ```shell
 # enable aws lambda for a route via iam authorization
