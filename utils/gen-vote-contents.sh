@@ -88,5 +88,5 @@ EOF
 if [ ! -d release ];then
   mkdir release
 fi
-rm -rf ./release/apache-apisix-$VERSION-vote-contents.txt
-printf "$vote_contents" >> ./release/apache-apisix-$VERSION-vote-contents.txt
+
+printf "$vote_contents" > ./release/apache-apisix-$VERSION-vote-contents.txt
