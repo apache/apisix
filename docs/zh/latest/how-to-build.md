@@ -50,14 +50,7 @@ $ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/
 请运行以下命令安装 Apache APISIX。
 
 ```shell
-# 查看仓库中最新的 apisix 软件包的信息
-$ sudo yum info -y apisix
-
-# 显示仓库中现有的 apisix 软件包
-$ sudo yum --showduplicates list apisix
-
-# 安装最新的 apisix 软件包
-$ sudo yum install apisix
+sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.11.0-0.el7.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -73,14 +66,13 @@ $ sudo yum install apisix
 1. 创建一个名为 `apisix-2.11.0` 的目录。
 
   ```shell
-  $ APISIX_VERSION='2.11.0'
-  $ mkdir apisix-${APISIX_VERSION}
+  mkdir apisix-2.11.0
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  $ wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
+  wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-2.11.0-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -88,14 +80,14 @@ $ sudo yum install apisix
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  $ tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
+  tar zxvf apache-apisix-2.11.0-src.tgz -C apisix-2.11.0
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-${APISIX_VERSION} 目录
-  $ cd apisix-${APISIX_VERSION}
+  # 切换到 apisix-2.11.0 目录
+  cd apisix-2.11.0
   # 安装依赖
   $ LUAROCKS_SERVER=https://luarocks.cn make deps
   # 安装 apisix 命令
