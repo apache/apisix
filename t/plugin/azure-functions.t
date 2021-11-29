@@ -42,9 +42,21 @@ add_block_preprocessor(sub {
             }
         }
 
+        location  /api {
+           content_by_lua_block {
+                ngx.say("invocation /api successful")
+            }
+        }
+
         location /api/httptrigger {
            content_by_lua_block {
-                ngx.say("success")
+                ngx.say("invocation /api/httptrigger successful")
+            }
+        }
+
+        location /api/http/trigger {
+           content_by_lua_block {
+                ngx.say("invocation /api/http/trigger successful")
             }
         }
 
@@ -398,7 +410,7 @@ Authz-Header - metadata_key
                                 "function_uri": "http://localhost:8765/api"
                             }
                         },
-                        "uri": "/azure/**"
+                        "uri": "/azure/*"
                 }]]
             )
             if code >= 300 then
@@ -420,4 +432,61 @@ Authz-Header - metadata_key
     }
 --- response_body
 passed
-success
+invocation /api/httptrigger successful
+
+
+
+=== TEST 11: check multilevel url path forwarding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/azure/http/trigger", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+invocation /api/http/trigger successful
+
+
+
+=== TEST 12: check url path forwarding containing multiple slashes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/azure///http////trigger", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+invocation /api/http/trigger successful
+
+
+
+=== TEST 13: check url path forwarding with no excess path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/azure/", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+invocation /api successful

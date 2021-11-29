@@ -74,8 +74,9 @@ function _M:refresh_access_token()
         return
     end
 
-    self.access_token_expire_time = get_timestamp() + res.expires_in
     self.access_token = res.access_token
+    self.access_token_type = res.token_type
+    self.access_token_expire_time = get_timestamp() + res.expires_in
 end
 
 
@@ -106,6 +107,7 @@ function _M:new(config)
         auth_uri = config.auth_uri or "https://accounts.google.com/o/oauth2/auth",
         entries_uri = config.entries_uri or "https://logging.googleapis.com/v2/entries:write",
         access_token = nil,
+        access_token_type = nil,
         access_token_expire_time = 0,
     }
 
