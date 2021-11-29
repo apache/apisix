@@ -143,6 +143,16 @@ do
         var_x_forwarded_proto = true,
     }
 
+    local apisix_var_names = {
+        route_id = true,
+        route_name = true,
+        service_id = true,
+        service_name = true,
+        consumer_name = true,
+        balancer_ip = true,
+        balancer_port = true,
+    }
+
     local mt = {
         __index = function(t, key)
             local cached = t._cache[key]
@@ -205,26 +215,8 @@ do
                 key = sub_str(key, 9)
                 val = get_parsed_graphql()[key]
 
-            elseif key == "route_id" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
-
-            elseif key == "service_id" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_id
-
-            elseif key == "consumer_name" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_name
-
-            elseif key == "route_name" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_name
-
-            elseif key == "service_name" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_name
-
-            elseif key == "balancer_ip" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_ip
-
-            elseif key == "balancer_port" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.balancer_port
+            elseif apisix_var_names[key] then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx[key]
 
             else
                 val = get_var(key, t._request)
