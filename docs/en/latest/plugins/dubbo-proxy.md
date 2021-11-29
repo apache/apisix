@@ -71,7 +71,7 @@ Then reload APISIX.
 Here's an example, enable the dubbo-proxy plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/upstream/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "nodes": {
         "127.0.0.1:20880": 1
