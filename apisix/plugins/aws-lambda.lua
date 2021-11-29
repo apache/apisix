@@ -178,4 +178,8 @@ end
 
 local serverless_obj = require("apisix.plugins.serverless.generic-upstream")
 
-return serverless_obj(plugin_name, plugin_version, priority, request_processor, aws_authz_schema)
+return serverless_obj(plugin_name,
+                    plugin_version,
+                    priority,
+                    request_processor,
+                    aws_authz_schema)

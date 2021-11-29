@@ -61,6 +61,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
     function _M.access(conf, ctx)
         local uri_args = core.request.get_uri_args(ctx)
         local headers = core.request.headers(ctx) or {}
+
         local req_body, err = core.request.get_body()
 
         if err then
