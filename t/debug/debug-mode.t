@@ -81,6 +81,7 @@ loaded plugin and sort by priority: 410 name: http-logger
 loaded plugin and sort by priority: 406 name: sls-logger
 loaded plugin and sort by priority: 405 name: tcp-logger
 loaded plugin and sort by priority: 403 name: kafka-logger
+loaded plugin and sort by priority: 402 name: rocketmq-logger
 loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
