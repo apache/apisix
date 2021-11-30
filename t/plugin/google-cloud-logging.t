@@ -509,3 +509,99 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 --- error_log
 Batch Processor[google-cloud-logging] failed to process entries
 Batch Processor[google-cloud-logging] exceeded the max_retry_count
+
+
+
+=== TEST 16: set route (succeed write)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging-configuration.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: test route(succeed write)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+
+
+
+=== TEST 18: set route (succeed write)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "google-cloud-logging-configuration.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: test route(customize auth type error)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+google-cloud-logging-configuration.json: No such file or directory
