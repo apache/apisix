@@ -107,7 +107,7 @@ Server: APISIX/2.10.2
 Hello, APISIX
 ```
 
-For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in [config-default.yaml](../../../../conf/config-default.yaml). You can do it by uncommenting the port 9081 from `apisix.node_listen` field ) :
+For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in `config-default.yaml`. You can do it by uncommenting the port 9081 from `apisix.node_listen` field ) :
 
 ```shell
 $ curl -i -XGET --http2 --http2-prior-knowledge http://localhost:9081/azure\?name=APISIX
