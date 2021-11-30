@@ -38,9 +38,82 @@ __DATA__
 
 === TEST 1: get plugins' name
 --- request
-GET /apisix/admin/plugins/list
---- response_body_like eval
-qr/\["real-ip","client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","ua-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","authz-casbin","wolf-rbac","ldap-auth","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","gzip","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","datadog","echo","http-logger","skywalking-logger","google-cloud-logging","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","azure-functions","openwhisk","serverless-post-function","ext-plugin-post-req"\]/
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require('cjson')
+            local code, _, body = t("/apisix/admin/plugins/list", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local tab = json.decode(body)
+            for _, v in ipairs(tab) do
+                ngx.say(v)
+            end
+        }
+    }
+--- request
+GET /t
+
+--- response_body
+real-ip
+client-control
+ext-plugin-pre-req
+zipkin
+request-id
+fault-injection
+serverless-pre-function
+batch-requests
+cors
+ip-restriction
+ua-restriction
+referer-restriction
+uri-blocker
+request-validation
+openid-connect
+authz-casbin
+wolf-rbac
+ldap-auth
+hmac-auth
+basic-auth
+jwt-auth
+key-auth
+consumer-restriction
+authz-keycloak
+proxy-mirror
+proxy-cache
+proxy-rewrite
+api-breaker
+limit-conn
+limit-count
+limit-req
+gzip
+server-info
+traffic-split
+redirect
+response-rewrite
+grpc-transcode
+prometheus
+datadog
+echo
+http-logger
+skywalking-logger
+google-cloud-logging
+sls-logger
+tcp-logger
+kafka-logger
+syslog
+udp-logger
+example-plugin
+azure-functions
+openwhisk
+serverless-post-function
+ext-plugin-post-req
+
 --- no_error_log
 [error]
 
