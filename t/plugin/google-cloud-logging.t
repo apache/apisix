@@ -512,7 +512,7 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
 
 
 
-=== TEST 16: set route (succeed write)
+=== TEST 16: set route (file configuration is successful)
 --- config
     location /t {
         content_by_lua_block {
@@ -527,7 +527,7 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
                 },
                 plugins = {
                     ["google-cloud-logging"] = {
-                        auth_file = "t/plugin/google-cloud-logging-configuration.json",
+                        auth_file = "t/plugin/google-cloud-logging/config.json",
                         inactive_timeout = 1,
                         batch_max_size = 1,
                     }
@@ -550,7 +550,7 @@ passed
 
 
 
-=== TEST 17: test route(succeed write)
+=== TEST 17: test route(file configuration is successful)
 --- request
 GET /hello
 --- wait: 2
@@ -559,7 +559,7 @@ hello world
 
 
 
-=== TEST 18: set route (succeed write)
+=== TEST 18: set route (file configuration is failed)
 --- config
     location /t {
         content_by_lua_block {
@@ -574,7 +574,7 @@ hello world
                 },
                 plugins = {
                     ["google-cloud-logging"] = {
-                        auth_file = "google-cloud-logging-configuration.json",
+                        auth_file = "google-cloud-logging/config.json",
                         inactive_timeout = 1,
                         batch_max_size = 1,
                     }
@@ -597,11 +597,11 @@ passed
 
 
 
-=== TEST 19: test route(customize auth type error)
+=== TEST 19: test route(file configuration is failed)
 --- request
 GET /hello
 --- wait: 2
 --- response_body
 hello world
 --- error_log
-google-cloud-logging-configuration.json: No such file or directory
+config.json: No such file or directory
