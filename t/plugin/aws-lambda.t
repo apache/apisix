@@ -171,7 +171,7 @@ passed
 
 
 
-=== TEST 4: Test plugin endpoint
+=== TEST 4: test plugin endpoint
 --- config
     location /t {
         content_by_lua_block {
