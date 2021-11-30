@@ -24,7 +24,7 @@ BLOB_VERSION=$SUBSTRING1.$SUBSTRING2
 CHANGELOG_HASH=$(printf $VERSION | sed 's/\.//g')
 
 RELEASE_NOTE_PR="https://github.com/apache/apisix/blob/release/$BLOB_VERSION/CHANGELOG.md#$CHANGELOG_HASH"
-COMMIT_ID=`git rev-parse --short HEAD`
+COMMIT_ID=$(git rev-parse --short HEAD)
 
 vote_contents=$(cat <<EOF
 Hello, Community,
