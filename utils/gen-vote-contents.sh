@@ -21,9 +21,10 @@ VERSION=$1
 SUBSTRING1=$(echo $VERSION| cut -d'.' -f 1)
 SUBSTRING2=$(echo $VERSION| cut -d'.' -f 2)
 BLOB_VERSION=$SUBSTRING1.$SUBSTRING2
+CHANGELOG_HASH=$(printf $VERSION | sed 's/\.//g')
 
-read -p "Please enter release note pr: " RELEASE_NOTE_PR
-read -p "Please enter release commit id: " COMMIT_ID
+RELEASE_NOTE_PR="https://github.com/apache/apisix/blob/release/$BLOB_VERSION/CHANGELOG.md#$CHANGELOG_HASH"
+COMMIT_ID=`git rev-parse --short HEAD`
 
 vote_contents=$(cat <<EOF
 Hello, Community,
