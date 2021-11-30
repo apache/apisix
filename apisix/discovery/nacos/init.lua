@@ -19,6 +19,7 @@ local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
 local core               = require('apisix.core')
+local schema             = require('apisix.discovery.nacos.schema')
 local ipairs             = ipairs
 local type               = type
 local math               = math
@@ -332,6 +333,9 @@ end
 
 
 function _M.init_worker()
+    -- inject the default values
+    core.schema.check(schema, local_conf.discovery.nacos)
+
     events = require("resty.worker.events")
     events_list = events.event_list("discovery_nacos_update_application",
                                     "updating")

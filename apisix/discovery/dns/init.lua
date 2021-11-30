@@ -17,6 +17,7 @@
 
 local core = require("apisix.core")
 local config_local = require("apisix.core.config_local")
+local schema = require('apisix.discovery.dns.schema')
 local ipairs = ipairs
 local error = error
 
@@ -51,6 +52,9 @@ end
 
 function _M.init_worker()
     local local_conf = config_local.local_conf()
+    -- inject the default values
+    core.schema.check(schema, local_conf.discovery.dns)
+
     local servers = local_conf.discovery.dns.servers
 
     local opts = {
