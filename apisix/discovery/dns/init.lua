@@ -17,26 +17,12 @@
 
 local core = require("apisix.core")
 local config_local = require("apisix.core.config_local")
+local schema = require('apisix.discovery.dns.schema')
 local ipairs = ipairs
 local error = error
 
 
 local dns_client
-local schema = {
-    type = "object",
-    properties = {
-        servers = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-            },
-        },
-    },
-    required = {"servers"}
-}
-
-
 local _M = {}
 
 
@@ -66,13 +52,10 @@ end
 
 function _M.init_worker()
     local local_conf = config_local.local_conf()
-    local ok, err = core.schema.check(schema, local_conf.discovery.dns)
-    if not ok then
-        error("invalid dns discovery configuration: " .. err)
-        return
-    end
+    -- inject the default values
+    core.schema.check(schema, local_conf.discovery.dns)
 
-    local servers = core.table.try_read_attr(local_conf, "discovery", "dns", "servers")
+    local servers = local_conf.discovery.dns.servers
 
     local opts = {
         hosts = {},
