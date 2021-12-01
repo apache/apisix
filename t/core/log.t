@@ -155,6 +155,28 @@ debug log
 --- config
     location /t {
         content_by_lua_block {
+            local log_prefix = require("apisix.core").log.new("prefix: ")
+            log_prefix.error("error log")
+            log_prefix.warn("warn log")
+            log_prefix.notice("notice log")
+            log_prefix.info("info log")
+            ngx.say("done")
+        }
+    }
+--- log_level: error
+--- request
+GET /t
+--- error_log eval
+qr/[error].+prefix: error log/
+--- no_error_log
+[qr/[warn].+warn log/, qr/[notice].+notice log/, qr/[info].+info log/]
+
+
+
+=== TEST 7: print both prefixed error logs and normal logs
+--- config
+    location /t {
+        content_by_lua_block {
             local core = require("apisix.core")
             local log_prefix = core.log.new("prefix: ")
             core.log.error("raw error log")
@@ -175,6 +197,4 @@ GET /t
 --- error_log eval
 [qr/[error].+raw error log/, qr/[error].+prefix: error log/]
 --- no_error_log
-[warn]
-[notice]
-[info]
+[qr/[warn].+warn log/, qr/[notice].+notice log/, qr/[info].+info log/]

@@ -26,10 +26,7 @@ local unpack       = unpack
 local tab_clear = require("table.clear")
 
 
-local _M = {
-    prefix  = false,
-    version = 0.4,
-}
+local _M = {version = 0.4}
 
 
 local log_levels = {
@@ -50,44 +47,49 @@ local cur_level = ngx.config.subsystem == "http" and
 local do_nothing = function() end
 
 
-local function func_metatable_index(self, cmd)
-    local log_level = log_levels[cmd]
-    local method
+function _M.new(prefix)
+    local m = {version = _M.version}
+    setmetatable(m, {__index = function(self, cmd)
+        local log_level = log_levels[cmd]
 
+        local method
+        if cur_level and (log_level > cur_level)
+        then
+            method = do_nothing
+        else
+            method = function(...)
+                return ngx_log(log_level, prefix, ...)
+            end
+        end
+
+        -- cache the lazily generated method in our
+        -- module table
+        m[cmd] = method
+        return method
+    end})
+
+    return m
+end
+
+
+setmetatable(_M, {__index = function(self, cmd)
+    local log_level = log_levels[cmd]
+
+    local method
     if cur_level and (log_level > cur_level)
     then
         method = do_nothing
     else
-        if self.prefix then
-            method = function(...)
-                return ngx_log(log_level, self.prefix, ...)
-            end
-        else
-            method = function(...)
-                return ngx_log(log_level, ...)
-            end
+        method = function(...)
+            return ngx_log(log_level, ...)
         end
     end
 
-    -- cache the lazily generated method in our module table
-    self[cmd] = method
+    -- cache the lazily generated method in our
+    -- module table
+    _M[cmd] = method
     return method
-end
-
-
-function _M.new(prefix)
-    local _m = {
-        prefix = prefix,
-        version = _M.version,
-    }
-
-    setmetatable(_m, {__index = func_metatable_index})
-
-    return _m
-end
-
-
-setmetatable(_M, {__index = func_metatable_index})
+end})
 
 
 local delay_tab = setmetatable({
@@ -107,7 +109,7 @@ local delay_tab = setmetatable({
 
         local res, err = self.func(unpack(self.args))
         if err then
-            ngx.log(ngx.WARN, "failed to exec: ", err)
+            ngx_log(ngx.ERR, "failed to exec: ", err)
         end
 
         -- avoid unexpected reference
