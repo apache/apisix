@@ -32,7 +32,7 @@ title: rocketmq-logger
 
 ## 简介
 
-`rocketmq-logger` 插件利用ngx_lua客户端能力，可推送JSON格式的日志到外部rocketmq集群。
+`rocketmq-logger` 插件利用ngx_lua客户端能力，可推送JSON格式的请求日志到外部rocketmq集群。
 
 它可以将接口请求日志以 JSON 的形式推送给外部 rocketmq 集群。如果在短时间内没有收到日志数据，请放心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
