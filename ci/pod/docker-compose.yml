@@ -355,6 +355,27 @@ services:
     networks:
       apisix_net:
 
+  rocketmq_namesrv:
+    image: apacherocketmq/rocketmq:4.9.2
+    container_name: rmqnamesrv
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    networks:
+      rocketmq_net:
+
+  rocketmq_broker:
+    image: apacherocketmq/rocketmq:4.9.2
+    container_name: rmqbroker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    depends_on:
+      - rocketmq_namesrv
+    networks:
+      rocketmq_net:
 
 networks:
   apisix_net:
@@ -362,3 +383,4 @@ networks:
   kafka_net:
   nacos_net:
   skywalk_net:
+  rocketmq_net:
