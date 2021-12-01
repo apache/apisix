@@ -121,44 +121,6 @@ server: APISIX/2.10.2
 Hello, APISIX
 ```
 
-### Plugin with Path Forwarding
-
-Azure Faas plugin supports url path forwarding while proxying request to the modified upstream. With that being said, any extension to the path of the base request APISIX gateway URI gets "appended" (path join) to the `function_uri` specified in the plugin configuration.
-
-**Note**: APISIX route uri must be ended with an asterisk (`*`) for this feature to work properly. APISIX routes are strictly matched and the extra asterisk at the suffix means any subpath appended to the original parent path will use the same route object configurations.
-
-Here is an example:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "plugins": {
-        "azure-functions": {
-            "function_uri": "http://app-bisakh.azurewebsites.net/api",
-            "authorization": {
-                "apikey": "<Generated API key to access the Azure-Function>"
-            }
-        }
-    },
-    "uri": "/azure/*"
-}'
-```
-
-Now any request with path `azure/HttpTrigger1` will invoke the azure function. Here the extra path (where the magic character `*` has been used) upto the query params have been forwarded.
-
-```shell
-curl -i -XGET http://127.0.0.1:9080/azure/HttpTrigger1\?name\=APISIX
-HTTP/1.1 200 OK
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Date: Wed, 01 Dec 2021 14:19:53 GMT
-Request-Context: appId=cid-v1:4d4b6221-07f1-4e1a-9ea0-b86a5d533a94
-Server: APISIX/2.11.0
-
-Hello, APISIX
-```
-
 ## Disable Plugin
 
 Remove the corresponding JSON configuration in the plugin configuration to disable the `azure-functions` plugin and add the suitable upstream configuration.
