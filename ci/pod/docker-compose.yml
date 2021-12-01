@@ -356,7 +356,7 @@ services:
       apisix_net:
 
   rocketmq_namesrv:
-    image: apacherocketmq/rocketmq:4.9.2
+    image: apacherocketmq/rocketmq:4.9.1
     container_name: rmqnamesrv
     restart: unless-stopped
     ports:
@@ -365,7 +365,7 @@ services:
       rocketmq_net:
 
   rocketmq_broker:
-    image: apacherocketmq/rocketmq:4.9.2
+    image: apacherocketmq/rocketmq:4.9.1
     container_name: rmqbroker
     restart: unless-stopped
     ports:
