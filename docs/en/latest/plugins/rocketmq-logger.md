@@ -32,7 +32,7 @@ title: rocketmq-logger
 
 ## Name
 
-`rocketmq-logger` is a plugin which works as a rocketmq client driver for the ngx_lua nginx module.
+`rocketmq-logger` is a plugin which provides the ability to push requests log data as JSON objects to your external rocketmq clusters.
 
 This plugin provides the ability to push requests log data as JSON objects to your external rocketmq clusters. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
