@@ -74,7 +74,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-
 
 ## How To Enable
 
-The following is an example of how to enable the azure-function faas plugin for a specific route URI. We are assuming your cloud function is already up and running.
+The following is an example of how to enable the azure-function faas plugin for a specific APISIX route URI. We are assuming your cloud function is already up and running.
 
 ```shell
 # enable azure function for a route
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Now any requests (HTTP/1.1, HTTPS, HTTP2) to URI `/azure` will trigger an HTTP invocation to the aforesaid function URI and response body along with the response headers and response code will be proxied back to the client. For example ( here azure cloud function just take the `name` query param and returns `Hello $name` ) :
 
 ```shell
-$ curl -i -XGET http://localhost:9080/azure\?name=apisix
+$ curl -i -XGET http://localhost:9080/azure\?name=APISIX
 HTTP/1.1 200 OK
 Content-Type: text/plain; charset=utf-8
 Transfer-Encoding: chunked
@@ -104,20 +104,20 @@ Request-Context: appId=cid-v1:38aae829-293b-43c2-82c6-fa94aec0a071
 Date: Wed, 17 Nov 2021 14:46:55 GMT
 Server: APISIX/2.10.2
 
-Hello, apisix
+Hello, APISIX
 ```
 
-For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in conf.yaml or uncomment port 9081 of `node_listen` field inside [config-default.yaml](../../../../conf/config-default.yaml) ) :
+For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in `config-default.yaml`. You can do it by uncommenting the port 9081 from `apisix.node_listen` field ) :
 
 ```shell
-$ curl -i -XGET --http2 --http2-prior-knowledge http://localhost:9081/azure\?name=apisix
+$ curl -i -XGET --http2 --http2-prior-knowledge http://localhost:9081/azure\?name=APISIX
 HTTP/2 200
 content-type: text/plain; charset=utf-8
 request-context: appId=cid-v1:38aae829-293b-43c2-82c6-fa94aec0a071
 date: Wed, 17 Nov 2021 14:54:07 GMT
 server: APISIX/2.10.2
 
-Hello, apisix
+Hello, APISIX
 ```
 
 ## Disable Plugin
