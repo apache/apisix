@@ -187,7 +187,7 @@ local function get_auth_config(config)
 
     local file_content, err = core.io.get_file(config.auth_file)
     if not file_content then
-        return nil, "failed to read configuration, file: " .. config.auth_file .. " err:" .. err
+        return nil, "failed to read configuration, file: " .. config.auth_file .. " err: " .. err
     end
 
     local config_data
@@ -196,7 +196,7 @@ local function get_auth_config(config)
         return nil, "config parse failure, data: " .. file_content .. " , err: " .. err
     end
 
-    auth_config_cache = config.auth_config
+    auth_config_cache = config_data
     return auth_config_cache
 end
 
