@@ -109,6 +109,7 @@ kafka-logger
 syslog
 udp-logger
 example-plugin
+aws-lambda
 azure-functions
 openwhisk
 serverless-post-function
