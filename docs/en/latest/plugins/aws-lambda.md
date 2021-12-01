@@ -28,7 +28,6 @@ title: aws-lambda
 - [Attributes](#attributes)
   - [IAM Authorization Schema](#iam-authorization-schema)
 - [How To Enable](#how-to-enable)
-  - [Plugin with Path Forwarding](#plugin-with-path-forwarding)
 - [Disable Plugin](#disable-plugin)
 
 ## Name
@@ -136,47 +135,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 **Note**: This approach assumes you already have an iam user with the programmatic access enabled and required permissions (`AmazonAPIGatewayInvokeFullAccess`) to access the endpoint.
-
-### Plugin with Path Forwarding
-
-AWS Lambda plugin supports url path forwarding while proxying request to the modified upstream (AWS Gateway URI endpoint). With that being said, any extension to the path of the base request APISIX gateway URI gets "appended" (path join) to the `function_uri` specified in the plugin configuration.
-
-**Note**: APISIX route uri must be ended with an asterisk (`*`) for this feature to work properly. APISIX routes are strictly matched and the extra asterisk at the suffix means any subpath appended to the original parent path will use the same route object configurations.
-
-Here is an example:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "plugins": {
-        "aws-lambda": {
-            "function_uri": "https://x9w6z07gb9.execute-api.us-east-1.amazonaws.com",
-            "authorization": {
-                "apikey": "<Generate API key>"
-            },
-            "ssl_verify":false
-        }
-    },
-    "uri": "/aws/*"
-}'
-```
-
-Now any request with path `aws/default/test-apisix` will invoke the aws api gateway endpoint. Here the extra path (where the magic character `*` has been used) upto the query params have been forwarded.
-
-```shell
-curl -i -XGET http://127.0.0.1:9080/aws/default/test-apisix\?name\=APISIX
-HTTP/1.1 200 OK
-Content-Type: application/json
-Connection: keep-alive
-Date: Wed, 01 Dec 2021 14:23:27 GMT
-X-Amzn-Trace-Id: Root=1-61a7855f-0addc03e0cf54ddc683de505;Sampled=0
-x-amzn-RequestId: f5f4e197-9cdd-49f9-9b41-48f0d269885b
-Content-Length: 16
-x-amz-apigw-id: JrHG8GC4IAMFaGA=
-Server: APISIX/2.11.0
-
-"Hello, APISIX!"
-```
 
 ## Disable Plugin
 
