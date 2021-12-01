@@ -15,18 +15,21 @@
 -- limitations under the License.
 --
 
-local ngx = ngx
-local ngx_log  = ngx.log
-local require  = require
-local select = select
+local ngx          = ngx
+local ngx_log      = ngx.log
+local require      = require
+local select       = select
 local setmetatable = setmetatable
-local tostring = tostring
-local unpack = unpack
+local tostring     = tostring
+local unpack       = unpack
 -- avoid loading other module since core.log is the most foundational one
 local tab_clear = require("table.clear")
 
 
-local _M = {version = 0.4}
+local _M = {
+    prefix  = false,
+    version = 0.4,
+}
 
 
 local log_levels = {
@@ -43,53 +46,48 @@ local log_levels = {
 
 
 local cur_level = ngx.config.subsystem == "http" and
-                  require "ngx.errlog" .get_sys_filter_level()
+                  require("ngx.errlog").get_sys_filter_level()
 local do_nothing = function() end
 
 
-function _M.new(prefix)
-    local m = {version = _M.version}
-    setmetatable(m, {__index = function(self, cmd)
-        local log_level = log_levels[cmd]
-
-        local method
-        if cur_level and (log_level > cur_level)
-        then
-            method = do_nothing
-        else
-            method = function(...)
-                return ngx_log(log_level, prefix, ...)
-            end
-        end
-
-        -- cache the lazily generated method in our
-        -- module table
-        m[cmd] = method
-        return method
-    end})
-
-    return m
-end
-
-
-setmetatable(_M, {__index = function(self, cmd)
+local function func_metatable_index(self, cmd)
     local log_level = log_levels[cmd]
-
     local method
+
     if cur_level and (log_level > cur_level)
     then
         method = do_nothing
     else
-        method = function(...)
-            return ngx_log(log_level, ...)
+        if self.prefix then
+            method = function(...)
+                return ngx_log(log_level, self.prefix, ...)
+            end
+        else
+            method = function(...)
+                return ngx_log(log_level, ...)
+            end
         end
     end
 
-    -- cache the lazily generated method in our
-    -- module table
-    _M[cmd] = method
+    -- cache the lazily generated method in our module table
+    self[cmd] = method
     return method
-end})
+end
+
+
+function _M.new(prefix)
+    local _m = {
+        prefix = prefix,
+        version = _M.version,
+    }
+
+    setmetatable(_m, {__index = func_metatable_index})
+
+    return _m
+end
+
+
+setmetatable(_M, {__index = func_metatable_index})
 
 
 local delay_tab = setmetatable({
