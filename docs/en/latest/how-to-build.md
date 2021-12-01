@@ -35,12 +35,6 @@ If the official OpenResty repository is not installed yet, the following command
 $ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 ```
 
-If the official OpenResty repository is installed, the following command will help you automatically install the repositories of Apache APISIX.
-
-```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.11.0-0.el7.x86_64.rpm
-```
-
 ### Installation via Docker
 
 Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).

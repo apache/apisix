@@ -47,12 +47,6 @@ $ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-r
 $ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
 ```
 
-请运行以下命令安装 Apache APISIX。
-
-```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.11.0-0.el7.x86_64.rpm
-```
-
 ### 通过 Docker 安装
 
 详情请参考：[使用 Docker 安装 Apache APISIX](https://hub.docker.com/r/apache/apisix)。
