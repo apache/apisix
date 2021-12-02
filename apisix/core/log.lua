@@ -15,13 +15,13 @@
 -- limitations under the License.
 --
 
-local ngx          = ngx
-local ngx_log      = ngx.log
-local require      = require
-local select       = select
+local ngx = ngx
+local ngx_log  = ngx.log
+local require  = require
+local select = select
 local setmetatable = setmetatable
-local tostring     = tostring
-local unpack       = unpack
+local tostring = tostring
+local unpack = unpack
 -- avoid loading other module since core.log is the most foundational one
 local tab_clear = require("table.clear")
 
@@ -43,7 +43,7 @@ local log_levels = {
 
 
 local cur_level = ngx.config.subsystem == "http" and
-                  require("ngx.errlog").get_sys_filter_level()
+                  require "ngx.errlog" .get_sys_filter_level()
 local do_nothing = function() end
 
 
@@ -109,7 +109,7 @@ local delay_tab = setmetatable({
 
         local res, err = self.func(unpack(self.args))
         if err then
-            ngx_log(ngx.ERR, "failed to exec: ", err)
+            ngx.log(ngx.WARN, "failed to exec: ", err)
         end
 
         -- avoid unexpected reference
