@@ -67,7 +67,7 @@ title: rocketmq-logger
 
 - **default**:
 
- ```json
+```json
     {
      "upstream": "127.0.0.1:1980",
      "start_time": 1619414294760,
