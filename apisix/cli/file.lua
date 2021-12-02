@@ -65,8 +65,15 @@ local function resolve_conf_var(conf)
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+)%s*%}%}", function(var)
-                local v = getenv(var)
+            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%w+]*)%s*%}%}", function(var)
+                local i, j = string.find(var, "%:%w+")
+                local default
+                if i and j then
+                    default = string.sub(var, i+1, j)
+                    var = string.sub(var, 1, i)
+                end
+
+                local v = getenv(var) or default
                 if v then
                     if not exported_vars then
                         exported_vars = {}
