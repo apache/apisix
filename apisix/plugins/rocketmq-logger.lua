@@ -170,8 +170,6 @@ function _M.log(conf, ctx)
     local entry
     if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)
-        -- core.log.info("origin entry: ", entry)
-
     else
         local metadata = plugin.plugin_metadata(plugin_name)
         core.log.info("metadata: ", core.json.delay_encode(metadata))
