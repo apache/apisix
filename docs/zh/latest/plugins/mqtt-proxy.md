@@ -40,6 +40,7 @@ title: mqtt-proxy
 | -------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------ |
 | protocol_name  | string  | 必须   |        |        | 协议名称，正常情况下应为“ MQTT”                        |
 | protocol_level | integer | 必须   |        |        | 协议级别，MQTT `3.1.*` 应为 `4` ，MQTT `5.0` 应是`5`。 |
+| upstream       | object  | 废弃   |         |       | 推荐改用 route 上配置的上游信息                                            |
 | upstream.host  | string  | 必须   |        |        | 将当前请求转发到的上游的 IP 地址或域名                  |
 | upstream.ip    | string  | 废弃   |        |        | 推荐使用“host”代替。将当前请求转发到的上游的 IP 地址                       |
 | upstream.port  | number  | 必须   |        |        | 将当前请求转发到的上游的端口                           |
@@ -71,12 +72,16 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
     "plugins": {
         "mqtt-proxy": {
             "protocol_name": "MQTT",
-            "protocol_level": 4,
-            "upstream": {
-                "host": "127.0.0.1",
-                "port": 1980
-            }
+            "protocol_level": 4
         }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": [{
+            "host": "127.0.0.1",
+            "port": 1980,
+            "weight": 1
+        }]
     }
 }'
 ```
