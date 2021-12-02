@@ -25,8 +25,8 @@ local type     = type
 local ipairs   = ipairs
 local plugin_name = "rocketmq-logger"
 local stale_timer_running = false
-local timer_at = ngx.timer.at
 local ngx = ngx
+local timer_at = ngx.timer.at
 local buffers = {}
 
 local lrucache = core.lrucache.new({

@@ -355,7 +355,7 @@ services:
     networks:
       apisix_net:
 
-  namesrv:
+  rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv
     restart: unless-stopped
@@ -365,7 +365,7 @@ services:
     networks:
       rocketmq_net:
 
-  broker:
+  rocketmq_broker:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqbroker
     restart: unless-stopped
@@ -374,8 +374,8 @@ services:
       - "10911:10911"
       - "10912:10912"
     depends_on:
-      - namesrv
-    command: sh mqbroker -n namesrv:9876 -c ../conf/broker.conf
+      - rocketmq_namesrv
+    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
     networks:
       rocketmq_net:
 

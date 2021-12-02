@@ -32,9 +32,9 @@ title: rocketmq-logger
 
 ## 简介
 
-`rocketmq-logger` 插件利用ngx_lua客户端能力，可推送JSON格式的请求日志到外部rocketmq集群。
+`rocketmq-logger` 插件可以将接口请求日志以 JSON 的形式推送给外部 rocketmq 集群。
 
-它可以将接口请求日志以 JSON 的形式推送给外部 rocketmq 集群。如果在短时间内没有收到日志数据，请放心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+如果在短时间内没有收到日志数据，请放心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
 有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
 [Batch-Processor](../batch-processor.md)
@@ -67,7 +67,7 @@ title: rocketmq-logger
 
 - **default**:
 
-    ```json
+ ```json
     {
      "upstream": "127.0.0.1:1980",
      "start_time": 1619414294760,
@@ -106,18 +106,18 @@ title: rocketmq-logger
      },
      "latency": 0
     }
-    ```
+```
 
 - **origin**:
 
-    ```http
+```http
     GET /hello?ab=cd HTTP/1.1
     host: localhost
     content-length: 6
     connection: close
 
     abcdef
-    ```
+```
 
 ## 工作原理
 
