@@ -57,7 +57,7 @@ local schema = {
         tag = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         use_tls = {type = "boolean", default = false},
-        access_key = {type = "string", default = .""},
+        access_key = {type = "string", default = ""},
         secret_key = {type = "string", default = ""},
         name = {type = "string", default = "rocketmq logger"},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
