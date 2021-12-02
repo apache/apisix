@@ -43,23 +43,21 @@ local schema = {
             enum = {"default", "origin"},
         },
         nameserver_list = {
-            type = "object",
-            minProperties = 1,
-            patternProperties = {
-                [".*"] = {
-                    description = "the port of rocketmq nameserver",
-                    type = "integer",
-                    minimum = 1,
-                    maximum = 65535,
-                },
-            },
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array",
+                items = {
+                    type = "string"
+                }
+            }
         },
-        rocketmq_topic = {type = "string"},
+        topic = {type = "string"},
         key = {type = "string"},
         tag = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         use_tls = {type = "boolean", default = false},
-        access_key = {type = "string", default = ""},
+        access_key = {type = "string", default = .""},
         secret_key = {type = "string", default = ""},
         name = {type = "string", default = "rocketmq logger"},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
@@ -89,7 +87,7 @@ local schema = {
             }
         },
     },
-    required = {"nameserver_list", "rocketmq_topic"}
+    required = {"nameserver_list", "topic"}
 }
 
 local metadata_schema = {
@@ -155,7 +153,7 @@ end
 
 
 local function send_rocketmq_data(conf, log_message, prod)
-    local result, err = prod:send(conf.rocketmq_topic, log_message, conf.tag, conf.key)
+    local result, err = prod:send(conf.topic, log_message, conf.tag, conf.key)
     if not result then
         return false, "failed to send data to rocketmq topic: " .. err ..
                 ", nameserver_list: " .. core.json.encode(conf.nameserver_list)
@@ -205,13 +203,6 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in rocketmq
-    local nameserver_list = core.table.new(core.table.nkeys(conf.nameserver_list), 0)
-
-    for host, port in pairs(conf.nameserver_list) do
-        local nameserver = host .. ':' .. port
-        core.table.insert(nameserver_list, nameserver)
-    end
-
     local producer_config = {
         timeout = conf.timeout * 1000,
         use_tls = conf.use_tls,
@@ -220,7 +211,7 @@ function _M.log(conf, ctx)
     }
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
-            nameserver_list, producer_config)
+            conf.nameserver_list, producer_config)
     if err then
         return nil, "failed to create the rocketmq producer: " .. err
     end
