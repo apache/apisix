@@ -139,7 +139,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### Plugin with Path Forwarding
 
-AWS Lambda plugin supports url path forwarding while proxying request to the modified upstream (AWS Gateway URI endpoint). With that being said, any extension to the path of the base request APISIX gateway URI gets "appended" (path join) to the `function_uri` specified in the plugin configuration. To test this behavior, see the below example:
+AWS Lambda plugin supports url path forwarding while proxying request to the modified upstream (AWS Gateway URI endpoint). With that being said, any extension to the path of the base request APISIX gateway URI gets "appended" (path join) to the `function_uri` specified in the plugin configuration.
+
+**Note**: APISIX route uri must be ended with an asterisk (`*`) for this feature to work properly. APISIX routes are strictly matched and the extra asterisk at the suffix means any subpath appended to the original parent path will use the same route object configurations.
+
+Here is an example:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
