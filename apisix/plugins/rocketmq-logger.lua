@@ -21,7 +21,6 @@ local acl_rpchook = require("resty.rocketmq.acl_rpchook")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
 
-local pairs    = pairs
 local type     = type
 local ipairs   = ipairs
 local plugin_name = "rocketmq-logger"
