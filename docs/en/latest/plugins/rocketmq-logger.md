@@ -67,7 +67,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 - **default**:
 
-    ```json
+```json
     {
      "upstream": "127.0.0.1:1980",
      "start_time": 1619414294760,
@@ -106,18 +106,18 @@ For more info on Batch-Processor in Apache APISIX please refer.
      },
      "latency": 0
     }
-    ```
+```
 
 - **origin**:
 
-    ```http
+```http
     GET /hello?ab=cd HTTP/1.1
     host: localhost
     content-length: 6
     connection: close
 
     abcdef
-    ```
+```
 
 ## Info
 
