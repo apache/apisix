@@ -55,7 +55,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.rocketmq-logger")
-            local ok, err = plugin.check_schema({rocketmq_topic = "test", key= "key1"})
+            local ok, err = plugin.check_schema({topic = "test", key= "key1"})
             if not ok then
                 ngx.say(err)
             end
@@ -82,7 +82,7 @@ done
                     "127.0.0.1:3000"
                 },
                 timeout = "10",
-                rocketmq_topic ="test",
+                topic ="test",
                 key= "key1"
             })
             if not ok then
@@ -112,7 +112,7 @@ done
                         "plugins": {
                             "rocketmq-logger": {
                                 "nameserver_list" : [ "127.0.0.1:9876" ],
-                                "rocketmq_topic" : "test2",
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "batch_max_size": 1
@@ -132,7 +132,7 @@ done
                             "plugins": {
                                  "rocketmq-logger": {
                                     "nameserver_list" : [ "127.0.0.1:9876" ],
-                                    "rocketmq_topic" : "test2",
+                                    "topic" : "test2",
                                     "key" : "key1",
                                     "timeout" : 1,
                                     "batch_max_size": 1
