@@ -45,10 +45,7 @@ local schema = {
             type = "array",
             minItems = 1,
             items = {
-                type = "array",
-                items = {
-                    type = "string"
-                }
+                type = "string"
             }
         },
         topic = {type = "string"},
