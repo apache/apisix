@@ -44,7 +44,7 @@ title: rocketmq-logger
 | 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | nameserver_list  | object  | 必须   |                |         | 要推送的 rocketmq 的 nameserver 列表。        |
-| rocketmq_topic   | string  | 必须   |                |         | 要推送的 topic。                             |
+| topic            | string  | 必须   |                |         | 要推送的 topic。                             |
 | key              | string  | 可选   |                |         | 发送消息的keys。                             |
 | tag              | string  | 可选   |                |         | 发送消息的tags。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                          |
@@ -148,11 +148,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "plugins": {
        "rocketmq-logger": {
-           "nameserver_list" :
-             {
-               "127.0.0.1":9876
-             },
-           "rocketmq_topic" : "test2",
+           "nameserver_list" : [ "127.0.0.1:9876" ],
+           "topic" : "test2",
        }
     },
     "upstream": {

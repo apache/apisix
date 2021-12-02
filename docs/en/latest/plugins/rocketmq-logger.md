@@ -44,7 +44,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | Name             | Type    | Requirement | Default        | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | -------------- | ------- | ---------------------------------------------------------------------------------------- |
 | nameserver_list  | object  | required    |                |         | An array of rocketmq nameservers.                                                               |
-| rocketmq_topic      | string  | required    |                |         | Target  topic to push data.                                                              |
+| topic            | string  | required    |                |         | Target  topic to push data.                                                              |
 | key              | string  | optional    |                |         | Keys of messages to send.                                               |
 | tag              | string  | optional   |                |         | Tags of messages to send.                           |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
@@ -148,11 +148,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 {
     "plugins": {
        "rocketmq-logger": {
-           "nameserver_list" :
-             {
-               "127.0.0.1":9876
-             },
-           "rocketmq_topic" : "test2",
+           "nameserver_list" : [ "127.0.0.1:9876" ],
+           "topic" : "test2",
            "batch_max_size": 1,
            "name": "rocketmq logger"
        }
