@@ -819,7 +819,7 @@ qr/getTopicRouteInfoFromNameserver return TOPIC_NOT_EXIST, No topic route info i
 
 
 
-=== TEST 23: rocketmq nameserver list info in log
+=== TEST 22: rocketmq nameserver list info in log
 --- config
     location /t {
         content_by_lua_block {
@@ -863,7 +863,7 @@ qr/failed to send data to rocketmq topic: .*, nameserver_list: \{"127.0.0.127":9
 
 
 
-=== TEST 24: delete plugin metadata, tests would fail if run rocketmq-logger-log-format.t and plugin metadata is added
+=== TEST 23: delete plugin metadata, tests would fail if run rocketmq-logger-log-format.t and plugin metadata is added
 --- config
     location /t {
         content_by_lua_block {
@@ -883,7 +883,7 @@ GET /t
 
 
 
-=== TEST 25: set route(id: 1,include_req_body = true,include_req_body_expr = array)
+=== TEST 24: set route(id: 1,include_req_body = true,include_req_body_expr = array)
 --- config
     location /t {
         content_by_lua_block {
@@ -933,7 +933,7 @@ passed
 
 
 
-=== TEST 26: hit route, expr eval success
+=== TEST 25: hit route, expr eval success
 --- request
 POST /hello?name=qwerty
 abcdef
@@ -947,7 +947,7 @@ qr/send data to rocketmq: \{.*"body":"abcdef"/
 
 
 
-=== TEST 27: hit route,expr eval fail
+=== TEST 26: hit route,expr eval fail
 --- request
 POST /hello?name=zcxv
 abcdef
@@ -959,7 +959,7 @@ qr/send data to rocketmq: \{.*"body":"abcdef"/
 
 
 
-=== TEST 28: check log schema(include_req_body)
+=== TEST 27: check log schema(include_req_body)
 --- config
     location /t {
         content_by_lua_block {
@@ -991,7 +991,7 @@ done
 
 
 
-=== TEST 29: check log schema(include_resp_body)
+=== TEST 28: check log schema(include_resp_body)
 --- config
     location /t {
         content_by_lua_block {
@@ -1023,7 +1023,7 @@ done
 
 
 
-=== TEST 30: set route(id: 1,include_resp_body = true,include_resp_body_expr = array)
+=== TEST 29: set route(id: 1,include_resp_body = true,include_resp_body_expr = array)
 --- config
     location /t {
         content_by_lua_block {
@@ -1073,7 +1073,7 @@ passed
 
 
 
-=== TEST 31: hit route, expr eval success
+=== TEST 30: hit route, expr eval success
 --- request
 POST /hello?name=qwerty
 abcdef
@@ -1087,7 +1087,7 @@ qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 
 
 
-=== TEST 32: hit route,expr eval fail
+=== TEST 31: hit route,expr eval fail
 --- request
 POST /hello?name=zcxv
 abcdef
