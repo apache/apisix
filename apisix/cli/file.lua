@@ -70,7 +70,7 @@ local function resolve_conf_var(conf)
                 local default
                 if i and j then
                     default = string.sub(var, i+1, j)
-                    var = string.sub(var, 1, i)
+                    var = string.sub(var, 1, i-1)
                 end
 
                 local v = getenv(var) or default
