@@ -76,11 +76,8 @@ passed
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" :
-                                  {
-                                    "127.0.0.1":9876
-                                  },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "tag" : "tag1",
                                 "timeout" : 1,

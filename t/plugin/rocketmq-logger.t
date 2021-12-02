@@ -29,10 +29,10 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.rocketmq-logger")
             local ok, err = plugin.check_schema({
-                 rocketmq_topic = "test",
+                 topic = "test",
                  key = "key1",
                  nameserver_list = {
-                    ["127.0.0.1"] = 3
+                    "127.0.0.1:3"
                  }
             })
             if not ok then
@@ -79,7 +79,7 @@ done
             local plugin = require("apisix.plugins.rocketmq-logger")
             local ok, err = plugin.check_schema({
                 nameserver_list = {
-                    ["127.0.0.1"] = 3000
+                    "127.0.0.1:3000"
                 },
                 timeout = "10",
                 rocketmq_topic ="test",
@@ -111,10 +111,7 @@ done
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" :
-                                  {
-                                    "127.0.0.1":9876
-                                  },
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
                                 "rocketmq_topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
@@ -134,10 +131,7 @@ done
                         "value": {
                             "plugins": {
                                  "rocketmq-logger": {
-                                    "nameserver_list" :
-                                      {
-                                        "127.0.0.1":9876
-                                      },
+                                    "nameserver_list" : [ "127.0.0.1:9876" ],
                                     "rocketmq_topic" : "test2",
                                     "key" : "key1",
                                     "timeout" : 1,
@@ -193,12 +187,8 @@ hello world
                  [[{
                         "plugins": {
                              "rocketmq-logger": {
-                                    "nameserver_list" :
-                                      {
-                                        "127.0.0.1":9876,
-                                        "127.0.0.1":9877
-                                      },
-                                    "rocketmq_topic" : "test2",
+                                    "nameserver_list" : [ "127.0.0.1:9877" ],
+                                    "topic" : "test2",
                                     "producer_type": "sync",
                                     "key" : "key1",
                                     "batch_max_size": 1
@@ -217,12 +207,8 @@ hello world
                         "value": {
                             "plugins": {
                                 "rocketmq-logger": {
-                                    "nameserver_list" :
-                                      {
-                                        "127.0.0.1":9876,
-                                        "127.0.0.1":9877
-                                      },
-                                    "rocketmq_topic" : "test2",
+                                    "nameserver_list" : [ "127.0.0.1:9877" ],
+                                    "topic" : "test2",
                                     "producer_type": "sync",
                                     "key" : "key1",
                                     "batch_max_size": 1
@@ -270,10 +256,8 @@ failed to send data to rocketmq topic
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1":9876
-                                },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
@@ -334,10 +318,8 @@ abcdef
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1":9876
-                                },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
@@ -396,10 +378,8 @@ connection: close
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1":9876
-                                },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" :  [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
@@ -454,11 +434,8 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" :
-                                  {
-                                    "127.0.0.1":9876
-                                  },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "timeout" : 1,
                                 "batch_max_size": 1
                             }
@@ -476,11 +453,8 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
                         "value": {
                             "plugins": {
                                  "rocketmq-logger": {
-                                    "nameserver_list" :
-                                      {
-                                        "127.0.0.1":9876
-                                      },
-                                    "rocketmq_topic" : "test2",
+                                    "nameserver_list" : [ "127.0.0.1:9876" ],
+                                    "topic" : "test2",
                                     "timeout" : 1,
                                     "batch_max_size": 1
                                 }
@@ -534,10 +508,8 @@ hello world
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1":9876
-                                },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" :  [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
                                 "include_req_body": false
@@ -591,10 +563,8 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1": 9876
-                                },
-                                "rocketmq_topic" : "test3",
+                                "nameserver_list" :  [ "127.0.0.1:9876" ],
+                                "topic" : "test3",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
                                 "include_req_body": false
@@ -634,10 +604,8 @@ passed
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1": 9876
-                                },
-                                "rocketmq_topic" : "test3",
+                                "nameserver_list" :  [ "127.0.0.1:9876" ],
+                                "topic" : "test3",
                                 "producer_type": "sync",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
@@ -685,10 +653,8 @@ qr/queue: 2/]
                  [[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" : {
-                                    "127.0.0.1": 9876
-                                },
-                                "rocketmq_topic" : "test3",
+                                "nameserver_list" :  [ "127.0.0.1:9876" ],
+                                "topic" : "test3",
                                 "producer_type": "async",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
@@ -754,10 +720,8 @@ qr/queue: 2/]
                 ngx.HTTP_PATCH,
                  [[{
                         "rocketmq-logger": {
-                            "nameserver_list" : {
-                                "127.0.0.1": 9876
-                            },
-                            "rocketmq_topic" : "test2",
+                            "nameserver_list" : [ "127.0.0.1:9876" ],
+                            "topic" : "test2",
                             "timeout" : 1,
                             "batch_max_size": 1,
                             "include_req_body": false
@@ -778,10 +742,8 @@ qr/queue: 2/]
                 ngx.HTTP_PATCH,
                  [[{
                         "rocketmq-logger": {
-                            "nameserver_list" : {
-                                "127.0.0.1": 19876
-                            },
-                            "rocketmq_topic" : "test4",
+                            "nameserver_list" :  [ "127.0.0.1:19876" ],
+                            "topic" : "test4",
                             "timeout" : 1,
                             "batch_max_size": 1,
                             "include_req_body": false
@@ -825,10 +787,8 @@ qr/not found topic/
                 ngx.HTTP_PATCH,
                  [[{
                         "rocketmq-logger": {
-                            "nameserver_list" : {
-                                "127.0.0.1": 9876
-                            },
-                            "rocketmq_topic" : "undefined_topic",
+                            "nameserver_list" : [ "127.0.0.1:9876" ],
+                            "topic" : "undefined_topic",
                             "timeout" : 1,
                             "batch_max_size": 1,
                             "include_req_body": false
@@ -859,73 +819,6 @@ qr/getTopicRouteInfoFromNameserver return TOPIC_NOT_EXIST, No topic route info i
 
 
 
-=== TEST 22: check nameserver_list via schema
---- config
-    location /t {
-        content_by_lua_block {
-            local data = {
-                {
-                    input = {
-                        nameserver_list = {},
-                        rocketmq_topic = "test",
-                        key= "key1",
-                    },
-                },
-                {
-                    input = {
-                        nameserver_list = {
-                            ["127.0.0.1"] = "9876"
-                        },
-                        rocketmq_topic = "test",
-                        key= "key1",
-                    },
-                },
-                {
-                    input = {
-                        nameserver_list = {
-                            ["127.0.0.1"] = 0
-                        },
-                        rocketmq_topic = "test",
-                        key= "key1",
-                    },
-                },
-                {
-                    input = {
-                        nameserver_list = {
-                            ["127.0.0.1"] = 65536
-                        },
-                        rocketmq_topic = "test",
-                        key= "key1",
-                    },
-                },
-            }
-
-            local plugin = require("apisix.plugins.rocketmq-logger")
-
-            local err_count = 0
-            for i in ipairs(data) do
-                local ok, err = plugin.check_schema(data[i].input)
-                if not ok then
-                    err_count = err_count + 1
-                    ngx.say(err)
-                end
-            end
-
-            assert(err_count == #data)
-        }
-    }
---- request
-GET /t
---- response_body
-property "nameserver_list" validation failed: expect object to have at least 1 properties
-property "nameserver_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): wrong type: expected integer, got string
-property "nameserver_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 0 to be greater than 1
-property "nameserver_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be smaller than 65535
---- no_error_log
-[error]
-
-
-
 === TEST 23: rocketmq nameserver list info in log
 --- config
     location /t {
@@ -936,11 +829,8 @@ property "nameserver_list" validation failed: failed to validate 127.0.0.1 (matc
                  [[{
                         "plugins": {
                              "rocketmq-logger": {
-                                    "nameserver_list" :
-                                      {
-                                        "127.0.0.127":9876
-                                      },
-                                    "rocketmq_topic" : "test2",
+                                    "nameserver_list" : [ "127.0.0.1:9876" ],
+                                    "topic" : "test2",
                                     "producer_type": "sync",
                                     "key" : "key1",
                                     "batch_max_size": 1
@@ -1003,11 +893,8 @@ GET /t
                  [=[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" :
-                                  {
-                                    "127.0.0.1":9876
-                                  },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "include_req_body": true,
@@ -1078,10 +965,10 @@ qr/send data to rocketmq: \{.*"body":"abcdef"/
         content_by_lua_block {
             local plugin = require("apisix.plugins.rocketmq-logger")
             local ok, err = plugin.check_schema({
-                 rocketmq_topic = "test",
+                 topic = "test",
                  key = "key1",
                  nameserver_list = {
-                    ["127.0.0.1"] = 3
+                    "127.0.0.1:3"
                  },
                  include_req_body = true,
                  include_req_body_expr = {
@@ -1110,10 +997,10 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.rocketmq-logger")
             local ok, err = plugin.check_schema({
-                 rocketmq_topic = "test",
+                 topic = "test",
                  key = "key1",
                  nameserver_list = {
-                    ["127.0.0.1"] = 3
+                    "127.0.0.1:3"
                  },
                  include_resp_body = true,
                  include_resp_body_expr = {
@@ -1146,11 +1033,8 @@ done
                  [=[{
                         "plugins": {
                             "rocketmq-logger": {
-                                "nameserver_list" :
-                                  {
-                                    "127.0.0.1":9876
-                                  },
-                                "rocketmq_topic" : "test2",
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
                                 "key" : "key1",
                                 "timeout" : 1,
                                 "include_resp_body": true,
