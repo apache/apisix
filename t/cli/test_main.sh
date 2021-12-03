@@ -265,34 +265,6 @@ if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
-# support default value when environment not set
-echo '
-etcd:
-    host:
-        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
-' > conf/config.yaml
-
-ETCD_PORT=2379 make init
-
-if ! grep "env ETCD_HOST=192.168.1.1;" conf/nginx.conf > /dev/null; then
-    echo "failed: support environment variables in local_conf"
-    exit 1
-fi
-
-# support default value when environment not set
-echo '
-etcd:
-    host:
-        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
-' > conf/config.yaml
-
-ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
-
-if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
-    echo "failed: support environment variables in local_conf"
-    exit 1
-fi
-
 # don't override user's envs configuration
 echo '
 etcd:
@@ -337,6 +309,35 @@ if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "pass: support environment variables in local_conf"
+
+# support default value when environment not set
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=192.168.1.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support default value when environment not set"
+    exit 1
+fi
+
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support default value when environment not set"
+    exit 1
+fi
+
+echo "pass: support default value when environment not set"
 
 # support merging worker_processes
 echo '
