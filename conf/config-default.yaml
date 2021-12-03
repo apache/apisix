@@ -318,6 +318,7 @@ plugins:                          # plugin list (sorted by priority)
   - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
   - ldap-auth                      # priority: 2540
+  - vault-auth                     # priority: 2535
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
