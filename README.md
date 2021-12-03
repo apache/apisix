@@ -146,10 +146,18 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Custom routing: Support users to implement routing algorithms themselves.
 
 ## Get started with just a few clicks
-<a valign="middle" href="https://www.teamcode.com/tin/clone?applicationId=254296249567039488" rel="nofollow">
-      <img src="https://camo.githubusercontent.com/b36eed3d94c2a07262f31bc2edc6b734698c3f0682d4b449d9f68c683dba8599/68747470733a2f2f73746174696330312e7465616d636f64652e636f6d2f62616467652f7465616d636f64652d62616467652d72756e2d696e2d636c6f75642d656e2e737667" width="140px" alt="Teamcode" valign="middle" data-canonical-src="https://static01.teamcode.com/badge/teamcode-badge-run-in-cloud-en.svg" style="max-width: 100%;">
+
+<table>
+  <tbody><tr>
+      <a valign="middle" href="https://www.teamcode.com/tin/clone?applicationId=254296249567039488" rel="nofollow">
+        <img src="https://camo.githubusercontent.com/b36eed3d94c2a07262f31bc2edc6b734698c3f0682d4b449d9f68c683dba8599/68747470733a2f2f73746174696330312e7465616d636f64652e636f6d2f62616467652f7465616d636f64652d62616467652d72756e2d696e2d636c6f75642d656e2e737667" width="140px" alt="Teamcode" valign="middle" data-canonical-src="https://static01.teamcode.com/badge/teamcode-badge-run-in-cloud-en.svg" style="max-width: 100%;">
+      </a> 
+      <a valign="middle" href="https://www.teamcode.com/docs/en-US/tin/clone-tin"><span valign="middle">See the Guide</span>
       </a>
-      
+    </td>
+  </tr>
+</tbody></table>    
+
 ## Get Started
 
 1. Installation
