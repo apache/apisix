@@ -310,7 +310,7 @@ fi
 
 echo "pass: support environment variables in local_conf"
 
-# support default value when environment not set
+# should use default value when environment not set
 echo '
 etcd:
     host:
@@ -320,7 +320,7 @@ etcd:
 ETCD_PORT=2379 make init
 
 if ! grep "env ETCD_HOST=192.168.1.1;" conf/nginx.conf > /dev/null; then
-    echo "failed: support default value when environment not set"
+    echo "failed: should use default value when environment not set"
     exit 1
 fi
 
@@ -333,11 +333,11 @@ etcd:
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
 if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
-    echo "failed: support default value when environment not set"
+    echo "failed: should use default value when environment not set"
     exit 1
 fi
 
-echo "pass: support default value when environment not set"
+echo "pass: should use default value when environment not set"
 
 # support merging worker_processes
 echo '
