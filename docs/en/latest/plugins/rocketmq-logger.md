@@ -133,10 +133,10 @@ In case of errors, returns `nil` with a string describing the error (`buffer ove
 Specify the nameservers of the external rocketmq servers as below sample.
 
 ```json
-{
-    "127.0.0.1":9876,
-    "127.0.0.2":9876
-}
+[
+    "127.0.0.1:9876",
+    "127.0.0.2:9876"
+]
 ```
 
 ## How To Enable
