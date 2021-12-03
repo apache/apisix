@@ -66,11 +66,11 @@ local function resolve_conf_var(conf)
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
             local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%w+]*)%s*%}%}", function(var)
-                local i, j = string.find(var, "%:%w+")
+                local i, j = var:find("%:%w+")
                 local default
                 if i and j then
-                    default = string.sub(var, i+1, j)
-                    var = string.sub(var, 1, i-1)
+                    default = var:sub(i + 1, j)
+                    var = var:sub(1, i - 1)
                 end
 
                 local v = getenv(var) or default
