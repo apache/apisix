@@ -31,7 +31,7 @@
 #
 # If the configured environment variable can't be found, an error will be thrown.
 #
-# Also, If you want to use default value when using environment variable not set,
+# Also, If you want to use default value when the environment variable not set,
 # Use `${{VAR:default_value}}` instead. For instance:
 #
 # etcd:
