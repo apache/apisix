@@ -72,7 +72,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
             if ok and json then
                 stderr:write("please remove the cjson library in Lua, it may "
                             .. "conflict with the cjson library in openresty. "
-                            .. "\n luarocks remove cjson\n")
+                            .. "\n luarocks remove lua-cjson\n")
                 exit(1)
             end
         end
