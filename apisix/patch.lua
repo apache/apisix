@@ -20,18 +20,24 @@ local ipmatcher = require("resty.ipmatcher")
 local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
+local ngx = ngx
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
 local original_udp = ngx.socket.udp
 local concat_tab = table.concat
+local debug = debug
 local new_tab = require("table.new")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
 local select = select
 local setmetatable = setmetatable
+local string = string
+local table = table
 local type = type
+local tonumber = tonumber
+local tostring = tostring
 
 
 local config_local
@@ -84,6 +90,53 @@ do
         return sock
     end
 end
+
+
+-- Inspired by kong.globalpatches
+do -- `_G.math.randomseed` patch
+    local resty_random = require("resty.random")
+    local math_randomseed = math.randomseed
+    local seeded = {}
+    -- make linter happy
+    -- luacheck: ignore
+    _G.math.randomseed = function()
+        local seed
+        local worker_pid = ngx.worker.pid()
+
+        -- check seed mark
+        if seeded[worker_pid] then
+            log(WARN, debug.traceback("attempt to seed already seeded random number " ..
+                                      "generator on process #" .. tostring(worker_pid), 2))
+            return
+        end
+
+        -- get randomseed
+        local bytes = resty_random.bytes(8)
+        if bytes then
+            log(ngx.INFO, "seeding from resty.random.bytes")
+
+            local t = {}
+            for i = 1, #bytes do
+                t[i] = string.byte(bytes, i)
+            end
+
+            local str = table.concat(t)
+            if #str > 12 then
+                str = string.sub(str, 1, 12)
+            end
+            seed = tonumber(str)
+        else
+            log(ngx.ERR, "could not seed from resty.random.bytes, seeding ",
+                         "seeding with time and process id instead (this can ",
+                         "result to duplicated seeds)")
+
+            seed = ngx.now() * 1000 + worker_pid
+        end
+
+        seeded[worker_pid] = true
+        math_randomseed(seed)
+    end
+end -- do
 
 
 local patch_udp_socket
