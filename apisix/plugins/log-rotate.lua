@@ -209,11 +209,11 @@ local function rotate()
         return
     end
 
-    core.log.warn("send USER1 signal to master process [",
+    core.log.warn("send USR1 signal to master process [",
                   process.get_master_pid(), "] for reopening log file")
     local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
     if not ok then
-        core.log.error("failed to send USER1 signal for reopening log file: ", err)
+        core.log.error("failed to send USR1 signal for reopening log file: ", err)
     end
 
     -- clean the oldest file
