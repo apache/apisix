@@ -312,27 +312,37 @@ echo "pass: support environment variables in local_conf"
 
 # should use default value when environment not set
 echo '
-etcd:
-    host:
-        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
+tests:
+    key: ${{TEST_ENV::1.1.1.1}}
 ' > conf/config.yaml
 
-ETCD_PORT=2379 make init
+make init
 
-if ! grep "env ETCD_HOST=192.168.1.1;" conf/nginx.conf > /dev/null; then
+if ! grep "env TEST_ENV=1.1.1.1;" conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi
 
 echo '
-etcd:
-    host:
-        - "http://${{ETCD_HOST:192.168.1.1}}:${{ETCD_PORT}}"
+tests:
+    key: ${{TEST_ENV::very-long-domain-with-many-symbols.absolutely-non-exists-123ss.com:1234/path?param1=value1}}
 ' > conf/config.yaml
 
-ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+make init
 
-if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+if ! grep "env TEST_ENV=very-long-domain-with-many-symbols.absolutely-non-exists-123ss.com:1234/path?param1=value1;" conf/nginx.conf > /dev/null; then
+    echo "failed: should use default value when environment not set"
+    exit 1
+fi
+
+echo '
+tests:
+    key: ${{TEST_ENV::192.168.1.1}}
+' > conf/config.yaml
+
+TEST_ENV=127.0.0.1 make init
+
+if ! grep "env TEST_ENV=127.0.0.1;" conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi

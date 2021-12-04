@@ -32,11 +32,11 @@
 # If the configured environment variable can't be found, an error will be thrown.
 #
 # Also, If you want to use default value when the environment variable not set,
-# Use `${{VAR:default_value}}` instead. For instance:
+# Use `${{VAR::default_value}}` instead. For instance:
 #
 # etcd:
 #     host:
-#       - http://${{ETCD_HOST:localhost}}:2379
+#       - http://${{ETCD_HOST::localhost}}:2379
 #
 # This will find environment variable `ETCD_HOST` first, and if it's not exist it will use `localhost` as default value.
 #
