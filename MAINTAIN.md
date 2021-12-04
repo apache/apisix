@@ -27,7 +27,7 @@
 4. Package a vote artifact to Apache's dev-apisix repo. The artifact can be created
 via `VERSION=x.y.z make release-src`
 5. Send the [vote email](https://lists.apache.org/thread/vq4qtwqro5zowpdqhx51oznbjy87w9d0) to dev@apisix.apache.org
-   > After executing the `VERSION=x.y.z make release-src` command, the content of the vote email will be automatically generated in the `/release `directory named `apache-apisix-${x.y.z}-vote-contents`
+   > After executing the `VERSION=x.y.z make release-src` command, the content of the vote email will be automatically generated in the `/release` directory named `apache-apisix-${x.y.z}-vote-contents`
 6. When the vote is passed, send the [vote result email](https://lists.apache.org/thread/k2frnvj4zj9oynsbr7h7nd6n6m3q5p89) to dev@apisix.apache.org
 7. Move the vote artifact to Apache's apisix repo
 8. Register the release info in https://reporter.apache.org/addrelease.html?apisix
