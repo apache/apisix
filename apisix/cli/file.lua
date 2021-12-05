@@ -65,11 +65,12 @@ local function resolve_conf_var(conf)
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%:[%w%-%.%:%?%/=]+]?)%s*%}%}", function(var)
-                local i, j = var:find("%:%:[%w%-%.%:%?%/=]+")
+            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
+                local i, j = var:find("%:%=")
                 local default
                 if i and j then
-                    default = var:sub(i + 2, j)
+                    default = var:sub(i + 2, #var)
+                    default = default:gsub('^%s*(.-)%s*$', '%1')
                     var = var:sub(1, i - 1)
                 end
 

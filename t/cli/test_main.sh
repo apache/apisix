@@ -310,10 +310,10 @@ fi
 
 echo "pass: support environment variables in local_conf"
 
-# should use default value when environment not set
+# support default value when environment not set
 echo '
 tests:
-    key: ${{TEST_ENV::1.1.1.1}}
+    key: ${{TEST_ENV:=1.1.1.1}}
 ' > conf/config.yaml
 
 make init
@@ -325,7 +325,7 @@ fi
 
 echo '
 tests:
-    key: ${{TEST_ENV::very-long-domain-with-many-symbols.absolutely-non-exists-123ss.com:1234/path?param1=value1}}
+    key: ${{TEST_ENV:=very-long-domain-with-many-symbols.absolutely-non-exists-123ss.com:1234/path?param1=value1}}
 ' > conf/config.yaml
 
 make init
@@ -337,17 +337,17 @@ fi
 
 echo '
 tests:
-    key: ${{TEST_ENV::192.168.1.1}}
+    key: ${{TEST_ENV:=192.168.1.1}}
 ' > conf/config.yaml
 
 TEST_ENV=127.0.0.1 make init
 
 if ! grep "env TEST_ENV=127.0.0.1;" conf/nginx.conf > /dev/null; then
-    echo "failed: should use default value when environment not set"
+    echo "failed: should use environment variable when environment is set"
     exit 1
 fi
 
-echo "pass: should use default value when environment not set"
+echo "pass: support default value when environment not set"
 
 # support merging worker_processes
 echo '
