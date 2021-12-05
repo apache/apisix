@@ -104,7 +104,7 @@ do -- `_G.math.randomseed` patch
 
         -- check seed mark
         if seeded[worker_pid] then
-            log(WARN, debug.traceback("attempt to seed already seeded random number " ..
+            log(ngx.DEBUG, debug.traceback("attempt to seed already seeded random number " ..
                                       "generator on process #" .. tostring(worker_pid), 2))
             return
         end
@@ -112,7 +112,7 @@ do -- `_G.math.randomseed` patch
         -- get randomseed
         local bytes = resty_random.bytes(8)
         if bytes then
-            log(ngx.INFO, "seeding from resty.random.bytes")
+            log(ngx.DEBUG, "seeding from resty.random.bytes")
 
             local t = {}
             for i = 1, #bytes do
