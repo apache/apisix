@@ -41,7 +41,7 @@ local schema = {
             },
         }
     },
-    required = {"protocol_name", "protocol_level", "upstream"},
+    required = {"protocol_name", "protocol_level"},
 }
 
 
@@ -163,6 +163,10 @@ function _M.preread(conf, ctx)
     end
 
     core.log.info("mqtt client id: ", res.client_id)
+
+    if not conf.upstream then
+        return
+    end
 
     local host = conf.upstream.host
     if not host then

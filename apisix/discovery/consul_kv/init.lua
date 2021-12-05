@@ -18,6 +18,7 @@ local require            = require
 local local_conf         = require("apisix.core.config_local").local_conf()
 local core               = require("apisix.core")
 local core_sleep         = require("apisix.core.utils").sleep
+local schema             = require('apisix.discovery.consul_kv.schema')
 local resty_consul       = require('resty.consul')
 local cjson              = require('cjson')
 local http               = require('resty.http')
@@ -47,77 +48,6 @@ local dump_params
 local events
 local events_list
 local consul_apps
-
-local schema = {
-    type = "object",
-    properties = {
-        servers = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-            }
-        },
-        fetch_interval = {type = "integer", minimum = 1, default = 3},
-        keepalive = {
-            type = "boolean",
-            default = true
-        },
-        prefix = {type = "string", default = "upstreams"},
-        weight = {type = "integer", minimum = 1, default = 1},
-        timeout = {
-            type = "object",
-            properties = {
-                connect = {type = "integer", minimum = 1, default = 2000},
-                read = {type = "integer", minimum = 1, default = 2000},
-                wait = {type = "integer", minimum = 1, default = 60}
-            },
-            default = {
-                connect = 2000,
-                read = 2000,
-                wait = 60,
-            }
-        },
-        skip_keys = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-            }
-        },
-        dump = {
-            type = "object",
-            properties = {
-                path = {type = "string", minLength = 1},
-                load_on_init = {type = "boolean", default = true},
-                expire = {type = "integer", default = 0},
-            },
-            required = {"path"},
-        },
-        default_service = {
-            type = "object",
-            properties = {
-                host = {type = "string"},
-                port = {type = "integer"},
-                metadata = {
-                    type = "object",
-                    properties = {
-                        fail_timeout = {type = "integer", default = 1},
-                        weight = {type = "integer", default = 1},
-                        max_fails = {type = "integer", default = 1}
-                    },
-                    default = {
-                        fail_timeout = 1,
-                        weight = 1,
-                        max_fails = 1
-                    }
-                }
-            }
-        }
-    },
-
-    required = {"servers"}
-}
 
 local _M = {
     version = 0.3,
@@ -434,18 +364,8 @@ end
 
 function _M.init_worker()
     local consul_conf = local_conf.discovery.consul_kv
-    if not consul_conf
-        or not consul_conf.servers
-        or #consul_conf.servers == 0 then
-        error("do not set consul_kv correctly !")
-        return
-    end
-
-    local ok, err = core.schema.check(schema, consul_conf)
-    if not ok then
-        error("invalid consul_kv configuration: " .. err)
-        return
-    end
+    -- inject the default values
+    core.schema.check(schema, consul_conf)
 
     if consul_conf.dump then
       local dump = consul_conf.dump

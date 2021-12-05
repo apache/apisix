@@ -363,6 +363,7 @@ release-src: compress-tar
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512
+	./utils/gen-vote-contents.sh $(VERSION)
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
