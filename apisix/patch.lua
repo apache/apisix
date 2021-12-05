@@ -92,8 +92,15 @@ do
 end
 
 
--- Inspired by kong.globalpatches
 do -- `_G.math.randomseed` patch
+
+    -- Seeds the random generator, use with care.
+    -- Once - properly - seeded, this method is replaced with a stub
+    -- one. This is to enforce best-practices for seeding in ngx_lua,
+    -- and prevents third-party modules from overriding our correct seed
+    -- (many modules make a wrong usage of `math.randomseed()` by calling
+    -- it multiple times or by not using unique seeds for Nginx workers).
+    -- Inspired by kong.globalpatches
     local resty_random = require("resty.random")
     local math_randomseed = math.randomseed
     local seeded = {}
@@ -105,7 +112,7 @@ do -- `_G.math.randomseed` patch
         -- check seed mark
         if seeded[worker_pid] then
             log(ngx.DEBUG, debug.traceback("attempt to seed already seeded random number " ..
-                                      "generator on process #" .. tostring(worker_pid), 2))
+                                           "generator on process #" .. tostring(worker_pid), 2))
             return
         end
 
