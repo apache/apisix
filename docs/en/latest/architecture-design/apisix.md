@@ -20,6 +20,7 @@ title: APISIX
 # limitations under the License.
 #
 -->
+
 ## Apache APISIX : Software Architecture
 
 ![flow-software-architecture](../../../assets/images/flow-software-architecture.png)
