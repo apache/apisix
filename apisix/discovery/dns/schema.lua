@@ -15,5 +15,15 @@
 -- limitations under the License.
 --
 return {
-    VERSION = "2.11.0"
+    type = "object",
+    properties = {
+        servers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+            },
+        },
+    },
+    required = {"servers"}
 }

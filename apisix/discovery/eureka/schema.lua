@@ -15,5 +15,26 @@
 -- limitations under the License.
 --
 return {
-    VERSION = "2.11.0"
+    type = "object",
+    properties = {
+        host = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+            },
+        },
+        fetch_interval = {type = "integer", minimum = 1, default = 30},
+        prefix = {type = "string"},
+        weight = {type = "integer", minimum = 0},
+        timeout = {
+            type = "object",
+            properties = {
+                connect = {type = "integer", minimum = 1, default = 2000},
+                send = {type = "integer", minimum = 1, default = 2000},
+                read = {type = "integer", minimum = 1, default = 5000},
+            }
+        },
+    },
+    required = {"host"}
 }

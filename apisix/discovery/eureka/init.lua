@@ -18,12 +18,12 @@
 local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
+local schema             = require('apisix.discovery.eureka.schema')
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
 local math_random        = math.random
-local error              = error
 local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
@@ -33,31 +33,6 @@ local log                = core.log
 
 local default_weight
 local applications
-
-local schema = {
-    type = "object",
-    properties = {
-        host = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-            },
-        },
-        fetch_interval = {type = "integer", minimum = 1, default = 30},
-        prefix = {type = "string"},
-        weight = {type = "integer", minimum = 0},
-        timeout = {
-            type = "object",
-            properties = {
-                connect = {type = "integer", minimum = 1, default = 2000},
-                send = {type = "integer", minimum = 1, default = 2000},
-                read = {type = "integer", minimum = 1, default = 5000},
-            }
-        },
-    },
-    required = {"host"}
-}
 
 
 local _M = {
@@ -232,17 +207,9 @@ end
 
 
 function _M.init_worker()
-    if not local_conf.discovery.eureka or
-        not local_conf.discovery.eureka.host or #local_conf.discovery.eureka.host == 0 then
-        error("do not set eureka.host")
-        return
-    end
+    -- inject the default values
+    core.schema.check(schema, local_conf.discovery.eureka)
 
-    local ok, err = core.schema.check(schema, local_conf.discovery.eureka)
-    if not ok then
-        error("invalid eureka configuration: " .. err)
-        return
-    end
     default_weight = local_conf.discovery.eureka.weight or 100
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.eureka.fetch_interval or 30
