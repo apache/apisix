@@ -121,6 +121,12 @@ do -- `_G.math.randomseed` patch
 
             local str = table.concat(t)
             if #str > 12 then
+                -- truncate the final number to prevent integer overflow,
+                -- since math.randomseed() could get cast to a platform-specific
+                -- integer with a different size and get truncated, hence, lose
+                -- randomness.
+                -- double-precision floating point should be able to represent numbers
+                -- without rounding with up to 15/16 digits but let's use 12 of them.
                 str = string.sub(str, 1, 12)
             end
             seed = tonumber(str)
