@@ -514,7 +514,6 @@ local rpc_handlers = {
         http_req_call_req.AddArgs(builder, args_vec)
         http_req_call_req.AddHeaders(builder, hdrs_vec)
         http_req_call_req.AddMethod(builder, encode_a6_method(method))
-        -- TODO: handle extraInfo
 
         local req = http_req_call_req.End(builder)
         builder:Finish(req)
