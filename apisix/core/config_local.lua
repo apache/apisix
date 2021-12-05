@@ -16,6 +16,7 @@
 --
 
 local file = require("apisix.cli.file")
+local schema = require("apisix.cli.schema")
 
 
 local _M = {}
@@ -38,6 +39,9 @@ function _M.local_conf(force)
     if not default_conf then
         return nil, err
     end
+
+    -- fill the default value by the schema
+    schema.validate(default_conf)
 
     config_data = default_conf
     return config_data

@@ -18,7 +18,6 @@ local require            = require
 local local_conf         = require("apisix.core.config_local").local_conf()
 local core               = require("apisix.core")
 local core_sleep         = require("apisix.core.utils").sleep
-local schema             = require('apisix.discovery.consul_kv.schema')
 local resty_consul       = require('resty.consul')
 local cjson              = require('cjson')
 local http               = require('resty.http')
@@ -364,8 +363,6 @@ end
 
 function _M.init_worker()
     local consul_conf = local_conf.discovery.consul_kv
-    -- inject the default values
-    core.schema.check(schema, consul_conf)
 
     if consul_conf.dump then
       local dump = consul_conf.dump
