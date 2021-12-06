@@ -41,7 +41,15 @@ plugin_attr:
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
-    $block->set_value("request", "GET /t");
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
 });
 
 run_tests;
@@ -58,11 +66,11 @@ __DATA__
             local has_split_error_file = false
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__access.log.tar.gz$") then
+                if string.match(file_name, "_access.log.tar.gz$") then
                     has_split_access_file = true
                 end
 
-                if string.match(file_name, "__error.log.tar.gz$") then
+                if string.match(file_name, "_error.log.tar.gz$") then
                     has_split_error_file = true
                 end
             end
@@ -74,8 +82,6 @@ __DATA__
             end
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -90,7 +96,45 @@ __DATA__
     }
 --- response_body
 done
---- no_error_log
-[error]
 --- error_log
 start xxxxxx
+
+
+
+=== TEST 3: check file changes (enable compression)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2)
+
+            local default_logs = {}
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "_error.log.tar.gz$") or string.match(file_name, "_access.log.tar.gz$") then
+                    local filepath = ngx.config.prefix() .. "/logs/" .. file_name
+                    local attr = lfs.attributes(filepath)
+                    if attr then
+                        default_logs[filepath] = { change = attr.change, size = attr.size }
+                    end
+                end
+            end
+
+            ngx.sleep(1)
+
+            local passed = false
+            for filepath, origin_attr in pairs(default_logs) do
+                local check_attr = lfs.attributes(filepath)
+                if check_attr.change == origin_attr.change and check_attr.size == origin_attr.size then
+                    passed = true
+                else
+                    passed = false
+                    break
+                end
+            end
+
+            if passed then
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed

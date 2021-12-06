@@ -40,7 +40,16 @@ plugin_attr:
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
-    $block->set_value("request", "GET /t");
+
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
 });
 
 run_tests;
@@ -57,11 +66,11 @@ __DATA__
             local has_split_error_file = false
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__access.log$") then
+                if string.match(file_name, "_access.log$") then
                     has_split_access_file = true
                 end
 
-                if string.match(file_name, "__error.log$") then
+                if string.match(file_name, "_error.log$") then
                     local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
                     local content = f:read("*all")
                     f:close()
@@ -81,8 +90,6 @@ __DATA__
     }
 --- error_code eval
 [200]
---- no_error_log
-[error]
 
 
 
@@ -97,8 +104,6 @@ __DATA__
     }
 --- response_body
 done
---- no_error_log
-[error]
 --- error_log
 start xxxxxx
 
@@ -120,7 +125,7 @@ start xxxxxx
 
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__error.log$") then
+                if string.match(file_name, "_error.log$") then
                     local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
                     local content = f:read("*all")
                     f:close()
@@ -139,8 +144,6 @@ start xxxxxx
     }
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -168,7 +171,7 @@ plugins:
             local n_split_error_file = 0
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__error.log$") then
+                if string.match(file_name, "_error.log$") then
                     n_split_error_file = n_split_error_file + 1
                 end
             end
@@ -181,5 +184,43 @@ plugins:
 --- response_body
 done
 true
---- no_error_log
-[error]
+
+
+
+=== TEST 5: check file changes (disable compression)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2)
+
+            local default_logs = {}
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "_error.log$") or string.match(file_name, "_access.log$") then
+                    local filepath = ngx.config.prefix() .. "/logs/" .. file_name
+                    local attr = lfs.attributes(filepath)
+                    if attr then
+                        default_logs[filepath] = { change = attr.change, size = attr.size }
+                    end
+                end
+            end
+
+            ngx.sleep(1)
+
+            local passed = false
+            for filepath, origin_attr in pairs(default_logs) do
+                local check_attr = lfs.attributes(filepath)
+                if check_attr.change == origin_attr.change and check_attr.size == origin_attr.size then
+                    passed = true
+                else
+                    passed = false
+                    break
+                end
+            end
+
+            if passed then
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
