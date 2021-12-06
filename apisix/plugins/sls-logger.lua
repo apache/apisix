@@ -26,6 +26,7 @@ local tcp = ngx.socket.tcp
 local buffers = {}
 local tostring = tostring
 local ipairs = ipairs
+local pairs = pairs
 local table = table
 local schema = {
     type = "object",
@@ -116,7 +117,7 @@ local function remove_stale_objects(premature)
         return
     end
 
-    for key, batch in ipairs(buffers) do
+    for key, batch in pairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
             core.log.warn("removing batch processor stale object, route id:", tostring(key))
             buffers[key] = nil
