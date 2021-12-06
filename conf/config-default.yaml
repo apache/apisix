@@ -278,6 +278,13 @@ etcd:
                                   # the default value is true, e.g. the certificate will be verified strictly.
     #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
 
+# storage backend for sensitive data storage and retrieval
+vault:
+  host: "http://127.0.0.1:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: s.0L81KEDHYZnjLMFleFIfXDWV
+
 #discovery:                       # service discovery center
 #  dns:
 #    servers:

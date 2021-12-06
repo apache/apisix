@@ -17,8 +17,9 @@
 local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
+local vault   = require("apisix.core.vault")
+
 local hex_encode = require("resty.string").to_hex
--- local vault_fetch = require("apisix.plugins.vault.request").fetch
 
 local ipairs   = ipairs
 local plugin_name = "vault-auth"
@@ -41,15 +42,6 @@ local consumer_schema = {
     }
 }
 
-local metadata_schema = {
-    type = "object",
-    properties = {
-        host = {type = "string", default = "127.0.0.1"},
-        port = {type = "integer", default = 8200},
-        vault_token = {type = "string"},
-        vault_kv_path = {type = "string", default = "kv/apisix/plugins/vault-auth"}
-    }
-}
 
 local _M = {
     version = 0.1,
@@ -58,7 +50,6 @@ local _M = {
     name = plugin_name,
     schema = schema,
     consumer_schema = consumer_schema,
-    metadata_schema = metadata_schema,
 }
 
 
@@ -70,7 +61,7 @@ do
         core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            core.log.error("consumer node: ", core.json.delay_encode(consumer, true))
             consumer_names[consumer.auth_conf.accesskey] = consumer
         end
 
@@ -86,9 +77,6 @@ function _M.check_schema(conf, schema_type)
         if not ok then
             return false, err
         end
-
-    elseif schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
     else
         return core.schema.check(schema, conf)
     end
@@ -123,20 +111,29 @@ function _M.rewrite(conf, ctx)
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
         create_consume_cache, consumer_conf)
 
+    -- check local cache to verify if the accesskey is there (the etcd doesn't contains
+    -- the password). Actually saves a roundtrip to vault when accesskey itself is invalid.
     local consumer = consumers[accesskey]
+    core.log.error(core.json.delay_encode(consumer, true)) -- see this log @spacewander
+
     if not consumer then
         return 401, {message = "Invalid accesskey attached with the request"}
     end
 
-    core.log.error(core.json.delay_encode(consumer, true))
-    core.log.error("sec ", secretkey)
+    -- fetching the secretkey from vault and perform matching.
+    local res, err = vault.get("/consumers/auth-data/" .. accesskey)
+    if not res or err then
+        core.log.error("failed to get secret key for access key[ ", accesskey,
+                        " ] from vault: ", err)
+        return 503, {message = "Issue with authenticating with vault server"}
+    end
 
-    if consumer.auth_conf.secretkey ~= secretkey then
+    if res.data.secretkey ~= secretkey then
         return 401, {message = "Invalid secretkey attached with the request"}
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
+
     core.log.info("hit vault-auth rewrite")
 end
 
