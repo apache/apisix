@@ -93,7 +93,7 @@ do
 end
 
 
-do -- `_G.math.randomseed` patch
+do -- `math.randomseed` patch
 
     -- Seeds the random generator, use with care.
     -- Once - properly - seeded, this method is replaced with a stub
