@@ -105,6 +105,8 @@ do -- `_G.math.randomseed` patch
     local math_randomseed = math.randomseed
     local seeded = {}
 
+    -- make linter happy
+    -- luacheck: ignore
     math.randomseed = function()
         local seed
         local worker_pid = ngx.worker.pid()
