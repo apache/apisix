@@ -18,7 +18,7 @@
 local core            = require("apisix.core")
 local ngx             = ngx
 local tostring        = tostring
-local ipairs          = ipairs
+local pairs           = pairs
 local ngx_timer_at    = ngx.timer.at
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
@@ -128,7 +128,7 @@ local function remove_stale_objects(premature)
         return
     end
 
-    for key, batch in ipairs(buffers) do
+    for key, batch in pairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
             core.log.warn("removing batch processor stale object, route id:", tostring(key))
             buffers[key] = nil
