@@ -38,6 +38,7 @@ local table = table
 local type = type
 local tonumber = tonumber
 local tostring = tostring
+local min = math.min
 
 
 local config_local
@@ -124,20 +125,17 @@ do -- `_G.math.randomseed` patch
             log(ngx.DEBUG, "seeding from resty.random.bytes")
 
             local t = {}
-            for i = 1, #bytes do
+            -- truncate the final number to prevent integer overflow,
+            -- since math.randomseed() could get cast to a platform-specific
+            -- integer with a different size and get truncated, hence, lose
+            -- randomness.
+            -- double-precision floating point should be able to represent numbers
+            -- without rounding with up to 15/16 digits but let's use 12 of them.
+            for i = 1, min(#bytes, 12) do
                 t[i] = string.byte(bytes, i)
             end
 
             local str = table.concat(t)
-            if #str > 12 then
-                -- truncate the final number to prevent integer overflow,
-                -- since math.randomseed() could get cast to a platform-specific
-                -- integer with a different size and get truncated, hence, lose
-                -- randomness.
-                -- double-precision floating point should be able to represent numbers
-                -- without rounding with up to 15/16 digits but let's use 12 of them.
-                str = string.sub(str, 1, 12)
-            end
             seed = tonumber(str)
         else
             log(ngx.ERR, "could not seed from resty.random.bytes, seeding ",
