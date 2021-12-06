@@ -177,7 +177,7 @@ hello world
 
 
 
-=== TEST 6: error log
+=== TEST 6: unavailable nameserver
 --- config
     location /t {
         content_by_lua_block {
