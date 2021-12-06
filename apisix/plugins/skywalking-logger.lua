@@ -28,7 +28,7 @@ local ngx_re          = require("ngx.re")
 local ngx      = ngx
 local tostring = tostring
 local tonumber = tonumber
-local ipairs   = ipairs
+local pairs    = pairs
 local timer_at = ngx.timer.at
 
 local plugin_name = "skywalking-logger"
@@ -130,7 +130,7 @@ local function remove_stale_objects(premature)
         return
     end
 
-    for key, batch in ipairs(buffers) do
+    for key, batch in pairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
             core.log.warn("removing batch processor stale object, conf: ",
                           core.json.delay_encode(key))
