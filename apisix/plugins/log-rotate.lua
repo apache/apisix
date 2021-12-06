@@ -191,8 +191,9 @@ local function compression_file(new_file)
 
     local ok, stdout, stderr, reason, status = shell.run(cmd)
     if not ok then
-        core.log.error("compress log file from ", new_filename, " to ", com_filename, " fail, stdout: ",
-                stdout, " stderr: ", stderr, " reason: ", reason, " status: ", status)
+        core.log.error("compress log file from ", new_filename, " to ", com_filename,
+                " fail, stdout: ", stdout, " stderr: ", stderr, " reason: ", reason,
+                " status: ", status)
         return
     end
 
