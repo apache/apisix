@@ -23,6 +23,7 @@ local rf5424 = require("apisix.plugins.slslog.rfc5424")
 local tcp = ngx.socket.tcp
 local tostring = tostring
 local ipairs = ipairs
+local pairs = pairs
 local table = table
 
 
@@ -102,6 +103,22 @@ local function send_tcp_data(route_conf, log_message)
     end
 
     return res, err_msg
+end
+
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
+    end
+
+    for key, batch in pairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.warn("removing batch processor stale object, route id:", tostring(key))
+            buffers[key] = nil
+        end
+    end
+
+    stale_timer_running = false
 end
 
 local function combine_syslog(entries)

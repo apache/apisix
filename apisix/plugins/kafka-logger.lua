@@ -149,6 +149,24 @@ local function get_partition_id(prod, topic, log_message)
 end
 
 
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
+    end
+
+    for key, batch in pairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
+            buffers[key] = nil
+        end
+    end
+
+    stale_timer_running = false
+end
+
+
 local function create_producer(broker_list, broker_config, cluster_name)
     core.log.info("create new kafka producer instance")
     return producer:new(broker_list, broker_config, cluster_name)
