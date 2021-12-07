@@ -102,13 +102,15 @@ do -- `math.randomseed` patch
 
     local resty_random = require("resty.random")
     local math_randomseed = math.randomseed
-    local seeded
+    local seeded = {}
 
     -- make linter happy
     -- luacheck: ignore
     math.randomseed = function()
+        local worker_pid = ngx.worker.pid()
+
         -- check seed mark
-        if not seeded then
+        if seeded[worker_pid] then
             log(ngx.DEBUG, debug.traceback("Random seed has been inited", 2))
             return
         end
@@ -126,7 +128,7 @@ do -- `math.randomseed` patch
         local s = table.concat(t)
 
         math_randomseed(tonumber(s))
-        seeded = true
+        seeded[worker_pid] = true
     end
 end -- do
 
