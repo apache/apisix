@@ -23,6 +23,7 @@ local signal = require("resty.signal")
 local shell = require("resty.shell")
 local ngx = ngx
 local ngx_time = ngx.time
+local ngx_update_time = ngx.update_time
 local lfs = require("lfs")
 local type = type
 local io_open = io.open
@@ -238,6 +239,7 @@ local function rotate()
         init_default_logs(default_logs, DEFAULT_ERROR_LOG_FILENAME)
     end
 
+    ngx_update_time()
     local now_time = ngx_time()
     if not rotate_time then
         -- first init rotate time
