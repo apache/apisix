@@ -16,6 +16,7 @@
 --
 local ipairs = ipairs
 local core = require("apisix.core")
+local re_compile = require("resty.core.regex").re_match_compile
 local stringx = require('pl.stringx')
 local type = type
 local str_strip = stringx.strip
@@ -34,11 +35,11 @@ local schema = {
             type = "boolean",
             default = false,
         },
-        allowlist = {
+        allow_list = {
             type = "array",
             minItems = 1
         },
-        denylist = {
+        deny_list = {
             type = "array",
             minItems = 1
         },
@@ -62,16 +63,16 @@ local _M = {
 
 local function match_user_agent(user_agent, conf)
     user_agent = str_strip(user_agent)
-    if conf.allowlist then
-        for _, rule in ipairs(conf.allowlist) do
+    if conf.allow_list then
+        for _, rule in ipairs(conf.allow_list) do
             if re_find(user_agent, rule, "jo") then
                 return MATCH_ALLOW
             end
         end
     end
 
-    if conf.denylist then
-        for _, rule in ipairs(conf.denylist) do
+    if conf.deny_list then
+        for _, rule in ipairs(conf.deny_list) do
             if re_find(user_agent, rule, "jo") then
                 return MATCH_DENY
             end
@@ -86,6 +87,20 @@ function _M.check_schema(conf)
 
     if not ok then
         return false, err
+    end
+
+    for _, re_rule in ipairs(conf.allow_list) do
+        ok, err = re_compile(re_rule, "j")
+        if not ok then
+            return false, err
+        end
+    end
+
+    for _, re_rule in ipairs(conf.deny_list) do
+        ok, err = re_compile(re_rule, "j")
+        if not ok then
+            return false, err
+        end
     end
 
     return true
