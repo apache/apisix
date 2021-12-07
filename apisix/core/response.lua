@@ -164,8 +164,6 @@ end
 --  final_body = transform(final_body)
 --  ngx.arg[1] = final_body
 --  ...
---
--- Inspired by kong.response.get_raw_body()
 function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
