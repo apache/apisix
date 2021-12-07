@@ -108,7 +108,7 @@ do -- `math.randomseed` patch
     -- luacheck: ignore
     math.randomseed = function()
         -- check seed mark
-        if seeded or false then
+        if not seeded then
             log(ngx.DEBUG, debug.traceback("Random seed has been inited", 2))
             return
         end
@@ -125,8 +125,8 @@ do -- `math.randomseed` patch
 
         local s = table.concat(t)
 
-        seeded = true
         math_randomseed(tonumber(s))
+        seeded = true
     end
 end -- do
 
