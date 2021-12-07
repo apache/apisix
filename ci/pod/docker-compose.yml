@@ -396,23 +396,6 @@ services:
     networks:
       rocketmq_net:
 
-  # Open Policy Agent
-  opa:
-    image: openpolicyagent/opa:0.35.0
-    restart: unless-stopped
-    ports:
-      - 8181:8181
-    command: run -s /example.rego /data.json
-    volumes:
-      - type: bind
-        source: ./ci/pod/opa/example.rego
-        target: /example.rego
-      - type: bind
-        source: ./ci/pod/opa/data.json
-        target: /data.json
-    networks:
-      opa_net:
-
 networks:
   apisix_net:
   consul_net:
@@ -420,5 +403,3 @@ networks:
   nacos_net:
   skywalk_net:
   rocketmq_net:
-  vault_net:
-  opa_net:
