@@ -254,7 +254,7 @@ local function rotate()
         return
     end
 
-    local now_date = os_date("%Y-%m-%dT%H-%M-%S", now_time)
+    local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
     local access_new_file = rename_file(default_logs[DEFAULT_ACCESS_LOG_FILENAME], now_date)
     local error_new_file = rename_file(default_logs[DEFAULT_ERROR_LOG_FILENAME], now_date)
     if not access_new_file and not error_new_file then
