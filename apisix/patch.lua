@@ -37,8 +37,6 @@ local string = string
 local table = table
 local type = type
 local tonumber = tonumber
-local tostring = tostring
-local min = math.min
 
 
 local config_local
@@ -97,8 +95,10 @@ do -- `math.randomseed` patch
     -- `math.random` generates PRND(pseudo-random numbers) from the seed set by `math.randomseed`
     -- Many module libraries use `ngx.time` and `ngx.worker.pid` to generate seeds which may
     -- loss randomness in container env (where pids are identical, e.g. root pid is 1)
-    -- Kubernetes may launch multi instance with deployment RS, so `ngx.time` may get same return in pods.
-    -- Therefore, this global patch enforce entire framework to use the best-practice PRND generates.
+    -- Kubernetes may launch multi instance with deployment RS at the same time, `ngx.time` may
+    -- get same return in the pods.
+    -- Therefore, this global patch enforce entire framework to use
+    -- the best-practice PRND generates.
 
     local resty_random = require("resty.random")
     local math_randomseed = math.randomseed
