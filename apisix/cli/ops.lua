@@ -18,19 +18,17 @@ local ver = require("apisix.core.version")
 local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
+local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
-local jsonschema = require("jsonschema")
 
 local stderr = io.stderr
 local ipairs = ipairs
 local pairs = pairs
-local pcall = pcall
 local print = print
-local require = require
 local type = type
 local tostring = tostring
 local tonumber = tonumber
@@ -148,227 +146,6 @@ local function get_lua_path(conf)
 end
 
 
-local config_schema = {
-    type = "object",
-    properties = {
-        apisix = {
-            properties = {
-                config_center = {
-                    enum = {"etcd", "yaml"},
-                },
-                lua_module_hook = {
-                    pattern = "^[a-zA-Z._-]+$",
-                },
-                proxy_protocol = {
-                    type = "object",
-                    properties = {
-                        listen_http_port = {
-                            type = "integer",
-                        },
-                        listen_https_port = {
-                            type = "integer",
-                        },
-                        enable_tcp_pp = {
-                            type = "boolean",
-                        },
-                        enable_tcp_pp_to_upstream = {
-                            type = "boolean",
-                        },
-                    }
-                },
-                proxy_cache = {
-                    type = "object",
-                    properties = {
-                        zones = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                type = "object",
-                                properties = {
-                                    name = {
-                                        type = "string",
-                                    },
-                                    memory_size = {
-                                        type = "string",
-                                    },
-                                    disk_size = {
-                                        type = "string",
-                                    },
-                                    disk_path = {
-                                        type = "string",
-                                    },
-                                    cache_levels = {
-                                        type = "string",
-                                    },
-                                },
-                                oneOf = {
-                                    {
-                                        required = {"name", "memory_size"},
-                                        maxProperties = 2,
-                                    },
-                                    {
-                                        required = {"name", "memory_size", "disk_size",
-                                            "disk_path", "cache_levels"},
-                                    }
-                                },
-                            },
-                            uniqueItems = true,
-                        }
-                    }
-                },
-                port_admin = {
-                    type = "integer",
-                },
-                https_admin = {
-                    type = "boolean",
-                },
-                stream_proxy = {
-                    type = "object",
-                    properties = {
-                        tcp = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                anyOf = {
-                                    {
-                                        type = "integer",
-                                    },
-                                    {
-                                        type = "string",
-                                    },
-                                    {
-                                        type = "object",
-                                        properties = {
-                                            addr = {
-                                                anyOf = {
-                                                    {
-                                                        type = "integer",
-                                                    },
-                                                    {
-                                                        type = "string",
-                                                    },
-                                                }
-                                            },
-                                            tls = {
-                                                type = "boolean",
-                                            }
-                                        },
-                                        required = {"addr"}
-                                    },
-                                },
-                            },
-                            uniqueItems = true,
-                        },
-                        udp = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                anyOf = {
-                                    {
-                                        type = "integer",
-                                    },
-                                    {
-                                        type = "string",
-                                    },
-                                },
-                            },
-                            uniqueItems = true,
-                        },
-                    }
-                },
-                dns_resolver = {
-                    type = "array",
-                    minItems = 1,
-                    items = {
-                        type = "string",
-                    }
-                },
-                dns_resolver_valid = {
-                    type = "integer",
-                },
-                ssl = {
-                    type = "object",
-                    properties = {
-                        ssl_trusted_certificate = {
-                            type = "string",
-                        }
-                    }
-                },
-            }
-        },
-        nginx_config = {
-            type = "object",
-            properties = {
-                envs = {
-                    type = "array",
-                    minItems = 1,
-                    items = {
-                        type = "string",
-                    }
-                }
-            },
-        },
-        http = {
-            type = "object",
-            properties = {
-                custom_lua_shared_dict = {
-                    type = "object",
-                }
-            }
-        },
-        etcd = {
-            type = "object",
-            properties = {
-                resync_delay = {
-                    type = "integer",
-                },
-                user = {
-                    type = "string",
-                },
-                password = {
-                    type = "string",
-                },
-                tls = {
-                    type = "object",
-                    properties = {
-                        cert = {
-                            type = "string",
-                        },
-                        key = {
-                            type = "string",
-                        },
-                    }
-                }
-            }
-        },
-        wasm = {
-            type = "object",
-            properties = {
-                plugins = {
-                    type = "array",
-                    minItems = 1,
-                    items = {
-                        type = "object",
-                        properties = {
-                            name = {
-                                type = "string"
-                            },
-                            file = {
-                                type = "string"
-                            },
-                            priority = {
-                                type = "integer"
-                            }
-                        },
-                        required = {"name", "file", "priority"}
-                    }
-                }
-            }
-        },
-    }
-}
-
-
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -391,23 +168,9 @@ local function init(env)
         util.die("failed to read local yaml config of apisix: ", err, "\n")
     end
 
-    local validator = jsonschema.generate_validator(config_schema)
-    local ok, err = validator(yaml_conf)
+    local ok, err = schema.validate(yaml_conf)
     if not ok then
-        util.die("failed to validate config: ", err, "\n")
-    end
-
-    if yaml_conf.discovery then
-        for kind, conf in pairs(yaml_conf.discovery) do
-            local ok, schema = pcall(require, "apisix.discovery." .. kind .. ".schema")
-            if ok then
-                local validator = jsonschema.generate_validator(schema)
-                local ok, err = validator(conf)
-                if not ok then
-                    util.die("invalid discovery ", kind, " configuration: ", err, "\n")
-                end
-            end
-        end
+        util.die(err, "\n")
     end
 
     -- check the Admin API token
