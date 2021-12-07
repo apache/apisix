@@ -18,7 +18,6 @@
 local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
-local schema             = require('apisix.discovery.eureka.schema')
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
@@ -207,9 +206,6 @@ end
 
 
 function _M.init_worker()
-    -- inject the default values
-    core.schema.check(schema, local_conf.discovery.eureka)
-
     default_weight = local_conf.discovery.eureka.weight or 100
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.eureka.fetch_interval or 30
