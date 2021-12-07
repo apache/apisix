@@ -20,18 +20,23 @@ local ipmatcher = require("resty.ipmatcher")
 local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
+local ngx = ngx
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp
 local original_udp = ngx.socket.udp
 local concat_tab = table.concat
+local debug = debug
 local new_tab = require("table.new")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
 local select = select
 local setmetatable = setmetatable
+local string = string
+local table = table
 local type = type
+local tonumber = tonumber
 
 
 local config_local
@@ -84,6 +89,48 @@ do
         return sock
     end
 end
+
+
+do -- `math.randomseed` patch
+    -- `math.random` generates PRND(pseudo-random numbers) from the seed set by `math.randomseed`
+    -- Many module libraries use `ngx.time` and `ngx.worker.pid` to generate seeds which may
+    -- loss randomness in container env (where pids are identical, e.g. root pid is 1)
+    -- Kubernetes may launch multi instance with deployment RS at the same time, `ngx.time` may
+    -- get same return in the pods.
+    -- Therefore, this global patch enforce entire framework to use
+    -- the best-practice PRND generates.
+
+    local resty_random = require("resty.random")
+    local math_randomseed = math.randomseed
+    local seeded = {}
+
+    -- make linter happy
+    -- luacheck: ignore
+    math.randomseed = function()
+        local worker_pid = ngx.worker.pid()
+
+        -- check seed mark
+        if seeded[worker_pid] then
+            log(ngx.DEBUG, debug.traceback("Random seed has been inited", 2))
+            return
+        end
+
+        -- generate randomseed
+        -- chose 6 from APISIX's SIX, 256 ^ 6 should do the trick
+        -- it shouldn't be large than 16 to prevent overflow.
+        local random_bytes = resty_random.bytes(6)
+        local t = {}
+
+        for i = 1, #random_bytes do
+            t[i] = string.byte(random_bytes, i)
+        end
+
+        local s = table.concat(t)
+
+        math_randomseed(tonumber(s))
+        seeded[worker_pid] = true
+    end
+end -- do
 
 
 local patch_udp_socket
