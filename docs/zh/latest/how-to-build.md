@@ -21,36 +21,37 @@ title: 如何构建 Apache APISIX
 #
 -->
 
-## 步骤1：安装依赖
-
-Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考 [安装依赖](install-dependencies.md)。
-
-通过 Docker 或 Helm Chart 安装 Apache APISIX 时，已经包含了所需的 NGINX 和 etcd，请参照各自对应的文档。
-
-## 步骤2：安装 Apache APISIX
+## 步骤1：安装 Apache APISIX
 
 你可以通过 RPM 仓库、RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 仓库安装（CentOS 7）
 
-这种安装方式适用于 CentOS 7 操作系统。Apache APISIX 已经支持适用于 CentOS 7 的 RPM 仓库。请运行以下命令安装 RPM 仓库和 Apache APISIX。
+这种安装方式适用于 CentOS 7 操作系统。
 
-```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# View the information of the latest apisix package
-sudo yum info -y apisix
-
-# Will show the existing apisix packages
-sudo yum --showduplicates list apisix
-
-# Will install the latest apisix package
-sudo yum install apisix
-```
-
-如果尚未安装 OpenResty 的官方 RPM 仓库，以下命令可以帮助您自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
+如果尚未安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
 
 ```shell
 sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+```
+
+如果已安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 Apache APISIX 的 RPM 仓库。
+
+```
+sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+```
+
+请运行以下命令安装 Apache APISIX。
+
+```shell
+# 查看仓库中最新的 apisix 软件包的信息
+sudo yum info -y apisix
+
+# 显示仓库中现有的 apisix 软件包
+sudo yum --showduplicates list apisix
+
+# 安装最新的 apisix 软件包
+sudo yum install apisix
 ```
 
 ### 通过 Docker 安装
@@ -93,6 +94,23 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
   # 安装 apisix 命令
   make install
   ```
+
+## 步骤2：安装 ETCD
+
+通过 RPM 或者 Docker 安装 Apache APISIX 时，需要执行此步骤。
+
+你可以通过 Docker 或者二进制等方式安装 ETCD。以下命令通过二进制方式安装 ETCD。
+
+```shell
+ETCD_VERSION='3.4.13'
+wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+    cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+nohup etcd &
+```
+
+注意：用 `nohup etcd &` 命令启动 ETCD 时，ETCD 中的数据不会持久化存储。如果需要了解更多关于 ETCD 的信息，请参考 [ETCD 文档](https://etcd.io/docs/) 。
 
 ## 步骤3：管理 Apache APISIX 服务
 

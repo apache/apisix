@@ -21,22 +21,29 @@ title: How to build Apache APISIX
 #
 -->
 
-## Step 1: Install dependencies
-
-The Apache APISIX runtime environment requires dependencies on NGINX and etcd.
-
-Before installing Apache APISIX, please install dependencies according to the operating system you are using. We provide the dependencies installation instructions for **CentOS7**, **Fedora 31 & 32**, **Ubuntu 16.04 & 18.04**, **Debian 9 & 10**, and **MacOS**, please refer to [Install Dependencies](install-dependencies.md) for more details.
-
-## Step 2: Install Apache APISIX
+## Step 1: Install Apache APISIX
 
 You can install Apache APISIX via RPM Repository, RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
 
 ### Installation via RPM Repository(CentOS 7)
 
-This installation method is suitable for CentOS 7. For now, the Apache APISIX RPM repository for CentOS 7 is already supported. Please run the following commands to install the repository and Apache APISIX.
+This installation method is suitable for CentOS 7.
+
+If the official OpenResty repository is not installed yet, the following command will help you automatically install both the repositories of OpenResty and Apache APISIX.
+
+```shell
+sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+```
+
+If the official OpenResty repository is installed, the following command will help you automatically install both the repositories of Apache APISIX.
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+```
+
+Please run the following commands to install the repository and Apache APISIX.
+
+```shell
 # View the information of the latest apisix package
 sudo yum info -y apisix
 
@@ -45,12 +52,6 @@ sudo yum --showduplicates list apisix
 
 # Will install the latest apisix package
 sudo yum install apisix
-```
-
-If the official OpenResty repository is not installed yet, the following command will help you automatically install both the repositories of OpenResty and Apache APISIX.
-
-```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 ```
 
 ### Installation via Docker
@@ -93,6 +94,23 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   # Install apisix command
   make install
   ```
+
+## Step 2: Install ETCD
+
+This step is required when installing Apache APISIX via RPM or Docker.
+
+You can install ETCD via Docker or binary etc. The following command installs ETCD via binary.
+
+```shell
+ETCD_VERSION='3.4.13'
+wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+    cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+nohup etcd &
+```
+
+Note: When ETCD is started with the command `nohup etcd &`, the data in ETCD is not stored persistently. For more information on ETCD, please refer to the [ETCD documentation](https://etcd.io/docs/).
 
 ## Step 3: Manage Apache APISIX Server
 
