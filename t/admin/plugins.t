@@ -106,6 +106,7 @@ google-cloud-logging
 sls-logger
 tcp-logger
 kafka-logger
+rocketmq-logger
 syslog
 udp-logger
 example-plugin

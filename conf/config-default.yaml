@@ -349,6 +349,7 @@ plugins:                          # plugin list (sorted by priority)
   - sls-logger                     # priority: 406
   - tcp-logger                     # priority: 405
   - kafka-logger                   # priority: 403
+  - rocketmq-logger                # priority: 402
   - syslog                         # priority: 401
   - udp-logger                     # priority: 400
   #- log-rotate                    # priority: 100

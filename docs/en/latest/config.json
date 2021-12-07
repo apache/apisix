@@ -116,6 +116,7 @@
             "plugins/skywalking-logger",
             "plugins/tcp-logger",
             "plugins/kafka-logger",
+            "plugins/rocketmq-logger",
             "plugins/udp-logger",
             "plugins/syslog",
             "plugins/log-rotate",
