@@ -28,9 +28,7 @@ local pl_path = require("pl.path")
 local stderr = io.stderr
 local ipairs = ipairs
 local pairs = pairs
-local pcall = pcall
 local print = print
-local require = require
 local type = type
 local tostring = tostring
 local tonumber = tonumber
@@ -173,19 +171,6 @@ local function init(env)
     local ok, err = schema.validate(yaml_conf)
     if not ok then
         util.die(err, "\n")
-    end
-
-    if yaml_conf.discovery then
-        for kind, conf in pairs(yaml_conf.discovery) do
-            local ok, schema = pcall(require, "apisix.discovery." .. kind .. ".schema")
-            if ok then
-                local validator = jsonschema.generate_validator(schema)
-                local ok, err = validator(conf)
-                if not ok then
-                    util.die("invalid discovery ", kind, " configuration: ", err, "\n")
-                end
-            end
-        end
     end
 
     -- check the Admin API token
