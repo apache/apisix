@@ -309,6 +309,7 @@ plugins:                          # plugin list (sorted by priority)
   - serverless-pre-function        # priority: 10000
   - batch-requests                 # priority: 4010
   - cors                           # priority: 4000
+  - csrf                           # priority: 3500
   - ip-restriction                 # priority: 3000
   - ua-restriction                 # priority: 2999
   - referer-restriction            # priority: 2990
