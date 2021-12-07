@@ -66,11 +66,11 @@ __DATA__
             local has_split_error_file = false
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "_access.log$") then
+                if string.match(file_name, "__access.log$") then
                     has_split_access_file = true
                 end
 
-                if string.match(file_name, "_error.log$") then
+                if string.match(file_name, "__error.log$") then
                     local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
                     local content = f:read("*all")
                     f:close()
@@ -125,7 +125,7 @@ start xxxxxx
 
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "_error.log$") then
+                if string.match(file_name, "__error.log$") then
                     local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
                     local content = f:read("*all")
                     f:close()
@@ -171,7 +171,7 @@ plugins:
             local n_split_error_file = 0
             local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "_error.log$") then
+                if string.match(file_name, "__error.log$") then
                     n_split_error_file = n_split_error_file + 1
                 end
             end
@@ -195,7 +195,7 @@ true
 
             local default_logs = {}
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "_error.log$") or string.match(file_name, "_access.log$") then
+                if string.match(file_name, "__error.log$") or string.match(file_name, "__access.log$") then
                     local filepath = ngx.config.prefix() .. "/logs/" .. file_name
                     local attr = lfs.attributes(filepath)
                     if attr then
