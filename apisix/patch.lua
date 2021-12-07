@@ -94,59 +94,39 @@ end
 
 
 do -- `math.randomseed` patch
+    -- `math.random` generates PRND(pseudo-random numbers) from the seed set by `math.randomseed`
+    -- Many module libraries use `ngx.time` and `ngx.worker.pid` to generate seeds which may
+    -- loss randomness in container env (where pids are identical, e.g. root pid is 1)
+    -- Kubernetes may launch multi instance with deployment RS, so `ngx.time` may get same return in pods.
+    -- Therefore, this global patch enforce entire framework to use the best-practice PRND generates.
 
-    -- Seeds the random generator, use with care.
-    -- Once - properly - seeded, this method is replaced with a stub
-    -- one. This is to enforce best-practices for seeding in ngx_lua,
-    -- and prevents third-party modules from overriding our correct seed
-    -- (many modules make a wrong usage of `math.randomseed()` by calling
-    -- it multiple times or by not using unique seeds for Nginx workers).
-    -- Inspired by kong.globalpatches
     local resty_random = require("resty.random")
     local math_randomseed = math.randomseed
-    local seeded = {}
+    local seeded
 
     -- make linter happy
     -- luacheck: ignore
     math.randomseed = function()
-        local seed
-        local worker_pid = ngx.worker.pid()
-
         -- check seed mark
-        if seeded[worker_pid] then
-            log(ngx.DEBUG, debug.traceback("attempt to seed already seeded random number " ..
-                                           "generator on process #" .. tostring(worker_pid), 2))
+        if seeded or false then
+            log(ngx.DEBUG, debug.traceback("Random seed has been inited", 2))
             return
         end
 
-        -- get randomseed
-        local bytes = resty_random.bytes(8)
-        if bytes then
-            log(ngx.DEBUG, "seeding from resty.random.bytes")
+        -- generate randomseed
+        -- chose 6 from APISIX's SIX, 256 ^ 6 should do the trick
+        -- it shouldn't be large than 16 to prevent overflow.
+        local random_bytes = resty_random.bytes(6)
+        local t = {}
 
-            local t = {}
-            -- truncate the final number to prevent integer overflow,
-            -- since math.randomseed() could get cast to a platform-specific
-            -- integer with a different size and get truncated, hence, lose
-            -- randomness.
-            -- double-precision floating point should be able to represent numbers
-            -- without rounding with up to 15/16 digits but let's use 12 of them.
-            for i = 1, min(#bytes, 12) do
-                t[i] = string.byte(bytes, i)
-            end
-
-            local str = table.concat(t)
-            seed = tonumber(str)
-        else
-            log(ngx.ERR, "could not seed from resty.random.bytes, seeding ",
-                         "seeding with time and process id instead (this can ",
-                         "result to duplicated seeds)")
-
-            seed = ngx.now() * 1000 + worker_pid
+        for i = 1, #random_bytes do
+            t[i] = string.byte(random_bytes, i)
         end
 
-        seeded[worker_pid] = true
-        math_randomseed(seed)
+        local s = table.concat(t)
+
+        seeded = true
+        math_randomseed(tonumber(s))
     end
 end -- do
 
