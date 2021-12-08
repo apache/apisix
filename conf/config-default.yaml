@@ -280,10 +280,14 @@ etcd:
 
 # storage backend for sensitive data storage and retrieval
 vault:
-  host: "http://127.0.0.1:8200"
-  timeout: 10
-  prefix: kv/apisix
-  token: s.0L81KEDHYZnjLMFleFIfXDWV
+  host: "http://127.0.0.1:8200" # The host address where the vault server is running.
+  timeout: 10                   # request timeout 30 seconds
+  prefix: kv/apisix             # APISIX supports vault kv engine v1, where sensitive data are being stored
+                                # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforce
+                                # policies, generate limited scoped tokens and tightly control the data that can be accessed
+                                # from APISIX.
+
+  token: root                   # Authentication token to access Vault HTTP APIs
 
 #discovery:                       # service discovery center
 #  dns:
@@ -325,7 +329,6 @@ plugins:                          # plugin list (sorted by priority)
   - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
   - ldap-auth                      # priority: 2540
-  - vault-auth                     # priority: 2535
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510

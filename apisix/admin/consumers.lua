@@ -19,8 +19,6 @@ local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
 local vault   = require("apisix.core.vault")
-
-local tab_clone = require("apisix.core.table").clone
 local pairs   = pairs
 
 local _M = {
@@ -77,27 +75,6 @@ function _M.put(username, conf)
     local key = "/consumers/" .. consumer_name
     core.log.info("key: ", key)
 
-    -- vault-auth details gets stored into vault for security concern
-    local vault_restore
-    if conf.plugins and conf.plugins["vault-auth"] then
-        vault_restore = tab_clone(conf.plugins["vault-auth"])
-
-        conf.plugins["vault-auth"].secretkey = nil
-        conf.plugins["vault-auth"]["fetch-vault"] = true
-
-        -- store into vault with the path set to plugin accesskey
-        local vkey = "/consumers/auth-data/" .. vault_restore.accesskey
-
-        local vres, err = vault.set(vkey, vault_restore)
-        if not vres or err then
-            core.log.error("failed to store data for suffix path[", vkey,
-                                    "]: into vault server, error: ", err)
-            return 503, {error = err}
-        end
-
-    end
-    core.log.error(core.json.delay_encode(conf, true))
-
     local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
     if not ok then
         return 503, {error_msg = err}
@@ -107,13 +84,6 @@ function _M.put(username, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)
         return 503, {error_msg = err}
-    end
-
-    -- modify the body, some data were not stored into etcd
-    if vault_restore then
-        res.body.vault = {
-            ["data-stored"] = vault_restore
-        }
     end
 
     return res.status, res.body
@@ -135,24 +105,31 @@ function _M.get(consumer_name)
     utils.fix_count(res.body, consumer_name)
 
     if consumer_name then
-        local _plugins = res.body.node.value.plugins
-
-        if _plugins and _plugins["vault-auth"] then
-            local vkey = "/consumers/auth-data/" .. _plugins["vault-auth"].accesskey
-
-            local vres, err = vault.get(vkey)
-
-            if not vres then
-                core.log.error("failed to fetch data for suffix path[", vkey,
-                                "]: into vault server, error: ", err)
-                return 503, {error_msg = err}
+        -- if data is queried for a single consumer, and there is any plugin where the vault config
+        -- is enabled - it fetches vault data and returns combined with etcd response.
+        local vault_fetch = {}
+        local attach_response = false
+        local _plugins = res.body.node.value.plugins or {}
+        for plugin_name, _schema in pairs(_plugins) do
+            if _schema.vault then
+                local res, err = vault.get(_schema.vault.path, _schema.vault.add_prefix)
+                if not res then
+                    core.log.error("failed to get data from vault for plugin: ", plugin_name,
+                                    "err: ", err)
+                else
+                    attach_response = true
+                    vault_fetch[plugin_name] = res.data
+                end
             end
+        end
 
+        if attach_response then
             res.body.vault = {
-                ["data-fetched"] = vres
+                ["data-fetched"] = vault_fetch
             }
         end
     end
+
     return res.status, res.body
 end
 
