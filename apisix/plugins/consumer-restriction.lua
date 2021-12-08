@@ -106,11 +106,10 @@ local function is_method_allowed(allowed_methods, method, user)
 end
 
 local function reject(conf)
-    local reject_message = "The " .. conf.type .. " is forbidden." ;
     if conf.reject_message then
-        reject_message = conf.reject_message;
+        return conf.rejected_code , { message = conf.reject_message }
     end
-    return conf.rejected_code, { message = reject_message }
+    return conf.rejected_code , { message = "The " .. conf.type .. " is forbidden."}
 end
 
 function _M.check_schema(conf)
