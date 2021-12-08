@@ -51,7 +51,8 @@ local schema = {
                 }
             }
         },
-        rejected_code = {type = "integer", minimum = 200, default = 403}
+        rejected_code = {type = "integer", minimum = 200, default = 403},
+        reject_message = {type = "string"}
     },
     anyOf = {
         {required = {"blacklist"}},
@@ -105,7 +106,11 @@ local function is_method_allowed(allowed_methods, method, user)
 end
 
 local function reject(conf)
-    return conf.rejected_code, { message = "The " .. conf.type .. " is forbidden." }
+    local reject_message = "The " .. conf.type .. " is forbidden." ;
+    if conf.reject_message then
+        reject_message = conf.reject_message;
+    end
+    return conf.rejected_code, { message = reject_message }
 end
 
 function _M.check_schema(conf)

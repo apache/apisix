@@ -42,6 +42,7 @@ title: consumer-restriction
 | whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
+| rejected_messgae | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
