@@ -464,3 +464,30 @@ POST /hello
 POST
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: get_path
+--- config
+    location / {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+
+            local path = core.request.get_path(ngx.ctx.api_ctx)
+            ngx.say(path)
+        }
+    }
+--- request
+GET /hello/test?a=b&b=a
+--- response_body
+/hello/test
+--- no_error_log
+[error]
