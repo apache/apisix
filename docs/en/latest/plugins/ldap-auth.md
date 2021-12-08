@@ -41,13 +41,20 @@ This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plu
 
 ## Attributes
 
+For consumer side:
+
+| Name     | Type    | Requirement | Default | Valid |                                                                                                           |Description                                                                                                                                                      |
+| -------- | ------- | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user_dn  | string  | required    |         |       | the user dn of the `ladp` client (example: `cn=user01,ou=users,dc=example,dc=org`)                        |
+
+For route side:
+
 | Name     | Type    | Requirement | Default | Valid |                                                                                                           |Description                                                                                                                                                      |
 | -------- | ------- | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | base_dn  | string  | required    |         |       | the base dn of the `ldap` server (example : `ou=users,dc=example,dc=org`)                                 |
 | ldap_uri | string  | required    |         |       | the uri of the ldap server                                                                                |
 | use_tls  | boolean | optional    | `true`  |       | Boolean flag indicating if Transport Layer Security (TLS) should be used.                                 |
 | uid      | string  | optional    | `cn`    |       | the `uid` attribute                                                                                       |
-| user_dn  | string  | required    |         |       | the user dn of the `ladp` client (example: `cn=user01,ou=users,dc=example,dc=org`)                        |
 
 ## How To Enable
 
