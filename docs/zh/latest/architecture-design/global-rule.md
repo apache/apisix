@@ -21,7 +21,7 @@ title: Global rule
 #
 -->
 
-[Plugin](plugin.md) 只能绑定在 [Service](service.md) 或者 [Route](route.md) 上，如果我们需要一个能作用于所有请求的 [Plugin](plugin.md) 该怎么办呢？
+[Plugin](plugin.md) 配置可直接绑定在 [Route](route.md) 上，也可以被绑定在 [Service](service.md) 或 [Consumer](consumer.md) 上，如果我们需要一个能作用于所有请求的 [Plugin](plugin.md) 该怎么办呢？
 这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](plugin.md):
 
 ```shell
