@@ -21,10 +21,10 @@ local io = require("apisix.core.io")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local clear_header = ngx.req.clear_header
-local tonumber = tonumber
-local error    = error
-local type     = type
-local str_fmt  = string.format
+local tonumber  = tonumber
+local error     = error
+local type      = type
+local str_fmt   = string.format
 local str_lower = string.lower
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
@@ -266,6 +266,15 @@ function _M.get_port(ctx)
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.server_port)
+end
+
+
+function _M.get_path(ctx, original)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+
+    return ctx.var.uri or ''
 end
 
 
