@@ -248,11 +248,31 @@ local function rotate()
         return
     end
 
+    if now_time < rotate_time then
+        -- did not reach the rotate time
+        core.log.info("rotate time: ", rotate_time, " now time: ", now_time)
+        return
+    end
+
+    local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
+    local access_new_file = rename_file(default_logs[DEFAULT_ACCESS_LOG_FILENAME], now_date)
+    local error_new_file = rename_file(default_logs[DEFAULT_ERROR_LOG_FILENAME], now_date)
+    if not access_new_file and not error_new_file then
+        -- reset rotate time
+        rotate_time = rotate_time + interval
+        return
+    end
+
     core.log.warn("send USR1 signal to master process [",
                   process.get_master_pid(), "] for reopening log file")
     local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
     if not ok then
         core.log.error("failed to send USR1 signal for reopening log file: ", err)
+    end
+
+    if enable_compression then
+        compression_file(access_new_file)
+        compression_file(error_new_file)
     end
 
     -- clean the oldest file
