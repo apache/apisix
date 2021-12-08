@@ -42,15 +42,16 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
-| Name          | Type    | Requirement | Default | Valid                       | Description                                                                                                                                      |
-|:--------------|:--------|:------------|:--------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name          | Type    | Requirement | Default | Valid                       | Description                                                  |
+| :------------ | :------ | :---------- | :------ | :-------------------------- | :----------------------------------------------------------- |
 | key           | string  | required    |         |                             | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
-| secret        | string  | optional    |         |                             | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
-| public_key    | string  | optional    |         |                             | RSA public key, required when `algorithm` attribute selects `RS256` algorithm.                                                                   |
-| private_key   | string  | optional    |         |                             | RSA private key, required when `algorithm` attribute selects `RS256` algorithm.                                                                  |
-| algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                                                                                                            |
-| exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                                                                                                                  |
-| base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
+| secret        | string  | optional    |         |                             | encryption key. if you do not specify, the value is auto-generated in the background. |
+| public_key    | string  | optional    |         |                             | RSA public key, required when `algorithm` attribute selects `RS256` algorithm. |
+| private_key   | string  | optional    |         |                             | RSA private key, required when `algorithm` attribute selects `RS256` algorithm. |
+| algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                        |
+| exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                              |
+| base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                             |
+| token_name    | string  | optional    | "jwt"   |                             | token's parameter name                                       |
 
 ## API
 

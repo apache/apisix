@@ -45,6 +45,7 @@ local consumer_schema = {
     properties = {
         key = {type = "string"},
         secret = {type = "string"},
+        token_name = {type = "string", default = "jwt"},
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256"},
@@ -149,7 +150,7 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function fetch_jwt_token(ctx)
+local function fetch_jwt_token(conf, ctx)
     local token = core.request.header(ctx, "authorization")
     if token then
         local prefix = sub_str(token, 1, 7)
@@ -159,8 +160,7 @@ local function fetch_jwt_token(ctx)
 
         return token
     end
-
-    token = ctx.var.arg_jwt
+    token = ctx.var["arg_" .. conf.token_name]
     if token then
         return token
     end
@@ -170,7 +170,7 @@ local function fetch_jwt_token(ctx)
         return nil, err
     end
 
-    local val, err = cookie:get("jwt")
+    local val, err = cookie:get(conf.token_name)
     return val, err
 end
 
@@ -250,7 +250,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local jwt_token, err = fetch_jwt_token(ctx)
+    local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         if err and err:sub(1, #"no cookie") ~= "no cookie" then
             core.log.error("failed to fetch JWT token: ", err)

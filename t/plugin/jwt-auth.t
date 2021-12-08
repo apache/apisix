@@ -1448,3 +1448,28 @@ GET /t
 qr/failed to validate dependent schema for \\"algorithm\\"/
 --- no_error_log
 [error]
+
+
+
+=== TEST 51: default token name as jwt
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.jwt-auth")
+            local core = require("apisix.core")
+            local conf = {key = "123"}
+
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(conf.token_name)
+        }
+    }
+--- request
+GET /t
+--- response_body
+jwt
+--- no_error_log
+[error]
