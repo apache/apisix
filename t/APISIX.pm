@@ -220,6 +220,10 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
     if ($block->apisix_yaml && (!defined $block->yaml_config)) {
         $user_yaml_config = <<_EOC_;
 apisix:
