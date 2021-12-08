@@ -469,7 +469,7 @@ POST
 
 === TEST 14: get_path
 --- config
-    location / {
+    location /hello1 {
         content_by_lua_block {
             local core = require("apisix.core")
             local ngx_ctx = ngx.ctx
@@ -486,8 +486,8 @@ POST
         }
     }
 --- request
-GET /hello/test?a=b&b=a
+GET /hello1/test?a=b&b=a
 --- response_body
-/hello/test
+/hello1/test
 --- no_error_log
 [error]
