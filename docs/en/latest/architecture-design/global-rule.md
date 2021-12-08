@@ -21,7 +21,7 @@ title: Global rule
 #
 -->
 
-The [Plugin](plugin.md) configuration can be bound directly to [Route](route.md) or it can be bound to [Service](service.md) or [Consumer](consumer.md), if we want a [Plugin](plugin.md) work on all requests, how to do it?
+The [Plugin](plugin.md) configuration can be bound directly to a [Route](route.md), or to a [Service](service.md) or [Consumer](consumer.md). What if we want a [Plugin](plugin.md) to work on all requests, how to do it?
 We can register a global [Plugin](plugin.md) with `GlobalRule`:
 
 ```shell
