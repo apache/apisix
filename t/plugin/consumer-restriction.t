@@ -1766,3 +1766,65 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+=== TEST 54:  whitelist > rejected_message
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.consumer-restriction")
+            local ok, err = plugin.check_schema({whitelist={"jack1"}, rejected_message="forbidden"})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 55: set rejected_message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "basic-auth": {},
+                            "consumer-restriction": {
+                                "rejected_message":"forbidden",
+                                "type":"service_id",
+                                "whitelist":["test"]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
