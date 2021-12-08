@@ -89,17 +89,21 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    for _, re_rule in ipairs(conf.allowlist) do
-        ok, err = re_compile(re_rule, "j")
-        if not ok then
-            return false, err
+    if conf.allowlist then
+        for _, re_rule in ipairs(conf.allowlist) do
+            ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
         end
     end
 
-    for _, re_rule in ipairs(conf.denylist) do
-        ok, err = re_compile(re_rule, "j")
-        if not ok then
-            return false, err
+    if conf.denylist then
+        for _, re_rule in ipairs(conf.denylist) do
+            ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
         end
     end
 
