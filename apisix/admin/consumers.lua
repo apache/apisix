@@ -18,7 +18,6 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
-local vault   = require("apisix.core.vault")
 local pairs   = pairs
 
 local _M = {
@@ -103,33 +102,6 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-
-    if consumer_name then
-        -- if data is queried for a single consumer, and there is any plugin where the vault config
-        -- is enabled - it fetches vault data and returns combined with etcd response.
-        local vault_fetch = {}
-        local attach_response = false
-        local _plugins = res.body.node.value.plugins or {}
-        for plugin_name, _schema in pairs(_plugins) do
-            if _schema.vault then
-                local res, err = vault.get(_schema.vault.path, _schema.vault.add_prefix)
-                if not res then
-                    core.log.error("failed to get data from vault for plugin: ", plugin_name,
-                                    "err: ", err)
-                else
-                    attach_response = true
-                    vault_fetch[plugin_name] = res.data
-                end
-            end
-        end
-
-        if attach_response then
-            res.body.vault = {
-                ["data-fetched"] = vault_fetch
-            }
-        end
-    end
-
     return res.status, res.body
 end
 
