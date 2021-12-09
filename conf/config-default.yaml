@@ -286,7 +286,7 @@ vault:
   host: "http://0.0.0.0:8200" # The host address where the vault server is running.
   timeout: 10                   # request timeout 30 seconds
   prefix: kv/apisix             # APISIX supports vault kv engine v1, where sensitive data are being stored
-                                # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforce
+                                # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforcement of
                                 # policies, generate limited scoped tokens and tightly control the data that can be accessed
                                 # from APISIX.
 
