@@ -399,4 +399,3 @@ passed
     }
 --- response_body
 successfully invoked secure endpoint
-

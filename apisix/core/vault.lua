@@ -52,7 +52,7 @@ local function make_request_to_vault(method, key, rel_path, data)
         req_addr = req_addr .. norm_path("/v1/"
                 .. vault.prefix .. "/" .. key)
     else
-        req_addr = req_addr .. norm_path("/" .. key)
+        req_addr = req_addr .. norm_path("/v1/" .. key)
     end
 
     local res, err = httpc:request_uri(req_addr, {
