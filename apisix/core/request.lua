@@ -269,7 +269,7 @@ function _M.get_port(ctx)
 end
 
 
-function _M.get_path(ctx, original)
+function _M.get_path(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
