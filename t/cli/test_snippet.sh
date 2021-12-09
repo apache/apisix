@@ -37,6 +37,8 @@ nginx_config:
         chunked_transfer_encoding on;
     http_server_configuration_snippet: |
         set $my "var";
+    http_server_location_configuration_snippet: |
+        set $upstream_name -;
     http_admin_configuration_snippet: |
         log_format admin "$request_time $pipe";
     http_end_configuration_snippet: |
@@ -62,6 +64,12 @@ fi
 grep 'set $my "var";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: can't inject http server configuration"
+    exit 1
+fi
+
+grep 'set $upstream_name -;' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http server location configuration"
     exit 1
 fi
 

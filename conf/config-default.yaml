@@ -191,6 +191,9 @@ nginx_config:                     # config for render the template to generate n
   http_server_configuration_snippet: |
     # Add custom Nginx http server configuration to nginx.conf.
     # The configuration should be well indented!
+  http_server_location_configuration_snippet: |
+    # Add custom Nginx http server location configuration to nginx.conf.
+    # The configuration should be well indented!
   http_admin_configuration_snippet: |
     # Add custom Nginx admin server configuration to nginx.conf.
     # The configuration should be well indented!
@@ -360,6 +363,7 @@ plugins:                          # plugin list (sorted by priority)
   - sls-logger                     # priority: 406
   - tcp-logger                     # priority: 405
   - kafka-logger                   # priority: 403
+  - rocketmq-logger                # priority: 402
   - syslog                         # priority: 401
   - udp-logger                     # priority: 400
   #- log-rotate                    # priority: 100

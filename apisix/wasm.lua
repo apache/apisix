@@ -62,7 +62,7 @@ local function fetch_plugin_ctx(conf, ctx, plugin)
 end
 
 
-local function access_wrapper(self, conf, ctx)
+local function http_request_wrapper(self, conf, ctx)
     local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
     if not plugin_ctx then
         core.log.error("failed to fetch wasm plugin ctx: ", err)
@@ -113,9 +113,17 @@ function _M.require(attrs)
         plugin = plugin,
         type = "wasm",
     }
-    mod.access = function (conf, ctx)
-        return access_wrapper(mod, conf, ctx)
+
+    if attrs.http_request_phase == "rewrite" then
+        mod.rewrite = function (conf, ctx)
+            return http_request_wrapper(mod, conf, ctx)
+        end
+    else
+        mod.access = function (conf, ctx)
+            return http_request_wrapper(mod, conf, ctx)
+        end
     end
+
     mod.header_filter = function (conf, ctx)
         return header_filter_wrapper(mod, conf, ctx)
     end

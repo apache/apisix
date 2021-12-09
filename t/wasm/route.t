@@ -36,7 +36,8 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    my $extra_yaml_config = <<_EOC_;
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
 wasm:
     plugins:
         - name: wasm_log
@@ -46,7 +47,8 @@ wasm:
           priority: 7998
           file: t/wasm/log/main.go.wasm
 _EOC_
-    $block->set_value("extra_yaml_config", $extra_yaml_config);
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
 });
 
 run_tests();
@@ -145,7 +147,28 @@ run plugin ctx 1 with conf zzz in http ctx 2
 
 
 
-=== TEST 4: plugin from service
+=== TEST 4: run wasm plugin in rewrite phase (prior to the one run in access phase)
+--- extra_yaml_config
+wasm:
+    plugins:
+        - name: wasm_log
+          priority: 7999
+          file: t/wasm/log/main.go.wasm
+        - name: wasm_log2
+          priority: 7998
+          file: t/wasm/log/main.go.wasm
+          http_request_phase: rewrite
+--- request
+GET /hello
+--- grep_error_log eval
+qr/run plugin ctx \d+ with conf \S+ in http ctx \d+/
+--- grep_error_log_out
+run plugin ctx 1 with conf zzz in http ctx 2
+run plugin ctx 1 with conf blahblah in http ctx 2
+
+
+
+=== TEST 5: plugin from service
 --- config
     location /t {
         content_by_lua_block {
@@ -212,7 +235,7 @@ passed
 
 
 
-=== TEST 5: hit
+=== TEST 6: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -243,7 +266,7 @@ run plugin ctx 3 with conf blahblah in http ctx 4
 
 
 
-=== TEST 6: plugin from plugin_config
+=== TEST 7: plugin from plugin_config
 --- config
     location /t {
         content_by_lua_block {
@@ -316,7 +339,7 @@ passed
 
 
 
-=== TEST 7: hit
+=== TEST 8: hit
 --- config
     location /t {
         content_by_lua_block {
