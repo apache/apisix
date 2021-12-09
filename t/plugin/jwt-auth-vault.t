@@ -323,7 +323,7 @@ passed
                 ngx.say(err)
                 return
             end
-            
+
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -389,7 +389,7 @@ passed
                 ngx.say(err)
                 return
             end
-            
+
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )

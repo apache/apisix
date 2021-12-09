@@ -42,7 +42,7 @@ install_grpcurl () {
 install_vault_cli () {
     VAULT_VERSION="1.9.0"
     wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
-    unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin 
+    unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819
