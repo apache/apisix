@@ -142,7 +142,7 @@ services:
     container_name: vault
     restart: unless-stopped
     ports:
-      - "8900:8200"
+      - "8200:8200"
     cap_add:
       - IPC_LOCK
     environment:
