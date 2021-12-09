@@ -88,9 +88,14 @@ function _M.access(conf, ctx)
     end
 
     -- parse the results of the decision
-    local ret = core.json.decode(res.body).result
+    local data, err = core.json.decode(res.body)
 
-    if not ret then
+    if err then
+        core.log.error("invalid response body: ", res.body, " err: ", err)
+        return 403
+    end
+
+    if not data.result then
         return 403
     end
 end
