@@ -17,7 +17,7 @@
 
 local core   = require("apisix.core")
 local http   = require("resty.http")
-local helper = require("apisix.plugins.opa.helper")
+local helper = require("apisix.plugins.opa.init")
 
 local schema = {
     type = "object",
