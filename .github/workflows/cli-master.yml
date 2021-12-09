@@ -1,13 +1,13 @@
-name: CLI Test
+name: CLI Test (master)
 
 on:
   push:
-    branches: [master, 'release/**']
+    branches: [master]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master, 'release/**']
+    branches: [master]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -21,16 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - ubuntu-18.04
         job_name:
-          - linux_apisix_current_luarocks
-          - linux_apisix_current_luarocks_in_customed_nginx
-
-    runs-on: ${{ matrix.platform }}
+          - linux_apisix_master_luarocks
+    runs-on: ubuntu-18.04
     timeout-minutes: 15
     env:
-      SERVER_NAME: ${{ matrix.job_name }}
       OPENRESTY_VERSION: default
 
     steps:
@@ -53,9 +48,6 @@ jobs:
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
-
-      - name: Linux Before install
-        run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
 
       - name: Linux Install
         run: |
