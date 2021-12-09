@@ -573,6 +573,12 @@ http {
             set $ctx_ref                     '';
             set $from_error_page             '';
 
+            # http server location configuration snippet starts
+            {% if http_server_location_configuration_snippet then %}
+            {* http_server_location_configuration_snippet *}
+            {% end %}
+            # http server location configuration snippet ends
+
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
