@@ -16,7 +16,6 @@
 --
 
 local core     = require("apisix.core")
-local ngx_var  = ngx.var
 local ngx_time = ngx.time
 
 local _M = {}
@@ -24,10 +23,10 @@ local _M = {}
 
 local function build_var(conf, ctx)
     return {
-        server_addr = ngx_var.server_addr,
-        server_port = ngx_var.server_port,
-        remote_addr = ngx_var.remote_addr,
-        remote_port = ngx_var.remote_port,
+        server_addr = ctx.var.server_addr,
+        server_port = ctx.var.server_port,
+        remote_addr = ctx.var.remote_addr,
+        remote_port = ctx.var.remote_port,
         timestamp   = ngx_time(),
     }
 end
