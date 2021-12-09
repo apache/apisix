@@ -315,7 +315,7 @@ local function sign_jwt_with_HS(key, auth_conf, payload)
     local auth_secret, err = get_secret(auth_conf)
     if not auth_secret then
         core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(500, "failed to sign jwt")
+        core.response.exit(503, "failed to sign jwt")
     end
     local ok, jwt_token = pcall(jwt.sign, _M,
         auth_secret,
@@ -339,7 +339,7 @@ local function sign_jwt_with_RS256(key, auth_conf, payload)
     local public_key, private_key, err = get_rsa_keypair(auth_conf)
     if not public_key then
         core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(500, "failed to sign jwt")
+        core.response.exit(503, "failed to sign jwt")
     end
 
     local ok, jwt_token = pcall(jwt.sign, _M,
@@ -420,6 +420,7 @@ function _M.rewrite(conf, ctx)
     local auth_secret, err = algorithm_handler(consumer)
     if not auth_secret then
         core.log.error("failed to retrive secrets, err: ", err)
+        return 503, {message = "failed to verify jwt"}
     end
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))

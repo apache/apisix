@@ -93,7 +93,7 @@ local function set(key, data, rel_path)
         return nil, "failed to store data into vault kv engine " .. err
     end
 
-    return {status = "success"}
+    return true
 end
 _M.set = set
 
@@ -108,7 +108,7 @@ local function delete(key, rel_path)
         return nil, "failed to delete data into vault kv engine " .. err
     end
 
-    return {status = "success"}
+    return true
 end
 
 _M.delete = delete
