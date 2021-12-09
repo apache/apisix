@@ -109,8 +109,6 @@ __DATA__
             ngx.say("passed")
         }
     }
---- request
-GET /t
 --- timeout: 10
 --- response
 passed
@@ -154,8 +152,6 @@ qr/not found topic/
             ngx.say("passed")
         }
     }
---- request
-GET /t
 --- timeout: 5
 --- response
 passed
@@ -200,8 +196,6 @@ qr/getTopicRouteInfoFromNameserver return TOPIC_NOT_EXIST, No topic route info i
             local res, err = httpc:request_uri(uri, {method = "GET"})
         }
     }
---- request
-GET /t
 --- error_log_like eval
 qr/create new rocketmq producer instance, nameserver_list: \[\{"port":9876,"host":"127.0.0.127"}]/
 qr/failed to send data to rocketmq topic: .*, nameserver_list: \{"127.0.0.127":9876}/
@@ -219,8 +213,6 @@ qr/failed to send data to rocketmq topic: .*, nameserver_list: \{"127.0.0.127":9
                 [[{"action": "delete"}]])
         }
     }
---- request
-GET /t
 --- response_body
 
 
@@ -266,8 +258,6 @@ GET /t
         }
     }
 
---- request
-GET /t
 --- response_body
 passed
 
@@ -320,8 +310,6 @@ qr/send data to rocketmq: \{.*"body":"abcdef"/
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 failed to validate the 'include_req_body_expr' expression: invalid operator '<>'
 done
@@ -350,8 +338,6 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 failed to validate the 'include_resp_body_expr' expression: invalid operator '<!>'
 done
@@ -399,8 +385,6 @@ done
         }
     }
 
---- request
-GET /t
 --- response_body
 passed
 
