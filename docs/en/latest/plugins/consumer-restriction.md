@@ -42,6 +42,7 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 | whitelist | array[string] | required   |               |                                 | Grant full access to all users specified in the provided list , **has the priority over `allowed_by_methods`** |
 | blacklist | array[string] | required   |               |                                 | Reject connection to all users specified in the provided list , **has the priority over `whitelist`** |
 | rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
+| rejected_msg | string | optional     |            |                        | The message returned when the request is rejected.                                                                         |
 | allowed_by_methods | array[object] | optional     |            |                        | Set a list of allowed HTTP methods for the selected user , HTTP methods can be `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
