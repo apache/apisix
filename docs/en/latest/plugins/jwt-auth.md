@@ -57,7 +57,7 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
 | vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
 
-**Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [default-config.yaml](https://github.com/apache/apisix/blob/master/conf/default-config.yaml) under the vault attributes.
+**Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) under the vault attributes.
 
 ## API
 
