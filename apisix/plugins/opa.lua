@@ -27,8 +27,7 @@ local schema = {
             type = "boolean",
             default = true,
         },
-        package = {type = "string"},
-        decision = {type = "string", maxLength = 256},
+        policy = {type = "string"},
         timeout = {
             type = "integer",
             minimum = 1,
@@ -40,7 +39,7 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5}
     },
-    required = {"host", "package", "decision"}
+    required = {"host", "policy"}
 }
 
 
@@ -74,7 +73,7 @@ function _M.access(conf, ctx)
         params.keepalive_pool = conf.keepalive_pool
     end
 
-    local endpoint = conf.host .. "/v1/data/" .. conf.package .. "/" .. conf.decision
+    local endpoint = conf.host .. "/v1/data/" .. conf.policy
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
