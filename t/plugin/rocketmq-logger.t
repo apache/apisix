@@ -19,6 +19,19 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -45,8 +58,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -67,8 +78,6 @@ GET /t
 --- response_body
 property "nameserver_list" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -96,8 +105,6 @@ GET /t
 --- response_body
 property "timeout" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -161,8 +168,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -171,8 +176,7 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- wait: 2
 
 
@@ -284,8 +288,6 @@ failed to send data to rocketmq topic
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -295,8 +297,7 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- error_log
 send data to rocketmq: GET /hello?ab=cd HTTP/1.1
 host: localhost
@@ -346,8 +347,6 @@ abcdef
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -357,8 +356,7 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- error_log
 send data to rocketmq: GET /hello?ab=cd HTTP/1.1
 host: localhost
@@ -405,8 +403,6 @@ connection: close
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -416,8 +412,7 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- error_log_like eval
 qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
@@ -482,8 +477,6 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -492,8 +485,7 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- wait: 2
 
 
@@ -534,8 +526,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -545,8 +535,7 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
+
 --- error_log_like eval
 qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
@@ -589,8 +578,6 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -634,8 +621,7 @@ passed
 GET /t
 --- timeout: 5s
 --- ignore_response
---- no_error_log
-[error]
+
 --- error_log eval
 [qr/queue: 1/,
 qr/queue: 0/,
@@ -682,417 +668,8 @@ qr/queue: 2/]
 GET /t
 --- timeout: 5s
 --- ignore_response
---- no_error_log
-[error]
+
 --- error_log eval
 [qr/queue: 1/,
 qr/queue: 0/,
 qr/queue: 2/]
-
-
-
-=== TEST 20: update the nameserver_list, generate different rocketmq producers
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-            )
-            ngx.sleep(0.5)
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("fail")
-                return
-            end
-
-            code, body = t('/apisix/admin/routes/1/plugins',
-                ngx.HTTP_PATCH,
-                 [[{
-                        "rocketmq-logger": {
-                            "nameserver_list" : [ "127.0.0.1:9876" ],
-                            "topic" : "test2",
-                            "timeout" : 1,
-                            "batch_max_size": 1,
-                            "include_req_body": false
-                        }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("fail")
-                return
-            end
-
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
-
-            code, body = t('/apisix/admin/routes/1/plugins',
-                ngx.HTTP_PATCH,
-                 [[{
-                        "rocketmq-logger": {
-                            "nameserver_list" :  [ "127.0.0.1:19876" ],
-                            "topic" : "test4",
-                            "timeout" : 1,
-                            "batch_max_size": 1,
-                            "include_req_body": false
-                        }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("fail")
-                return
-            end
-
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
-
-            ngx.sleep(2)
-            ngx.say("passed")
-        }
-    }
---- request
-GET /t
---- timeout: 10
---- response
-passed
---- wait: 5
---- error_log
-phase_func(): rocketmq nameserver_list[1] port 9876
-phase_func(): rocketmq nameserver_list[1] port 19876
---- no_error_log eval
-qr/not found topic/
-
-
-
-=== TEST 21: use the topic that does not exist on rocketmq(even if rocketmq allows auto create topics, first time push messages to rocketmq would got this error)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/plugins',
-                ngx.HTTP_PATCH,
-                 [[{
-                        "rocketmq-logger": {
-                            "nameserver_list" : [ "127.0.0.1:9876" ],
-                            "topic" : "undefined_topic",
-                            "timeout" : 1,
-                            "batch_max_size": 1,
-                            "include_req_body": false
-                        }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("fail")
-                return
-            end
-
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
-
-            ngx.sleep(2)
-            ngx.say("passed")
-        }
-    }
---- request
-GET /t
---- timeout: 5
---- response
-passed
---- error_log eval
-qr/getTopicRouteInfoFromNameserver return TOPIC_NOT_EXIST, No topic route info in name server for the topic: undefined_topic/
-
-
-
-=== TEST 22: rocketmq nameserver list info in log
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                             "rocketmq-logger": {
-                                    "nameserver_list" : [ "127.0.0.1:9876" ],
-                                    "topic" : "test2",
-                                    "producer_type": "sync",
-                                    "key" : "key1",
-                                    "batch_max_size": 1
-                             }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {method = "GET"})
-        }
-    }
---- request
-GET /t
---- error_log_like eval
-qr/create new rocketmq producer instance, nameserver_list: \[\{"port":9876,"host":"127.0.0.127"}]/
-qr/failed to send data to rocketmq topic: .*, nameserver_list: \{"127.0.0.127":9876}/
-
-
-
-=== TEST 23: delete plugin metadata, tests would fail if run rocketmq-logger-log-format.t and plugin metadata is added
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/rocketmq-logger',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{"action": "delete"}]])
-        }
-    }
---- request
-GET /t
---- response_body
-
---- no_error_log
-[error]
-
-
-
-=== TEST 24: set route(id: 1,include_req_body = true,include_req_body_expr = array)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [=[{
-                        "plugins": {
-                            "rocketmq-logger": {
-                                "nameserver_list" : [ "127.0.0.1:9876" ],
-                                "topic" : "test2",
-                                "key" : "key1",
-                                "timeout" : 1,
-                                "include_req_body": true,
-                                "include_req_body_expr": [
-                                    [
-                                      "arg_name",
-                                      "==",
-                                      "qwerty"
-                                    ]
-                                ],
-                                "batch_max_size": 1
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]=]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
-
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 25: hit route, expr eval success
---- request
-POST /hello?name=qwerty
-abcdef
---- response_body
-hello world
---- no_error_log
-[error]
---- error_log eval
-qr/send data to rocketmq: \{.*"body":"abcdef"/
---- wait: 2
-
-
-
-=== TEST 26: hit route,expr eval fail
---- request
-POST /hello?name=zcxv
-abcdef
---- response_body
-hello world
---- no_error_log eval
-qr/send data to rocketmq: \{.*"body":"abcdef"/
---- wait: 2
-
-
-
-=== TEST 27: check log schema(include_req_body)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.rocketmq-logger")
-            local ok, err = plugin.check_schema({
-                 topic = "test",
-                 key = "key1",
-                 nameserver_list = {
-                    "127.0.0.1:3"
-                 },
-                 include_req_body = true,
-                 include_req_body_expr = {
-                     {"bar", "<>", "foo"}
-                 }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-failed to validate the 'include_req_body_expr' expression: invalid operator '<>'
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 28: check log schema(include_resp_body)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.rocketmq-logger")
-            local ok, err = plugin.check_schema({
-                 topic = "test",
-                 key = "key1",
-                 nameserver_list = {
-                    "127.0.0.1:3"
-                 },
-                 include_resp_body = true,
-                 include_resp_body_expr = {
-                     {"bar", "<!>", "foo"}
-                 }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-failed to validate the 'include_resp_body_expr' expression: invalid operator '<!>'
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 29: set route(id: 1,include_resp_body = true,include_resp_body_expr = array)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [=[{
-                        "plugins": {
-                            "rocketmq-logger": {
-                                "nameserver_list" : [ "127.0.0.1:9876" ],
-                                "topic" : "test2",
-                                "key" : "key1",
-                                "timeout" : 1,
-                                "include_resp_body": true,
-                                "include_resp_body_expr": [
-                                    [
-                                      "arg_name",
-                                      "==",
-                                      "qwerty"
-                                    ]
-                                ],
-                                "batch_max_size": 1
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]=]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
-
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 30: hit route, expr eval success
---- request
-POST /hello?name=qwerty
-abcdef
---- response_body
-hello world
---- no_error_log
-[error]
---- error_log eval
-qr/send data to rocketmq: \{.*"body":"hello world\\n"/
---- wait: 2
-
-
-
-=== TEST 31: hit route,expr eval fail
---- request
-POST /hello?name=zcxv
-abcdef
---- response_body
-hello world
---- no_error_log eval
-qr/send data to rocketmq: \{.*"body":"hello world\\n"/
---- wait: 2
