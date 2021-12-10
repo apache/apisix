@@ -148,6 +148,7 @@ function _M.check_schema(conf, schema_type)
         core.log.info("skipping jwt-auth schema validation with vault")
         return true
     end
+
     if conf.algorithm ~= "RS256" and not conf.secret then
         conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
     elseif conf.base64_secret then
@@ -163,59 +164,6 @@ function _M.check_schema(conf, schema_type)
             return false, "missing valid public key"
         end
         if not conf.private_key then
-            return false, "missing valid private key"
-        end
-    end
-
-
-    local vout = {}
-    local vault_path = jwt_vault_prefix .. conf.key
-    if conf.vault then
-        -- fetch the data to check if the keys are stored into vault
-        local res, err = vault.get(vault_path)
-        if not res or err then
-            core.log.error("failed to fetch data from vault: ", err)
-            return false, "error while fetching data from vault, " ..
-                                "please check the connection or remove vault config"
-        end
-        -- if there is no data on that path, that's absolutely fine.
-        vout = res.data or {}
-    end
-
-    if conf.algorithm ~= "RS256" then
-        local secret = conf.secret or vout.secret
-        -- if no secret is provided, generate one.
-        if not secret then
-            secret = ngx_encode_base64(resty_random.bytes(32, true))
-
-            -- if vault config is enabled, lifecycle of the
-            -- HS256/HS512 secret will be externally managed by vault.
-            if conf.vault then
-                local res, err = vault.set(vault_path, {
-                    secret = secret,
-                })
-                if not res or err then
-                    core.log.error("failed to put data into vault: ", err)
-                    return false, "error communicating with vault server"
-                end
-                conf.secret = "<vault: " .. vault_path .. ">"
-            else
-                conf.secret = secret
-            end
-
-        elseif conf.base64_secret then
-            if ngx_decode_base64(secret) == nil then
-                return false, "base64_secret required but the secret is not in base64 format"
-            end
-        end
-    end
-
-    if conf.algorithm == "RS256" then
-
-        if not conf.public_key and not vout.public_key then
-            return false, "missing valid public key"
-        end
-        if not conf.private_key and not vout.private_key then
             return false, "missing valid private key"
         end
     end
