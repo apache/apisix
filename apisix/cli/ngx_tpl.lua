@@ -84,15 +84,12 @@ stream {
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
 
-    # for stream logs
-    {% if stream.enable_access_log == false then %}
-    access_log off;
-    {% else %}
+    # for stream logs, off by default
+    {% if stream.enable_access_log == true then %}
     log_format main escape={* stream.access_log_format_escape *} '{* stream.access_log_format *}';
 
     access_log {* stream.access_log *} main buffer=16384 flush=3;
     {% end %}
-    open_log_file_cache max=1000 inactive=60;
 
     # stream configuration snippet starts
     {% if stream_configuration_snippet then %}
@@ -271,7 +268,7 @@ http {
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
-    open_log_file_cache  max=1000 inactive=60;
+    open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
     keepalive_timeout {* http.keepalive_timeout *};
     client_header_timeout {* http.client_header_timeout *};
