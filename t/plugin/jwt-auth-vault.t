@@ -51,56 +51,41 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: schema - if public and private key are not provided for RS256
+=== TEST 1: schema check
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
             local core = require("apisix.core")
-            local conf = {
-                key = "key-1",
-                algorithm = "RS256"
-            }
-
-            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("ok")
+            for _, conf in ipairs({
+                {
+                    -- public and private key are not provided for RS256, returns error
+                    key = "key-1",
+                    algorithm = "RS256"
+                },
+                {
+                    -- public and private key are not provided but vault config is enabled.
+                    key = "key-1",
+                    algorithm = "RS256",
+                    vault = {}
+                }
+            }) do
+                local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
+                if not ok then
+                    ngx.say(err)
+                else
+                    ngx.say("ok")
+                end
             end
         }
     }
 --- response_body
 failed to validate dependent schema for "algorithm": value should match only one schema, but matches none
-
-
-
-=== TEST 2: schema - vault config enabled, it expects keys present in vault datastore.
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.jwt-auth")
-            local core = require("apisix.core")
-            local conf = {
-                key = "key-1",
-                algorithm = "RS256",
-                vault = {}
-            }
-
-            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("ok")
-            end
-        }
-    }
---- response_body
 ok
 
 
 
-=== TEST 3: create a consumer with plugin and username
+=== TEST 2: create a consumer with plugin and username
 --- config
     location /t {
         content_by_lua_block {
@@ -134,7 +119,9 @@ ok
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -143,7 +130,7 @@ passed
 
 
 
-=== TEST 4: enable jwt auth plugin using admin api
+=== TEST 3: enable jwt auth plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -175,7 +162,7 @@ passed
 
 
 
-=== TEST 5: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
+=== TEST 4: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +180,9 @@ passed
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.print(res)
         }
     }
@@ -208,15 +197,15 @@ failed to sign jwt, err: secret could not found in vault
 
 
 
-=== TEST 6: store HS256 secret into vault
+=== TEST 5: store HS256 secret into vault
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jwt-auth/keys/key-hs256 secret=$3nsitiv3-c8d3
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/jack/jwt-auth secret=$3nsitiv3-c8d3
 --- response_body
-Success! Data written to: kv/apisix/jwt-auth/keys/key-hs256
+Success! Data written to: kv/apisix/consumer/jack/jwt-auth
 
 
 
-=== TEST 7: sign a HS256 jwt and access/verify /secure-endpoint
+=== TEST 6: sign a HS256 jwt and access/verify /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -234,7 +223,9 @@ Success! Data written to: kv/apisix/jwt-auth/keys/key-hs256
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.print(res)
         }
     }
@@ -243,15 +234,15 @@ successfully invoked secure endpoint
 
 
 
-=== TEST 8: store rsa key pairs into vault from local filesystem
+=== TEST 7: store rsa key pairs into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jwt-auth/keys/rsa public_key=@t/certs/public.pem private_key=@t/certs/private.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/jim/jwt-auth public_key=@t/certs/public.pem private_key=@t/certs/private.pem
 --- response_body
-Success! Data written to: kv/apisix/jwt-auth/keys/rsa
+Success! Data written to: kv/apisix/consumer/jim/jwt-auth
 
 
 
-=== TEST 9: create consumer for RS256 algorithm with keypair fetched from vault
+=== TEST 8: create consumer for RS256 algorithm with keypair fetched from vault
 --- config
     location /t {
         content_by_lua_block {
@@ -259,7 +250,7 @@ Success! Data written to: kv/apisix/jwt-auth/keys/rsa
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "jack",
+                    "username": "jim",
                     "plugins": {
                         "jwt-auth": {
                             "key": "rsa",
@@ -270,7 +261,9 @@ Success! Data written to: kv/apisix/jwt-auth/keys/rsa
                 }]]
             )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -279,7 +272,7 @@ passed
 
 
 
-=== TEST 10: sign a jwt with with rsa keypair and access /secure-endpoint
+=== TEST 9: sign a jwt with with rsa keypair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -297,7 +290,9 @@ passed
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.print(res)
         }
     }
@@ -306,15 +301,15 @@ successfully invoked secure endpoint
 
 
 
-=== TEST 11: store rsa private key into vault from local filesystem
+=== TEST 10: store rsa private key into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jwt-auth/keys/rsa1 private_key=@t/certs/private.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/john/jwt-auth private_key=@t/certs/private.pem
 --- response_body
-Success! Data written to: kv/apisix/jwt-auth/keys/rsa1
+Success! Data written to: kv/apisix/consumer/john/jwt-auth
 
 
 
-=== TEST 12: create consumer for RS256 algorithm with private key fetched from vault and public key in consumer schema
+=== TEST 11: create consumer for RS256 algorithm with private key fetched from vault and public key in consumer schema
 --- config
     location /t {
         content_by_lua_block {
@@ -322,7 +317,7 @@ Success! Data written to: kv/apisix/jwt-auth/keys/rsa1
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "jack",
+                    "username": "john",
                     "plugins": {
                         "jwt-auth": {
                             "key": "rsa1",
@@ -334,7 +329,9 @@ Success! Data written to: kv/apisix/jwt-auth/keys/rsa1
                 }]]
             )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -343,7 +340,7 @@ passed
 
 
 
-=== TEST 13: sign a jwt with with rsa keypair and access /secure-endpoint
+=== TEST 12: sign a jwt with with rsa keypair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -361,7 +358,9 @@ passed
             local code, _, res = t('/secure-endpoint?jwt=' .. sign,
                 ngx.HTTP_GET
             )
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.print(res)
         }
     }
