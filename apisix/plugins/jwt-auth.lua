@@ -144,11 +144,29 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
-    -- in nginx init_worker_by_lua context API calls are disabled,
-    -- also that is a costly operation during system startup.
-    if ngx.get_phase() == "init_worker" then
+    if conf.vault then
+        core.log.info("skipping jwt-auth schema validation with vault")
         return true
     end
+    if conf.algorithm ~= "RS256" and not conf.secret then
+        conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
+    elseif conf.base64_secret then
+        if ngx_decode_base64(conf.secret) == nil then
+            return false, "base64_secret required but the secret is not in base64 format"
+        end
+    end
+
+    if conf.algorithm == "RS256" then
+        -- Possible options are a) both are in vault, b) both in schema
+        -- c) one in schema, another in vault.
+        if not conf.public_key then
+            return false, "missing valid public key"
+        end
+        if not conf.private_key then
+            return false, "missing valid private key"
+        end
+    end
+
 
     local vout = {}
     local vault_path = jwt_vault_prefix .. conf.key
@@ -193,8 +211,7 @@ function _M.check_schema(conf, schema_type)
     end
 
     if conf.algorithm == "RS256" then
-        -- check from consumer config and vault data store. Possible options are
-        -- a) both are in vault, b) both in schema, c) one in schema, another in vault.
+
         if not conf.public_key and not vout.public_key then
             return false, "missing valid public key"
         end
