@@ -144,13 +144,13 @@ apisix:
                 ngx.log(ngx.ERR, err)
                 return
             end
-            ngx.say(res.status)
+            ngx.say("ok")
         }
     }
 --- request
 GET /t
 --- response_body
-200
+ok
 
 
 
@@ -176,11 +176,11 @@ apisix:
             ngx.log(ngx.ERR, err)
             return ngx.exit(-1)
         end
-        sock:send(res.status)
+        sock:send("ok")
     }
 --- stream_request eval
 m
---- stream_response: 200
+--- stream_response: ok
 --- no_error_log
 [error]
 
