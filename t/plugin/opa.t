@@ -41,7 +41,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181", package = "example", decision = "allow"})
+            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181", policy = "example/allow"})
             if not ok then
                 ngx.say(err)
             end
@@ -54,19 +54,19 @@ done
 
 
 
-=== TEST 2: missing `host`
+=== TEST 2: missing `policy`
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({package = "example", decision = "allow"})
+            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181"})
             if not ok then
                 ngx.say(err)
             end
         }
     }
 --- response_body
-property "host" is required
+property "policy" is required
 
 
 
@@ -75,7 +75,7 @@ property "host" is required
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({host = 3233, package = "example", decision = "allow"})
+            local ok, err = plugin.check_schema({host = 3233, policy = "example/allow"})
             if not ok then
                 ngx.say(err)
             end
@@ -97,8 +97,7 @@ property "host" validation failed: wrong type: expected string, got number
                         "plugins": {
                             "opa": {
                                 "host": "http://127.0.0.1:8181",
-                                "package": "example",
-                                "decision": "allow"
+                                "policy": "example/allow"
                             }
                         },
                         "upstream": {
