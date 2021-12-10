@@ -36,57 +36,35 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: sanity check with minimal valid configuration
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
+            local testcase = {
+                {host = "http://127.0.0.1:8181", policy = "example/allow"},
+                {host = "http://127.0.0.1:8181"},
+                {host = 3233, policy = "example/allow"},
+            }
             local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181", policy = "example/allow"})
-            if not ok then
-                ngx.say(err)
-            end
 
-            ngx.say("done")
+            for _, v in ipairs(a) do
+                local ok, err = plugin.check_schema(v)
+                if not ok then
+                    ngx.say(err)
+                end
+
+                ngx.say("done")
+            end
         }
     }
 --- response_body
 done
-
-
-
-=== TEST 2: missing `policy`
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181"})
-            if not ok then
-                ngx.say(err)
-            end
-        }
-    }
---- response_body
 property "policy" is required
-
-
-
-=== TEST 3: wrong type for `host`
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.opa")
-            local ok, err = plugin.check_schema({host = 3233, policy = "example/allow"})
-            if not ok then
-                ngx.say(err)
-            end
-        }
-    }
---- response_body
 property "host" validation failed: wrong type: expected string, got number
 
 
 
-=== TEST 4: setup route with plugin
+=== TEST 2: setup route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -121,7 +99,7 @@ passed
 
 
 
-=== TEST 5: hit route (with wrong header request)
+=== TEST 3: hit route (with wrong header request)
 --- request
 GET /hello
 --- more_headers
@@ -130,7 +108,7 @@ test-header: not-for-test
 
 
 
-=== TEST 6: hit route (with correct request)
+=== TEST 4: hit route (with correct request)
 --- request
 GET /hello
 --- more_headers
