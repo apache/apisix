@@ -92,7 +92,7 @@ function _M.access(conf, ctx)
 
     if err then
         core.log.error("invalid response body: ", res.body, " err: ", err)
-        return 403
+        return 500
     end
 
     if not data.result then
