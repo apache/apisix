@@ -55,9 +55,9 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                                                                                                            |
 | exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                                                                                                                  |
 | base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
-| vault | dictionary | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/jwt-auth/keys/<jwt-auth.key>` for secret retrieval. |
+| vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
 
-**Note**: To enable vault integration, first visit the [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) and update the yaml vault attributes with your vault server configuration.
+**Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [default-config.yaml](https://github.com/apache/apisix/blob/master/conf/default-config.yaml) under the vault attributes.
 
 ## API
 
@@ -121,7 +121,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Sometimes, it's quite natural in production to have a centralized key management solution like vault where you don't have to update the APISIX consumer each time some part of your organization changes the signing secret key (secret for HS256/HS512 or public_key and private_key for RS256) and/or for privacy concerns you don't want to use the key through APISIX admin APIs. APISIX got you covered here. The `jwt-auth` is capable of referencing keys from vault.
 
-**Note**: For early version of this integration support, the plugin expects the key name of secrets stored into the vault path is among [ `secret`, `public_key`, `private_key` ] to successfully use the key. In next release we are going to add the support of referencing custom named keys.
+**Note**: For early version of this integration support, the plugin expects the key name of secrets stored into the vault path is among [ `secret`, `public_key`, `private_key` ] to successfully use the key. In future releases, we are going to add the support of referencing custom named keys.
 
 To enable vault compatibility, just add the empty vault object inside the jwt-auth plugin.
 
@@ -140,14 +140,14 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-Here the plugin looks up for key `secret` inside vault path (`<vault.prefix from default-conf.yaml>/jwt-auth/keys/key-1`) for key `key-1` mentioned in the consumer config and uses it for subsequent signing and jwt verification. If the key is not found in the same path, the plugin logs error and fails to perform jwt authentication.
+Here the plugin looks up for key `secret` inside vault path (`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`) for consumer username `jack` mentioned in the consumer config and uses it for subsequent signing and jwt verification. If the key is not found in the same path, the plugin logs error and fails to perform jwt authentication.
 
-2. RS256 rsa keypairs, both public and private keys are stored into vault.
+1. RS256 rsa keypairs, both public and private keys are stored into vault.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "jack",
+    "username": "kowalski",
     "plugins": {
         "jwt-auth": {
             "key": "rsa-keypair",
@@ -158,14 +158,14 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-The plugin looks up for `public_key` and `private_key` keys inside vault kv path (`<vault.prefix from default-conf.yaml>/jwt-auth/keys/rsa-keypair`) for key `rsa-keypair` mentioned inside plugin vault configuration. If not found, authentication fails.
+The plugin looks up for `public_key` and `private_key` keys inside vault kv path (`<vault.prefix from conf.yaml>/consumer/kowalski/jwt-auth`) for username `kowalski` mentioned inside plugin vault configuration. If not found, authentication fails.
 
 3. public key in consumer configuration, while the private key is in vault.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "jack",
+    "username": "rico",
     "plugins": {
         "jwt-auth": {
             "key": "user-key",

@@ -281,7 +281,9 @@ etcd:
                                   # the default value is true, e.g. the certificate will be verified strictly.
     #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
 
-# storage backend for sensitive data storage and retrieval
+# HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
+# wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
+# server HTTP APIs. By default, APISIX doesn't need this configuration.
 vault:
   host: "http://0.0.0.0:8200" # The host address where the vault server is running.
   timeout: 10                   # request timeout 30 seconds

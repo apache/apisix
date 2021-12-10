@@ -29,7 +29,7 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 local pcall = pcall
-local jwt_vault_prefix = "jwt-auth/keys/"
+
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -198,10 +198,15 @@ local function fetch_jwt_token(ctx)
 end
 
 
-local function get_secret(conf)
+local function get_vault_path(username)
+    return "consumer/".. username .. "/jwt-auth"
+end
+
+
+local function get_secret(conf, consumer_name)
     local secret = conf.secret
     if conf.vault then
-        local res, err = vault.get(jwt_vault_prefix .. conf.key)
+        local res, err = vault.get(get_vault_path(consumer_name))
         if not res or err then
             return nil, err
         end
@@ -220,7 +225,7 @@ local function get_secret(conf)
 end
 
 
-local function get_rsa_keypair(conf)
+local function get_rsa_keypair(conf, consumer_name)
     local public_key = conf.public_key
     local private_key = conf.private_key
     -- if keys are present in conf, no need to query vault (fallback)
@@ -230,7 +235,7 @@ local function get_rsa_keypair(conf)
 
     local vout = {}
     if conf.vault then
-        local res, err = vault.get(jwt_vault_prefix .. conf.key)
+        local res, err = vault.get(get_vault_path(consumer_name))
         if not res or err then
             return nil, nil, err
         end
@@ -265,8 +270,8 @@ local function get_real_payload(key, auth_conf, payload)
 end
 
 
-local function sign_jwt_with_HS(key, auth_conf, payload)
-    local auth_secret, err = get_secret(auth_conf)
+local function sign_jwt_with_HS(key, consumer, payload)
+    local auth_secret, err = get_secret(consumer.auth_conf, consumer.username)
     if not auth_secret then
         core.log.error("failed to sign jwt, err: ", err)
         core.response.exit(503, "failed to sign jwt")
@@ -276,9 +281,9 @@ local function sign_jwt_with_HS(key, auth_conf, payload)
         {
             header = {
                 typ = "JWT",
-                alg = auth_conf.algorithm
+                alg = consumer.auth_conf.algorithm
             },
-            payload = get_real_payload(key, auth_conf, payload)
+            payload = get_real_payload(key, consumer.auth_conf, payload)
         }
     )
     if not ok then
@@ -289,8 +294,8 @@ local function sign_jwt_with_HS(key, auth_conf, payload)
 end
 
 
-local function sign_jwt_with_RS256(key, auth_conf, payload)
-    local public_key, private_key, err = get_rsa_keypair(auth_conf)
+local function sign_jwt_with_RS256(key, consumer, payload)
+    local public_key, private_key, err = get_rsa_keypair(consumer.auth_conf, consumer.username)
     if not public_key then
         core.log.error("failed to sign jwt, err: ", err)
         core.response.exit(503, "failed to sign jwt")
@@ -301,12 +306,12 @@ local function sign_jwt_with_RS256(key, auth_conf, payload)
         {
             header = {
                 typ = "JWT",
-                alg = auth_conf.algorithm,
+                alg = consumer.auth_conf.algorithm,
                 x5c = {
                     public_key,
                 }
             },
-            payload = get_real_payload(key, auth_conf, payload)
+            payload = get_real_payload(key, consumer.auth_conf, payload)
         }
     )
     if not ok then
@@ -324,13 +329,13 @@ local function algorithm_handler(consumer, method_only)
             return sign_jwt_with_HS
         end
 
-        return get_secret(consumer.auth_conf)
+        return get_secret(consumer.auth_conf, consumer.username)
     elseif consumer.auth_conf.algorithm == "RS256" then
         if method_only then
             return sign_jwt_with_RS256
         end
 
-        local public_key, _, err = get_rsa_keypair(consumer.auth_conf)
+        local public_key, _, err = get_rsa_keypair(consumer.auth_conf, consumer.username)
         return public_key, err
     end
 end
@@ -417,7 +422,7 @@ local function gen_token()
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local sign_handler = algorithm_handler(consumer, true)
-    local jwt_token = sign_handler(key, consumer.auth_conf, payload)
+    local jwt_token = sign_handler(key, consumer, payload)
     if jwt_token then
         return core.response.exit(200, jwt_token)
     end
