@@ -47,7 +47,7 @@ __DATA__
             }
             local plugin = require("apisix.plugins.opa")
 
-            for _, v in ipairs(a) do
+            for _, v in ipairs(testcase) do
                 local ok, err = plugin.check_schema(v)
                 if not ok then
                     ngx.say(err)
