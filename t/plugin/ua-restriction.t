@@ -739,3 +739,51 @@ hello world
     }
 --- response_body
 passed
+
+
+
+=== TEST 33: the element in allowList is null
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ua-restriction")
+            local conf = {
+                allowlist = {
+                    null
+                },
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "allowlist" validation failed: expect array to have at least 1 items
+done
+
+
+
+=== TEST 34: the element in denylistList is null
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ua-restriction")
+            local conf = {
+                denylist = {
+                    null
+                },
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "denylist" validation failed: expect array to have at least 1 items
+done
