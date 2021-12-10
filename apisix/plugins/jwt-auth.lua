@@ -206,7 +206,7 @@ local function get_secret(conf)
             return nil, err
         end
 
-        if not res.data and not res.data.secret then
+        if not res.data or not res.data.secret then
             return nil, "secret could not found in vault: " .. core.json.encode(res)
         end
         secret = res.data.secret
