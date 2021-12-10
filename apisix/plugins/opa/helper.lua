@@ -38,7 +38,7 @@ local function build_http_request(conf, ctx)
         method = core.request.get_method(ctx),
         host   = core.request.get_host(ctx),
         port   = core.request.get_port(ctx),
-        path   = core.request.get_path(ctx, true),
+        path   = core.request.get_path(ctx),
         header = core.request.headers(ctx),
         query  = core.request.get_uri_args(ctx),
     }
