@@ -29,7 +29,7 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 local pcall = pcall
-
+local jwt_vault_prefix = "jwt-auth/keys/"
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -58,10 +58,7 @@ local consumer_schema = {
         },
         vault = {
             type = "object",
-            properties = {
-                path = {type = "string"},
-                add_prefix = {type = "boolean"}
-            }
+            properties = {}
         }
     },
     dependencies = {
@@ -89,10 +86,7 @@ local consumer_schema = {
                     properties = {
                         vault = {
                             type = "object",
-                            properties = {
-                                path = {type = "string"},
-                                add_prefix = {type = "boolean"}
-                            }
+                            properties = {}
                         },
                         algorithm = {
                             enum = {"RS256"},
@@ -157,15 +151,10 @@ function _M.check_schema(conf, schema_type)
     end
 
     local vout = {}
+    local vault_path = jwt_vault_prefix .. conf.key
     if conf.vault then
-        -- create vault path, if not set by admin.
-        if not conf.vault.path then
-            conf.vault.path = "jwt-auth/key/" .. conf.key
-            conf.vault.add_prefix = true
-        end
-
         -- fetch the data to check if the keys are stored into vault
-        local res, err = vault.get(conf.vault.path, conf.vault.add_prefix)
+        local res, err = vault.get(vault_path)
         if not res or err then
             core.log.error("failed to fetch data from vault: ", err)
             return false, "error while fetching data from vault, " ..
@@ -184,14 +173,14 @@ function _M.check_schema(conf, schema_type)
             -- if vault config is enabled, lifecycle of the
             -- HS256/HS512 secret will be externally managed by vault.
             if conf.vault then
-                local res, err = vault.set(conf.vault.path, {
+                local res, err = vault.set(vault_path, {
                     secret = secret,
-                }, conf.vault.add_prefix)
+                })
                 if not res or err then
                     core.log.error("failed to put data into vault: ", err)
                     return false, "error communicating with vault server"
                 end
-                conf.secret = "<vault: " .. conf.vault.path .. ">"
+                conf.secret = "<vault: " .. vault_path .. ">"
             else
                 conf.secret = secret
             end
@@ -247,7 +236,7 @@ end
 local function get_secret(conf)
     local secret = conf.secret
     if conf.vault then
-        local res, err = vault.get(conf.vault.path, conf.vault.add_prefix)
+        local res, err = vault.get(jwt_vault_prefix .. conf.key)
         if not res or err then
             return nil, err
         end
@@ -276,7 +265,7 @@ local function get_rsa_keypair(conf)
 
     local vout = {}
     if conf.vault then
-        local res, err = vault.get(conf.vault.path, conf.vault.add_prefix)
+        local res, err = vault.get(jwt_vault_prefix .. conf.key)
         if not res or err then
             return nil, nil, err
         end

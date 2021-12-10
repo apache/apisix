@@ -37,7 +37,7 @@ local function fetch_vault_conf()
 end
 
 
-local function make_request_to_vault(method, key, rel_path, data)
+local function make_request_to_vault(method, key, skip_prefix, data)
     local vault, err = fetch_vault_conf()
     if not vault then
         return nil, err
@@ -48,7 +48,7 @@ local function make_request_to_vault(method, key, rel_path, data)
     httpc:set_timeout((vault.timeout or 5)*1000)
 
     local req_addr = vault.host
-    if rel_path then
+    if not skip_prefix then
         req_addr = req_addr .. norm_path("/v1/"
                 .. vault.prefix .. "/" .. key)
     else
@@ -69,11 +69,13 @@ local function make_request_to_vault(method, key, rel_path, data)
     return res.body
 end
 
--- key is the vault kv engine path, joined with config yaml vault prefix
-local function get(key, rel_path)
+-- key is the vault kv engine path, joined with config yaml vault prefix.
+-- It takes an extra optional boolean param skip_prefix. If enabled, it simply doesn't use the
+-- prefix defined inside config yaml under vault config for fetching data.
+local function get(key, skip_prefix)
     core.log.info("fetching data from vault for key: ", key)
 
-    local res, err = make_request_to_vault("GET", key, rel_path)
+    local res, err = make_request_to_vault("GET", key, skip_prefix)
     if not res or err then
         return nil, "failed to retrtive data from vault kv engine " .. err
     end
@@ -83,12 +85,14 @@ end
 
 _M.get = get
 
--- key is the vault kv engine path, data is json key vaule pair
-local function set(key, data, rel_path)
+-- key is the vault kv engine path, data is json key vaule pair.
+-- It takes an extra optional boolean param skip_prefix. If enabled, it simply doesn't use the
+-- prefix defined inside config yaml under vault config for storing data.
+local function set(key, data, skip_prefix)
     core.log.info("stroing data into vault for key: ", key,
                     "and value: ", core.json.delay_encode(data, true))
 
-    local res, err = make_request_to_vault("POST", key, rel_path, data)
+    local res, err = make_request_to_vault("POST", key, skip_prefix, data)
     if not res or err then
         return nil, "failed to store data into vault kv engine " .. err
     end
@@ -98,11 +102,13 @@ end
 _M.set = set
 
 
--- key is the vault kv engine path, joined with config yaml vault prefix
-local function delete(key, rel_path)
+-- key is the vault kv engine path, joined with config yaml vault prefix.
+-- It takes an extra optional boolean param skip_prefix. If enabled, it simply doesn't use the
+-- prefix defined inside config yaml under vault config for deleting data.
+local function delete(key, skip_prefix)
     core.log.info("deleting data from vault for key: ", key)
 
-    local res, err = make_request_to_vault("DELETE", key, rel_path)
+    local res, err = make_request_to_vault("DELETE", key, skip_prefix)
 
     if not res or err then
         return nil, "failed to delete data into vault kv engine " .. err
