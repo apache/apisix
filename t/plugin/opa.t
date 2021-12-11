@@ -40,20 +40,16 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local testcase = {
+            local test_cases = {
                 {host = "http://127.0.0.1:8181", policy = "example/allow"},
                 {host = "http://127.0.0.1:8181"},
                 {host = 3233, policy = "example/allow"},
             }
             local plugin = require("apisix.plugins.opa")
 
-            for _, v in ipairs(testcase) do
-                local ok, err = plugin.check_schema(v)
-                if not ok then
-                    ngx.say(err)
-                end
-
-                ngx.say("done")
+            for _, case in ipairs(test_cases) do
+                local ok, err = plugin.check_schema(case)
+                ngx.say(ok and "done" or err)
             end
         }
     }
