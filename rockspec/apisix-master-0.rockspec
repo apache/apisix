@@ -72,7 +72,7 @@ dependencies = {
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
-    "lua-resty-rocketmq = 0.2.1-3",
+    "lua-resty-rocketmq = 0.3.0-0",
 }
 
 build = {
