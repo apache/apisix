@@ -101,23 +101,8 @@ ok
                             "vault":{}
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "jwt-auth": {
-                                    "key": "key-hs256",
-                                    "algorithm": "HS256",
-                                    "vault":{}
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -163,6 +148,13 @@ passed
 
 
 === TEST 4: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
+--- yaml_config
+vault:
+  host: "http://0.0.0.0:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: root
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -206,6 +198,13 @@ Success! Data written to: kv/apisix/consumer/jack/jwt-auth
 
 
 === TEST 6: sign a HS256 jwt and access/verify /secure-endpoint
+--- yaml_config
+vault:
+  host: "http://0.0.0.0:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: root
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -273,6 +272,13 @@ passed
 
 
 === TEST 9: sign a jwt with with rsa keypair and access /secure-endpoint
+--- yaml_config
+vault:
+  host: "http://0.0.0.0:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: root
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -341,6 +347,13 @@ passed
 
 
 === TEST 12: sign a jwt with with rsa keypair and access /secure-endpoint
+--- yaml_config
+vault:
+  host: "http://0.0.0.0:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: root
+#END
 --- config
     location /t {
         content_by_lua_block {
