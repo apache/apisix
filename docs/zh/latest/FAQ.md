@@ -566,5 +566,5 @@ apisix:
 
 `plugin-metadata` 和 `plugin-configs` 的区别在于：
 
- - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的的插件配置实例。
+ - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的插件配置实例。
  - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
