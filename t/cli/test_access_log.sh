@@ -245,6 +245,7 @@ if [ ! $? -eq 0 ]; then
     echo "failed: stream access_log_format in nginx.conf doesn't change"
     exit 1
 fi
+echo "passed: stream access_log_format in nginx.conf is ok"
 
 # check if logs are being written
 make run
@@ -259,6 +260,4 @@ if ! grep '127.0.0.1 UDP test_stream_access_log_format' output.log; then
     cat output.log
     exit 1
 fi
-
-make stop
-git checkout conf/config.yaml
+echo "passed: logs are being dumped for stream proxy"
