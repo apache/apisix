@@ -146,6 +146,6 @@ test-header: only-for-test
 GET /test?test=1234&user=alice
 --- more_headers
 test-header: not-for-test
---- error_code: 301
+--- error_code: 302
 --- response_headers
 Location: http://example.com/auth
