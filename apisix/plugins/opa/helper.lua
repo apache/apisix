@@ -54,7 +54,7 @@ function _M.build_opa_input(conf, ctx, subsystem)
         var     = build_var(conf, ctx)
     }
 
-    return core.json.encode(data)
+    return core.json.encode({input = data})
 end
 
 
