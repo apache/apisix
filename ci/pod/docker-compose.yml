@@ -396,6 +396,16 @@ services:
     networks:
       rocketmq_net:
 
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s
+    networks:
+      opa_net:
+
 networks:
   apisix_net:
   consul_net:
@@ -404,3 +414,4 @@ networks:
   skywalk_net:
   rocketmq_net:
   vault_net:
+  opa_net:

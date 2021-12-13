@@ -263,7 +263,8 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
                             "consumer-restriction": {
                                  "blacklist": [
                                      "jack1"
-                                 ]
+                                 ],
+                                 "rejected_msg": "request is forbidden"
                             }
                         }
                 }]]
@@ -302,7 +303,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is forbidden."}
+{"message":"request is forbidden"}
 --- no_error_log
 [error]
 
