@@ -26,7 +26,7 @@ reason = {"desc": "Error request header", "code": 40001} {
     not allow
 }
 
-header = {
+headers = {
     "test": "abc"
 } {
     not allow
