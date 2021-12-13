@@ -29,29 +29,29 @@ allow {
 
 reason = {"code": 40001, "desc": "wrong request"} {
     not allow
-    request.query["user"] != "alice"
+    not request.query["user"]
 }
 
 headers = {
     "test": "abcd"
 } {
     not allow
-    request.query["user"] != "alice"
+    not request.query["user"]
 }
 
 headers = {
     "Location": "http://example.com/auth"
 } {
     not allow
-    request.query["user"] == "alice"
+    request.query["user"]
 }
 
 status_code = 204 {
     not allow
-    request.query["user"] != "alice"
+    not request.query["user"]
 }
 
 status_code = 302 {
     not allow
-    request.query["user"] == "alice"
+    request.query["user"]
 }

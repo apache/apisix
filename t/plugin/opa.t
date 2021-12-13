@@ -141,7 +141,7 @@ test-header: only-for-test
 
 
 
-=== TEST 8: hit route (with wront header request and alice user)
+=== TEST 8: hit route (with wront header request and user)
 --- request
 GET /test?test=1234&user=alice
 --- more_headers
