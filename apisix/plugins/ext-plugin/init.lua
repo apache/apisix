@@ -677,6 +677,7 @@ local function create_lrucache()
 
     lrucache = core.lrucache.new({
         type = "plugin",
+    	invalid_stale = true,
         ttl = helper.get_conf_token_cache_time(),
     })
 end
