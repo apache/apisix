@@ -44,12 +44,24 @@ function install_dependencies_with_aur() {
 
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
-    # add OpenResty source
     sudo yum install yum-utils
-    sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
 
-    # install OpenResty and some compilation tools
-    sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel
+    local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
+    if [ "${1}" == "centos" ]; then
+        # add APISIX source
+        sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+
+        # install apisix-base and some compilation tools
+        # shellcheck disable=SC2086
+        sudo yum install -y apisix-base $common_dep
+    else
+        # add OpenResty source
+        sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
+
+        # install OpenResty and some compilation tools
+        # shellcheck disable=SC2086
+        sudo yum install -y openresty $common_dep
+    fi
 }
 
 # Install dependencies on ubuntu and debian
