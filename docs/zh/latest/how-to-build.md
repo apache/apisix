@@ -38,7 +38,7 @@ $ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-r
 如果已安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 Apache APISIX 的 RPM 仓库。
 
 ```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+$ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
 ```
 
 请运行以下命令安装 Apache APISIX。
@@ -67,7 +67,8 @@ $ sudo yum install apisix
 1. 创建一个名为 `apisix-2.11.0` 的目录。
 
   ```shell
-  $ mkdir apisix-2.11.0
+  $ APISIX_VERSION='2.11.0'
+  $ mkdir apisix-${APISIX_VERSION}
   ```
 
 2. 下载 Apache APISIX Release 源码包：
