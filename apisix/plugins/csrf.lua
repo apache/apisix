@@ -19,7 +19,6 @@ local ngx = ngx
 local plugin_name = "csrf"
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
-local request_method = ngx.var.request_method
 local timer = ngx.time
 local cookie_time = ngx.cookie_time
 local ck = require "resty.cookie"
@@ -120,7 +119,7 @@ end
 
 
 function _M.access(conf, ctx)
-    local method = request_method
+    local method = ctx.var.request_method
     if method == 'GET' then
       return
     end
@@ -157,7 +156,7 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    local method = request_method
+    local method = ctx.var.request_method
     if method == 'GET' then
       local csrf_token = gen_csrf_token(conf)
       core.response.add_header("Set-Cookie", {conf.name .. "=" .. csrf_token
