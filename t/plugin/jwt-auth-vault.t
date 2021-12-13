@@ -148,7 +148,7 @@ passed
 
 
 === TEST 4: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
---- yaml_config
+--- extra_yaml_config
 vault:
   host: "http://0.0.0.0:8200"
   timeout: 10
@@ -198,7 +198,7 @@ Success! Data written to: kv/apisix/consumer/jack/jwt-auth
 
 
 === TEST 6: sign a HS256 jwt and access/verify /secure-endpoint
---- yaml_config
+--- extra_yaml_config
 vault:
   host: "http://0.0.0.0:8200"
   timeout: 10
@@ -272,7 +272,7 @@ passed
 
 
 === TEST 9: sign a jwt with with rsa keypair and access /secure-endpoint
---- yaml_config
+--- extra_yaml_config
 vault:
   host: "http://0.0.0.0:8200"
   timeout: 10
@@ -347,7 +347,7 @@ passed
 
 
 === TEST 12: sign a jwt with with rsa keypair and access /secure-endpoint
---- yaml_config
+--- extra_yaml_config
 vault:
   host: "http://0.0.0.0:8200"
   timeout: 10
