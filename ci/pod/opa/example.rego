@@ -19,7 +19,7 @@ package example
 default allow = false
 
 allow {
-    input.request.header["test-header"] == "only-for-test"
+    input.request.headers["test-header"] == "only-for-test"
 }
 
 reason = {"desc": "Error request header", "code": 40001} {

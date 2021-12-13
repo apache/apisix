@@ -39,7 +39,7 @@ local function build_http_request(conf, ctx)
         host   = core.request.get_host(ctx),
         port   = core.request.get_port(ctx),
         path   = core.request.get_path(ctx),
-        header = core.request.headers(ctx),
+        headers = core.request.headers(ctx),
         query  = core.request.get_uri_args(ctx),
     }
 end
@@ -55,6 +55,11 @@ function _M.build_opa_input(conf, ctx, subsystem)
     }
 
     return core.json.encode({input = data})
+end
+
+
+function _M.parse_decision(resp)
+    
 end
 
 
