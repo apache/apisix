@@ -58,9 +58,4 @@ function _M.build_opa_input(conf, ctx, subsystem)
 end
 
 
-function _M.parse_decision(resp)
-    
-end
-
-
 return _M

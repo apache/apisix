@@ -97,6 +97,26 @@ function _M.access(conf, ctx)
     if not data.result then
         return 403
     end
+
+    local result = data.result
+
+    if result.headers then
+        core.response.set_header(result.headers)
+    end
+
+    local status_code = 403
+    local reason = ""
+
+    if result.status_code then
+        status_code = result.status_code
+    end
+
+    if result.reason then
+        reason = type(result.reason) == "table" and 
+            core.json.encode(result.reason) or result.reason
+    end
+
+    return status_code, reason
 end
 
 
