@@ -16,25 +16,42 @@
 #
 package example
 
+import input.request
+
 default allow = false
 
 allow {
-    input.request.headers["test-header"] == "only-for-test"
-    input.request.method == "GET"
-    startswith(input.request.path, "/test")
-    input.request.query["test"] != "abcd"
+    request.headers["test-header"] == "only-for-test"
+    request.method == "GET"
+    startswith(request.path, "/hello")
+    request.query["test"] != "abcd"
 }
 
 reason = {"code": 40001, "desc": "wrong request"} {
     not allow
+    request.query["user"] != "alice"
 }
 
 headers = {
-    "test": "abc"
+    "test": "abcd"
 } {
     not allow
+    request.query["user"] != "alice"
 }
 
-status_code = 503 {
+headers = {
+    "Location": "http://example.com/auth"
+} {
     not allow
+    request.query["user"] == "alice"
+}
+
+status_code = 204 {
+    not allow
+    request.query["user"] != "alice"
+}
+
+status_code = 302 {
+    not allow
+    request.query["user"] == "alice"
 }
