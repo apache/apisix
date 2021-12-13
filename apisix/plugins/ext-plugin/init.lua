@@ -65,11 +65,7 @@ local type = type
 
 
 local events_list
-local lrucache = core.lrucache.new({
-    type = "plugin",
-    invalid_stale = true,
-    ttl = helper.get_conf_token_cache_time(),
-})
+local lrucache = new_lrucache()
 local shdict_name = "ext-plugin"
 local shdict = ngx.shared[shdict_name]
 
@@ -668,6 +664,15 @@ rpc_call = function (ty, conf, ctx, ...)
 end
 
 
+local function new_lrucache()
+    return core.lrucache.new({
+        type = "plugin",
+        invalid_stale = true,
+        ttl = helper.get_conf_token_cache_time(),
+    })
+end
+
+
 local function create_lrucache()
     flush_token()
 
@@ -675,11 +680,7 @@ local function create_lrucache()
         core.log.warn("flush conf token lrucache")
     end
 
-    lrucache = core.lrucache.new({
-        type = "plugin",
-    	invalid_stale = true,
-        ttl = helper.get_conf_token_cache_time(),
-    })
+    lrucache = new_lrucache()
 end
 
 
