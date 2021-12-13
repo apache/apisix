@@ -18,6 +18,7 @@
 local core   = require("apisix.core")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
+local type   = type
 
 local schema = {
     type = "object",
@@ -109,12 +110,13 @@ function _M.access(conf, ctx)
         end
 
         if result.reason then
-            reason = type(result.reason) == "table" and 
-                core.json.encode(result.reason) or result.reason
+            reason = type(result.reason) == "table"
+                and core.json.encode(result.reason)
+                or result.reason
         end
 
         return status_code, reason
-    end    
+    end
 end
 
 
