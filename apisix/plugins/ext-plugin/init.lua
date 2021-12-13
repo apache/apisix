@@ -673,7 +673,7 @@ rpc_call = function (ty, conf, ctx, ...)
 end
 
 
-local function create_lrucache()
+local function recreate_lrucache()
     flush_token()
 
     if lrucache then
@@ -704,7 +704,7 @@ function _M.communicate(conf, ctx, plugin_name)
         end
 
         core.log.warn("refresh cache and try again")
-        create_lrucache()
+        recreate_lrucache()
     end
 
     core.log.error(err)
@@ -801,7 +801,7 @@ function _M.init_worker()
     )
 
     -- flush cache when runner exited
-    events.register(create_lrucache, events_list._source, events_list.runner_exit)
+    events.register(recreate_lrucache, events_list._source, events_list.runner_exit)
 
     -- note that the runner is run under the same user as the Nginx master
     if process.type() == "privileged agent" then
