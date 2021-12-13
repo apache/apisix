@@ -71,7 +71,7 @@ property "host" validation failed: wrong type: expected string, got number
                         "plugins": {
                             "opa": {
                                 "host": "http://127.0.0.1:8181",
-                                "policy": "example"
+                                "policy": "example/allow"
                             }
                         },
                         "upstream": {
@@ -80,7 +80,7 @@ property "host" validation failed: wrong type: expected string, got number
                             },
                             "type": "roundrobin"
                         },
-                        "uris": ["/hello", "/test"]
+                        "uri": "/hello"
                 }]]
                 )
 
@@ -95,91 +95,19 @@ passed
 
 
 
-=== TEST 3: hit route (with correct request)
+=== TEST 3: hit route (with wrong header request)
 --- request
-GET /hello?test=1234&user=none
---- more_headers
-test-header: only-for-test
---- response_body
-hello world
-
-
-
-=== TEST 4: hit route (with wrong header request)
---- request
-GET /hello?test=1234&user=none
+GET /hello
 --- more_headers
 test-header: not-for-test
 --- error_code: 403
 
 
 
-=== TEST 5: hit route (with wrong query request)
+=== TEST 4: hit route (with correct request)
 --- request
-GET /hello?test=abcd&user=none
+GET /hello
 --- more_headers
 test-header: only-for-test
---- error_code: 403
-
-
-
-=== TEST 6: hit route (with wrong method request)
---- request
-POST /hello?test=1234&user=none
---- more_headers
-test-header: only-for-test
---- error_code: 403
-
-
-
-=== TEST 7: hit route (with wrong path request)
---- request
-GET /test?test=1234&user=none
---- more_headers
-test-header: only-for-test
---- error_code: 403
-
-
-
-=== TEST 8: hit route (response status code and header)
---- request
-GET /test?test=abcd&user=alice
---- more_headers
-test-header: only-for-test
---- error_code: 302
---- response_headers
-Location: http://example.com/auth
-
-
-
-=== TEST 9: hit route (response multiple header reason)
---- request
-GET /test?test=abcd&user=bob
---- more_headers
-test-header: only-for-test
---- error_code: 403
---- response_headers
-test: abcd
-abcd: test
-
-
-
-=== TEST 10: hit route (response string reason)
---- request
-GET /test?test=abcd&user=carla
---- more_headers
-test-header: only-for-test
---- error_code: 403
---- response
-Give you a string reason
-
-
-
-=== TEST 11: hit route (response json reason)
---- request
-GET /test?test=abcd&user=dylon
---- more_headers
-test-header: only-for-test
---- error_code: 403
---- response
-{"code":40001,"desc":"Give you a object reason"}
+--- response_body
+hello world
