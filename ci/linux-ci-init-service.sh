@@ -34,14 +34,3 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 
 # prepare vault kv engine
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
-
-# prepare OPA env
-curl -XPUT 'http://localhost:8181/v1/policies/example' \
---header 'Content-Type: text/plain' \
---data-raw 'package example
-
-default allow = false
-
-allow {
-  input.request.header["test-header"] == "only-for-test"
-}'
