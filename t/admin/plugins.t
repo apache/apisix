@@ -83,6 +83,7 @@ basic-auth
 jwt-auth
 key-auth
 consumer-restriction
+opa
 authz-keycloak
 proxy-mirror
 proxy-cache
