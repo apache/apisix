@@ -142,7 +142,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 Here the plugin looks up for key `secret` inside vault path (`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`) for consumer username `jack` mentioned in the consumer config and uses it for subsequent signing and jwt verification. If the key is not found in the same path, the plugin logs error and fails to perform jwt authentication.
 
-1. RS256 rsa keypairs, both public and private keys are stored into vault.
+2. RS256 rsa keypairs, both public and private keys are stored into vault.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

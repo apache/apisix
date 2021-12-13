@@ -39,6 +39,16 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
+    my $vault_config = $block->extra_yaml_config // <<_EOC_;
+vault:
+  host: "http://0.0.0.0:8200"
+  timeout: 10
+  prefix: kv/apisix
+  token: root
+_EOC_
+
+    $block->set_value("extra_yaml_config", $vault_config);
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -148,13 +158,6 @@ passed
 
 
 === TEST 4: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
---- extra_yaml_config
-vault:
-  host: "http://0.0.0.0:8200"
-  timeout: 10
-  prefix: kv/apisix
-  token: root
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -198,13 +201,6 @@ Success! Data written to: kv/apisix/consumer/jack/jwt-auth
 
 
 === TEST 6: sign a HS256 jwt and access/verify /secure-endpoint
---- extra_yaml_config
-vault:
-  host: "http://0.0.0.0:8200"
-  timeout: 10
-  prefix: kv/apisix
-  token: root
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -272,13 +268,6 @@ passed
 
 
 === TEST 9: sign a jwt with with rsa keypair and access /secure-endpoint
---- extra_yaml_config
-vault:
-  host: "http://0.0.0.0:8200"
-  timeout: 10
-  prefix: kv/apisix
-  token: root
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -347,13 +336,6 @@ passed
 
 
 === TEST 12: sign a jwt with with rsa keypair and access /secure-endpoint
---- extra_yaml_config
-vault:
-  host: "http://0.0.0.0:8200"
-  timeout: 10
-  prefix: kv/apisix
-  token: root
-#END
 --- config
     location /t {
         content_by_lua_block {
