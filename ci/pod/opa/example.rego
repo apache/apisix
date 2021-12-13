@@ -20,9 +20,12 @@ default allow = false
 
 allow {
     input.request.headers["test-header"] == "only-for-test"
+    input.request.method == "GET"
+    startswith(input.request.path, "/test")
+    input.request.query["test"] != "abcd"
 }
 
-reason = {"desc": "Error request header", "code": 40001} {
+reason = {"code": 40001, "desc": "wrong request"} {
     not allow
 }
 
