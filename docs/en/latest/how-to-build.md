@@ -67,13 +67,14 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 1. Create a directory named `apisix-2.11.0`.
 
   ```shell
-  $ mkdir apisix-2.11.0
+  $ APISIX_VERSION='2.11.0'
+  $ mkdir apisix-${APISIX_VERSION}
   ```
 
 2. Download Apache APISIX Release source package.
 
   ```shell
-  $ wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-2.11.0-src.tgz
+  $ wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
   You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.

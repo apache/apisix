@@ -74,7 +74,7 @@ $ sudo yum install apisix
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  $ wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-2.11.0-src.tgz
+  $ wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
