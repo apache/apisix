@@ -15,13 +15,14 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local resty_sha256 = require("resty.sha256")
+local ck = require("resty.cookie")
 local ngx = ngx
 local plugin_name = "csrf"
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local timer = ngx.time
 local cookie_time = ngx.cookie_time
-local ck = require "resty.cookie"
 local math = math
 
 local schema = {
@@ -58,7 +59,6 @@ end
 
 
 local function gen_sign(random, expires, key)
-    local resty_sha256 = require "resty.sha256"
     local sha256 = resty_sha256:new()
 
     local sign = {
@@ -141,7 +141,7 @@ function _M.access(conf, ctx)
 
     if err then
       core.log.error(err)
-      return 500, {error_msg = "read csrf cookie failed"}
+      return 400, {error_msg = "read csrf cookie failed"}
     end
 
     if token ~= field_cookie then
