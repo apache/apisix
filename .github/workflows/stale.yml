@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Prune Stale
-      uses: actions/stale@v4.0.0
+      uses: actions/stale@v4.1.0
       with:
         days-before-issue-stale: 350
         days-before-issue-close: 14
