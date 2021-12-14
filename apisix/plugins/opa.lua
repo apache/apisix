@@ -103,12 +103,11 @@ function _M.access(conf, ctx)
         end
 
         local status_code = 403
-        local reason = ""
-
         if result.status_code then
             status_code = result.status_code
         end
 
+        local reason = nil
         if result.reason then
             reason = type(result.reason) == "table"
                 and core.json.encode(result.reason)
