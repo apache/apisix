@@ -42,6 +42,7 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default= 1000},
     }
 }
+batch_processor.schema = schema
 
 
 local function schedule_func_exec(self, delay, batch)
