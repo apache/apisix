@@ -97,7 +97,7 @@ passed
 
 === TEST 3: hit route (with correct request)
 --- request
-GET /hello?test=1234
+GET /hello?test=1234&user=none
 --- more_headers
 test-header: only-for-test
 --- response_body
@@ -107,45 +107,78 @@ hello world
 
 === TEST 4: hit route (with wrong header request)
 --- request
-GET /hello?test=1234
+GET /hello?test=1234&user=none
 --- more_headers
 test-header: not-for-test
---- error_code: 204
+--- error_code: 403
 
 
 
 === TEST 5: hit route (with wrong query request)
 --- request
-GET /hello?test=abcd
+GET /hello?test=abcd&user=none
 --- more_headers
 test-header: only-for-test
---- error_code: 204
+--- error_code: 403
 
 
 
 === TEST 6: hit route (with wrong method request)
 --- request
-POST /hello?test=1234
+POST /hello?test=1234&user=none
 --- more_headers
 test-header: only-for-test
---- error_code: 204
+--- error_code: 403
 
 
 
 === TEST 7: hit route (with wrong path request)
 --- request
-GET /test?test=1234
+GET /test?test=1234&user=none
 --- more_headers
 test-header: only-for-test
---- error_code: 204
+--- error_code: 403
 
 
 
-=== TEST 8: hit route (with wront header request and user)
+=== TEST 8: hit route (response status code and header)
 --- request
-GET /test?test=1234&user=alice
+GET /test?test=abcd&user=alice
 --- more_headers
-test-header: not-for-test
+test-header: only-for-test
 --- error_code: 302
 --- response_headers
 Location: http://example.com/auth
+
+
+
+=== TEST 9: hit route (response mutliple header reason)
+--- request
+GET /test?test=abcd&user=bob
+--- more_headers
+test-header: only-for-test
+--- response_headers
+test: abcd
+abcd: test
+
+
+
+=== TEST 10: hit route (response string reason)
+--- request
+GET /test?test=abcd&user=carla
+--- more_headers
+test-header: only-for-test
+--- error_code: 403
+--- response
+Give you a string reason
+
+
+
+=== TEST 11: hit route (response json reason)
+--- request
+GET /test?test=abcd&user=dylon
+--- more_headers
+test-header: only-for-test
+--- error_code: 403
+--- response
+{"code":40001,"desc":"Give you a object reason"}
