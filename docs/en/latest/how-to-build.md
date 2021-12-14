@@ -23,7 +23,7 @@ title: How to build Apache APISIX
 
 ## Step 1: Install Apache APISIX
 
-You can install Apache APISIX via RPM Repository, RPM package, Docker, Helm Chart, and source release package. Please choose one from the following options.
+You can install Apache APISIX via RPM Repository, Docker, Helm Chart, and source release package. Please choose one from the following options.
 
 ### Installation via RPM Repository(CentOS 7)
 

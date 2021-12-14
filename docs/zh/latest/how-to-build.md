@@ -23,7 +23,7 @@ title: 如何构建 Apache APISIX
 
 ## 步骤1：安装 Apache APISIX
 
-你可以通过 RPM 仓库、RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+你可以通过 RPM 仓库、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 仓库安装（CentOS 7）
 
