@@ -57,6 +57,7 @@ For example, the following configuration represents listening on the 9100 TCP po
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
+      only: false                 # needed if HTTP and Stream Proxy should be enabled
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:
