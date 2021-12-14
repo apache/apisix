@@ -17,6 +17,7 @@
 package example
 
 import input.request
+import data.users
 
 default allow = false
 
@@ -25,33 +26,20 @@ allow {
     request.method == "GET"
     startswith(request.path, "/hello")
     request.query["test"] != "abcd"
+    request.query["user"]
 }
 
-reason = {"code": 40001, "desc": "wrong request"} {
-    not allow
-    not request.query["user"]
-}
-
-headers = {
-    "test": "abcd"
-} {
-    not allow
-    not request.query["user"]
-}
-
-headers = {
-    "Location": "http://example.com/auth"
-} {
+reason = users[request.query["user"]].reason {
     not allow
     request.query["user"]
 }
 
-status_code = 204 {
+headers = users[request.query["user"]].headers {
     not allow
-    not request.query["user"]
+    request.query["user"]
 }
 
-status_code = 302 {
+status_code = users[request.query["user"]].status_code {
     not allow
     request.query["user"]
 }
