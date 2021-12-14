@@ -992,4 +992,6 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | server_port      | 可选  | 整数     | 过滤选项：如果 APISIX 服务器 port 与 server_port 匹配，则转发到上游 | 9090  |
 | sni              | 可选  | Host     | 服务器名称指示| "test.com"  |
 
+点击 [此处](./stream-proxy.md#more-route-match-options)，了解更多有关过滤器如何工作的信息。
+
 [Back to TOC](#目录)

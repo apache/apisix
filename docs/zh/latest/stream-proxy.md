@@ -74,9 +74,9 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 我们可以添加更多的选项来匹配 route。目前 stream 路由配置支持 3 个字段进行过滤：
 
-- server_addr: 接受 L4 连接的 APISIX 服务器的地址。
-- server_port: 接受 L4 连接的 APISIX 服务器的端口。
-- remote_addr: 发出请求的客户地址。
+- server_addr: 接受四层（流式）连接的 APISIX 服务器的地址。
+- server_port: 接受四层（流式）连接的 APISIX 服务器的端口。
+- remote_addr: 发出请求的客户端地址。
 
 例如
 
@@ -137,7 +137,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
    }'
    ```
 
-   每当 APISIX 服务器 `127.0.0.10` 和端口 `9101` 收到连接时，它只会将请求转发到 mysql 上游。让我们测试这种行为：
+   每当 APISIX 服务器 `127.0.0.10` 和端口 `9101` 收到连接时，它只会将请求转发到 mysql 上游。让我们测试一下：
 
 4. 向 `9100` 发出请求（在 config.yaml 中启用 stream 代理端口），过滤器匹配失败。
 
@@ -147,7 +147,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
    ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 2
    ```
 
-   Instead making a request to the APISIX host and port where the filter matching succeeds:
+   而给 APISIX 的主机和端口发出请求，过滤器匹配成功。
 
    ```shell
    mysql --host=127.0.0.10 --port=9101 -u root -p
