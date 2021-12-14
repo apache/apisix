@@ -55,6 +55,7 @@ title: mqtt-proxy
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
+      only: false                 # 如需 HTTP 与 Stream 代理同时生效，需要增加该键值
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:
