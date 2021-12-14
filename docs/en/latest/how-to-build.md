@@ -35,6 +35,25 @@ If the official OpenResty repository is not installed yet, the following command
 $ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 ```
 
+If the official OpenResty repository is installed, the following command will help you automatically install the repositories of Apache APISIX.
+
+```shell
+$ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+```
+
+Please run the following commands to install the repository and Apache APISIX.
+
+```shell
+# View the information of the latest apisix package
+$ sudo yum info -y apisix
+
+# Will show the existing apisix packages
+$ sudo yum --showduplicates list apisix
+
+# Will install the latest apisix package
+$ sudo yum install apisix
+```
+
 ### Installation via Docker
 
 Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
@@ -48,13 +67,14 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 1. Create a directory named `apisix-2.11.0`.
 
   ```shell
-  mkdir apisix-2.11.0
+  $ APISIX_VERSION='2.11.0'
+  $ mkdir apisix-${APISIX_VERSION}
   ```
 
 2. Download Apache APISIX Release source package.
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-2.11.0-src.tgz
+  $ wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
   You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
@@ -62,14 +82,14 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 3. Unzip the Apache APISIX Release source package.
 
   ```shell
-  tar zxvf apache-apisix-2.11.0-src.tgz -C apisix-2.11.0
+  $ tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
 4. Install the runtime dependent Lua libraries.
 
   ```shell
-  # Switch to the apisix-2.11.0 directory
-  cd apisix-2.11.0
+  # Switch to the apisix-${APISIX_VERSION} directory
+  $ cd apisix-${APISIX_VERSION}
   # Create dependencies
   $ make depsInstall Apache APISIX
   # Install apisix command

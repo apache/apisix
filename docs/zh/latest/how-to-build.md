@@ -23,13 +23,7 @@ title: 如何构建 Apache APISIX
 
 ## 步骤1：安装 Apache APISIX
 
-Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考 [安装依赖](install-dependencies.md)。
-
-通过 Docker 或 Helm Chart 安装 Apache APISIX 时，已经包含了所需的 NGINX 和 etcd，请参照各自对应的文档。
-
-## 步骤2：安装 Apache APISIX
-
-你可以通过 RPM 仓库、RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+你可以通过 RPM 仓库、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 仓库安装（CentOS 7）
 
@@ -47,6 +41,19 @@ $ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-r
 $ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
 ```
 
+请运行以下命令安装 Apache APISIX。
+
+```shell
+# 查看仓库中最新的 apisix 软件包的信息
+$ sudo yum info -y apisix
+
+# 显示仓库中现有的 apisix 软件包
+$ sudo yum --showduplicates list apisix
+
+# 安装最新的 apisix 软件包
+$ sudo yum install apisix
+```
+
 ### 通过 Docker 安装
 
 详情请参考：[使用 Docker 安装 Apache APISIX](https://hub.docker.com/r/apache/apisix)。
@@ -60,13 +67,14 @@ $ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/
 1. 创建一个名为 `apisix-2.11.0` 的目录。
 
   ```shell
-  mkdir apisix-2.11.0
+  $ APISIX_VERSION='2.11.0'
+  $ mkdir apisix-${APISIX_VERSION}
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.11.0/apache-apisix-2.11.0-src.tgz
+  $ wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -74,14 +82,14 @@ $ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.11.0-src.tgz -C apisix-2.11.0
+  $ tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.11.0 目录
-  cd apisix-2.11.0
+  # 切换到 apisix-${APISIX_VERSION} 目录
+  $ cd apisix-${APISIX_VERSION}
   # 安装依赖
   $ LUAROCKS_SERVER=https://luarocks.cn make deps
   # 安装 apisix 命令
