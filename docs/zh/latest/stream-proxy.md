@@ -72,7 +72,11 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 ## 更多 route 匹配选项
 
-我们可以添加更多的选项来匹配 route。
+我们可以添加更多的选项来匹配 route。目前 stream 路由配置支持 3 个字段进行过滤：
+
+- server_addr: 接受 L4 流连接的 APISIX 服务器的地址。
+- server_port: 接受 L4 流连接的 APISIX 服务器的端口。
+- remote_addr: 发出请求的客户地址。
 
 例如
 
@@ -91,6 +95,68 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 例子中 APISIX 会把服务器地址为 `127.0.0.1`, 端口为 `2000` 代理到上游地址 `127.0.0.1:1995`。
+
+让我们再举一个实际场景的例子：
+
+1. 将此配置放在 `config.yaml` 中
+
+   ```yaml
+   apisix:
+     stream_proxy: # TCP/UDP proxy
+       tcp: # TCP proxy address list
+         - 9100 # by default uses 0.0.0.0
+         - "127.0.0.10:9101"
+   ```
+
+2. 现在运行一个 mysql docker 容器并将端口 3306 暴露给主机
+
+   ```shell
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   # check it using a mysql client that it works
+   $ mysql --host=127.0.0.1 --port=3306 -u root -p
+   Enter password:
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 25
+   ...
+   mysql>
+   ```
+
+3. 现在我们将创建一个带有服务器过滤的 stream 路由：
+
+   ```shell
+   curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+   {
+       "server_addr": "127.0.0.10",
+       "server_port": 9101,
+       "upstream": {
+           "nodes": {
+               "127.0.0.1:3306": 1
+           },
+           "type": "roundrobin"
+       }
+   }'
+   ```
+
+   每当 APISIX 服务器 `127.0.0.10` 和端口 `9101` 收到连接时，它只会将请求转发到 mysql 上游。让我们测试这种行为：
+
+4. 向 `9100` 发出请求（在 config.yaml 中启用 stream 代理端口），过滤器匹配失败。
+
+   ```shell
+   $ mysql --host=127.0.0.1 --port=9100 -u root -p
+   Enter password:
+   ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 2
+   ```
+
+   Instead making a request to the APISIX host and port where the filter matching succeeds:
+
+   ```shell
+   mysql --host=127.0.0.10 --port=9101 -u root -p
+   Enter password:
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 26
+   ...
+   mysql>
+   ```
 
 完整的匹配选项列表参见 [Admin API 的 Stream Route](./admin-api.md#stream-route)。
 
