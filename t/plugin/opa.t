@@ -157,6 +157,7 @@ Location: http://example.com/auth
 GET /test?test=abcd&user=bob
 --- more_headers
 test-header: only-for-test
+--- error_code: 403
 --- response_headers
 test: abcd
 abcd: test
