@@ -74,8 +74,8 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 我们可以添加更多的选项来匹配 route。目前 stream 路由配置支持 3 个字段进行过滤：
 
-- server_addr: 接受 L4 流连接的 APISIX 服务器的地址。
-- server_port: 接受 L4 流连接的 APISIX 服务器的端口。
+- server_addr: 接受 L4 连接的 APISIX 服务器的地址。
+- server_port: 接受 L4 连接的 APISIX 服务器的端口。
 - remote_addr: 发出请求的客户地址。
 
 例如
