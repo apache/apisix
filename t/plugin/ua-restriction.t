@@ -749,7 +749,7 @@ passed
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
                 allowlist = {
-                    null
+                    "userdata: NULL"
                 },
             }
             local ok, err = plugin.check_schema(conf)
@@ -760,9 +760,8 @@ passed
             ngx.say("done")
         }
     }
---- response_body
-property "allowlist" validation failed: expect array to have at least 1 items
-done
+--- error_log
+load_full_data(): failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin ua-restriction
 
 
 
@@ -773,7 +772,7 @@ done
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
                 denylist = {
-                    null
+                    "userdata: NULL"
                 },
             }
             local ok, err = plugin.check_schema(conf)
@@ -784,6 +783,5 @@ done
             ngx.say("done")
         }
     }
---- response_body
-property "denylist" validation failed: expect array to have at least 1 items
-done
+--- error_log
+load_full_data(): failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin ua-restriction

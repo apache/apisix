@@ -37,11 +37,19 @@ local schema = {
         },
         allowlist = {
             type = "array",
-            minItems = 1
+            minItems = 1,
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         },
         denylist = {
             type = "array",
-            minItems = 1
+            minItems = 1,
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         },
         message = {
             type = "string",
