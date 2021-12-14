@@ -94,9 +94,9 @@ function _M.access(conf, ctx)
         core.log.error("invalid response body: ", res.body, " err: ", err)
         return 503
     end
-    
+
     local result = data.result
-    
+
     if not result.allow then
         if result.headers then
             core.response.set_header(result.headers)
