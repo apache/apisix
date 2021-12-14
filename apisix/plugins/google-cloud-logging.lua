@@ -18,20 +18,17 @@
 local core            = require("apisix.core")
 local ngx             = ngx
 local tostring        = tostring
-local pairs           = pairs
-local ngx_timer_at    = ngx.timer.at
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local google_oauth    = require("apisix.plugins.google-cloud-logging.oauth")
 
 
-local buffers = {}
 local auth_config_cache
-local stale_timer_running
 
 
 local plugin_name = "google-cloud-logging"
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -89,21 +86,6 @@ local schema = {
             type = "string",
             default = "apisix.apache.org%2Flogs"
         },
-        max_retry_count = {
-            type = "integer",
-            minimum = 0,
-            default = 0
-        },
-        retry_delay = {
-            type = "integer",
-            minimum = 0,
-            default = 1
-        },
-        buffer_duration = {
-            type = "integer",
-            minimum = 1,
-            default = 60
-        },
         inactive_timeout = {
             type = "integer",
             minimum = 1,
@@ -120,23 +102,6 @@ local schema = {
         { required = { "auth_file" } },
     },
 }
-
-
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in pairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, route id:", tostring(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
 
 
 local function send_to_google(oauth, entries)
@@ -201,34 +166,6 @@ local function get_auth_config(config)
 end
 
 
-local function get_logger_buffer(conf, ctx)
-    local oauth_client = google_oauth:new(auth_config_cache)
-
-    local process = function(entries)
-        return send_to_google(oauth_client, entries)
-    end
-
-    local config = {
-        name = conf.name or plugin_name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    local buffer, err = batch_processor:new(process, config)
-
-    if not buffer then
-        return nil, "error when creating the batch processor: " .. err
-    end
-
-    return buffer
-end
-
-
 local function get_logger_entry(conf, ctx)
     local auth_config, err = get_auth_config(conf)
     if err or not auth_config.project_id or not auth_config.private_key then
@@ -270,7 +207,7 @@ local _M = {
     version = 0.1,
     priority = 407,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
 }
 
 
@@ -286,27 +223,17 @@ function _M.log(conf, ctx)
         return
     end
 
-    if not stale_timer_running then
-        -- run the timer every 15 minutes if any log is present
-        ngx_timer_at(900, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    local log_buffer = buffers[conf]
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
-    log_buffer, err = get_logger_buffer(conf, ctx)
+    local oauth_client = google_oauth:new(auth_config_cache)
 
-    if err then
-        core.log.error(err)
-        return
+    local process = function(entries)
+        return send_to_google(oauth_client, entries)
     end
 
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
 
 

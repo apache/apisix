@@ -21,9 +21,6 @@ local plugin_name = "udp-logger"
 local tostring = tostring
 local ngx = ngx
 local udp = ngx.socket.udp
-local pairs = pairs
-local stale_timer_running = false;
-local timer_at = ngx.timer.at
 
 
 local batch_processor_manager = bp_manager_mod.new("udp logger")
@@ -79,23 +76,6 @@ local function send_udp_data(conf, log_message)
     end
 
     return res, err_msg
-end
-
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in pairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
 end
 
 
