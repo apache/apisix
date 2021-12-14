@@ -90,13 +90,13 @@ function _M.access(conf, ctx)
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
-    if err then
+    if err or not data or not data.result then
         core.log.error("invalid response body: ", res.body, " err: ", err)
         return 503
     end
-
+    
     local result = data.result
-
+    
     if not result.allow then
         if result.headers then
             core.response.set_header(result.headers)
