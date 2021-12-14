@@ -152,7 +152,7 @@ Location: http://example.com/auth
 
 
 
-=== TEST 9: hit route (response mutliple header reason)
+=== TEST 9: hit route (response multiple header reason)
 --- request
 GET /test?test=abcd&user=bob
 --- more_headers
