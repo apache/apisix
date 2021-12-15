@@ -54,8 +54,11 @@ do_install() {
     CGO_ENABLED=0 go build
     cd ../../
 
-    # installing grpcurl
+    # install grpcurl
     install_grpcurl
+
+    # install vault cli capabilities
+    install_vault_cli
 }
 
 script() {

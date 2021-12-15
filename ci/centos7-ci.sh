@@ -40,6 +40,9 @@ install_dependencies() {
     cp ./etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
     rm -rf etcd-v3.4.0-linux-amd64
 
+    # install vault cli capabilities
+    install_vault_cli
+
     # install test::nginx
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
