@@ -413,4 +413,5 @@ networks:
   nacos_net:
   skywalk_net:
   rocketmq_net:
+  vault_net:
   opa_net:
