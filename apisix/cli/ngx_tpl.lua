@@ -592,7 +592,7 @@ http {
             set $dubbo_method                '';
             {% end %}
 
-            access_by_lua_block {
+            rewrite_by_lua_block {
                 apisix.http_access_phase()
             }
 
