@@ -193,23 +193,25 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
-            local function get_syslog_timestamp_millisecond(sls_log)
-                local first_idx = string.find(sls_log, " ") + 1
-                local last_idx2 = string.find(sls_log, " ", first_idx)
-                local rfc3339_date = string.sub(sls_log, first_idx, last_idx2)
+            local function get_syslog_timestamp_millisecond(log_entry)
+                local first_idx = string.find(log_entry, " ") + 1
+                local last_idx2 = string.find(log_entry, " ", first_idx)
+                local rfc3339_date = string.sub(log_entry, first_idx, last_idx2)
                 local rfc3339_len = string.len(rfc3339_date)
                 local rfc3339_millisecond = string.sub(rfc3339_date, rfc3339_len - 4, rfc3339_len - 2)
                 return tonumber(rfc3339_millisecond)
             end
 
+            math.randomseed(os.time())
             local rfc5424 = require("apisix.plugins.slslog.rfc5424")
             local m = 0
             for _ = 1, 10 do
-                local sls_log = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
-                                              123456, "apisix.apache.org", "apisix.apache.log",
-                                              "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
-                                              "hello world")
-                m = get_syslog_timestamp_millisecond(sls_log) + m
+                local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
+                                                 123456, "apisix.apache.org", "apisix.apache.log",
+                                                 "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
+                                                 "hello world")
+                m = get_syslog_timestamp_millisecond(log_entry) + m
+                ngx.sleep(math.random())
             end
 
             if m > 0 then
