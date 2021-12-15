@@ -167,8 +167,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 1
 
 
@@ -219,9 +217,5 @@ hello world
             end
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
