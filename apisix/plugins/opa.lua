@@ -97,7 +97,7 @@ function _M.access(conf, ctx)
 
     if not data.result then
         core.log.error("invalid OPA decision format: ", res.body,
-                       " err: `allow` field does not exist")
+                       " err: `result` field does not exist")
         return 503
     end
 
