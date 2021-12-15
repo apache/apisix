@@ -90,8 +90,14 @@ function _M.access(conf, ctx)
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
-    if err or not data or not data.result then
+    if err or not data then
         core.log.error("invalid response body: ", res.body, " err: ", err)
+        return 503
+    end
+
+    if not data.result then
+        core.log.error("invalid OPA decision format: ", res.body,
+                       " err: `allow` field does not exist")
         return 503
     end
 
