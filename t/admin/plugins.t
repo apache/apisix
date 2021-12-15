@@ -102,6 +102,7 @@ prometheus
 datadog
 echo
 http-logger
+splunk-hec-logging
 skywalking-logger
 google-cloud-logging
 sls-logger
@@ -119,6 +120,7 @@ ext-plugin-post-req
 
 --- no_error_log
 [error]
+--- ONLY
 
 
 
