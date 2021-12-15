@@ -10,7 +10,8 @@ Please follow the requirements:
 2. Test is required for the feat/fix PR, unless you have a good reason
 3. Doc is required for the feat PR
 4. Use a new commit to resolve review instead of `push -f`
-5. Use "request review" to notify the reviewer once you have resolved the review
+5. If you need to resolve merge conflicts after the PR is reviewed, please merge master but do not rebase
+6. Use "request review" to notify the reviewer once you have resolved the review
 -->
 
 * [ ] Did you explain what problem does this PR solve? Or what new features have been added?
