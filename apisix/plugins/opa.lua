@@ -18,6 +18,7 @@
 local core   = require("apisix.core")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
+local type   = type
 
 local schema = {
     type = "object",
@@ -89,13 +90,37 @@ function _M.access(conf, ctx)
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
-    if err then
+    if err or not data then
         core.log.error("invalid response body: ", res.body, " err: ", err)
         return 503
     end
 
     if not data.result then
-        return 403
+        core.log.error("invalid OPA decision format: ", res.body,
+                       " err: `result` field does not exist")
+        return 503
+    end
+
+    local result = data.result
+
+    if not result.allow then
+        if result.headers then
+            core.response.set_header(result.headers)
+        end
+
+        local status_code = 403
+        if result.status_code then
+            status_code = result.status_code
+        end
+
+        local reason = nil
+        if result.reason then
+            reason = type(result.reason) == "table"
+                and core.json.encode(result.reason)
+                or result.reason
+        end
+
+        return status_code, reason
     end
 end
 
