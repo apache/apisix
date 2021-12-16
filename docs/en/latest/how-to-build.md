@@ -68,7 +68,7 @@ $ sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 Copy `./apisix` folder to the target host, run the following command to install Apache APISIX.
 
 ```shell
-$ yum install ./apisix/*.rpm
+$ sudo yum install ./apisix/*.rpm
 ```
 
 ### Installation via Docker

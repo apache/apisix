@@ -68,7 +68,7 @@ $ sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 拷贝 `./apisix` 文件夹到目标主机，使用以下命令安装 Apache APISIX。
 
 ```shell
-$ yum install ./apisix/*.rpm
+$ sudo yum install ./apisix/*.rpm
 ```
 
 ### 通过 Docker 安装
