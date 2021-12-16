@@ -205,13 +205,13 @@ hello world
             math.randomseed(os.time())
             local rfc5424 = require("apisix.plugins.slslog.rfc5424")
             local m = 0
-            for _ = 1, 10 do
+            for i = 1, 5 do
+                ngx.sleep(string.format("%0.3f", math.random()))
                 local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
                                                  123456, "apisix.apache.org", "apisix.apache.log",
                                                  "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
                                                  "hello world")
                 m = get_syslog_timestamp_millisecond(log_entry) + m
-                ngx.sleep(math.random())
             end
 
             if m > 0 then
@@ -221,3 +221,4 @@ hello world
     }
 --- response_body
 passed
+--- timeout: 5
