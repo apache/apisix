@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功的情况
+* 向配置 `splunk-hec-logging` 插件的路由发送请求
 
 ```shell
 $ curl -i http://127.0.0.1:9080/splunk.do?q=hello

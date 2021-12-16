@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-* Success
+* Send request to route configured with the `splunk-hec-logging` plugin
 
 ```shell
 $ curl -i http://127.0.0.1:9080/splunk.do?q=hello
