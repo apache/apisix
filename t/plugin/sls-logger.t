@@ -205,6 +205,8 @@ hello world
             math.randomseed(os.time())
             local rfc5424 = require("apisix.plugins.slslog.rfc5424")
             local m = 0
+            -- because the millisecond value obtained by `ngx.now` may be `0`
+            -- it is executed multiple times to ensure the accuracy of the test
             for i = 1, 5 do
                 ngx.sleep(string.format("%0.3f", math.random()))
                 local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
