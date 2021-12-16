@@ -54,6 +54,23 @@ $ sudo yum --showduplicates list apisix
 $ sudo yum install apisix
 ```
 
+### 通过 RPM 包离线安装（CentOS 7）
+
+下载 APISIX 离线 RPM 包到 `./apisix` 文件夹
+
+```shell
+$ sudo mkdir -p apisix
+$ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+$ sudo yum clean all && yum makecache
+$ sudo yum install -y --downloadonly --downloaddir=./apisix apisix
+```
+
+拷贝 `./apisix` 文件夹到目标主机，使用以下命令安装 Apache APISIX。
+
+```shell
+$ yum install ./apisix/*.rpm
+```
+
 ### 通过 Docker 安装
 
 详情请参考：[使用 Docker 安装 Apache APISIX](https://hub.docker.com/r/apache/apisix)。
