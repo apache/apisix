@@ -147,7 +147,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
    ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 2
    ```
 
-   而给 APISIX 的主机和端口发出请求，过滤器匹配成功。
+  下面的请求匹配到了 stream 路由，所以它可以正常代理到 mysql。
 
    ```shell
    mysql --host=127.0.0.10 --port=9101 -u root -p
