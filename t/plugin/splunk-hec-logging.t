@@ -45,7 +45,7 @@ __DATA__
             local plugin = require("apisix.plugins.splunk-hec-logging")
             local ok, err = plugin.check_schema({
                 endpoint = {
-                    uri = "http://192.168.56.199:18088/services/collector",
+                    uri = "http://127.0.0.1:18088/services/collector",
                     token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
                     channel = "FE0ECFAD-13D5-401B-847D-77833BD77131",
                     timeout = 60
@@ -76,7 +76,7 @@ passed
             local plugin = require("apisix.plugins.splunk-hec-logging")
             local ok, err = plugin.check_schema({
                 endpoint = {
-                    uri = "http://192.168.56.199:18088/services/collector",
+                    uri = "http://127.0.0.1:18088/services/collector",
                     token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
                 }
             })
@@ -123,7 +123,7 @@ property "endpoint" validation failed: property "uri" is required
             local plugin = require("apisix.plugins.splunk-hec-logging")
             local ok, err = plugin.check_schema({
                 endpoint = {
-                    uri = "http://192.168.56.199:18088/services/collector",
+                    uri = "http://127.0.0.1:18088/services/collector",
                 }
             })
 
@@ -146,7 +146,7 @@ property "endpoint" validation failed: property "token" is required
             local plugin = require("apisix.plugins.splunk-hec-logging")
             local ok, err = plugin.check_schema({
                 endpoint = {
-                    uri = "192.168.56.199:18088/services/collector",
+                    uri = "127.0.0.1:18088/services/collector",
                     token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
                 }
             })
@@ -179,7 +179,7 @@ property "endpoint" validation failed: property "uri" validation failed.*
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://192.168.56.199:18088/services/collector",
+                            uri = "http://127.0.0.1:18088/services/collector",
                             token = "BD274822-96AA-4DA6-90EC-18940FB24444"
                         },
                         batch_max_size = 1,
@@ -229,7 +229,7 @@ Batch Processor[splunk-hec-logging] exceeded the max_retry_count
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://192.168.56.199:18088/services/collector",
+                            uri = "http://127.0.0.1:18088/services/collector",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
                         },
                         batch_max_size = 1,
