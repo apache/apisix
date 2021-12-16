@@ -201,7 +201,7 @@ passed
 
 
 
-=== TEST 7: test route (success write)
+=== TEST 7: test route (failed auth)
 --- request
 GET /hello
 --- wait: 2
@@ -213,7 +213,7 @@ Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
 
-=== TEST 8: set route (failed auth)
+=== TEST 8: set route (success write)
 --- config
     location /t {
         content_by_lua_block {
