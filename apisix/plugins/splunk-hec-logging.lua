@@ -49,7 +49,7 @@ local schema = {
                 timeout = {
                     type = "integer",
                     minimum = 1,
-                    default = 60
+                    default = 10
                 }
             },
             required = { "uri", "token" }
@@ -133,6 +133,7 @@ local function send_to_splunk(conf, entries)
     end
 
     local http_new = http.new()
+    http_new:set_timeout((conf.endpoint.timeout or 10) * 1000)
     local res, err = http_new:request_uri(conf.endpoint.uri, {
         ssl_verify = conf.ssl_verify,
         method = "POST",
