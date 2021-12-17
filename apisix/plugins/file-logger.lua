@@ -20,6 +20,8 @@ local plugin = require("apisix.plugin")
 
 local ngx = ngx
 local pairs = pairs
+local io_open = io.open
+local load_string = loadstring
 
 local plugin_name = "file-logger"
 
@@ -28,7 +30,9 @@ local schema = {
     properties = {
         path = {
             type = "string",
-            require = true
+            require = true,
+            match = [[^[^*&%%\`]+$]],
+            err = "not a valid filename"
         },
         custom_fields_by_lua = {
             type = "object",
@@ -74,15 +78,14 @@ end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
-    local file = core.io.open(conf.path, 'a+')
+    local file, err = io_open(conf.path, 'r+')
+
+    if not file then
+        return false, "failed to open file: " .. conf.path .. ", error info: " .. err
+    end
 
     file:write(msg)
     file:close()
-end
-
-local function custom_fields_value(custom_lua_code)
-    local result = core.loadstring(custom_lua_code)
-    return result()
 end
 
 function _M.body_filter(conf, ctx)
@@ -106,7 +109,7 @@ function _M.log(conf, ctx)
     then
         local set_log_fields_value = entry
         for key, expression in pairs(conf.custom_fields_by_lua) do
-            set_log_fields_value[key] = custom_fields_value(expression)
+            set_log_fields_value[key] = load_string(expression)()
         end
         write_file_data(conf, set_log_fields_value)
     else
