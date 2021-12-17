@@ -61,12 +61,12 @@ local schema = {
                     type = "string",
                     default = "https://logging.googleapis.com/v2/entries:write"
                 },
-                ssl_verify = {
-                    type = "boolean",
-                    default = true
-                },
             },
             required = { "private_key", "project_id", "token_uri" }
+        },
+        ssl_verify = {
+            type = "boolean",
+            default = true
         },
         auth_file = { type = "string" },
         -- https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource
@@ -136,23 +136,24 @@ local function send_to_google(oauth, entries)
 end
 
 
-local function get_auth_config(config)
+local function get_auth_config(conf)
     if auth_config_cache then
         return auth_config_cache
     end
 
-    if config.auth_config then
-        auth_config_cache = config.auth_config
+    if conf.auth_config then
+        auth_config_cache = conf.auth_config
+        auth_config_cache.ssl_verify = conf.ssl_verify
         return auth_config_cache
     end
 
-    if not config.auth_file then
+    if not conf.auth_file then
         return nil, "configuration is not defined"
     end
 
-    local file_content, err = core.io.get_file(config.auth_file)
+    local file_content, err = core.io.get_file(conf.auth_file)
     if not file_content then
-        return nil, "failed to read configuration, file: " .. config.auth_file .. " err: " .. err
+        return nil, "failed to read configuration, file: " .. conf.auth_file .. " err: " .. err
     end
 
     local config_data
@@ -162,6 +163,7 @@ local function get_auth_config(config)
     end
 
     auth_config_cache = config_data
+    auth_config_cache.ssl_verify = conf.ssl_verify
     return auth_config_cache
 end
 
