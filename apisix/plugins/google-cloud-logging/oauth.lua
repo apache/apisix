@@ -98,7 +98,7 @@ function _M:generate_jwt_token()
 end
 
 
-function _M:new(config)
+function _M:new(config, ssl_verify)
     local oauth = {
         client_email = config.client_email,
         private_key = config.private_key,
@@ -110,6 +110,12 @@ function _M:new(config)
         access_token_type = nil,
         access_token_expire_time = 0,
     }
+
+    if ssl_verify == true then
+        oauth.ssl_verify = true
+    else
+        oauth.ssl_verify = false
+    end
 
     if config.scopes then
         if type(config.scopes) == "string" then

@@ -112,7 +112,7 @@ local function send_to_google(oauth, entries, ssl_verify)
     end
 
     local res, err = http_new:request_uri(oauth.entries_uri, {
-        ssl_verify = ssl_verify,
+        ssl_verify = oauth.ssl_verify,
         method = "POST",
         body = core.json.encode({
             entries = entries,
@@ -227,10 +227,10 @@ function _M.log(conf, ctx)
         return
     end
 
-    local oauth_client = google_oauth:new(auth_config_cache)
+    local oauth_client = google_oauth:new(auth_config_cache, conf.ssl_verify)
 
     local process = function(entries)
-        return send_to_google(oauth_client, entries, conf.ssl_verify)
+        return send_to_google(oauth_client, entries)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
