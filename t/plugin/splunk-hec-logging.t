@@ -38,50 +38,44 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: full configuration verification
+=== TEST 1: configuration verification
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.splunk-hec-logging")
-            local ok, err = plugin.check_schema({
-                endpoint = {
-                    uri = "http://127.0.0.1:18088/services/collector",
-                    token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
-                    channel = "FE0ECFAD-13D5-401B-847D-77833BD77131",
-                    timeout = 60
+            local ok, err
+            local configs = {
+                -- full configuration
+                {
+                    endpoint = {
+                        uri = "http://127.0.0.1:18088/services/collector",
+                        token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
+                        channel = "FE0ECFAD-13D5-401B-847D-77833BD77131",
+                        timeout = 60
+                    },
+                    max_retry_count = 0,
+                    retry_delay = 1,
+                    buffer_duration = 60,
+                    inactive_timeout = 2,
+                    batch_max_size = 10,
                 },
-                max_retry_count = 0,
-                retry_delay = 1,
-                buffer_duration = 60,
-                inactive_timeout = 2,
-                batch_max_size = 10,
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: minimize configuration verification
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.splunk-hec-logging")
-            local ok, err = plugin.check_schema({
-                endpoint = {
-                    uri = "http://127.0.0.1:18088/services/collector",
-                    token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
+                -- minimize configuration
+                {
+                    endpoint = {
+                        uri = "http://127.0.0.1:18088/services/collector",
+                        token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
+                    }
                 }
-            })
+            }
 
-            if not ok then
+            local plugin = require("apisix.plugins.splunk-hec-logging")
+            for i = 1, #configs do
+                ok, err = plugin.check_schema(configs[i])
+                if err then
+                    break
+                end
+            end
+
+            if err then
                 ngx.say(err)
             else
                 ngx.say("passed")
@@ -93,7 +87,7 @@ passed
 
 
 
-=== TEST 3: undefined uri configuration
+=== TEST 2: undefined uri configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -116,7 +110,7 @@ property "endpoint" validation failed: property "uri" is required
 
 
 
-=== TEST 4: undefined token configuration
+=== TEST 3: undefined token configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -139,7 +133,7 @@ property "endpoint" validation failed: property "token" is required
 
 
 
-=== TEST 5: uri configuration format invalid
+=== TEST 4: uri configuration format invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -163,7 +157,7 @@ property "endpoint" validation failed: property "uri" validation failed.*
 
 
 
-=== TEST 6: set route (failed auth)
+=== TEST 5: set route (failed auth)
 --- config
     location /t {
         content_by_lua_block {
@@ -194,14 +188,12 @@ property "endpoint" validation failed: property "uri" validation failed.*
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
 
 
-=== TEST 7: test route (failed auth)
+=== TEST 6: test route (failed auth)
 --- request
 GET /hello
 --- wait: 2
@@ -213,7 +205,7 @@ Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
 
-=== TEST 8: set route (success write)
+=== TEST 7: set route (success write)
 --- config
     location /t {
         content_by_lua_block {
@@ -244,14 +236,12 @@ Batch Processor[splunk-hec-logging] exceeded the max_retry_count
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
 
 
-=== TEST 9: test route (success write)
+=== TEST 8: test route (success write)
 --- request
 GET /hello
 --- wait: 2

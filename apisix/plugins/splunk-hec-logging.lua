@@ -17,9 +17,7 @@
 
 local core            = require("apisix.core")
 local ngx             = ngx
-local type            = type
 local ngx_now         = ngx.now
-local ngx_update_time = ngx.update_time
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
@@ -58,39 +56,26 @@ local schema = {
             type = "boolean",
             default = true
         },
-        max_retry_count = {
-            type = "integer",
-            minimum = 0,
-            default = 0
-        },
-        retry_delay = {
-            type = "integer",
-            minimum = 0,
-            default = 1
-        },
-        buffer_duration = {
-            type = "integer",
-            minimum = 1,
-            default = 60
-        },
-        inactive_timeout = {
-            type = "integer",
-            minimum = 1,
-            default = 10
-        },
-        batch_max_size = {
-            type = "integer",
-            minimum = 1,
-            default = 100
-        },
     },
     required = { "endpoint" },
 }
 
 
+local _M = {
+    version = 0.1,
+    priority = 409,
+    name = plugin_name,
+    schema = batch_processor_manager:wrap_schema(schema),
+}
+
+
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
+
+
 local function get_logger_entry(conf)
     local entry = log_util.get_full_log(ngx, conf)
-    ngx_update_time()
     return {
         time = ngx_now(),
         host = entry.server.hostname,
@@ -113,18 +98,6 @@ end
 
 
 local function send_to_splunk(conf, entries)
-    if type(conf.endpoint) ~= "table" then
-        return nil, "endpoint config invalid"
-    end
-
-    if not conf.endpoint.uri then
-        return nil, "endpoint url undefined"
-    end
-
-    if not conf.endpoint.token then
-        return nil, "endpoint token undefined"
-    end
-
     local request_headers = {}
     request_headers["Content-Type"] = "application/json"
     request_headers["Authorization"] = "Splunk " .. conf.endpoint.token
@@ -133,7 +106,7 @@ local function send_to_splunk(conf, entries)
     end
 
     local http_new = http.new()
-    http_new:set_timeout((conf.endpoint.timeout or 10) * 1000)
+    http_new:set_timeout(conf.endpoint.timeout * 1000)
     local res, err = http_new:request_uri(conf.endpoint.uri, {
         ssl_verify = conf.ssl_verify,
         method = "POST",
@@ -156,19 +129,6 @@ local function send_to_splunk(conf, entries)
     end
 
     return body.text
-end
-
-
-local _M = {
-    version = 0.1,
-    priority = 409,
-    name = plugin_name,
-    schema = batch_processor_manager:wrap_schema(schema),
-}
-
-
-function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
 end
 
 
