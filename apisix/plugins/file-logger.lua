@@ -74,14 +74,14 @@ end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
-    local file = io.open(conf.path, 'a+')
+    local file = core.io.open(conf.path, 'a+')
 
     file:write(msg)
     file:close()
 end
 
 local function custom_fields_value(custom_lua_code)
-    local result = loadstring(custom_lua_code)
+    local result = core.loadstring(custom_lua_code)
     return result()
 end
 
