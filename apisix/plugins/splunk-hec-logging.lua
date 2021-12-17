@@ -15,14 +15,14 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local ngx = ngx
-local type = type
-local ngx_now = ngx.now
+local core            = require("apisix.core")
+local ngx             = ngx
+local type            = type
+local ngx_now         = ngx.now
 local ngx_update_time = ngx.update_time
-local http = require("resty.http")
-local log_util = require("apisix.utils.log-util")
-local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+local http            = require("resty.http")
+local log_util        = require("apisix.utils.log-util")
+local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -31,6 +31,8 @@ local DEFAULT_SPLUNK_HEC_ENTRY_TYPE = "_json"
 
 local plugin_name = "splunk-hec-logging"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
+
+
 local schema = {
     type = "object",
     properties = {
