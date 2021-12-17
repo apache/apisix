@@ -64,6 +64,25 @@ __DATA__
                         uri = "http://127.0.0.1:18088/services/collector",
                         token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
                     }
+                },
+                -- property "uri" is required
+                {
+                    endpoint = {
+                        token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
+                    }
+                },
+                -- property "token" is required
+                {
+                    endpoint = {
+                        uri = "http://127.0.0.1:18088/services/collector",
+                    }
+                },
+                -- property "uri" validation failed
+                {
+                    endpoint = {
+                        uri = "127.0.0.1:18088/services/collector",
+                        token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
+                    }
                 }
             }
 
@@ -71,93 +90,23 @@ __DATA__
             for i = 1, #configs do
                 ok, err = plugin.check_schema(configs[i])
                 if err then
-                    break
+                    ngx.say(err)
+                else
+                    ngx.say("passed")
                 end
-            end
-
-            if err then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: undefined uri configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.splunk-hec-logging")
-            local ok, err = plugin.check_schema({
-                endpoint = {
-                    token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-property "endpoint" validation failed: property "uri" is required
-
-
-
-=== TEST 3: undefined token configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.splunk-hec-logging")
-            local ok, err = plugin.check_schema({
-                endpoint = {
-                    uri = "http://127.0.0.1:18088/services/collector",
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-property "endpoint" validation failed: property "token" is required
-
-
-
-=== TEST 4: uri configuration format invalid
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.splunk-hec-logging")
-            local ok, err = plugin.check_schema({
-                endpoint = {
-                    uri = "127.0.0.1:18088/services/collector",
-                    token = "BD274822-96AA-4DA6-90EC-18940FB2414C",
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
             end
         }
     }
 --- response_body_like
+passed
+passed
+property "endpoint" validation failed: property "uri" is required
+property "endpoint" validation failed: property "token" is required
 property "endpoint" validation failed: property "uri" validation failed.*
 
 
 
-=== TEST 5: set route (failed auth)
+=== TEST 2: set route (failed auth)
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +142,7 @@ passed
 
 
 
-=== TEST 6: test route (failed auth)
+=== TEST 3: test route (failed auth)
 --- request
 GET /hello
 --- wait: 2
@@ -205,7 +154,7 @@ Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
 
-=== TEST 7: set route (success write)
+=== TEST 4: set route (success write)
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +190,7 @@ passed
 
 
 
-=== TEST 8: test route (success write)
+=== TEST 5: test route (success write)
 --- request
 GET /hello
 --- wait: 2
