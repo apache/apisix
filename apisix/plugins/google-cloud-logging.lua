@@ -104,7 +104,7 @@ local schema = {
 }
 
 
-local function send_to_google(oauth, entries)
+local function send_to_google(oauth, entries, ssl_verify)
     local http_new = http.new()
     local access_token = oauth:generate_access_token()
     if not access_token then
@@ -112,7 +112,7 @@ local function send_to_google(oauth, entries)
     end
 
     local res, err = http_new:request_uri(oauth.entries_uri, {
-        ssl_verify = oauth.ssl_verify,
+        ssl_verify = ssl_verify,
         method = "POST",
         body = core.json.encode({
             entries = entries,
@@ -143,7 +143,6 @@ local function get_auth_config(conf)
 
     if conf.auth_config then
         auth_config_cache = conf.auth_config
-        auth_config_cache.ssl_verify = conf.ssl_verify
         return auth_config_cache
     end
 
@@ -163,7 +162,6 @@ local function get_auth_config(conf)
     end
 
     auth_config_cache = config_data
-    auth_config_cache.ssl_verify = conf.ssl_verify
     return auth_config_cache
 end
 
@@ -232,7 +230,7 @@ function _M.log(conf, ctx)
     local oauth_client = google_oauth:new(auth_config_cache)
 
     local process = function(entries)
-        return send_to_google(oauth_client, entries)
+        return send_to_google(oauth_client, entries, conf.ssl_verify)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
