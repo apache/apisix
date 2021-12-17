@@ -91,7 +91,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   # Switch to the apisix-${APISIX_VERSION} directory
   $ cd apisix-${APISIX_VERSION}
   # Create dependencies
-  $ make depsInstall Apache APISIX
+  $ make deps
   # Install apisix command
   $ make install
   ```
