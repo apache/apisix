@@ -93,13 +93,17 @@ function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     local entry
 
-    if metadata and metadata.value.log_format and core.table.nkeys(metadata.value.log_format) > 0 then
+    if metadata and metadata.value.log_format
+        and core.table.nkeys(metadata.value.log_format) > 0
+    then
         entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     else
         entry = log_util.get_full_log(ngx, conf)
     end
 
-    if conf.custom_fields_by_lua and core.table.nkeys(conf.custom_fields_by_lua) > 0 then
+    if conf.custom_fields_by_lua
+        and core.table.nkeys(conf.custom_fields_by_lua) > 0
+    then
         local set_log_fields_value = entry
         for key, expression in pairs(conf.custom_fields_by_lua) do
             set_log_fields_value[key] = custom_fields_value(expression)
