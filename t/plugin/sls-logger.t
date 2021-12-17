@@ -19,7 +19,21 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-run_tests;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
+run_tests();
 
 __DATA__
 
@@ -37,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -60,13 +70,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "access_key_secret" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -84,13 +90,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "timeout" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -155,12 +157,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -169,8 +167,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 1
 
 
@@ -188,9 +184,43 @@ hello world
             ngx.say(data)
         }
     }
---- request
-GET /t
 --- response_body
 123
---- no_error_log
-[error]
+
+
+
+=== TEST 7: sls log get milliseconds
+--- config
+    location /t {
+        content_by_lua_block {
+            local function get_syslog_timestamp_millisecond(log_entry)
+                local first_idx = string.find(log_entry, " ") + 1
+                local last_idx2 = string.find(log_entry, " ", first_idx)
+                local rfc3339_date = string.sub(log_entry, first_idx, last_idx2)
+                local rfc3339_len = string.len(rfc3339_date)
+                local rfc3339_millisecond = string.sub(rfc3339_date, rfc3339_len - 4, rfc3339_len - 2)
+                return tonumber(rfc3339_millisecond)
+            end
+
+            math.randomseed(os.time())
+            local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+            local m = 0
+            -- because the millisecond value obtained by `ngx.now` may be `0`
+            -- it is executed multiple times to ensure the accuracy of the test
+            for i = 1, 5 do
+                ngx.sleep(string.format("%0.3f", math.random()))
+                local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
+                                                 123456, "apisix.apache.org", "apisix.apache.log",
+                                                 "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
+                                                 "hello world")
+                m = get_syslog_timestamp_millisecond(log_entry) + m
+            end
+
+            if m > 0 then
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
+--- timeout: 5
