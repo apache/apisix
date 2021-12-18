@@ -243,5 +243,3 @@ Content-Type: application/json
 --- error_code: 503
 --- error_log
 failed to process openwhisk action, err:
-
-
