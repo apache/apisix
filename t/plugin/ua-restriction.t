@@ -793,4 +793,3 @@ done
 --- response_body
 property "denylist" validation failed: wrong type: expected array, got table
 done
---- ONLY
