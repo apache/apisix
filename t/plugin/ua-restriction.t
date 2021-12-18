@@ -742,14 +742,17 @@ passed
 
 
 
-=== TEST 33: the element in allowList is null
+=== TEST 33: the element in allowlist is null
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
                 allowlist = {
-                    "userdata: NULL"
+                    "userdata: NULL",
+                    null,
+                    nil,
+                    ""
                 },
             }
             local ok, err = plugin.check_schema(conf)
@@ -760,19 +763,23 @@ passed
             ngx.say("done")
         }
     }
---- error_log
-load_full_data(): failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin ua-restriction
+--- response_body
+property "allowlist" validation failed: wrong type: expected array, got table
+done
 
 
 
-=== TEST 34: the element in denylistList is null
+=== TEST 34: the element in denylist is null
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
                 denylist = {
-                    "userdata: NULL"
+                    "userdata: NULL",
+                    null,
+                    nil,
+                    ""
                 },
             }
             local ok, err = plugin.check_schema(conf)
@@ -783,5 +790,7 @@ load_full_data(): failed to check item data of [/apisix/routes] err:failed to ch
             ngx.say("done")
         }
     }
---- error_log
-load_full_data(): failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin ua-restriction
+--- response_body
+property "denylist" validation failed: wrong type: expected array, got table
+done
+--- ONLY
