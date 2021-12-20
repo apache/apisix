@@ -124,7 +124,7 @@ local function send_to_splunk(conf, entries)
         if body then
             return false, "failed to parse splunk response data, " .. body.text
         else
-            return false, "failed to send splunk, http status code: " .. res.status
+            return false, "failed to send splunk, http status code: " .. res.status .. " err: " .. err
         end
     end
 
