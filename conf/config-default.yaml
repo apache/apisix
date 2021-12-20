@@ -366,6 +366,7 @@ plugins:                          # plugin list (sorted by priority)
   - datadog                        # priority: 495
   - echo                           # priority: 412
   - http-logger                    # priority: 410
+  - splunk-hec-logging             # priority: 409
   - skywalking-logger              # priority: 408
   - google-cloud-logging           # priority: 407
   - sls-logger                     # priority: 406

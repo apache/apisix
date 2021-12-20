@@ -413,6 +413,19 @@ services:
     networks:
       opa_net:
 
+  # Splunk HEC Logging Service
+  splunk:
+    image: splunk/splunk:8.2.3
+    restart: unless-stopped
+    ports:
+      - "18088:8088"
+    environment:
+      SPLUNK_PASSWORD: "ApacheAPISIX@666"
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
+      SPLUNK_HEC_SSL: "False"
+
+
 networks:
   apisix_net:
   consul_net:
