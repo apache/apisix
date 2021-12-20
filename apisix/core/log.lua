@@ -48,7 +48,7 @@ local cur_level
 local do_nothing = function() end
 
 
-local function log_level_update()
+local function update_log_level()
     -- Nginx use `notice` level in init phase instead of error_log directive config
     -- Ref to src/core/ngx_log.c's ngx_log_init
     if ngx.get_phase() ~= "init" then
@@ -62,7 +62,7 @@ function _M.new(prefix)
     setmetatable(m, {__index = function(self, cmd)
         local log_level = log_levels[cmd]
         local method
-        log_level_update()
+        update_log_level()
 
         if cur_level and (log_level > cur_level)
         then
@@ -75,7 +75,10 @@ function _M.new(prefix)
 
         -- cache the lazily generated method in our
         -- module table
-        m[cmd] = method
+        if ngx.get_phase() ~= "init" then
+            self[cmd] = method
+        end
+
         return method
     end})
 
@@ -86,7 +89,7 @@ end
 setmetatable(_M, {__index = function(self, cmd)
     local log_level = log_levels[cmd]
     local method
-    log_level_update()
+    update_log_level()
 
     if cur_level and (log_level > cur_level)
     then
@@ -99,7 +102,10 @@ setmetatable(_M, {__index = function(self, cmd)
 
     -- cache the lazily generated method in our
     -- module table
-    _M[cmd] = method
+    if ngx.get_phase() ~= "init" then
+        self[cmd] = method
+    end
+
     return method
 end})
 
