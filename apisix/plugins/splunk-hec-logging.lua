@@ -121,10 +121,10 @@ local function send_to_splunk(conf, entries)
     if res.status ~= 200 then
         local body
         body, err = core.json.decode(res.body)
-        if body then
-            return false, "failed to parse splunk response data, " .. body.text
+        if err then
+            return false, "failed to send splunk, http status code: " .. res.status
         else
-            return false, "failed to send splunk, http status code: " .. res.status .. " err: " .. err
+            return false, "failed to send splunk, " .. body.text
         end
     end
 
