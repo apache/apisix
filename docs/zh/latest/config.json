@@ -120,7 +120,8 @@
             "plugins/log-rotate",
             "plugins/error-log-logger",
             "plugins/sls-logger",
-            "plugins/google-cloud-logging"
+            "plugins/google-cloud-logging",
+            "plugins/splunk-hec-logging"
           ]
         },
         {
