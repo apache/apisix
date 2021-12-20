@@ -115,20 +115,20 @@ local function send_to_splunk(conf, entries)
     })
 
     if err then
-        return nil, "failed to write log to splunk, " .. err
-    end
-
-    local body
-    body, err = core.json.decode(res.body)
-    if err then
-        return nil, "failed to parse splunk response data, " .. err
+        return false, "failed to write log to splunk, " .. err
     end
 
     if res.status ~= 200 then
-        return nil, body.text
+        local body
+        body, err = core.json.decode(res.body)
+        if body then
+            return false, "failed to parse splunk response data, " .. body.text
+        else
+            return false, "failed to send splunk, http status code: " .. res.status
+        end
     end
 
-    return body.text
+    return true
 end
 
 
