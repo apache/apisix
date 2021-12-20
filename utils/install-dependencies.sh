@@ -44,7 +44,7 @@ function install_dependencies_with_aur() {
 
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
-    sudo yum install yum-utils
+    sudo yum install -y yum-utils
 
     local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
     if [ "${1}" == "centos" ]; then

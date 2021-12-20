@@ -316,5 +316,23 @@ passed
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
+--- grep_error_log eval
+qr/mqtt client id: \w+/
+--- grep_error_log_out
+mqtt client id: foo
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: hit route with empty client id
+--- stream_enable
+--- stream_request eval
+"\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x00"
+--- stream_response
+hello world
+--- grep_error_log eval
+qr/mqtt client id: \w+/
+--- grep_error_log_out
 --- no_error_log
 [error]
