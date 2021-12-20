@@ -111,11 +111,7 @@ function _M:new(config, ssl_verify)
         access_token_expire_time = 0,
     }
 
-    if ssl_verify == true then
-        oauth.ssl_verify = true
-    else
-        oauth.ssl_verify = false
-    end
+    oauth.ssl_verify = ssl_verify
 
     if config.scopes then
         if type(config.scopes) == "string" then
