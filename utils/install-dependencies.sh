@@ -26,7 +26,7 @@ function detect_aur_helper() {
         AUR_HELPER=pacaur
     else
         echo No available AUR helpers found. Please specify your AUR helper by AUR_HELPER.
-        exit 1
+        exit 255
     fi
 }
 
