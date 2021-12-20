@@ -137,7 +137,7 @@ plugin_attr:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-下载 [Grafana dashboard 元数据](../../../assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+下载 [Grafana dashboard 元数据](https://github.com/apache/apisix/blob/master/docs/assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
@@ -163,7 +163,7 @@ plugin_attr:
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。|
 
-* `Bandwidth`: 流经 APISIX 的总带宽(可分出口带宽和入口带宽)，可以统计到每个服务的带宽总和。具有的维度：
+* `Bandwidth`: 流经 APISIX 的总带宽（可分出口带宽和入口带宽），可以统计到每个服务的带宽总和。具有的维度：
 
     | 名称          |    描述        |
     | -------------| ------------- |
@@ -180,7 +180,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 该值可以为`apisix`, `upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
+    | type         | 该值可以为 `apisix`、`upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |

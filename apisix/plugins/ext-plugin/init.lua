@@ -28,6 +28,7 @@ local extra_info = require("A6.ExtraInfo.Info")
 local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
 local extra_info_resp = require("A6.ExtraInfo.Resp")
+local extra_info_reqbody = require("A6.ExtraInfo.ReqBody")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -64,11 +65,16 @@ local type = type
 
 
 local events_list
-local lrucache = core.lrucache.new({
-    type = "plugin",
-    invalid_stale = true,
-    ttl = helper.get_conf_token_cache_time(),
-})
+
+local function new_lrucache()
+    return core.lrucache.new({
+        type = "plugin",
+        invalid_stale = true,
+        ttl = helper.get_conf_token_cache_time(),
+    })
+end
+local lrucache = new_lrucache()
+
 local shdict_name = "ext-plugin"
 local shdict = ngx.shared[shdict_name]
 
@@ -273,6 +279,17 @@ local function handle_extra_info(ctx, input)
 
         local var_name = var_req:Name()
         res = ctx.var[var_name]
+    elseif info_type == extra_info.ReqBody then
+        local info = req:Info()
+        local reqbody_req = extra_info_reqbody.New()
+        reqbody_req:Init(info.bytes, info.pos)
+
+        local err
+        res, err = core.request.get_body()
+        if err then
+            core.log.error("failed to read request body: ", err)
+        end
+
     else
         return nil, "unsupported info type: " .. info_type
     end
@@ -502,7 +519,6 @@ local rpc_handlers = {
         http_req_call_req.AddArgs(builder, args_vec)
         http_req_call_req.AddHeaders(builder, hdrs_vec)
         http_req_call_req.AddMethod(builder, encode_a6_method(method))
-        -- TODO: handle extraInfo
 
         local req = http_req_call_req.End(builder)
         builder:Finish(req)
@@ -657,17 +673,14 @@ rpc_call = function (ty, conf, ctx, ...)
 end
 
 
-local function create_lrucache()
+local function recreate_lrucache()
     flush_token()
 
     if lrucache then
         core.log.warn("flush conf token lrucache")
     end
 
-    lrucache = core.lrucache.new({
-        type = "plugin",
-        ttl = helper.get_conf_token_cache_time(),
-    })
+    lrucache = new_lrucache()
 end
 
 
@@ -691,7 +704,7 @@ function _M.communicate(conf, ctx, plugin_name)
         end
 
         core.log.warn("refresh cache and try again")
-        create_lrucache()
+        recreate_lrucache()
     end
 
     core.log.error(err)
@@ -788,7 +801,7 @@ function _M.init_worker()
     )
 
     -- flush cache when runner exited
-    events.register(create_lrucache, events_list._source, events_list.runner_exit)
+    events.register(recreate_lrucache, events_list._source, events_list.runner_exit)
 
     -- note that the runner is run under the same user as the Nginx master
     if process.type() == "privileged agent" then

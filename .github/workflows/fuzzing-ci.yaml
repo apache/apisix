@@ -29,7 +29,7 @@ jobs:
         submodules: recursive
 
     - name: Cache deps
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v2.1.7
       env:
         cache-name: cache-deps
       with:
@@ -50,7 +50,6 @@ jobs:
         sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc libldap2-dev
         ./utils/linux-install-luarocks.sh
 
-        git config --global url.https://github.com/.insteadOf git://github.com/
         make deps
         make init
         make run

@@ -49,7 +49,7 @@ dependencies = {
     "lua-protobuf = 0.3.3",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
-    "api7-lua-tinyyaml = 0.3.0",
+    "api7-lua-tinyyaml = 0.4.1",
     "nginx-lua-prometheus = 0.20210206",
     "jsonschema = 0.9.5",
     "lua-resty-ipmatcher = 0.6.1",
@@ -72,6 +72,7 @@ dependencies = {
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
+    "lua-resty-rocketmq = 0.3.0-0",
 }
 
 build = {

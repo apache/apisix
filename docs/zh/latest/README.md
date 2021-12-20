@@ -135,7 +135,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
   - [故障注入](plugins/fault-injection.md)
   - [REST Admin API](admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
-  - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](plugins/http-logger.md), [TCP Logger](plugins/tcp-logger.md), [Kafka Logger](plugins/kafka-logger.md), [UDP Logger](plugins/udp-logger.md))
+  - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](plugins/http-logger.md), [TCP Logger](plugins/tcp-logger.md), [Kafka Logger](plugins/kafka-logger.md), [UDP Logger](plugins/udp-logger.md), [RocketMQ Logger](plugins/rocketmq-logger.md), [SkyWalking Logger](plugins/skywalking-logger.md), [Alibaba Cloud Logging(SLS)](plugins/sls-logger.md), [Google Cloud Logging](plugins/google-cloud-logging.md))
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**
@@ -143,6 +143,17 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [插件可以用 Java/Go/Python 编写](../../zh/latest/external-plugin.md)
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
+
+- **多语言支持**
+- Apache APISIX 是一个通过 `RPC` 和 `WASM` 支持不同语言来进行插件开发的网关.
+  ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
+  - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
+  - WASM 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的 WASM 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 WASM 字节码，即可运行在 APISIX 中的 WASM 虚拟机中。
+
+- **Serverless**
+  - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): 能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
+  - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): 与Apache OpenWhisk集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
 
 ## 立刻开始
 
@@ -221,7 +232,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ### 贡献者变化
 
-![contributor-over-time](../../assets/images/contributor-over-time.png)
+> [访问此处](https://www.apiseven.com/contributor-graph) 使用贡献者数据服务。
+
+[![贡献者变化](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## 视频和文章
 

@@ -136,6 +136,23 @@ services:
       consul_net:
 
 
+  ## HashiCorp Vault
+  vault:
+    image: vault:1.9.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: [ "vault", "server", "-dev" ]
+    networks:
+      vault_net:
+
+
   ## OpenLDAP
   openldap:
     image: bitnami/openldap:2.5.8
@@ -355,6 +372,46 @@ services:
     networks:
       apisix_net:
 
+  rocketmq_namesrv:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqnamesrv
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      rocketmq_net:
+
+  rocketmq_broker:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqbroker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    depends_on:
+      - rocketmq_namesrv
+    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
+    networks:
+      rocketmq_net:
+
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s /example.rego /data.json
+    volumes:
+      - type: bind
+        source: ./ci/pod/opa/example.rego
+        target: /example.rego
+      - type: bind
+        source: ./ci/pod/opa/data.json
+        target: /data.json
+    networks:
+      opa_net:
 
 networks:
   apisix_net:
@@ -362,3 +419,6 @@ networks:
   kafka_net:
   nacos_net:
   skywalk_net:
+  rocketmq_net:
+  vault_net:
+  opa_net:

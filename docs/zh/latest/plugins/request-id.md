@@ -75,7 +75,7 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 ### 使用 snowflake 算法生成ID
 
 > 支持使用 snowflake 算法来生成ID。
-> 在决定使用snowflake时，请优先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息。否则可能会导致生成重复ID。
+> 在决定使用 snowflake 时，请优先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息。否则可能会导致生成重复ID。
 
 snowflake 算法默认是不启用的，需要在 `conf/config.yaml` 中开启配置。
 
@@ -104,7 +104,7 @@ plugin_attr:
 
 - snowflake_epoc 默认起始时间为 `2021-01-01T00:00:00Z`, 按默认配置可以支持 `69年` 大约可以使用到 `2090-09-07 15:47:35Z`
 - data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterID 的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程。
-- sequence_bits 默认占 `10 bits`, 每个进程每秒最多生成 `1024` 个ID
+- sequence_bits 默认占 `10 bits`, 每个进程每毫秒最多生成 `1024` 个ID
 
 #### 配置示例
 
@@ -114,7 +114,7 @@ plugin_attr:
 
 > - 起始时间 2014-10-20T15:00:00.000Z， 精确到毫秒为单位。大约可以使用 `69年`
 > - 最多支持 `1024` 个进程
-> - 每个进程每秒最多产生 `4096` 个ID
+> - 每个进程每毫秒最多产生 `4096` 个ID
 
 ```yaml
 plugin_attr:

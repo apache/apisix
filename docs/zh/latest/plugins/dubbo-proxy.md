@@ -38,7 +38,7 @@ title: dubbo-proxy
 ## 要求
 
 如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)。
-在 `APISIX` 中为了实现使从 `http` 代理到 `dubbo`，我们在`Tengine` 的 `mod_dubbo` 基础上对 `dubbo` 模块做了改进。 所有的修改已经提交给 `Tengine`，但是还未合并到最新的 `release` 版本中(Tengine-2.3.2) 。所以目前 `Tengine` 自身是不支持此特性的。
+在 `APISIX` 中为了实现使从 `http` 代理到 `dubbo`，我们在 `Tengine` 的 `mod_dubbo` 基础上对 `dubbo` 模块做了改进。 所有的修改已经提交给 `Tengine`，但是还未合并到最新的 `release` 版本中(Tengine-2.3.2) 。所以目前 `Tengine` 自身是不支持此特性的。
 
 ## 运行时属性
 
@@ -70,7 +70,7 @@ plugins:
 这里有个例子，在指定的路由中启用 `dubbo-proxy` 插件:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/upstream/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "nodes": {
         "127.0.0.1:20880": 1
@@ -100,7 +100,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 将会有同样的结果。
 
-从上游 `dubbo` 服务返回的数据一定是`Map<String, String>` 类型。
+从上游 `dubbo` 服务返回的数据一定是 `Map<String, String>` 类型。
 
 如果返回的数据如下
 

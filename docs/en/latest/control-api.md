@@ -306,9 +306,9 @@ Return all services info in the format below:
           "type": "roundrobin",
           "nodes": [
             {
-              "port": 80,
+              "port": 1980,
               "weight": 1,
-              "host": "39.97.63.215"
+              "host": "127.0.0.1"
             }
           ]
       },
@@ -355,9 +355,9 @@ Return specific service info with **service_id** in the format below:
       "type": "roundrobin",
       "nodes": [
         {
-          "port": 80,
+          "port": 1980,
           "weight": 1,
-          "host": "39.97.63.215"
+          "host": "127.0.0.1"
         }
       ]
     },

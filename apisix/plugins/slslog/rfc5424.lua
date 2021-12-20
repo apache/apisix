@@ -78,16 +78,15 @@ local Severity = {
     DEBUG = LOG_DEBUG,
 }
 
-local os_date = os.date
-local ngx = ngx
-local rfc5424_timestamp_format = "!%Y-%m-%dT%H:%M:%S.000Z"
+local log_util = require("apisix.utils.log-util")
+
+
 local _M = { version = 0.1 }
 
 function _M.encode(facility, severity, hostname, appname, pid, project,
                    logstore, access_key_id, access_key_secret, msg)
     local pri = (Facility[facility] * 8 + Severity[severity])
-    ngx.update_time()
-    local t = os_date(rfc5424_timestamp_format, ngx.now())
+    local t = log_util.get_rfc3339_zulu_timestamp()
     if not hostname then
         hostname = "-"
     end

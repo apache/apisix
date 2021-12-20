@@ -87,7 +87,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -124,7 +124,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 > signed_headers_string 生成步骤如下：
 
 * 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
-* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用`name:value`方式拼接起来，拼接完后就生成了 `signed_headers_string` 。
+* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用 `name:value` 方式拼接起来，拼接完后就生成了 `signed_headers_string`。
 
 ```plain
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
@@ -144,7 +144,7 @@ $ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "User-Agent: curl/7.29.0"
 ```
 
-根据`签名生成公式`生成的 `signing_string` 为：
+根据 `签名生成公式` 生成的 `signing_string` 为：
 
 ```plain
 "GET
@@ -322,7 +322,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

@@ -23,7 +23,6 @@ local ipairs             = ipairs
 local type               = type
 local math               = math
 local math_random        = math.random
-local error              = error
 local ngx                = ngx
 local ngx_re             = require('ngx.re')
 local ngx_timer_at       = ngx.timer.at
@@ -43,46 +42,6 @@ local default_group_name = "DEFAULT_GROUP"
 
 local events
 local events_list
-
-local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@%]+$]]
-local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
-local schema = {
-    type = 'object',
-    properties = {
-        host = {
-            type = 'array',
-            minItems = 1,
-            items = {
-                type = 'string',
-                pattern = host_pattern,
-                minLength = 2,
-                maxLength = 100,
-            },
-        },
-        fetch_interval = {type = 'integer', minimum = 1, default = 30},
-        prefix = {
-            type = 'string',
-            pattern = prefix_pattern,
-            maxLength = 100,
-            default = '/nacos/v1/'
-        },
-        weight = {type = 'integer', minimum = 1, default = 100},
-        timeout = {
-            type = 'object',
-            properties = {
-                connect = {type = 'integer', minimum = 1, default = 2000},
-                send = {type = 'integer', minimum = 1, default = 2000},
-                read = {type = 'integer', minimum = 1, default = 5000},
-            },
-            default = {
-                connect = 2000,
-                send = 2000,
-                read = 5000,
-            }
-        },
-    },
-    required = {'host'}
-}
 
 
 local _M = {}
@@ -373,18 +332,6 @@ end
 
 
 function _M.init_worker()
-    if not local_conf.discovery.nacos or
-            not local_conf.discovery.nacos.host or #local_conf.discovery.nacos.host == 0 then
-        error('do not set nacos.host')
-        return
-    end
-
-    local ok, err = core.schema.check(schema, local_conf.discovery.nacos)
-    if not ok then
-        error('invalid nacos configuration: ' .. err)
-        return
-    end
-
     events = require("resty.worker.events")
     events_list = events.event_list("discovery_nacos_update_application",
                                     "updating")

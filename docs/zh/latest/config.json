@@ -1,5 +1,5 @@
 {
-  "version": "2.10.2",
+  "version": "2.11.0",
   "sidebar": [
     {
       "type": "category",
@@ -115,11 +115,13 @@
             "plugins/skywalking-logger",
             "plugins/tcp-logger",
             "plugins/kafka-logger",
+            "plugins/rocketmq-logger",
             "plugins/udp-logger",
             "plugins/syslog",
             "plugins/log-rotate",
             "plugins/error-log-logger",
-            "plugins/sls-logger"
+            "plugins/sls-logger",
+            "plugins/google-cloud-logging"
           ]
         },
         {

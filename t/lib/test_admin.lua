@@ -197,11 +197,11 @@ function _M.test(uri, method, body, pattern, headers)
     end
 
     if res.status >= 300 then
-        return res.status, res.body
+        return res.status, res.body, res.headers
     end
 
     if pattern == nil then
-        return res.status, "passed", res.body
+        return res.status, "passed", res.body, res.headers
     end
 
     local res_data = json.decode(res.body)
@@ -210,7 +210,7 @@ function _M.test(uri, method, body, pattern, headers)
         return 500, "failed, " .. err, res_data
     end
 
-    return 200, "passed", res_data
+    return 200, "passed", res_data, res.headers
 end
 
 

@@ -21,44 +21,54 @@ title: 如何构建 Apache APISIX
 #
 -->
 
-## 步骤1：安装依赖
+## 步骤1：安装 Apache APISIX
 
-Apache APISIX 的运行环境需要依赖 NGINX 和 etcd，所以在安装 Apache APISIX 前，请根据您使用的操作系统安装对应的依赖。我们提供了 **CentOS7** 、**Fedora 31 & 32** 、**Ubuntu 16.04 & 18.04** 、 **Debian 9 & 10** 和 **MacOS** 上的依赖安装操作步骤，详情请参考[安装依赖](install-dependencies.md)。
-
-通过 Docker 或 Helm Chart 安装 Apache APISIX 时，已经包含了所需的 NGINX 和 etcd，请参照各自对应的文档。
-
-## 步骤2：安装 Apache APISIX
-
-你可以通过 RPM 仓库、RPM 包、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+你可以通过 RPM 仓库、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 仓库安装（CentOS 7）
 
-这种安装方式适用于 CentOS 7 操作系统。Apache APISIX 已经支持适用于 CentOS 7 的 RPM 仓库。请运行以下命令安装 RPM 仓库和 Apache APISIX。
+这种安装方式适用于 CentOS 7 操作系统。
+
+如果尚未安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
 
 ```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
-# View the information of the latest apisix package
-sudo yum info -y apisix
-
-# Will show the existing apisix packages
-sudo yum --showduplicates list apisix
-
-# Will install the latest apisix package
-sudo yum install apisix
+$ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 ```
 
-如果尚未安装 OpenResty 的官方 RPM 仓库，以下命令可以帮助您自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
+如果已安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 Apache APISIX 的 RPM 仓库。
 
 ```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+$ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
 ```
 
-### 通过 RPM 包安装（CentOS 7）
-
-这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
+请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.2-0.el7.x86_64.rpm
+# 查看仓库中最新的 apisix 软件包的信息
+$ sudo yum info -y apisix
+
+# 显示仓库中现有的 apisix 软件包
+$ sudo yum --showduplicates list apisix
+
+# 安装最新的 apisix 软件包
+$ sudo yum install apisix
+```
+
+### 通过 RPM 包离线安装（CentOS 7）
+
+下载 APISIX 离线 RPM 包到 `./apisix` 文件夹
+
+```shell
+$ sudo mkdir -p apisix
+$ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+$ sudo yum clean all && yum makecache
+$ sudo yum install -y --downloadonly --downloaddir=./apisix apisix
+```
+
+拷贝 `./apisix` 文件夹到目标主机，使用以下命令安装 Apache APISIX。
+
+```shell
+$ sudo yum install ./apisix/*.rpm
 ```
 
 ### 通过 Docker 安装
@@ -71,36 +81,52 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.10.2` 的目录。
+1. 创建一个名为 `apisix-2.11.0` 的目录。
 
   ```shell
-  mkdir apisix-2.10.2
+  $ APISIX_VERSION='2.11.0'
+  $ mkdir apisix-${APISIX_VERSION}
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.10.2/apache-apisix-2.10.2-src.tgz
+  $ wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
-  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
+  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
 
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.10.2-src.tgz -C apisix-2.10.2
+  $ tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.10.2 目录
-  cd apisix-2.10.2
+  # 切换到 apisix-${APISIX_VERSION} 目录
+  $ cd apisix-${APISIX_VERSION}
   # 安装依赖
-  LUAROCKS_SERVER=https://luarocks.cn make deps
+  $ LUAROCKS_SERVER=https://luarocks.cn make deps
   # 安装 apisix 命令
-  make install
+  $ make install
   ```
+
+## 步骤2：安装 ETCD
+
+如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
+
+你可以通过 Docker 或者二进制等方式安装 ETCD。以下命令通过二进制方式安装 ETCD。
+
+```shell
+ETCD_VERSION='3.4.13'
+$ wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+$ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+    cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+$ nohup etcd &
+```
 
 ## 步骤3：管理 Apache APISIX 服务
 
@@ -112,16 +138,16 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
 
 ```shell
 # initialize NGINX config file and etcd
-apisix init
+$ apisix init
 ```
 
 ### 测试配置文件
 
-运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf` ，并检查 `nginx.conf` 的语法是否正确。
+运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
 
 ```shell
 # generate `nginx.conf` from `config.yaml` and test it
-apisix test
+$ apisix test
 ```
 
 ### 启动 Apache APISIX
@@ -130,25 +156,25 @@ apisix test
 
 ```shell
 # start Apache APISIX server
-apisix start
+$ apisix start
 ```
 
 ### 停止运行 Apache APISIX
 
-优雅停机 `apisix quit` 和强制停机 `apisix stop`都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
+优雅停机 `apisix quit` 和强制停机 `apisix stop` 都可以停止运行 Apache APISIX。建议您优先选择优雅停机的方式停止 Apache APISIX，因为这种停止方式能够保证 Apache APISIX 完成了已经接受到的请求之后再停止；而强制停机则是立即停止 Apache APISIX，在这种情况下，Apache APISIX 接收到但未完成的请求会随着强制停机一并停止。
 
 执行优雅停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server gracefully
-apisix quit
+$ apisix quit
 ```
 
 执行强制停机的命令如下所示：
 
 ```shell
 # stop Apache APISIX server immediately
-apisix stop
+$ apisix stop
 ```
 
 ### 查看其他操作
@@ -157,7 +183,7 @@ apisix stop
 
 ```shell
 # more actions find by `help`
-apisix help
+$ apisix help
 ```
 
 ## 步骤4：运行测试案例
@@ -167,13 +193,13 @@ apisix help
 2. 然后通过 `cpanm` 来安装 test-nginx 的依赖：
 
   ```shell
-  sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
+  $ sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
   ```
 
 3. 运行 `git clone` 命令，将最新的源码克隆到本地，请使用我们 fork 出来的版本：
 
   ```shell
-  git clone https://github.com/iresty/test-nginx.git
+  $ git clone https://github.com/iresty/test-nginx.git
   ```
 
 4. 有两种方法运行测试：
@@ -200,7 +226,7 @@ apisix help
 
 **配置 NGINX 路径**
 
-出现`Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
+出现 `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错的解决方法如下：
 
 确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
@@ -215,10 +241,10 @@ apisix help
 使用以下命令运行指定的测试用例：
 
 ```shell
-prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+$ prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-关于测试用例的更多细节，参见[测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
+关于测试用例的更多细节，参见 [测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## 步骤5：修改 Admin API key
 
@@ -239,7 +265,7 @@ apisix:
 当我们需要访问 Admin API 时，就可以使用上面记录的 key 了，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
 ```
 
 返回结果中的状态码 200 说明访问成功，如下所示：
@@ -255,7 +281,7 @@ Content-Type: text/plain
 在这个时候，如果您输入的 key 与 `conf/config.yaml` 中 `apisix.admin_key` 的值不匹配，例如，我们已知正确的 key 是 `abcdefghabcdefgh`，但是我们选择输入一个错误的 key，例如 `wrong-key`，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i
 ```
 
 返回结果中的状态码 `401` 说明访问失败，原因是输入的 `key` 有误，未通过认证，触发 `Unauthorized` 错误，如下所示：
@@ -272,15 +298,15 @@ Content-Type: text/html
 
 有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
 如果您需要这些功能，您可以构建 APISIX OpenResty。
-您可以根据[api7/apisix-build-tools](https://github.com/api7/apisix-build-tools)里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
+您可以根据 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
 ## 步骤7：为 Apache APISIX 添加 systemd 配置文件
 
 如果您使用的操作系统是 CentOS 7，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
 
 ```shell
-systemctl start apisix
-systemctl stop apisix
+$ systemctl start apisix
+$ systemctl stop apisix
 ```
 
-如果通过其他方法安装，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service` 路径下。
+如果通过其他方法安装，可以参考 [配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service) 进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service` 路径下。

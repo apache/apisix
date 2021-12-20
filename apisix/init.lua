@@ -15,6 +15,16 @@
 -- limitations under the License.
 --
 local require         = require
+-- set the JIT options before any code, to prevent error "changing jit stack size is not
+-- allowed when some regexs have already been compiled and cached"
+if require("ffi").os == "Linux" then
+    require("ngx.re").opt("jit_stack_size", 200 * 1024)
+end
+
+require("jit.opt").start("minstitch=2", "maxtrace=4000",
+                         "maxrecord=8000", "sizemcode=64",
+                         "maxmcode=4000", "maxirconst=1000")
+
 require("apisix.patch").patch()
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
@@ -61,16 +71,6 @@ local _M = {version = 0.4}
 
 
 function _M.http_init(args)
-    require("resty.core")
-
-    if require("ffi").os == "Linux" then
-        require("ngx.re").opt("jit_stack_size", 200 * 1024)
-    end
-
-    require("jit.opt").start("minstitch=2", "maxtrace=4000",
-                             "maxrecord=8000", "sizemcode=64",
-                             "maxmcode=4000", "maxirconst=1000")
-
     core.resolver.init_resolver(args)
     core.id.init()
 

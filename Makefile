@@ -22,10 +22,10 @@ SHELL := /bin/bash -o pipefail
 
 
 # Project basic setting
+VERSION                ?= master
 project_name           ?= apache-apisix
-project_version        ?= master
 project_compose_ci     ?= ci/pod/docker-compose.yml
-project_release_name   ?= $(project_name)-$(project_version)-src
+project_release_name   ?= $(project_name)-$(VERSION)-src
 
 
 # Hyperconverged Infrastructure
@@ -155,12 +155,8 @@ deps: runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
-		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please add the following items to your LuaRocks config file:"); \
-		echo "variables = {"; \
-		echo "    OPENSSL_LIBDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /lib)"; \
-		echo "    OPENSSL_INCDIR=$(addprefix $(ENV_OPENSSL_PREFIX), /include)"; \
-		echo "}"; \
-		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
+		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
+		exit 1; \
 	fi
 
 
@@ -303,6 +299,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
+	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/prometheus
 	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(ENV_INST_LUADIR)/apisix/plugins/prometheus/
 
@@ -314,6 +313,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
+	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
@@ -360,16 +362,19 @@ release-src: compress-tar
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512
+	./utils/gen-vote-contents.sh $(VERSION)
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
 .PHONY: compress-tar
 compress-tar:
+	# The $VERSION can be major.minor.patch (from developer)
+	# or major.minor (from the branch name in the CI)
 	$(ENV_TAR) -zcvf $(project_release_name).tgz \
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec/apisix-$(project_version)-*.rockspec \
+	./rockspec/apisix-$(VERSION)*.rockspec \
 	./rockspec/apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \

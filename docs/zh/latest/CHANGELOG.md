@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.11.0](#2110)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
@@ -47,6 +48,36 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.11.0
+
+### Change
+
+- wolf-rbac 插件变更默认端口，并在文档中增加 authType 参数 [#5477](https://github.com/apache/apisix/pull/5477)
+
+### Core
+
+- :sunrise: 支持基于 POST 表单的高级路由匹配 [#5409](https://github.com/apache/apisix/pull/5409)
+- :sunrise: 初步的 WASM 支持 [#5288](https://github.com/apache/apisix/pull/5288)
+- :sunrise: control API 暴露 service 配置 [#5271](https://github.com/apache/apisix/pull/5271)
+- :sunrise: control API 暴露 upstream 配置 [#5259](https://github.com/apache/apisix/pull/5259)
+- :sunrise: 支持在 etcd 少于半数节点不可用时成功启动 [#5158](https://github.com/apache/apisix/pull/5158)
+- :sunrise: 支持 etcd 配置里面自定义 SNI [#5206](https://github.com/apache/apisix/pull/5206)
+
+### Plugin
+
+- :sunrise: 新增 Azure-functions 插件 [#5479](https://github.com/apache/apisix/pull/5479)
+- :sunrise: kafka-logger 支持动态记录请求体 [#5501](https://github.com/apache/apisix/pull/5501)
+- :sunrise: 新增 skywalking-logger 插件 [#5478](https://github.com/apache/apisix/pull/5478)
+- :sunrise: 新增 datadog 插件 [#5372](https://github.com/apache/apisix/pull/5372)
+- :sunrise: limit-* 系列插件，在 key 对应的值不存在时，回退到用客户端地址作为限流的 key [#5422](https://github.com/apache/apisix/pull/5422)
+- :sunrise: limit-count 支持使用多个变量作为 key [#5378](https://github.com/apache/apisix/pull/5378)
+- :sunrise: limit-conn 支持使用多个变量作为 key [#5354](https://github.com/apache/apisix/pull/5354)
+- :sunrise: proxy-rewrite 支持改写 HTTP method [#5292](https://github.com/apache/apisix/pull/5292)
+- :sunrise: limit-req 支持使用多个变量作为 key [#5302](https://github.com/apache/apisix/pull/5302)
+- :sunrise: proxy-cache 支持基于内存的缓存机制 [#5028](https://github.com/apache/apisix/pull/5028)
+- :sunrise: ext-plugin 避免发送重复的 conf 请求 [#5183](https://github.com/apache/apisix/pull/5183)
+- :sunrise: 新增 ldap-auth 插件 [#3894](https://github.com/apache/apisix/pull/3894)
 
 ## 2.10.2
 
