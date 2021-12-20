@@ -17,14 +17,31 @@
 local log_util = require("apisix.utils.log-util")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local ffi = require("ffi")
+local bit = require("bit")
 
+local C = ffi.C
 local ngx = ngx
 local pairs = pairs
-local io_open = io.open
 local load_string = loadstring
 
-local plugin_name = "file-logger"
+local plugin_name  = "file-logger"
+local O_WRONLY     =   00000001 -- write only open
+local O_CREAT      =   00000040 -- create and open
+local O_APPEND     =   00000400 -- add content to the end of
+local S_IRUSR      =   00400    -- user has read permission
+local S_IWUSR      =   00200    -- user has write permission
+local S_IRGRP      =   00040    -- group has read permission
+local S_IROTH      =   00004    -- others have read permission
 
+local oflags = bit.bor(O_WRONLY, O_CREAT, O_APPEND)
+local mode = bit.bor(S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH)
+
+ffi.cdef [[
+    int open(const char * filename, int flags, int mode);
+    int write(int fd, const void * ptr, int numbytes);
+    int close(int fd);
+]]
 local schema = {
     type = "object",
     properties = {
@@ -64,6 +81,8 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
+local file_descriptors = {}
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
@@ -78,14 +97,26 @@ end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
-    local file, err = io_open(conf.path, 'r+')
+    local fd = file_descriptors[conf.path]
 
-    if not file then
-        return false, "failed to open file: " .. conf.path .. ", error info: " .. err
+    if fd and conf.reopen then
+        C.close(fd)
+        file_descriptors[conf.path] = nil
+        fd = nil
     end
 
-    file:write(msg)
-    file:close()
+    if not fd then
+        fd = C.open(conf.path, oflags, mode)
+        if fd < 0 then
+            local err = ffi.errno()
+            core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
+
+        else
+            file_descriptors[conf.path] = fd
+        end
+    end
+    
+    C.write(fd, msg, #msg)
 end
 
 function _M.body_filter(conf, ctx)
