@@ -405,8 +405,6 @@ In route, we can achieve more condition matching by combining `uri` with `vars` 
 
 ## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
 
-This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
-
 This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
 
 ```shell
