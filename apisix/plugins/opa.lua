@@ -38,7 +38,11 @@ local schema = {
         },
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
-        keepalive_pool = {type = "integer", minimum = 1, default = 5}
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        with_route = {type = "boolean", default = false},
+        with_upstream = {type = "boolean", default = false},
+        with_service = {type = "boolean", default = false},
+        with_consumer = {type = "boolean", default = false},
     },
     required = {"host", "policy"}
 }
@@ -59,9 +63,10 @@ end
 
 function _M.access(conf, ctx)
     local body = helper.build_opa_input(conf, ctx, "http")
+    core.log.warn(core.json.encode(body, true))
     local params = {
         method = "POST",
-        body = body,
+        body = core.json.encode(body),
         headers = {
             ["Content-Type"] = "application/json",
         },
