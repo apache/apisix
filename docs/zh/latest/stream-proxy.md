@@ -41,7 +41,6 @@ apisix:
 ```
 
 如果 `apisix.enable_admin` 为 true，上面的配置会同时启用 HTTP 和 stream 代理。
-If `apisix.enable_admin` is true, both HTTP and stream proxy are enabled with the configuration above.
 
 如果你设置 `enable_admin` 为 false，且需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
 
