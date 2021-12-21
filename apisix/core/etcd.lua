@@ -143,13 +143,21 @@ function _M.get_format(res, real_key, is_dir, formatter)
     else
         -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-        res.body.node = kvs_to_node(res.body.kvs[1])
-        if not res.body.kvs[1].value then
-            -- remove last "/" when necessary
-            if string.byte(res.body.node.key, -1) == 47 then
-                res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+        if #res.body.kvs > 0 and res.body.kvs[1].value == "init_dir" then
+            res.body.node = kvs_to_node(res.body.kvs[1])
+            if not res.body.kvs[1].value then
+                -- remove last "/" when necessary
+                if string.byte(res.body.node.key, -1) == 47 then
+                    res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+                end
+                res = kvs_to_nodes(res)
             end
-            res = kvs_to_nodes(res)
+
+        else
+            res.body.node = {dir = true, nodes = {}}
+            for i=1, #res.body.kvs do
+                res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
+            end
         end
     end
 

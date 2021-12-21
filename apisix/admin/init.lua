@@ -177,6 +177,13 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        if code == 404 and method == "get" and not seg_id then
+            -- As we don't create directories now, the request to an empty etcd "directory"
+            -- will return 404. To keep the compatibility, we rewrite it to 200 instead
+            code = 200
+            data = {}
+        end
+
         data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end

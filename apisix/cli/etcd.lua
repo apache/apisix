@@ -239,6 +239,10 @@ function _M.init(env, args)
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
+    if not yaml_conf.etcd.init_dir then
+        return
+    end
+
     local etcd_ok = false
     for index, host in ipairs(etcd_healthy_hosts) do
         local is_success = true

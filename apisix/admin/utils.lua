@@ -70,6 +70,7 @@ function _M.fix_count(body, id)
     if body.count then
         if not id then
             -- remove the count of placeholder (init_dir)
+            -- TODO: handle case that init_dir exists
             body.count = tonumber(body.count) - 1
         else
             body.count = tonumber(body.count)
