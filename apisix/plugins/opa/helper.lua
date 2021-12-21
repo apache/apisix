@@ -86,7 +86,7 @@ local function _build_http_upstream(conf, ctx)
         else
             local upstream_id = route.upstream_id
             local upstreams = get_upstreams()
-    
+
             for _, upstream in ipairs(upstreams) do
                 if upstream.value.id == upstream_id then
                     return core.table.deepcopy(upstream).value
