@@ -412,3 +412,35 @@ hello world
 --- no_error_log eval
 qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 --- wait: 2
+
+
+
+=== TEST 13: multi level nested expr conditions
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.rocketmq-logger")
+            local ok, err = plugin.check_schema({
+                 topic = "test",
+                 key = "key1",
+                 nameserver_list = {
+                    "127.0.0.1:3"
+                 },
+                 include_req_body = true,
+                 include_req_body_expr = {
+                    {"request_length", "<", 1024},
+                    {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
+                 },
+                 include_req_body_expr = {
+                    {"http_content_length", "<", 1024},
+                    {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
+                 }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done

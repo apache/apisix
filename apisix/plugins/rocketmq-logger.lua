@@ -57,10 +57,7 @@ local schema = {
             type = "array",
             minItems = 1,
             items = {
-                type = "array",
-                items = {
-                    type = "string"
-                }
+                type = "array"
             }
         },
         include_resp_body = {type = "boolean", default = false},
@@ -68,10 +65,7 @@ local schema = {
             type = "array",
             minItems = 1,
             items = {
-                type = "array",
-                items = {
-                    type = "string"
-                }
+                type = "array"
             }
         },
     },

@@ -433,3 +433,26 @@ qr/request log: \{.+\}/
 --- grep_error_log_out eval
 qr/\Q{"client_ip":"127.0.0.1","consumer":{"username":"jack"},"latency":\E[^,]+\Q,"request":{"headers":{"apikey":"auth-one","connection":"close","host":"localhost"},"method":"GET","querystring":{},"size":\E\d+\Q,"uri":"\/hello","url":"http:\/\/localhost:1984\/hello"},"response":{"headers":{"connection":"close","content-length":"\E\d+\Q","content-type":"text\/plain","server":"\E[^"]+\Q"},"size":\E\d+\Q,"status":200},"route_id":"1","server":{"hostname":"\E[^"]+\Q","version":"\E[^"]+\Q"},"service_id":"","start_time":\E\d+\Q,"upstream":"127.0.0.1:1982"}\E/
 --- wait: 0.5
+
+
+
+=== TEST 14: multi level nested expr conditions
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.http-logger")
+            local ok, err = plugin.check_schema({
+                 uri = "http://127.0.0.1",
+                 include_req_body_expr = {
+                    {"http_content_length", "<", 1024},
+                    {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
+                 }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
