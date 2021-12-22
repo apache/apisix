@@ -122,6 +122,16 @@ passed
 
 
 === TEST 5: hit route (with GET request)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openwhisk")
+            local ok, err = plugin.check_schema({api_host = 3233, service_token = "test:test", namespace = "test", action = "test-params"})
+            if not ok then
+                ngx.say(err)
+            end
+        }
+    }
 --- request
 GET /hello
 --- response_body chomp
