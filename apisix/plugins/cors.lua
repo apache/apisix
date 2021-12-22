@@ -227,6 +227,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    ctx["raw-request-origin"] = core.request.header(ctx, "Origin")
     if ctx.var.request_method == "OPTIONS" then
         return 200
     end
@@ -234,7 +235,7 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    local req_origin = core.request.header(ctx, "Origin")
+    local req_origin =  ctx["raw-request-origin"]
     -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
     local allow_origins
     allow_origins = process_with_allow_origins(conf, ctx, req_origin)
