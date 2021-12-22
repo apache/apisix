@@ -443,7 +443,8 @@ qr/\Q{"client_ip":"127.0.0.1","consumer":{"username":"jack"},"latency":\E[^,]+\Q
             local plugin = require("apisix.plugins.http-logger")
             local ok, err = plugin.check_schema({
                  uri = "http://127.0.0.1",
-                 include_req_body_expr = {
+                 include_resp_body = true,
+                 include_resp_body_expr = {
                     {"http_content_length", "<", 1024},
                     {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
                  }
