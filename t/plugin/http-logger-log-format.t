@@ -455,5 +455,9 @@ qr/\Q{"client_ip":"127.0.0.1","consumer":{"username":"jack"},"latency":\E[^,]+\Q
             ngx.say("done")
         }
     }
+--- request
+GET /t
 --- response_body
 done
+--- no_error_log
+[error]
