@@ -46,6 +46,7 @@ Limit request rate by a fixed number of requests in a given time window.
 | policy              | string  | optional                                | "local"       | ["local", "redis", "redis-cluster"]                                                                     | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node), `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit), and `redis-cluster` which works the same as `redis` but with redis cluster. |
 | allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-count function is temporarily unavailable(e.g. redis timeout). Allow requests to continue when the value is set to true, default false. |
 | show_limit_quota_header              | boolean  | optional                                | true       |                                                                     | Whether show `X-RateLimit-Limit` and `X-RateLimit-Remaining` (which mean the total number of requests and the remaining number of requests that can be sent) in the response header, default true. |
+| group               | string | optional                                |            | non-empty                                                                                           | Route configured with the same group will share the same counter |
 | redis_host          | string  | required for `redis`                    |               |                                                                                                         | When using the `redis` policy, this property specifies the address of the Redis server.                                                                                                                                                                                                                    |
 | redis_port          | integer | optional                                | 6379          | [1,...]                                                                                                 | When using the `redis` policy, this property specifies the port of the Redis server.                                                                                                                                                                                                                       |
 | redis_password      | string  | optional                                |               |                                                                                                         | When using the `redis`  or `redis-cluster` policy, this property specifies the password of the Redis server.                                                                                                                                                                                                                   |
@@ -106,6 +107,54 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 You also can complete the above operation through the web interface, first add a route, then add limit-count plugin:
 ![Add limit-count plugin.](../../../assets/images/plugin/limit-count-1.png)
+
+It is possible to share the same limit counter across different routes. For example,
+
+```
+curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "limit-count": {
+            "count": 1,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "group": "services_1#1640140620"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+Every route which group name is "services_1#1640140620" will share the same count limitation `2` per remote_addr.
+
+```
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "service_id": "1",
+    "uri": "/hello"
+}'
+
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "service_id": "1",
+    "uri": "/hello2"
+}'
+
+$ curl -i http://127.0.0.1:9080/hello
+HTTP/1.1 200 ...
+
+$ curl -i http://127.0.0.1:9080/hello2
+HTTP/1.1 503 ...
+```
+
+Note that every limit-count configuration of the same group must be the same.
+Therefore, once update the configuration, we also need to update the group name.
 
 If you need a cluster-level precision traffic limit, then we can do it with the redis server. The rate limit of the traffic will be shared between different APISIX nodes to limit the rate of cluster traffic.
 

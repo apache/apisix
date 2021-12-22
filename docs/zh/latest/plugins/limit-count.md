@@ -49,6 +49,7 @@ title: limit-count
 | policy              | string  | 可选                               | "local"       | ["local", "redis", "redis-cluster"]                                                                     | 用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地，默认选项) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速)；以及`redis-cluster`，跟 redis 功能一样，只是使用 redis 集群方式。                                                                                                                                                        |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限流插件功能临时不可用时（例如，Redis 超时）是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 | show_limit_quota_header              | boolean  | 可选                                | true       |                                                                     | 是否在响应头中显示 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining` （限制的总请求数和剩余还可以发送的请求数），默认值是 true。 |
+| group               | string | 可选                                |            | 非空                                                                                           | 配置同样的 group 的 Route 将共享同样的限流计数器 |
 | redis_host          | string  | `redis` 必须                       |               |                                                                                                         | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的地址。                                                                                                                                                                                                                                                                                                                                                            |
 | redis_port          | integer | 可选                               | 6379          | [1,...]                                                                                                 | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口                                                                                                                                                                                                                                                                                                                                                              |
 | redis_password      | string  | 可选                               |               |                                                                                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，该属性是 Redis 服务节点的密码。                                                                                                                                                                                                                                                                                                                                                            |
@@ -111,6 +112,54 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-count 插件：
 ![添加插件](../../../assets/images/plugin/limit-count-1.png)
+
+我们也支持在多个 Route 间共享同样的限流计数器。举个例子，
+
+```
+curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "limit-count": {
+            "count": 1,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "group": "services_1#1640140620"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+每个配置了 `group` 为 `services_1#1640140620` 的 Route 都将共享同一个每个 IP 地址只能访问两次的计数器。
+
+```
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "service_id": "1",
+    "uri": "/hello"
+}'
+
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "service_id": "1",
+    "uri": "/hello2"
+}'
+
+$ curl -i http://127.0.0.1:9080/hello
+HTTP/1.1 200 ...
+
+$ curl -i http://127.0.0.1:9080/hello2
+HTTP/1.1 503 ...
+```
+
+注意同一个 group 里面的 limit-count 配置必须一样。
+所以，一旦修改了配置，我们需要更新对应的 group 的值。
 
 如果你需要一个集群级别的流量控制，我们可以借助 redis server 来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
 
