@@ -69,6 +69,7 @@ fault-injection
 serverless-pre-function
 batch-requests
 cors
+csrf
 ip-restriction
 ua-restriction
 referer-restriction
