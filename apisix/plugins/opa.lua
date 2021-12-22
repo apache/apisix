@@ -63,7 +63,7 @@ end
 
 function _M.access(conf, ctx)
     local body = helper.build_opa_input(conf, ctx, "http")
-    core.log.warn(core.json.encode(body, true))
+
     local params = {
         method = "POST",
         body = core.json.encode(body),
