@@ -698,7 +698,7 @@ match uri /hello
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.2:1979": 100000,
+                            "0.0.0.0:1979": 100000,
                             "127.0.0.1:1980": 1
                         },
                         "type": "chash",
@@ -730,7 +730,7 @@ GET /log_request
 --- grep_error_log eval
 qr/(proxy request to \S+|x-serverless: [\d.]+)/
 --- grep_error_log_out
-proxy request to 127.0.0.2:1979
+proxy request to 0.0.0.0:1979
 proxy request to 127.0.0.1:1980
 x-serverless: 127.0.0.1
 
@@ -752,7 +752,7 @@ x-serverless: 127.0.0.1
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.2:1979": 100000,
+                            "0.0.0.0:1979": 100000,
                             "127.0.0.1:1980": 1
                         },
                         "type": "chash",
@@ -802,7 +802,7 @@ GET /log_request
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.2:1979": 100000,
+                            "0.0.0.0:1979": 100000,
                             "127.0.0.1:1980": 1
                         },
                         "type": "chash",
@@ -833,5 +833,5 @@ GET /log_request
 --- grep_error_log eval
 qr/(run balancer phase with [\d.]+)/
 --- grep_error_log_out
-run balancer phase with 127.0.0.2
+run balancer phase with 0.0.0.0
 run balancer phase with 127.0.0.1
