@@ -87,16 +87,6 @@ local schema = {
             type = "string",
             default = "apisix.apache.org%2Flogs"
         },
-        inactive_timeout = {
-            type = "integer",
-            minimum = 1,
-            default = 10
-        },
-        batch_max_size = {
-            type = "integer",
-            minimum = 1,
-            default = 100
-        },
     },
     oneOf = {
         { required = { "auth_config" } },
