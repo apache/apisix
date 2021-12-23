@@ -616,28 +616,102 @@ qr/send data to kafka: \{.*"body":"hello world\\n"/
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({
-                 kafka_topic = "test",
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local kafka = {
+                 kafka_topic = "test2",
                  key = "key1",
+                 batch_max_size = 1,
                  broker_list = {
-                    ["127.0.0.1"] = 3
+                    ["127.0.0.1"] = 9092
                  },
+                 timeout = 3,
                  include_req_body = true,
                  include_req_body_expr = {
-                    {"request_length", "<", 1024},
-                    {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
+                    {"request_length", "<", 1054},
+                    {"arg_name", "in", {"qwerty", "asdfgh"}}
                  },
-                 include_req_body_expr = {
-                    {"http_content_length", "<", 1024},
-                    {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
+                 include_resp_body = true,
+                 include_resp_body_expr = {
+                    {"http_content_length", "<", 1054},
+                    {"arg_name", "in", {"qwerty", "zxcvbn"}}
                  }
-            })
-            if not ok then
-                ngx.say(err)
+            }
+            local plugins = {}
+            plugins["kafka-logger"] = kafka
+            local data = {
+                plugins = plugins
+            }
+            data.upstream = {
+                type = "roundrobin",
+                nodes = {
+                    ["127.0.0.1:1980"] = 1
+                }
+            }
+            data.uri = "/hello"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 core.json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- response_body
-done
+passed
+
+
+
+=== TEST 16: hit route, req_body_expr and resp_body_expr both eval success
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- error_log eval
+[qr/send data to kafka: \{.*"body":"abcdef"/,
+qr/send data to kafka: \{.*"body":"hello world\\n"/]
+--- wait: 2
+
+
+
+=== TEST 17: hit route, req_body_expr eval success, resp_body_expr both eval failed
+--- request
+POST /hello?name=asdfgh
+abcdef
+--- response_body
+hello world
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- no_error_log eval
+qr/send data to kafka: \{.*"body":"hello world\\n"/
+--- wait: 2
+
+
+
+=== TEST 18: hit route, req_body_expr eval failed, resp_body_expr both eval success
+--- request
+POST /hello?name=zxcvbn
+abcdef
+--- response_body
+hello world
+--- error_log eval
+qr/send data to kafka: \{.*"body":"hello world\\n"/
+--- no_error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2
+
+
+
+=== TEST 19: hit route, req_body_expr eval success, resp_body_expr both eval failed
+--- request
+POST /hello?name=xxxxxx
+abcdef
+--- response_body
+hello world
+--- no_error_log eval
+[qr/send data to kafka: \{.*"body":"abcdef"/,
+qr/send data to kafka: \{.*"body":"hello world\\n"/]
+--- wait: 2
