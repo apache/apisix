@@ -14,18 +14,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local log_util = require("apisix.utils.log-util")
-local core = require("apisix.core")
-local plugin = require("apisix.plugin")
-local ffi = require("ffi")
-local bit = require("bit")
+local log_util     =   require("apisix.utils.log-util")
+local core         =   require("apisix.core")
+local plugin       =   require("apisix.plugin")
+local ffi          =   require("ffi")
+local bit          =   require("bit")
 
-local C = ffi.C
-local ngx = ngx
-local pairs = pairs
-local load_string = loadstring
+local C            =   ffi.C
+local ngx          =   ngx
+local pairs        =   pairs
+local load_string  =   loadstring
 
-local plugin_name  = "file-logger"
+local plugin_name  =   "file-logger"
 local O_WRONLY     =   00000001 -- write only open
 local O_CREAT      =   00000040 -- create and open
 local O_APPEND     =   00000400 -- add content to the end of
@@ -99,12 +99,6 @@ local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
     local fd = file_descriptors[conf.path]
 
-    if fd and conf.reopen then
-        C.close(fd)
-        file_descriptors[conf.path] = nil
-        fd = nil
-    end
-
     if not fd then
         fd = C.open(conf.path, oflags, mode)
         if fd < 0 then
@@ -115,7 +109,7 @@ local function write_file_data(conf, log_message)
             file_descriptors[conf.path] = fd
         end
     end
-    
+
     C.write(fd, msg, #msg)
 end
 
