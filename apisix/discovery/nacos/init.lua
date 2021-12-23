@@ -292,7 +292,7 @@ local function fetch_full_registry(premature)
 
             local is_grpc = ngx_re_match(scheme, "grpc", "jo")
             if is_grpc and host.metadata and host.metadata.gRPC_port then
-                node.host = host.metadata.gRPC_port
+                node.port = host.metadata.gRPC_port
             end
 
             core.table.insert(nodes, node)
