@@ -572,6 +572,8 @@ qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","v
         }
     }
 
+
+
 === TEST 19: default allow_degradation
 --- config
     location /t {
@@ -629,6 +631,7 @@ GET /hello
 qr/failed to connect to the unix socket/
 
 
+
 === TEST 21: open allow_degradation
 --- config
     location /t {
@@ -670,7 +673,7 @@ qr/failed to connect to the unix socket/
 --- response_body
 passed
 
-=== TEST 22: ext-plugin wrong, req reject
+=== TEST 22: ext-plugin wrong, req access
 --- request
 GET /hello
 --- extra_stream_config
