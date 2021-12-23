@@ -71,21 +71,18 @@ Creates a stream route, and enable plugin `mqtt-proxy`.
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
-    "plugins": {
-        "mqtt-proxy": {
-            "protocol_name": "MQTT",
-            "protocol_level": 4
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": [{
-            "host": "127.0.0.1",
-            "port": 1980,
-            "weight": 1
-        }]
+  "remote_addr": "127.0.0.1",
+  "plugins": {
+    "mqtt-proxy": {
+      "protocol_name": "MQTT",
+      "protocol_level": 4,
+      "upstream": {
+        "host": "127.0.0.1",
+        "port": 1980,
+        "weight": 1
+      }
     }
+  }
 }'
 ```
 
