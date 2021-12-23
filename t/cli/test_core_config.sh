@@ -56,7 +56,7 @@ nginx_config:
 make init
 
 count=$(grep -c "lua_max_pending_timers 10240;" conf/nginx.conf)
-if [ "$count" -ne 1 ]; then
+if [ "$count" -ne 2 ]; then
     echo "failed: failed to set lua_max_pending_timers in stream proxy"
     exit 1
 fi
@@ -64,7 +64,7 @@ fi
 echo "passed: set lua_max_pending_timers successfully in stream proxy"
 
 count=$(grep -c "lua_max_running_timers 2561;" conf/nginx.conf)
-if [ "$count" -ne 1 ]; then
+if [ "$count" -ne 2 ]; then
     echo "failed: failed to set lua_max_running_timers in stream proxy"
     exit 1
 fi
