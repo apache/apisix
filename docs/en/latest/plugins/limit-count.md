@@ -131,7 +131,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-Every route which group name is "services_1#1640140620" will share the same count limitation `2` per remote_addr.
+Every route which group name is "services_1#1640140620" will share the same count limitation `1` in one minute per remote_addr.
 
 ```
 $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
