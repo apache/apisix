@@ -40,7 +40,6 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         with_route = {type = "boolean", default = false},
-        with_upstream = {type = "boolean", default = false},
         with_service = {type = "boolean", default = false},
         with_consumer = {type = "boolean", default = false},
     },

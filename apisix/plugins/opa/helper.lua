@@ -15,13 +15,10 @@
 -- limitations under the License.
 --
 
-local core          = require("apisix.core")
-local get_routes    = require("apisix.router").http_routes
-local get_upstreams = require("apisix.upstream").upstreams
-local get_consumers = require("apisix.consumer").consumers
-local get_services  = require("apisix.http.service").services
-local ngx_time      = ngx.time
-local ipairs        = ipairs
+local core        = require("apisix.core")
+local get_service = require("apisix.http.service").get
+local ngx_time    = ngx.time
+local ipairs      = ipairs
 
 local _M = {}
 
@@ -51,6 +48,7 @@ local function build_http_request(conf, ctx)
     }
 end
 
+
 local function build_http_route(conf, ctx, remove_upstream)
     local route = core.table.clone(ctx.matched_route).value
 
@@ -62,51 +60,12 @@ local function build_http_route(conf, ctx, remove_upstream)
 end
 
 
-local function _build_http_upstream(conf, ctx)
-    local route = build_http_route(conf, ctx, false)
-
-    if route then
-        if route.upstream then
-            return core.table.deepcopy(route.upstream)
-        else
-            local upstream_id = route.upstream_id
-            local upstreams = get_upstreams()
-
-            for _, upstream in ipairs(upstreams) do
-                if upstream.value.id == upstream_id then
-                    return core.table.deepcopy(upstream).value
-                end
-            end
-        end
-    end
-
-    return nil
-end
-
-
-local function build_http_upstream(conf, ctx)
-    local upstream = _build_http_upstream(conf, ctx)
-
-    if upstream and upstream.parent then
-        upstream.parent = nil
-    end
-
-    return upstream
-end
-
-
 local function _build_http_service(conf, ctx)
     local service_id = ctx.service_id
 
     -- possible that the route is not bind a service
     if service_id then
-        local services = get_services()
-
-        for _, service in ipairs(services) do
-            if service.value.id == service_id then
-                return core.table.deepcopy(service).value
-            end
-        end
+        return core.table.clone(get_service(service_id)).value
     end
 
     return nil
@@ -138,10 +97,6 @@ function _M.build_opa_input(conf, ctx, subsystem)
 
     if conf.with_route then
         data.route = build_http_route(conf, ctx, true)
-    end
-
-    if conf.with_upstream then
-        data.upstream = build_http_upstream(conf, ctx)
     end
 
     if conf.with_consumer then
