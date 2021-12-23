@@ -136,7 +136,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-每个配置了 `group` 为 `services_1#1640140620` 的 Route 都将共享同一个每个 IP 地址只能访问两次的计数器。
+每个配置了 `group` 为 `services_1#1640140620` 的 Route 都将共享同一个每个 IP 地址每分钟只能访问一次的计数器。
 
 ```
 $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
