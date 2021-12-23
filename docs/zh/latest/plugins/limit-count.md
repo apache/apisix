@@ -113,7 +113,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-count 插件：
 ![添加插件](../../../assets/images/plugin/limit-count-1.png)
 
-我们也支持在多个 Route 间共享同样的限流计数器。举个例子，
+我们也支持在多个 Route 间共享同一个限流计数器。举个例子，
 
 ```
 curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
