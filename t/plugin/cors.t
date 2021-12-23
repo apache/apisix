@@ -948,7 +948,9 @@ Access-Control-Allow-Credentials:
                             "allow_credential": true
                         },
                         "proxy-rewrite": {
-                            "Origin": "http://example.com"
+                            "headers": {
+                                  "Origin": "http://example.com"
+                            }
                         }
                     },
                     "upstream": {
