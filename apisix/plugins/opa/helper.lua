@@ -18,7 +18,6 @@
 local core        = require("apisix.core")
 local get_service = require("apisix.http.service").get
 local ngx_time    = ngx.time
-local ipairs      = ipairs
 
 local _M = {}
 
