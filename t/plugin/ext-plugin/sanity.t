@@ -614,6 +614,8 @@ qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","v
 --- response_body
 passed
 
+
+
 === TEST 20: ext-plugin wrong, req reject
 --- request
 GET /hello
@@ -672,6 +674,8 @@ qr/failed to connect to the unix socket/
     }
 --- response_body
 passed
+
+
 
 === TEST 22: ext-plugin wrong, req access
 --- request
