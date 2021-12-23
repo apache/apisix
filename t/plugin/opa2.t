@@ -130,7 +130,7 @@ passed
                     "plugins": {
                         "opa": {
                             "host": "http://127.0.0.1:8181",
-                            "policy": "example2",
+                            "policy": "debug",
                             "with_route": true,
                             "with_upstream": true,
                             "with_consumer": true,
