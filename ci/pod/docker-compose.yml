@@ -402,14 +402,14 @@ services:
     restart: unless-stopped
     ports:
       - 8181:8181
-    command: run -s /example.rego /example2.rego /data.json
+    command: run -s /example.rego /debug.rego /data.json
     volumes:
       - type: bind
         source: ./ci/pod/opa/example.rego
         target: /example.rego
       - type: bind
-        source: ./ci/pod/opa/example2.rego
-        target: /example2.rego
+        source: ./ci/pod/opa/debug.rego
+        target: /debug.rego
       - type: bind
         source: ./ci/pod/opa/data.json
         target: /data.json
