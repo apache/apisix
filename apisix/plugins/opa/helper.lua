@@ -51,23 +51,8 @@ local function build_http_request(conf, ctx)
     }
 end
 
-
-local function _build_http_route(conf, ctx)
-    local route_id = ctx.route_id
-    local routes = get_routes()
-
-    for _, route in ipairs(routes) do
-        if route.value.id == route_id then
-            return core.table.deepcopy(route).value
-        end
-    end
-
-    return nil
-end
-
-
 local function build_http_route(conf, ctx, remove_upstream)
-    local route = _build_http_route(conf, ctx)
+    local route = core.table.clone(ctx.matched_route).value
 
     if remove_upstream and route and route.upstream then
         route.upstream = nil
@@ -140,19 +125,7 @@ end
 
 
 local function build_http_consumer(conf, ctx)
-    local consumer_name = ctx.consumer_name
-
-    if consumer_name then
-        local consumers = get_consumers()
-
-        for _, consumer in ipairs(consumers) do
-            if consumer.value.username == consumer_name then
-                return core.table.deepcopy(consumer).value
-            end
-        end
-    end
-
-    return nil
+    return core.table.clone(ctx.consumer)
 end
 
 
