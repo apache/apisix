@@ -26,7 +26,7 @@ function detect_aur_helper() {
         AUR_HELPER=pacaur
     else
         echo No available AUR helpers found. Please specify your AUR helper by AUR_HELPER.
-        exit -1
+        exit 255
     fi
 }
 
@@ -44,12 +44,12 @@ function install_dependencies_with_aur() {
 
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
-    sudo yum install yum-utils
+    sudo yum install -y yum-utils
 
     local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
     if [ "${1}" == "centos" ]; then
         # add APISIX source
-        sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+        sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 
         # install apisix-base and some compilation tools
         # shellcheck disable=SC2086

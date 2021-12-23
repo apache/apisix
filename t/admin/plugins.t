@@ -102,6 +102,7 @@ prometheus
 datadog
 echo
 http-logger
+splunk-hec-logging
 skywalking-logger
 google-cloud-logging
 sls-logger

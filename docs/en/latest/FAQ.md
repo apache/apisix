@@ -66,7 +66,6 @@ See more [etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart).
 There are two possibilities when encountering slow luarocks:
 
 1. Server used for luarocks installation is blocked
-2. There is a place between your network and github server to block the 'git' protocol
 
 For the first problem, you can use https_proxy or use the `--server` option to specify a luarocks server that you can access or access faster.
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
@@ -78,7 +77,7 @@ We already provide a wrapper in the Makefile to simplify your job:
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
+If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is.
 
 ## How to support gray release via Apache APISIX?
 
@@ -405,8 +404,6 @@ HTTP/1.1 404 Not Found
 In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
 
 ## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
-
-This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local`:
 
 This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
 

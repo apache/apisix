@@ -54,6 +54,23 @@ $ sudo yum --showduplicates list apisix
 $ sudo yum install apisix
 ```
 
+### Installation via RPM Offline Package(CentOS 7)
+
+Download APISIX offline RPM package to `./apisix` folder
+
+```shell
+$ sudo mkdir -p apisix
+$ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+$ sudo yum clean all && yum makecache
+$ sudo yum install -y --downloadonly --downloaddir=./apisix apisix
+```
+
+Copy `./apisix` folder to the target host, run the following command to install Apache APISIX.
+
+```shell
+$ sudo yum install ./apisix/*.rpm
+```
+
 ### Installation via Docker
 
 Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
@@ -91,7 +108,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   # Switch to the apisix-${APISIX_VERSION} directory
   $ cd apisix-${APISIX_VERSION}
   # Create dependencies
-  $ make depsInstall Apache APISIX
+  $ make deps
   # Install apisix command
   $ make install
   ```
