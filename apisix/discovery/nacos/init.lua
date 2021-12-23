@@ -204,7 +204,8 @@ local function iter_and_add_service(services, values)
             core.table.insert(services, {
                 service_name = up.service_name,
                 namespace_id = namespace_id,
-                group_name = group_name
+                group_name = group_name,
+                scheme = up.scheme,
             })
         end
         ::CONTINUE::
@@ -255,6 +256,7 @@ local function fetch_full_registry(premature)
         local data, err
         local namespace_id = service_info.namespace_id
         local group_name = service_info.group_name
+        local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
         local query_path = instance_list_path .. service_info.service_name
@@ -281,11 +283,18 @@ local function fetch_full_registry(premature)
                 up_apps[namespace_id]
                     [group_name][service_info.service_name] = nodes
             end
-            core.table.insert(nodes, {
+
+            local node = {
                 host = host.ip,
                 port = host.port,
                 weight = host.weight or default_weight,
-            })
+            }
+
+            if string.match(scheme, "grpc") and host.metadata.gRPC_port then
+                node.host = host.metadata.gRPC_port
+            end
+
+            core.table.insert(nodes, node)
         end
 
         ::CONTINUE::
