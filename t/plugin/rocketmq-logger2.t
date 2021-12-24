@@ -431,7 +431,8 @@ qr/send data to rocketmq: \{.*"body":"hello world\\n"/
                     {"request_length", "<", 1024},
                     {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
                  },
-                 include_req_body_expr = {
+                 include_resp_body = true,
+                 include_resp_body_expr = {
                     {"http_content_length", "<", 1024},
                     {"http_content_type", "in", {"application/xml", "application/json", "text/plain", "text/xml"}}
                  }
