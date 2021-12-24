@@ -692,4 +692,4 @@ GET /hello
 --- response_body
 hello world
 --- error_log eval
-qr/failed to connect to the unix socket/
+qr/Plugin Runner service.*allow degradation/
