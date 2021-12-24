@@ -229,6 +229,13 @@ local function get_nacos_services()
     return services
 end
 
+local function is_grpc(scheme)
+    if scheme == 'grpc' or scheme == 'grpcs' then
+        return true
+    end
+
+    return false
+end
 
 local function fetch_full_registry(premature)
     if premature then
@@ -290,8 +297,7 @@ local function fetch_full_registry(premature)
                 weight = host.weight or default_weight,
             }
 
-            local is_grpc = ngx_re_match(scheme, "grpc", "jo")
-            if is_grpc and host.metadata and host.metadata.gRPC_port then
+            if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                 node.port = host.metadata.gRPC_port
             end
 
