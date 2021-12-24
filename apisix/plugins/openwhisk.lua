@@ -95,7 +95,6 @@ function _M.access(conf, ctx)
     local package = conf.package and conf.package .. "/" or ""
     local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace ..
         "/actions/" .. package .. conf.action
-	
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
