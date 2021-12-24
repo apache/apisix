@@ -59,31 +59,32 @@ local function build_http_route(conf, ctx, remove_upstream)
 end
 
 
-local function _build_http_service(conf, ctx)
+local function build_http_service(conf, ctx)
     local service_id = ctx.service_id
 
     -- possible that the route is not bind a service
     if service_id then
-        return core.table.clone(get_service(service_id)).value
+        local service = core.table.clone(get_service(service_id)).value
+
+        if service then
+            if service.upstream and service.upstream.parent then
+                service.upstream.parent = nil
+            end
+            return service
+        end
     end
 
     return nil
 end
 
 
-local function build_http_service(conf, ctx)
-    local service = _build_http_service(conf, ctx)
-
-    if service and service.upstream and service.upstream.parent then
-        service.upstream.parent = nil
+local function build_http_consumer(conf, ctx)
+    -- possible that the route is not relative consumer
+    if ctx.consumer then
+        return core.table.clone(ctx.consumer)
     end
 
-    return service
-end
-
-
-local function build_http_consumer(conf, ctx)
-    return core.table.clone(ctx.consumer)
+    return nil
 end
 
 
