@@ -41,10 +41,13 @@ apisix:
       - "127.0.0.1:9211"
 ```
 
-If you need to enable both HTTP and stream proxy, set the `only` to false:
+If `apisix.enable_admin` is true, both HTTP and stream proxy are enabled with the configuration above.
+
+If you have set the `enable_admin` to false, and need to enable both HTTP and stream proxy, set the `only` to false:
 
 ```yaml
 apisix:
+  enable_admin: false
   stream_proxy: # TCP/UDP proxy
     only: false
     tcp: # TCP proxy address list
