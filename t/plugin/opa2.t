@@ -36,7 +36,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: setup upstream
+=== TEST 1: setup all-in-one test
 --- config
     location /t {
         content_by_lua_block {
@@ -53,20 +53,10 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
             ngx.say(body)
-        }
-    }
---- response_body
-passed
 
-
-
-=== TEST 2: setup consumer
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -82,20 +72,10 @@ passed
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
             ngx.say(body)
-        }
-    }
---- response_body
-passed
 
-
-
-=== TEST 3: setup service
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/s1',
                 ngx.HTTP_PUT,
                 [[{
@@ -110,16 +90,79 @@ passed
 
             if code >= 300 then
                 ngx.status = code
+                return
+            end
+            ngx.say(body)
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opa": {
+                            "host": "http://127.0.0.1:8181",
+                            "policy": "debug",
+                            "with_route": true,
+                            "with_consumer": true,
+                            "with_service": true
+                        }
+                    },
+                    "upstream_id": "u1",
+                    "service_id": "s1",
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
             end
             ngx.say(body)
         }
     }
---- response_body
-passed
+--- response_body eval
+"passed\n" x 4
 
 
 
-=== TEST 4: setup route with APISIX data
+=== TEST 2: hit route (test route data)
+--- request
+GET /hello
+--- more_headers
+test-header: only-for-test
+apikey: test-key
+--- error_code: 403
+--- response_body eval
+qr/\"route\":/ and qr/\"id\":\"r1\"/ and qr/\"plugins\":\{\"opa\"/ and
+qr/\"with_route\":true/
+
+
+
+=== TEST 3: hit route (test consumer data)
+--- request
+GET /hello
+--- more_headers
+test-header: only-for-test
+apikey: test-key
+--- error_code: 403
+--- response_body eval
+qr/\"consumer\":/ and qr/\"username\":\"test\"/ and qr/\"key\":\"test-key\"/
+
+
+
+=== TEST 4: hit route (test service data)
+--- request
+GET /hello
+--- more_headers
+test-header: only-for-test
+apikey: test-key
+--- error_code: 403
+--- response_body eval
+qr/\"service\":/ and qr/\"id\":\"s1\"/ and qr/\"query\":\"apikey\"/ and
+qr/\"header\":\"apikey\"/
+
+
+
+=== TEST 5: setup route without service
 --- config
     location /t {
         content_by_lua_block {
@@ -132,13 +175,11 @@ passed
                             "host": "http://127.0.0.1:8181",
                             "policy": "debug",
                             "with_route": true,
-                            "with_upstream": true,
                             "with_consumer": true,
                             "with_service": true
                         }
                     },
                     "upstream_id": "u1",
-                    "service_id": "s1",
                     "uri": "/hello"
                 }]]
                 )
@@ -154,64 +195,12 @@ passed
 
 
 
-=== TEST 5: hit route (test without apikey)
---- request
-GET /hello
---- more_headers
-test-header: only-for-test
---- error_code: 401
---- response_body eval
-qr/Missing API key found in request/
-
-
-
-=== TEST 6: hit route (test route data)
+=== TEST 6: hit route (test without service and consumer)
 --- request
 GET /hello
 --- more_headers
 test-header: only-for-test
 apikey: test-key
 --- error_code: 403
---- response_body eval
-qr/\"route\":/ and qr/\"id\":\"r1\"/ and qr/\"plugins\":\{\"opa\"/ and
-qr/\"with_route\":true/
-
-
-
-=== TEST 7: hit route (test upstream data)
---- request
-GET /hello
---- more_headers
-test-header: only-for-test
-apikey: test-key
---- error_code: 403
---- response_body eval
-qr/\"upstream\":/ and qr/\"id\":\"u1\"/ and qr/\"nodes\":\[\{/ and
-qr/\"host\":\"127.0.0.1\"/ and qr/\"port\":1980/ and
-qr/\"weight\":1/ and qr/\"with_upstream\":true/ and
-qr/\"type\":\"roundrobin\"/
-
-
-
-=== TEST 8: hit route (test consumer data)
---- request
-GET /hello
---- more_headers
-test-header: only-for-test
-apikey: test-key
---- error_code: 403
---- response_body eval
-qr/\"consumer\":/ and qr/\"username\":\"test\"/ and qr/\"key\":\"test-key\"/
-
-
-
-=== TEST 9: hit route (test service data)
---- request
-GET /hello
---- more_headers
-test-header: only-for-test
-apikey: test-key
---- error_code: 403
---- response_body eval
-qr/\"service\":/ and qr/\"id\":\"s1\"/ and qr/\"query\":\"apikey\"/ and
-qr/\"header\":\"apikey\"/
+--- response_body_unlike eval
+qr/\"service\"/ and qr/\"consumer\"/
