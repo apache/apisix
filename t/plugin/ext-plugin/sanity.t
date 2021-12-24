@@ -692,4 +692,4 @@ GET /hello
 --- response_body
 hello world
 --- error_log eval
-qr/Plugin Runner service.*allow degradation/
+qr/Plugin Runner.*allow degradation/
