@@ -30,6 +30,7 @@ local schema = {
         },
         service_token = {type = "string"},
         namespace = {type = "string", maxLength = 256},
+        package = {type = "string", maxLength = 256},
         action = {type = "string", maxLength = 256},
         result = {
             type = "boolean",
@@ -91,8 +92,10 @@ function _M.access(conf, ctx)
     end
 
     -- OpenWhisk action endpoint
+    local package = conf.package and conf.package .. "/" or ""
     local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace ..
-        "/actions/" .. conf.action
+        "/actions/" .. package .. conf.action
+	
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
@@ -104,8 +107,35 @@ function _M.access(conf, ctx)
         return 503
     end
 
+    -- parse OpenWhisk JSON response
+    -- OpenWhisk supports two types of responses, the user can return only
+    -- the response body, or set the status code and header.
+    local result, err = core.json.decode(res.body)
+
+    if err then
+        core.log.error("failed to parse openwhisk response data: ", err)
+        return 503
+    end
+
     -- setting response headers
-    core.response.set_header(res.headers)
+    if result.headers ~= nil then
+        core.response.set_header(result.headers)
+    end
+
+    -- return status code and body
+    if result.statusCode ~= nil and result.body ~= nil then
+        return result.statusCode, result.body
+    end
+
+    -- return only status code
+    if result.statusCode ~= nil then
+        return result.statusCode
+    end
+
+    -- return only body
+    if result.body ~= nil then
+        return 200, result.body
+    end
 
     return res.status, res.body
 end

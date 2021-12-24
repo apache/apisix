@@ -99,7 +99,7 @@ property "api_host" validation failed: wrong type: expected string, got number
                                 "api_host": "http://127.0.0.1:3233",
                                 "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
                                 "namespace": "guest",
-                                "action": "test"
+                                "action": "test-params"
                             }
                         },
                         "upstream": {
@@ -140,8 +140,40 @@ Content-Type: application/x-www-form-urlencoded
 qr/"error":"The request content was malformed/
 
 
+=== TEST 7: setup route with plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "test-params"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
 
-=== TEST 7: hit route (with POST and correct request body)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+=== TEST 8: hit route (with POST and correct request body)
 --- request
 POST /hello
 {"name": "world"}
@@ -152,7 +184,7 @@ Content-Type: application/json
 
 
 
-=== TEST 8: reset route to non-existent action
+=== TEST 9: reset route to non-existent action
 --- config
     location /t {
         content_by_lua_block {
@@ -187,7 +219,7 @@ passed
 
 
 
-=== TEST 9: hit route (with non-existent action)
+=== TEST 10: hit route (with non-existent action)
 --- request
 POST /hello
 {"name": "world"}
@@ -199,7 +231,7 @@ qr/"error":"The requested resource does not exist."/
 
 
 
-=== TEST 10: reset route to wrong api_host
+=== TEST 11: reset route to wrong api_host
 --- config
     location /t {
         content_by_lua_block {
@@ -234,7 +266,7 @@ passed
 
 
 
-=== TEST 11: hit route (with wrong api_host)
+=== TEST 12: hit route (with wrong api_host)
 --- request
 POST /hello
 {"name": "world"}
@@ -243,3 +275,132 @@ Content-Type: application/json
 --- error_code: 503
 --- error_log
 failed to process openwhisk action, err:
+
+
+
+=== TEST 13: reset route to packaged action
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "package": "pkg",
+                                "action": "testpkg"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: hit route (with packaged action)
+--- request
+GET /hello
+--- response_body chomp
+{"hello":"world"}
+
+
+
+=== TEST 15: reset route to status code action
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "test-statuscode"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route (with packaged action)
+--- request
+GET /hello
+--- error_code: 407
+
+
+
+=== TEST 17: reset route to headers action
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "test-headers"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit route (with headers action)
+--- request
+GET /hello
+--- response_headers
+test: header
