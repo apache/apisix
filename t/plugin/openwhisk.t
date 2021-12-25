@@ -445,7 +445,7 @@ passed
 
 
 
-=== TEST 20: hit route (with headers action)
+=== TEST 20: hit route (with body action)
 --- request
 GET /hello
 --- response_body
