@@ -140,6 +140,7 @@ Content-Type: application/x-www-form-urlencoded
 qr/"error":"The request content was malformed/
 
 
+
 === TEST 7: setup route with plugin
 --- config
     location /t {
@@ -172,6 +173,8 @@ qr/"error":"The request content was malformed/
     }
 --- response_body
 passed
+
+
 
 === TEST 8: hit route (with POST and correct request body)
 --- request
