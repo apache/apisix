@@ -407,3 +407,46 @@ passed
 GET /hello
 --- response_headers
 test: header
+
+
+
+=== TEST 19: reset route to body action
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openwhisk": {
+                                "api_host": "http://127.0.0.1:3233",
+                                "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+                                "namespace": "guest",
+                                "action": "test-body"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route (with headers action)
+--- request
+GET /hello
+--- response_body
+{"test":"body"}
