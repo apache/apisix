@@ -16,6 +16,7 @@
 --
 local require = require
 local router = require("apisix.utils.router")
+local radixtree = require("resty.radixtree")
 local builtin_v1_routes = require("apisix.control.v1")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")
@@ -95,6 +96,14 @@ do
 function fetch_control_api_router()
     core.table.clear(routes)
 
+    local with_parameter = false
+    local conf = core.config.local_conf()
+    if conf and conf.apisix and conf.apisix.router then
+        if conf.apisix.router.control == "radixtree_uri_with_parameter" then
+            with_parameter = true
+        end
+    end
+
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.control_api
         if api_fun then
@@ -154,7 +163,11 @@ function fetch_control_api_router()
         handler = empty_func,
     })
 
-    return router.new(routes)
+    if with_parameter then
+        return radixtree.new(routes)
+    else
+        return router.new(routes)
+    end
 end
 
 end -- do
