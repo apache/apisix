@@ -24,11 +24,13 @@ local C            =   ffi.C
 local ngx          =   ngx
 local pairs        =   pairs
 local load_string  =   loadstring
+local io_open      =    io.open
 
 local plugin_name  =   "file-logger"
-local O_WRONLY     =   00000001 -- write only open
 local O_CREAT      =   00000040 -- create and open
 local O_APPEND     =   00000400 -- add content to the end of
+local O_WRONLY     =   00000001 -- write only open
+-- local O_APPEND     =   02000 -- add content to the end of
 local S_IRUSR      =   00400    -- user has read permission
 local S_IWUSR      =   00200    -- user has write permission
 local S_IRGRP      =   00040    -- group has read permission
@@ -36,6 +38,7 @@ local S_IROTH      =   00004    -- others have read permission
 
 local oflags = bit.bor(O_WRONLY, O_CREAT, O_APPEND)
 local mode = bit.bor(S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH)
+local file_descriptors = {}
 
 ffi.cdef [[
     int open(const char * filename, int flags, int mode);
@@ -81,8 +84,6 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
-local file_descriptors = {}
-
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
@@ -95,21 +96,48 @@ function _M.check_schema(conf, schema_type)
     return log_util.check_log_schema(conf)
 end
 
+local function reopen()
+    local args = ngx.req.get_uri_args()
+    if args["path"] then
+        local target_fd = io_open('logs/file_fd', 'w+')
+        local fd = tonumber(target_fd:read())
+        target_fd:write('-1')
+        core.log.warn('read_file: ', fd)
+        target_fd:close()
+        C.close(fd)
+    end
+end
+
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
+    local find_file = io_open('logs/file_fd', 'w+')
+    local reopen = tonumber(find_file:read())
     local fd = file_descriptors[conf.path]
+    core.log.warn("reopen: ", reopen)
+
+    if fd and reopen then
+        if reopen < 0 then
+            fd = nil
+            file_descriptors[conf.path] = nil
+        end
+    end
 
     if not fd then
+        local file = io_open(conf.path, 'a+')
+        file:close()
+
         fd = C.open(conf.path, oflags, mode)
         if fd < 0 then
             local err = ffi.errno()
             core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
 
         else
+            find_file:write(fd)
             file_descriptors[conf.path] = fd
         end
     end
 
+    find_file:close()
     C.write(fd, msg, #msg)
 end
 
@@ -140,6 +168,16 @@ function _M.log(conf, ctx)
     else
         write_file_data(conf, entry)
     end
+end
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris ={"/v1/plugin/file-logger/reopen"},
+            handler = reopen,
+        }
+    }
 end
 
 return _M
