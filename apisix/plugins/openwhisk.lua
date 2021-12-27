@@ -20,6 +20,8 @@ local http              = require("resty.http")
 local ngx_encode_base64 = ngx.encode_base64
 local tostring          = tostring
 
+local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z}]]
+
 local schema = {
     type = "object",
     properties = {
@@ -29,9 +31,9 @@ local schema = {
             default = true,
         },
         service_token = {type = "string"},
-        namespace = {type = "string", maxLength = 256},
-        package = {type = "string", maxLength = 256},
-        action = {type = "string", maxLength = 256},
+        namespace = {type = "string", maxLength = 256, pattern = name_pattern},
+        package = {type = "string", maxLength = 256, pattern = name_pattern},
+        action = {type = "string", maxLength = 256, pattern = name_pattern},
         result = {
             type = "boolean",
             default = true,
@@ -111,7 +113,7 @@ function _M.access(conf, ctx)
     -- the response body, or set the status code and header.
     local result, err = core.json.decode(res.body)
 
-    if err then
+    if not result or err then
         core.log.error("failed to parse openwhisk response data: ", err)
         return 503
     end
@@ -121,19 +123,17 @@ function _M.access(conf, ctx)
         core.response.set_header(result.headers)
     end
 
-    -- return status code and body
     if result.statusCode ~= nil and result.body ~= nil then
+        -- return status code and body
         return result.statusCode, result.body
-    end
-
-    -- return only status code
-    if result.statusCode ~= nil then
+    elseif result.statusCode ~= nil then
+        -- return only status code
         return result.statusCode
-    end
-
-    -- return only body
-    if result.body ~= nil then
+    elseif result.body ~= nil then
+        -- return only body
         return 200, result.body
+    else
+        return res.status, res.body
     end
 
     return res.status, res.body
