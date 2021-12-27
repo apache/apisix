@@ -98,8 +98,8 @@ function fetch_control_api_router()
 
     local with_parameter = false
     local conf = core.config.local_conf()
-    if conf and conf.apisix and conf.apisix.router then
-        if conf.apisix.router.control == "radixtree_uri_with_parameter" then
+    if conf.apisix.enable_control and conf.apisix.control then
+        if conf.apisix.control.router == "radixtree_uri_with_parameter" then
             with_parameter = true
         end
     end
