@@ -1,0 +1,196 @@
+---
+title: limit-req
+---
+
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+## 目录
+
+  - [简介](#简介)
+  - [属性](#属性)
+  - [示例](#示例)
+    - [如何在 `route` 或 `service` 上使用](#如何在`route`或`service`上使用)
+    - [如何在 `consumer` 上使用](#如何在`consumer`上使用)
+  - [移除插件](#移除插件)
+
+## 简介
+
+Mock API插件，绑定该插件后将随机返回指定格式的mock数据，不再转发到后端。
+
+## 属性
+
+| 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
+| ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| response_schema | object | 必须  |        |                                                                 | 响应的json schema对象。具体结构看后文说明。                                            |
+支持的字段类型：string,number,integer,boolean,object,array。
+基础数据类型（string,number,integer,boolean）可通过配置example属性指定生成的响应值，未配置时随机返回。
+以下是一个json schema实例：
+```json
+{
+    "properties":{
+        "field0":{
+            "example":"abcd",
+            "type":"string"
+        },
+        "field1":{
+            "example":123.12,
+            "type":"number"
+        },
+        "field3":{
+            "properties":{
+                "field3_1":{
+                    "type":"string"
+                },
+                "field3_2":{
+                    "properties":{
+                        "field3_2_1":{
+                            "example":true,
+                            "type":"boolean"
+                        },
+                        "field3_2_2":{
+                            "items":{
+                                "example":155.55,
+                                "type":"integer"
+                            },
+                            "type":"array"
+                        }
+                    },
+                    "type":"object"
+                }
+            },
+            "type":"object"
+        },
+        "field2":{
+            "items":{
+                "type":"string"
+            },
+            "type":"array"
+        }
+    },
+    "type":"object"
+}
+```
+以下为该json schema可能生成的返回对象：
+```json
+{
+    "field1": 123.12,
+    "field3": {
+        "field3_1": "LCFE0",
+        "field3_2": {
+            "field3_2_1": true,
+            "field3_2_2": [
+                155,
+                155
+            ]
+        }
+    },
+    "field0": "abcd",
+    "field2": [
+        "sC"
+    ]
+}
+```
+
+## 示例
+
+### 如何在`route`或`service`上使用
+
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `mocking` 插件。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "mocking": {
+            "response_schema": {
+               "properties":{
+                   "field0":{
+                       "example":"abcd",
+                       "type":"string"
+                   },
+                   "field1":{
+                       "example":123.12,
+                       "type":"number"
+                   },
+                   "field3":{
+                       "properties":{
+                           "field3_1":{
+                               "type":"string"
+                           },
+                           "field3_2":{
+                               "properties":{
+                                   "field3_2_1":{
+                                       "example":true,
+                                       "type":"boolean"
+                                   },
+                                   "field3_2_2":{
+                                       "items":{
+                                           "example":155.55,
+                                           "type":"integer"
+                                       },
+                                       "type":"array"
+                                   }
+                               },
+                               "type":"object"
+                           }
+                       },
+                       "type":"object"
+                   },
+                   "field2":{
+                       "items":{
+                           "type":"string"
+                       },
+                       "type":"array"
+                   }
+               },
+               "type":"object"
+           }
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+## 移除插件
+
+当你想去掉 mocking 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+现在就已经移除了 mocking 插件了。其他插件的开启和移除也是同样的方法。
