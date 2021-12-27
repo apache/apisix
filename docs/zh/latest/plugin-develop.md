@@ -31,10 +31,10 @@ title: 插件开发
 - [编写执行逻辑](#编写执行逻辑)
   - [conf 参数](#conf-参数)
   - [ctx 参数](#ctx-参数)
+- [注册公共接口](#注册公共接口)
+- [注册控制接口](#注册控制接口)
 - [编写测试用例](#编写测试用例)
   - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
-  - [注册公共接口](#注册公共接口)
-  - [注册控制接口](#注册控制接口)
 
 ## 检查外部依赖
 
@@ -308,6 +308,59 @@ function _M.access(conf, ctx)
 end
 ```
 
+## 注册公共接口
+
+插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
+
+```lua
+local function gen_token()
+    -- ...
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/sign",
+            handler = gen_token,
+        }
+    }
+end
+```
+
+注意注册的接口会暴露到外网。
+你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
+
+## 注册控制接口
+
+如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
+
+Take a look at example-plugin plugin:
+
+```lua
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
+end
+```
+
+如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。
+
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
@@ -352,56 +405,3 @@ done
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。
-
-### 注册公共接口
-
-插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
-
-```lua
-local function gen_token()
-    -- ...
-end
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
-    }
-end
-```
-
-注意注册的接口会暴露到外网。
-你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
-
-### 注册控制接口
-
-如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
-
-Take a look at example-plugin plugin:
-
-```lua
-local function hello()
-    local args = ngx.req.get_uri_args()
-    if args["json"] then
-        return 200, {msg = "world"}
-    else
-        return 200, "world\n"
-    end
-end
-
-
-function _M.control_api()
-    return {
-        {
-            methods = {"GET"},
-            uris = {"/v1/plugin/example-plugin/hello"},
-            handler = hello,
-        }
-    }
-end
-```
-
-如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。
