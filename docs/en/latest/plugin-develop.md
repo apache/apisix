@@ -493,7 +493,7 @@ function _M.control_api()
 end
 ```
 
-If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`. Test with the following command:
+If you don't change the default control API configuration, the plugin will expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`. Test with the following command:
 
 ```shell
 curl -i -X GET "http://localhost:9090/v1/plugin/example-plugin/hello"
