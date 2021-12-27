@@ -281,16 +281,12 @@ failed to parse domain: loc, error:
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4
+                            "protocol_level": 4,
+                            "upstream": {
+                                "ip": "127.0.0.1",
+                                "port": 1995
+                            }
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": [{
-                            "host": "127.0.0.1",
-                            "port": 1995,
-                            "weight": 1
-                        }]
                     }
                 }]]
                 )
@@ -352,16 +348,12 @@ qr/mqtt client id: \w+/
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 5
+                            "protocol_level": 5,
+                            "upstream": {
+                                "ip": "127.0.0.1",
+                                "port": 1995
+                            }
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": [{
-                            "host": "127.0.0.1",
-                            "port": 1995,
-                            "weight": 1
-                        }]
                     }
                 }]]
                 )
