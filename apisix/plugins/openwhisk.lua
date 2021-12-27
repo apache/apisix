@@ -132,8 +132,6 @@ function _M.access(conf, ctx)
     elseif result.body ~= nil then
         -- return only body
         return 200, result.body
-    else
-        return res.status, res.body
     end
 
     return res.status, res.body
