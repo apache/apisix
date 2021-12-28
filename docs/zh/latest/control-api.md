@@ -37,7 +37,7 @@ apisix:
     port: 9090
 ```
 
-control API 的路由在默认情况下不支持参数匹配，如果想启用参数匹配功能可以在 control 部分添加 `router: 'radixtree_uri_with_parameter'`
+插件的 control API 在默认情况下不支持参数匹配，如果想启用参数匹配功能可以在 control 部分添加 `router: 'radixtree_uri_with_parameter'`
 
 注意: control API server 不应该被配置成监听公网地址。
 
