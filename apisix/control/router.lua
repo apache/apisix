@@ -96,14 +96,6 @@ do
 function fetch_control_api_router()
     core.table.clear(routes)
 
-    local with_parameter = false
-    local conf = core.config.local_conf()
-    if conf.apisix.enable_control and conf.apisix.control then
-        if conf.apisix.control.router == "radixtree_uri_with_parameter" then
-            with_parameter = true
-        end
-    end
-
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.control_api
         if api_fun then
@@ -162,6 +154,14 @@ function fetch_control_api_router()
         end,
         handler = empty_func,
     })
+
+    local with_parameter = false
+    local conf = core.config.local_conf()
+    if conf.apisix.enable_control and conf.apisix.control then
+        if conf.apisix.control.router == "radixtree_uri_with_parameter" then
+            with_parameter = true
+        end
+    end
 
     if with_parameter then
         return radixtree.new(routes)
