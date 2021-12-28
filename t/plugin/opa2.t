@@ -40,87 +40,68 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local datas = {
+                {
+                    url = "/apisix/admin/upstreams/u1",
+                    data = [[{
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/consumers",
+                    data = [[{
+                        "username": "test",
+                        "plugins": {
+                            "key-auth": {
+                                "disable": false,
+                                "key": "test-key"
+                            }
+                        }
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/services/s1",
+                    data = [[{
+                        "name": "s1",
+                        "plugins": {
+                            "key-auth": {
+                                "disable": false
+                            }
+                        }
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/1",
+                    data = [[{
+                        "plugins": {
+                            "opa": {
+                                "host": "http://127.0.0.1:8181",
+                                "policy": "echo",
+                                "with_route": true,
+                                "with_consumer": true,
+                                "with_service": true
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "service_id": "s1",
+                        "uri": "/hello"
+                    }]],
+                },
+            }
+
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/u1',
-                ngx.HTTP_PUT,
-                [[{
-                    "nodes": {
-                        "127.0.0.1:1980": 1
-                    },
-                    "type": "roundrobin"
-                }]]
-                )
 
-            if code >= 300 then
-                ngx.status = code
-                return
+            for _, data in ipairs(datas) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(code..body)
             end
-            ngx.say(body)
-
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "test",
-                    "plugins": {
-                        "key-auth": {
-                            "disable": false,
-                            "key": "test-key"
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-            ngx.say(body)
-
-            local code, body = t('/apisix/admin/services/s1',
-                ngx.HTTP_PUT,
-                [[{
-                    "name": "s1",
-                    "plugins": {
-                        "key-auth": {
-                            "disable": false
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-            ngx.say(body)
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "opa": {
-                            "host": "http://127.0.0.1:8181",
-                            "policy": "debug",
-                            "with_route": true,
-                            "with_consumer": true,
-                            "with_service": true
-                        }
-                    },
-                    "upstream_id": "u1",
-                    "service_id": "s1",
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-            ngx.say(body)
         }
     }
 --- response_body eval
-"passed\n" x 4
+"200passed\n" x 4
 
 
 
@@ -173,7 +154,7 @@ qr/\"header\":\"apikey\"/
                     "plugins": {
                         "opa": {
                             "host": "http://127.0.0.1:8181",
-                            "policy": "debug",
+                            "policy": "echo",
                             "with_route": true,
                             "with_consumer": true,
                             "with_service": true
