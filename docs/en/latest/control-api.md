@@ -38,7 +38,7 @@ apisix:
     port: 9090
 ```
 
-The control API server does not support parameter matching in plugin's control API by default, if you want to enable parameter matching
+The control API server does not support parameter matching by default, if you want to enable parameter matching in plugin's control API
 you can add `router: 'radixtree_uri_with_parameter'` to the `control` section.
 
 Note that the control API server should not be configured to listen to the public traffic!
