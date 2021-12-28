@@ -32,10 +32,11 @@ title: Plugin Develop
 - [implement the logic](#implement-the-logic)
   - [conf parameter](#conf-parameter)
   - [ctx parameter](#ctx-parameter)
+- [register public API](#register-public-api)
+- [register control API](#register-control-api)
+- [register custom variable](#register-custom-variable)
 - [write test case](#write-test-case)
-  - [Attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
-  - [Register public API](#register-public-api)
-  - [Register control API](#register-control-api)
+  - [attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
 
 This documentation is about developing plugin in Lua. For other languages,
 see [external plugin](./external-plugin.md).
@@ -388,6 +389,81 @@ function _M.access(conf, ctx)
 end
 ```
 
+## register public API
+
+A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
+
+```lua
+local function gen_token()
+    --...
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/sign",
+            handler = gen_token,
+        }
+    }
+end
+```
+
+Note that the public API is exposed to the public.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
+
+## register control API
+
+If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
+
+Take a look at example-plugin plugin:
+
+```lua
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
+end
+```
+
+If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`.
+
+## register custom variable
+
+We can use variables in many places of APISIX. For example, customizing log format in http-logger, using it as the key of `limit-*` plugins. In some situations, the builtin variables are not enough. Therefore, APISIX allows developers to register their variables globally, and use them as normal builtin variables.
+
+For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
+
+```
+local core = require "apisix.core"
+
+core.ctx.register_var("a6_labels_zone", function(ctx)
+    local route = ctx.matched_route and ctx.matched_route.value
+    if route and route.labels then
+        return route.labels.zone
+    end
+    return nil
+end)
+```
+
+After that, any get operation to `$a6_labels_zone` will call the registered getter to fetch the value.
+
+Note that the custom variables can't be used in features that depend on the Nginx directive, like `access_log_format`.
+
 ## write test case
 
 For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin! The
@@ -435,62 +511,9 @@ Additionally, there are some convenience testing endpoints which can be found [h
 
 Refer the following [document](how-to-build.md#Step-4-Run-Test-Cases) to setup the testing framework.
 
-### Attach the test-nginx execution process:
+### attach the test-nginx execution process:
 
 According to the path we configured in the makefile and some configuration items at the front of each __.t__ file, the
 framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
 Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.
-
-### Register public API
-
-A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
-
-```lua
-local function gen_token()
-    --...
-end
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
-    }
-end
-```
-
-Note that the public API is exposed to the public.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
-
-### Register control API
-
-If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
-
-Take a look at example-plugin plugin:
-
-```lua
-local function hello()
-    local args = ngx.req.get_uri_args()
-    if args["json"] then
-        return 200, {msg = "world"}
-    else
-        return 200, "world\n"
-    end
-end
-
-
-function _M.control_api()
-    return {
-        {
-            methods = {"GET"},
-            uris = {"/v1/plugin/example-plugin/hello"},
-            handler = hello,
-        }
-    }
-end
-```
-
-If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`.
