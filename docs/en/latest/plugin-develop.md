@@ -496,9 +496,7 @@ end
 If you don't change the default control API configuration, the plugin will expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`. Test with the following command:
 
 ```shell
-curl -i -X GET "http://localhost:9090/v1/plugin/example-plugin/hello"
+curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 ```
 
-:::note Note
-By default, the control API server is enabled and listens to `127.0.0.1:9090`. You can change it via the `control` section under `apisix` in `conf/config.yaml`: [Read more about control API introduction](./control-api)
-:::
+[Read more about control API introduction](./control-api.md)

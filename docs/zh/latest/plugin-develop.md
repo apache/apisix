@@ -407,9 +407,7 @@ end
 如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。通过以下命令进行测试：
 
 ```shell
-curl -i -X GET "http://localhost:9090/v1/plugin/example-plugin/hello"
+curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 ```
 
-:::note 注意
-默认情况下，control API 是启用的，监听 `127.0.0.1:9090`。你可以通过修改 `apisix/conf/config.yaml` 中的 control 部分来更改设置。[查看更多有关 control API 介绍](./control-api)
-:::
+[查看更多有关 control API 介绍](./control-api)
