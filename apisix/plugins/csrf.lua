@@ -21,34 +21,34 @@ local ngx = ngx
 local plugin_name = "csrf"
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
-local timer = ngx.time
+local ngx_time = ngx.time
 local cookie_time = ngx.cookie_time
 local math = math
 
 local schema = {
     type = "object",
     properties = {
-      key = {
-        description = "use to generate csrf token",
-        type = "string",
-      },
-      expires = {
-        description = "expires time for csrf token",
-        type = "integer",
-        default = 7200
-      },
-      name = {
-        description = "the csrf token name",
-        type = "string",
-        default = "apisix_csrf_token"
-      }
+        key = {
+            description = "use to generate csrf token",
+            type = "string",
+        },
+        expires = {
+            description = "expires time(s) for csrf token",
+            type = "integer",
+            default = 7200
+        },
+        name = {
+            description = "the csrf token name",
+            type = "string",
+            default = "apisix_csrf_token"
+        }
     },
     required = {"key"}
 }
 
 local _M = {
     version = 0.1,
-    priority = 3500,
+    priority = 2980,
     name = plugin_name,
     schema = schema,
 }
@@ -62,9 +62,9 @@ local function gen_sign(random, expires, key)
     local sha256 = resty_sha256:new()
 
     local sign = {
-      random = random,
-      expires = expires,
-      key = key,
+        random = random,
+        expires = expires,
+        key = key,
     }
 
     sha256:update(core.json.encode(sign))
@@ -75,13 +75,13 @@ end
 
 
 local function gen_csrf_token(conf)
-    local random = math.random();
+    local random = math.random()
     local sign = gen_sign(random, conf.expires, conf.key)
 
     local token = {
-      random = random,
-      expires = conf.expires,
-      sign = sign,
+        random = random,
+        expires = conf.expires,
+        sign = sign,
     }
 
     local cookie = ngx_encode_base64(core.json.encode(token))
@@ -91,27 +91,32 @@ end
 
 local function check_csrf_token(conf, ctx, token)
     local _token = ngx_decode_base64(token)
+    if _token == nil then
+        core.log.error("csrf token is nil")
+        return false
+    end
+
     local _token_table, err = core.json.decode(_token)
     if err then
-      core.log.error("decode token error: ", err)
-      return false
+        core.log.error("decode token error: ", err)
+        return false
     end
 
     local random = _token_table["random"]
     if not random then
-      core.log.warn("no random in token")
-      return false
+        core.log.error("no random in token")
+        return false
     end
 
     local expires = _token_table["expires"]
     if not expires then
-      core.log.warn("no expires in token")
-      return false
+        core.log.error("no expires in token")
+        return false
     end
 
     local sign = gen_sign(random, expires, conf.key)
     if _token_table["sign"] ~= sign then
-      return false
+        return false
     end
 
     return true
@@ -119,50 +124,47 @@ end
 
 
 function _M.access(conf, ctx)
-    local method = ctx.var.request_method
+    local method = core.request.get_method
     if method == 'GET' then
-      return
+        return
     end
 
     local token = core.request.header(ctx, conf.name)
     if not token then
-      return 401, {error_msg = "no csrf token in request header"}
+        return 401, {error_msg = "no csrf token in request header"}
     end
 
     local cookie, err = ck:new()
     if not cookie then
-      return nil, err
+        return nil, err
     end
 
     local field_cookie, err = cookie:get(conf.name)
     if not field_cookie then
-      return 401, {error_msg = "no csrf cookie"}
+        return 401, {error_msg = "no csrf cookie"}
     end
 
     if err then
-      core.log.error(err)
-      return 400, {error_msg = "read csrf cookie failed"}
+        core.log.error(err)
+        return 400, {error_msg = "read csrf cookie failed"}
     end
 
     if token ~= field_cookie then
-      return 401, {error_msg = "csrf token mismatch"}
+        return 401, {error_msg = "csrf token mismatch"}
     end
 
     local result = check_csrf_token(conf, ctx, token)
     if not result then
-      return 401, {error_msg = "Failed to verify the csrf token signature"}
+        return 401, {error_msg = "Failed to verify the csrf token signature"}
     end
 end
 
 
 function _M.header_filter(conf, ctx)
-    local method = ctx.var.request_method
-    if method == 'GET' then
-      local csrf_token = gen_csrf_token(conf)
-      core.response.add_header("Set-Cookie", {conf.name .. "=" .. csrf_token
-                                              .. ";path=/;Expires="
-                                              .. cookie_time(timer() + conf.expires)})
-    end
+    local csrf_token = gen_csrf_token(conf)
+    core.response.add_header("Set-Cookie", {conf.name .. "=" .. csrf_token
+                                            .. ";path=/;Expires="
+                                            .. cookie_time(ngx_time() + conf.expires)})
 end
 
 return _M
