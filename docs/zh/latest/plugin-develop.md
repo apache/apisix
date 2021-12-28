@@ -359,7 +359,13 @@ function _M.control_api()
 end
 ```
 
-如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。
+如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。通过以下命令进行测试：
+
+```shell
+curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
+```
+
+[查看更多有关 control API 介绍](./control-api.md)
 
 ## 编写测试用例
 
