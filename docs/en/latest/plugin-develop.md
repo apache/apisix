@@ -439,7 +439,13 @@ function _M.control_api()
 end
 ```
 
-If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`.
+If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`. Test with the following command:
+
+```shell
+curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
+```
+
+[Read more about control API introduction](./control-api.md)
 
 ## write test case
 
@@ -494,62 +500,3 @@ According to the path we configured in the makefile and some configuration items
 framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
 Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.
-
-### Register public API
-
-A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
-
-```lua
-local function gen_token()
-    --...
-end
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
-    }
-end
-```
-
-Note that the public API is exposed to the public.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
-
-### Register control API
-
-If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
-
-Take a look at example-plugin plugin:
-
-```lua
-local function hello()
-    local args = ngx.req.get_uri_args()
-    if args["json"] then
-        return 200, {msg = "world"}
-    else
-        return 200, "world\n"
-    end
-end
-
-
-function _M.control_api()
-    return {
-        {
-            methods = {"GET"},
-            uris = {"/v1/plugin/example-plugin/hello"},
-            handler = hello,
-        }
-    }
-end
-```
-
-If you don't change the default control API configuration, the plugin will expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`. Test with the following command:
-
-```shell
-curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
-```
-
-[Read more about control API introduction](./control-api.md)
