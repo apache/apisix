@@ -39,107 +39,95 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.response_schema then
-        ok, err = core.schema.valid(conf.response_schema)
-        if not ok then
-            return false, err
-        end
-    end
-
     return true, nil
 end
 
-function _M.rewrite(conf)
-    if conf.response_schema then
-        local output = genObject(conf.response_schema)
-        ngx.header["Content-Type"] = "application/json"
-        return 200, core.utils.resolve_var(core.json.encode(output))
-    end
+function _M.access(conf)
+    local output = gen_object(conf.response_schema)
+    ngx.header["Content-Type"] = "application/json"
+    return 200, core.utils.resolve_var(core.json.encode(output))
 end
 
-function genObject(property)
+function gen_object(property)
     local output = {}
     if property.properties == nil then
         return output
     end
     for k, v in pairs(property.properties) do
-        if v.type == "array" then
-            output[k] = genArray(v)
-        elseif v.type == "object" then
-            output[k] = genObject(v)
+        local type = string.lower(v.type)
+        if type == "array" then
+            output[k] = gen_array(v)
+        elseif type == "object" then
+            output[k] = gen_object(v)
         else
-            output[k] = genBase(v)
+            output[k] = get_base(v)
         end
     end
     return output
 end
 
-function genArray(property)
+function gen_array(property)
     local output = {}
     if property.items == nil then
         return nil
     end
     local v = property.items
     local n = math.random(1, 3)
+    local type = string.lower(v.type)
     for i = 1, n do
         if type == "array" then
-            table.insert(output, genArray(v))
+            table.insert(output, gen_array(v))
         elseif type == "object" then
-            table.insert(output, genObject(v))
+            table.insert(output, gen_object(v))
         else
-            table.insert(output, genBase(v))
+            table.insert(output, get_base(v))
         end
     end
     return output
 end
 
-function genBase(property)
-    local type = property.type
+function get_base(property)
+    local type = string.lower(property.type)
     local example = property.example
     if type == "string" then
-        return genString(example)
+        return gen_string(example)
     elseif type == "number" then
-        return genNumber(example)
+        return gen_number(example)
     elseif type == "integer" then
-        return genInteger(example)
+        return gen_integer(example)
     elseif type == "boolean" then
-        return genBoolean(example)
+        return gen_boolean(example)
     end
     return nil
 end
 
-function genString(example)
+function gen_string(example)
     if example ~= nil and type(example) == "string" then
         return example
     end
-    local t = {
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-    }
     local n = math.random(1, 10)
-    local s = ""
+    local list = {}
     for i = 1, n do
-        s = s .. t[math.random(#t)]
-    end ;
-    return s
+        table.insert(list, string.char(math.random(97, 122)))
+    end
+    return table.concat(list)
 end
 
-function genNumber(example)
+function gen_number(example)
     if example ~= nil and type(example) == "number" then
         return example
     end
     return math.random() * 10000
 end
 
-function genInteger(example)
+function gen_integer(example)
     if example ~= nil and type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
 
-function genBoolean(example)
+function gen_boolean(example)
     if example ~= nil and type(example) == "boolean" then
         return example
     end
