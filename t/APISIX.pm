@@ -212,6 +212,7 @@ my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
     apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     wasm_vm wasmtime;
 _EOC_
 }
@@ -762,11 +763,17 @@ _EOC_
 
         location = /proxy_mirror {
             internal;
+_EOC_
 
+    if ($version !~ m/\/apisix-nginx-module/) {
+        $config .= <<_EOC_;
             if (\$upstream_mirror_host = "") {
                 return 200;
             }
+_EOC_
+    }
 
+    $config .= <<_EOC_;
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;
