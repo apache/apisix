@@ -99,6 +99,7 @@ local schema = {
             },
             minItems = 1,
         },
+        allow_degradation = {type = "boolean", default = false}
     },
 }
 
@@ -700,6 +701,10 @@ function _M.communicate(conf, ctx, plugin_name)
 
         if not core.string.find(err, "conf token not found") then
             core.log.error(err)
+            if conf.allow_degradation then
+                core.log.warn("Plugin Runner is wrong, allow degradation")
+                return
+            end
             return 503
         end
 
@@ -708,6 +713,10 @@ function _M.communicate(conf, ctx, plugin_name)
     end
 
     core.log.error(err)
+    if conf.allow_degradation then
+        core.log.warn("Plugin Runner is wrong after " .. tries .. " times retry, allow degradation")
+        return
+    end
     return 503
 end
 
