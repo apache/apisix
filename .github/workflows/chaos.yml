@@ -64,9 +64,11 @@ jobs:
           kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
-          kubectl wait pods -l app=apisix-gw --for=condition=Ready --timeout=300s
+          kubectl wait pods -l app=apisix-gw --for=condition=Ready --timeout=300s \
+            || kubectl logs -l app=apisix-gw
           kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
-          kubectl wait pods -l app=httpbin --for=condition=Ready --timeout=300s
+          kubectl wait pods -l app=httpbin --for=condition=Ready --timeout=300s \
+            || kubectl logs -l app=httpbin
           bash ./t/chaos/utils/setup_chaos_utils.sh port_forward
 
       - name: Deploy Chaos Mesh
