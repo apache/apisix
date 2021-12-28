@@ -199,8 +199,8 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing JWT token in request"}
---- no_error_log
-[error]
+--- error_log
+failed to fetch JWT token: JWT not found in cookie
 
 
 

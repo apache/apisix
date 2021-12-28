@@ -16,7 +16,6 @@
 --
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
-local ck       = require("resty.cookie")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local vault        = require("apisix.core.vault")
@@ -188,13 +187,11 @@ local function fetch_jwt_token(ctx)
         return token
     end
 
-    local cookie, err = ck:new()
-    if not cookie then
-        return nil, err
+    local val = ctx.var.cookie_jwt
+    if not val then
+        return nil, "JWT not found in cookie"
     end
-
-    local val, err = cookie:get("jwt")
-    return val, err
+    return val
 end
 
 
@@ -344,7 +341,7 @@ end
 function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
-        if err and err:sub(1, #"no cookie") ~= "no cookie" then
+        if err then
             core.log.error("failed to fetch JWT token: ", err)
         end
 
