@@ -67,8 +67,8 @@ local function build_http_service(conf, ctx)
         local service = core.table.clone(get_service(service_id)).value
 
         if service then
-            if service.upstream and service.upstream.parent then
-                service.upstream.parent = nil
+            if service.upstream then
+                service.upstream = nil
             end
             return service
         end
