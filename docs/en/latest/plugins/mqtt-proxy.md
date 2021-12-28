@@ -22,7 +22,6 @@ title: mqtt-proxy
 -->
 
 ## Summary
-
 - [Summary](#summary)
 - [Name](#name)
 - [Attributes](#attributes)
@@ -81,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
     "upstream": {
         "type": "roundrobin",
         "nodes": [{
-            "host": "127.0.0.1", 
+            "host": "127.0.0.1",
             "port": 1980,
             "weight": 1
         }]
