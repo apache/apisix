@@ -57,10 +57,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
       "upstream": {
            "type": "roundrobin",
            "nodes": {
-               "127.0.0.1:3030": 1
+               "127.0.0.1:9001": 1
            }
       },
-      "uri": "/api/hello"
+      "uri": "/hello"
 }'
 ```
 
@@ -89,7 +89,7 @@ $ curl -i http://localhost:9090/plugin/file-logger/reopen?reopen
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 http-logger 的 Route 或 Service 生效。 |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 file-logger 的 Route 或 Service 生效。 |
 
 **APISIX 变量**
 
@@ -103,7 +103,7 @@ $ curl -i http://localhost:9090/plugin/file-logger/reopen?reopen
 
 ## 禁用插件
 
-在插件配置中删除相应的 json 配置以禁用 http-logger。APISIX 插件是热重载的，因此无需重新启动 APISIX：
+在插件配置中删除相应的 json 配置以禁用 file-logger。APISIX 插件是热重载的，因此无需重新启动 APISIX：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -114,7 +114,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "127.0.0.1:9001": 1
         }
     }
 }'
