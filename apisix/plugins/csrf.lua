@@ -92,7 +92,7 @@ end
 local function check_csrf_token(conf, ctx, token)
     local _token = ngx_decode_base64(token)
     if _token == nil then
-        core.log.error("csrf token is nil")
+        core.log.error("csrf token is null")
         return false
     end
 
@@ -124,14 +124,14 @@ end
 
 
 function _M.access(conf, ctx)
-    local method = core.request.get_method
+    local method = core.request.get_method(ctx)
     if method == 'GET' then
         return
     end
 
     local token = core.request.header(ctx, conf.name)
     if not token then
-        return 401, {error_msg = "no csrf token in request header"}
+        return 401, {error_msg = "no csrf token in headers"}
     end
 
     local cookie, err = ck:new()

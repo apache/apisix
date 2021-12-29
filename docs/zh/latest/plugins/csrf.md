@@ -37,7 +37,7 @@ title: csrf
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    false    | `apisix_csrf_token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字从 Cookie 中读取 |
+|   name   |  string |    false    | `apisix_csrf_token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
 | expires |  number | false | `7200` | | CSRF Cookie 的过期时间(秒) |
 | key | string | true |  |  | 加密 token 的秘钥 |
 
