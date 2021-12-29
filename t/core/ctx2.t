@@ -316,3 +316,63 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 15: register custom variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_labels_zone: ', ctx.var.a6_labels_zone) end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "labels": {
+                            "zone": "Singapore"
+                        }
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 16: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require "apisix.core"
+            core.ctx.register_var("a6_labels_zone", function(ctx)
+                local route = ctx.matched_route and ctx.matched_route.value
+                if route and route.labels then
+                    return route.labels.zone
+                end
+                return nil
+            end)
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res = assert(httpc:request_uri(uri))
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+find ctx.var.a6_labels_zone: Singapore
