@@ -293,7 +293,7 @@ hello 1980
 
 `match` 中可以设置多个 `vars` 规则，`vars` 中的多个表达式之间是 `add` 的关系， 多个 `vars` 规则之间是 `or` 的关系；只要其中一个 vars 规则通过，则整个 `match` 通过。
 
-**示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系。在 `weighted_upstreams` 中根据 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 `route` 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
+**示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系。在 `weighted_upstreams` 中根据 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 `route` 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
