@@ -24,7 +24,7 @@ local C            =   ffi.C
 local ngx          =   ngx
 local pairs        =   pairs
 local load_string  =   loadstring
-local io_open      =    io.open
+local io_open      =   io.open
 
 local plugin_name  =   "file-logger"
 local O_CREAT      =   00000040 -- create and open
@@ -203,7 +203,7 @@ function _M.control_api()
     return {
         {
             methods = {"GET"},
-            uris ={"/plugin/file-logger/reopen"},
+            uris = {"/plugin/file-logger/reopen"},
             handler = reopen,
         }
     }
