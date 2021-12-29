@@ -221,6 +221,7 @@ do
                     if getter == true then
                         val = ngx.ctx.api_ctx and ngx.ctx.api_ctx[key]
                     else
+                        -- the getter is registered by ctx.register_var
                         val = getter(ngx.ctx.api_ctx)
                     end
 
