@@ -33,6 +33,7 @@ title: 插件开发
   - [ctx 参数](#ctx-参数)
 - [注册公共接口](#注册公共接口)
 - [注册控制接口](#注册控制接口)
+- [注册自定义变量](#注册自定义变量)
 - [编写测试用例](#编写测试用例)
   - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
 
@@ -366,6 +367,28 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 ```
 
 [查看更多有关 control API 介绍](./control-api.md)
+
+## 注册自定义变量
+
+我们可以在APISIX的许多地方使用变量。例如，在 http-logger 中自定义日志格式，用它作为 `limit-*` 插件的键。在某些情况下，内置的变量是不够的。因此，APISIX允许开发者在全局范围内注册他们的变量，并将它们作为普通的内置变量使用。
+
+例如，让我们注册一个叫做 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值。
+
+```
+local core = require "apisix.core"
+
+core.ctx.register_var("a6_labels_zone", function(ctx)
+    local route = ctx.matched_route and ctx.matched_route.value
+    if route and route.labels then
+        return route.labels.zone
+    end
+    return nil
+end)
+```
+
+此后，任何对 `$a6_labels_zone` 的获取操作都会调用注册的获取器来获取数值。
+
+注意，自定义变量不能用于依赖 Nginx 指令的功能，如 `access_log_format`。
 
 ## 编写测试用例
 
