@@ -43,6 +43,7 @@ The result of external plugins execution will affect the behavior of the current
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner with their configuration    |
+| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the plugin runner is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
 ## How To Enable
 

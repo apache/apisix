@@ -3,14 +3,6 @@ name: ❄️ Lint
 on: [pull_request]
 
 jobs:
-  trailing-whitespace:
-    name: 🌌 Trailing whitespace
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - uses: actions/checkout@v2.4.0
-      - name: 🧹 Check for trailing whitespace
-        run: "! git grep -EIn $'[ \t]+$'"
   misc:
     name: misc checker
     runs-on: ubuntu-latest
