@@ -162,9 +162,9 @@ end
 
 function _M.header_filter(conf, ctx)
     local csrf_token = gen_csrf_token(conf)
-    core.response.add_header("Set-Cookie", {conf.name .. "=" .. csrf_token
-                                            .. ";path=/;Expires="
-                                            .. cookie_time(ngx_time() + conf.expires)})
+    local cookie = conf.name .. "=" .. csrf_token .. ";path=/;Expires="
+                   .. cookie_time(ngx_time() + conf.expires)
+    core.response.add_header("Set-Cookie", cookie)
 end
 
 return _M
