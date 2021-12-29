@@ -62,7 +62,7 @@ end
 local function build_http_service(conf, ctx)
     local service_id = ctx.service_id
 
-    -- possible that the route is not bind a service
+    -- possible that there is no service bound to the route
     if service_id then
         local service = core.table.clone(get_service(service_id)).value
 
@@ -79,7 +79,7 @@ end
 
 
 local function build_http_consumer(conf, ctx)
-    -- possible that the route is not relative consumer
+    -- possible that there is no consumer bound to the route
     if ctx.consumer then
         return core.table.clone(ctx.consumer)
     end
