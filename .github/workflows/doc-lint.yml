@@ -22,3 +22,14 @@ jobs:
       - name: check category
         run: |
           ./utils/check-category.py
+      - name: check Chinese doc
+        run: |
+          sudo pip3 install zhon
+          ./utils/fix-zh-doc-segment.py > \
+            /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+          if grep "find broken newline in file: " /tmp/check.log; then
+            cat /tmp/error.log
+            echo "Newline can't appear in the middle of Chinese sentences."
+            echo "You need to run ./utils/fix-zh-doc-segment.py to fix them."
+            exit 1
+          fi

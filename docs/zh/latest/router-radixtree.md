@@ -194,8 +194,7 @@ apisix:
 
 ### 如何通过 Nginx 内置变量过滤路由
 
-具体参数及使用方式请查看 [radixtree#new](https://github.com/iresty/lua-resty-radixtree#new) 文档
-，下面是一个简单的示例:
+具体参数及使用方式请查看 [radixtree#new](https://github.com/iresty/lua-resty-radixtree#new) 文档，下面是一个简单的示例:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
