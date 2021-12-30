@@ -46,7 +46,7 @@ The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from
 1. Create the route and enable the plugin.
 
 ```
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X POST -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT-d '
 {
   "uri": "/hello",
   "plugins": {
