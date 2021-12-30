@@ -44,4 +44,17 @@ install_vault_cli () {
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
+install_nodejs () {
+    NODEJS_VERSION="16.13.1"
+    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    tar -xvf node-v16.13.1-linux-x64.tar.xz
+    ln -s ./node-v16.13.1-linux-x64/bin/node /usr/local/bin/node
+    ln -s ./node-v16.13.1-linux-x64/bin/npm /usr/local/bin/npm
+    # grpc web protoc gen
+    wget https://github.com/grpc/grpc-web/releases/download/1.3.0/protoc-gen-grpc-web-1.3.0-linux-x86_64
+    mv protoc-gen-grpc-web-1.3.0-linux-x86_64 /usr/local/bin/protoc-gen-grpc-web
+    chmod +x /usr/local/bin/protoc-gen-grpc-web
+}
+
+
 GRPC_SERVER_EXAMPLE_VER=20210819
