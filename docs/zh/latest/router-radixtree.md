@@ -23,7 +23,7 @@ title: 路由 RadixTree
 
 ### 什么是 libradixtree？
 
-[libradixtree](https://github.com/iresty/lua-resty-radixtree), 是在 `Lua` 中为 `OpenResty` 实现的自适应
+[libradixtree](https://github.com/api7/lua-resty-radixtree), 是在 `Lua` 中为 `OpenResty` 实现的自适应
 [基数树](https://zh.wikipedia.org/wiki/%E5%9F%BA%E6%95%B0%E6%A0%91) 。
 
 `Apache APISIX` 使用 `libradixtree` 作为路由调度库。
@@ -194,7 +194,8 @@ apisix:
 
 ### 如何通过 Nginx 内置变量过滤路由
 
-具体参数及使用方式请查看 [radixtree#new](https://github.com/iresty/lua-resty-radixtree#new) 文档，下面是一个简单的示例:
+
+具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
