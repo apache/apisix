@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local resty_sha256 = require("resty.sha256")
-local ck = require("resty.cookie")
 local ngx = ngx
 local plugin_name = "csrf"
 local ngx_encode_base64 = ngx.encode_base64
@@ -40,7 +39,7 @@ local schema = {
         name = {
             description = "the csrf token name",
             type = "string",
-            default = "apisix_csrf_token"
+            default = "apisix-csrf-token"
         }
     },
     required = {"key"}
@@ -134,12 +133,7 @@ function _M.access(conf, ctx)
         return 401, {error_msg = "no csrf token in headers"}
     end
 
-    local cookie, err = ck:new()
-    if not cookie then
-        return nil, err
-    end
-
-    local field_cookie, err = cookie:get(conf.name)
+    local field_cookie = ctx.var["cookie_" .. conf.name]
     if not field_cookie then
         return 401, {error_msg = "no csrf cookie"}
     end
