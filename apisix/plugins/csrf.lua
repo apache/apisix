@@ -24,6 +24,7 @@ local ngx_time = ngx.time
 local cookie_time = ngx.cookie_time
 local math = math
 
+
 local schema = {
     type = "object",
     properties = {
@@ -45,12 +46,14 @@ local schema = {
     required = {"key"}
 }
 
+
 local _M = {
     version = 0.1,
     priority = 2980,
     name = plugin_name,
     schema = schema,
 }
+
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
@@ -89,32 +92,32 @@ end
 
 
 local function check_csrf_token(conf, ctx, token)
-    local _token = ngx_decode_base64(token)
-    if _token == nil then
-        core.log.error("csrf token is null")
+    local token_str = ngx_decode_base64(token)
+    if token_str == nil then
+        core.log.error("csrf token base64 decode error")
         return false
     end
 
-    local _token_table, err = core.json.decode(_token)
+    local token_table, err = core.json.decode(token_str)
     if err then
         core.log.error("decode token error: ", err)
         return false
     end
 
-    local random = _token_table["random"]
+    local random = token_table["random"]
     if not random then
         core.log.error("no random in token")
         return false
     end
 
-    local expires = _token_table["expires"]
+    local expires = token_table["expires"]
     if not expires then
         core.log.error("no expires in token")
         return false
     end
 
     local sign = gen_sign(random, expires, conf.key)
-    if _token_table["sign"] ~= sign then
+    if token_table["sign"] ~= sign then
         return false
     end
 
@@ -128,26 +131,21 @@ function _M.access(conf, ctx)
         return
     end
 
-    local token = core.request.header(ctx, conf.name)
-    if not token then
+    local header_token = core.request.header(ctx, conf.name)
+    if not header_token then
         return 401, {error_msg = "no csrf token in headers"}
     end
 
-    local field_cookie = ctx.var["cookie_" .. conf.name]
-    if not field_cookie then
+    local cookie_token = ctx.var["cookie_" .. conf.name]
+    if not cookie_token then
         return 401, {error_msg = "no csrf cookie"}
     end
 
-    if err then
-        core.log.error(err)
-        return 400, {error_msg = "read csrf cookie failed"}
-    end
-
-    if token ~= field_cookie then
+    if header_token ~= cookie_token then
         return 401, {error_msg = "csrf token mismatch"}
     end
 
-    local result = check_csrf_token(conf, ctx, token)
+    local result = check_csrf_token(conf, ctx, cookie_token)
     if not result then
         return 401, {error_msg = "Failed to verify the csrf token signature"}
     end
@@ -160,5 +158,6 @@ function _M.header_filter(conf, ctx)
                    .. cookie_time(ngx_time() + conf.expires)
     core.response.add_header("Set-Cookie", cookie)
 end
+
 
 return _M
