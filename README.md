@@ -65,7 +65,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **All platforms**
 
   - Cloud-Native: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
-  - Run Environment: Both OpenResty and Tengine are supported.
   - Supports ARM64: Don't worry about the lock-in of the infra technology.
 
 - **Multi protocols**
@@ -221,7 +220,6 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 | Plug-in hot loading                                             | Yes                                               | No                      |
 | Custom LB and route                                             | Yes                                               | No                      |
 | REST API <--> gRPC transcoding                                  | Yes                                               | No                      |
-| Tengine                                                         | Yes                                               | No                      |
 | MQTT                                                            | Yes                                               | No                      |
 | Configuration effective time                                    | Event-driven, < 1ms                               | polling, 5 seconds      |
 | Dashboard                                                       | Yes                                               | No                      |
