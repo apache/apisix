@@ -194,7 +194,6 @@ apisix:
 
 ### 如何通过 Nginx 内置变量过滤路由
 
-
 具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例:
 
 ```shell
