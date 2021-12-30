@@ -47,8 +47,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 *地址*：/apisix/admin/routes/{id}?ttl=0
 
-*说明*：Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
-插件，并把请求转发给到指定 Upstream。
+*说明*：Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream。
 
 注意：在启用 `Admin API` 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `port_admin` 进行自定义 Admin API 端口。
 
