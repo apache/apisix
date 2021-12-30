@@ -23,7 +23,7 @@ title: Router radixtree
 
 ### what's libradixtree?
 
-[libradixtree](https://github.com/iresty/lua-resty-radixtree), adaptive radix trees implemented in Lua for OpenResty.
+[libradixtree](https://github.com/api7/lua-resty-radixtree), adaptive radix trees implemented in Lua for OpenResty.
 
 APISIX using libradixtree as route dispatching library.
 
@@ -193,7 +193,7 @@ For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in
 
 ### How to filter route by Nginx builtin variable
 
-Please take a look at [radixtree-new](https://github.com/iresty/lua-resty-radixtree#new),
+Please take a look at [radixtree-new](https://github.com/api7/lua-resty-radixtree#new),
 here is an simple example:
 
 ```shell

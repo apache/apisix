@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 Here's an example, to enable the grpc-transcode plugin to specified route:
 
 * attention: the `scheme` in the route's upstream must be `grpc`
-* the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+* the grpc server example：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

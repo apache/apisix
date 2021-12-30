@@ -119,7 +119,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 ```
 
 Here is the operator list of current `lua-resty-radixtree`：
-https://github.com/iresty/lua-resty-radixtree#operator-list
+https://github.com/api7/lua-resty-radixtree#operator-list
 
 2. Use `traffic-split` plugin to do it.
 
