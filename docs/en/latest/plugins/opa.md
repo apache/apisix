@@ -222,6 +222,7 @@ test
 Let's think about another scenario, when your decision needs to use some APISIX data, such as `route`, `consumer`, etc., how should we do it?
 
 Create a simple policy `echo`, which will return the data sent by APISIX to the OPA service as is, so we can simply see them.
+
 ```shell
 curl -XPUT '127.0.0.1:8181/v1/policies/echo' \
 --header 'Content-Type: text/plain' \
