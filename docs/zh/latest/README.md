@@ -98,8 +98,8 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
   - [支持全路径匹配和前缀匹配](../../en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
   - [支持使用 Nginx 所有内置变量做为路由的条件](../../en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
-  - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
-  - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
+  - 支持[各类操作符做为路由的判断条件](https://github.com/api7/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
+  - 支持[自定义路由匹配函数](https://github.com/api7/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6：支持使用 IPv6 格式匹配路由
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
