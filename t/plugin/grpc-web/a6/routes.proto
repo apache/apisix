@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package a6;
+
+option go_package = "./;a6";
+
+service RouteService {
+  rpc FlushAll (Empty) returns (Response) {}
+  rpc GetAll (Empty) returns (Response) {}
+  rpc Get (Request) returns (Response) {}
+  rpc Insert (Request) returns (Response) {}
+  rpc Update (Request) returns (Response) {}
+  rpc Remove (Request) returns (Response) {}
+}
+
+message Empty {}
+
+message Route {
+  string name = 1;
+  string path = 2;
+}
+
+message Request {
+  string id = 1;
+  Route route = 2;
+}
+
+message Response {
+  bool status = 1;
+  Route route = 2;
+  map <string, Route> routes = 3;
+}
