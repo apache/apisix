@@ -42,7 +42,7 @@ title: limit-count
 | ------------------- | ------- | --------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count               | integer | 必须                               |               | count > 0                                                                                               | 指定时间窗口内的请求数量阈值                                                                                                                                                                                                                                                                                                                                                                                          |
 | time_window         | integer | 必须                               |               | time_window > 0                                                                                         | 时间窗口的大小（以秒为单位），超过这个时间就会重置                                                                                                                                                                                                                                                                                                                                                                    |
-| key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
+| key_type      | string | 可选   |  "var"      | ["var", "var_combination", "constant"]                                          | key 的类型 |
 | key           | string  | 可选   |    "remote_addr"    |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组。比如如果设置 "$remote_addr $consumer_name" 作为 keys，那么插件会同时受 remote_addr 和 consumer_name 两个 key 的约束。如果 key 的值为空，$remote_addr 会被作为默认 key。 |
 | rejected_code       | integer | 可选                               | 503           | [200,...,599]                                                                                           | 当请求超过阈值被拒绝时，返回的 HTTP 状态码                                                                                                                                                                                                                                                                                                                                                                            |
 | rejected_msg       | string | 可选                                |            | 非空                                                                                           | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
@@ -115,7 +115,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 我们也支持在多个 Route 间共享同一个限流计数器。举个例子，
 
-```
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -138,7 +138,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 
 每个配置了 `group` 为 `services_1#1640140620` 的 Route 都将共享同一个每个 IP 地址每分钟只能访问一次的计数器。
 
-```
+```shell
 $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
@@ -160,6 +160,35 @@ HTTP/1.1 503 ...
 
 注意同一个 group 里面的 limit-count 配置必须一样。
 所以，一旦修改了配置，我们需要更新对应的 group 的值。
+
+我们也支持在所有请求间共享同一个限流计数器。举个例子，
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "limit-count": {
+            "count": 1,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "key_type": "constant",
+            "group": "services_1#1640140621"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+比起之前的配置，我们把 `key_type` 改成 `constant`。
+通过设置 `key_type` 为 `constant`，`key` 的值将会直接作为常量来处理。
+
+现在每个配置了 `group` 为 `services_1#1640140620` 的 Route 上的所有请求，都将共享同一个每分钟只能访问一次的计数器，即使它们来自不同的 IP 地址。
 
 如果你需要一个集群级别的流量控制，我们可以借助 redis server 来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
 

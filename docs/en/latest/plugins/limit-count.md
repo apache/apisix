@@ -39,7 +39,7 @@ Limit request rate by a fixed number of requests in a given time window.
 | ------------------- | ------- | --------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count               | integer | required                                |               | count > 0                                                                                               | the specified number of requests threshold.                                                                                                                                                                                                                                                                |
 | time_window         | integer | required                    |               | time_window > 0                                                                                         | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                              |
-| key_type      | string  | optional    |   "var"   | ["var", "var_combination"] | the type of key. |
+| key_type      | string  | optional    |   "var"   | ["var", "var_combination", "constant"] | the type of key. |
 | key           | string  | optional    |     "remote_addr"    |  | the user specified key to limit the rate. If the `key_type` is "var", the key will be treated as a name of variable. If the `key_type` is "var_combination", the key will be a combination of variables. For example, if we use "$remote_addr $consumer_name" as keys, plugin will be restricted by two keys which are "remote_addr" and "consumer_name". If the value of the key is empty, `remote_addr` will be set as the default key.|
 | rejected_code       | integer | optional                                | 503           | [200,...,599]                                                                                           | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                             |
 | rejected_msg       | string | optional                                |            | non-empty                                                                                           | The response body returned when the request exceeds the threshold is rejected.                                                                                                                                                                                                             |
@@ -110,7 +110,7 @@ You also can complete the above operation through the web interface, first add a
 
 It is possible to share the same limit counter across different routes. For example,
 
-```
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -133,7 +133,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 
 Every route which group name is "services_1#1640140620" will share the same count limitation `1` in one minute per remote_addr.
 
-```
+```shell
 $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
@@ -155,6 +155,36 @@ HTTP/1.1 503 ...
 
 Note that every limit-count configuration of the same group must be the same.
 Therefore, once update the configuration, we also need to update the group name.
+
+It is also possible to share the same limit counter in all requests. For example,
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "limit-count": {
+            "count": 1,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "key_type": "constant",
+            "group": "services_1#1640140621"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+Compared with the previous configuration, we set the `key_type` to `constant`.
+By setting `key_type` to `constant`, we don't evaluate the value of `key` but treat it as a constant.
+
+Now every route which group name is "services_1#1640140621" will share the same count limitation `1` in one minute among all the requests,
+even these requests are from different remote_addr.
 
 If you need a cluster-level precision traffic limit, then we can do it with the redis server. The rate limit of the traffic will be shared between different APISIX nodes to limit the rate of cluster traffic.
 
