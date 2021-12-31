@@ -16,6 +16,7 @@
 --
 local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
+local plugin    = require("apisix.plugin")
 local ipairs    = ipairs
 local ngx       = ngx
 local ngx_capture = ngx.location.capture
@@ -75,7 +76,13 @@ function _M.init()
     -- We keep the old metric names for the compatibility.
 
     -- across all services
-    prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
+    local metric_prefix = "apisix_"
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.metric_prefix then
+        metric_prefix = attr.metric_prefix
+    end
+
+    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
             {"state"})
