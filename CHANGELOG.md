@@ -90,6 +90,8 @@ title: Changelog
 - fix(batch-processor): we didn't free stale object actually [#5700](https://github.com/apache/apisix/pull/5700)
 - fix(patch): add global `math.randomseed` patch support [#5682](https://github.com/apache/apisix/pull/5682)
 - fix(log-rotate): after enabling compression collect log exceptions [#5715](https://github.com/apache/apisix/pull/5715)
+- feat(ext-plugin): avoid sending conf request more times [#5183](https://github.com/apache/apisix/pull/5183)
+- feat: use lock to ensure fetching token from shdict always [#5263](https://github.com/apache/apisix/pull/5263)
 - fix(ext-plugin): don't use stale key [#5782](https://github.com/apache/apisix/pull/5782)
 - fix(mqtt-proxy): client id can be empty [#5816](https://github.com/apache/apisix/pull/5816)
 - fix(sls-logger): log entry unable get millisecond timestamp [#5820](https://github.com/apache/apisix/pull/5820)
