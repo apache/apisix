@@ -150,7 +150,7 @@ function main() {
             multi_distro_installation
         ;;
         *)
-            echo "Unsupported method"
+            echo "Unsupported method: ${case_opt}"
         ;;
     esac
 }
