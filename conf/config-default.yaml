@@ -408,6 +408,7 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+    metric_prefix: apisix_
     enable_export_server: true
     export_addr:
       ip: 127.0.0.1
