@@ -76,7 +76,7 @@ install_dependencies() {
     install_grpcurl
 
     # install nodejs
-    install_nodejs
+    # install_nodejs
 
     # grpc-web server && client
     cd t/plugin/grpc-web
