@@ -19,12 +19,10 @@ local core         =   require("apisix.core")
 local plugin       =   require("apisix.plugin")
 local ffi          =   require("ffi")
 local bit          =   require("bit")
-
 local C            =   ffi.C
 local ngx          =   ngx
-local pairs        =   pairs
-local load_string  =   loadstring
 local io_open      =   io.open
+
 
 local plugin_name  =   "file-logger"
 local O_CREAT      =   00000040 -- create and open
@@ -34,39 +32,30 @@ local S_IRUSR      =   00400    -- user has read permission
 local S_IWUSR      =   00200    -- user has write permission
 local S_IRGRP      =   00040    -- group has read permission
 local S_IROTH      =   00004    -- others have read permission
-
 local oflags = bit.bor(O_WRONLY, O_CREAT, O_APPEND)
 local mode = bit.bor(S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH)
 local file_descriptors = {}
+
 
 ffi.cdef [[
     int open(const char * filename, int flags, int mode);
     int write(int fd, const void * ptr, int numbytes);
     int close(int fd);
 ]]
+
+
 local schema = {
     type = "object",
     properties = {
         path = {
             type = "string",
-            require = true,
             match = [[^[^*&%%\`]+$]],
             err = "not a valid filename"
         },
-        custom_fields_by_lua = {
-            type = "object",
-            keys = {
-                type = "string",
-                len_min = 1
-            },
-            values = {
-                type = "string",
-                len_min = 1
-            }
-        }
     },
     required = {"path"}
 }
+
 
 local metadata_schema = {
     type = "object",
@@ -75,6 +64,7 @@ local metadata_schema = {
     }
 }
 
+
 local _M = {
     version = 0.1,
     priority = 399,
@@ -82,6 +72,7 @@ local _M = {
     schema = schema,
     metadata_schema = metadata_schema
 }
+
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
@@ -97,22 +88,21 @@ end
 
 
 local function reopen()
-    local args = ngx.req.get_uri_args()
-    if args["reopen"] then
-        local target_pointer, err = io_open('logs/file_pointer', 'r')
-        if not target_pointer then
-            core.log.error("failed to open file, error info: " .. err)
-        else
-            local pointer = target_pointer:read('*n')
-            target_pointer:close()
-            core.log.warn('pointer: ', pointer)
-            C.close(pointer)
+    local target_pointer, err = io_open('logs/file_pointer', 'r')
+    if not target_pointer then
+        core.log.error("failed to open file, error info: " .. err)
+        core.response.exit(400, {error_msg = "failed to open file, error info: " .. err})
+    else
+        local pointer = target_pointer:read('*n')
+        target_pointer:close()
+        C.close(pointer)
 
-            local reset_pointer = io_open('logs/file_pointer', 'w+')
-            reset_pointer:write(-1)
-            reset_pointer:close()
-        end
+        local reset_pointer = io_open('logs/file_pointer', 'w+')
+        reset_pointer:write(-1)
+        reset_pointer:close()
     end
+
+    core.response.exit(200, 'reopen file-logger successfully')
 end
 
 
@@ -124,9 +114,8 @@ local function write_file_data(conf, log_message)
 
     if file_pointer then
         local read_pointer = file_pointer:read('*n')
-        core.log.warn('read_pointer: ', read_pointer)
         file_pointer:close()
-        if read_pointer < 0 then
+        if read_pointer < 0 and fd then
             C.close(fd)
             fd = nil
             file_descriptors[conf.path] = nil
@@ -150,7 +139,6 @@ local function write_file_data(conf, log_message)
 
     if not fd then
         fd = C.open(conf.path, oflags, mode)
-        core.log.warn('fd: ', fd)
         local write_pointer = io_open('logs/file_pointer', 'w+')
         write_pointer:write(fd)
         write_pointer:close()
@@ -168,11 +156,6 @@ local function write_file_data(conf, log_message)
 end
 
 
-function _M.body_filter(conf, ctx)
-    log_util.collect_body(conf, ctx)
-end
-
-
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     local entry
@@ -185,28 +168,19 @@ function _M.log(conf, ctx)
         entry = log_util.get_full_log(ngx, conf)
     end
 
-    if conf.custom_fields_by_lua
-        and core.table.nkeys(conf.custom_fields_by_lua) > 0
-    then
-        local set_log_fields_value = entry
-        for key, expression in pairs(conf.custom_fields_by_lua) do
-            set_log_fields_value[key] = load_string(expression)()
-        end
-        write_file_data(conf, set_log_fields_value)
-    else
-        write_file_data(conf, entry)
-    end
+    write_file_data(conf, entry)
 end
 
 
 function _M.control_api()
     return {
         {
-            methods = {"GET"},
-            uris = {"/plugin/file-logger/reopen"},
+            methods = {"PUT"},
+            uris = {"/v1/plugin/file-logger/reopen"},
             handler = reopen,
         }
     }
 end
+
 
 return _M
