@@ -362,6 +362,7 @@ plugins:                          # plugin list (sorted by priority)
   - response-rewrite               # priority: 899
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
+  - grpc-web                       # priority: 505
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
   - echo                           # priority: 412

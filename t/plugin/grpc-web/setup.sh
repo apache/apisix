@@ -22,4 +22,4 @@ npm install || exit 1
 
 CGO_ENABLED=0 go build -o grpc-web-server server.go || exit 1
 
-./grpc-web-server -listen :19800 > grpc_web_server.log 2>&1 || (cat grpc_web_server.log && exit 1)&
+./grpc-web-server -listen :50001 > grpc_web_server.log 2>&1 || (cat grpc_web_server.log && exit 1)&
