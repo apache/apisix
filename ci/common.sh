@@ -47,11 +47,10 @@ install_vault_cli () {
 install_nodejs () {
     NODEJS_VERSION="16.13.1"
     wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xvf node-v16.13.1-linux-x64.tar.xz
-    mv node-v16.13.1-linux-x64/bin/node /usr/local/bin/node
-    chmod +x /usr/local/bin/node
-    mv node-v16.13.1-linux-x64/bin/npm /usr/local/bin/npm
-    chmod +x /usr/local/bin/npm
+    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    mv node-v${NODEJS_VERSION}-linux-x64/bin/node /usr/local/bin/node
+    mv node-v${NODEJS_VERSION}-linux-x64/bin/npm /usr/local/bin/npm
+    rm -rf node-v${NODEJS_VERSION}-linux-x64*
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819
