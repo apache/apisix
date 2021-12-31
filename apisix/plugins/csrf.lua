@@ -127,7 +127,7 @@ end
 
 function _M.access(conf, ctx)
     local method = core.request.get_method(ctx)
-    if method == 'GET' then
+    if method == 'GET' or 'OPTIONS' then
         return
     end
 
@@ -154,7 +154,7 @@ end
 
 function _M.header_filter(conf, ctx)
     local csrf_token = gen_csrf_token(conf)
-    local cookie = conf.name .. "=" .. csrf_token .. ";path=/;Expires="
+    local cookie = conf.name .. "=" .. csrf_token .. ";path=/;SameSite=Lax;Expires="
                    .. cookie_time(ngx_time() + conf.expires)
     core.response.add_header("Set-Cookie", cookie)
 end

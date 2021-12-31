@@ -37,7 +37,7 @@ title: csrf
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    false    | `apisix_csrf_token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
+|   name   |  string |    false    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
 | expires |  number | false | `7200` | | CSRF Cookie 的过期时间(秒) |
 | key | string | true |  |  | 加密 token 的秘钥 |
 
@@ -65,7 +65,13 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 这条路由已经开启保护，当你使用 GET 之外的方法访问，请求会被拦截并返回 401 状态码。
 
-2. 使用 `GET` 请求 `/hello`，在响应中会有一个携带了加密 `token` 的 `Cookie`。Token 字段的名字为插件配置中的 `name` 值，如果没有配置的话默认值为 `apisix_csrf_token`。
+2. 使用 `GET` 请求 `/hello`，在响应中会有一个携带了加密 `token` 的 `Cookie`。Token 字段的名字为插件配置中的 `name` 值，如果没有配置的话默认值为 `apisix-csrf-token`。
+
+:::important
+
+每次请求都会产生新的 Cookie。
+
+:::
 
 3. 在后续的对该路由的非 GET 请求中，需要保证携带该 Cookie 并在请求头部中携带该 token，请求头字段的名称为插件配置中的 `name`。
 

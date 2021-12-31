@@ -37,7 +37,7 @@ The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    false    | `apisix_csrf_token`  |    | The name of the token in the generated cookie. |
+|   name   |  string |    false    | `apisix-csrf-token`  |    | The name of the token in the generated cookie. |
 | expires |  number | false | `7200` | | Expiration time(s) of csrf cookie. |
 | key | string | true |  |  | The secret key used to encrypt the cookie. |
 
@@ -65,7 +65,13 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 The route is then protected, and if you access it using methods other than `GET`, you will see that the request was blocked and receive a 401 status code back.
 
-2. Using `GET` requests `/hello`, a cookie with an encrypted token is received in the response. Token name is the `name` field set in the plugin configuration, if not set, the default value is `apisix_csrf_token`.
+2. Using `GET` requests `/hello`, a cookie with an encrypted token is received in the response. Token name is the `name` field set in the plugin configuration, if not set, the default value is `apisix-csrf-token`.
+
+:::important
+
+A new cookie is generated for each request.
+
+:::
 
 3. In subsequent non-GET requests to this route, you need to read the encrypted token from the cookie and append the token to the `request header`, setting the field name to the `name` in the plugin configuration.
 
