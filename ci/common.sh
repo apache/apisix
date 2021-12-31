@@ -44,34 +44,4 @@ install_vault_cli () {
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
-install_nodejs () {
-    NODEJS_VERSION="16.13.1"
-    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xvf node-v16.13.1-linux-x64.tar.xz
-    mv node-v16.13.1-linux-x64/bin/node /usr/local/bin/node
-    chmod +x /usr/local/bin/node
-    mv node-v16.13.1-linux-x64/bin/npm /usr/local/bin/npm
-    chmod +x /usr/local/bin/npm
-}
-
-install_protobuf () {
-    PROTOBUF_VERSION="3.19.0"
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protoc-${PROTOBUF_VERSION}-linux-x86_64.zip
-    unzip protoc-${PROTOBUF_VERSION}-linux-x86_64.zip
-    mv bin/protoc /usr/local/bin/protoc
-    mv include/google /usr/local/include/
-    chmod +x /usr/local/bin/protoc
-
-    PROTO_GO_PLUGIN_VER="1.2.0"
-    wget https://github.com/grpc/grpc-go/releases/download/cmd/protoc-gen-go-grpc/v${PROTO_GO_PLUGIN_VER}/protoc-gen-go-grpc.v${PROTO_GO_PLUGIN_VER}.linux.amd64.tar.gz
-    tar -zxvf protoc-gen-go-grpc.v${PROTO_GO_PLUGIN_VER}.linux.amd64.tar.gz
-    mv protoc-gen-go-grpc /usr/local/bin/protoc-gen-go
-    chmod +x /usr/local/bin/protoc-gen-go
-
-    PROTO_JS_PLUGIN_VER="1.3.0"
-    wget https://github.com/grpc/grpc-web/releases/download/${PROTO_JS_PLUGIN_VER}/protoc-gen-grpc-web-${PROTO_JS_PLUGIN_VER}-linux-x86_64
-    mv protoc-gen-grpc-web-${PROTO_JS_PLUGIN_VER}-linux-x86_64 /usr/local/bin/protoc-gen-grpc-web
-    chmod +x /usr/local/bin/protoc-gen-grpc-web
-}
-
 GRPC_SERVER_EXAMPLE_VER=20210819

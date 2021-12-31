@@ -57,15 +57,9 @@ do_install() {
     # install grpcurl
     install_grpcurl
 
-    # install node js
-    install_nodejs
-
-    # install protobuf
-    install_protobuf
-
     # grpc-web server && client
     cd t/plugin/grpc-web
-    ./init.sh
+    ./setup.sh
     # back to home directory
     cd ../../../
 
