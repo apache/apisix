@@ -111,7 +111,13 @@ local function parse_mqtt(data)
         return res
     end
 
-    res.client_id = str_sub(data, parsed_pos + 1, parsed_pos + client_id_len)
+    if client_id_len == 0 then
+        -- A Server MAY allow a Client to supply a ClientID that has a length of zero bytes
+        res.client_id = ""
+    else
+        res.client_id = str_sub(data, parsed_pos + 1, parsed_pos + client_id_len)
+    end
+
     parsed_pos = parsed_pos + client_id_len
 
     res.expect_len = parsed_pos
@@ -120,10 +126,10 @@ end
 
 
 function _M.preread(conf, ctx)
-    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
-    -- core.log.warn(" ctx: ", core.json.encode(ctx, true))
     local sock = ngx.req.socket()
-    local data, err = sock:peek(16)
+    -- the header format of MQTT CONNECT can be found in
+    -- https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901033
+    local data, err = sock:peek(14)
     if not data then
         core.log.error("failed to read first 16 bytes: ", err)
         return 503

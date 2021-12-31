@@ -264,3 +264,75 @@ passed
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- error_log
 failed to parse domain: loc, error:
+--- timeout: 10
+
+
+
+=== TEST 11: set route with upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "server_port": 1985,
+                    "plugins": {
+                        "mqtt-proxy": {
+                            "protocol_name": "MQTT",
+                            "protocol_level": 4
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": [{
+                            "host": "127.0.0.1",
+                            "port": 1995,
+                            "weight": 1
+                        }]
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit route
+--- stream_enable
+--- stream_request eval
+"\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
+--- stream_response
+hello world
+--- grep_error_log eval
+qr/mqtt client id: \w+/
+--- grep_error_log_out
+mqtt client id: foo
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: hit route with empty client id
+--- stream_enable
+--- stream_request eval
+"\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x00"
+--- stream_response
+hello world
+--- grep_error_log eval
+qr/mqtt client id: \w+/
+--- grep_error_log_out
+--- no_error_log
+[error]
