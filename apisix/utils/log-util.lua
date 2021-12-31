@@ -17,7 +17,11 @@
 local core = require("apisix.core")
 local ngx  = ngx
 local pairs = pairs
+local ngx_now = ngx.now
+local os_date = os.date
 local str_byte = string.byte
+local math_floor = math.floor
+local ngx_update_time = ngx.update_time
 local req_get_body_data = ngx.req.get_body_data
 
 local lru_log_format = core.lrucache.new({
@@ -150,6 +154,15 @@ function _M.get_req_original(ctx, conf)
     end
 
     return core.table.concat(headers, "")
+end
+
+
+function _M.get_rfc3339_zulu_timestamp(timestamp)
+    ngx_update_time()
+    local now = timestamp or ngx_now()
+    local second = math_floor(now)
+    local millisecond = math_floor((now - second) * 1000)
+    return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
 end
 
 
