@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local resty_sha256 = require("resty.sha256")
 local ngx = ngx
-local plugin_name = "csrf"
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_time = ngx.time
@@ -50,7 +49,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2980,
-    name = plugin_name,
+    name = "csrf",
     schema = schema,
 }
 
