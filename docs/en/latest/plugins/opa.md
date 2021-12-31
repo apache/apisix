@@ -39,13 +39,13 @@ The `opa` plugin is used to integrate with Open Policy Agent. By using this plug
 | host | string | required |   |   | Open Policy Agent service host (eg. https://localhost:8181) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | policy | string | required |   |   | OPA policy path (It is a combination of `package` and `decision`. When you need to use advanced features such as custom response, `decision` can be omitted) |
-| timeout | integer | optional | 60000ms | [1, 60000]ms | OpenWhisk Action and HTTP call timeout. |
+| timeout | integer | optional | 60000ms | [1, 60000]ms | HTTP call timeout. |
 | keepalive | boolean | optional | true |   | HTTP keepalive |
 | keepalive_timeout | integer | optional | 60000ms | [1000,...] | keepalive idle timeout |
 | keepalive_pool | integer | optional | 5 | [1,...] | Connection pool limit |
 | with_route | boolean | optional | false |   | Whether to send information about the current route. |
 | with_service | boolean | optional | false |   | Whether to send information about the current service. |
-| with_consumer | boolean | optional | false |   | Whether to send information about the current consumer. (It may contain sensitive information such as apikey, so please turn it on again if you are sure it is safe) |
+| with_consumer | boolean | optional | false |   | Whether to send information about the current consumer. (It may contain sensitive information such as apikey, so please turn it on only if you are sure it is safe) |
 
 ## Data Definition
 
@@ -73,7 +73,7 @@ The `route`, `service`, and `consumer` will be sent only after the `opa` plugin 
         "host": "127.0.0.1"
     },
     "var": {
-        "timestamp": 1700000000,
+        "timestamp": 1701234567,
         "server_addr": "127.0.0.1",
         "server_port": "9080",
         "remote_port": "port",
