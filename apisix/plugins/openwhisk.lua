@@ -20,7 +20,7 @@ local http              = require("resty.http")
 local ngx_encode_base64 = ngx.encode_base64
 local tostring          = tostring
 
-local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z}]]
+local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z]]
 
 local schema = {
     type = "object",
