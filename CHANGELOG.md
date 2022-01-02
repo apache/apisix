@@ -82,6 +82,8 @@ title: Changelog
 
 ## 2.10.3
 
+**In LTS maintenance release 2.10.3, we merged the major bugfix commits and their dependent code that were merged by December 29, 2021.**
+
 ### Bugfix
 
 - fix: str concat in error call [#5540](https://github.com/apache/apisix/pull/5540)
