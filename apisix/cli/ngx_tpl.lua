@@ -264,6 +264,7 @@ http {
 
     {% if use_apisix_openresty then %}
     apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
@@ -715,9 +716,11 @@ http {
         location = /proxy_mirror {
             internal;
 
+            {% if not use_apisix_openresty then %}
             if ($upstream_mirror_host = "") {
                 return 200;
             }
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
