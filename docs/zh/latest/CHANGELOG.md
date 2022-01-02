@@ -79,6 +79,28 @@ title: CHANGELOG
 - :sunrise: ext-plugin 避免发送重复的 conf 请求 [#5183](https://github.com/apache/apisix/pull/5183)
 - :sunrise: 新增 ldap-auth 插件 [#3894](https://github.com/apache/apisix/pull/3894)
 
+## 2.10.3
+
+**在2.10.3的LTS维护版本中，我们合并了2021年12月29日前的主要Bugfix及其依赖的部分代码。**
+
+### Bugfix
+
+- 修正插件加载错误日志拼接方式 [#5540](https://github.com/apache/apisix/pull/5540)
+- 修正插件加载时忽略 /apisix/plugins/ 改变 [#5558](https://github.com/apache/apisix/pull/5558)
+- 修正改变被动健康检查后的无效错误 [#5589](https://github.com/apache/apisix/pull/5589)
+- 修正 batch-processor 中未被正确释放的陈旧对象 [#5700](https://github.com/apache/apisix/pull/5700)
+- 通过 math.randomseed 补丁提供更具随机性的随机数生成 [#5682](https://github.com/apache/apisix/pull/5682)
+- 修正 log-rotate 插件开启压缩后的日志收集异常 [#5715](https://github.com/apache/apisix/pull/5715)
+- 避免 ext-plugin 多次发送配置数据 [#5183](https://github.com/apache/apisix/pull/5183)
+- 在 ext-plugin 中使用锁确保总是从共享存储中获取 token [#5263](https://github.com/apache/apisix/pull/5263)
+- 修正 ext-plugin 使用陈旧的 key [#5782](https://github.com/apache/apisix/pull/5782)
+- 允许在使用 mqtt-proxy 插件时 client id 为空的情况 [#5816](https://github.com/apache/apisix/pull/5816)
+- 修正 sls-logger 插件中日志不支持毫秒级时间戳 [#5820](https://github.com/apache/apisix/pull/5820)
+- 完善 ua-restriction 插件中配置检查逻辑 [#5728](https://github.com/apache/apisix/pull/5728)
+- 在 cors 插件中防止 Origin 被修改 [#5890](https://github.com/apache/apisix/pull/5890)
+- 确保使用 proxy-rewrite 插件时会更新 core.request.header 的缓存 [#5914](https://github.com/apache/apisix/pull/5914)
+- 修正 mqtt-proxy 插件中对 MQTT5 的属性处理 [#5916](https://github.com/apache/apisix/pull/5916)
+
 ## 2.10.2
 
 ### Bugfix
