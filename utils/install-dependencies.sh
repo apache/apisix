@@ -125,15 +125,34 @@ function install_luarocks() {
 # Entry
 function main() {
     OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    if [[ "${OS_NAME}" == "linux" ]]; then
-        multi_distro_installation
-        install_luarocks
-        install_etcd
-    elif [[ "${OS_NAME}" == "darwin" ]]; then
-        install_dependencies_on_mac_osx
-    else
-        echo "Non-surported distribution"
+    if [[ "$#" == 0 ]]; then
+        if [[ "${OS_NAME}" == "linux" ]]; then
+            multi_distro_installation
+            install_luarocks
+            install_etcd
+        elif [[ "${OS_NAME}" == "darwin" ]]; then
+            install_dependencies_on_mac_osx
+        else
+            echo "Non-surported distribution"
+        fi
+        return
     fi
+
+    case_opt=$1
+    case "${case_opt}" in
+        "install_etcd")
+            install_etcd
+        ;;
+        "install_luarocks")
+            install_luarocks
+        ;;
+        "multi_distro_installation")
+            multi_distro_installation
+        ;;
+        *)
+            echo "Unsupported method: ${case_opt}"
+        ;;
+    esac
 }
 
-main
+main "$@"
