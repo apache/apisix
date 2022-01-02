@@ -185,7 +185,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-比起之前的配置，我们把 `key_type` 改成 `constant`。
+在上面的例子中，我们将 `key_type` 设置为 `constant`。
 通过设置 `key_type` 为 `constant`，`key` 的值将会直接作为常量来处理。
 
 现在每个配置了 `group` 为 `services_1#1640140620` 的 Route 上的所有请求，都将共享同一个每分钟只能访问一次的计数器，即使它们来自不同的 IP 地址。
