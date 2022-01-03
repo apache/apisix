@@ -187,16 +187,6 @@ hello, world
 
  Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use kafka-logger plugin.
 
-**APISIX Variables**
-
-|   Variable Name  |      Description        | Usage Example  |
-|------------------|-------------------------|----------------|
-| route_id         | id of `route`          | $route_id      |
-| route_name       | name of `route`        | $route_name    |
-| service_id       | id of `service`        | $service_id    |
-| service_name     | name of `service`      | $service_name  |
-| consumer_name    | username of `consumer` | $consumer_name |
-
 ### Example
 
 ```shell
