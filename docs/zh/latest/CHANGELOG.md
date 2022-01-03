@@ -24,6 +24,7 @@ title: CHANGELOG
 ## Table of Contents
 
 - [2.11.0](#2110)
+- [2.10.3](#2103)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
@@ -81,54 +82,21 @@ title: CHANGELOG
 
 ## 2.10.3
 
-**在2.10.3的LTS维护版本中，我们合并了2021年12月29日前的主要Bugfix及其依赖的部分代码。**
+**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
 
-### Bugfix
-
-- 修正插件加载错误日志拼接方式 [#5540](https://github.com/apache/apisix/pull/5540)
-- 修正插件加载时忽略 /apisix/plugins/ 改变 [#5558](https://github.com/apache/apisix/pull/5558)
-- 修正改变被动健康检查后的无效错误 [#5589](https://github.com/apache/apisix/pull/5589)
-- 修正 batch-processor 中未被正确释放的陈旧对象 [#5700](https://github.com/apache/apisix/pull/5700)
-- 通过 math.randomseed 补丁提供更具随机性的随机数生成 [#5682](https://github.com/apache/apisix/pull/5682)
-- 修正 log-rotate 插件开启压缩后的日志收集异常 [#5715](https://github.com/apache/apisix/pull/5715)
-- 避免 ext-plugin 多次发送配置数据 [#5183](https://github.com/apache/apisix/pull/5183)
-- 在 ext-plugin 中使用锁确保总是从共享存储中获取 token [#5263](https://github.com/apache/apisix/pull/5263)
-- 修正 ext-plugin 使用陈旧的 key [#5782](https://github.com/apache/apisix/pull/5782)
-- 允许在使用 mqtt-proxy 插件时 client id 为空的情况 [#5816](https://github.com/apache/apisix/pull/5816)
-- 修正 sls-logger 插件中日志不支持毫秒级时间戳 [#5820](https://github.com/apache/apisix/pull/5820)
-- 完善 ua-restriction 插件中配置检查逻辑 [#5728](https://github.com/apache/apisix/pull/5728)
-- 在 cors 插件中防止 Origin 被修改 [#5890](https://github.com/apache/apisix/pull/5890)
-- 确保使用 proxy-rewrite 插件时会更新 core.request.header 的缓存 [#5914](https://github.com/apache/apisix/pull/5914)
-- 修正 mqtt-proxy 插件中对 MQTT5 的属性处理 [#5916](https://github.com/apache/apisix/pull/5916)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
 
 ## 2.10.2
 
-### Bugfix
+**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
 
-- 更正 response.set_header 行为，与 request.set_header 保持一致 [#5499](https://github.com/apache/apisix/pull/5499)
-- 修复 batch-requests 插件中 client ip 的问题 [#5476](https://github.com/apache/apisix/pull/5476)
-- 修复 upstream 被多条 routes 绑定时，负载不平衡的问题 [#5462](https://github.com/apache/apisix/pull/5462)
-- hmac-auth 插件检查是否缺少 X-HMAC-ALGORITHM header [#5467](https://github.com/apache/apisix/pull/5467)
-- 防止不可信的 request_uri [#5458](https://github.com/apache/apisix/pull/5458)
-- 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
-- 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
-- basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
-
-### Change
-
-- 只记录不敏感的 consumer 信息 [#5445](https://github.com/apache/apisix/pull/5445)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
 
 ## 2.10.1
 
-### Bugfix
+**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
 
-- 更正 zipkin 插件 response_span 的开始时间 [#5295](https://github.com/apache/apisix/pull/5295)
-- 避免发送过期 key 给 plugin runner [#5309](https://github.com/apache/apisix/pull/5309)
-- 更正 route 的 timeout 被 service 覆盖的问题 [#5219](https://github.com/apache/apisix/pull/5219)
-- 过滤掉初始化 etcd 数据时产生的空 plugin conf [#5204](https://github.com/apache/apisix/pull/5204)
-- 健康检查特定情况下会发送错误的 Host header [#5175](https://github.com/apache/apisix/pull/5175)
-- 升级 lua-resty-balancer 到 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
-- prometheus 插件修复偶发的 latency 为负数的问题 [#5150](https://github.com/apache/apisix/pull/5150)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
 ## 2.10.0
 
