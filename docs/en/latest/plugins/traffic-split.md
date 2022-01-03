@@ -291,7 +291,7 @@ hello 1980
 
 ### Custom Release
 
-Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `add` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
+Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `and` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
 
 **Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `and`. In `weighted_upstreams`, the traffic is divided into 3:2 according to the value of `weight`, of which only the part of the `weight` value represents the proportion of upstream on the `route`. When `match` fails to pass, all traffic will only hit the upstream on the route.**
 
