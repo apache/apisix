@@ -381,7 +381,7 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-**示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `or` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
+**示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系， 多个 `vars` 之间是 `or` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
