@@ -41,7 +41,7 @@ Both plug-ins receive the same parameters.
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"] |                                                                                                                                                     |
+| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] |                                                                                                                                                     |
 | functions | array[string] | required    |            |                                                                          | A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially. |
 
 Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br />
@@ -70,6 +70,8 @@ ngx.say(count)
 ```
 
 Since `v2.6`, we pass the `conf` and `ctx` as the first two arguments to the servelss function, like a regular plugin.
+
+Prior to `v2.12.0`, the phase `before_proxy` used to be called `balancer`. Considering that this method actually runs after `access` and before the request goes upstream, and has nothing to do with `balancer`, the new naming would be more appropriate.
 
 ## How To Enable
 
