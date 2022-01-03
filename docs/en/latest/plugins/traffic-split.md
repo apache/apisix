@@ -291,9 +291,9 @@ hello 1980
 
 ### Custom Release
 
-Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `add` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
+Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `and` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
 
-**Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. In `weighted_upstreams`, the traffic is divided into 3:2 according to the value of `weight`, of which only the part of the `weight` value represents the proportion of upstream on the `route`. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+**Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `and`. In `weighted_upstreams`, the traffic is divided into 3:2 according to the value of `weight`, of which only the part of the `weight` value represents the proportion of upstream on the `route`. When `match` fails to pass, all traffic will only hit the upstream on the route.**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -370,7 +370,7 @@ hello 1980
 
 After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
 
-**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `or` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `and` relationships, and multiple `vars` are `or` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
