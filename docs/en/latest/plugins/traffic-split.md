@@ -370,7 +370,7 @@ hello 1980
 
 After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
 
-**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `or` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `and` relationships, and multiple `vars` are `or` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
