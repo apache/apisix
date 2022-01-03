@@ -82,54 +82,21 @@ title: Changelog
 
 ## 2.10.3
 
-**In LTS maintenance release 2.10.3, we merged the major bugfix commits and their dependent code that were merged by December 29, 2021.**
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
 
-### Bugfix
-
-- fix: str concat in error call [#5540](https://github.com/apache/apisix/pull/5540)
-- fix: ignore changes of /apisix/plugins/ [#5558](https://github.com/apache/apisix/pull/5558)
-- fix: invalid error after passive health check is changed [#5589](https://github.com/apache/apisix/pull/5589)
-- fix(batch-processor): we didn't free stale object actually [#5700](https://github.com/apache/apisix/pull/5700)
-- fix(patch): add global `math.randomseed` patch support [#5682](https://github.com/apache/apisix/pull/5682)
-- fix(log-rotate): after enabling compression collect log exceptions [#5715](https://github.com/apache/apisix/pull/5715)
-- feat(ext-plugin): avoid sending conf request more times [#5183](https://github.com/apache/apisix/pull/5183)
-- feat: use lock to ensure fetching token from shdict always [#5263](https://github.com/apache/apisix/pull/5263)
-- fix(ext-plugin): don't use stale key [#5782](https://github.com/apache/apisix/pull/5782)
-- fix(mqtt-proxy): client id can be empty [#5816](https://github.com/apache/apisix/pull/5816)
-- fix(sls-logger): log entry unable get millisecond timestamp [#5820](https://github.com/apache/apisix/pull/5820)
-- fix(ua-restriction): refine plugin configuration check logic [#5728](https://github.com/apache/apisix/pull/5728)
-- fix(cors): compatible with scenarios where origin is modified [#5890](https://github.com/apache/apisix/pull/5890)
-- fix(proxy-rewrite): make sure proxy-rewrite update the core.request.header cache [#5914](https://github.com/apache/apisix/pull/5914)
-- fix(mqtt): handle properties for MQTT 5 [#5916](https://github.com/apache/apisix/pull/5916)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
 
 ## 2.10.2
 
-### Bugfix
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
 
-- fix: response.set_header should remove header like request.set_header [#5499](https://github.com/apache/apisix/pull/5499)
-- fix(batch-requests): correct the client ip in the pipeline [#5476](https://github.com/apache/apisix/pull/5476)
-- fix(upstream): load imbalance when it's referred by multiple routes [#5462](https://github.com/apache/apisix/pull/5462)
-- fix(hmac-auth): check if the X-HMAC-ALGORITHM header is missing [#5467](https://github.com/apache/apisix/pull/5467)
-- fix: prevent being hacked by untrusted request_uri [#5458](https://github.com/apache/apisix/pull/5458)
-- fix(admin): modify boolean parameters with PATCH [#5434](https://github.com/apache/apisix/pull/5432)
-- fix(traffic-split): multiple rules with multiple weighted_upstreams under each rule cause upstream_key duplicate [#5414](https://github.com/apache/apisix/pull/5414)
-- fix: add handler for invalid basic auth header values [#5419](https://github.com/apache/apisix/pull/5419)
-
-### Change
-
-- change: log insensitive consumer info only [#5445](https://github.com/apache/apisix/pull/5445)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
 
 ## 2.10.1
 
-### Bugfix
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
 
-- fix(zipkin): response_span doesn't have correct start time [#5295](https://github.com/apache/apisix/pull/5295)
-- fix(ext-plugin): don't use stale key [#5309](https://github.com/apache/apisix/pull/5309)
-- fix: route's timeout should not be overwrittern by service [#5219](https://github.com/apache/apisix/pull/5219)
-- fix: filter nil plugin conf triggered by etcd dir init [#5204](https://github.com/apache/apisix/pull/5204)
-- fix: pass correct host header to health checker target nodes [#5175](https://github.com/apache/apisix/pull/5175)
-- fix: upgrade lua-resty-balancer to 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
-- fix(prometheus): avoid negative latency caused by inconsistent Nginx metrics [#5150](https://github.com/apache/apisix/pull/5150)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
 ## 2.10.0
 
