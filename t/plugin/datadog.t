@@ -108,7 +108,7 @@ done
                         "plugins": {
                             "datadog": {
                                 "batch_max_size" : 1,
-                                "max_retry_count": 1
+                                "max_retry_count": 0
                             }
                         },
                         "upstream": {
@@ -126,7 +126,7 @@ done
                             "plugins": {
                                 "datadog": {
                                     "batch_max_size": 1,
-                                    "max_retry_count": 1
+                                    "max_retry_count": 0
                                 }
                             },
                             "upstream": {
