@@ -214,12 +214,8 @@ GET /hello
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -244,10 +240,6 @@ passed
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200,503,503]
 
@@ -274,10 +266,6 @@ GET /t
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200,503,503]
 
@@ -316,12 +304,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -346,10 +330,6 @@ passed
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200,503,503]
 
@@ -376,10 +356,6 @@ GET /t
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [503,200]
 
@@ -406,10 +382,6 @@ GET /t
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200,503,503]
 --- error_log
@@ -450,12 +422,8 @@ The value of the configured key is empty, use client IP instead
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -480,11 +448,240 @@ passed
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200,503,503]
 --- error_log
 The value of the configured key is empty, use client IP instead
+
+
+
+=== TEST 15: limit count in group
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "group": "services_1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "group": "services_1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello_chunked"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit multiple paths
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello_chunked"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local uri
+                if i % 2 == 1 then
+                    uri = uri1
+                else
+                    uri = uri2
+                end
+
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- response_body
+[200,200,503,503]
+
+
+
+=== TEST 17: limit count in group, configuration is from services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "group": "afafafhao"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": "1",
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": "1",
+                    "uri": "/hello_chunked"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit multiple paths
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello_chunked"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local uri
+                if i % 2 == 1 then
+                    uri = uri1
+                else
+                    uri = uri2
+                end
+
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- response_body
+[200,200,503,503]
+
+
+
+=== TEST 19: configuration from the same group should be the same
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "group": "afafafhao"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- error_log
+[error]
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-count err: group conf mismatched"}

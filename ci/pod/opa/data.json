@@ -1,0 +1,25 @@
+{
+    "users": {
+        "alice": {
+            "headers": {
+                "Location": "http://example.com/auth"
+            },
+            "status_code": 302
+        },
+        "bob": {
+            "headers": {
+                "test": "abcd",
+                "abcd": "test"
+            }
+        },
+        "carla": {
+            "reason": "Give you a string reason"
+        },
+        "dylon": {
+            "reason": {
+                "code": 40001,
+                "desc": "Give you a object reason"
+            }
+        }
+    }
+}

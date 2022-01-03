@@ -55,7 +55,7 @@ dependencies = {
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
-    "skywalking-nginx-lua = 0.5.0",
+    "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
     "dkjson = 2.5-2",
@@ -72,7 +72,7 @@ dependencies = {
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
-    "lua-resty-rocketmq = 0.2.1-3",
+    "lua-resty-rocketmq = 0.3.0-0",
 }
 
 build = {

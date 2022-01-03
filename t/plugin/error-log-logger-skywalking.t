@@ -84,7 +84,7 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/.*\[lua\] batch-processor.lua:63: Batch Processor\[error-log-logger\] failed to process entries: error while sending data to skywalking\[http:\/\/127.0.0.1:1988\/log\] connection refused, context: ngx.timer/
+qr/Batch Processor\[error-log-logger\] failed to process entries: error while sending data to skywalking\[http:\/\/127.0.0.1:1988\/log\] connection refused, context: ngx.timer/
 --- wait: 3
 
 

@@ -83,6 +83,7 @@ basic-auth
 jwt-auth
 key-auth
 consumer-restriction
+opa
 authz-keycloak
 proxy-mirror
 proxy-cache
@@ -101,6 +102,7 @@ prometheus
 datadog
 echo
 http-logger
+splunk-hec-logging
 skywalking-logger
 google-cloud-logging
 sls-logger

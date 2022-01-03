@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
@@ -25,12 +25,9 @@ local plugin          = require("apisix.plugin")
 local ngx      = ngx
 local tostring = tostring
 local ipairs   = ipairs
-local pairs    = pairs
-local timer_at = ngx.timer.at
 
 local plugin_name = "http-logger"
-local stale_timer_running = false
-local buffers = {}
+local batch_processor_manager = bp_manager_mod.new("http logger")
 
 local schema = {
     type = "object",
@@ -38,22 +35,13 @@ local schema = {
         uri = core.schema.uri_def,
         auth_header = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
-        name = {type = "string", default = "http logger"},
-        max_retry_count = {type = "integer", minimum = 0, default = 0},
-        retry_delay = {type = "integer", minimum = 0, default = 1},
-        buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 5},
-        batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
             minItems = 1,
             items = {
-                type = "array",
-                items = {
-                    type = "string"
-                }
+                type = "array"
             }
         },
         concat_method = {type = "string", default = "json",
@@ -75,7 +63,7 @@ local _M = {
     version = 0.1,
     priority = 410,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema,
 }
 
@@ -161,24 +149,6 @@ local function send_http_data(conf, log_message)
 end
 
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in pairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
-
-
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
@@ -202,16 +172,7 @@ function _M.log(conf, ctx)
         entry.route_id = "no-matched"
     end
 
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    local log_buffer = buffers[conf]
-
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -253,27 +214,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    local config = {
-        name = conf.name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    local err
-    log_buffer, err = batch_processor:new(func, config)
-
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 

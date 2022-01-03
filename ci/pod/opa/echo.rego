@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+package echo
 
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
-tar xf etcd-v3.4.0-linux-amd64.tar.gz
-sudo cp etcd-v3.4.0-linux-amd64/etcd /usr/local/bin/
-sudo cp etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
-rm -rf etcd-v3.4.0-linux-amd64
+allow = false
+reason = input

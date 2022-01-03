@@ -14,4 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-find lua -type d | sort | awk '{print "$(INSTALL) -d $(INST_LUADIR)/apisix/" $0 "\n" "$(INSTALL) " $0 "/*.lua $(INST_LUADIR)/apisix/" $0 "/\n" }'
+package example
+
+import input.request
+import data.users
+
+default allow = false
+
+allow {
+    request.headers["test-header"] == "only-for-test"
+    request.method == "GET"
+    startswith(request.path, "/hello")
+    request.query["test"] != "abcd"
+    request.query["user"]
+}
+
+reason = users[request.query["user"]].reason {
+    not allow
+    request.query["user"]
+}
+
+headers = users[request.query["user"]].headers {
+    not allow
+    request.query["user"]
+}
+
+status_code = users[request.query["user"]].status_code {
+    not allow
+    request.query["user"]
+}

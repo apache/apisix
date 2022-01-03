@@ -605,3 +605,149 @@ GET /hello
 hello world
 --- error_log
 config.json: No such file or directory
+
+
+
+=== TEST 20: set route (https file configuration is successful)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging/config-https-domain.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                        ssl_verify = true,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: test route(https file configuration is successful)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+
+
+
+=== TEST 22: set route (https file configuration SSL authentication failed: ssl_verify = true)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging/config-https-ip.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                        ssl_verify = true,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: test route(https file configuration SSL authentication failed: ssl_verify = true)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+failed to refresh google oauth access token, certificate host mismatch
+
+
+
+=== TEST 24: set route (https file configuration SSL authentication succeed: ssl_verify = false)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging/config-https-ip.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                        ssl_verify = false,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: test route(https file configuration SSL authentication succeed: ssl_verify = false)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world

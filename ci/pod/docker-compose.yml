@@ -136,6 +136,23 @@ services:
       consul_net:
 
 
+  ## HashiCorp Vault
+  vault:
+    image: vault:1.9.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: [ "vault", "server", "-dev" ]
+    networks:
+      vault_net:
+
+
   ## OpenLDAP
   openldap:
     image: bitnami/openldap:2.5.8
@@ -379,6 +396,39 @@ services:
     networks:
       rocketmq_net:
 
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s /example.rego /echo.rego /data.json
+    volumes:
+      - type: bind
+        source: ./ci/pod/opa/example.rego
+        target: /example.rego
+      - type: bind
+        source: ./ci/pod/opa/echo.rego
+        target: /echo.rego
+      - type: bind
+        source: ./ci/pod/opa/data.json
+        target: /data.json
+    networks:
+      opa_net:
+
+  # Splunk HEC Logging Service
+  splunk:
+    image: splunk/splunk:8.2.3
+    restart: unless-stopped
+    ports:
+      - "18088:8088"
+    environment:
+      SPLUNK_PASSWORD: "ApacheAPISIX@666"
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
+      SPLUNK_HEC_SSL: "False"
+
+
 networks:
   apisix_net:
   consul_net:
@@ -386,3 +436,5 @@ networks:
   nacos_net:
   skywalk_net:
   rocketmq_net:
+  vault_net:
+  opa_net:

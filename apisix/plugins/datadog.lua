@@ -16,7 +16,7 @@
 
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local fetch_log = require("apisix.utils.log-util").get_full_log
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local service_fetch = require("apisix.http.service").get
@@ -24,12 +24,8 @@ local ngx = ngx
 local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
-local buffers = {}
 local ipairs = ipairs
-local pairs = pairs
 local tostring = tostring
-local stale_timer_running = false
-local timer_at = ngx.timer.at
 
 local plugin_name = "datadog"
 local defaults = {
@@ -39,13 +35,12 @@ local defaults = {
     constant_tags = {"source:apisix"}
 }
 
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 5},
-        batch_max_size = {type = "integer", minimum = 1, default = 5000},
         max_retry_count = {type = "integer", minimum = 1, default = 1},
+        batch_max_size = {type = "integer", minimum = 1, default = 5000},
         prefer_name = {type = "boolean", default = true}
     }
 }
@@ -68,7 +63,7 @@ local _M = {
     version = 0.1,
     priority = 495,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema,
 }
 
@@ -115,31 +110,8 @@ local function generate_tag(entry, const_tags)
     return ""
 end
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in pairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
 
 function _M.log(conf, ctx)
-
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
-
     local entry = fetch_log(ngx, {})
     entry.latency, entry.upstream_latency, entry.apisix_latency = latency_details(ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
@@ -160,9 +132,7 @@ function _M.log(conf, ctx)
         end
     end
 
-    local log_buffer = buffers[conf]
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -261,27 +231,8 @@ function _M.log(conf, ctx)
         -- Returning at the end and ensuring the resource has been released.
         return true
     end
-    local config = {
-        name = plugin_name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
 
-    local err
-    log_buffer, err = batch_processor:new(func, config)
-
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 return _M

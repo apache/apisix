@@ -38,7 +38,7 @@ title: request-id
 | 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name         | string  | 可选 | "X-Request-Id" |                       | Request ID header name         |
-| include_in_response | boolean | 可选 | false          |                       | 是否需要在返回头中包含该唯一ID |
+| include_in_response | boolean | 可选 | true          |                       | 是否需要在返回头中包含该唯一ID |
 | algorithm           | string  | 可选 | "uuid"         | ["uuid", "snowflake"] | ID 生成算法 |
 
 ## 如何启用
@@ -104,7 +104,7 @@ plugin_attr:
 
 - snowflake_epoc 默认起始时间为 `2021-01-01T00:00:00Z`, 按默认配置可以支持 `69年` 大约可以使用到 `2090-09-07 15:47:35Z`
 - data_machine_bits 对应的是 snowflake 定义中的 WorkerID 和 DatacenterID 的集合，插件会为每一个进程分配一个唯一ID，最大支持进程数为 `pow(2, data_machine_bits)`。默认占 `12 bits` 最多支持 `4096` 个进程。
-- sequence_bits 默认占 `10 bits`, 每个进程每秒最多生成 `1024` 个ID
+- sequence_bits 默认占 `10 bits`, 每个进程每毫秒最多生成 `1024` 个ID
 
 #### 配置示例
 
@@ -114,7 +114,7 @@ plugin_attr:
 
 > - 起始时间 2014-10-20T15:00:00.000Z， 精确到毫秒为单位。大约可以使用 `69年`
 > - 最多支持 `1024` 个进程
-> - 每个进程每秒最多产生 `4096` 个ID
+> - 每个进程每毫秒最多产生 `4096` 个ID
 
 ```yaml
 plugin_attr:
