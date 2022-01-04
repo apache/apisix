@@ -51,6 +51,7 @@
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
+            "plugins/grpc-web",
             "plugins/fault-injection"
           ]
         },
