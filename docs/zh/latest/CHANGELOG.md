@@ -82,19 +82,19 @@ title: CHANGELOG
 
 ## 2.10.3
 
-**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
 
 [https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
 
 ## 2.10.2
 
-**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
 
 [https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
 
 ## 2.10.1
 
-**这是一个LTS维护版本，您可以在 `release/2.10` 分支中看到CHANGELOG。**
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
 
 [https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
