@@ -21,11 +21,22 @@
 
 set -ex
 
+check_failure() {
+    cat logs/error.log
+}
+
 clean_up() {
+    if [ $? -gt 0 ]; then
+        check_failure
+    fi
     make stop || true
     git checkout conf/config.yaml
 }
 
 trap clean_up EXIT
+
+exit_if_not_customed_nginx() {
+    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
+}
 
 unset APISIX_PROFILE

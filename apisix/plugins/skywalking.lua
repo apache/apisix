@@ -45,7 +45,6 @@ local attr_schema = {
             type = "integer",
         },
     },
-    additionalProperties = false,
 }
 
 local schema = {
@@ -58,7 +57,6 @@ local schema = {
             default = 1
         }
     },
-    additionalProperties = false,
 }
 
 

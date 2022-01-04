@@ -17,6 +17,23 @@
 local json_decode = require("toolkit.json").decode
 local json_encode = require("toolkit.json").encode
 
+local rsa_public_key = [[
+-----BEGIN PUBLIC KEY-----
+MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr
+7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==
+-----END PUBLIC KEY-----]]
+
+local rsa_private_key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv
+0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7
++pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL
+wQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF
+IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
+2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs
+YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
+-----END RSA PRIVATE KEY-----]]
+
 local _M = {}
 
 
@@ -76,6 +93,7 @@ function _M.plugin_proxy_rewrite()
     ngx.say("uri: ", ngx.var.uri)
     ngx.say("host: ", ngx.var.host)
     ngx.say("scheme: ", ngx.var.scheme)
+    ngx.log(ngx.WARN, "plugin_proxy_rewrite get method: ", ngx.req.get_method())
 end
 
 
@@ -109,6 +127,7 @@ end
 
 
 function _M.status()
+    ngx.log(ngx.WARN, "client request host: ", ngx.var.http_host)
     ngx.say("ok")
 end
 
@@ -424,6 +443,86 @@ function _M._well_known_openid_configuration()
     ngx.say(openid_data)
 end
 
+function _M.google_logging_token()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    ngx.req.read_body()
+    local data = ngx.decode_args(ngx.req.get_body_data())
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://apisix.apache.org/logs:admin"
+    local verify = jwt:verify(rsa_public_key, data["assertion"])
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scopes" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        expire_time = 0
+    end
+
+    local jwt_token = jwt:sign(rsa_private_key, {
+        header = { typ = "JWT", alg = "RS256" },
+        payload = { exp = verify.payload.exp, scope = access_scopes }
+    })
+
+    ngx.say(json_encode({
+        access_token = jwt_token,
+        expires_in = expire_time,
+        token_type = args_token_type
+    }))
+end
+
+function _M.google_logging_entries()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://apisix.apache.org/logs:admin"
+
+    local headers = ngx.req.get_headers()
+    local token = headers["Authorization"]
+    if not token then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "authentication header not exists" }))
+        return
+    end
+
+    token = string.sub(token, string.len(args_token_type) + 2)
+    local verify = jwt:verify(rsa_public_key, token)
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scopes" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "token has expired" }))
+        return
+    end
+
+    ngx.say(data)
+end
 
 -- Please add your fake upstream above
 function _M.go()

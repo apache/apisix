@@ -26,7 +26,7 @@ title: limit-req
   - [Introduction](#introduction)
   - [Attributes](#attributes)
   - [Example](#example)
-    - [How to enable on the `route` or `serivce`](#how-to-enable-on-the-route-or-serivce)
+    - [How to enable on the `route` or `service`](#how-to-enable-on-the-route-or-service)
     - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
   - [Disable Plugin](#disable-plugin)
 
@@ -40,17 +40,18 @@ limit request rate using the "leaky bucket" method.
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rate          | integer | required    |         | rate > 0                                                                 | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
 | burst         | integer | required    |         | burst >= 0                                                               | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
-| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
+| key_type      | string  | optional    |   "var"   | ["var", "var_combination"] | the type of key. |
+| key           | string  | required    |         |  | the user specified key to limit the rate. If the `key_type` is "var", the key will be treated as a name of variable, like "remote_addr" or "consumer_name". If the `key_type` is "var_combination", the key will be a combination of variables, like "$remote_addr $consumer_name". If the value of the key is empty, `remote_addr` will be set as the default key.|
 | rejected_code | integer | optional    | 503     | [200,...,599]                                                            | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
+| rejected_msg       | string | optional                                |            | non-empty                                | The response body returned when the request exceeds the threshold is rejected.                                                                                                                                                                                                             |
 | nodelay       | boolean | optional    | false   |                                                                          | If nodelay flag is true, bursted requests will not get delayed  |
-
-**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
+| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-req function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
 ## Example
 
-### How to enable on the `route` or `serivce`
+### How to enable on the `route` or `service`
 
-Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route.
+Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route when setting `key_type` to `var` .
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -62,25 +63,46 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
         }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:9001": 1
         }
     }
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route when setting `key_type` to `var_combination` .
 
-![add route](../../../assets/images/plugin/limit-req-1.png)
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:9001": 1
+        }
+    }
+}'
+```
 
-Then add limit-req plugin:
-
-![add plugin](../../../assets/images/plugin/limit-req-2.png)
+You also can complete the above operation through the web interface, first add a route, then add limit-req plugin:
+![add plugin](../../../assets/images/plugin/limit-req-1.png)
 
 **Test Plugin**
 
@@ -106,6 +128,18 @@ Server: APISIX web server
 <hr><center>openresty</center>
 </body>
 </html>
+```
+
+At the same time, you set the property `rejected_msg` to `"Requests are too frequent, please try again later."` , when you exceed, you will receive a response body like below:
+
+```shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Content-Type: text/html
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX web server
+
+{"error_msg":"Requests are too frequent, please try again later."}
 ```
 
 This means that the limit req plugin is in effect.
@@ -199,7 +233,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

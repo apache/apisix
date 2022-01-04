@@ -166,29 +166,7 @@ failed to query the DNS server
 
 
 
-=== TEST 7: bad discovery configuration
---- yaml_config
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    enable_admin: false
-    enable_resolv_search_option: false
-discovery:                        # service discovery center
-    dns:
-        servers: "127.0.0.1:1053"
---- apisix_yaml
-upstreams:
-    - service_name: apisix
-      discovery_type: dns
-      type: roundrobin
-      id: 1
---- error_log
-invalid dns discovery configuration
---- error_code: 500
-
-
-
-=== TEST 8: SRV
+=== TEST 7: SRV
 --- apisix_yaml
 upstreams:
     - service_name: "srv.test.local"
@@ -204,7 +182,7 @@ hello world
 
 
 
-=== TEST 9: SRV (RFC 2782 style)
+=== TEST 8: SRV (RFC 2782 style)
 --- apisix_yaml
 upstreams:
     - service_name: "_sip._tcp.srv.test.local"
@@ -220,7 +198,7 @@ hello world
 
 
 
-=== TEST 10: SRV (different port)
+=== TEST 9: SRV (different port)
 --- apisix_yaml
 upstreams:
     - service_name: "port.srv.test.local"
@@ -236,7 +214,7 @@ hello world
 
 
 
-=== TEST 11: SRV (zero weight)
+=== TEST 10: SRV (zero weight)
 --- apisix_yaml
 upstreams:
     - service_name: "zero-weight.srv.test.local"
@@ -252,7 +230,7 @@ hello world
 
 
 
-=== TEST 12: SRV (split weight)
+=== TEST 11: SRV (split weight)
 --- apisix_yaml
 upstreams:
     - service_name: "split-weight.srv.test.local"
@@ -268,7 +246,7 @@ hello world
 
 
 
-=== TEST 13: SRV (priority)
+=== TEST 12: SRV (priority)
 --- apisix_yaml
 upstreams:
     - service_name: "priority.srv.test.local"
@@ -284,3 +262,17 @@ qr/proxy request to \S+/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1979
 proxy request to 127.0.0.2:1980
+
+
+
+=== TEST 13: prefer SRV than A
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- error_log
+proxy request to 127.0.0.1:1980
+--- response_body
+hello world

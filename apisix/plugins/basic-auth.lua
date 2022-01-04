@@ -31,7 +31,6 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {},
-    additionalProperties = false,
 }
 
 local consumer_schema = {
@@ -42,7 +41,6 @@ local consumer_schema = {
         password = { type = "string" },
     },
     required = {"username", "password"},
-    additionalProperties = false,
 }
 
 local plugin_name = "basic-auth"
@@ -82,12 +80,23 @@ local function extract_auth_header(authorization)
             return nil, err
         end
 
+        if not m then
+            return nil, "Invalid authorization header format"
+        end
+
         local decoded = ngx.decode_base64(m[1])
+
+        if not decoded then
+            return nil, "Failed to decode authentication header: " .. m[1]
+        end
 
         local res
         res, err = ngx_re.split(decoded, ":")
         if err then
-            return nil, "split authorization err:" .. err
+            return nil, "Split authorization err:" .. err
+        end
+        if #res < 2 then
+            return nil, "Split authorization err: invalid decoded data: " .. decoded
         end
 
         obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")

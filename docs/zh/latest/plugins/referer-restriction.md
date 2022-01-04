@@ -37,8 +37,13 @@ title: referer-restriction
 
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 必须    |         |       | 域名列表。域名开头可以用'*'作为通配符 |
-| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查 |
+| whitelist | array[string] | 可选    |         |       | 白名单域名列表。域名开头可以用'*'作为通配符。 |
+| blacklist | array[string] | 可选    |         |       | 黑名单域名列表。域名开头可以用'*'作为通配符。 |
+| message | string | 可选    | Your referer host is not allowed | [1, 1024] | 在未允许访问的情况下返回的信息。 |
+| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查。 |
+
+只能单独启用白名单或黑名单，两个不能一起使用。
+`message`可以由用户自定义。
 
 ## 如何启用
 
@@ -98,14 +103,14 @@ HTTP/1.1 200 OK
 当你想去掉 `referer-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

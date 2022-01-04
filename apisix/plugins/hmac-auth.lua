@@ -29,13 +29,16 @@ local hmac       = require("resty.hmac")
 local consumer   = require("apisix.consumer")
 local plugin     = require("apisix.plugin")
 local ngx_decode_base64 = ngx.decode_base64
+local ngx_encode_base64 = ngx.encode_base64
 
+local BODY_DIGEST_KEY = "X-HMAC-DIGEST"
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local DATE_KEY = "Date"
 local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
 local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
+local MAX_REQ_BODY = 1024 * 512
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -45,7 +48,6 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {},
-    additionalProperties = false,
 }
 
 local consumer_schema = {
@@ -80,10 +82,19 @@ local consumer_schema = {
             type = "boolean",
             title = "Whether to escape the uri parameter",
             default = true,
-        }
+        },
+        validate_request_body = {
+            type = "boolean",
+            title = "A boolean value telling the plugin to enable body validation",
+            default = false,
+        },
+        max_req_body = {
+            type = "integer",
+            title = "Max request body size",
+            default = MAX_REQ_BODY,
+        },
     },
     required = {"access_key", "secret_key"},
-    additionalProperties = false,
 }
 
 local _M = {
@@ -195,7 +206,6 @@ local function do_nothing(v)
     return v
 end
 
-
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
@@ -281,6 +291,10 @@ local function validate(ctx, params)
         return nil, {message = "access key or signature missing"}
     end
 
+    if not params.algorithm then
+        return nil, {message = "algorithm missing"}
+    end
+
     local consumer, err = get_consumer(params.access_key)
     if err then
         return nil, err
@@ -329,6 +343,27 @@ local function validate(ctx, params)
         return nil, {message = "Invalid signature"}
     end
 
+    local validate_request_body = get_conf_field(params.access_key, "validate_request_body")
+    if validate_request_body then
+        local digest_header = params.body_digest
+        if not digest_header then
+            return nil, {message = "Invalid digest"}
+        end
+
+        local max_req_body = get_conf_field(params.access_key, "max_req_body")
+        local req_body, err = core.request.get_body(max_req_body, ctx)
+        if err then
+            return nil, {message = "Exceed body limit size"}
+        end
+
+        req_body = req_body or ""
+        local request_body_hash = ngx_encode_base64(
+                hmac_funcs[params.algorithm](secret_key, req_body))
+        if request_body_hash ~= digest_header then
+            return nil, {message = "Invalid digest"}
+        end
+    end
+
     return consumer
 end
 
@@ -340,6 +375,7 @@ local function get_params(ctx)
     local algorithm_key = ALGORITHM_KEY
     local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
+    local body_digest_key = BODY_DIGEST_KEY
 
 
     local attr = plugin.plugin_attr(plugin_name)
@@ -349,6 +385,7 @@ local function get_params(ctx)
         algorithm_key = attr.algorithm_key or algorithm_key
         date_key = attr.date_key or date_key
         signed_headers_key = attr.signed_headers_key or signed_headers_key
+        body_digest_key = attr.body_digest_key or body_digest_key
     end
 
     local app_key = core.request.header(ctx, access_key)
@@ -356,6 +393,7 @@ local function get_params(ctx)
     local algorithm = core.request.header(ctx, algorithm_key)
     local date = core.request.header(ctx, date_key)
     local signed_headers = core.request.header(ctx, signed_headers_key)
+    local body_digest = core.request.header(ctx, body_digest_key)
     core.log.info("signature_key: ", signature_key)
 
     -- get params from header `Authorization`
@@ -384,6 +422,7 @@ local function get_params(ctx)
     params.signature  = signature
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
+    params.body_digest = body_digest
 
     local keep_headers = get_conf_field(params.access_key, "keep_headers")
     core.log.info("keep_headers: ", keep_headers)

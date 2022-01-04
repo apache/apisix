@@ -84,11 +84,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 先增加一个 Route：
 
-![](../../../assets/images/plugin/prometheus-1.png)
+![create a route](../../../assets/images/plugin/prometheus-1.png)
 
 然后在 route 页面中添加 prometheus 插件：
 
-![](../../../assets/images/plugin/prometheus-2.png)
+![enable prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
 
 ## 如何提取指标数据
 
@@ -105,6 +105,7 @@ curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```yaml
 scrape_configs:
   - job_name: "apisix"
+    scrape_interval: 15s # 这个值会跟Prometheus QL中rate函数的时间范围有关系, rate函数中的时间范围应该至少两倍于该值.
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
       - targets: ["127.0.0.1:9091"]
@@ -112,9 +113,9 @@ scrape_configs:
 
 我们也可以在 prometheus 控制台中去检查状态:
 
-![](../../../assets/images/plugin/prometheus01.png)
+![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
-![](../../../assets/images/plugin/prometheus02.png)
+![prometheus apisix in-depth metric view](../../../assets/images/plugin/prometheus02.png)
 
 ## 如何修改暴露指标的 uri
 
@@ -136,17 +137,17 @@ plugin_attr:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-下载 [Grafana dashboard 元数据](../../../assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+下载 [Grafana dashboard 元数据](https://github.com/apache/apisix/blob/master/docs/assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
-![](../../../assets/images/plugin/grafana-1.png)
+![Grafana chart-1](../../../assets/images/plugin/grafana-1.png)
 
-![](../../../assets/images/plugin/grafana-2.png)
+![Grafana chart-2](../../../assets/images/plugin/grafana-2.png)
 
-![](../../../assets/images/plugin/grafana-3.png)
+![Grafana chart-3](../../../assets/images/plugin/grafana-3.png)
 
-![](../../../assets/images/plugin/grafana-4.png)
+![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
 ### 可有的指标
 
@@ -162,7 +163,7 @@ plugin_attr:
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。|
 
-* `Bandwidth`: 流经 APISIX 的总带宽(可分出口带宽和入口带宽)，可以统计到每个服务的带宽总和。具有的维度：
+* `Bandwidth`: 流经 APISIX 的总带宽（可分出口带宽和入口带宽），可以统计到每个服务的带宽总和。具有的维度：
 
     | 名称          |    描述        |
     | -------------| ------------- |
@@ -179,7 +180,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 该值可以为`apisix`, `upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
+    | type         | 该值可以为 `apisix`、`upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
     | node         | 命中的 upstream 节点 `ip`。 |

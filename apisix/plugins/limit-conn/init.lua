@@ -41,19 +41,50 @@ function _M.increase(conf, ctx)
     local lim, err = lrucache(conf, nil, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local conf_key = conf.key
+    local key
+    if conf.key_type == "var_combination" then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
+        end
+
+        if n_resolved == 0 then
+            key = nil
+        end
+    else
+        key = ctx.var[conf_key]
+    end
+
+    if key == nil then
+        core.log.info("The value of the configured key is empty, use client IP instead")
+        -- When the value of key is empty, use client IP instead
+        key = ctx.var["remote_addr"]
+    end
+
+    key = key .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
+            if conf.rejected_msg then
+                return conf.rejected_code, { error_msg = conf.rejected_msg }
+            end
             return conf.rejected_code or 503
         end
 
-        core.log.error("failed to limit req: ", err)
+        core.log.error("failed to limit conn: ", err)
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
 

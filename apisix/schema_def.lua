@@ -237,7 +237,7 @@ local health_checker = {
                         },
                         successes = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         }
@@ -259,28 +259,41 @@ local health_checker = {
                         },
                         tcp_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 2
                         },
                         timeouts = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 7
                         },
                         http_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         },
                     }
                 }
+            },
+            default = {
+                type = "http",
+                healthy = {
+                    http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+                                      300, 301, 302, 303, 304, 305, 306, 307, 308 },
+                    successes = 0,
+                },
+                unhealthy = {
+                    http_statuses = { 429, 500, 503 },
+                    tcp_failures = 0,
+                    timeouts = 0,
+                    http_failures = 0,
+                },
             }
         }
     },
-    additionalProperties = false,
     anyOf = {
         {required = {"active"}},
         {required = {"active", "passive"}},
@@ -642,7 +655,6 @@ _M.route = {
             {required = {"script", "plugin_config_id"}},
         }
     },
-    additionalProperties = false,
 }
 
 
@@ -663,9 +675,13 @@ _M.service = {
             description = "enable websocket for request",
             type        = "boolean",
         },
-
+        hosts = {
+            type = "array",
+            items = host_def,
+            minItems = 1,
+            uniqueItems = true,
+        },
     },
-    additionalProperties = false,
 }
 
 
@@ -683,7 +699,6 @@ _M.consumer = {
         desc = desc_def,
     },
     required = {"username"},
-    additionalProperties = false,
 }
 
 
@@ -748,7 +763,6 @@ _M.ssl = {
         {required = {"sni", "key", "cert"}},
         {required = {"snis", "key", "cert"}}
     },
-    additionalProperties = false,
 }
 
 
@@ -765,7 +779,6 @@ _M.proto = {
         }
     },
     required = {"content"},
-    additionalProperties = false,
 }
 
 
@@ -778,7 +791,6 @@ _M.global_rule = {
         update_time = timestamp_def
     },
     required = {"plugins"},
-    additionalProperties = false,
 }
 
 
@@ -823,7 +835,6 @@ _M.plugins = {
             stream = {
                 type = "boolean"
             },
-            additionalProperties = false,
         },
         required = {"name"}
     }
@@ -841,7 +852,6 @@ _M.plugin_config = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
-    additionalProperties = false,
 }
 
 

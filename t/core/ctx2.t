@@ -188,3 +188,191 @@ query repo {
 hello world
 --- error_log
 find ctx._graphql: true
+
+
+
+=== TEST 7: support dash in the args
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "vars": [["arg_a-b", "==", "ab"]]
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 8: check (support dash in the args)
+--- request
+GET /hello?a-b=ab
+--- response_body
+hello world
+
+
+
+=== TEST 9: support dash in the args(Multi args with the same name, only fetch the first one)
+--- request
+GET /hello?a-b=ab&a-b=ccc
+--- response_body
+hello world
+
+
+
+=== TEST 10: support dash in the args(arg is missing)
+--- request
+GET /hello
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 11: parsed post args is cached under ctx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'find ctx.req_post_args.test: ', ctx.req_post_args.test ~= nil) end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "vars": [["post_arg_test", "==", "test"]]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit
+--- request
+POST /hello
+test=test
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- response_body
+hello world
+--- error_log
+find ctx.req_post_args.test: true
+
+
+
+=== TEST 13: missed (post_arg_test is missing)
+--- request
+POST /hello
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 14: missed (post_arg_test is mismatch)
+--- request
+POST /hello
+test=tesy
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 15: register custom variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_labels_zone: ', ctx.var.a6_labels_zone) end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "labels": {
+                            "zone": "Singapore"
+                        }
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 16: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require "apisix.core"
+            core.ctx.register_var("a6_labels_zone", function(ctx)
+                local route = ctx.matched_route and ctx.matched_route.value
+                if route and route.labels then
+                    return route.labels.zone
+                end
+                return nil
+            end)
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res = assert(httpc:request_uri(uri))
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+find ctx.var.a6_labels_zone: Singapore

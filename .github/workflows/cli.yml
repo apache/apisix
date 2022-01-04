@@ -1,0 +1,66 @@
+name: CLI Test
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-18.04
+        job_name:
+          - linux_apisix_current_luarocks
+          - linux_apisix_current_luarocks_in_customed_nginx
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 15
+    env:
+      SERVER_NAME: ${{ matrix.job_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v2.1.7
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+      - name: Linux launch common services
+        run: |
+          project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+
+      - name: Linux Get dependencies
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+            sudo --preserve-env=OPENRESTY_VERSION \
+            ./ci/${{ matrix.job_name }}_runner.sh do_install
+
+      - name: Linux Script
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script

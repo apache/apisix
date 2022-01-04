@@ -337,41 +337,7 @@ GET /t
 
 
 
-=== TEST 8: set global rules(invalid host option)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "host": "foo.com",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: additional properties forbidden, found host"}
---- no_error_log
-[error]
-
-
-
-=== TEST 9: set global rules(missing plugins)
+=== TEST 8: set global rules(missing plugins)
 --- config
     location /t {
         content_by_lua_block {
@@ -395,7 +361,7 @@ GET /t
 
 
 
-=== TEST 10: string id
+=== TEST 9: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -428,7 +394,7 @@ passed
 
 
 
-=== TEST 11: string id(DELETE)
+=== TEST 10: string id(DELETE)
 --- config
     location /t {
         content_by_lua_block {
@@ -451,7 +417,7 @@ passed
 
 
 
-=== TEST 12: not unwanted data, PUT
+=== TEST 11: not unwanted data, PUT
 --- config
     location /t {
         content_by_lua_block {
@@ -489,7 +455,7 @@ GET /t
 
 
 
-=== TEST 13: not unwanted data, PATCH
+=== TEST 12: not unwanted data, PATCH
 --- config
     location /t {
         content_by_lua_block {
@@ -527,7 +493,7 @@ GET /t
 
 
 
-=== TEST 14: not unwanted data, GET
+=== TEST 13: not unwanted data, GET
 --- config
     location /t {
         content_by_lua_block {
@@ -563,7 +529,7 @@ GET /t
 
 
 
-=== TEST 15: not unwanted data, DELETE
+=== TEST 14: not unwanted data, DELETE
 --- config
     location /t {
         content_by_lua_block {

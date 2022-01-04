@@ -101,7 +101,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -110,20 +110,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
 
 1. 先增加一个 consumer：
-![](../../../assets/images/plugin/jwt-auth-1.png)
+
+![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
 
 然后在 consumer 页面中添加 jwt-auth 插件：
-![](../../../assets/images/plugin/jwt-auth-2.png)
+![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
 
 2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
 
-![](../../../assets/images/plugin/jwt-auth-3.png)
+![enabe jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## 测试插件
 
 #### 首先进行登录获取 `jwt-auth` token:
 
-* 没有额外的payload:
+* 没有额外的 payload:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -137,7 +138,7 @@ Server: APISIX web server
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
 ```
 
-* 有额外的payload:
+* 有额外的 payload:
 
 ```shell
 $ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -212,7 +213,7 @@ Accept-Ranges: bytes
 当你想去掉 `jwt-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -221,7 +222,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

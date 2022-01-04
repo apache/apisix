@@ -41,16 +41,15 @@ Limiting request concurrency plugin.
 | burst              | integer | required    |         | burst >= 0                                                                                | the number of excessive concurrent requests (or connections) allowed to be delayed.                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | default_conn_delay | number  | required    |         | default_conn_delay > 0                                                                    | the latency seconds of request when concurrent requests exceeding `conn` but below (`conn` + `burst`).                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | only_use_default_delay  | boolean | optional    | false   | [true,false]                                                                              | enable the strict mode of the latency seconds. If you set this option to `true`, it will run strictly according to the latency seconds you set without additional calculation logic.                                                                                                                                                                                                                                                                                                                      |
-| key                | object  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | to limit the concurrency level. <br />For example, one can use the host name (or server zone) as the key so that we limit concurrency per host name. Otherwise, we can also use the client address as the key so that we can avoid a single client from flooding our service with too many parallel connections or requests. <br /> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
-| rejected_code      | string  | optional    | 503     | [200,...,599]                                                                             | returned when the request exceeds `conn` + `burst` will be rejected.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-
-**Key can be customized by the user, only need to modify a line of code of the plug-in to complete. It is a security consideration that is not open in the plugin.**
-
-When used in the stream proxy, only `remote_addr` and `server_addr` can be used as key. And `rejected_code` is meaningless.
+| key_type      | string  | optional    |   "var"   | ["var", "var_combination"] | the type of key. |
+| key           | string  | required    |         |  | the user specified key to limit the rate. If the `key_type` is "var", the key will be treated as a name of variable, like "remote_addr" or "consumer_name". If the `key_type` is "var_combination", the key will be a combination of variables, like "$remote_addr $consumer_name". If the value of the key is empty, `remote_addr` will be set as the default key.|
+| rejected_code      | string  | optional    | 503     | [200,...,599]                                                                             | the HTTP status code returned when the request exceeds `conn` + `burst` will be rejected.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| rejected_msg       | string | optional                                |            | non-empty                                | the response body returned when the request exceeds `conn` + `burst` will be rejected.                                                                                                                                                                                                            |
+| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-conn function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
 ## How To Enable
 
-Here's an example, enable the limit-conn plugin on the specified route:
+Here's an example, enable the limit-conn plugin on the specified route when setting `key_type` to `var` :
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,23 +62,47 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "burst": 0,
             "default_conn_delay": 0.1,
             "rejected_code": 503,
-            "key": "remote_addr"
+            "key_type": "var",
+            "key": "http_a"
         }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-![](../../../assets/images/plugin/limit-conn-1.png)
+Here's an example, enable the limit-conn plugin on the specified route when setting `key_type` to `var_combination` :
 
-Then add limit-conn plugin:
-![](../../../assets/images/plugin/limit-conn-2.png)
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+You also can complete the above operation through the web interface, first add a route, then add limit-conn plugin:
+![enable limit-conn plugin](../../../assets/images/plugin/limit-conn-1.png)
 
 ## Test Plugin
 
@@ -117,7 +140,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

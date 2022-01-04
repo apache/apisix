@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 在指定 route 中，代理 grpc 服务接口:
 
 * 注意： 这个 route 对应的 upstream 的属性 `scheme` 必须设置为 `grpc`
-* 代理 grpc 服务例子可参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+* 代理 grpc 服务例子可参考：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

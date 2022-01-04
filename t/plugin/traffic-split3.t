@@ -525,105 +525,7 @@ upstream_key: roundrobin#route_1_1
 
 
 
-=== TEST 17: schema validation, "additionalProperties = false" to limit the plugin configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.traffic-split")
-            local ok, err = plugin.check_schema({
-                additional_properties = "hello",
-                rules = {
-                    {
-                        match = {
-                            {
-                                vars = {
-                                    {"arg_name", "==", "jack"},
-                                    {"arg_age", "!", "<", "16"}
-                                }
-                            },
-                             {
-                                vars = {
-                                    {"arg_name", "==", "rose"},
-                                    {"arg_age", "!", ">", "32"}
-                                }
-                            }
-                        },
-                        weighted_upstreams = {
-                            {
-                                upstream = {
-                                    name = "upstream_A",
-                                    type = "roundrobin",
-                                    nodes = {["127.0.0.1:1981"]=2},
-                                    timeout = {connect = 15, send = 15, read = 15}
-                                },
-                                weight = 2
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/additional properties forbidden, found additional_properties/
-
-
-
-=== TEST 18: schema validation, "additionalProperties = false" to limit the "rules" configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.traffic-split")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        additional_properties = "hello",
-                        match = {
-                            {
-                                vars = {
-                                    {"arg_name", "==", "jack"},
-                                    {"arg_age", "!", "<", "16"}
-                                }
-                            },
-                             {
-                                vars = {
-                                    {"arg_name", "==", "rose"},
-                                    {"arg_age", "!", ">", "32"}
-                                }
-                            }
-                        },
-                        weighted_upstreams = {
-                            {
-                                upstream = {
-                                    name = "upstream_A",
-                                    type = "roundrobin",
-                                    nodes = {["127.0.0.1:1981"]=2},
-                                    timeout = {connect = 15, send = 15, read = 15}
-                                },
-                                weight = 2
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "rules" validation failed: failed to validate item 1: additional properties forbidden, found additional_properties/
-
-
-
-=== TEST 19: the request header contains horizontal lines("-")
+=== TEST 17: the request header contains horizontal lines("-")
 --- config
     location /t {
         content_by_lua_block {
@@ -668,7 +570,7 @@ passed
 
 
 
-=== TEST 20: `match` rule passed
+=== TEST 18: `match` rule passed
 --- config
 location /t {
     content_by_lua_block {
@@ -689,7 +591,7 @@ location /t {
 
 
 
-=== TEST 21: request args and request headers contain horizontal lines("-")
+=== TEST 19: request args and request headers contain horizontal lines("-")
 --- config
     location /t {
         content_by_lua_block {
@@ -734,7 +636,7 @@ passed
 
 
 
-=== TEST 22: `match` rule passed
+=== TEST 20: `match` rule passed
 --- config
 location /t {
     content_by_lua_block {

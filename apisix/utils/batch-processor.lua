@@ -42,6 +42,7 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default= 1000},
     }
 }
+batch_processor.schema = schema
 
 
 local function schedule_func_exec(self, delay, batch)
@@ -130,7 +131,7 @@ function batch_processor:new(func, config)
         retry_delay = config.retry_delay,
         name = config.name,
         batch_to_process = {},
-        entry_buffer = { entries = {}, retry_count = 0},
+        entry_buffer = {entries = {}, retry_count = 0},
         is_timer_running = false,
         first_entry_t = 0,
         last_entry_t = 0,
@@ -145,7 +146,7 @@ end
 function batch_processor:push(entry)
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
-        local batch = { entries = { entry }, retry_count = 0 }
+        local batch = {entries = {entry}, retry_count = 0}
         schedule_func_exec(self, 0, batch)
         return
     end
@@ -188,7 +189,7 @@ function batch_processor:process_buffer()
         core.log.debug("transferring buffer entries to processing pipe line, ",
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
-        self.entry_buffer = { entries = {}, retry_count = 0 }
+        self.entry_buffer = {entries = {}, retry_count = 0}
         if batch_metrics then
             self.label = {self.name, self.route_id, self.server_addr}
             batch_metrics:set(0, self.label)

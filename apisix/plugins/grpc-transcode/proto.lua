@@ -17,6 +17,8 @@
 local core        = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local protoc      = require("protoc")
+local pcall       = pcall
+local ipairs      = ipairs
 local protos
 
 
@@ -24,6 +26,33 @@ local lrucache_proto = core.lrucache.new({
     ttl = 300, count = 100
 })
 
+local proto_fake_file = "filename for loaded"
+
+local function compile_proto(content)
+    local _p  = protoc.new()
+    -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
+    -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
+    -- name to keep the code below unchanged, or we can create our own load function with returning
+    -- the loaded DescriptorProto table additionally, see more details in
+    -- https://github.com/apache/apisix/pull/4368
+    local ok, res = pcall(_p.load, _p, content, proto_fake_file)
+    if not ok then
+        return nil, res
+    end
+
+    if not res or not _p.loaded then
+        return nil, "failed to load proto content"
+    end
+
+    return _p.loaded
+end
+
+
+local _M = {
+    version = 0.1,
+    compile_proto = compile_proto,
+    proto_fake_file = proto_fake_file
+}
 
 local function create_proto_obj(proto_id)
     if protos.values == nil then
@@ -42,24 +71,25 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local _p  = protoc.new()
-    -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
-    -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
-    -- name to keep the code below unchanged, or we can create our own load function with returning
-    -- the loaded DescriptorProto table additionally, see more details in
-    -- https://github.com/apache/apisix/pull/4368
-    local res = _p:load(content, "filename for loaded")
+    local compiled, err = compile_proto(content)
 
-    if not res or not _p.loaded then
-        return nil, "failed to load proto content"
+    if not compiled then
+        return nil, err
     end
 
+    local index = {}
+    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
+        local method_index = {}
+        for _, m in ipairs(s.method) do
+            method_index[m.name] = m
+        end
 
-    return _p.loaded
+        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
+    end
+
+    compiled[proto_fake_file].index = index
+    return compiled
 end
-
-
-local _M = {version = 0.1}
 
 
 function _M.fetch(proto_id)

@@ -1,0 +1,440 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: "3.8"
+
+services:
+  ## Redis
+  apisix_redis:
+    image: redis:3.0-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      apisix_net:
+
+
+  ## keycloak
+  apisix_keycloak:
+    image: sshniro/keycloak-apisix:1.0.0
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: 123456
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+      - "8443:8443"
+    networks:
+      apisix_net:
+
+
+  ## kafka-cluster
+  zookeeper-server1:
+    image: bitnami/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    networks:
+      kafka_net:
+
+  zookeeper-server2:
+    image: bitnami/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "12181:12181"
+    networks:
+      kafka_net:
+
+  kafka-server1:
+    image: bitnami/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server1:2181
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+    networks:
+      kafka_net:
+
+  kafka-server2:
+    image: bitnami/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
+    restart: unless-stopped
+    ports:
+      - "19092:9092"
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+    networks:
+      kafka_net:
+
+
+  ## Eureka
+  eureka:
+    image: bitinit/eureka
+    env_file:
+      - ci/pod/eureka/env/common.env
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+
+
+  ## SkyWalking
+  skywalking:
+    image: apache/skywalking-oap-server:8.7.0-es6
+    restart: unless-stopped
+    ports:
+      - "1234:1234"
+      - "11800:11800"
+      - "12800:12800"
+    networks:
+      skywalk_net:
+
+
+  ## Consul
+  consul_1:
+    image: consul:1.7
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    networks:
+      consul_net:
+
+  consul_2:
+    image: consul:1.7
+    restart: unless-stopped
+    ports:
+      - "8600:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    networks:
+      consul_net:
+
+
+  ## HashiCorp Vault
+  vault:
+    image: vault:1.9.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: [ "vault", "server", "-dev" ]
+    networks:
+      vault_net:
+
+
+  ## OpenLDAP
+  openldap:
+    image: bitnami/openldap:2.5.8
+    environment:
+      LDAP_ADMIN_USERNAME: amdin
+      LDAP_ADMIN_PASSWORD: adminpassword
+      LDAP_USERS: user01,user02
+      LDAP_PASSWORDS: password1,password2
+    ports:
+      - "1389:1389"
+      - "1636:1636"
+
+
+  ## Nacos cluster
+  nacos_auth:
+    hostname: nacos1
+    image: nacos/nacos-server:1.4.1
+    env_file:
+      - ci/pod/nacos/env/common.env
+    environment:
+      NACOS_AUTH_ENABLE: "true"
+    restart: unless-stopped
+    ports:
+      - "8848:8848"
+    networks:
+      nacos_net:
+
+  nacos_no_auth:
+    hostname: nacos2
+    image: nacos/nacos-server:1.4.1
+    env_file:
+      - ci/pod/nacos/env/common.env
+    restart: unless-stopped
+    ports:
+      - "8858:8848"
+    networks:
+      nacos_net:
+
+  nacos_server_health_check:
+    build:
+      context: ci/pod/nacos/healthcheck
+      dockerfile: Dockerfile
+    environment:
+      CHECK_URI: "http://nacos2:8848/nacos/v1/ns/service/list?pageNo=1&pageSize=2"
+    tty: true
+    # debug healthcheck script
+#    volumes:
+#     - ./ci/pod/nacos/healthcheck/nacos-server-healthcheck.sh:/nacos-server-healthcheck.sh
+    healthcheck:
+      test: [ "CMD", "bash", "/nacos-server-healthcheck.sh" ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+    networks:
+      nacos_net:
+
+  nacos_service_health_check:
+    build:
+      context: ci/pod/nacos/healthcheck
+      dockerfile: Dockerfile
+    # debug healthcheck script
+#    volumes:
+#     - ./ci/pod/nacos/healthcheck/nacos-service-healthcheck.sh:/nacos-service-healthcheck.sh
+    tty: true
+    healthcheck:
+      test: [ "CMD", "bash", "/nacos-service-healthcheck.sh" ]
+      interval: 5s
+      timeout: 30s
+      retries: 60
+      start_period: 10s
+    networks:
+      nacos_net:
+
+  ### Nacos services
+  nacos-service1:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 1
+    restart: unless-stopped
+    ports:
+      - "18001:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service2:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 2
+    restart: unless-stopped
+    ports:
+      - "18002:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service3:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 1
+      NAMESPACE: test_ns
+    restart: unless-stopped
+    ports:
+      - "18003:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service4:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 1
+      GROUP: test_group
+    restart: unless-stopped
+    ports:
+      - "18004:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service5:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 1
+      GROUP: test_group
+      NAMESPACE: test_ns
+    restart: unless-stopped
+    ports:
+      - "18005:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service6:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 3
+      GROUP: test_group2
+      NAMESPACE: test_ns
+    restart: unless-stopped
+    ports:
+      - "18006:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+  nacos-service7:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service.env
+    environment:
+      SUFFIX_NUM: 4
+      GROUP: test_group
+      NAMESPACE: test_ns2
+    restart: unless-stopped
+    ports:
+      - "18007:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+
+
+  ## http_echo
+  apisix_http_echo:
+    image: mendhak/http-https-echo
+    environment:
+      HTTP_PORT: 8888
+      HTTPS_PORT: 9999
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+      - "9999:9999"
+    depends_on:
+      nacos_service_health_check:
+        condition: service_healthy
+    networks:
+      apisix_net:
+
+  rocketmq_namesrv:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqnamesrv
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      rocketmq_net:
+
+  rocketmq_broker:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqbroker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    depends_on:
+      - rocketmq_namesrv
+    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
+    networks:
+      rocketmq_net:
+
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s /example.rego /echo.rego /data.json
+    volumes:
+      - type: bind
+        source: ./ci/pod/opa/example.rego
+        target: /example.rego
+      - type: bind
+        source: ./ci/pod/opa/echo.rego
+        target: /echo.rego
+      - type: bind
+        source: ./ci/pod/opa/data.json
+        target: /data.json
+    networks:
+      opa_net:
+
+  # Splunk HEC Logging Service
+  splunk:
+    image: splunk/splunk:8.2.3
+    restart: unless-stopped
+    ports:
+      - "18088:8088"
+    environment:
+      SPLUNK_PASSWORD: "ApacheAPISIX@666"
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
+      SPLUNK_HEC_SSL: "False"
+
+
+networks:
+  apisix_net:
+  consul_net:
+  kafka_net:
+  nacos_net:
+  skywalk_net:
+  rocketmq_net:
+  vault_net:
+  opa_net:

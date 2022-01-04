@@ -56,32 +56,7 @@ done
 
 
 
-=== TEST 2: wrong value of key
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.prometheus")
-            local ok, err = plugin.check_schema({
-                invalid = "invalid"
-                })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-additional properties forbidden, found invalid
---- no_error_log
-[error]
-
-
-
-=== TEST 3: set it in route
+=== TEST 2: set it in route
 --- config
     location /t {
         content_by_lua_block {
@@ -117,7 +92,7 @@ passed
 
 
 
-=== TEST 4: fetch the prometheus metric data
+=== TEST 3: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like
@@ -127,7 +102,7 @@ apisix_etcd_reachable 1
 
 
 
-=== TEST 5: request from client (all hit)
+=== TEST 4: request from client (all hit)
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -137,7 +112,7 @@ apisix_etcd_reachable 1
 
 
 
-=== TEST 6: request from client (part hit)
+=== TEST 5: request from client (part hit)
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -147,7 +122,7 @@ apisix_etcd_reachable 1
 
 
 
-=== TEST 7: fetch the prometheus metric data
+=== TEST 6: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -157,91 +132,14 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 
 
 
-=== TEST 8: test for unsupported method
+=== TEST 7: test for unsupported method
 --- request
 PATCH /apisix/prometheus/metrics
 --- error_code: 404
 
 
 
-=== TEST 9: set it in route (with wrong property)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {
-                        "prometheus": {
-                            "invalid_property": 1
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
---- no_error_log
-[error]
-
-
-
-=== TEST 10: set it in service (with wrong property)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {
-                        "prometheus": {
-                            "invalid_property": 1
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
---- no_error_log
-[error]
-
-
-
-=== TEST 11: set route without id in post body
+=== TEST 8: set route without id in post body
 --- config
     location /t {
         content_by_lua_block {
@@ -279,7 +177,7 @@ passed
 
 
 
-=== TEST 12: pipeline of client request
+=== TEST 9: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -289,7 +187,7 @@ passed
 
 
 
-=== TEST 13: fetch the prometheus metric data
+=== TEST 10: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -299,7 +197,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 
 
 
-=== TEST 14: fetch the prometheus metric data
+=== TEST 11: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -309,7 +207,7 @@ qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",no
 
 
 
-=== TEST 15: create service
+=== TEST 12: create service
 --- config
     location /t {
         content_by_lua_block {
@@ -344,7 +242,7 @@ passed
 
 
 
-=== TEST 16: use service 1 in route 2
+=== TEST 13: use service 1 in route 2
 --- config
     location /t {
         content_by_lua_block {
@@ -372,7 +270,7 @@ passed
 
 
 
-=== TEST 17: pipeline of client request
+=== TEST 14: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello1", "GET /not_found", "GET /hello1", "GET /hello1"]
 --- error_code eval
@@ -382,7 +280,7 @@ passed
 
 
 
-=== TEST 18: fetch the prometheus metric data
+=== TEST 15: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -392,7 +290,7 @@ qr/apisix_bandwidth\{type="egress",route="2",service="1",consumer="",node="127.0
 
 
 
-=== TEST 19: delete route 2
+=== TEST 16: delete route 2
 --- config
     location /t {
         content_by_lua_block {
@@ -416,7 +314,7 @@ passed
 
 
 
-=== TEST 20: set it in route with plugin `fault-injection`
+=== TEST 17: set it in route with plugin `fault-injection`
 --- config
     location /t {
         content_by_lua_block {
@@ -452,7 +350,7 @@ passed
 
 
 
-=== TEST 21: pipeline of client request
+=== TEST 18: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -462,7 +360,7 @@ passed
 
 
 
-=== TEST 22: set it in global rule
+=== TEST 19: set it in global rule
 --- config
     location /t {
         content_by_lua_block {
@@ -507,7 +405,7 @@ passed
 
 
 
-=== TEST 23: request from client
+=== TEST 20: request from client
 --- pipelined_requests eval
 ["GET /hello3", "GET /hello3"]
 --- error_code eval
@@ -517,7 +415,7 @@ passed
 
 
 
-=== TEST 24: fetch the prometheus metric data
+=== TEST 21: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -527,7 +425,7 @@ qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host=
 
 
 
-=== TEST 25: fetch the prometheus metric data with apisix latency
+=== TEST 22: fetch the prometheus metric data with apisix latency
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -537,7 +435,7 @@ qr/.*apisix_http_latency_bucket\{type="apisix".*/
 
 
 
-=== TEST 26: add service 3 to distinguish other services
+=== TEST 23: add service 3 to distinguish other services
 --- config
     location /t {
         content_by_lua_block {
@@ -572,7 +470,7 @@ passed
 
 
 
-=== TEST 27: add a route 4 to redirect /mysleep?seconds=1
+=== TEST 24: add a route 4 to redirect /mysleep?seconds=1
 --- config
     location /t {
         content_by_lua_block {
@@ -600,7 +498,7 @@ passed
 
 
 
-=== TEST 28: request from client to /mysleep?seconds=1 ( all hit)
+=== TEST 25: request from client to /mysleep?seconds=1 ( all hit)
 --- pipelined_requests eval
 ["GET /mysleep?seconds=1", "GET /mysleep?seconds=1", "GET /mysleep?seconds=1"]
 --- error_code eval
@@ -610,7 +508,7 @@ passed
 
 
 
-=== TEST 29: fetch the prometheus metric data with apisix latency (latency < 1s)
+=== TEST 26: fetch the prometheus metric data with apisix latency (latency < 1s)
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -620,7 +518,7 @@ qr/apisix_http_latency_bucket\{type="apisix".*service=\"3\".*le=\"500.*/
 
 
 
-=== TEST 30: delete route 4
+=== TEST 27: delete route 4
 --- config
     location /t {
         content_by_lua_block {
@@ -643,7 +541,7 @@ passed
 
 
 
-=== TEST 31: delete service 3
+=== TEST 28: delete service 3
 --- config
     location /t {
         content_by_lua_block {
@@ -666,7 +564,7 @@ passed
 
 
 
-=== TEST 32: fetch the prometheus metric data with `modify_indexes consumers`
+=== TEST 29: fetch the prometheus metric data with `modify_indexes consumers`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -676,7 +574,7 @@ qr/apisix_etcd_modify_indexes\{key="consumers"\} \d+/
 
 
 
-=== TEST 33: fetch the prometheus metric data with `modify_indexes global_rules`
+=== TEST 30: fetch the prometheus metric data with `modify_indexes global_rules`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -686,7 +584,7 @@ qr/apisix_etcd_modify_indexes\{key="global_rules"\} \d+/
 
 
 
-=== TEST 34: fetch the prometheus metric data with `modify_indexes max_modify_index`
+=== TEST 31: fetch the prometheus metric data with `modify_indexes max_modify_index`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -696,7 +594,7 @@ qr/apisix_etcd_modify_indexes\{key="max_modify_index"\} \d+/
 
 
 
-=== TEST 35: fetch the prometheus metric data with `modify_indexes protos`
+=== TEST 32: fetch the prometheus metric data with `modify_indexes protos`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -706,7 +604,7 @@ qr/apisix_etcd_modify_indexes\{key="protos"\} \d+/
 
 
 
-=== TEST 36: fetch the prometheus metric data with `modify_indexes routes`
+=== TEST 33: fetch the prometheus metric data with `modify_indexes routes`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -716,7 +614,7 @@ qr/apisix_etcd_modify_indexes\{key="routes"\} \d+/
 
 
 
-=== TEST 37: fetch the prometheus metric data with `modify_indexes services`
+=== TEST 34: fetch the prometheus metric data with `modify_indexes services`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -726,7 +624,7 @@ qr/apisix_etcd_modify_indexes\{key="services"\} \d+/
 
 
 
-=== TEST 38: fetch the prometheus metric data with `modify_indexes ssls`
+=== TEST 35: fetch the prometheus metric data with `modify_indexes ssls`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -736,7 +634,7 @@ qr/apisix_etcd_modify_indexes\{key="ssls"\} \d+/
 
 
 
-=== TEST 39: fetch the prometheus metric data with `modify_indexes stream_routes`
+=== TEST 36: fetch the prometheus metric data with `modify_indexes stream_routes`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -746,7 +644,7 @@ qr/apisix_etcd_modify_indexes\{key="stream_routes"\} \d+/
 
 
 
-=== TEST 40: fetch the prometheus metric data with `modify_indexes upstreams`
+=== TEST 37: fetch the prometheus metric data with `modify_indexes upstreams`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -756,7 +654,7 @@ qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
 
 
 
-=== TEST 41: fetch the prometheus metric data with `modify_indexes prev_index`
+=== TEST 38: fetch the prometheus metric data with `modify_indexes prev_index`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -766,7 +664,7 @@ qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
 
 
 
-=== TEST 42: fetch the prometheus metric data with `modify_indexes x_etcd_index`
+=== TEST 39: fetch the prometheus metric data with `modify_indexes x_etcd_index`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -776,7 +674,7 @@ qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
 
 
 
-=== TEST 43: fetch the prometheus metric data -- hostname
+=== TEST 40: fetch the prometheus metric data -- hostname
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -786,7 +684,7 @@ qr/apisix_node_info\{hostname=".*"\} 1/
 
 
 
-=== TEST 44: don't try to provide etcd metrics when you don't use it
+=== TEST 41: don't try to provide etcd metrics when you don't use it
 --- yaml_config
 apisix:
     node_listen: 1984

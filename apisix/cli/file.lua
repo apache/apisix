@@ -65,8 +65,16 @@ local function resolve_conf_var(conf)
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+)%s*%}%}", function(var)
-                local v = getenv(var)
+            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
+                local i, j = var:find("%:%=")
+                local default
+                if i and j then
+                    default = var:sub(i + 2, #var)
+                    default = default:gsub('^%s*(.-)%s*$', '%1')
+                    var = var:sub(1, i - 1)
+                end
+
+                local v = getenv(var) or default
                 if v then
                     if not exported_vars then
                         exported_vars = {}
@@ -112,6 +120,24 @@ local function tinyyaml_type(t)
 end
 
 
+local function path_is_multi_type(path, type_val)
+    if str_sub(path, 1, 14) == "nginx_config->" and
+            (type_val == "number" or type_val == "string") then
+        return true
+    end
+
+    if path == "apisix->node_listen" and type_val == "number" then
+        return true
+    end
+
+    if path == "apisix->ssl->listen_port" and type_val == "number" then
+        return true
+    end
+
+    return false
+end
+
+
 local function merge_conf(base, new_tab, ppath)
     ppath = ppath or ""
 
@@ -143,12 +169,11 @@ local function merge_conf(base, new_tab, ppath)
             if base[key] == nil then
                 base[key] = val
             elseif type(base[key]) ~= type_val then
-                if (ppath == "nginx_config" or str_sub(ppath, 1, 14) == "nginx_config->") and
-                    (type_val == "number" or type_val == "string")
-                then
+                local path = ppath == "" and key or ppath .. "->" .. key
+
+                if path_is_multi_type(path, type_val) then
                     base[key] = val
                 else
-                    local path = ppath == "" and key or ppath .. "->" .. key
                     return nil, "failed to merge, path[" .. path ..  "] expect: " ..
                                 type(base[key]) .. ", but got: " .. type_val
                 end

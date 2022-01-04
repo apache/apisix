@@ -23,9 +23,16 @@ title: Debug Mode
 
 ### 基本调试模式
 
-设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
+设置 `conf/debug.yaml` 即可开启基本调试模式:
 
-比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
+```
+basic:
+  enable: true
+```
+
+注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
+
+比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
@@ -78,3 +85,25 @@ hook_phase: # 模块函数列表，名字：hook_phase
     - http_log_phase
 #END
 ```
+
+### 动态高级调试模式
+
+动态高级调试模式是基于高级调试模式，可以由单个请求动态开启高级调试模式。设置 `conf/debug.yaml` 中的选项。
+
+示例：
+
+```yaml
+http_filter:
+  enable: true # 是否动态开启高级调试模式
+  enable_header_name: X-APISIX-Dynamic-Debug # 追踪携带此 header 的请求
+......
+#END
+```
+
+动态开启高级调试模式，示例：
+
+```shell
+curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
+```
+
+注意：动态高级调试模式无法调试 `apisix.http_access_phase`， 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。

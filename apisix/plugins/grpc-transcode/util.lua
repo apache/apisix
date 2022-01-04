@@ -14,37 +14,30 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local json     = core.json
-local pb       = require("pb")
-local ngx      = ngx
-local pairs    = pairs
-local ipairs   = ipairs
-local string   = string
-local tonumber = tonumber
-local type     = type
+local core              = require("apisix.core")
+local proto_fake_file   = require("apisix.plugins.grpc-transcode.proto").proto_fake_file
+local json              = core.json
+local pb                = require("pb")
+local ngx               = ngx
+local string            = string
+local tonumber          = tonumber
+local type              = type
 
 
 local _M = {version = 0.1}
 
 
 function _M.find_method(protos, service, method)
-    for k, loaded in pairs(protos) do
-        if type(loaded) == 'table' then
-            local package = loaded.package
-            for _, s in ipairs(loaded.service or {}) do
-                if package .. "." .. s.name == service then
-                    for _, m in ipairs(s.method) do
-                        if m.name == method then
-                            return m
-                        end
-                    end
-                end
-            end
-        end
+    local loaded = protos[proto_fake_file]
+    if not loaded or type(loaded) ~= "table" then
+        return nil
     end
 
-    return nil
+    if not loaded.index[service] or type(loaded.index[service]) ~= "table" then
+        return nil
+    end
+
+    return loaded.index[service][method]
 end
 
 
@@ -91,25 +84,34 @@ local function get_from_request(request_table, name, kind)
 end
 
 
-function _M.map_message(field, default_values)
+function _M.map_message(field, default_values, request_table)
     if not pb.type(field) then
         return nil, "Field " .. field .. " is not defined"
     end
 
     local request = {}
     local sub, err
-    local request_table = get_request_table()
+    if not request_table then
+        request_table = get_request_table()
+    end
+
     for name, _, field_type in pb.fields(field) do
         local _, _, ty = pb.type(field_type)
         if ty ~= "enum" and field_type:sub(1, 1) == "." then
-            sub, err = _M.map_message(field_type, default_values)
-            if err then
-                return nil, err
+            if request_table[name] == nil then
+                sub = default_values and default_values[name]
+            else
+                sub, err = _M.map_message(field_type, default_values and default_values[name],
+                                          request_table[name])
+                if err then
+                    return nil, err
+                end
             end
+
             request[name] = sub
         else
             request[name] = get_from_request(request_table, name, field_type)
-                                or default_values[name] or nil
+                                or (default_values and default_values[name])
         end
     end
     return request

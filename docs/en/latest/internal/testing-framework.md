@@ -135,8 +135,8 @@ One request after another:
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local uri = "http://127.0.0.1:" ... ngx.var.server_port
-                        ... "/server_port"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
 
             local ports_count = {}
             for i = 1, 12 do
@@ -157,14 +157,14 @@ Sending multiple requests concurrently:
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local uri = "http://127.0.0.1:" ... ngx.var.server_port
-                        ... "/server_port?var=2&var2="
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port?var=2&var2="
 
 
             local t = {}
             local ports_count = {}
             for i = 1, 180 do
-                local th = assert(ngx.thread.spawn(function(i))
+                local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
                     local res, err = httpc:request_uri(uri..i, {method = "GET"})
                     if not res then
@@ -285,4 +285,25 @@ ONLY:
 ...
 --- response_body
 {"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":{}}}
+```
+
+### Executing Shell Commands
+
+It is possible to execute shell commands while writing tests in test-nginx for APISIX. We expose this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block and `stderr` (if any) can be captured by filtering error.log through `grep_error_log`. Here is an example:
+
+```
+=== TEST 1: check exec stdout
+--- exec
+echo hello world
+--- response_body
+hello world
+
+
+=== TEST 2: when exec returns an error
+--- exec
+echxo hello world
+--- grep_error_log eval
+qr/failed to execute the script [ -~]*/
+--- grep_error_log_out
+failed to execute the script with status: 127, reason: exit, stderr: /bin/sh: 1: echxo: not found
 ```

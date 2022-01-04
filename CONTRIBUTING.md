@@ -48,6 +48,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
 * Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
+* Follow the [PR manners](https://raw.githubusercontent.com/apache/apisix/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 ## Contribution Guidelines for Documentation
 
@@ -126,6 +127,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
     * Use tool to check your test case style statically by command, eg: `make lint`.
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
+    * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
 ## Do you have questions about the source code?
 

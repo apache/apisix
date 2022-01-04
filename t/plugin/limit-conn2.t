@@ -34,6 +34,36 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+    my $port = $ENV{TEST_NGINX_SERVER_PORT};
+
+    my $config = $block->config // <<_EOC_;
+    location /access_root_dir {
+        content_by_lua_block {
+            local httpc = require "resty.http"
+            local hc = httpc:new()
+
+            local res, err = hc:request_uri('http://127.0.0.1:$port/limit_conn')
+            if res then
+                ngx.exit(res.status)
+            end
+        }
+    }
+
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 5 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
+    }
+_EOC_
+
+    $block->set_value("config", $config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -228,3 +258,259 @@ GET /hello1
 qr/request latency is nil/
 --- grep_error_log_out
 request latency is nil
+
+
+
+=== TEST 7: invalid route: wrong rejected_msg type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": true
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: wrong type: expected string, got boolean"}
+
+
+
+=== TEST 8: invalid route: wrong rejected_msg length
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr",
+                                    "rejected_msg": ""
+                                }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"rejected_msg\" validation failed: string too short, expected at least 1, got 0"}
+
+
+
+=== TEST 9: update plugin to set key_type to var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 1,
+                                "burst": 0,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "$http_a $http_b",
+                                "key_type": "var_combination"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-conn": {
+                                    "conn": 1,
+                                    "burst": 0,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "$http_a $http_b",
+                                    "key_type": "var_combination"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/limit_conn"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: Don't exceed the burst
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/limit_conn"
+            local ress = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {a = i}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- request
+GET /t
+--- timeout: 10s
+--- response_body
+[200,200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: request when key is missing
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+503
+503
+503
+503
+--- no_error_log
+[error]
+--- error_log
+The value of the configured key is empty, use client IP instead
+
+
+
+=== TEST 12: update plugin to set invalid key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 1,
+                                "burst": 0,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "abcdefgh",
+                                "key_type": "var_combination"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: request when key is invalid
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+503
+503
+503
+503
+--- no_error_log
+[error]
+--- error_log
+The value of the configured key is empty, use client IP instead

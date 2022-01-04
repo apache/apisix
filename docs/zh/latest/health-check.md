@@ -23,18 +23,43 @@ title: 健康检查
 
 ## Upstream 的健康检查
 
-APISIX 的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck)实现，你可以在 upstream 中使用它。
+Apache APISIX 的健康检查使用 [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck) 实现。
 
 注意:
 
-* 只有在 upstream 被请求时才会开始健康检查。
-如果一个 upstream 被配置但没有被请求，那么就不会有健康检查。
+* 只有在 `upstream` 被请求时才会开始健康检查，如果 `upstream` 被配置但没有被请求，不会触发启动健康检查。
 * 如果没有健康的节点，那么请求会继续发送给上游。
-* 如果 upstream 中只有一个节点，就不会有健康检查。
-因为该唯一节点无论是否健康，请求都会发送给上游，
+* 如果 `upstream` 中只有一个节点时不会触发启动健康检查，该唯一节点无论是否健康，请求都将转发给上游。
 * 主动健康检查是必须的，这样不健康的节点才会恢复。
 
-下面是一个检查检查的例子：
+### 配置说明
+
+| 配置项                                       | 配置类型           | 值类型 | 值选项               | 默认值                                                                                     | 描述                                                                    |
+| ----------------------------------------------- | ---------------------- | ------- | -------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| upstream.checks.active.type                     | 主动检查           | string  | `http` `https` `tcp` | http                                                                                          | 主动检查的类型。                                                  |
+| upstream.checks.active.timeout                  | 主动检查           | integer |                      | 1                                                                                             | 主动检查的超时时间（单位：秒）。                          |
+| upstream.checks.active.concurrency              | 主动检查           | integer |                      | 10                                                                                            | 主动检查时同时检查的目标数。                                |
+| upstream.checks.active.http_path                | 主动检查           | string  |                      | /                                                                                             | 主动检查的 HTTP 请求路径。                                      |
+| upstream.checks.active.host                     | 主动检查           | string  |                      | ${upstream.node.host}                                                                         | 主动检查的 HTTP 请求主机名。                                   |
+| upstream.checks.active.port                     | 主动检查           | integer | `1` 至 `65535`      | ${upstream.node.port}                                                                         | 主动检查的 HTTP 请求主机端口。                                |
+| upstream.checks.active.https_verify_certificate | 主动检查           | boolean |                      | true                                                                                          | 主动检查使用 HTTPS 类型检查时，是否检查远程主机的SSL证书。 |
+| upstream.checks.active.req_headers              | 主动检查           | array   |                      | []                                                                                            | 主动检查使用 HTTP 或 HTTPS类型检查时，设置额外的请求头信息。 |
+| upstream.checks.active.healthy.interval         | 主动检查（健康节点） | integer | `>= 1`               | 1                                                                                             | 主动检查（健康节点）检查的间隔时间（单位：秒）     |
+| upstream.checks.active.healthy.http_statuses    | 主动检查（健康节点） | array   | `200` 至 `599`      | [200, 302]                                                                                    | 主动检查（健康节点） HTTP 或 HTTPS 类型检查时，健康节点的HTTP状态码。 |
+| upstream.checks.active.healthy.successes        | 主动检查（健康节点） | integer | `1` 至 `254`        | 2                                                                                             | 主动检查（健康节点）确定节点健康的次数。              |
+| upstream.checks.active.unhealthy.interval       | 主动检查（非健康节点） | integer | `>= 1`               | 1                                                                                             | 主动检查（非健康节点）检查的间隔时间（单位：秒）  |
+| upstream.checks.active.unhealthy.http_statuses  | 主动检查（非健康节点） | array   | `200` 至 `599`      | [429, 404, 500, 501, 502, 503, 504, 505]                                                      | 主动检查（非健康节点） HTTP 或 HTTPS 类型检查时，非健康节点的HTTP状态码。 |
+| upstream.checks.active.unhealthy.http_failures  | 主动检查（非健康节点） | integer | `1` 至 `254`        | 5                                                                                             | 主动检查（非健康节点）HTTP 或 HTTPS 类型检查时，确定节点非健康的次数。 |
+| upstream.checks.active.unhealthy.tcp_failures   | 主动检查（非健康节点） | integer | `1` 至 `254`        | 2                                                                                             | 主动检查（非健康节点）TCP 类型检查时，确定节点非健康的次数。 |
+| upstream.checks.active.unhealthy.timeouts       | 主动检查（非健康节点） | integer | `1` 至 `254`        | 3                                                                                             | 主动检查（非健康节点）确定节点非健康的超时次数。  |
+| upstream.checks.passive.healthy.http_statuses   | 被动检查（健康节点） | array   | `200` 至 `599`      | [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308] | 被动检查（健康节点） HTTP 或 HTTPS 类型检查时，健康节点的HTTP状态码。 |
+| upstream.checks.passive.healthy.successes       | 被动检查（健康节点） | integer | `0` 至 `254`        | 5                                                                                             | 被动检查（健康节点）确定节点健康的次数。              |
+| upstream.checks.passive.unhealthy.http_statuses | 被动检查（非健康节点） | array   | `200` 至 `599`      | [429, 500, 503]                                                                               | 被动检查（非健康节点） HTTP 或 HTTPS 类型检查时，非健康节点的HTTP状态码。 |
+| upstream.checks.passive.unhealthy.tcp_failures  | 被动检查（非健康节点） | integer | `0` 至 `254`        | 2                                                                                             | 被动检查（非健康节点）TCP 类型检查时，确定节点非健康的次数。 |
+| upstream.checks.passive.unhealthy.timeouts      | 被动检查（非健康节点） | integer | `0` 至 `254`        | 7                                                                                             | 被动检查（非健康节点）确定节点非健康的超时次数。  |
+| upstream.checks.passive.unhealthy.http_failures | 被动检查（非健康节点） | integer | `0` 至 `254`        | 5                                                                                             | 被动检查（非健康节点）HTTP 或 HTTPS 类型检查时，确定节点非健康的次数。 |
+
+### 配置示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -86,39 +111,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-监控检查的配置内容在`checks`中，`checks`包含两个类型：`active` 和 `passive`，详情如下
-
-* `active`: 要启动主动健康检查，需要在 upstream 配置中的 `checks.active` 添加如下配置项。
-
-  * `active.timeout`: 主动健康检查 socket 超时时间（秒为单位），支持小数点。比如 `1.01` 代表 `1010` 毫秒，`2` 代表 `2000` 毫秒。
-
-  * `active.http_path`: 用于发现 upstream 节点健康可用的 HTTP GET 请求路径。
-  * `active.host`: 用于发现 upstream 节点健康可用的 HTTP 请求主机名。
-  * `active.port`: 用于发现 upstream 节点健康可用的自定义主机端口（可选），配置此项会覆盖 `upstream` 节点中的端口。
-
-  `healthy`的阀值字段：
-
-  * `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为 1。
-  * `active.healthy.successes`: 确定目标是否健康的成功次数，最小值为 1。
-
-  `unhealthy`的阀值字段：
-
-  * `active.unhealthy.interval`: 针对不健康目标节点的健康检查之间的间隔（以秒为单位），最小值为 1。
-  * `active.unhealthy.http_failures`: 确定目标节点不健康的 http 请求失败次数，最小值为 1。
-  * `active.req_headers`: 其他请求标头。数组格式，可以填写多个标题。
-
-* `passive`: 要启用被动健康检查，需要在 upstream 配置中的 `checks.passive` 添加如下配置项。
-
-  `healthy`的阀值字段：
-
-  * `passive.healthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `healthy` 状态。否则，请忽略此请求。
-  * `passive.healthy.successes`: 如果 upstream 节点被检测成功（由 `passive.healthy.http_statuses` 定义）的次数超过 `successes` 次，则将该节点设置为 `healthy` 状态。
-
-  `unhealthy`的阀值字段：
-
-  * `passive.unhealthy.http_statuses`: 如果当前 HTTP 响应状态码是其中任何一个，则将 upstream 节点设置为 `unhealthy` 状态。否则，请忽略此请求。
-  * `passive.unhealthy.tcp_failures`: 如果 TCP 通讯失败次数超过 `tcp_failures` 次，则将 upstream 节点设置为 `unhealthy` 状态。
-  * `passive.unhealthy.timeouts`: 如果被动健康检查超时次数超过 `timeouts` 次，则将 upstream 节点设置为 `unhealthy` 状态。
-  * `passive.unhealthy.http_failures`: 如果被动健康检查的 HTTP 请求失败（由 `passive.unhealthy.http_statuses` 定义）的次数超过 `http_failures`次，则将 upstream 节点设置为 `unhealthy` 状态。
-
-健康检查信息可以通过 [控制接口](../../en/latest/control-api.md) 中的 `GET /v1/healthcheck` 接口得到。
+健康检查信息可以通过 [控制接口](./control-api.md) 中的 `GET /v1/healthcheck` 接口得到。

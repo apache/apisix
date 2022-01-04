@@ -247,7 +247,7 @@ function _M.patch(id, conf, sub_path, args)
         return 400, {error_msg = "missing route id"}
     end
 
-    if not conf then
+    if conf == nil then
         return 400, {error_msg = "missing new configuration"}
     end
 
@@ -283,11 +283,11 @@ function _M.patch(id, conf, sub_path, args)
         if code then
             return code, err
         end
+        utils.inject_timestamp(node_value, nil, true)
     else
         node_value = core.table.merge(node_value, conf);
+        utils.inject_timestamp(node_value, nil, conf)
     end
-
-    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 

@@ -68,11 +68,11 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-![](../../../assets/images/plugin/key-auth-1.png)
+You also can complete the above operation through the web interface, first add a route:
+![create a consumer](../../../assets/images/plugin/key-auth-1.png)
 
 Then add key-auth plugin:
-![](../../../assets/images/plugin/key-auth-2.png)
+![enable key-auth plugin](../../../assets/images/plugin/key-auth-2.png)
 
 2. creates a route or service object, and enable plugin `key-auth`.
 
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -135,14 +135,14 @@ When you want to disable the `key-auth` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

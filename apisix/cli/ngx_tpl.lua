@@ -66,6 +66,13 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
@@ -75,6 +82,13 @@ stream {
 
     {% if ssl.ssl_trusted_certificate ~= nil then %}
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
+
+    # for stream logs, off by default
+    {% if stream.enable_access_log == true then %}
+    log_format main escape={* stream.access_log_format_escape *} '{* stream.access_log_format *}';
+
+    access_log {* stream.access_log *} main buffer=16384 flush=3;
     {% end %}
 
     # stream configuration snippet starts
@@ -92,6 +106,9 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -138,7 +155,7 @@ stream {
 }
 {% end %}
 
-{% if not (stream_proxy and stream_proxy.only ~= false) then %}
+{% if enable_admin or not (stream_proxy and stream_proxy.only ~= false) then %}
 http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
@@ -147,6 +164,13 @@ http {
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
+
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
     lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
@@ -174,7 +198,15 @@ http {
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
+    # for ext-plugin
+    lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+
     # for custom shared dict
+    {% if http.custom_lua_shared_dict then %}
+    {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
+    lua_shared_dict {*cache_key*} {*cache_size*};
+    {% end %}
+    {% end %}
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
     lua_shared_dict {*cache_key*} {*cache_size*};
@@ -184,7 +216,11 @@ http {
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
     proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
     {% end %}
     {% end %}
 
@@ -192,7 +228,9 @@ http {
     # for proxy cache
     map $upstream_cache_zone $upstream_cache_zone_info {
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
         {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
     {% end %}
     }
     {% end %}
@@ -226,6 +264,7 @@ http {
 
     {% if use_apisix_openresty then %}
     apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
@@ -317,8 +356,15 @@ http {
     }
     {% end %}
 
+    {% if wasm then %}
+    wasm_vm wasmtime;
+    {% end %}
+
     init_by_lua_block {
         require "resty.core"
+        {% if lua_module_hook then %}
+        require "{* lua_module_hook *}"
+        {% end %}
         apisix = require("apisix")
 
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
@@ -382,10 +428,10 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and port_admin then %}
+    {% if enable_admin and admin_server_addr then %}
     server {
         {%if https_admin then%}
-        listen {* port_admin *} ssl;
+        listen {* admin_server_addr *} ssl;
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -405,7 +451,7 @@ http {
         {% end %}
 
         {% else %}
-        listen {* port_admin *};
+        listen {* admin_server_addr *};
         {%end%}
         log_not_found off;
 
@@ -445,11 +491,11 @@ http {
 
     server {
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
+        listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen {* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, item in ipairs(ssl.listen) do %}
+        listen {* item.ip *}:{* item.port *} ssl default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
@@ -458,17 +504,6 @@ http {
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
-
-        {% if enable_ipv6 then %}
-        {% for _, item in ipairs(node_listen) do %}
-        listen [::]:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %} {% if item.enable_http2 then %} http2 {% end %};
-        {% end %}
-        {% if ssl.enable then %}
-        {% for _, port in ipairs(ssl.listen_port) do %}
-        listen [::]:{* port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
-        {% end %}
-        {% end %}
-        {% end %} {% -- if enable_ipv6 %}
 
         server_name _;
 
@@ -503,7 +538,7 @@ http {
         }
         {% end %}
 
-        {% if enable_admin and not port_admin then %}
+        {% if enable_admin and not admin_server_addr then %}
         location /apisix/admin {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
@@ -545,6 +580,12 @@ http {
             set $upstream_uri                '';
             set $ctx_ref                     '';
             set $from_error_page             '';
+
+            # http server location configuration snippet starts
+            {% if http_server_location_configuration_snippet then %}
+            {* http_server_location_configuration_snippet *}
+            {% end %}
+            # http server location configuration snippet ends
 
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
@@ -596,7 +637,7 @@ http {
             proxy_cache                         $upstream_cache_zone;
             proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
             proxy_cache_min_uses                1;
-            proxy_cache_methods                 GET HEAD;
+            proxy_cache_methods                 GET HEAD POST;
             proxy_cache_lock_timeout            5s;
             proxy_cache_use_stale               off;
             proxy_cache_key                     $upstream_cache_key;
@@ -675,9 +716,11 @@ http {
         location = /proxy_mirror {
             internal;
 
+            {% if not use_apisix_openresty then %}
             if ($upstream_mirror_host = "") {
                 return 200;
             }
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;

@@ -16,6 +16,7 @@
 --
 local ipairs = ipairs
 local core = require("apisix.core")
+local re_compile = require("resty.core.regex").re_match_compile
 local stringx = require('pl.stringx')
 local type = type
 local str_strip = stringx.strip
@@ -36,11 +37,19 @@ local schema = {
         },
         allowlist = {
             type = "array",
-            minItems = 1
+            minItems = 1,
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         },
         denylist = {
             type = "array",
-            minItems = 1
+            minItems = 1,
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         },
         message = {
             type = "string",
@@ -49,7 +58,6 @@ local schema = {
             default = "Not allowed"
         },
     },
-    additionalProperties = false,
 }
 
 local plugin_name = "ua-restriction"
@@ -87,6 +95,24 @@ function _M.check_schema(conf)
 
     if not ok then
         return false, err
+    end
+
+    if conf.allowlist then
+        for _, re_rule in ipairs(conf.allowlist) do
+            ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
+    if conf.denylist then
+        for _, re_rule in ipairs(conf.denylist) do
+            ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
+        end
     end
 
     return true

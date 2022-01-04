@@ -57,9 +57,9 @@ _EOC_
     $block->set_value("stream_config", $stream_single_server);
 
     my $stream_default_server = <<_EOC_;
-	    content_by_lua_block {
-	    	ngx.log(ngx.INFO, "a stream server")
-	    }
+        content_by_lua_block {
+            ngx.log(ngx.INFO, "a stream server")
+        }
 _EOC_
 
     $block->set_value("stream_server_config", $stream_default_server);

@@ -25,20 +25,23 @@ title: proxy-cache
 
 基于磁盘的缓存需要注意：
 
-1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存10秒钟
-2. 如果后端服务不可用， APISIX 将返回502或504，那么502或504将被缓存10秒钟
+1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存 10 秒钟
+2. 如果后端服务不可用， APISIX 将返回 502 或 504，那么 502 或 504 将被缓存 10 秒钟
 
 ### 参数
 
 | 名称               | 类型           | 必选项 | 默认值                    | 有效值                                                                          | 描述                                                                                                                               |
 | ------------------ | -------------- | ------ | ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| cache_strategy     | string         | 可选   | disk                      | ["disk","memory"]                                                               | 缓存策略，指定缓存数据存储在磁盘还是内存中 |
 | cache_zone         | string         | 可选   |        disk_cache_one     |                                                                                 | 指定使用哪个缓存区域，不同的缓存区域可以配置不同的路径，在 conf/config.yaml 文件中可以预定义使用的缓存区域。当不使用默认值时，指定的缓存区域与 conf/config.yaml 文件中预定义的缓存区域不一致，缓存无效。   |
 | cache_key          | array[string]  | 可选   | ["$host", "$request_uri"] |                                                                                 | 缓存key，可以使用变量。例如：["$host", "$uri", "-cache-id"]                                                                        |
 | cache_bypass       | array[string]  | 可选   |                           |                                                                                 | 是否跳过缓存检索，即不在缓存中查找数据，可以使用变量，需要注意当此参数的值不为空或非'0'时将会跳过缓存的检索。例如：["$arg_bypass"] |
-| cache_method       | array[string]  | 可选   | ["GET", "HEAD"]           | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD","OPTIONS", "CONNECT", "TRACE"] | 根据请求method决定是否需要缓存                                                                                                     |
+| cache_method       | array[string]  | 可选   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求method决定是否需要缓存                                                                                                     |
 | cache_http_status  | array[integer] | 可选   | [200, 301, 404]           | [200, 599]                                                                      | 根据响应码决定是否需要缓存                                                                                                         |
 | hide_cache_headers | boolean        | 可选   | false                     |                                                                                 | 是否将 Expires 和 Cache-Control 响应头返回给客户端                                                                                 |
+| cache_control      | boolean        | 可选   | false                     |                                                                                 | 是否遵守 HTTP 协议规范中的 Cache-Control 的行为                                 |
 | no_cache           | array[string]  | 可选   |                           |                                                                                 | 是否缓存数据，可以使用变量，需要注意当此参数的值不为空或非'0'时将不会缓存数据                                                      |
+| cache_ttl          | integer        | 可选   | 300 秒                    |                                                                                 | 当选项 cache_control 未开启或开启以后服务端没有返回缓存控制头时，提供的默认缓存时间    |
 
 注：变量以$开头，也可以使用变量和字符串的结合，但是需要以数组的形式分开写，最终变量被解析后会和字符串拼接在一起。
 
@@ -102,7 +105,7 @@ Apisix-Cache-Status: MISS
 hello
 ```
 
-> http status 返回`200`并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
+> http status 返回 `200` 并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
 
 2、验证数据是否被缓存，再次请求上边的地址：
 
@@ -179,7 +182,7 @@ Apisix-Cache-Status: MISS
 hello
 ```
 
-> http status 返回`200`并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
+> http status 返回 `200` 并且响应头中包含 `Apisix-Cache-Status`，表示该插件已启用。
 
 3、验证数据是否被缓存，再次请求上面的地址：
 
@@ -247,9 +250,9 @@ Connection: keep-alive
 Server: APISIX web server
 ```
 
-> 响应码为200即表示删除成功，如果缓存的数据未找到将返回404。
+> 响应码为 200 即表示删除成功，如果缓存的数据未找到将返回 404。
 
-再次请求，缓存数据未找到返回404：
+再次请求，缓存数据未找到返回 404：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello -X PURGE

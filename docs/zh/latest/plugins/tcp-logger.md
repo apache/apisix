@@ -31,23 +31,23 @@ title: tcp-logger
 
 ## 定义
 
-`tcp-logger` 是用于将日志数据发送到TCP服务的插件。
+`tcp-logger` 是用于将日志数据发送到 TCP 服务的插件。
 
-以实现将日志数据以JSON格式发送到监控工具或其它TCP服务的能力。
+以实现将日志数据以 JSON 格式发送到监控工具或其它 TCP 服务的能力。
 
-该插件提供了将Log Data作为批处理推送到外部TCP服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+该插件提供了将 Log Data 作为批处理推送到外部 TCP 服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
-有关Apache APISIX中Batch-Processor的更多信息，请参考。
+有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
 ## 属性列表
 
 | 名称             | 类型    | 必选项 | 默认值 | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------ | ------- | ------------------------------------------------ |
-| host             | string  | 必须   |        |         | TCP 服务的IP地址或主机名                         |
+| host             | string  | 必须   |        |         | TCP 服务的 IP 地址或主机名                         |
 | port             | integer | 必须   |        | [0,...] | 目标端口                                         |
 | timeout          | integer | 可选   | 1000   | [1,...] | 发送数据超时间                                   |
-| tls              | boolean | 可选   | false  |         | 用于控制是否执行SSL验证                          |
+| tls              | boolean | 可选   | false  |         | 用于控制是否执行 SSL 验证                          |
 | tls_options      | string  | 可选   |        |         | TLS 选项                                         |
 | batch_max_size   | integer | 可选   | 1000   | [1,...] | 每批的最大大小                                   |
 | inactive_timeout | integer | 可选   | 5      | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
@@ -95,10 +95,10 @@ hello, world
 
 ## 禁用插件
 
-想要禁用“tcp-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
+想要禁用“tcp-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

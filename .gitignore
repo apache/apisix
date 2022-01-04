@@ -42,8 +42,9 @@ luac.out
 # develop
 *.log
 *.pid
+*.orig
+*.rej
 t/servroot
-go
 conf/apisix.uid
 conf/nginx.conf
 deps
@@ -61,19 +62,19 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 *.iml
 \.*
 !.github/
-ci/openwhisk-utilities/
 !.gitmodules
 !.markdownlint.yml
-!.yamllint
-/conf/apisix.yaml
-/conf/apisix-*.yaml
-/conf/config-*.yaml
-!/conf/config-default.yaml
-/conf/debug-*.yaml
-/build-cache/
+!.licenserc.yaml
+conf/apisix.yaml
+conf/apisix-*.yaml
+conf/config-*.yaml
+!conf/config-default.yaml
+conf/debug-*.yaml
+build-cache/
 t/fuzzing/__pycache__/
 boofuzz-results/
 *.pyc
+*.wasm
 # release tar package
 *.tgz
 release/*

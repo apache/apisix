@@ -21,10 +21,9 @@ title: Route
 #
 -->
 
-Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
-插件，并把请求转发给到指定 Upstream。
+Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream。
 
-Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
+Route 中主要包含三部分内容：匹配规则（比如 uri、host、remote_addr 等），插件配（限流限速等）和上游信息。
 请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
 ![路由示例](../../../assets/images/routes-example.png)
@@ -33,7 +32,7 @@ Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_a
 
 上面提及重复的缺点在 APISIX 中独立抽象了 [Service](service.md) 和 [Upstream](upstream.md) 两个概念来解决。
 
-下面创建的 Route 示例，是把 URL 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
+下面创建的 Route 示例，是把 URL 为 "/index.html" 的请求代理到地址为 "127.0.0.1:1980" 的 Upstream 服务：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -42,7 +41,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -54,7 +53,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
 当我们接收到成功应答，表示该 Route 已成功创建。

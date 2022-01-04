@@ -3,31 +3,42 @@ name: ❄️ Lint
 on: [pull_request]
 
 jobs:
-  trailing-whitespace:
-    name: 🌌 Trailing whitespace
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - name: 🧹 Check for trailing whitespace
-        run: "! git grep -EIn $'[ \t]+$'"
   misc:
     name: misc checker
     runs-on: ubuntu-latest
     steps:
       - name: Check out code.
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
       - name: Install
         run: |
           wget -O - -q https://git.io/misspell | sh -s -- -b .
       - name: Misspell
         run: |
-          git ls-files | grep -v "docs/es" | grep -v "t/toolkit" | xargs ./misspell -error
+          git grep --cached -l '' | xargs ./misspell -error
       - name: Merge conflict
         run: |
-          grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
-      - name: License
-        run: |
-          make license-check
+          grep "^<<<<<<< HEAD" $(git grep --cached -l '' | xargs) && exit 1 || true
       - name: Plugin Code
         run: |
           sudo bash ./utils/check-plugins-code.sh
+
+  ci-eclint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+
+      - name: Setup Nodejs env
+        uses: actions/setup-node@v2.5.1
+        with:
+          node-version: '12'
+
+      - name: Install eclint
+        run: |
+          sudo npm install -g eclint
+
+      - name: Run eclint
+        run: |
+          eclint check

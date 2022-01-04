@@ -39,11 +39,11 @@ title: cors
 | ---------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------------ |
 | allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081 。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
 | allow_methods    | string  | 可选   | "*"    |        | 允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
-| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。 |
-| max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
+| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS 规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Header 都通过，但请注意这样存在安全隐患。 |
+| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS 规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示允许任意 Header 。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许任意 Header，但请注意这样存在安全隐患。 |
+| max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
 | allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
-| allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin, 如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
+| allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin，如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
 
 > **提示**
 >
@@ -72,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-请求下接口，发现接口已经返回了`CORS`相关的header，代表插件生效
+请求下接口，发现接口已经返回了 `CORS` 相关的header，代表插件生效
 
 ```shell
 curl http://127.0.0.1:9080/hello -v
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/hello -v
 
 ## 禁用插件
 
-从配置中移除`cors`插件即可。
+当你想去掉 `cors` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -103,3 +103,5 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+现在就已经移除了 `cors` 插件了。其他插件的开启和移除也是同样的方法。

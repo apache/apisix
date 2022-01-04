@@ -204,11 +204,11 @@ function _M.patch(id, conf, sub_path)
         if code then
             return code, err
         end
+        utils.inject_timestamp(new_value, nil, true)
     else
         new_value = core.table.merge(new_value, conf);
+        utils.inject_timestamp(new_value, nil, conf)
     end
-
-    utils.inject_timestamp(new_value, nil, conf)
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 

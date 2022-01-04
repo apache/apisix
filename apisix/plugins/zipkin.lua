@@ -240,15 +240,14 @@ function _M.header_filter(conf, ctx)
     local end_time = opentracing.tracer:time()
 
     if conf.span_version == ZIPKIN_SPAN_VER_1 then
-        ctx.HEADER_FILTER_END_TIME = end_time
         if  opentracing.proxy_span then
             opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
-                "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+                "apisix.body_filter", end_time)
         end
     else
         opentracing.proxy_span:finish(end_time)
         opentracing.response_span = opentracing.request_span:start_child_span(
-            "apisix.response_span", ctx.HEADER_FILTER_END_TIME)
+            "apisix.response_span", end_time)
     end
 end
 
@@ -279,9 +278,9 @@ function _M.log(conf, ctx)
 
     opentracing.request_span:finish(log_end_time)
 
-    if ctx.zipkin_ctx then
-        core.tablepool.release("zipkin_ctx", ctx.zipkin_ctx)
-        ctx.zipkin_ctx = nil
+    if ctx.zipkin then
+        core.tablepool.release("zipkin_ctx", ctx.zipkin)
+        ctx.zipkin = nil
     end
 end
 

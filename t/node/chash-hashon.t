@@ -716,3 +716,47 @@ hash_on: vars_combinations
 chash_key: "custom-one-custom-two"
 hash_on: vars_combinations
 chash_key: "custom-one-custom-two"
+
+
+
+=== TEST 15: hit routes, hash_on custom header combinations
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local ports_count = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("toolkit.json").encode(ports_arr))
+        }
+    }
+--- request
+GET /t
+--- response_body
+[{"count":2,"port":"1980"}]
+--- grep_error_log eval
+qr/chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1/
+--- grep_error_log_out
+chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1
+chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1

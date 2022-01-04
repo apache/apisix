@@ -29,8 +29,10 @@ title: hmac-auth
 - [How To Enable](#how-to-enable)
 - [Test Plugin](#test-plugin)
   - [generate signature:](#generate-signature)
+  - [Request body checking](#request-body-checking)
   - [Use the generated signature to try the request](#use-the-generated-signature-to-try-the-request)
 - [Custom header key](#custom-header-key)
+  - [Enable request body checking](#enable-request-body-checking)
 - [Disable Plugin](#disable-plugin)
 - [Generate Signature Examples](#generate-signature-examples)
 
@@ -51,6 +53,8 @@ The `consumer` then adds its key to request header to verify its request.
 | signed_headers    | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
 | keep_headers      | boolean       | optional    | false         | [ true, false ]                             | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header.   |
 | encode_uri_params | boolean       | optional    | true          | [ true, false ]                             | Whether to encode the uri parameter in the signature, for example: `params1=hello%2Cworld` is encoded, `params2=hello,world` is not encoded. true: means to encode the uri parameter in the signature, false: not to encode the uri parameter in the signature.               |
+| validate_request_body | boolean  | optional   | false         | [ true, false ]                             | Whether to check request body. |
+| max_req_body     | integer        | optional   | 512 * 1024         |                                             | Max allowed body size. |
 
 ## How To Enable
 
@@ -74,10 +78,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 The default `keep_headers` is false and `encode_uri_params` is true.
 
 You can visit the dashboard to complete the above operations through the web interface, first add a consumer:
-![](../../../assets/images/plugin/hmac-auth-1.png)
+![create a consumer](../../../assets/images/plugin/hmac-auth-1.png)
 
 Then add the hmac-auth plugin to the consumer page:
-![](../../../assets/images/plugin/hmac-auth-2.png)
+![enable hmac plugin](../../../assets/images/plugin/hmac-auth-2.png)
 
 2. add a Route or add a Service, and enable the `hmac-auth` plugin
 
@@ -91,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -101,7 +105,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### generate signature:
 
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`.
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_string` is `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. If one of the items in signing_string does not exist, you also need to use an empty string instead.
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".
@@ -192,6 +196,18 @@ print(base64.b64encode(hash.digest()))
 | --------- | -------------------------------------------- |
 | SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
+### Request body checking
+
+When `validate_request_body` is assigned to `true`, the plugin will check the request body. The plugin will calculate the hmac-sha value of the request body，and check against the `X-HMAC-DIGEST` header.
+
+```
+X-HMAC-DIGEST: base64(hmac-sha(<body>))
+```
+
+When there is no request body, you can set `X-HMAC-DIGEST` value to the hmac-sha of empty string.
+
+**Note:** The plugin will load the request body to memory to calculate the digest of the request body, which might cause high memory consumption with large bodies. You can limit the max allowed body size by the configuration of `max_req_body`(default=512KB), request body larger than that will be rejected.
+
 ### Use the generated signature to try the request
 
 ```shell
@@ -262,12 +278,13 @@ plugin_attr:
     date_key: X-APISIX-DATE
     access_key: X-APISIX-HMAC-ACCESS-KEY
     signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+    body_digest_key: X-APISIX-HMAC-BODY-DIGEST
 ```
 
 **After customizing the header, request example:**
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -H 'X-APISIX-HMAC-BODY-DIGEST: BODY_DIGEST' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -276,6 +293,29 @@ Accept-Ranges: bytes
 
 <!DOCTYPE html>
 <html lang="cn">
+```
+
+### Enable request body checking
+
+```shell
+$ curl -X "POST" "http://localhost:9080/index.html?age=36&name=james" \
+     -H 'X-HMAC-ACCESS-KEY: my-access-key' \
+     -H 'X-HMAC-SIGNATURE: lSWO4vcyVoZG5bn8miHudzABAeJQd8tqEHyM7RsjeiU=' \
+     -H 'X-HMAC-ALGORITHM: hmac-sha256' \
+     -H 'Date: Tue, 24 Aug 2021 03:19:21 GMT' \
+     -H 'X-HMAC-SIGNED-HEADERS: User-Agent;X-HMAC-DIGEST' \
+     -H 'User-Agent: curl/7.29.0' \
+     -H 'X-HMAC-DIGEST: L9b/+QMvhvnoUlSw5vq+kHPqnZiHGl61T8oavMVTaC4=' \
+     -H 'Content-Type: text/plain; charset=utf-8' \
+     -d "{\"hello\":\"world\"}"
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Tue, 14 Sep 2021 03:28:14 GMT
+Server: APISIX/2.9
+...
 ```
 
 ## Disable Plugin
@@ -292,7 +332,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -305,10 +345,10 @@ Need to pay attention to the handling of newline characters in signature strings
 
 Example inputs:
 
-| Variable | Value                    |
-| -------- | ------------------------ |
-| secret   | this is secret key       |
-| message  | this is signature string |
+| Variable | Value                      |
+| -------- | -------------------------- |
+| secret   | the shared secret key here |
+| message  | this is signature string   |
 
 Example outputs:
 

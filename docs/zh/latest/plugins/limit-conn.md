@@ -31,16 +31,15 @@ title: limit-conn
 | burst              | integer | required |        | burst >= 0                                                                                | 允许被延迟处理的并发请求数。                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | default_conn_delay | number  | required |        | default_conn_delay > 0                                                                    | 默认的典型连接(或请求)的处理延迟时间。                                                                                                                                                                                                                                                                                                                                                                                                        |
 | only_use_default_delay  | boolean | optional | false  | [true,false]                                                                              | 延迟时间的严格模式。 如果设置为`true`的话，将会严格按照设置的时间来进行延迟                                                                                                                                                                                                                                                                                                                                                                           |
-| key                | object  | required |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用户指定的限制并发级别的关键字，可以是客户端 IP 或服务端 IP。<br />例如，可以使用主机名（或服务器区域）作为关键字，以便限制每个主机名的并发性。 否则，我们也可以使用客户端地址作为关键字，这样我们就可以避免单个客户端用太多的并行连接或请求淹没我们的服务。 <br />当前接受的 key 有："remote_addr"（客户端 IP 地址）, "server_addr"（服务端 IP 地址）, 请求头中的"X-Forwarded-For" 或 "X-Real-IP", "consumer_name"（consumer 的 username）。 |
+| key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
+| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。如果 key 的值为空，$remote_addr 会被作为默认 key。 |
 | rejected_code      | string  | optional | 503    | [200,...,599]                                                                             | 当请求超过 `conn` + `burst` 这个阈值时，返回的 HTTP 状态码                                                                                                                                                                                                                                                                                                                                                                                    |
-
-**注：key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
-
-在 stream 代理中使用该插件时，只有 `remote_addr` 和 `server_addr` 可以被用作 key。另外设置 `rejected_code` 毫无意义。
+| rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过 `conn` + `burst` 这个阈值时，返回的响应体。                                                                                                                                                                                                             |
+| allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
 #### 如何启用
 
-下面是一个示例，在指定的 route 上开启了 limit-conn 插件:
+下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -54,23 +53,48 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "burst": 0,
             "default_conn_delay": 0.1,
             "rejected_code": 503,
+            "key_type": "var",
             "key": "remote_addr"
         }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
 ```
 
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
-![](../../../assets/images/plugin/limit-conn-1.png)
+下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var_combination`:
 
-然后在 route 页面中添加 limit-conn 插件：
-![](../../../assets/images/plugin/limit-conn-2.png)
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key_type": "var_combination",
+            "key": "$consumer_name $remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-conn 插件：
+![enable limit-conn plugin](../../../assets/images/plugin/limit-conn-1.png)
 
 #### test plugin
 
@@ -103,7 +127,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

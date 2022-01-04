@@ -19,6 +19,19 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -41,12 +54,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -62,13 +71,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "broker_list" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -91,13 +96,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "timeout" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -163,12 +164,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -177,8 +174,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 2
 
 
@@ -251,8 +246,6 @@ hello world
             local res, err = httpc:request_uri(uri, {method = "GET"})
         }
     }
---- request
-GET /t
 --- error_log
 failed to send data to Kafka topic
 [error]
@@ -296,12 +289,8 @@ failed to send data to Kafka topic
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -311,8 +300,6 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 send data to kafka: GET /hello?ab=cd HTTP/1.1
 host: localhost
@@ -360,12 +347,8 @@ abcdef
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -375,8 +358,6 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 send data to kafka: GET /hello?ab=cd HTTP/1.1
 host: localhost
@@ -421,12 +402,8 @@ connection: close
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -436,8 +413,6 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log_like eval
 qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
@@ -504,12 +479,8 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -518,8 +489,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 2
 
 
@@ -558,12 +527,8 @@ hello world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -573,8 +538,6 @@ GET /hello?ab=cd
 abcdef
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log_like eval
 qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
@@ -615,12 +578,8 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -662,12 +621,8 @@ passed
             ngx.sleep(0.5)
         }
     }
---- request
-GET /t
 --- timeout: 5s
 --- ignore_response
---- no_error_log
-[error]
 --- error_log eval
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
@@ -712,12 +667,8 @@ qr/partition_id: 2/]
             ngx.sleep(0.5)
         }
     }
---- request
-GET /t
 --- timeout: 5s
 --- ignore_response
---- no_error_log
-[error]
 --- error_log eval
 [qr/partition_id: 1/,
 qr/partition_id: 0/,

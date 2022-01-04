@@ -2,10 +2,10 @@ name: Chaos Test
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -14,17 +14,18 @@ concurrency:
 jobs:
   chaos-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.4.0
         with:
           submodules: recursive
 
       - name: Setup go
-        uses: actions/setup-go@v2.1.3
+        uses: actions/setup-go@v2.1.5
         with:
           go-version: "1.16"
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v2.1.7
         with:
           path: |
             ~/.cache/go-build
@@ -63,14 +64,16 @@ jobs:
           kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
           kubectl apply -f ./kubernetes/deployment.yaml
           kubectl apply -f ./kubernetes/service.yaml
-          kubectl wait pods -l app=apisix-gw --for=condition=Ready --timeout=300s
+          kubectl wait pods -l app=apisix-gw --for=condition=Ready --timeout=300s \
+            || (kubectl logs -l app=apisix-gw && exit 1)
           kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml
-          kubectl wait pods -l app=httpbin --for=condition=Ready --timeout=300s
+          kubectl wait pods -l app=httpbin --for=condition=Ready --timeout=300s \
+            || (kubectl logs -l app=httpbin && exit 1)
           bash ./t/chaos/utils/setup_chaos_utils.sh port_forward
 
       - name: Deploy Chaos Mesh
         run: |
-          curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash
+          curl -sSL https://mirrors.chaos-mesh.org/v2.0.1/install.sh | bash
 
 
       - name: Install Ginkgo

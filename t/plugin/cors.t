@@ -30,7 +30,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.cors")
             local ok, err = plugin.check_schema({
-                allow_origins = '',
+                allow_origins = 'http://test.com',
                 allow_methods = '',
                 allow_headers = '',
                 expose_headers = '',
@@ -59,7 +59,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.cors")
             local ok, err = plugin.check_schema({
-                allow_origins = '',
+                allow_origins = 'http://test.com',
                 allow_methods = '',
                 allow_headers = '',
                 expose_headers = '',
@@ -925,5 +925,74 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: origin was modified by the proxy_rewrite plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "http://sub.domain.com",
+                            "allow_methods": "GET,POST",
+                            "allow_headers": "headr1,headr2",
+                            "expose_headers": "ex-headr1,ex-headr2",
+                            "max_age": 50,
+                            "allow_credential": true
+                        },
+                        "proxy-rewrite": {
+                            "headers": {
+                                  "Origin": "http://example.com"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: origin is not affected by proxy_rewrite plugins
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://sub.domain.com
+resp-vary: Via
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin: http://sub.domain.com
+Vary: Via, Origin
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: headr1,headr2
+Access-Control-Expose-Headers: ex-headr1,ex-headr2
+Access-Control-Max-Age: 50
+Access-Control-Allow-Credentials: true
 --- no_error_log
 [error]

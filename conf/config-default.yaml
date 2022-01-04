@@ -20,50 +20,63 @@
 #
 
 apisix:
-  node_listen: 9080                # APISIX listening port
+  # node_listen: 9080               # APISIX listening port
+  node_listen:                      # This style support multiple ports
+    - 9080
+  #   - port: 9081
+  #     enable_http2: true          # If not set, the default value is `false`.
+  #   - ip: 127.0.0.2               # Specific IP, If not set, the default value is `0.0.0.0`.
+  #     port: 9082
+  #     enable_http2: true
   enable_admin: true
-  enable_admin_cors: true          # Admin API support CORS response headers.
-  enable_debug: false
-  enable_dev_mode: false           # Sets nginx worker_processes to 1 if set to true
-  enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
+  enable_admin_cors: true           # Admin API support CORS response headers.
+  enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
+  enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
-  config_center: etcd              # etcd: use etcd to store the config value
-                                   # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
+  config_center: etcd               # etcd: use etcd to store the config value
+                                    # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 
-  #proxy_protocol:                 # Proxy Protocol configuration
-  #listen_http_port: 9181          # The port with proxy protocol for http, it differs from node_listen and port_admin.
-                                   # This port can only receive http request with proxy protocol, but node_listen & port_admin
-                                   # can only receive http request. If you enable proxy protocol, you must use this port to
-                                   # receive http request with proxy protocol
-  #listen_https_port: 9182         # The port with proxy protocol for https
-  #enable_tcp_pp: true             # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
-  #enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
-  enable_server_tokens: true       # Whether the APISIX version number should be shown in Server header.
-                                   # It's enabled by default.
+  #proxy_protocol:                  # Proxy Protocol configuration
+  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and port_admin.
+                                    # This port can only receive http request with proxy protocol, but node_listen & port_admin
+                                    # can only receive http request. If you enable proxy protocol, you must use this port to
+                                    # receive http request with proxy protocol
+  #listen_https_port: 9182          # The port with proxy protocol for https
+  #enable_tcp_pp: true              # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
+  #enable_tcp_pp_to_upstream: true  # Enables the proxy protocol to the upstream server
+  enable_server_tokens: true        # Whether the APISIX version number should be shown in Server header.
+                                    # It's enabled by default.
 
   # configurations to load third party code and/or override the builtin one.
-  extra_lua_path: ""               # extend lua_package_path to load third party code
-  extra_lua_cpath: ""              # extend lua_package_cpath to load third party code
+  extra_lua_path: ""                # extend lua_package_path to load third party code
+  extra_lua_cpath: ""               # extend lua_package_cpath to load third party code
+  #lua_module_hook: "my_project.my_hook"  # the hook module which will be used to inject third party code into APISIX
 
-  proxy_cache:                     # Proxy Caching configuration
-    cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
-    zones:                         # The parameters of a cache
-      - name: disk_cache_one       # The name of the cache, administrator can be specify
-                                   # which cache to use by name in the admin api
-        memory_size: 50m           # The size of shared memory, it's used to store the cache index
-        disk_size: 1G              # The size of disk, it's used to store the cache data
-        disk_path: /tmp/disk_cache_one  # The path to store the cache data
-        cache_levels: 1:2        # The hierarchy levels of a cache
+  proxy_cache:                      # Proxy Caching configuration
+    cache_ttl: 10s                  # The default caching time in disk if the upstream does not specify the cache time
+    zones:                          # The parameters of a cache
+      - name: disk_cache_one        # The name of the cache, administrator can specify
+                                    # which cache to use by name in the admin api (disk|memory)
+        memory_size: 50m            # The size of shared memory, it's used to store the cache index for
+                                    # disk strategy, store cache content for memory strategy (disk|memory)
+        disk_size: 1G               # The size of disk, it's used to store the cache data (disk)
+        disk_path: /tmp/disk_cache_one  # The path to store the cache data (disk)
+        cache_levels: 1:2           # The hierarchy levels of a cache (disk)
       #- name: disk_cache_two
       #  memory_size: 50m
       #  disk_size: 1G
       #  disk_path: "/tmp/disk_cache_two"
       #  cache_levels: "1:2"
+      - name: memory_cache
+        memory_size: 50m
 
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
     #- "::/64"
-  #port_admin: 9180             # use a separate port
+  #admin_listen:                # use a separate port
+  #  ip: 127.0.0.1              # Specific IP, if not set, the default value is `0.0.0.0`.
+  #  port: 9180
+  #port_admin: 9180             # Not recommend: This parameter should be set via the `admin_listen`.
   #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
@@ -87,8 +100,8 @@ apisix:
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
-  global_rule_skip_internal_api: true    # does not run global rule in internal apis
-                                         # api that path starts with "/apisix" is considered to be internal api
+  global_rule_skip_internal_api: true     # does not run global rule in internal apis
+                                          # api that path starts with "/apisix" is considered to be internal api
   router:
     http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
@@ -113,8 +126,15 @@ apisix:
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
     enable: true
-    enable_http2: true
-    listen_port: 9443
+    listen:                       # APISIX listening port in https.
+      - 9443
+    #   - port: 9444
+    #     enable_http2: true      # If not set, the default value is `false`.
+    #   - ip: 127.0.0.3           # Specific IP, If not set, the default value is `0.0.0.0`.
+    #     port: 9445
+    #     enable_http2: true
+    enable_http2: true            # Not recommend: This parameter should be set via the `listen`.
+    # listen_port: 9443           # Not recommend: This parameter should be set via the `listen`.
     #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
@@ -122,9 +142,12 @@ apisix:
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
                                             #  ref: https://github.com/mozilla/server-side-tls/issues/135
+
     key_encrypt_salt: edd1c9f0985e76a2      #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+
+    #fallback_sni: "my.default.domain"      # If set this, when the client doesn't send SNI during handshake, the fallback SNI will be used instead
   enable_control: true
   #control:
   #  ip: 127.0.0.1
@@ -141,12 +164,21 @@ nginx_config:                     # config for render the template to generate n
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
+
+  max_pending_timers: 16384       # increase it if you see "too many pending timers" error
+  max_running_timers: 4096        # increase it if you see "lua_max_running_timers are not enough" error
+
   event:
     worker_connections: 10620
   #envs:                          # allow to get a list of environment variables
   #  - TEST_ENV
 
   stream:
+    enable_access_log: false         # enable access log or not, default false
+    access_log: logs/access_stream.log
+    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time"
+                                            # create your custom log format by visiting http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default       # allows setting json or default characters escaping in variables
     lua_shared_dict:
       etcd-cluster-health-check-stream: 10m
       lrucache-lock-stream: 10m
@@ -164,6 +196,9 @@ nginx_config:                     # config for render the template to generate n
   http_server_configuration_snippet: |
     # Add custom Nginx http server configuration to nginx.conf.
     # The configuration should be well indented!
+  http_server_location_configuration_snippet: |
+    # Add custom Nginx http server location configuration to nginx.conf.
+    # The configuration should be well indented!
   http_admin_configuration_snippet: |
     # Add custom Nginx admin server configuration to nginx.conf.
     # The configuration should be well indented!
@@ -175,16 +210,16 @@ nginx_config:                     # config for render the template to generate n
     # The configuration should be well indented!
 
   http:
-    enable_access_log: true        # enable access log or not, default true
+    enable_access_log: true         # enable access log or not, default true
     access_log: logs/access.log
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     access_log_format_escape: default       # allows setting json or default characters escaping in variables
-    keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
-    client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
-    client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
-    client_max_body_size: 0        # The maximum allowed size of the client request body.
-                                   # If exceeded, the 413 (Request Entity Too Large) error is returned to the client.
-                                   # Note that unlike Nginx, we don't limit the body size by default.
+    keepalive_timeout: 60s          # timeout during which a keep-alive client connection will stay open on the server side.
+    client_header_timeout: 60s      # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
+    client_body_timeout: 60s        # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
+    client_max_body_size: 0         # The maximum allowed size of the client request body.
+                                    # If exceeded, the 413 (Request Entity Too Large) error is returned to the client.
+                                    # Note that unlike Nginx, we don't limit the body size by default.
 
     send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
     underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
@@ -193,21 +228,21 @@ nginx_config:                     # config for render the template to generate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - "unix:"
-    #lua_shared_dicts:             # add custom shared cache to nginx.conf
+    #custom_lua_shared_dict:       # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
     # when establishing a connection with the proxied HTTPS server.
     proxy_ssl_server_name: true
     upstream:
-      keepalive: 320               # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
-                                   # When this number is exceeded, the least recently used connections are closed.
-      keepalive_requests: 1000     # Sets the maximum number of requests that can be served through one keepalive connection.
-                                   # After the maximum number of requests is made, the connection is closed.
-      keepalive_timeout: 60s       # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
-    charset: utf-8                 # Adds the specified charset to the "Content-Type" response header field, see
-                                   # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
-    variables_hash_max_size: 2048  # Sets the maximum size of the variables hash table.
+      keepalive: 320                # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
+                                    # When this number is exceeded, the least recently used connections are closed.
+      keepalive_requests: 1000      # Sets the maximum number of requests that can be served through one keepalive connection.
+                                    # After the maximum number of requests is made, the connection is closed.
+      keepalive_timeout: 60s        # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
+    charset: utf-8                  # Adds the specified charset to the "Content-Type" response header field, see
+                                    # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
+    variables_hash_max_size: 2048   # Sets the maximum size of the variables hash table.
 
     lua_shared_dict:
       internal-status: 10m
@@ -229,6 +264,7 @@ nginx_config:                     # config for render the template to generate n
       jwks: 1m
       introspection: 10m
       access-tokens: 1m
+      ext-plugin: 1m
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
@@ -241,13 +277,27 @@ etcd:
   #user: root                     # root username for etcd
   #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
-    # To enable etcd client certificate you need to build APISIX-Openresty, see
-    # http://apisix.apache.org/docs/apisix/how-to-build#6-build-openresty-for-apisix
+    # To enable etcd client certificate you need to build APISIX-OpenResty, see
+    # https://apisix.apache.org/docs/apisix/how-to-build/#step-6-build-openresty-for-apache-apisix
     #cert: /path/to/cert          # path of certificate used by the etcd client
     #key: /path/to/key            # path of key used by the etcd client
 
     verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
+    #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
+
+# HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
+# wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
+# server HTTP APIs. By default, APISIX doesn't need this configuration.
+# vault:
+#   host: "http://0.0.0.0:8200"   # The host address where the vault server is running.
+#   timeout: 10                   # request timeout 30 seconds
+#   token: root                   # Authentication token to access Vault HTTP APIs
+#   prefix: kv/apisix             # APISIX supports vault kv engine v1, where sensitive data are being stored
+                                  # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforcement of
+                                  # policies, generate limited scoped tokens and tightly control the data that can be accessed
+                                  # from APISIX.
+
 
 #discovery:                       # service discovery center
 #  dns:
@@ -271,6 +321,7 @@ graphql:
   #cmd: ["ls", "-l"]
 
 plugins:                          # plugin list (sorted by priority)
+  - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
@@ -285,12 +336,15 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
+  - authz-casbin                   # priority: 2560
   - wolf-rbac                      # priority: 2555
+  - ldap-auth                      # priority: 2540
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
   - proxy-mirror                   # priority: 1010
@@ -309,17 +363,25 @@ plugins:                          # plugin list (sorted by priority)
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - prometheus                     # priority: 500
+  - datadog                        # priority: 495
   - echo                           # priority: 412
   - http-logger                    # priority: 410
+  - splunk-hec-logging             # priority: 409
+  - skywalking-logger              # priority: 408
+  - google-cloud-logging           # priority: 407
   - sls-logger                     # priority: 406
   - tcp-logger                     # priority: 405
   - kafka-logger                   # priority: 403
+  - rocketmq-logger                # priority: 402
   - syslog                         # priority: 401
   - udp-logger                     # priority: 400
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
   #- skywalking                    # priority: -1100
+  - aws-lambda                     # priority: -1899
+  - azure-functions                # priority: -1900
+  - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
 
@@ -329,16 +391,24 @@ stream_plugins: # sorted by priority
   - mqtt-proxy                     # priority: 1000
   # <- recommend to use priority (0, 100) for your custom plugins
 
+#wasm:
+  #plugins:
+    #- name: wasm_log
+      #priority: 7999
+      #file: t/wasm/log/main.go.wasm
+
 plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
     max_kept: 168     # max number of log files will be kept
+    enable_compression: false    # enable log file compression(gzip) or not, default false
   skywalking:
     service_name: APISIX
     service_instance_name: APISIX Instance Name
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+    metric_prefix: apisix_
     enable_export_server: true
     export_addr:
       ip: 127.0.0.1
@@ -348,3 +418,12 @@ plugin_attr:
     report_ttl: 3600     # live time for server info in etcd (unit: second)
   dubbo-proxy:
     upstream_multiplex_count: 32
+  request-id:
+    snowflake:
+      enable: false
+      snowflake_epoc: 1609459200000   # the starting timestamp is expressed in milliseconds
+      data_machine_bits: 12           # data machine bit, maximum 31, because Lua cannot do bit operations greater than 31
+      sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
+      data_machine_ttl: 30            # live time for data_machine in etcd (unit: second)
+      data_machine_interval: 10       # lease renewal interval in etcd (unit: second)
+

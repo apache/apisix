@@ -78,19 +78,19 @@ Note: When the `Admin API` is enabled, it will occupy the API prefixed with `/ap
 | uri              | True, can't be used with `uris`          | Match Rules | In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design/router.md) allows more advanced matching, see [Router](architecture-design/router.md) for more.                                                                                                                                                                                                                         | "/hello"                                             |
 | uris             | True, can't be used with `uri`           | Match Rules | The `uri` in the form of a non-empty list means that multiple different uris are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                               | ["/hello", "/word"]                                  |
 | host             | False, can't be used with `hosts`        | Match Rules | Currently requesting a domain name, such as `foo.com`; PAN domain names such as `*.foo.com` are also supported.                                                                                                                                                                                                                                                                                                                    | "foo.com"                                            |
-| hosts            | False, can't be used with `host`         | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                             | {"foo.com", "*.bar.com"}                             |
+| hosts            | False, can't be used with `host`         | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.                                                                                                                                                                                                                                                                                                             | ["foo.com", "*.bar.com"]                             |
 | remote_addr      | False, can't be used with `remote_addrs` | Match Rules | The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.                                                                                                                                                                                                               | "192.168.1.0/24"                                     |
-| remote_addrs     | False, can't be used with `remote_addr`  | Match Rules | The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.                                                                                                                                                                                                                                                                                           | {"127.0.0.1", "192.0.0.0/8", "::1"}                  |
-| methods          | False                                    | Match Rules | If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.                                                                                                                                                                                                                                          | {"GET", "POST"}                                      |
+| remote_addrs     | False, can't be used with `remote_addr`  | Match Rules | The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.                                                                                                                                                                                                                                                                                           | ["127.0.0.1", "192.0.0.0/8", "::1"]                  |
+| methods          | False                                    | Match Rules | If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.                                                                                                                                                                                                                                          | ["GET", "POST"]                                      |
 | priority         | False                                    | Match Rules | If different routes contain the same `uri`, determine which route is matched first based on the attribute `priority`. Larger value means higher priority. The default value is 0.                                                                                                                                                                                                                                                  | priority = 10                                        |
-| vars             | False                                    | Match Rules | A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) | {{"arg_name", "==", "json"}, {"arg_age", ">", 18}}   |
+| vars             | False                                    | Match Rules | A list of one or more `[var, operator, val]` elements, like this: `[[var, operator, val], [var, operator, val], ...]]`. For example: `["arg_name", "==", "json"]` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
 | filter_func      | False                                    | Match Rules | User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.                                                                                                                                                                                                                | function(vars) return vars["arg_name"] == "json" end |
 | plugins          | False                                    | Plugin      | See [Plugin](architecture-design/plugin.md) for more                                                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | script           | False                                    | Script      | See [Script](architecture-design/script.md) for more                                                                                                                                                                                                                                                                                                                                                                               |                                                      |
 | upstream         | False                                    | Upstream    | Enabled Upstream configuration, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                           |                                                      |
 | upstream_id      | False                                    | Upstream    | Enabled upstream id, see [Upstream](architecture-design/upstream.md) for more                                                                                                                                                                                                                                                                                                                                                      |                                                      |
-| service_id       | False                                    | Service     | Binded Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
-| plugin_config_id | False, can't be used with `script`       | Plugin      | Binded plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
+| service_id       | False                                    | Service     | Bound Service configuration, see [Service](architecture-design/service.md) for more                                                                                                                                                                                                                                                                                                                                               |                                                      |
+| plugin_config_id | False, can't be used with `script`       | Plugin      | Bound plugin config object, see [Plugin Config](architecture-design/plugin-config.md) for more                                                                                                                                                                                                                                                                                                                                    |                                                      |
 | labels           | False                                    | Match Rules | Key/value pairs to specify attributes                                                                                                                                                                                                                                                                                                                                                                                              | {"version":"v2","build":"16","env":"production"}     |
 | timeout          | False                                    | Auxiliary   | Set the upstream timeout for connecting, sending and receiving messages of the route. This option will overwrite the [timeout](#upstream) option which set in upstream configuration.                                                                                                                                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | False                                    | Auxiliary   | enable `websocket`(boolean), default `false`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                      |
@@ -142,7 +142,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -158,7 +158,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -173,7 +173,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 1
+            "127.0.0.1:1981": 1
         }
     }
 }'
@@ -182,8 +182,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -192,7 +192,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 10
+            "127.0.0.1:1981": 10
         }
     }
 }'
@@ -201,8 +201,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -211,7 +211,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f1
 {
     "upstream": {
         "nodes": {
-            "39.97.63.215:80": null
+            "127.0.0.1:1980": null
         }
     }
 }'
@@ -220,7 +220,7 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
@@ -238,14 +238,14 @@ After successful execution, methods will not retain the original data, and the e
 # Replace upstream nodes of the Route -- sub path
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After successful execution, nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 
@@ -323,12 +323,13 @@ Return response from etcd currently.
 | desc             | False    | Auxiliary   | service usage scenarios, and more.                                                       | service xxxx                                   |
 | labels           | False    | Match Rules | Key/value pairs to specify attributes                                                    | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | enable `websocket`(boolean), default `false`.                                            |                                                  |
+| hosts            | False    | Match Rules | The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.| ["foo.com", "*.bar.com"]                             |
 | create_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 | update_time      | False    | Auxiliary   | epoch timestamp in second, will be created automatically if missing                      | 1602883670                                       |
 
 Config Example:
 
-```shell
+```json
 {
     "id": "1",          # id
     "plugins": {},      # Bound plugin
@@ -337,6 +338,7 @@ Config Example:
     "name": "service-test",
     "desc": "hello world",
     "enable_websocket": true,
+    "hosts": ["foo.com"]
 }
 ```
 
@@ -357,7 +359,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -371,7 +373,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 1
+            "127.0.0.1:1981": 1
         }
     }
 }'
@@ -380,8 +382,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -390,7 +392,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.216:80": 10
+            "127.0.0.1:1981": 10
         }
     }
 }'
@@ -399,8 +401,8 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -409,7 +411,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f0343
 {
     "upstream": {
         "nodes": {
-            "39.97.63.215:80": null
+            "127.0.0.1:1980": null
         }
     }
 }'
@@ -418,21 +420,21 @@ HTTP/1.1 200 OK
 
 After successful execution, upstream nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
 # Replace upstream nodes of the Service
 $ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After successful execution, upstream nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 ```
@@ -557,7 +559,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |tls.client_cert |optional| Set the client certificate when connecting to TLS upstream, see below for more details||
-|tls.client_key  |optional| Set the client priviate key when connecting to TLS upstream, see below for more details||
+|tls.client_key  |optional| Set the client private key when connecting to TLS upstream, see below for more details||
 |keepalive_pool.size  |optional| Set `keepalive` directive dynamically, see below for more details||
 |keepalive_pool.idle_timeout  |optional| Set `keepalive_timeout` directive dynamically, see below for more details||
 |keepalive_pool.requests  |optional| Set `keepalive_requests` directive dynamically, see below for more details||
@@ -568,7 +570,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 * `chash`: consistent hash
 * `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
 * `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
-* user-defined balancer which can be loaed via `require("apisix.balancer.your_balancer")`.
+* user-defined balancer which can be loaded via `require("apisix.balancer.your_balancer")`.
 
 `hash_on` can be set to different types:
 
@@ -620,7 +622,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
 {
     "type":"roundrobin",
     "nodes":{
-        "39.97.63.215:80": 1
+        "127.0.0.1:1980": 1
     }
 }'
 HTTP/1.1 201 Created
@@ -631,7 +633,7 @@ HTTP/1.1 201 Created
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.216:80": 1
+        "127.0.0.1:1981": 1
     }
 }'
 HTTP/1.1 200 OK
@@ -639,8 +641,8 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 1
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 1
 }
 
 
@@ -648,7 +650,7 @@ After successful execution, nodes will be updated to:
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.216:80": 10
+        "127.0.0.1:1981": 10
     }
 }'
 HTTP/1.1 200 OK
@@ -656,8 +658,8 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.215:80": 1,
-    "39.97.63.216:80": 10
+    "127.0.0.1:1980": 1,
+    "127.0.0.1:1981": 10
 }
 
 
@@ -665,7 +667,7 @@ After successful execution, nodes will be updated to:
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
-        "39.97.63.215:80": null
+        "127.0.0.1:1980": null
     }
 }'
 HTTP/1.1 200 OK
@@ -673,21 +675,21 @@ HTTP/1.1 200 OK
 
 After successful execution, nodes will be updated to:
 {
-    "39.97.63.216:80": 10
+    "127.0.0.1:1981": 10
 }
 
 
 # Replace the nodes of the Upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }'
 HTTP/1.1 200 OK
 ...
 
 After the execution is successful, nodes will not retain the original data, and the entire update is:
 {
-    "39.97.63.200:80": 1
+    "127.0.0.1:1982": 1
 }
 
 ```
@@ -748,7 +750,7 @@ For example:
         "type": "roundrobin",
         "nodes": [
             {"host": "127.0.0.1", "port": 1980, "weight": 2000},
-            {"host": "127.0.0.2", "port": 1980, "weight": 1, "priority": -1}
+            {"host": "127.0.0.1", "port": 1981, "weight": 1, "priority": -1}
         ],
         "checks": {
             "active": {
@@ -768,7 +770,7 @@ For example:
 ```
 
 Node `127.0.0.2` will be used only after `127.0.0.1` is unavailable or tried.
-Therefore it is the backup of `127.0.0.1`.
+Therefore, it is the backup of `127.0.0.1`.
 
 ### Response Parameters
 
@@ -939,11 +941,19 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
+By default, this API only returns the http plugins. If you need stream plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+
 ### Request Methods
 
 | Method | Request URI                    | Request Body | Description    |
 | ------ | ------------------------------ | ------------ | -------------- |
 | GET    | /apisix/admin/plugins?all=true | NULL         | Fetch resource |
+
+### Request Arguments
+
+| Name      | Description                    | Default |
+| --------- | ------------------------------ | ------------ |
+| subsystem | the subsystem of plugins       | http         |
 
 [Back to TOC](#table-of-contents)
 
@@ -967,9 +977,13 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | Parameter        | Required | Type     | Description | Example  |
 | ---------------- | ------| -------- | ------| -----|
-| remote_addr      | False  | IP       | client IP | "127.0.0.1"  |
-| server_addr      | False  | IP       | server IP | "127.0.0.1"  |
-| server_port      | False  | Integer  | server port | 9090  |
+| upstream | False | Upstream | Upstream configuration, see [Upstream](architecture-design/upstream.md) for more details |  |
+| upstream_id | False | Upstream | specify the upstream id, see [Upstream](architecture-design/upstream.md) for more details |             |
+| remote_addr      | False  | IP/CIDR  | Filter option: forward to upstream if client IP matches | "127.0.0.1/32" or "127.0.0.1" |
+| server_addr      | False  | IP/CIDR  | Filter option: forward to upstream if APISIX server IP matches with server_addr | "127.0.0.1/32" or "127.0.0.1"  |
+| server_port      | False  | Integer  | Filter option: forward to upstream if APISIX server port matches with server_port | 9090  |
 | sni              | False  | Host     | server name indication | "test.com"  |
+
+To know more about how the filter works, see the documentation [here](./stream-proxy.md#more-route-match-options)
 
 [Back to TOC](#table-of-contents)

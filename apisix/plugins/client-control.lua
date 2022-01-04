@@ -49,8 +49,8 @@ end
 
 function _M.rewrite(conf, ctx)
     if not ok then
-        core.log.error("need to build APISIX-OpenResty to support client restriction")
-        return 503
+        core.log.error("need to build APISIX-OpenResty to support client control")
+        return 501
     end
 
     if conf.max_body_size then

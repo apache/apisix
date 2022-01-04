@@ -1,5 +1,5 @@
 {
-  "version": 2.8,
+  "version": "2.11.0",
   "sidebar": [
     {
       "type": "category",
@@ -35,10 +35,13 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
-            "plugins/server-info"
+            "plugins/gzip",
+            "plugins/real-ip",
+            "plugins/server-info",
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-pre-req"
           ]
         },
         {
@@ -61,7 +64,8 @@
             "plugins/jwt-auth",
             "plugins/basic-auth",
             "plugins/openid-connect",
-            "plugins/hmac-auth"
+            "plugins/hmac-auth",
+            "plugins/authz-casbin"
           ]
         },
         {
@@ -88,7 +92,8 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
-            "plugins/request-id"
+            "plugins/request-id",
+            "plugins/client-control"
           ]
         },
         {
@@ -106,13 +111,24 @@
           "label": "Loggers",
           "items": [
             "plugins/http-logger",
+            "plugins/skywalking-logger",
             "plugins/tcp-logger",
             "plugins/kafka-logger",
+            "plugins/rocketmq-logger",
             "plugins/udp-logger",
             "plugins/syslog",
             "plugins/log-rotate",
             "plugins/error-log-logger",
-            "plugins/sls-logger"
+            "plugins/sls-logger",
+            "plugins/google-cloud-logging",
+            "plugins/splunk-hec-logging"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Serverless",
+          "items": [
+            "plugins/serverless"
           ]
         },
         {
@@ -132,6 +148,10 @@
         {
           "type": "doc",
           "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
         }
       ]
     },
@@ -147,12 +167,23 @@
           "type": "category",
           "label": "Discovery",
           "items": [
-            "discovery"
+            "discovery",
+            "discovery/dns",
+            "discovery/nacos",
+            "discovery/eureka"
           ]
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
           "id": "health-check"
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
         },
         {
           "type": "doc",

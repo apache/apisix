@@ -22,6 +22,18 @@ no_root_location();
 no_shuffle();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->no_error_log && !$block->error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -36,20 +48,20 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";
-                            package proto;
-                            message HelloRequest{
+                        package proto;
+                        message HelloRequest{
                             string name = 1;
-                                }
+                        }
 
-                            message HelloResponse{
+                        message HelloResponse{
                             int32 code = 1;
                             string msg = 2;
-                                }
-                                // The greeting service definition.
-                            service Hello {
-                                    // Sends a greeting
+                        }
+                        // The greeting service definition.
+                        service Hello {
+                            // Sends a greeting
                             rpc SayHi (HelloRequest) returns (HelloResponse){}
-                                }"
+                        }"
                 }]],
                 [[
                     {
@@ -67,12 +79,8 @@ __DATA__
             ngx.say("[put proto] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
 [put proto] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -99,12 +107,8 @@ GET /t
             ngx.say("[delete proto] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
 [delete proto] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -117,21 +121,21 @@ GET /t
             local code, message = t('/apisix/admin/proto/2',
                  ngx.HTTP_PUT,
                  [[{
-                        "content": "syntax = \"proto3\";
-                            package proto;
-                            message HelloRequest{
-                            string name = 1;
-                                }
+                    "content": "syntax = \"proto3\";
+                    package proto;
+                    message HelloRequest{
+                        string name = 1;
+                    }
 
-                            message HelloResponse{
-                            int32 code = 1;
-                            string msg = 2;
-                                }
-                                // The greeting service definition.
-                            service Hello {
-                                    // Sends a greeting
-                            rpc SayHi (HelloRequest) returns (HelloResponse){}
-                                }"
+                    message HelloResponse{
+                        int32 code = 1;
+                        string msg = 2;
+                    }
+                    // The greeting service definition.
+                    service Hello {
+                        // Sends a greeting
+                        rpc SayHi (HelloRequest) returns (HelloResponse){}
+                    }"
                 }]],
                 [[
                     {
@@ -194,11 +198,42 @@ GET /t
             ngx.say("[delete proto] code: ", code)
         }
     }
---- request
-GET /t
 --- response_body
 [put proto] code: 200 message: passed
 [route refer proto] code: 200 message: passed
 [delete proto] code: 400
---- no_error_log
-[error]
+
+
+
+=== TEST 4: reject invalid proto
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "content": "syntax = \"proto3\";
+                        package proto;
+                        message HelloRequest{
+                            string name = 1;
+                        }
+
+                        message HelloResponse{
+                            int32 code = 1;
+                            string msg = 1;
+                        }"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+            end
+
+            ngx.say(message)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/invalid content:/

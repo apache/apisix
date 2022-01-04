@@ -32,14 +32,19 @@ title: referer-restriction
 ## Name
 
 The `referer-restriction` can restrict access to a Service or a Route by
-whitelisting request header Referrers.
+whitelisting/blacklisting request header Referrers.
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default | Valid | Description                              |
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| whitelist | array[string] | required    |         |       | List of hostname to whitelist. The hostname can be started with `*` as a wildcard |
+| whitelist | array[string] | optional    |         |       | List of hostname to whitelist. The hostname can be started with `*` as a wildcard |
+| blacklist | array[string] | optional    |         |       | List of hostname to blacklist. The hostname can be started with `*` as a wildcard |
+| message | string | optional    | Your referer host is not allowed | [1, 1024] | Message returned in case access is not allowed. |
 | bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the Referer header is missing or malformed |
+
+One of `whitelist` or `blacklist` must be specified, and they can not work together.
+The message can be user-defined.
 
 ## How To Enable
 
@@ -101,14 +106,14 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

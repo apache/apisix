@@ -22,6 +22,31 @@
 . ./t/cli/common.sh
 
 echo '
+discovery:
+    nacos:
+        host: "127.0.0.1"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "host" validation failed: wrong type: expected array, got string'; then
+    echo "failed: should check discovery schema during init"
+    exit 1
+fi
+
+echo '
+discovery:
+    unknown:
+        host: "127.0.0.1"
+' > conf/config.yaml
+
+if ! make init; then
+    echo "failed: should ignore discovery without schema"
+    exit 1
+fi
+
+echo "passed: check discovery schema during init"
+
+echo '
 apisix:
   dns_resolver_valid: "/apisix"
 ' > conf/config.yaml
@@ -69,3 +94,86 @@ fi
 make stop
 
 echo "passed: allow configuring address in stream_proxy"
+
+sed -i 's/^  \(node_listen:\)/  #\1/g' conf/config-default.yaml
+sed -i 's/^    \(- 9080\)/    #\1/g' conf/config-default.yaml
+sed -i 's/^  # \(node_listen: 9080\)/  \1/g' conf/config-default.yaml
+
+echo '
+apisix:
+    node_listen:
+      - 9080
+      - 9081
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out"; then
+    echo "failed: allow configuring node_listen as a number in the default config"
+    exit 1
+fi
+git checkout conf/config-default.yaml
+
+echo "passed: allow configuring node_listen as a number in the default config"
+
+# apisix test
+git checkout conf/config.yaml
+
+out=$(./bin/apisix test 2>&1 || true)
+if ! echo "$out" | grep "configuration test is successful"; then
+    echo "failed: configuration test should be successful"
+    exit 1
+fi
+
+echo "pass: apisix test"
+
+./bin/apisix start
+sleep 1 # wait for apisix starts
+
+# set invalid configuration
+echo '
+nginx_config:
+    main_configuration_snippet: |
+        notexist on;
+' > conf/config.yaml
+
+# apisix restart
+out=$(./bin/apisix restart 2>&1 || true)
+if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "APISIX is running"); then
+    echo "failed: should restart failed when configuration invalid"
+    exit 1
+fi
+
+echo "passed: apisix restart"
+
+# apisix test - failure scenario
+out=$(./bin/apisix test 2>&1 || true)
+if ! echo "$out" | grep "configuration test failed"; then
+    echo "failed: should test failed when configuration invalid"
+    exit 1
+fi
+
+# apisix test failure should not affect apisix stop
+out=$(./bin/apisix stop 2>&1 || true)
+if echo "$out" | grep "\[emerg\] unknown directive \"notexist\""; then
+    echo "failed: `apisix test` failure should not affect `apisix stop`"
+    exit 1
+fi
+
+echo "passed: apisix test(failure scenario)"
+
+echo '
+plugins:
+- batch-requests
+nginx_config:
+    http:
+        real_ip_from:
+        - "127.0.0.2"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin batch-requests"; then
+    echo "failed: should check the realip configuration for batch-requests"
+    exit 1
+fi
+
+echo "passed: check the realip configuration for batch-requests"

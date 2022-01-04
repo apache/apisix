@@ -25,9 +25,19 @@ local stderr = io.stderr
 local str_find = string.find
 local arg = arg
 local package = package
-
+local tonumber = tonumber
 
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
+    -- ulimit setting should be checked when APISIX starts
+    local res, err = util.execute_cmd("ulimit -n")
+    if not res or err ~= nil then
+        error("failed to exec ulimit cmd \'ulimit -n \', err: " .. err)
+    end
+    local ulimit = tonumber(util.trim(res))
+    if not ulimit then
+        error("failed to fetch current maximum number of open file descriptors")
+    end
+
     -- only for developer, use current folder as working space
     local is_root_path = false
     local script_path = arg[0]
@@ -62,7 +72,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
             if ok and json then
                 stderr:write("please remove the cjson library in Lua, it may "
                             .. "conflict with the cjson library in openresty. "
-                            .. "\n luarocks remove cjson\n")
+                            .. "\n luarocks remove lua-cjson\n")
                 exit(1)
             end
         end
@@ -80,5 +90,6 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         pkg_cpath_org = pkg_cpath_org,
         pkg_path_org = pkg_path_org,
         min_etcd_version = min_etcd_version,
+        ulimit = ulimit,
     }
 end

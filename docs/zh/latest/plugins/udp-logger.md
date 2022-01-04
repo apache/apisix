@@ -38,7 +38,7 @@ title: udp-logger
 
 此插件提供了将批处理数据批量推送到外部 UDP 服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志
 
-有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
+有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
 ## 属性列表
@@ -95,7 +95,7 @@ hello, world
 想要禁用“udp-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

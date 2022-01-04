@@ -51,7 +51,6 @@ __DATA__
                         anyOf = schema_def.ip_def,
                     }
                 },
-                additionalProperties = false,
             }
 
             local cases = {

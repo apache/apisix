@@ -31,24 +31,24 @@ title: sls-logger
 
 ## 定义
 
-`sls-logger` 是使用[RF5424](https://tools.ietf.org/html/rfc5424)标准将日志数据以JSON格式发送到[阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
+`sls-logger` 是使用 [RF5424](https://tools.ietf.org/html/rfc5424) 标准将日志数据以JSON格式发送到 [阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
 
-该插件提供了将Log Data作为批处理推送到阿里云日志服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+该插件提供了将 Log Data 作为批处理推送到阿里云日志服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
-有关Apache APISIX中Batch-Processor的更多信息，请参考：
+有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
 ## 属性列表
 
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
-| host |必要的| TCP 服务的IP地址或主机名，请参考：[阿里云日志服务列表](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb)，建议配置 IP 取代配置域名。|
+| host |必要的| TCP 服务的 IP 地址或主机名，请参考：[阿里云日志服务列表](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb)，建议配置 IP 取代配置域名。|
 | port |必要的| 目标端口，阿里云日志服务默认端口为 10009。|
 | timeout |可选的|发送数据超时间。|
-| project |必要的|日志服务Project名称，请提前在阿里云日志服务中创建 Project。|
-| logstore | 必须的 |日志服务Logstore名称，请提前在阿里云日志服务中创建  Logstore。|
-| access_key_id | 必须的 | AccessKey ID。建议使用阿里云子账号AK，详情请参见[授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
-| access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号AK，详情请参见[授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
+| project |必要的|日志服务 Project 名称，请提前在阿里云日志服务中创建 Project。|
+| logstore | 必须的 |日志服务 Logstore 名称，请提前在阿里云日志服务中创建 Logstore。|
+| access_key_id | 必须的 | AccessKey ID。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
+| access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的| 是否包含请求体。|
 |name| 可选的|批处理名字。|
 |batch_max_size |可选的       |每批的最大大小。|
@@ -86,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ```
-注释:这里的 100.100.99.135 是阿里云华北3内外地址。
+注释:这里的 100.100.99.135 是阿里云华北 3 内外地址。
 ```
 
 ## 测试插件
@@ -101,14 +101,14 @@ hello, world
 ```
 
 * 查看阿里云日志服务上传记录
-![](../../../assets/images/plugin/sls-logger-1.png "阿里云日志服务预览")
+![sls logger view](../../../assets/images/plugin/sls-logger-1.png "阿里云日志服务预览")
 
 ## 禁用插件
 
-想要禁用“sls-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
+想要禁用“sls-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

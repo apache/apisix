@@ -26,13 +26,18 @@ local schema = {
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
-        key = {type = "string",
-            enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for", "consumer_name"},
+        key = {type = "string"},
+        key_type = {type = "string",
+            enum = {"var", "var_combination"},
+            default = "var",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },
+        rejected_msg = {
+            type = "string", minLength = 1
+        },
+        allow_degradation = {type = "boolean", default = false}
     },
     required = {"conn", "burst", "default_conn_delay", "key"}
 }
