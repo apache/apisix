@@ -123,8 +123,8 @@ local function get_full_log(ngx, conf)
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
         latency = latency,
-        latency_upstream = upstream_latency,
-        latency_apisix = apisix_latency
+        upstream_latency = upstream_latency,
+        apisix_latency = apisix_latency
     }
 
     if ctx.resp_body then
