@@ -29,18 +29,15 @@ title: grpc-web
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 The `grpc-web` plugin is a proxy plugin used to process [gRPC Web](https://github.com/grpc/grpc-web) client requests to `gRPC Server`.
 
 gRPC Web Client -> APISIX -> gRPC server
 
-
 ## Attributes
 
 - None
-
 
 ## How To Enable
 
@@ -65,14 +62,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-
 ## Test Plugin
 
 - The request method only supports `POST` and `OPTIONS`, refer to: [CORS support](https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support).
 - The `Content-Type` supports `application/grpc-web`, `application/grpc-web-text`, `application/grpc-web+proto`, `application/grpc-web-text+proto`, refer to: [Protocol differences vs gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2).
 - Client deployment, refer to: [gRPC-Web Client Runtime Library](https://www.npmjs.com/package/grpc-web) or [Apache APISIX gRPC Web Test Framework](https://github.com/apache/apisix/tree/master/t/plugin/grpc-web).
 - After the `gRPC Web` client is deployed, you can initiate a `gRPC Web` proxy request to `APISIX` through `browser` or `node`.
-
 
 ## Disable Plugin
 

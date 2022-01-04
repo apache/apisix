@@ -29,25 +29,21 @@ title: grpc-web
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-
 ## 定义
 
 `grpc-web` 插件是一个代理插件，用于转换 [gRPC Web](https://github.com/grpc/grpc-web) 客户端到 `gRPC Server` 的请求。
 
 gRPC Web Client -> APISIX -> gRPC server
 
-
 ## 属性列表
 
 - 无
-
 
 ## 如何开启
 
 启用 `gRPC Web` 代理插件，路由必须使用 `前缀匹配` 模式（例如：`/*` 或 `/grpc/example/*`），
 因为 `gRPC-Web` 客户端会在 URI 中传递 `proto` 中声明的`包名称`、`服务接口名称`、`方法名称`等信息（例如：`/path/a6.RouteService/Insert`）,
 使用 `绝对匹配` 时将无法命中插件和提取 `proto` 信息。
-
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -66,14 +62,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-
 ## 测试插件
 
 - 请求方式仅支持 `POST` 和 `OPTIONS`，参考：[CORS support](https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support) 。
 - 内容类型支持 `application/grpc-web`、`application/grpc-web-text`、`application/grpc-web+proto`、`application/grpc-web-text+proto`，参考：[Protocol differences vs gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2) 。
 - 客户端部署，参考：[gRPC-Web Client Runtime Library](https://www.npmjs.com/package/grpc-web) 或 [Apache APISIX gRPC Web 测试框架](https://github.com/apache/apisix/tree/master/t/plugin/grpc-web) 。
 - 完成 `gRPC Web` 客户端部署后，即可通过 `浏览器` 或 `node` 向 `APISIX` 发起 `gRPC Web` 代理请求。
-
 
 ## 禁用插件
 
