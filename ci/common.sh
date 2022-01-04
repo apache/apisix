@@ -52,7 +52,9 @@ install_nodejs () {
     rm -f /usr/local/bin/node
     rm -f /usr/local/bin/npm
     mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
-    export PATH=${NODEJS_PREFIX}/bin:$PATH
+    ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
+    ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
+    # export PATH=${NODEJS_PREFIX}/bin:$PATH
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819
