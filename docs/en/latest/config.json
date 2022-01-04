@@ -225,6 +225,10 @@
         },
         {
           "type": "doc",
+          "id": "apisix-variable"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
         },
         {
