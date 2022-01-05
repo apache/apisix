@@ -126,22 +126,18 @@ local function set_header(append, ...)
     end
 end
 
-
 function _M.set_header(...)
     set_header(false, ...)
 end
-
 
 function _M.add_header(...)
     set_header(true, ...)
 end
 
-
 function _M.get_upstream_status(ctx)
     -- $upstream_status maybe including multiple status, only need the last one
     return tonumber(str_sub(ctx.var.upstream_status or "", -3))
 end
-
 
 function _M.clear_header_as_body_modified()
     ngx.header.content_length = nil
@@ -153,6 +149,19 @@ function _M.clear_header_as_body_modified()
     ngx.header.etag = nil
 end
 
+local function check_limit_size(ctx, body_buffer_size, limit_size)
+    if not limit_size then
+        return
+    end
+
+    if body_buffer_size > limit_size then
+        ctx._body_buffer = nil
+        ctx._body_hold_flag = true
+    else
+        ctx._body_buffer_size = body_buffer_size
+        ctx._body_hold_flag = false
+    end
+end
 
 -- Hold body chunks and return the final body once all chunks have been read.
 -- Usage:
@@ -164,11 +173,17 @@ end
 --  final_body = transform(final_body)
 --  ngx.arg[1] = final_body
 --  ...
-function _M.hold_body_chunk(ctx, hold_the_copy)
+function _M.hold_body_chunk(ctx, hold_the_copy, limit_size)
+    local body_buffer_size, body_hold_flag
     local body_buffer
     local chunk, eof = arg[1], arg[2]
     if eof then
         body_buffer = ctx._body_buffer
+        body_hold_flag = ctx._body_hold_flag
+        if body_hold_flag then
+            return nil
+        end
+
         if not body_buffer then
             return chunk
         end
@@ -179,17 +194,26 @@ function _M.hold_body_chunk(ctx, hold_the_copy)
     end
 
     if type(chunk) == "string" and chunk ~= "" then
+        body_hold_flag = ctx._body_hold_flag
+        if body_hold_flag then
+            return nil
+        end
+
         body_buffer = ctx._body_buffer
         if not body_buffer then
             body_buffer = {
                 chunk,
                 n = 1
             }
+            ctx._body_buffer_size = #chunk
             ctx._body_buffer = body_buffer
+            check_limit_size(ctx, #chunk, limit_size)
         else
             local n = body_buffer.n + 1
             body_buffer.n = n
             body_buffer[n] = chunk
+            body_buffer_size = ctx._body_buffer_size + #chunk
+            check_limit_size(ctx, body_buffer_size, limit_size)
         end
     end
 
@@ -199,6 +223,5 @@ function _M.hold_body_chunk(ctx, hold_the_copy)
     end
     return nil
 end
-
 
 return _M
