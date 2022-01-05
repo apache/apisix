@@ -90,7 +90,7 @@ local schema = {
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
-            enum = {"var", "var_combination"},
+            enum = {"var", "var_combination", "constant"},
             default = "var",
         },
         rejected_code = {
@@ -238,6 +238,8 @@ function _M.access(conf, ctx)
         if n_resolved == 0 then
             key = nil
         end
+    elseif conf.key_type == "constant" then
+        key = conf_key
     else
         key = ctx.var[conf_key]
     end
@@ -248,10 +250,11 @@ function _M.access(conf, ctx)
         key = ctx.var["remote_addr"]
     end
 
+    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
     if not conf.group then
-        key = key .. ctx.conf_type .. ctx.conf_version
+        key = ctx.conf_type .. ctx.conf_version .. ':' .. key
     else
-        key = key .. conf.group
+        key = conf.group .. ':' .. key
     end
 
     core.log.info("limit key: ", key)
