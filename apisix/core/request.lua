@@ -28,6 +28,7 @@ local str_fmt   = string.format
 local str_lower = string.lower
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
+local req_set_body_data = ngx.req.set_body_data
 local req_get_body_file = ngx.req.get_body_file
 local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
@@ -242,6 +243,19 @@ function _M.get_body(max_size, ctx)
 
     local req_body, err = io.get_file(file_name)
     return req_body, err
+end
+
+
+function _M.set_raw_body(data)
+    if type(data) ~= "string" then
+        return nil, "body must be a string"
+    end
+
+    -- Prevents a case where the request body has not yet been read, call ngx.req.read_body first.
+    -- https://github.com/openresty/lua-nginx-module#ngxreqset_body_data
+    req_read_body()
+    req_set_body_data(data)
+    return true
 end
 
 

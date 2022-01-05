@@ -30,7 +30,7 @@ import (
 var grpcListenAddress string
 
 func init() {
-	flag.StringVar(&grpcListenAddress, "listen", ":19800", "address for grpc")
+	flag.StringVar(&grpcListenAddress, "listen", ":50001", "address for grpc")
 }
 
 func main() {

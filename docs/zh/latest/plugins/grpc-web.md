@@ -24,7 +24,6 @@ title: grpc-web
 ## 摘要
 
 - [**定义**](#定义)
-- [**属性列表**](#属性列表)
 - [**如何开启**](#如何开启)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
@@ -34,10 +33,6 @@ title: grpc-web
 `grpc-web` 插件是一个代理插件，用于转换 [gRPC Web](https://github.com/grpc/grpc-web) 客户端到 `gRPC Server` 的请求。
 
 gRPC Web Client -> APISIX -> gRPC server
-
-## 属性列表
-
-- 无
 
 ## 如何开启
 
