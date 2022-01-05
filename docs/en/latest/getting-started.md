@@ -138,35 +138,36 @@ Apache APISIX provides users with a powerful [Admin API](./admin-api.md) and [AP
 
 We can create a [Route](./architecture-design/route.md) and connect it to an Upstream service(also known as the [Upstream](./architecture-design/upstream.md)). When a `Request` arrives at Apache APISIX, Apache APISIX knows which Upstream the request should be forwarded to.
 
-Because we have configured matching rules for the Route object, Apache APISIX can forward the request to the corresponding Upstream service. The following code is an example of a Route configuration:
+Because we have configured matching rules for the Route object, Apache APISIX can forward the request to the corresponding Upstream service. The following code creates a sample configuration of Route:
 
 ```json
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
-  "uri": "/services/users/*",
+  "uri": "/anything/*",
   "upstream": {
     "type": "roundrobin",
     "nodes": {
       "httpbin.org:80": 1
     }
   }
-}
+}'
 ```
 
 This routing configuration means that all matching inbound requests will be forwarded to the Upstream service `httpbin.org:80` when they meet **all** the rules listed below:
 
 - The HTTP method of the request is `GET`.
 - The request header contains the `host` field, and its value is `example.com`.
-- The request path matches `/services/users/*`, `*` means any subpath, for example `/services/users/getAll?limit=10`.
+- The request path matches `/anything/*`, `*` means any subpath, for example `/anything/foo?arg=10`.
 
 Once this route is created, we can access the Upstream service using the address exposed by Apache APISIX.
 
 ```bash
-curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
+curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
-This will be forwarded to `http://httpbin.org:80/services/users/getAll?limit=10` by Apache APISIX.
+This will be forwarded to `http://httpbin.org:80/anything/foo?arg=10` by Apache APISIX.
 
 ### Create an Upstream
 
