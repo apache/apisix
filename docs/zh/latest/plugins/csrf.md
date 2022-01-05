@@ -65,7 +65,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 这条路由已经开启保护，当你使用 GET 之外的方法访问，请求会被拦截并返回 401 状态码。
 
-2. 使用 `GET` 请求 `/hello`，在响应中会有一个携带了加密 `token` 的 `Cookie`。Token 字段的名字为插件配置中的 `name` 值，如果没有配置的话默认值为 `apisix-csrf-token`。
+2. 使用 `GET` 请求 `/hello`，在响应中会有一个携带了加密 `token` 的 `Cookie`。Token 字段的名字为插件配置中的 `name` 值，如果没有配置该值，那么默认值为 `apisix-csrf-token`。
 
 注意：每一个请求都会返回一个新的 Cookie。
 
