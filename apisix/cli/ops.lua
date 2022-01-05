@@ -552,6 +552,7 @@ Please modify "admin_key" in conf/config.yaml .
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
+        enable_ipv6 = yaml_conf.apisix.enable_ipv6,
     }
 
     if not yaml_conf.apisix then
