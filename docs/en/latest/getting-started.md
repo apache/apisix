@@ -140,7 +140,7 @@ We can create a [Route](./architecture-design/route.md) and connect it to an Ups
 
 Because we have configured matching rules for the Route object, Apache APISIX can forward the request to the corresponding Upstream service. The following code creates a sample configuration of Route:
 
-```json
+```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],

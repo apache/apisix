@@ -138,7 +138,7 @@ Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](htt
 
 因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码会创建一个示例 Route 配置：
 
-```json
+```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
