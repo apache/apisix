@@ -136,35 +136,36 @@ Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](htt
 
 我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为 [Upstream](./architecture-design/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
-因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码是一个 Route 配置示例：
+因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码会创建一个示例 Route 配置：
 
 ```json
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
-  "uri": "/services/users/*",
+  "uri": "/anything/*",
   "upstream": {
     "type": "roundrobin",
     "nodes": {
       "httpbin.org:80": 1
     }
   }
-}
+}'
 ```
 
 这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游服务：
 
 - 请求的 HTTP 方法为 `GET`。
 - 请求头包含 `host` 字段，且它的值为 `example.com`。
-- 请求路径匹配 `/services/users/*`，`*` 意味着任意的子路径，例如 `/services/users/getAll?limit=10`。
+- 请求路径匹配 `/anything/*`，`*` 意味着任意的子路径，例如 `/anything/foo?arg=10`。
 
 当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游服务：
 
 ```bash
-curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
+curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
-这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
+这将会被 Apache APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
 
 ### 创建上游服务（Upstream）
 
