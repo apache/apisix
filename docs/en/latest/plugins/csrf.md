@@ -31,15 +31,15 @@ title: csrf
 
 ## Description
 
-The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from CSRF attacks.
+The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
 
 ## Attributes
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    false    | `apisix-csrf-token`  |    | The name of the token in the generated cookie. |
-| expires |  number | false | `7200` | | Expiration time(s) of csrf cookie. |
-| key | string | true |  |  | The secret key used to encrypt the cookie. |
+|   name   |  string |    optional    | `apisix-csrf-token`  |    | The name of the token in the generated cookie. |
+| expires |  number | optional | `7200` | | Expiration time(s) of csrf cookie. |
+| key | string | required |  |  | The secret key used to encrypt the cookie. |
 
 ## How To Enable
 
@@ -67,24 +67,18 @@ The route is then protected, and if you access it using methods other than `GET`
 
 2. Using `GET` requests `/hello`, a cookie with an encrypted token is received in the response. Token name is the `name` field set in the plugin configuration, if not set, the default value is `apisix-csrf-token`.
 
-:::important
-
-A new cookie is generated for each request.
-
-:::
+Please note: We return a new cookie for each request.
 
 3. In subsequent non-GET requests to this route, you need to read the encrypted token from the cookie and append the token to the `request header`, setting the field name to the `name` in the plugin configuration.
 
 ## Test Plugin
 
-The above configuration created a `/hello` route and enabled the csrf plugin, now direct access to the route using a non-GET method will return an error:
+Direct access to the '/hello' route using a `POST` method will return an error:
 
 ```
 curl -i http://127.0.0.1:9080/hello -X POST
-```
 
-```
-HTTP/1.1 401 Unauthorized
+HTTP/1.1 401
 Date: Mon, 13 Dec 2021 07:23:23 GMT
 Content-Type: text/plain; charset=utf-8
 Transfer-Encoding: chunked
@@ -96,10 +90,8 @@ When accessed with a GET request, the correct return and a cookie with an encryp
 
 ```
 curl -i http://127.0.0.1:9080/hello
-```
 
-```
-HTTP/1.1 200 OK
+HTTP/1.1 200
 Content-Type: text/plain; charset=utf-8
 Content-Length: 13
 Connection: keep-alive
@@ -108,7 +100,7 @@ x-frame-options: SAMEORIGIN
 permissions-policy: interest-cohort=()
 date: Mon, 13 Dec 2021 07:33:55 GMT
 Server: APISIX
-Set-Cookie: apisix_csrf_token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
+Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
 ```
 
 The token needs to be read from the cookie and carried in the request header in subsequent non-GET requests. You also need to make sure that you carry the cookie.

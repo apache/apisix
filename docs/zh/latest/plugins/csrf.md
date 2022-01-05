@@ -31,15 +31,15 @@ title: csrf
 
 ## 简介
 
-`CSRF` 插件基于 `Double Submit Cookie` 的方式，保护您的 API 免于 CSRF 攻击。
+`CSRF` 插件基于 `Double Submit Cookie` 的方式，保护您的 API 免于 CSRF 攻击。本插件认为 `GET`、`HEAD` 和 `OPTIONS` 方法是安全操作。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
 
 ## 属性
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    false    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
-| expires |  number | false | `7200` | | CSRF Cookie 的过期时间(秒) |
-| key | string | true |  |  | 加密 token 的秘钥 |
+|   name   |  string |    optional    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
+| expires |  number | optional | `7200` | | CSRF Cookie 的过期时间(秒) |
+| key | string | required |  |  | 加密 token 的秘钥 |
 
 ## 如何启用
 
@@ -67,24 +67,18 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 2. 使用 `GET` 请求 `/hello`，在响应中会有一个携带了加密 `token` 的 `Cookie`。Token 字段的名字为插件配置中的 `name` 值，如果没有配置的话默认值为 `apisix-csrf-token`。
 
-:::important
-
-每次请求都会产生新的 Cookie。
-
-:::
+注意：每一个请求都会返回一个新的 Cookie。
 
 3. 在后续的对该路由的非 GET 请求中，需要保证携带该 Cookie 并在请求头部中携带该 token，请求头字段的名称为插件配置中的 `name`。
 
 ## 测试插件
 
-上面的配置创建了一条 `/hello` 路由，并在该路由中启用了 csrf 插件，现在直接对该路由发起非 GET 请求会返回错误：
+直接对该路由发起 `POST` 请求会返回错误：
 
 ```
 curl -i http://127.0.0.1:9080/hello -X POST
-```
 
-```
-HTTP/1.1 401 Unauthorized
+HTTP/1.1 401
 Date: Mon, 13 Dec 2021 07:23:23 GMT
 Content-Type: text/plain; charset=utf-8
 Transfer-Encoding: chunked
@@ -96,10 +90,8 @@ Server: APISIX
 
 ```
 curl -i http://127.0.0.1:9080/hello
-```
 
-```
-HTTP/1.1 200 OK
+HTTP/1.1 200
 Content-Type: text/plain; charset=utf-8
 Content-Length: 13
 Connection: keep-alive
@@ -108,7 +100,7 @@ x-frame-options: SAMEORIGIN
 permissions-policy: interest-cohort=()
 date: Mon, 13 Dec 2021 07:33:55 GMT
 Server: APISIX
-Set-Cookie: apisix_csrf_token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
+Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
 ```
 
 在请求之前，需要从 Cookie 中读取 token，并在随后的非 GET 请求中的请求头中携带。你还需要确保你的请求携带了Cookie。

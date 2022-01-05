@@ -125,13 +125,14 @@ end
 
 
 function _M.access(conf, ctx)
+    local safe_methods = {"GET", "HEAD", "OPTIONS"}
     local method = core.request.get_method(ctx)
-    if method == 'GET' or 'OPTIONS' then
+    if core.table.array_find(safe_methods, method) then
         return
     end
 
     local header_token = core.request.header(ctx, conf.name)
-    if not header_token then
+    if not header_token or header_token == "" then
         return 401, {error_msg = "no csrf token in headers"}
     end
 
