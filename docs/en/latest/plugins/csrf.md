@@ -33,6 +33,8 @@ title: csrf
 
 The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
 
+In the following we define `GET`, `HEAD` and `OPTIONS` as the `safe-methods` and those other than these as `unsafe-methods`.
+
 ## Attributes
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
@@ -45,7 +47,7 @@ The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from
 
 1. Create the route and enable the plugin.
 
-```
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT-d '
 {
   "uri": "/hello",
@@ -69,47 +71,56 @@ The route is then protected, and if you access it using methods other than `GET`
 
 Please note: We return a new cookie for each request.
 
-3. In subsequent non-GET requests to this route, you need to read the encrypted token from the cookie and append the token to the `request header`, setting the field name to the `name` in the plugin configuration.
+3. In subsequent unsafe-methods requests to this route, you need to read the encrypted token from the cookie and append the token to the `request header`, setting the field name to the `name` in the plugin configuration.
 
 ## Test Plugin
 
 Direct access to the '/hello' route using a `POST` method will return an error:
 
-```
+```shell
 curl -i http://127.0.0.1:9080/hello -X POST
 
-HTTP/1.1 401
-Date: Mon, 13 Dec 2021 07:23:23 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX
+HTTP/1.1 401 Unauthorized
+...
+{"error_msg":"no csrf token in headers"}
 ```
 
 When accessed with a GET request, the correct return and a cookie with an encrypted token are obtained:
 
-```
+```shell
 curl -i http://127.0.0.1:9080/hello
 
-HTTP/1.1 200
-Content-Type: text/plain; charset=utf-8
-Content-Length: 13
-Connection: keep-alive
-x-content-type-options: nosniff
-x-frame-options: SAMEORIGIN
-permissions-policy: interest-cohort=()
-date: Mon, 13 Dec 2021 07:33:55 GMT
-Server: APISIX
+HTTP/1.1 200 OK
 Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
 ```
 
-The token needs to be read from the cookie and carried in the request header in subsequent non-GET requests. You also need to make sure that you carry the cookie.
+The token needs to be read from the cookie and carried in the request header in subsequent unsafe-methods requests.
+
+For example, use [js-cookie](https://github.com/js-cookie/js-cookie) read cookie and [axios](https://github.com/axios/axios) send request in client:
+
+```js
+const token = Cookie.get('apisix-csrf-token');
+
+const instance = axios.create({
+  headers: {'apisix-csrf-token': token}
+});
+```
+
+You also need to make sure that you carry the cookie.
+
+Use curl send request:
+
+```shell
+curl -i http://127.0.0.1:9080/hello -X POST -H 'apisix-csrf-token: eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==' -b 'apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ=='
+
+HTTP/1.1 200 OK
+```
 
 ## Disable Plugin
 
 Send a request to update the route to disable the plugin:
 
-```
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",

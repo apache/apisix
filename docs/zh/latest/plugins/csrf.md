@@ -33,6 +33,8 @@ title: csrf
 
 `CSRF` 插件基于 `Double Submit Cookie` 的方式，保护您的 API 免于 CSRF 攻击。本插件认为 `GET`、`HEAD` 和 `OPTIONS` 方法是安全操作。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
 
+在这里我们定义 `GET`, `HEAD` 和 `OPTIONS` 为 `safe-methods`，其他的请求方法为 `unsafe-methods`。
+
 ## 属性
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                  |
@@ -45,7 +47,7 @@ title: csrf
 
 1. 创建一条路由并启用该插件。
 
-```
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
@@ -69,47 +71,56 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 注意：每一个请求都会返回一个新的 Cookie。
 
-3. 在后续的对该路由的非 GET 请求中，需要保证携带该 Cookie 并在请求头部中携带该 token，请求头字段的名称为插件配置中的 `name`。
+3. 在后续的对该路由的 `unsafe-methods` 请求中，需要从 Cookie 中读取加密的 token，保证携带 Cookie 并在请求头部中携带该 token，请求头字段的名称为插件配置中的 `name`。
 
 ## 测试插件
 
 直接对该路由发起 `POST` 请求会返回错误：
 
-```
+```shell
 curl -i http://127.0.0.1:9080/hello -X POST
 
-HTTP/1.1 401
-Date: Mon, 13 Dec 2021 07:23:23 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX
+HTTP/1.1 401 Unauthorized
+...
+{"error_msg":"no csrf token in headers"}
 ```
 
 当使用 GET 请求，返回中会有携带 token 的 Cookie：
 
-```
+```shell
 curl -i http://127.0.0.1:9080/hello
 
-HTTP/1.1 200
-Content-Type: text/plain; charset=utf-8
-Content-Length: 13
-Connection: keep-alive
-x-content-type-options: nosniff
-x-frame-options: SAMEORIGIN
-permissions-policy: interest-cohort=()
-date: Mon, 13 Dec 2021 07:33:55 GMT
-Server: APISIX
+HTTP/1.1 200 OK
 Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
 ```
 
-在请求之前，需要从 Cookie 中读取 token，并在随后的非 GET 请求中的请求头中携带。你还需要确保你的请求携带了Cookie。
+在请求之前，需要从 Cookie 中读取 token，并在随后的 `unsafe-methods` 请求中的请求头中携带。
+
+例如，在客户端使用 [js-cookie](https://github.com/js-cookie/js-cookie) 读取 Cookie，使用 [axios](https://github.com/axios/axios) 发送请求。
+
+```js
+const token = Cookie.get('apisix-csrf-token');
+
+const instance = axios.create({
+  headers: {'apisix-csrf-token': token}
+});
+```
+
+你还需要确保你的请求携带了Cookie。
+
+使用 curl 发送请求：
+
+```shell
+curl -i http://127.0.0.1:9080/hello -X POST -H 'apisix-csrf-token: eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==' -b 'apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ=='
+
+HTTP/1.1 200 OK
+```
 
 ## 禁用插件
 
 发送一个更新路由的请求，以停用该插件：
 
-```
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
