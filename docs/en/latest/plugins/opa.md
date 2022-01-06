@@ -30,7 +30,7 @@ title: opa
 
 ## Description
 
-The `opa` plugin is used to integrate with Open Policy Agent. By using this plugin, users can decouple functions such as authentication and access to services and reduce the complexity of the application system.
+The `opa` plugin is used to integrate with [Open Policy Agent](https://www.openpolicyagent.org). By using this plugin, users can decouple functions such as authentication and access to services and reduce the complexity of the application system.
 
 ## Attributes
 
@@ -39,10 +39,10 @@ The `opa` plugin is used to integrate with Open Policy Agent. By using this plug
 | host | string | required |   |   | Open Policy Agent service host (eg. https://localhost:8181) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | policy | string | required |   |   | OPA policy path (It is a combination of `package` and `decision`. When you need to use advanced features such as custom response, `decision` can be omitted) |
-| timeout | integer | optional | 60000ms | [1, 60000]ms | HTTP call timeout. |
+| timeout | integer | optional | 3000ms | [1, 60000]ms | HTTP call timeout. |
 | keepalive | boolean | optional | true |   | HTTP keepalive |
-| keepalive_timeout | integer | optional | 60000ms | [1000,...] | keepalive idle timeout |
-| keepalive_pool | integer | optional | 5 | [1,...] | Connection pool limit |
+| keepalive_timeout | integer | optional | 60000ms | [1000, ...]ms | keepalive idle timeout |
+| keepalive_pool | integer | optional | 5 | [1, ...]ms | Connection pool limit |
 | with_route | boolean | optional | false |   | Whether to send information about the current route. |
 | with_service | boolean | optional | false |   | Whether to send information about the current service. |
 | with_consumer | boolean | optional | false |   | Whether to send information about the current consumer. (It may contain sensitive information such as apikey, so please turn it on only if you are sure it is safe) |
@@ -88,7 +88,7 @@ The `route`, `service`, and `consumer` will be sent only after the `opa` plugin 
 ### OPA service response to APISIX
 
 In the response, `result` is automatically added by OPA. The `allow` is indispensable and will indicate whether the request is allowed to be forwarded through the APISIX.
-The reason, headers, and status_code are optional and are only returned when you need to use a custom response, as you'll see in the next section with the actual use case for it.
+The `reason`, `headers`, and `status_code` are optional and are only returned when you need to use a custom response, as you'll see in the next section with the actual use case for it.
 
 ```json
 {
@@ -105,10 +105,10 @@ The reason, headers, and status_code are optional and are only returned when you
 
 ## Example
 
-First, you need to run the Open Policy Agent environment.
+First, you need to launch the Open Policy Agent environment.
 
 ```shell
-docker run -d --name opa -p 8181:8181 openpolicyagent/opa:0.35.0 run -s
+$ docker run -d --name opa -p 8181:8181 openpolicyagent/opa:0.35.0 run -s
 ```
 
 ### Basic Use Case
@@ -116,9 +116,9 @@ docker run -d --name opa -p 8181:8181 openpolicyagent/opa:0.35.0 run -s
 You can create a basic policy for testing.
 
 ```shell
-curl -XPUT '127.0.0.1:8181/v1/policies/example1' \
---header 'Content-Type: text/plain' \
---data-raw 'package example1
+$ curl -X PUT '127.0.0.1:8181/v1/policies/example1' \
+    -H 'Content-Type: text/plain' \
+    -d 'package example1
 
 import input.request
 
@@ -133,10 +133,10 @@ allow {
 After that, you can create a route and turn on the `opa` plugin.
 
 ```shell
-curl -XPUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
---header 'X-API-KEY: <api-key>' \
---header 'Content-Type: application/json' \
---data-raw '{
+$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+    -H 'X-API-KEY: <api-key>' \
+    -H 'Content-Type: application/json' \
+    -d '{
     "uri": "/*",
     "plugins": {
         "opa": {
@@ -157,11 +157,11 @@ Try it out.
 
 ```shell
 # Successful request
-curl -i -XGET 127.0.0.1:9080/get
+$ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 
 # Failed request
-curl -i -XPOST 127.0.0.1:9080/post
+$ curl -i -X POST 127.0.0.1:9080/post
 HTTP/1.1 403 FORBIDDEN
 ```
 
@@ -172,9 +172,9 @@ Next, let's think about some more complex scenarios.
 When you need to return a custom error message for an incorrect request, you can implement it this way.
 
 ```shell
-curl -XPUT '127.0.0.1:8181/v1/policies/example2' \
---header 'Content-Type: text/plain' \
---data-raw 'package example2
+$ curl -X PUT '127.0.0.1:8181/v1/policies/example2' \
+    -H 'Content-Type: text/plain' \
+    -d 'package example2
 
 import input.request
 
@@ -206,11 +206,11 @@ Update the route and set `opa` plugin's `policy` parameter to `example2`. Then, 
 
 ```shell
 # Successful request
-curl -i -XGET 127.0.0.1:9080/get
+$ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 
 # Failed request
-curl -i -XPOST 127.0.0.1:9080/post
+$ curl -i -X POST 127.0.0.1:9080/post
 HTTP/1.1 302 FOUND
 Location: http://example.com/auth
 
@@ -224,9 +224,9 @@ Let's think about another scenario, when your decision needs to use some APISIX 
 Create a simple policy `echo`, which will return the data sent by APISIX to the OPA service as is, so we can simply see them.
 
 ```shell
-curl -XPUT '127.0.0.1:8181/v1/policies/echo' \
---header 'Content-Type: text/plain' \
---data-raw 'package echo
+$ curl -X PUT '127.0.0.1:8181/v1/policies/echo' \
+    -H 'Content-Type: text/plain' \
+    -d 'package echo
 
 allow = false
 reason = input'
@@ -235,10 +235,10 @@ reason = input'
 Next, update the config of the route to enable sending route data.
 
 ```shell
-curl -XPUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
---header 'X-API-KEY: <api-key>' \
---header 'Content-Type: application/json' \
---data-raw '{
+$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+    -H 'X-API-KEY: <api-key>' \
+    -H 'Content-Type: application/json' \
+    -d '{
     "uri": "/*",
     "plugins": {
         "opa": {
@@ -259,7 +259,7 @@ curl -XPUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
 Try it. As you can see, we output this data with the help of the custom response body function described above, along with the data from the route.
 
 ```shell
-curl -XGET 127.0.0.1:9080/get
+$ curl -X GET 127.0.0.1:9080/get
 {
     "type": "http",
     "request": {
