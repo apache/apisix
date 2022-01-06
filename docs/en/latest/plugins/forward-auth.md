@@ -37,7 +37,7 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 
 | Name | Type | Requirement | Default | Valid | Description |
 | -- | -- | -- | -- | -- | -- |
-| host | string | required |  |  | Authorization sevice host (eg. https://localhost:9188) |
+| host | string | required |  |  | Authorization service host (eg. https://localhost:9188) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service |
 | upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream` |
@@ -76,7 +76,7 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 Next, we create a route for testing.
 
 ```shell
-$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1 
+$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
     -d '{
     "uri": "/headers",
