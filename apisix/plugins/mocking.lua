@@ -111,7 +111,7 @@ local function gen_boolean(example)
     if example ~= nil and type(example) == "boolean" then
         return example
     end
-    local r = math.random(0, 2)
+    local r = math.random(0, 1)
     if r == 0 then
         return false
     end
