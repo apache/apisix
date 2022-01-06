@@ -1,0 +1,123 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
+local core   = require("apisix.core")
+local http   = require("resty.http")
+
+local schema = {
+    type = "object",
+    properties = {
+        host = {type = "string"},
+        ssl_verify = {
+            type = "boolean",
+            default = true,
+        },
+        request_headers = {
+            type = "array",
+            default = {},
+            items = {type = "string"},
+            description = "client request header that will be sent to the authorization"
+        },
+        upstream_headers = {
+            type = "array",
+            default = {},
+            items = {type = "string"},
+            description = "authentication response header that will be sent upstream"
+        },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 60000,
+            default = 3000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+    },
+    required = {"host"}
+}
+
+
+local _M = {
+    version = 0.1,
+    priority = 2002,
+    name = "forward-auth",
+    schema = schema,
+}
+
+
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
+
+
+function _M.access(conf, ctx)
+    local auth_headers = {
+        ["X-Forwarded-Proto"] = core.request.get_scheme(ctx),
+        ["X-Forwarded-Method"] = core.request.get_method(),
+        ["X-Forwarded-Host"] = core.request.get_host(ctx),
+        ["X-Forwarded-Uri"] = core.request.get_uri(ctx),
+        ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
+    }
+
+    -- append headers that need to be get from the client request header
+    if conf.request_headers then
+        for _, header in ipairs(conf.request_headers) do
+            auth_headers[header] = core.request.header(ctx, header)
+        end
+    else
+        auth_headers = core.table.merge(core.request.headers(), auth_headers)
+    end
+
+    local params = {
+        method = "GET",
+        headers = auth_headers,
+        keepalive = conf.keepalive,
+        ssl_verify = conf.ssl_verify
+    }
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout
+        params.keepalive_pool = conf.keepalive_pool
+    end
+
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
+
+    local res, err = httpc:request_uri(conf.host, params)
+
+    -- block by default when authorization service is unavailable
+    if not res or err then
+        core.log.error("failed to process forward auth, err: ", err)
+        return 403
+    end
+
+    if res.status >= 300 then
+        return res.status, res.body
+    end
+
+    -- append headers that need to be get from the auth response header
+    for _, header in ipairs(conf.upstream_headers) do
+        if res.headers[header] then
+            core.request.set_header(ctx, header, res.headers[header])
+        end
+    end
+end
+
+
+return _M

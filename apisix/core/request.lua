@@ -278,6 +278,15 @@ function _M.get_path(ctx)
 end
 
 
+function _M.get_uri(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+
+    return ctx.var.request_uri or ''
+end
+
+
 function _M.get_http_version()
     return ngx.req.http_version()
 end
