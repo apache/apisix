@@ -36,7 +36,13 @@ local schema = {
             type = "array",
             default = {},
             items = {type = "string"},
-            description = "authentication response header that will be sent upstream"
+            description = "authorization response header that will be sent upstream"
+        },
+        client_headers = {
+            type = "array",
+            default = {},
+            items = {type = "string"},
+            description = "authorization response header that will be sent client when authorize error"
         },
         timeout = {
             type = "integer",
@@ -108,13 +114,20 @@ function _M.access(conf, ctx)
     end
 
     if res.status >= 300 then
+        local client_headers = {}
+        for _, header in ipairs(conf.client_headers) do
+            client_headers[header] = res.headers[header]
+        end
+
+        core.response.set_header(client_headers)
         return res.status, res.body
     end
 
     -- append headers that need to be get from the auth response header
     for _, header in ipairs(conf.upstream_headers) do
-        if res.headers[header] then
-            core.request.set_header(ctx, header, res.headers[header])
+        local header_value = res.headers[header]
+        if header_value then
+            core.request.set_header(ctx, header, header_value)
         end
     end
 end
