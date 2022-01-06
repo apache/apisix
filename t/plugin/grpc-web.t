@@ -133,3 +133,76 @@ node ./t/plugin/grpc-web/client.js GET 2
 node ./t/plugin/grpc-web/client.js all
 --- response_body
 [["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
+
+
+
+=== TEST 10: test options request
+--- request
+OPTIONS /grpc/a6.RouteService/GetAll
+--- error_code: 204
+
+
+
+=== TEST 11: test non-options request
+--- request
+GET /grpc/a6.RouteService/GetAll
+--- error_code: 400
+--- error_log
+request method: `GET` invalid
+
+
+
+=== TEST 12: test non gRPC Web MIME type request
+--- request
+POST /grpc/a6.RouteService/GetAll
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+request Content-Type: `application/json` invalid
+
+
+
+=== TEST 13: set route (absolute match)
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local config = {
+                uri = "/grpc2/a6.RouteService/GetAll",
+                upstream = {
+                    scheme = "grpc",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:50001"] = 1
+                    }
+                },
+                plugins = {
+                    ["grpc-web"] = {}
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: test route (absolute match)
+--- request
+POST /grpc2/a6.RouteService/GetAll
+--- more_headers
+Content-Type: application/grpc-web
+--- error_code: 400
+--- error_log
+please use matching pattern for routing URI, for example: /* or /grpc/*

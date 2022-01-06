@@ -37,7 +37,7 @@ gRPC Web Client -> APISIX -> gRPC server
 ## How To Enable
 
 To enable the `gRPC Web` proxy plugin, routing must use the `Prefix matching` pattern (for example: `/*` or `/grpc/example/*`),
-Because the `gRPC-Web` client will pass the `package name`, `service interface name`, `method name` and other information declared in the `proto` in the URI (for example: `/path/a6.RouteService/Insert`) ,
+Because the `gRPC Web` client will pass the `package name`, `service interface name`, `method name` and other information declared in the `proto` in the URI (for example: `/path/a6.RouteService/Insert`) ,
 When using `Absolute Match`, it will not be able to hit the plugin and extract the `proto` information.
 
 ```bash

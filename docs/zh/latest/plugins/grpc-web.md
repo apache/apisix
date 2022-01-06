@@ -37,7 +37,7 @@ gRPC Web Client -> APISIX -> gRPC server
 ## 如何开启
 
 启用 `gRPC Web` 代理插件，路由必须使用 `前缀匹配` 模式（例如：`/*` 或 `/grpc/example/*`），
-因为 `gRPC-Web` 客户端会在 URI 中传递 `proto` 中声明的`包名称`、`服务接口名称`、`方法名称`等信息（例如：`/path/a6.RouteService/Insert`）,
+因为 `gRPC Web` 客户端会在 URI 中传递 `proto` 中声明的`包名称`、`服务接口名称`、`方法名称`等信息（例如：`/path/a6.RouteService/Insert`）,
 使用 `绝对匹配` 时将无法命中插件和提取 `proto` 信息。
 
 ```bash

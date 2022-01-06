@@ -14,12 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-local ngx = ngx
-local ngx_arg = ngx.arg
-local core = require("apisix.core")
-local req_set_uri = ngx.req.set_uri
-local decode_base64 = ngx.decode_base64
-local encode_base64 = ngx.encode_base64
+local ngx               = ngx
+local ngx_arg           = ngx.arg
+local core              = require("apisix.core")
+local req_set_uri       = ngx.req.set_uri
+local req_set_body_data = ngx.req.set_body_data
+local decode_base64     = ngx.decode_base64
+local encode_base64     = ngx.encode_base64
 
 
 local ALLOW_METHOD_OPTIONS = "OPTIONS"
@@ -105,15 +106,10 @@ function _M.access(conf, ctx)
         end
     end
 
-    local ok
-    ok, err = core.request.set_raw_body(body)
-    if not ok then
-        core.log.error("setting body err, ", err)
-        return 400
-    end
-
     -- set grpc content-type
     core.request.set_header(ctx, "Content-Type", DEFAULT_PROXY_CONTENT_TYPE)
+    -- set grpc body
+    req_set_body_data(body)
 
     -- set context variable
     ctx.grpc_web_mime = mimetype
@@ -131,12 +127,12 @@ function _M.header_filter(conf, ctx)
 end
 
 function _M.body_filter(conf, ctx)
-    -- If the gRPC-Web standard MIME extension type is not obtained or
-    -- the `POST` method is not used for interaction according to the gRPC-Web specification,
-    -- the request body processing will be ignored
+    -- If the MIME extension type description of the gRPC-Web standard is not obtained,
+    -- indicating that the request is not based on the gRPC Web specification,
+    -- the processing of the request body will be ignored
+    -- https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
     -- https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support
-    local method = core.request.get_method()
-    if not ctx.grpc_web_mime or method ~= ALLOW_METHOD_POST then
+    if not ctx.grpc_web_mime then
         return
     end
 

@@ -246,19 +246,6 @@ function _M.get_body(max_size, ctx)
 end
 
 
-function _M.set_raw_body(data)
-    if type(data) ~= "string" then
-        return nil, "body must be a string"
-    end
-
-    -- Prevents a case where the request body has not yet been read, call ngx.req.read_body first.
-    -- https://github.com/openresty/lua-nginx-module#ngxreqset_body_data
-    req_read_body()
-    req_set_body_data(data)
-    return true
-end
-
-
 function _M.get_scheme(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
