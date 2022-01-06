@@ -27,14 +27,12 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        header = {
-            type = "string",
-            default = "apikey",
-        },
-        query = {
-            type = "string",
-            default = "apikey",
-        },
+        header = { type = "string", default = "apikey"},
+        query = { type = "string", default = "apikey"},
+        rejected_code = {type = "integer", default = 401},
+        rejected_miss_key_msg = {type = "string", default = "{\"message\":\"Missing API key found in request\"}"},
+        rejected_miss_consumer_msg = {type = "string", default = "{\"message\":\"Missing API key found in request\"}"},
+        rejected_error_consumer_msg = {type = "string", default = "{\"message\":\"Invalid API key in request\"}"},
     },
 }
 
@@ -93,12 +91,12 @@ function _M.rewrite(conf, ctx)
     end
 
     if not key then
-        return 401, {message = "Missing API key found in request"}
+        return conf.rejected_code, conf.rejected_miss_key_msg
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return conf.rejected_code, conf.rejected_miss_consumer_msg
     end
 
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
@@ -106,7 +104,7 @@ function _M.rewrite(conf, ctx)
 
     local consumer = consumers[key]
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        return conf.rejected_code, conf.rejected_error_consumer_msg
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
