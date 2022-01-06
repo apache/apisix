@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local ipairs = ipairs
 local core   = require("apisix.core")
 local http   = require("resty.http")
 
