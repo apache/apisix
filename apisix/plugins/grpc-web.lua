@@ -97,8 +97,12 @@ function _M.access(conf, ctx)
         return 400
     end
 
-    if body and encoding == CONTENT_ENCODING_BASE64 then
+    if encoding == CONTENT_ENCODING_BASE64 then
         body = decode_base64(body)
+        if not body then
+            core.log.error("decoding body fail")
+            return 400
+        end
     end
 
     local ok
