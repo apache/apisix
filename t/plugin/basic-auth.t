@@ -356,3 +356,99 @@ GET /t
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 15:  hide auth header = false
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/consumers',
+                   ngx.HTTP_PUT,
+                   [[{
+                       "username": "foo",
+                       "plugins": {
+                           "basic-auth": {
+                               "username": "foo",
+                               "password": "bar",
+                               "hide_auth_header": false
+                           }
+                       }
+                   }]],
+                   [[{
+                       "node": {
+                           "value": {
+                               "username": "foo",
+                               "plugins": {
+                                   "basic-auth": {
+                                       "username": "foo",
+                                       "password": "bar",
+                                       "hide_auth_header": false
+                                   }
+                               }
+                           }
+                       },
+                       "action": "set"
+                   }]]
+                   )
+
+               ngx.status = code
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: enable basic auth plugin using admin api
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: hit route (catch the authentication header)
+--- request
+GET /hello
+--- response_body chop
+hello world
+--- response_headers_like
+Authentication:
+--- no_error_log
+[error]
