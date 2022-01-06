@@ -130,7 +130,7 @@ function _M.body_filter(conf, ctx)
     -- If the MIME extension type description of the gRPC-Web standard is not obtained,
     -- indicating that the request is not based on the gRPC Web specification,
     -- the processing of the request body will be ignored
-    -- https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
+    -- https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
     -- https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support
     if not ctx.grpc_web_mime then
         return

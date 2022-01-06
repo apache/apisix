@@ -28,7 +28,6 @@ local str_fmt   = string.format
 local str_lower = string.lower
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
-local req_set_body_data = ngx.req.set_body_data
 local req_get_body_file = ngx.req.get_body_file
 local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
