@@ -16,22 +16,50 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
-local plugin_name = "mocking"
+local xml2lua = require("xml2lua")
 
 local schema = {
     type = "object",
     properties = {
-        response_schema = { type = "object" }
+        -- specify response delay time,default 0ms
+        delay = { type = "integer" },
+        -- specify response status,default 200
+        response_status = { type = "integer", default = 200, minimum = 1 },
+        -- specify response content type,support application/xml,text/plain and application/json,default application/json
+        content_type = { type = "string", default = "application/json" },
+        -- specify response body.
+        response_example = { type = "string" },
+        -- specify response json schema,if response_example is not nil,this conf will be ignore.
+        -- generate random response by json schema.
+        response_schema = { type = "object" },
     },
-    required = { "response_schema" }
+    anyOf = {
+        { required = { "response_example" } },
+        { required = { "response_schema" } }
+    }
 }
 
 local _M = {
     version = 0.1,
     priority = 9900,
-    name = plugin_name,
+    name = "mocking",
     schema = schema,
 }
+
+local function parse_content_type(content_type)
+    if not content_type then
+        return "", ""
+    end
+    local sep_idx = string.find(content_type, ";")
+    local type, charset
+    if sep_idx then
+        type = string.sub(content_type, 1, sep_idx - 1)
+        charset = string.sub(content_type, sep_idx + 1)
+    else
+        type = content_type
+    end
+    return type, charset
+end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -39,31 +67,70 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    return true, nil
+    if conf.content_type == "" then
+        conf.content_type = "application/json;charset=utf8"
+    end
+    local type, _ = parse_content_type(conf.content_type)
+    if type ~= "application/xml" and
+            type ~= "application/json" and
+            type ~= "text/plain" and
+            type ~= "text/html" and
+            type ~= "text/xml" then
+        return false, "unsupported content type!"
+    end
+    return true
 end
 
-function _M.access(conf)
-    local output = gen_object(conf.response_schema)
-    ngx.header["Content-Type"] = "application/json"
-    return 200, core.utils.resolve_var(core.json.encode(output))
+local function gen_string(example)
+    if example ~= nil and type(example) == "string" then
+        return example
+    end
+    local n = math.random(1, 10)
+    local list = {}
+    for i = 1, n do
+        table.insert(list, string.char(math.random(97, 122)))
+    end
+    return table.concat(list)
 end
 
-function gen_object(property)
-    local output = {}
-    if property.properties == nil then
-        return output
+local function gen_number(example)
+    if example ~= nil and type(example) == "number" then
+        return example
     end
-    for k, v in pairs(property.properties) do
-        local type = string.lower(v.type)
-        if type == "array" then
-            output[k] = gen_array(v)
-        elseif type == "object" then
-            output[k] = gen_object(v)
-        else
-            output[k] = get_base(v)
-        end
+    return math.random() * 10000
+end
+
+local function gen_integer(example)
+    if example ~= nil and type(example) == "number" then
+        return math.floor(example)
     end
-    return output
+    return math.random(1, 10000)
+end
+
+local function gen_boolean(example)
+    if example ~= nil and type(example) == "boolean" then
+        return example
+    end
+    local r = math.random(0, 2)
+    if r == 0 then
+        return false
+    end
+    return true
+end
+
+local function gen_base(property)
+    local type = string.lower(property.type)
+    local example = property.example
+    if type == "string" then
+        return gen_string(example)
+    elseif type == "number" then
+        return gen_number(example)
+    elseif type == "integer" then
+        return gen_integer(example)
+    elseif type == "boolean" then
+        return gen_boolean(example)
+    end
+    return nil
 end
 
 function gen_array(property)
@@ -80,69 +147,52 @@ function gen_array(property)
         elseif type == "object" then
             table.insert(output, gen_object(v))
         else
-            table.insert(output, get_base(v))
+            table.insert(output, gen_base(v))
         end
     end
     return output
 end
 
-function get_base(property)
-    local type = string.lower(property.type)
-    local example = property.example
-    if type == "string" then
-        return gen_string(example)
-    elseif type == "number" then
-        return gen_number(example)
-    elseif type == "integer" then
-        return gen_integer(example)
-    elseif type == "boolean" then
-        return gen_boolean(example)
+function gen_object(property)
+    local output = {}
+    if property.properties == nil then
+        return output
     end
-    return nil
+    for k, v in pairs(property.properties) do
+        local type = string.lower(v.type)
+        if type == "array" then
+            output[k] = gen_array(v)
+        elseif type == "object" then
+            output[k] = gen_object(v)
+        else
+            output[k] = gen_base(v)
+        end
+    end
+    return output
 end
 
-function gen_string(example)
-    if example ~= nil and type(example) == "string" then
-        return example
-    end
-    local n = math.random(1, 10)
-    local list = {}
-    for i = 1, n do
-        table.insert(list, string.char(math.random(97, 122)))
-    end
-    return table.concat(list)
-end
+function _M.access(conf)
+    local response_content = ""
 
-function gen_number(example)
-    if example ~= nil and type(example) == "number" then
-        return example
+    if conf.response_example then
+        response_content = conf.response_example
+    else
+        local output = gen_object(conf.response_schema)
+        local type, _ = parse_content_type(conf.content_type)
+        if type == "application/xml" or type == "text/xml" then
+            response_content = xml2lua.toXml(output, "data")
+        elseif type == "application/json" or type == "text/plain" then
+            response_content = core.json.encode(output)
+        else
+            core.log.error("json schema body only support xml and json content type")
+        end
     end
-    return math.random() * 10000
-end
 
-function gen_integer(example)
-    if example ~= nil and type(example) == "number" then
-        return math.floor(example)
+    ngx.header["Content-Type"] = conf.content_type
+    if conf.delay > 0 then
+        ngx.sleep(conf.delay)
     end
-    return math.random(1, 10000)
-end
-
-function gen_boolean(example)
-    if example ~= nil and type(example) == "boolean" then
-        return example
-    end
-    local r = math.random(0, 2)
-    if r == 0 then
-        return false
-    end
-    return true
+    return conf.response_status, core.utils.resolve_var(response_content)
 end
 
 return _M
-
-
-
-
-
-
-
