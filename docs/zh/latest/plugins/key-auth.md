@@ -45,11 +45,14 @@ consumer 端配置：
 
 router 端配置：
 
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| header  | string | 可选| apikey |        | 设置我们从哪个 header 获取 key。 |
-| query  | string | 可选 | apikey |        | 设置我们从哪个 querystring 获取 key，优先级低于header |
-
+| 名称 | 类型     | 必选项 | 默认值                                      | 有效值 | 描述                                     |
+| ---- |--------| ------ |------------------------------------------| ------ |----------------------------------------|
+| header  | string | 可选| apikey                                   |        | 设置我们从哪个 header 获取 key。                 |
+| query  | string | 可选 | apikey                                   |        | 设置我们从哪个 querystring 获取 key，优先级低于header |
+| rejected_code  | int    | 可选 | 401                                      |        | 设置鉴权失败的返回码                             |
+| rejected_miss_key_msg  | string | 可选 | {"message":"Invalid API key in request"} |        | 设置请求没有key的错误返回                         |
+| rejected_miss_consumer_msg  | string | 可选 | {"message":"Missing API key found in request"} |        | 设置路由没有consumer的错误返回                    |
+| rejected_error_consumer_msg  | string | 可选 | {"message":"Invalid API key in request"} |        | 设置key找不到consumer的错误返回                  |
 ## 如何启用
 
 1. 创建一个 consumer 对象，并设置插件 `key-auth` 的值。

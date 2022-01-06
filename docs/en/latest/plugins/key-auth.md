@@ -45,10 +45,14 @@ For consumer side:
 
 For route side:
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| header  | string | optional    | apikey        |       | the header we get the key from |
-| query   | string | optional    | apikey        |       | the querystring we get the key from, which priority is lower than header |
+| Name | Type   | Requirement | Default | Valid | Description                                                             |
+| ---- | ------ | ----------- | --- | ----- |-------------------------------------------------------------------------|
+| header  | string | optional    | apikey |       | the header we get the key from                                          |
+| query   | string | optional    | apikey |       | the querystring we get the key from, which priority is lower than header |
+| rejected_code  | int    | optional | 401 |        | set the return code for authentication failure |
+| rejected_miss_key_msg  | string | optional | {"message":"Invalid API key in request"} |        | set the error return for request without key|
+| rejected_miss_consumer_msg  | string | optional | {"message":"Missing API key found in request"} |        | set the error return for route without consumer|
+| rejected_error_consumer_msg  | string | optional | {"message":"Invalid API key in request"} |        | set the error return for route with error key|
 
 ## How To Enable
 
