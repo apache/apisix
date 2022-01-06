@@ -67,7 +67,8 @@
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
-            "plugins/opa"
+            "plugins/opa",
+            "plugins/forward-auth"
           ]
         },
         {
