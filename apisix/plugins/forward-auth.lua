@@ -82,7 +82,7 @@ function _M.access(conf, ctx)
     }
 
     -- append headers that need to be get from the client request header
-    if conf.request_headers then
+    if #conf.request_headers > 0 then
         for _, header in ipairs(conf.request_headers) do
             auth_headers[header] = core.request.header(ctx, header)
         end
@@ -115,8 +115,15 @@ function _M.access(conf, ctx)
 
     if res.status >= 300 then
         local client_headers = {}
-        for _, header in ipairs(conf.client_headers) do
-            client_headers[header] = res.headers[header]
+
+        if #conf.client_headers > 0 then
+            for _, header in ipairs(conf.client_headers) do
+                client_headers[header] = res.headers[header]
+            end
+        else
+            for header, value in ipairs(res.headers) do
+                client_headers[header] = value
+            end
         end
 
         core.response.set_header(client_headers)
