@@ -42,7 +42,7 @@ local schema = {
             type = "array",
             default = {},
             items = {type = "string"},
-            description = "authorization response header that will be sent to the client when authorize error"
+            description = "authorization response header that will be sent to the client when authorize failure"
         },
         timeout = {
             type = "integer",
