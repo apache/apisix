@@ -85,4 +85,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
+注意：当 Route 和 Service 都开启同一个插件时，Route 中的插件参数会优先于 Service 被使用。
