@@ -140,6 +140,10 @@ node ./t/plugin/grpc-web/client.js all
 --- request
 OPTIONS /grpc/a6.RouteService/GetAll
 --- error_code: 204
+--- response_headers
+Access-Control-Allow-Methods: POST
+Access-Control-Allow-Headers: content-type,x-grpc-web,x-user-agent
+Access-Control-Allow-Origin: *
 
 
 
