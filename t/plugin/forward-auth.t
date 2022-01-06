@@ -76,10 +76,6 @@ property "request_headers" validation failed: wrong type: expected array, got st
                                 "functions": ["return function (conf, ctx) local core = require(\"apisix.core\"); local authorization = core.request.header(ctx, \"Authorization\"); if authorization == \"123\" then core.response.exit(200); elseif authorization == \"321\" then core.response.set_header(\"X-User-ID\", \"i-am-an-user\"); core.response.exit(200); else core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end"]
                             }
                         },
-                        "upstream": {
-                            "nodes": {},
-                            "type": "roundrobin"
-                        },
                         "uri": "/auth"
                     }]],
                 },
@@ -91,10 +87,6 @@ property "request_headers" validation failed: wrong type: expected array, got st
                                 "phase": "rewrite",
                                 "functions": ["return function (conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"]
                             }
-                        },
-                        "upstream": {
-                            "nodes": {},
-                            "type": "roundrobin"
                         },
                         "uri": "/echo"
                     }]],
