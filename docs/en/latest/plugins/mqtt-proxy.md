@@ -23,11 +23,11 @@ title: mqtt-proxy
 
 ## Summary
 
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable](#how-to-enable)
-- [Delete Plugin](#delete-plugin)
+- [**Summary**](#summary)
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Delete Plugin**](#delete-plugin)
 
 ## Name
 
