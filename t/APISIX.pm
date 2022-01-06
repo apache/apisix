@@ -349,6 +349,7 @@ _EOC_
 
     lua_shared_dict lrucache-lock-stream 10m;
     lua_shared_dict plugin-limit-conn-stream 10m;
+    lua_shared_dict etcd-cluster-health-check-stream 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
