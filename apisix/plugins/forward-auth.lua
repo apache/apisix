@@ -79,7 +79,7 @@ function _M.access(conf, ctx)
         ["X-Forwarded-Proto"] = core.request.get_scheme(ctx),
         ["X-Forwarded-Method"] = core.request.get_method(),
         ["X-Forwarded-Host"] = core.request.get_host(ctx),
-        ["X-Forwarded-Uri"] = core.request.get_uri(ctx),
+        ["X-Forwarded-Uri"] = ctx.var.request_uri,
         ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
     }
 
