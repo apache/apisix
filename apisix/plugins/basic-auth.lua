@@ -170,9 +170,9 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Password is error" }
     end
 
-    -- 5. hide `Authentication` header if `hide_auth_header` is `true`
+    -- 5. hide `Authentication` request header if `hide_auth_header` is `true`
     if conf.hide_auth_header == true then
-        core.response.set_header("Authentication", "")
+        core.request.set_header(ctx, "Authentication", "")
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)

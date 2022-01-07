@@ -43,7 +43,7 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 | --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | username         | string  | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
 | password         | string  | required    |         |       | the user's password                                                                                                                                              |
-| hide_auth_header | boolean | optional    | true    |       | Whether to return the Authentication response headers to the client.                                                                                             |
+| hide_auth_header | boolean | optional    | true    |       | Whether to return the Authentication request headers to the client.                                                                                             |
 
 ## How To Enable
 
