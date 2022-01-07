@@ -73,7 +73,12 @@ property "request_headers" validation failed: wrong type: expected array, got st
                         "plugins": {
                             "serverless-pre-function": {
                                 "phase": "rewrite",
-                                "functions": ["return function (conf, ctx) local core = require(\"apisix.core\"); local authorization = core.request.header(ctx, \"Authorization\"); if authorization == \"123\" then core.response.exit(200); elseif authorization == \"321\" then core.response.set_header(\"X-User-ID\", \"i-am-an-user\"); core.response.exit(200); else core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end"]
+                                "functions": [
+                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"111\" then core.response.exit(200); end end",
+                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"222\" then core.response.set_header(\"X-User-ID\", \"i-am-an-user\"); core.response.exit(200); end end",
+                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"333\" then core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end"
+                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"444\" then core.response.exit(403, core.request.headers(ctx)); end end"
+                                ]
                             }
                         },
                         "uri": "/auth"
@@ -133,9 +138,9 @@ property "request_headers" validation failed: wrong type: expected array, got st
 --- request
 GET /hello
 --- more_headers
-Authorization: 123
+Authorization: 111
 --- response_body_like eval
-qr/\"authorization\":\"123\"/
+qr/\"authorization\":\"111\"/
 
 
 
@@ -143,7 +148,7 @@ qr/\"authorization\":\"123\"/
 --- request
 GET /hello
 --- more_headers
-Authorization: 321
+Authorization: 222
 --- response_body_like eval
 qr/\"x-user-id\":\"i-am-an-user\"/
 
@@ -152,6 +157,8 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 === TEST 5: hit route (test client_headers)
 --- request
 GET /hello
+--- more_headers
+Authorization: 333
 --- error_code: 403
 --- response_headers
 Location: http://example.com/auth
