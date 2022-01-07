@@ -45,7 +45,6 @@ title: basic-auth
 | password | string | 必须   |        |        | 用户的密码                                                                                                         |
 | hide_auth_header | boolean | 可选    | false   |       | 是否将 Authentication 响应头返回给客户端.                                                                                             |
 
-
 ## 如何启用
 
 ### 1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
