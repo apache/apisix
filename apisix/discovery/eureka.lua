@@ -19,7 +19,6 @@ local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
 local ipmatcher          = require("resty.ipmatcher")
-local zlib               = require("zlib")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
@@ -188,15 +187,10 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local encoding = res.headers["Content-Encoding"]
-    local res_body = res.body
-    if encoding == 'gzip' then
-        local stream = zlib.inflate()
-        res_body = stream(res_body)
-    end
-    local data, decode_err = core.json.decode(res_body)
+    local json_str = res.body
+    local data, err = core.json.decode(json_str)
     if not data then
-        log.error("invalid response body: ", res_body, " err: ", decode_err)
+        log.error("invalid response body: ", json_str, " err: ", err)
         return
     end
     local apps = data.applications.application
