@@ -33,7 +33,7 @@ local schema = {
     properties = {
         hide_auth_header = {
             type = "boolean",
-            default = true,
+            default = false,
         }
     },
 }
@@ -46,7 +46,7 @@ local consumer_schema = {
         password = { type = "string" },
         hide_auth_header = {
             type = "boolean",
-            default = true,
+            default = false,
         }
     },
     required = {"username", "password"},
@@ -172,7 +172,7 @@ function _M.rewrite(conf, ctx)
 
     -- 5. hide `Authentication` request header if `hide_auth_header` is `true`
     if conf.hide_auth_header == true then
-        core.request.set_header(ctx, "Authentication", "")
+        core.request.set_header(ctx, "Authentication", nil)
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
