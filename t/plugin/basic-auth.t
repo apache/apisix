@@ -442,6 +442,7 @@ passed
 [error]
 
 
+
 === TEST 17: verify with hide auth header
 --- request
 GET /hello
