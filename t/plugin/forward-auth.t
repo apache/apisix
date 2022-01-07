@@ -174,3 +174,5 @@ X-Forwarded-Host: apisix.apache.org
 --- error_code: 403
 --- response_body_like eval
 qr/\"x-forwarded-host\":\"localhost\"/
+--- response_body_unlike eval
+qr/\"x-forwarded-host\":\"apisix.apache.org\"/
