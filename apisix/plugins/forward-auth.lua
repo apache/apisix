@@ -31,7 +31,7 @@ local schema = {
             type = "array",
             default = {},
             items = {type = "string"},
-            description = "client request header that will be sent to the authorization"
+            description = "client request header that will be sent to the authorization service"
         },
         upstream_headers = {
             type = "array",
@@ -44,7 +44,7 @@ local schema = {
             default = {},
             items = {type = "string"},
             description = "authorization response header that will be sent to"
-                           .. "the client when authorize failure"
+                           .. "the client when authorizing failed"
         },
         timeout = {
             type = "integer",

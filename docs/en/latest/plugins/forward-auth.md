@@ -29,9 +29,9 @@ title: forward-auth
 
 ## Description
 
-The `forward-auth` plugin implement a classic external authentication model. We can implement a custom error return or user redirection to the authentication page if the authentication fails.
+The `forward-auth` plugin implements a classic external authentication model. We can implement a custom error return or user redirection to the authentication page if the authentication fails.
 
-Forward Auth cleverly moves the authentication and authorization logic to a dedicated external service, where the gateway forwards the user's request to the authentication service and blocks the original request and replaces the result when the authentication service responds with a non-20x status.
+Forward Auth cleverly moves the authentication and authorization logic to a dedicated external service, where the gateway forwards the user's request to the authentication service and blocks the original request, and replaces the result when the authentication service responds with a non-2xx status.
 
 ## Attributes
 
@@ -124,7 +124,7 @@ $ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 }
 ```
 
-3. **client_headers** Send `authorization` service response header to `client` when authorize failure
+3. **client_headers** Send `authorization` service response header to `client` when authorizing failed
 
 ```shell
 $ curl -i http://127.0.0.1:9080/headers
