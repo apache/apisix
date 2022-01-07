@@ -112,7 +112,7 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(conf.host, params)
 
     -- block by default when authorization service is unavailable
-    if not res or err then
+    if err then
         core.log.error("failed to process forward auth, err: ", err)
         return 403
     end
