@@ -123,9 +123,7 @@ function _M.access(conf, ctx)
                 client_headers[header] = res.headers[header]
             end
         else
-            for header, value in ipairs(res.headers) do
-                client_headers[header] = value
-            end
+            client_headers = res.headers
         end
 
         core.response.set_header(client_headers)
