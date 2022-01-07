@@ -86,7 +86,9 @@ function _M.access(conf, ctx)
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
         for _, header in ipairs(conf.request_headers) do
-            auth_headers[header] = core.request.header(ctx, header)
+            if not auth_headers[header] then
+                auth_headers[header] = core.request.header(ctx, header)
+            end
         end
     else
         auth_headers = core.table.merge(core.request.headers(), auth_headers)
