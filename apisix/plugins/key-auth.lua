@@ -31,7 +31,7 @@ local schema = {
         query = { type = "string", default = "apikey"},
         rejected_code = {type = "integer", default = 401},
         rejected_miss_key_msg = {type = "string", default = "{\"message\":\"Missing API key found in request\"}"},
-        rejected_miss_consumer_msg = {type = "string", default = "{\"message\":\"Missing API key found in request\"}"},
+        rejected_miss_consumer_msg = {type = "string", default = "{\"message\":\"Missing related consumer\"}"},
         rejected_error_consumer_msg = {type = "string", default = "{\"message\":\"Invalid API key in request\"}"},
     },
 }
