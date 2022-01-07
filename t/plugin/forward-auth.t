@@ -162,3 +162,15 @@ Authorization: 333
 --- error_code: 403
 --- response_headers
 Location: http://example.com/auth
+
+
+
+=== TEST 6: hit route (ignore client X-Forwarded-XXX headers)
+--- request
+GET /hello
+--- more_headers
+Authorization: 444
+X-Forwarded-Host: apisix.apache.org
+--- error_code: 403
+--- response_body_like eval
+qr/\"x-forwarded-host\":\"localhost\"/
