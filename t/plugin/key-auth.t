@@ -357,3 +357,101 @@ GET /hello?auth=auth-one
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: customize reject code
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_code": 432
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: valid reject code
+--- request
+GET /hello
+--- error_code: 432
+--- response_body
+{"message":"Missing API key found in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: customize reject message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "rejected_miss_key_msg": "Miss Key"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: valid reject code
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+Miss Key
+--- no_error_log
+[error]
