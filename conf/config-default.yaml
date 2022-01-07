@@ -268,7 +268,7 @@ nginx_config:                     # config for render the template to generate n
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
+    - "http://10.0.4.8:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                   # e.g. https://127.0.0.1:2379.
   prefix: /apisix                 # apisix configurations prefix
   timeout: 30                     # 30 seconds
