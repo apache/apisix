@@ -442,13 +442,16 @@ passed
 [error]
 
 
-
-=== TEST 17: hit route (catch the authentication header)
+=== TEST 17: verify with hide auth header
 --- request
 GET /hello
---- response_body chop
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_body
 hello world
 --- response_headers_like
 Authentication:
 --- no_error_log
 [error]
+--- error_log
+find consumer foo
