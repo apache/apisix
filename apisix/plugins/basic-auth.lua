@@ -33,7 +33,7 @@ local schema = {
     properties = {
         hide_auth_header = {
             type = "boolean",
-            default = false,
+            default = true,
         }
     },
 }
