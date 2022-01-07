@@ -151,6 +151,9 @@ Access-Control-Allow-Origin: *
 --- request
 GET /grpc/a6.RouteService/GetAll
 --- error_code: 400
+--- response_headers
+Access-Control-Allow-Origin: *
+Content-Type: application/grpc-web-text+proto
 --- error_log
 request method: `GET` invalid
 
@@ -162,6 +165,9 @@ POST /grpc/a6.RouteService/GetAll
 --- more_headers
 Content-Type: application/json
 --- error_code: 400
+--- response_headers
+Access-Control-Allow-Origin: *
+Content-Type: application/grpc-web-text+proto
 --- error_log
 request Content-Type: `application/json` invalid
 
@@ -208,5 +214,8 @@ POST /grpc2/a6.RouteService/GetAll
 --- more_headers
 Content-Type: application/grpc-web
 --- error_code: 400
+--- response_headers
+Access-Control-Allow-Origin: *
+Content-Type: application/grpc-web-text+proto
 --- error_log
 please use matching pattern for routing URI, for example: /* or /grpc/*
