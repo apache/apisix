@@ -111,7 +111,9 @@ function _M.access(conf, ctx)
     -- parse OpenWhisk JSON response
     -- OpenWhisk supports two types of responses, the user can return only
     -- the response body, or set the status code and header.
-    local result, err = core.json.decode(res.body)
+    if res.body = nil then
+        return
+    end
 
     if not result or err then
         core.log.error("failed to parse openwhisk response data: ", err)
@@ -123,16 +125,9 @@ function _M.access(conf, ctx)
         core.response.set_header(result.headers)
     end
 
-    if result.statusCode ~= nil and result.body ~= nil then
-        -- return status code and body
-        return result.statusCode, result.body
-    elseif result.statusCode ~= nil then
-        -- return only status code
-        return result.statusCode
-    elseif result.body ~= nil then
-        -- return only body
-        return 200, result.body
-    end
+    local code = result.statusCode or res.status
+    local body = result.body or res.body
+    return code, body
 
     return res.status, res.body
 end
