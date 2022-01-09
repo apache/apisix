@@ -65,7 +65,6 @@ passed
 
 
 === TEST 2: invalid header
---- stream_enable
 --- stream_request eval
 mmm
 --- error_log
@@ -74,7 +73,6 @@ Received unexpected MQTT packet type+flags
 
 
 === TEST 3: hit route
---- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
@@ -123,7 +121,6 @@ passed
 
 
 === TEST 5: failed to match route
---- stream_enable
 --- stream_request eval
 "\x10\x0f"
 --- stream_response
@@ -210,7 +207,6 @@ passed
 
 
 === TEST 8: hit route
---- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
@@ -259,7 +255,6 @@ passed
 
 
 === TEST 10: hit route
---- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- error_log
@@ -311,7 +306,6 @@ passed
 
 
 === TEST 12: hit route
---- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
@@ -326,7 +320,6 @@ mqtt client id: foo
 
 
 === TEST 13: hit route with empty client id
---- stream_enable
 --- stream_request eval
 "\x10\x0c\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x00"
 --- stream_response
@@ -382,7 +375,6 @@ passed
 
 
 === TEST 15: hit route with empty property
---- stream_enable
 --- stream_request eval
 "\x10\x0d\x00\x04\x4d\x51\x54\x54\x05\x02\x00\x3c\x00\x00\x00"
 --- stream_response
@@ -396,7 +388,6 @@ qr/mqtt client id: \w+/
 
 
 === TEST 16: hit route with property
---- stream_enable
 --- stream_request eval
 "\x10\x1b\x00\x04\x4d\x51\x54\x54\x05\x02\x00\x3c\x05\x11\x00\x00\x0e\x10\x00\x09\x63\x6c\x69\x6e\x74\x2d\x31\x31\x31"
 --- stream_response
