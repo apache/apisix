@@ -80,7 +80,8 @@ function _M.access(conf, ctx)
 
     -- set grpc path
     if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
-        core.log.error("routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing")
+        core.log.error("routing configuration error, grpc-web plugin only supports ",
+                       "`prefix matching` pattern routing")
         return 400
     end
 
