@@ -218,4 +218,4 @@ Content-Type: application/grpc-web
 Access-Control-Allow-Origin: *
 Content-Type: application/grpc-web-text+proto
 --- error_log
-please use matching pattern for routing URI, for example: /* or /grpc/*
+routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing

@@ -80,7 +80,7 @@ function _M.access(conf, ctx)
 
     -- set grpc path
     if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
-        core.log.error("please use matching pattern for routing URI, for example: /* or /grpc/*")
+        core.log.error("routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing")
         return 400
     end
 
@@ -94,14 +94,14 @@ function _M.access(conf, ctx)
     -- set grpc body
     local body, err = core.request.get_body()
     if err then
-        core.log.error("reading body err, ", err)
+        core.log.error("failed to read request body, err: ", err)
         return 400
     end
 
     if encoding == CONTENT_ENCODING_BASE64 then
         body = decode_base64(body)
         if not body then
-            core.log.error("decoding body fail")
+            core.log.error("failed to decode request body")
             return 400
         end
     end
