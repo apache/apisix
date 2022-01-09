@@ -124,12 +124,22 @@ function _M.access(conf, ctx)
     if result.headers ~= nil then
         core.response.set_header(result.headers)
     end
+    
+    if result.statusCode ~= nil and result.body ~= nil then
+        -- return status code and body
+        return result.statusCode, result.body
+    elseif result.statusCode ~= nil then
+        -- return only status code
+        return result.statusCode
+    elseif result.body ~= nil then
+        -- return only body
+        return 200, result.body
+    end
 
     local code = result.statusCode or res.status
     local body = result.body or res.body
     return code, body
 
-    return res.status, res.body
 end
 
 
