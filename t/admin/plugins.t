@@ -98,6 +98,7 @@ traffic-split
 redirect
 response-rewrite
 grpc-transcode
+grpc-web
 prometheus
 datadog
 echo
