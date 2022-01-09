@@ -24,6 +24,7 @@ title: Changelog
 ## Table of Contents
 
 - [2.11.0](#2110)
+- [2.10.3](#2103)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
@@ -79,34 +80,23 @@ title: Changelog
 - :sunrise: feat(ext-plugin): avoid sending conf request more times [#5183](https://github.com/apache/apisix/pull/5183)
 - :sunrise: feat: Add ldap-auth plugin [#3894](https://github.com/apache/apisix/pull/3894)
 
+## 2.10.3
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
+
 ## 2.10.2
 
-### Bugfix
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
 
-- fix: response.set_header should remove header like request.set_header [#5499](https://github.com/apache/apisix/pull/5499)
-- fix(batch-requests): correct the client ip in the pipeline [#5476](https://github.com/apache/apisix/pull/5476)
-- fix(upstream): load imbalance when it's referred by multiple routes [#5462](https://github.com/apache/apisix/pull/5462)
-- fix(hmac-auth): check if the X-HMAC-ALGORITHM header is missing [#5467](https://github.com/apache/apisix/pull/5467)
-- fix: prevent being hacked by untrusted request_uri [#5458](https://github.com/apache/apisix/pull/5458)
-- fix(admin): modify boolean parameters with PATCH [#5434](https://github.com/apache/apisix/pull/5432)
-- fix(traffic-split): multiple rules with multiple weighted_upstreams under each rule cause upstream_key duplicate [#5414](https://github.com/apache/apisix/pull/5414)
-- fix: add handler for invalid basic auth header values [#5419](https://github.com/apache/apisix/pull/5419)
-
-### Change
-
-- change: log insensitive consumer info only [#5445](https://github.com/apache/apisix/pull/5445)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
 
 ## 2.10.1
 
-### Bugfix
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
 
-- fix(zipkin): response_span doesn't have correct start time [#5295](https://github.com/apache/apisix/pull/5295)
-- fix(ext-plugin): don't use stale key [#5309](https://github.com/apache/apisix/pull/5309)
-- fix: route's timeout should not be overwrittern by service [#5219](https://github.com/apache/apisix/pull/5219)
-- fix: filter nil plugin conf triggered by etcd dir init [#5204](https://github.com/apache/apisix/pull/5204)
-- fix: pass correct host header to health checker target nodes [#5175](https://github.com/apache/apisix/pull/5175)
-- fix: upgrade lua-resty-balancer to 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
-- fix(prometheus): avoid negative latency caused by inconsistent Nginx metrics [#5150](https://github.com/apache/apisix/pull/5150)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
 ## 2.10.0
 
