@@ -156,7 +156,6 @@ proxy request to 127.0.0.2:1995
 
 
 === TEST 5: hit route, no TLS
---- stream_enable
 --- stream_request
 mmm
 --- stream_response

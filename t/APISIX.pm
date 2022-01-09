@@ -335,6 +335,11 @@ _EOC_
     }
 
     my $stream_enable = $block->stream_enable;
+    if ($block->stream_request) {
+        # Like stream_tls_request, if stream_request is given, automatically enable stream
+        $stream_enable = 1;
+    }
+
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
     my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
