@@ -93,7 +93,6 @@ function _M.access(conf, ctx)
     end
 
     local params = {
-        method = "GET",
         headers = auth_headers,
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify
