@@ -166,10 +166,9 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Password is error" }
     end
 
-    -- 5. hide `Authentication` request header if `hide_credentials` is `true`
+    -- 5. hide `Authorization` request header if `hide_credentials` is `true`
     if conf.hide_credentials then
-        core.request.set_header(ctx, "Authentication", nil)
-        core.log.info("clear Authentication header of request")
+        core.request.set_header(ctx, "Authorization", nil)
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)

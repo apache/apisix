@@ -20,6 +20,46 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+log_level('info');
+worker_connections(1024);
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $http_config = $block->http_config // <<_EOC_;
+
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                local core = require("apisix.core")
+                core.log.info("upstream_http_version: ", ngx.req.http_version())
+
+                local headers_tab = ngx.req.get_headers()
+                local headers_key = {}
+                for k in pairs(headers_tab) do
+                    core.table.insert(headers_key, k)
+                end
+                core.table.sort(headers_key)
+
+                for _, v in pairs(headers_key) do
+                    if v == "authorization" then
+                        ngx.say("Authorization: ", headers_tab[v])
+                        return
+                    end
+                end
+
+                ngx.say("hello world")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+});
+
 run_tests;
 
 __DATA__
@@ -374,7 +414,7 @@ GET /t
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1986": 1
                         },
                         "type": "roundrobin"
                     },
@@ -406,5 +446,53 @@ Authorization: Basic Zm9vOmJhcg==
 hello world
 --- no_error_log
 [error]
---- error_log
-clear Authentication header of request
+
+
+
+=== TEST 17: enable basic auth plugin using admin api, hide_credentials = false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_body
+Authorization: Basic Zm9vOmJhcg==
+--- no_error_log
+[error]
