@@ -219,8 +219,6 @@ _EOC_
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-    my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
-
     if ($block->apisix_yaml && (!defined $block->yaml_config)) {
         $user_yaml_config = <<_EOC_;
 apisix:
@@ -414,8 +412,6 @@ _EOC_
     }
 
     preread_by_lua_block {
-        -- wait for etcd sync
-        ngx.sleep($wait_etcd_sync)
         apisix.stream_preread_phase()
     }
 
@@ -714,8 +710,6 @@ _EOC_
             proxy_cache_bypass                  \$upstream_cache_bypass;
 
             access_by_lua_block {
-                -- wait for etcd sync
-                ngx.sleep($wait_etcd_sync)
                 apisix.http_access_phase()
             }
 
