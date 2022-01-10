@@ -85,10 +85,6 @@ property "request_headers" validation failed: wrong type: expected array, got st
                                 "functions": [
                                     "return function(conf, ctx)
                                         local core = require(\"apisix.core\");
-                                        core.log.warn(core.json.encode(core.request.headers(), true));
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
                                         if core.request.header(ctx, \"Authorization\") == \"111\" then
                                             core.response.exit(200);
                                         end
