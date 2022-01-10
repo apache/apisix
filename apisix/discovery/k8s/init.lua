@@ -151,39 +151,39 @@ local function create_resource(group, version, kind, plural, namespace)
     _t.path = _t.path .. "/" .. plural
 
     function _t.list_query(self)
-        local query = "limit=" .. self.limit
+        local uri = "limit=" .. self.limit
 
         if self.continue ~= nil and self.continue ~= "" then
-            query = query .. "&continue=" .. self.continue
+            uri = uri .. "&continue=" .. self.continue
         end
 
         if self.label_selector and self.label_selector ~= "" then
-            query = query .. "&labelSelector=" .. self.label_selector
+            uri = uri .. "&labelSelector=" .. self.label_selector
         end
 
         if self.field_selector and self.field_selector ~= "" then
-            query = query .. "&filedSelector=" .. self.field_selector
+            uri = uri .. "&filedSelector=" .. self.field_selector
         end
 
-        return query
+        return uri
     end
 
     function _t.watch_query(self)
-        local query = "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. self.overtime
+        local uri = "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. self.overtime
 
         if self.version ~= nil and self.version ~= "" then
-            query = query .. "&resourceVersion=" .. self.version
+            uri = uri .. "&resourceVersion=" .. self.version
         end
 
         if self.label_selector and self.label_selector ~= "" then
-            query = query .. "&labelSelector=" .. self.label_selector
+            uri = uri .. "&labelSelector=" .. self.label_selector
         end
 
         if self.field_selector and self.field_selector ~= "" then
-            query = query .. "&filedSelector=" .. self.field_selector
+            uri = uri .. "&filedSelector=" .. self.field_selector
         end
 
-        return query
+        return uri
     end
 
     return _t
@@ -389,126 +389,6 @@ local function fetch_resource(resource)
     end
 end
 
-local host_patterns = {
-    { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-    { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
-}
-
-local port_patterns = {
-    { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-    { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
-}
-
-local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
-local namespace_regex_pattern = [[^[\x21-\x7e]*$]]
-local schema = {
-    type = "object",
-    properties = {
-        service = {
-            type = "object",
-            properties = {
-                schema = {
-                    type = "string",
-                    enum = { "http", "https" },
-                    default = "https",
-                },
-                host = {
-                    type = "string",
-                    default = "${KUBERNETES_SERVICE_HOST}",
-                    oneOf = host_patterns,
-                },
-                port = {
-                    type = "string",
-                    default = "${KUBERNETES_SERVICE_PORT}",
-                    oneOf = port_patterns,
-                },
-            },
-            default = {
-                schema = "https",
-                host = "${KUBERNETES_SERVICE_HOST}",
-                port = "${KUBERNETES_SERVICE_PORT}",
-            }
-        },
-        client = {
-            type = "object",
-            properties = {
-                token = {
-                    type = "string",
-                    oneOf = {
-                        { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                        { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
-                    },
-                },
-                token_file = {
-                    type = "string",
-                    pattern = [[^[^\:*?"<>|]*$]],
-                    minLength = 1,
-                    maxLength = 500,
-                }
-            },
-            oneOf = {
-                { required = { "token" } },
-                { required = { "token_file" } },
-            },
-            default = {
-                token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-            }
-        },
-        default_weight = {
-            type = "integer",
-            default = 50,
-            minimum = 0,
-        },
-        namespace_selector = {
-            type = "object",
-            properties = {
-                equal = {
-                    type = "string",
-                    pattern = namespace_pattern,
-                },
-                not_equal = {
-                    type = "string",
-                    pattern = namespace_pattern,
-                },
-                match = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        pattern = namespace_regex_pattern
-                    },
-                    minItems = 1
-                },
-                not_match = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        pattern = namespace_regex_pattern
-                    },
-                    minItems = 1
-                },
-            },
-            oneOf = {
-                { required = { } },
-                { required = { "equal" } },
-                { required = { "not_equal" } },
-                { required = { "match" } },
-                { required = { "not_match" } }
-            },
-        },
-    },
-    default = {
-        service = {
-            schema = "https",
-            host = "${KUBERNETES_SERVICE_HOST}",
-            port = "${KUBERNETES_SERVICE_PORT}",
-        },
-        client = {
-            token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-        },
-        default_weight = 50
-    }
-}
-
 local function set_namespace_selector(conf, resource)
     local ns = conf.namespace_selector
     if ns == nil then
@@ -670,20 +550,7 @@ function _M.init_worker()
         return
     end
 
-    if not local_conf.discovery.k8s then
-        error("does not set k8s discovery configuration")
-        return
-    end
-
-    core.log.info("k8s discovery configuration: ", core.json.encode(local_conf.discovery.k8s, true))
-
-    local ok, err = core.schema.check(schema, local_conf.discovery.k8s)
-    if not ok then
-        error("invalid k8s discovery configuration: " .. err)
-        return
-    end
-
-    ok, err = read_conf(local_conf.discovery.k8s)
+    local ok, err = read_conf(local_conf.discovery.k8s)
     if not ok then
         error(err)
         return
