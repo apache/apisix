@@ -90,8 +90,6 @@ function _M.access(conf, ctx)
                 auth_headers[header] = core.request.header(ctx, header)
             end
         end
-    else
-        auth_headers = core.table.merge(core.request.headers(), auth_headers)
     end
 
     local params = {
@@ -124,8 +122,6 @@ function _M.access(conf, ctx)
             for _, header in ipairs(conf.client_headers) do
                 client_headers[header] = res.headers[header]
             end
-        else
-            client_headers = res.headers
         end
 
         core.response.set_header(client_headers)
