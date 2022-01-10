@@ -43,7 +43,8 @@ Mock API插件，绑定该插件后将随机返回指定格式的mock数据，�
 | content_type    | string | 可选  |        |                                                                 | 返回的响应头的Content-Type。                                            |
 | response_example| string | 可选  |        |                                                                 | 返回的响应体，与response_schema二选一。                                            |
 | response_schema | object | 可选  |        |                                                                 | 指定响应的json schema对象，未指定response_body时生效，具体结构看后文说明。                                            |
-支持的字段类型：string,number,integer,boolean,object,array。
+
+支持的字段类型：`string`, `number`, `integer`, `boolean`, `object,array`
 基础数据类型（string,number,integer,boolean）可通过配置example属性指定生成的响应值，未配置时随机返回。
 以下是一个json schema实例：
 
