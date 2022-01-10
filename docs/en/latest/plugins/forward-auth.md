@@ -39,7 +39,7 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 | -- | -- | -- | -- | -- | -- |
 | host | string | required |  |  | Authorization service host (eg. https://localhost:9188) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
-| request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, all `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
+| request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, no `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
 | upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream`. When it is not set, will not forward the `authorization` service response header to the `upstream`. |
 | client_headers | array[string] | optional |  |  | `authorization` response header that will be sent to the `client` when authorize failure. When it is not set, will not forward the `authorization` service response header to the `client`. |
 | timeout | integer | optional | 3000ms | [1, 60000]ms | Authorization service HTTP call timeout |
