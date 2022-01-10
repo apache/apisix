@@ -34,6 +34,7 @@ local schema = {
         -- specify response json schema,if response_example is not nil,this conf will be ignore.
         -- generate random response by json schema.
         response_schema = { type = "object" },
+        with_mock_header = { type = "boolean", default = true }
     },
     anyOf = {
         { required = { "response_example" } },
@@ -63,7 +64,6 @@ local function parse_content_type(content_type)
     return typ, charset
 end
 
-
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -84,7 +84,6 @@ function _M.check_schema(conf)
     return true
 end
 
-
 local function gen_string(example)
     if example ~= nil and type(example) == "string" then
         return example
@@ -97,7 +96,6 @@ local function gen_string(example)
     return table.concat(list)
 end
 
-
 local function gen_number(example)
     if example ~= nil and type(example) == "number" then
         return example
@@ -105,14 +103,12 @@ local function gen_number(example)
     return math.random() * 10000
 end
 
-
 local function gen_integer(example)
     if example ~= nil and type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
-
 
 local function gen_boolean(example)
     if example ~= nil and type(example) == "boolean" then
@@ -124,7 +120,6 @@ local function gen_boolean(example)
     end
     return true
 end
-
 
 local function gen_base(property)
     local typ = string.lower(property.type)
@@ -140,7 +135,6 @@ local function gen_base(property)
     end
     return nil
 end
-
 
 function gen_array(property)
     local output = {}
@@ -162,7 +156,6 @@ function gen_array(property)
     return output
 end
 
-
 function gen_object(property)
     local output = {}
     if property.properties == nil then
@@ -180,7 +173,6 @@ function gen_object(property)
     end
     return output
 end
-
 
 function _M.access(conf)
     local response_content = ""
@@ -200,6 +192,9 @@ function _M.access(conf)
     end
 
     ngx.header["Content-Type"] = conf.content_type
+    if conf.with_mock_header then
+        ngx.header["x-mock-by"] = "APISIX/" .. core.version.VERSION
+    end
     if conf.delay > 0 then
         ngx.sleep(conf.delay)
     end
