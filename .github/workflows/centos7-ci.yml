@@ -34,33 +34,41 @@ jobs:
         shell: bash
         run: |
           echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+
       - name: Build rpm package
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
           export VERSION=${{ steps.branch_env.outputs.version }}
           sudo gem install --no-document fpm
           git clone -b v2.6.0 https://github.com/api7/apisix-build-tools.git
+          
           # move codes under build tool
           mkdir ./apisix-build-tools/apisix
           for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
+          
           cd apisix-build-tools
           make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
           cd ..
           rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+
       - name: Run centos7 docker and mapping apisix into container
         run: |
           docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org -v /tmp:/tmp docker.io/centos:7 /bin/bash
           # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+
       - name: Run other docker containers for test
         run: |
           make ci-env-up
           ./ci/linux-ci-init-service.sh
+
       - name: Install dependencies
         run: |
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
+
       - name: Install rpm package
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
@@ -68,6 +76,7 @@ jobs:
           # Dependencies are attached with rpm, so revert `make deps`
           docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
           docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
+
       - name: Run test cases
         run: |
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
