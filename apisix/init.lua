@@ -15,6 +15,16 @@
 -- limitations under the License.
 --
 local require         = require
+-- set the JIT options before any code, to prevent error "changing jit stack size is not
+-- allowed when some regexs have already been compiled and cached"
+if require("ffi").os == "Linux" then
+    require("ngx.re").opt("jit_stack_size", 200 * 1024)
+end
+
+require("jit.opt").start("minstitch=2", "maxtrace=4000",
+                         "maxrecord=8000", "sizemcode=64",
+                         "maxmcode=4000", "maxirconst=1000")
+
 require("apisix.patch").patch()
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
@@ -30,6 +40,7 @@ local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
+local debug           = require("apisix.debug")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -60,16 +71,6 @@ local _M = {version = 0.4}
 
 
 function _M.http_init(args)
-    require("resty.core")
-
-    if require("ffi").os == "Linux" then
-        require("ngx.re").opt("jit_stack_size", 200 * 1024)
-    end
-
-    require("jit.opt").start("minstitch=2", "maxtrace=4000",
-                             "maxrecord=8000", "sizemcode=64",
-                             "maxmcode=4000", "maxirconst=1000")
-
     core.resolver.init_resolver(args)
     core.id.init()
 
@@ -314,7 +315,7 @@ local function verify_tls_client(ctx)
             if res == "NONE" then
                 core.log.error("client certificate was not present")
             else
-                core.log.error("clent certificate verification is not passed: ", res)
+                core.log.error("client certificate verification is not passed: ", res)
             end
 
             return false
@@ -355,6 +356,8 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
+    debug.dynamic_debug(api_ctx)
+
     local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
         if str_byte(uri, #uri) == str_byte("/") then
@@ -363,6 +366,12 @@ function _M.http_access_phase()
                           api_ctx.var.uri)
         end
     end
+
+    -- To prevent being hacked by untrusted request_uri, here we
+    -- record the normalized but not rewritten uri as request_uri,
+    -- the original request_uri can be accessed via var.real_request_uri
+    api_ctx.var.real_request_uri = api_ctx.var.request_uri
+    api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
     if router.api.has_route_not_under_apisix() or
         core.string.has_prefix(uri, "/apisix/")
@@ -705,10 +714,6 @@ function _M.http_log_phase()
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
         api_ctx.server_picker.after_balance(api_ctx, false)
-    end
-
-    if api_ctx.uri_parse_param then
-        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
     end
 
     core.ctx.release_vars(api_ctx)

@@ -32,11 +32,11 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "lua-resty-dns-client = 5.2.0",
+    "lua-resty-dns-client = 5.2.3",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.5.4",
+    "lua-resty-etcd = 1.6.0",
     "api7-lua-resty-http = 0.2.0",
-    "lua-resty-balancer = 0.02rc5",
+    "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
     "lua-resty-healthcheck-api7 = 2.2.0",
@@ -49,13 +49,13 @@ dependencies = {
     "lua-protobuf = 0.3.3",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
-    "api7-lua-tinyyaml = 0.3.0",
+    "api7-lua-tinyyaml = 0.4.2",
     "nginx-lua-prometheus = 0.20210206",
     "jsonschema = 0.9.5",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
-    "skywalking-nginx-lua = 0.4-1",
+    "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
     "dkjson = 2.5-2",
@@ -70,6 +70,9 @@ dependencies = {
     "ext-plugin-proto = 0.3.0",
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
+    "inspect == 3.1.1",
+    "lualdap = 1.2.6-1",
+    "lua-resty-rocketmq = 0.3.0-0",
 }
 
 build = {
@@ -85,10 +88,10 @@ build = {
         OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
-        INST_PREFIX="$(PREFIX)",
-        INST_BINDIR="$(BINDIR)",
-        INST_LIBDIR="$(LIBDIR)",
-        INST_LUADIR="$(LUADIR)",
-        INST_CONFDIR="$(CONFDIR)",
+        ENV_INST_PREFIX="$(PREFIX)",
+        ENV_INST_BINDIR="$(BINDIR)",
+        ENV_INST_LIBDIR="$(LIBDIR)",
+        ENV_INST_LUADIR="$(LUADIR)",
+        ENV_INST_CONFDIR="$(CONFDIR)",
     },
 }

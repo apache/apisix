@@ -84,6 +84,13 @@ stream {
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
 
+    # for stream logs, off by default
+    {% if stream.enable_access_log == true then %}
+    log_format main escape={* stream.access_log_format_escape *} '{* stream.access_log_format *}';
+
+    access_log {* stream.access_log *} main buffer=16384 flush=3;
+    {% end %}
+
     # stream configuration snippet starts
     {% if stream_configuration_snippet then %}
     {* stream_configuration_snippet *}
@@ -148,7 +155,7 @@ stream {
 }
 {% end %}
 
-{% if not (stream_proxy and stream_proxy.only ~= false) then %}
+{% if enable_admin or not (stream_proxy and stream_proxy.only ~= false) then %}
 http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
@@ -191,6 +198,9 @@ http {
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
 
+    # for ext-plugin
+    lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+
     # for custom shared dict
     {% if http.custom_lua_shared_dict then %}
     {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
@@ -206,7 +216,11 @@ http {
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
     proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
     {% end %}
     {% end %}
 
@@ -214,7 +228,9 @@ http {
     # for proxy cache
     map $upstream_cache_zone $upstream_cache_zone_info {
     {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
         {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
     {% end %}
     }
     {% end %}
@@ -248,6 +264,7 @@ http {
 
     {% if use_apisix_openresty then %}
     apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
@@ -337,6 +354,10 @@ http {
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
+    {% end %}
+
+    {% if wasm then %}
+    wasm_vm wasmtime;
     {% end %}
 
     init_by_lua_block {
@@ -560,6 +581,12 @@ http {
             set $ctx_ref                     '';
             set $from_error_page             '';
 
+            # http server location configuration snippet starts
+            {% if http_server_location_configuration_snippet then %}
+            {* http_server_location_configuration_snippet *}
+            {% end %}
+            # http server location configuration snippet ends
+
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
@@ -689,9 +716,11 @@ http {
         location = /proxy_mirror {
             internal;
 
+            {% if not use_apisix_openresty then %}
             if ($upstream_mirror_host = "") {
                 return 200;
             }
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;

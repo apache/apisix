@@ -42,6 +42,8 @@ luac.out
 # develop
 *.log
 *.pid
+*.orig
+*.rej
 t/servroot
 conf/apisix.uid
 conf/nginx.conf
@@ -72,6 +74,7 @@ build-cache/
 t/fuzzing/__pycache__/
 boofuzz-results/
 *.pyc
+*.wasm
 # release tar package
 *.tgz
 release/*

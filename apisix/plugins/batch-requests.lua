@@ -120,6 +120,7 @@ local _M = {
     schema = schema,
     metadata_schema = metadata_schema,
     attr_schema = attr_schema,
+    scope = "global",
 }
 
 
@@ -161,6 +162,10 @@ end
 
 
 local function set_common_header(data)
+    local local_conf = core.config.local_conf()
+    local real_ip_hdr = core.table.try_read_attr(local_conf, "nginx_config", "http",
+                                                 "real_ip_header")
+
     local outer_headers = core.request.headers(nil)
     for i,req in ipairs(data.pipeline) do
         for k, v in pairs(data.headers) do
@@ -178,6 +183,8 @@ local function set_common_header(data)
                 end
             end
         end
+
+        req.headers[real_ip_hdr] = core.request.get_remote_client_ip()
     end
 end
 

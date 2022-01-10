@@ -21,6 +21,10 @@ title: APISIX
 #
 -->
 
+## 软件架构
+
+![软件架构](../../../assets/images/flow-software-architecture.png)
+
 ## 插件加载流程
 
 ![插件加载流程](../../../assets/images/flow-load-plugin.png)

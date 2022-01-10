@@ -40,8 +40,8 @@ title: 快速入门指南
 - Protocol：即网络传输协议，示例中使用的是最常见的 `HTTP` 协议。
 - Port：即端口，示例中使用的 `80` 端口。
 - Host：即宿主机，示例中的主机是 `httpbin.org`。
-- Path：即路径，示例中的路径是`/get`。
-- Query Parameters：即查询字符串，这里有两个字符串，分别是`foo1`和`foo2`。
+- Path：即路径，示例中的路径是 `/get`。
+- Query Parameters：即查询字符串，这里有两个字符串，分别是 `foo1` 和 `foo2`。
 
 运行以下命令，发送请求：
 
@@ -70,9 +70,9 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 前提条件
 
-- 已安装[Docker Compose 组件](https://docs.docker.com/compose/)。
+- 已安装 [Docker Compose 组件](https://docs.docker.com/compose/)。
 
-- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/)等，进行测试。
+- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/) 等，进行测试。
 
 <!--
 #
@@ -105,14 +105,14 @@ docker-compose -p docker-apisix up -d
 
 下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。
 
-下载完成后，在运行 Docker 的宿主机上执行`curl`命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
+下载完成后，在运行 Docker 的宿主机上执行 `curl` 命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
 curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
-返回数据如下所示，表示Apache APISIX 成功启动：
+返回数据如下所示，表示 Apache APISIX 成功启动：
 
 ```json
 {
@@ -134,37 +134,38 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
 
-我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为[Upstream](./architecture-design/upstream.md)或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
+我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为 [Upstream](./architecture-design/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
-因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码是一个 Route 配置示例：
+因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码会创建一个示例 Route 配置：
 
-```json
+```bash
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
-  "uri": "/services/users/*",
+  "uri": "/anything/*",
   "upstream": {
     "type": "roundrobin",
     "nodes": {
       "httpbin.org:80": 1
     }
   }
-}
+}'
 ```
 
 这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游服务：
 
 - 请求的 HTTP 方法为 `GET`。
 - 请求头包含 `host` 字段，且它的值为 `example.com`。
-- 请求路径匹配 `/services/users/*`，`*` 意味着任意的子路径，例如 `/services/users/getAll?limit=10`。
+- 请求路径匹配 `/anything/*`，`*` 意味着任意的子路径，例如 `/anything/foo?arg=10`。
 
 当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游服务：
 
 ```bash
-curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Host: example.com"
+curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
-这将会被 Apache APISIX 转发到 `http://httpbin.org:80/services/users/getAll?limit=10`。
+这将会被 Apache APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
 
 ### 创建上游服务（Upstream）
 
@@ -227,7 +228,7 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
 
-现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用[消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
+现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用 [消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
 
 首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥：
 

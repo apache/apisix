@@ -247,7 +247,7 @@ function _M.patch(id, conf, sub_path, args)
         return 400, {error_msg = "missing route id"}
     end
 
-    if not conf then
+    if conf == nil then
         return 400, {error_msg = "missing new configuration"}
     end
 

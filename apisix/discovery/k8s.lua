@@ -31,17 +31,18 @@ local local_conf = require("apisix.core.config_local").local_conf()
 local http = require("resty.http")
 local endpoints_shared = ngx.shared.discovery
 
-local AddedEventType = "ADDED"
-local ModifiedEventType = "MODIFIED"
-local DeletedEventType = "DELETED"
-local BookmarkEventType = "BOOKMARK"
+local AddedEven = "ADDED"
+local ModifiedEvent = "MODIFIED"
+local DeletedEvent = "DELETED"
+local BookmarkEvent = "BOOKMARK"
+
+local ListDrive = "list"
+local WatchDrive = "watch"
 
 local apiserver_schema = ""
 local apiserver_host = ""
 local apiserver_port = 0
 local apiserver_token = ""
-local namespace_selector_string = ""
-local namespace_selector_function
 local default_weight = 0
 
 local endpoint_lrucache = core.lrucache.new({
@@ -49,55 +50,38 @@ local endpoint_lrucache = core.lrucache.new({
     count = 1024
 })
 
-local endpoint_cache = {}
+local endpoint_buffer = {}
 local empty_table = {}
-local pending_resources
 
-local function sort_by_ip(a, b)
-    return a.ip < b.ip
-end
-
-local function on_endpoint_deleted(endpoint, selector_check)
-    if selector_check then
-        if namespace_selector_function and
-                not namespace_selector_function(endpoint.metadata.namespace) then
-            return
-        end
+local function sort_cmp(left, right)
+    if left.ip ~= right.ip then
+        return left.ip < right.ip
     end
-
-    local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    endpoints_shared:delete(endpoint_key .. "#version")
-    endpoints_shared:delete(endpoint_key)
+    return left.port < right.port
 end
 
 local function on_endpoint_modified(endpoint)
-    if namespace_selector_function and
-            not namespace_selector_function(endpoint.metadata.namespace) then
-        return
-    end
+    core.log.debug(core.json.encode(endpoint, true))
+    core.table.clear(endpoint_buffer)
 
-    if endpoint.subsets == nil or #endpoint.subsets == 0 then
-        return on_endpoint_deleted(endpoint, false)
-    end
-
-    core.table.clear(endpoint_cache)
     local subsets = endpoint.subsets
-    for _, subset in ipairs(subsets) do
+    for _, subset in ipairs(subsets or empty_table) do
         if subset.addresses ~= nil then
             local addresses = subset.addresses
-
             for _, port in ipairs(subset.ports or empty_table) do
                 local port_name
                 if port.name then
                     port_name = port.name
+                elseif port.targetPort then
+                    port_name = tostring(port.targetPort)
                 else
                     port_name = tostring(port.port)
                 end
 
-                local nodes = endpoint_cache[port_name]
+                local nodes = endpoint_buffer[port_name]
                 if nodes == nil then
-                    nodes = core.table.new(0, #addresses * #subsets)
-                    endpoint_cache[port_name] = nodes
+                    nodes = core.table.new(0, #subsets * #addresses)
+                    endpoint_buffer[port_name] = nodes
                 end
 
                 for _, address in ipairs(subset.addresses) do
@@ -111,14 +95,14 @@ local function on_endpoint_modified(endpoint)
         end
     end
 
-    for _, ports in pairs(endpoint_cache) do
+    for _, ports in pairs(endpoint_buffer) do
         for _, nodes in pairs(ports) do
-            core.table.sort(nodes, sort_by_ip)
+            core.table.sort(nodes, sort_cmp)
         end
     end
 
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    local endpoint_content = core.json.encode(endpoint_cache, true)
+    local endpoint_content = core.json.encode(endpoint_buffer, true)
     local endpoint_version = ngx.crc32_long(endpoint_content)
 
     local _, err
@@ -134,11 +118,81 @@ local function on_endpoint_modified(endpoint)
     end
 end
 
-local function list_resource(httpc, resource, continue)
-    httpc:set_timeouts(2000, 2000, 3000)
+local function on_endpoint_deleted(endpoint)
+    core.log.debug(core.json.encode(endpoint, true))
+    local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
+    endpoints_shared:delete(endpoint_key .. "#version")
+    endpoints_shared:delete(endpoint_key)
+end
+
+local function create_resource(group, version, kind, plural, namespace)
+    local _t = {
+        kind = kind,
+        list_kind = kind .. "List",
+        plural = plural,
+        path = "",
+        version = "",
+        continue = "",
+        overtime = "1800",
+        limit = 30,
+        label_selector = "",
+        field_selector = "",
+    }
+
+    if group == "" then
+        _t.path = _t.path .. "/api/" .. version
+    else
+        _t.path = _t.path .. "/apis/" .. group .. "/" .. version
+    end
+
+    if namespace ~= "" then
+        _t.path = _t.path .. "/namespace/" .. namespace
+    end
+    _t.path = _t.path .. "/" .. plural
+
+    function _t.list_query(self)
+        local query = "limit=" .. self.limit
+
+        if self.continue ~= nil and self.continue ~= "" then
+            query = query .. "&continue=" .. self.continue
+        end
+
+        if self.label_selector and self.label_selector ~= "" then
+            query = query .. "&labelSelector=" .. self.label_selector
+        end
+
+        if self.field_selector and self.field_selector ~= "" then
+            query = query .. "&filedSelector=" .. self.field_selector
+        end
+
+        return query
+    end
+
+    function _t.watch_query(self)
+        local query = "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. self.overtime
+
+        if self.version ~= nil and self.version ~= "" then
+            query = query .. "&resourceVersion=" .. self.version
+        end
+
+        if self.label_selector and self.label_selector ~= "" then
+            query = query .. "&labelSelector=" .. self.label_selector
+        end
+
+        if self.field_selector and self.field_selector ~= "" then
+            query = query .. "&filedSelector=" .. self.field_selector
+        end
+
+        return query
+    end
+
+    return _t
+end
+
+local function list_resource(httpc, resource)
     local res, err = httpc:request({
-        path = resource:list_path(),
-        query = resource:list_query(continue),
+        path = resource.path,
+        query = resource:list_query(),
         headers = {
             ["Host"] = apiserver_host .. ":" .. apiserver_port,
             ["Authorization"] = "Bearer " .. apiserver_token,
@@ -147,7 +201,7 @@ local function list_resource(httpc, resource, continue)
         }
     })
 
-    core.log.debug("--raw=" .. resource:list_path() .. "?" .. resource:list_query(continue))
+    core.log.info("--raw=" .. resource.path .. "?" .. resource:list_query())
 
     if not res then
         return false, "RequestError", err or ""
@@ -162,31 +216,34 @@ local function list_resource(httpc, resource, continue)
     end
 
     local data, _ = core.json.decode(body)
-    if not data or data.kind ~= resource.listKind then
+    if not data or data.kind ~= resource.list_kind then
         return false, "UnexpectedBody", body
     end
 
-    resource.newest_resource_version = data.metadata.resourceVersion
+    resource.version = data.metadata.resourceVersion
 
-    for _, item in ipairs(data.items or empty_table) do
-        resource:event_dispatch(AddedEventType, item, "list")
+    if resource.on_added ~= nil then
+        for _, item in ipairs(data.items or empty_table) do
+            resource:on_added(item, ListDrive)
+        end
     end
 
+    resource.continue = data.metadata.continue
     if data.metadata.continue ~= nil and data.metadata.continue ~= "" then
-        list_resource(httpc, resource, data.metadata.continue)
+        list_resource(httpc, resource)
     end
 
     return true, "Success", ""
 end
 
 local function watch_resource(httpc, resource)
-    math.randomseed(process.get_master_pid())
-    local watch_seconds = 1800 + math.random(60, 1200)
-    local allowance_seconds = 120
-    httpc:set_timeouts(2000, 3000, (watch_seconds + allowance_seconds) * 1000)
+    local watch_seconds = 1800 + math.random(9, 999)
+    resource.overtime = watch_seconds
+    local http_seconds = watch_seconds + 120
+    httpc:set_timeouts(2000, 3000, http_seconds * 1000)
     local res, err = httpc:request({
-        path = resource:watch_path(),
-        query = resource:watch_query(watch_seconds),
+        path = resource.path,
+        query = resource:watch_query(),
         headers = {
             ["Host"] = apiserver_host .. ":" .. apiserver_port,
             ["Authorization"] = "Bearer " .. apiserver_token,
@@ -195,7 +252,7 @@ local function watch_resource(httpc, resource)
         }
     })
 
-    core.log.debug("--raw=" .. resource:watch_path() .. "?" .. resource:watch_query(watch_seconds))
+    core.log.info("--raw=" .. resource.path .. "?" .. resource:watch_query())
 
     if err then
         return false, "RequestError", err
@@ -245,9 +302,22 @@ local function watch_resource(httpc, resource)
                 return false, "UnexpectedBody", captures[0]
             end
 
-            resource.newest_resource_version = v.object.metadata.resource_version
-            if v.type ~= BookmarkEventType then
-                resource:event_dispatch(v.type, v.object, "watch")
+            resource.version = v.object.metadata.resourceVersion
+            local type = v.type
+            if type == AddedEven then
+                if resource.on_added ~= nil then
+                    resource:on_added(v.object, WatchDrive)
+                end
+            elseif type == DeletedEvent then
+                if resource.on_deleted ~= nil then
+                    resource:on_deleted(v.object)
+                end
+            elseif type == ModifiedEvent then
+                if resource.on_modified ~= nil then
+                    resource:on_modified(v.object)
+                end
+            elseif type == BookmarkEvent then
+                --    do nothing
             end
         end
 
@@ -263,14 +333,13 @@ local function watch_resource(httpc, resource)
 end
 
 local function fetch_resource(resource)
-    local begin_time = ngx.time()
     while true do
         local ok
         local reason, message
         local retry_interval
         repeat
             local httpc = http.new()
-            resource.watch_state = "connecting"
+            resource.fetch_state = "connecting"
             core.log.info("begin to connect ", apiserver_host, ":", apiserver_port)
             ok, message = httpc:connect({
                 scheme = apiserver_schema,
@@ -279,7 +348,7 @@ local function fetch_resource(resource)
                 ssl_verify = false
             })
             if not ok then
-                resource.watch_state = "connecting"
+                resource.fetch_state = "connecting"
                 core.log.error("connect apiserver failed , apiserver_host: ", apiserver_host,
                         ", apiserver_port", apiserver_port, ", message : ", message)
                 retry_interval = 100
@@ -287,63 +356,37 @@ local function fetch_resource(resource)
             end
 
             core.log.info("begin to list ", resource.plural)
-            resource.watch_state = "listing"
-            resource:pre_list_callback()
-            ok, reason, message = list_resource(httpc, resource, nil)
+            resource.fetch_state = "listing"
+            if resource.pre_List ~= nil then
+                resource:pre_list()
+            end
+            ok, reason, message = list_resource(httpc, resource)
             if not ok then
-                resource.watch_state = "list failed"
+                resource.fetch_state = "list failed"
                 core.log.error("list failed, resource: ", resource.plural,
                         ", reason: ", reason, ", message : ", message)
                 retry_interval = 100
                 break
             end
-            resource.watch_state = "list finished"
-            resource:post_list_callback()
+            resource.fetch_state = "list finished"
+            if resource.post_List ~= nil then
+                resource:post_list()
+            end
 
             core.log.info("begin to watch ", resource.plural)
-            resource.watch_state = "watching"
+            resource.fetch_state = "watching"
             ok, reason, message = watch_resource(httpc, resource)
             if not ok then
-                resource.watch_state = "watch failed"
+                resource.fetch_state = "watch failed"
                 core.log.error("watch failed, resource: ", resource.plural,
                         ", reason: ", reason, ", message : ", message)
                 retry_interval = 0
                 break
             end
-            resource.watch_state = "watch finished"
+            resource.fetch_state = "watch finished"
             retry_interval = 0
         until true
-
-        -- every 3 hours,we should quit and use another timer
-        local now_time = ngx.time()
-        if now_time - begin_time >= 10800 then
-            break
-        end
-        if retry_interval ~= 0 then
-            ngx.sleep(retry_interval)
-        end
     end
-    local timer_runner = function()
-        fetch_resource(resource)
-    end
-    ngx.timer.at(0, timer_runner)
-end
-
-local function create_endpoint_lrucache(endpoint_key, endpoint_port)
-    local endpoint_content, _, _ = endpoints_shared:get_stale(endpoint_key)
-    if not endpoint_content then
-        core.log.emerg("get empty endpoint content from discovery DIC, this should not happen ",
-                endpoint_key)
-        return nil
-    end
-
-    local endpoint, _ = core.json.decode(endpoint_content)
-    if not endpoint then
-        core.log.emerg("decode endpoint content failed, this should not happen, content : ",
-                endpoint_content)
-    end
-
-    return endpoint[endpoint_port]
 end
 
 local host_patterns = {
@@ -357,9 +400,7 @@ local port_patterns = {
 }
 
 local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
-
 local namespace_regex_pattern = [[^[\x21-\x7e]*$]]
-
 local schema = {
     type = "object",
     properties = {
@@ -395,7 +436,7 @@ local schema = {
                     type = "string",
                     oneOf = {
                         { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                        { pattern = [[^[A-Za-z0-9+\/_=-]{0,4096}$]] },
+                        { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
                     },
                 },
                 token_file = {
@@ -468,38 +509,24 @@ local schema = {
     }
 }
 
-local function load_api_context(key)
-    if #key > 3 then
-        local a, b = string.byte(key, 1, 2)
-        local c = string.byte(key, #key, #key)
-        -- '$', '{', '}' == 36,123,125
-        if a == 36 and b == 123 and c == 125 then
-            local env = string.sub(key, 3, #key - 1)
-            local val = os.getenv(env)
-            if not val then
-                return false, nil, "not found environment variable " .. env
-            end
-            return true, val, nil
-        end
-    end
-    return true, key, nil
-end
-
-local function build_namespace_selector(conf)
-    namespace_selector_string = ""
-    namespace_selector_function = nil
-
-    if conf.namespace_selector == nil then
-        return
-    end
-
+local function set_namespace_selector(conf, resource)
     local ns = conf.namespace_selector
-    if ns.equal then
-        namespace_selector_string = "&fieldSelector=metadata.namespace%3D" .. ns.equal
+    if ns == nil then
+        resource.namespace_filter = function(self, namespace)
+            return true
+        end
+    elseif ns.equal then
+        resource.field_selector = "metadata.namespace%3D" .. ns.equal
+        resource.namespace_filter = function(self, namespace)
+            return true
+        end
     elseif ns.not_equal then
-        namespace_selector_string = "&fieldSelector=metadata.namespace%21%3D" .. ns.not_equal
+        resource.field_selector = "metadata.namespace%21%3D" .. ns.not_equal
+        resource.namespace_filter = function(self, namespace)
+            return true
+        end
     elseif ns.match then
-        namespace_selector_function = function(namespace)
+        resource.namespace_filter = function(self, namespace)
             local match = conf.namespace_selector.match
             local m, err
             for _, v in ipairs(match) do
@@ -514,7 +541,7 @@ local function build_namespace_selector(conf)
             return false
         end
     elseif ns.not_match then
-        namespace_selector_function = function(namespace)
+        resource.namespace_filter = function(self, namespace)
             local not_match = conf.namespace_selector.not_match
             local m, err
             for _, v in ipairs(not_match) do
@@ -531,11 +558,28 @@ local function build_namespace_selector(conf)
     end
 end
 
+local function read_env(key)
+    if #key > 3 then
+        local a, b = string.byte(key, 1, 2)
+        local c = string.byte(key, #key, #key)
+        -- '$', '{', '}' == 36,123,125
+        if a == 36 and b == 123 and c == 125 then
+            local env = string.sub(key, 3, #key - 1)
+            local val = os.getenv(env)
+            if not val then
+                return false, nil, "not found environment variable " .. env
+            end
+            return true, val, nil
+        end
+    end
+    return true, key, nil
+end
+
 local function read_conf(conf)
     apiserver_schema = conf.service.schema
 
     local ok, value, message
-    ok, value, message = load_api_context(conf.service.host)
+    ok, value, message = read_env(conf.service.host)
     if not ok then
         return false, message
     end
@@ -544,7 +588,7 @@ local function read_conf(conf)
         return false, "get empty host value"
     end
 
-    ok, value, message = load_api_context(conf.service.port)
+    ok, value, message = read_env(conf.service.port)
     if not ok then
         return false, message
     end
@@ -555,13 +599,13 @@ local function read_conf(conf)
 
     -- we should not check if the apiserver_token is empty here
     if conf.client.token then
-        ok, value, message = load_api_context(conf.client.token)
+        ok, value, message = read_env(conf.client.token)
         if not ok then
             return false, message
         end
         apiserver_token = value
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        ok, value, message = load_api_context(conf.client.token_file)
+        ok, value, message = read_env(conf.client.token_file)
         if not ok then
             return false, message
         end
@@ -578,17 +622,32 @@ local function read_conf(conf)
 
     default_weight = conf.default_weight or 50
 
-    build_namespace_selector(conf)
-
     return true, nil
 end
 
+local function create_endpoint_lrucache(endpoint_key, endpoint_port)
+    local endpoint_content, _, _ = endpoints_shared:get_stale(endpoint_key)
+    if not endpoint_content then
+        core.log.emerg("get empty endpoint content from discovery DIC, this should not happen ",
+                endpoint_key)
+        return nil
+    end
+
+    local endpoint, _ = core.json.decode(endpoint_content)
+    if not endpoint then
+        core.log.emerg("decode endpoint content failed, this should not happen, content : ",
+                endpoint_content)
+    end
+
+    return endpoint[endpoint_port]
+end
+
 local _M = {
-    version = 0.01
+    version = "0.0.1"
 }
 
 function _M.nodes(service_name)
-    local pattern = "^(.*):(.*)$"
+    local pattern = "^(.*):(.*)$"  -- namespace/name:port_name
     local match, _ = ngx.re.match(service_name, pattern, "jo")
     if not match then
         core.log.info("get unexpected upstream service_name:　", service_name)
@@ -604,80 +663,6 @@ function _M.nodes(service_name)
     end
     return endpoint_lrucache(service_name, endpoint_version,
             create_endpoint_lrucache, endpoint_key, endpoint_port)
-end
-
-local function fill_pending_resources()
-    pending_resources = core.table.new(1, 0)
-
-    pending_resources[1] = {
-
-        group = "",
-        version = "v1",
-        kind = "Endpoints",
-        listKind = "EndpointsList",
-        plural = "endpoints",
-
-        newest_resource_version = "",
-
-        label_selector = function()
-            return ""
-        end,
-
-        list_path = function(self)
-            return "/api/v1/endpoints"
-        end,
-
-        list_query = function(self, continue)
-            if continue == nil or continue == "" then
-                return "limit=32" .. namespace_selector_string
-            else
-                return "limit=32" .. namespace_selector_string .. "&continue=" .. continue
-            end
-        end,
-
-        watch_path = function(self)
-            return "/api/v1/endpoints"
-        end,
-
-        watch_query = function(self, timeout)
-            return "watch=true&allowWatchBookmarks=true&timeoutSeconds=" .. timeout ..
-                    "&resourceVersion=" .. self.newest_resource_version .. namespace_selector_string
-        end,
-
-        pre_list_callback = function(self)
-            self.newest_resource_version = "0"
-            endpoints_shared:flush_all()
-        end,
-
-        post_list_callback = function(self)
-            endpoints_shared:flush_expired()
-        end,
-
-        added_callback = function(self, object, drive)
-            on_endpoint_modified(object)
-        end,
-
-        modified_callback = function(self, object)
-            on_endpoint_modified(object)
-        end,
-
-        deleted_callback = function(self, object)
-            on_endpoint_deleted(object, true)
-        end,
-
-        event_dispatch = function(self, event, object, drive)
-            if event == DeletedEventType or object.deletionTimestamp ~= nil then
-                self:deleted_callback(object)
-                return
-            end
-
-            if event == AddedEventType then
-                self:added_callback(object, drive)
-            elseif event == ModifiedEventType then
-                self:modified_callback(object)
-            end
-        end,
-    }
 end
 
 function _M.init_worker()
@@ -704,14 +689,38 @@ function _M.init_worker()
         return
     end
 
-    fill_pending_resources()
+    local resource = create_resource("", "v1", "Endpoints", "endpoints", "")
 
-    for _, resource in ipairs(pending_resources) do
-        local timer_runner = function()
-            fetch_resource(resource)
+    set_namespace_selector(local_conf.discovery.k8s, resource)
+
+    resource.on_added = function(self, object, drive)
+        if self.namespace_selector ~= nil then
+            if self:namespace_selector(object.metadata.namespace) then
+                on_endpoint_modified(object)
+            end
+        else
+            on_endpoint_modified(object)
         end
+    end
+
+    resource.on_modified = resource.on_added
+
+    resource.on_deleted = function(self, object)
+        if self.namespace_selector ~= nil then
+            if self:namespace_selector(object.metadata.namespace) then
+                on_endpoint_deleted(object)
+            end
+        else
+            on_endpoint_deleted(object)
+        end
+    end
+
+    local timer_runner
+    timer_runner = function()
+        fetch_resource(resource)
         ngx.timer.at(0, timer_runner)
     end
+    ngx.timer.at(0, timer_runner)
 end
 
 return _M

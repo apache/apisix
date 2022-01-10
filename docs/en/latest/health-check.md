@@ -23,8 +23,7 @@ title: Health Check
 
 ## Health Checks for Upstream
 
-Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck),
-you can use it for upstream.
+Health Check of Apache APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck).
 
 Note:
 
@@ -35,7 +34,34 @@ There won't be any health check if an upstream is configured but isn't in used.
 it whether this unique node is healthy or not.
 * Active health check is required so that the unhealthy node can recover.
 
-The following is an example of health check:
+### Configuration instructions
+
+| Configuration item                              | Configuration type              | Value type | Value option         | Defaults                                                                                      | Description                                                                                                          |
+| ----------------------------------------------- | ------------------------------- | ---------- | -------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| upstream.checks.active.type                     | Active check                    | string     | `http` `https` `tcp` | http                                                                                          | The type of active check.                                                                                            |
+| upstream.checks.active.timeout                  | Active check                    | integer    |                      | 1                                                                                             | The timeout period of the active check (unit: second).                                                               |
+| upstream.checks.active.concurrency              | Active check                    | integer    |                      | 10                                                                                            | The number of targets to be checked at the same time during the active check.                                        |
+| upstream.checks.active.http_path                | Active check                    | string     |                      | /                                                                                             | The HTTP request path that is actively checked.                                                                      |
+| upstream.checks.active.host                     | Active check                    | string     |                      | ${upstream.node.host}                                                                         | The hostname of the HTTP request actively checked.                                                                   |
+| upstream.checks.active.port                     | Active check                    | integer    | `1` to `65535`       | ${upstream.node.port}                                                                         | The host port of the HTTP request that is actively checked.                                                          |
+| upstream.checks.active.https_verify_certificate | Active check                    | boolean    |                      | true                                                                                          | Active check whether to check the SSL certificate of the remote host when HTTPS type checking is used.               |
+| upstream.checks.active.req_headers              | Active check                    | array      |                      | []                                                                                            | Active check When using HTTP or HTTPS type checking, set additional request header information.                      |
+| upstream.checks.active.healthy.interval         | Active check (healthy node)    | integer    | `>= 1`               | 1                                                                                             | Active check (healthy node) check interval (unit: second)                                                            |
+| upstream.checks.active.healthy.http_statuses    | Active check (healthy node)    | array      | `200` to `599`       | [200, 302]                                                                                    | Active check (healthy node) HTTP or HTTPS type check, the HTTP status code of the healthy node.                      |
+| upstream.checks.active.healthy.successes        | Active check (healthy node)    | integer    | `1` to `254`         | 2                                                                                             | Active check (healthy node) determine the number of times a node is healthy.                                         |
+| upstream.checks.active.unhealthy.interval       | Active check (unhealthy node)  | integer    | `>= 1`               | 1                                                                                             | Active check (unhealthy node) check interval (unit: second)                                                          |
+| upstream.checks.active.unhealthy.http_statuses  | Active check (unhealthy node)  | array      | `200` to `599`       | [429, 404, 500, 501, 502, 503, 504, 505]                                                      | Active check (unhealthy node) HTTP or HTTPS type check, the HTTP status code of the non-healthy node.                |
+| upstream.checks.active.unhealthy.http_failures  | Active check (unhealthy node)  | integer    | `1` to `254`         | 5                                                                                             | Active check (unhealthy node) HTTP or HTTPS type check, determine the number of times that the node is not healthy.  |
+| upstream.checks.active.unhealthy.tcp_failures   | Active check (unhealthy node)  | integer    | `1` to `254`         | 2                                                                                             | Active check (unhealthy node) TCP type check, determine the number of times that the node is not healthy.            |
+| upstream.checks.active.unhealthy.timeouts       | Active check (unhealthy node)  | integer    | `1` to `254`         | 3                                                                                             | Active check (unhealthy node) to determine the number of timeouts for unhealthy nodes.                              |
+| upstream.checks.passive.healthy.http_statuses   | Passive check (healthy node)   | array      | `200` to `599`       | [200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308] | Passive check (healthy node) HTTP or HTTPS type check, the HTTP status code of the healthy node.                     |
+| upstream.checks.passive.healthy.successes       | Passive check (healthy node)   | integer    | `0` to `254`         | 5                                                                                             | Passive checks (healthy node) determine the number of times a node is healthy.                                       |
+| upstream.checks.passive.unhealthy.http_statuses | Passive check (unhealthy node) | array      | `200` to `599`       | [429, 500, 503]                                                                               | Passive check (unhealthy node) HTTP or HTTPS type check, the HTTP status code of the non-healthy node.               |
+| upstream.checks.passive.unhealthy.tcp_failures  | Passive check (unhealthy node) | integer    | `0` to `254`         | 2                                                                                             | Passive check (unhealthy node) When TCP type is checked, determine the number of times that the node is not healthy. |
+| upstream.checks.passive.unhealthy.timeouts      | Passive check (unhealthy node) | integer    | `0` to `254`         | 7                                                                                             | Passive checks (unhealthy node) determine the number of timeouts for unhealthy nodes.                                |
+| upstream.checks.passive.unhealthy.http_failures | Passive check (unhealthy node) | integer    | `0` to `254`         | 5                                                                                             | Passive check (unhealthy node) The number of times that the node is not healthy during HTTP or HTTPS type checking.  |
+
+### Configuration example
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -87,36 +113,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The configures in `checks` are belong to health check, the type of `checks`
-contains: `active` or `passive`.
-
-* `active`: To enable active health checks, you need to specify the configuration items under `checks.active` in the Upstream object configuration.
-
-  * `active.timeout`: Socket timeout for active checks (in seconds), support decimals. For example `1.01` means `1010` milliseconds, `2` means `2000` milliseconds.
-
-  * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
-  * `active.host`: The HTTP request host used to detect if the upstream is healthy.
-  * `active.port`: The customize health check host port (optional), this will override the port in the `upstream` node.
-
-  The threshold fields of `healthy` are:
-  * `active.healthy.interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
-  * `active.healthy.successes`: The number of success times to determine the target is healthy, the minimum is 1.
-
-  The threshold fields of  `unhealthy` are:
-  * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
-  * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
-  * `active.req_headers`: Additional request headers. Array format, so you can fill in multiple headers.
-
-* `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
-
-  The threshold fields of `healthy` are:
-  * `passive.healthy.http_statuses`: If the current response code is equal to any of these, set the upstream node to the `healthy` state. Otherwise ignore this request.
-  * `passive.healthy.successes`: Number of successes in proxied traffic (as defined by `passive.healthy.http_statuses`) to consider a target healthy, as observed by passive health checks.
-
-  The threshold fields of `unhealthy` are:
-  * `passive.unhealthy.http_statuses`: If the current response code is equal to any of these, set the upstream node to the `unhealthy` state. Otherwise ignore this request.
-  * `passive.unhealthy.tcp_failures`: Number of TCP failures in proxied traffic to consider a target unhealthy, as observed by passive health checks.
-  * `passive.unhealthy.timeouts`: Number of timeouts in proxied traffic to consider a target unhealthy, as observed by passive health checks.
-  * `passive.unhealthy.http_failures`: Number of HTTP failures in proxied traffic (as defined by `passive.unhealthy.http_statuses`) to consider a target unhealthy, as observed by passive health checks.
-
-The health check status can be fetched via `GET /v1/healthcheck` in [control API](./control-api.md).
+The health check status can be fetched via `GET /v1/healthcheck` in [Control API](./control-api.md).

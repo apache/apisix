@@ -5,10 +5,12 @@ on:
     branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -24,44 +26,26 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_tengine
-          - linux_apisix_master_luarocks
-          - linux_apisix_current_luarocks
-          - linux_openresty_mtls
 
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
 
-
-    services:
-      etcd:
-        image: bitnami/etcd:3.4.0
-        ports:
-          - 2379:2379
-          - 2380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
-      old_etcd:
-        image: bitnami/etcd:3.3.8
-        ports:
-          - 3379:2379
-          - 3380:2380
-        env:
-          ALLOW_NONE_AUTHENTICATION: yes
-          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
         with:
           submodules: recursive
 
+      - name: Setup Go
+        uses: actions/setup-go@v2.1.5
+        with:
+          go-version: "1.15"
+
       - name: Cache deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         env:
           cache-name: cache-deps
         with:
@@ -76,20 +60,31 @@ jobs:
           echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
           echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
 
-      - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+      - name: Linux launch common services
         run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          make compress-tar
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+
+      - name: Create tarball
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
 
       - name: Remove source code
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && !endsWith(matrix.os_name, 'luarocks') }}
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+
+      - name: Build wasm code
+        if: startsWith(matrix.os_name, 'linux_openresty')
+        run: |
+          export TINYGO_VER=0.20.0
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
+          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
+          cd t/wasm && find . -type f -name "main.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -103,51 +98,6 @@ jobs:
           cd dubbo-backend-provider/target
           java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
 
-      - name: Install Redis Cluster
-        if: startsWith(matrix.os_name, 'linux_openresty')
-        run: |
-          docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
-        env:
-          MASTER1_PORT: 5000
-          MASTER2_PORT: 5001
-          MASTER3_PORT: 5002
-          SLAVE1_PORT: 5003
-          SLAVE2_PORT: 5004
-          SLAVE3_PORT: 5005
-
-      - name: Running Redis Cluster Test
-        if: startsWith(matrix.os_name, 'linux_openresty')
-        run: |
-          sudo apt-get install -y redis-tools
-          docker ps -a
-          redis-cli -h 127.0.0.1 -p 5000 ping
-          redis-cli -h 127.0.0.1 -p 5000 cluster nodes
-
-      - name: Running etcd server with TLS
-        run: |
-            sudo docker run -d -p 12379:12379 -p 12380:12380 \
-            -e ALLOW_NONE_AUTHENTICATION=yes \
-            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
-            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
-            -e ETCD_CERT_FILE=/certs/etcd.pem \
-            -e ETCD_KEY_FILE=/certs/etcd.key \
-            -v ${{ github.workspace }}/t/certs:/certs \
-            bitnami/etcd:3.4.0
-
-      - name: Running etcd server with mTLS
-        run: |
-            sudo docker run -d --rm --name etcd_mtls \
-            -p 22379:22379 -p 22380:22380 \
-            -e ALLOW_NONE_AUTHENTICATION=yes \
-            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:22379 \
-            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:22379 \
-            -e ETCD_CERT_FILE=/certs/mtls_server.crt \
-            -e ETCD_KEY_FILE=/certs/mtls_server.key \
-            -e ETCD_CLIENT_CERT_AUTH=true \
-            -e ETCD_TRUSTED_CA_FILE=/certs/mtls_ca.crt \
-            -v ${{ github.workspace }}/t/certs:/certs \
-            bitnami/etcd:3.4.0
-
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
@@ -155,10 +105,3 @@ jobs:
 
       - name: Linux Script
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
-
-      - name: Publish Artifact
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: ${{ steps.branch_env.outputs.fullname }}
-          path: ${{ steps.branch_env.outputs.fullname }}

@@ -16,6 +16,9 @@
 #
 basic:
   enable: false
+http_filter:
+  enable: false         # enable or disable this feature
+  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 hook_conf:
   enable: false                 # enable or disable this feature
   name: hook_phase              # the name of module and function list

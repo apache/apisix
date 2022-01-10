@@ -16,28 +16,22 @@
 --
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin_name = "sls-logger"
 local ngx = ngx
 local rf5424 = require("apisix.plugins.slslog.rfc5424")
-local stale_timer_running = false;
-local timer_at = ngx.timer.at
 local tcp = ngx.socket.tcp
-local buffers = {}
 local tostring = tostring
 local ipairs = ipairs
 local table = table
+
+
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
         include_req_body = {type = "boolean", default = false},
-        name = {type = "string", default = "sls-logger"},
         timeout = {type = "integer", minimum = 1, default= 5000},
-        max_retry_count = {type = "integer", minimum = 0, default = 0},
-        retry_delay = {type = "integer", minimum = 0, default = 1},
-        buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 5},
-        batch_max_size = {type = "integer", minimum = 1, default = 1000},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},
@@ -52,7 +46,7 @@ local _M = {
     version = 0.1,
     priority = 406,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
 }
 
 function _M.check_schema(conf)
@@ -110,22 +104,6 @@ local function send_tcp_data(route_conf, log_message)
     return res, err_msg
 end
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in ipairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, route id:", tostring(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
-
 local function combine_syslog(entries)
     local items = {}
     for _, entry in ipairs(entries) do
@@ -170,37 +148,11 @@ function _M.log(conf, ctx)
         route_conf = conf
     }
 
-    local log_buffer = buffers[entry.route_id]
-    if not stale_timer_running then
-        -- run the timer every 15 mins if any log is present
-        timer_at(900, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    if log_buffer then
-        log_buffer:push(process_context)
+    if batch_processor_manager:add_entry(conf, process_context) then
         return
     end
 
-    local process_conf = {
-        name = conf.name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    log_buffer, err = batch_processor:new(handle_log, process_conf)
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[entry.route_id] = log_buffer
-    log_buffer:push(process_context)
+    batch_processor_manager:add_entry_to_new_processor(conf, process_context, ctx, handle_log)
 end
 
 

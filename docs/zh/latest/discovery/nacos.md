@@ -31,7 +31,7 @@ Nacos 服务发现模块目前是实验性的。
 
 ### Nacos 配置
 
-在文件 `conf/config.yaml`  中添加以下配置到：
+在文件 `conf/config.yaml` 中添加以下配置到：
 
 ```yaml
 discovery:

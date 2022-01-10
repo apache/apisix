@@ -16,6 +16,7 @@
 --
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
+local arg = ngx.arg
 local ngx_print = ngx.print
 local ngx_header = ngx.header
 local ngx_add_header
@@ -100,7 +101,9 @@ local function set_header(append, ...)
     if count == 1 then
         local headers = select(1, ...)
         if type(headers) ~= "table" then
-            error("should be a table if only one argument", 2)
+            -- response.set_header(name, nil)
+            ngx_header[headers] = nil
+            return
         end
 
         for k, v in pairs(headers) do
@@ -148,6 +151,53 @@ function _M.clear_header_as_body_modified()
     -- clear cache identifier
     ngx.header.last_modified = nil
     ngx.header.etag = nil
+end
+
+
+-- Hold body chunks and return the final body once all chunks have been read.
+-- Usage:
+-- function _M.body_filter(conf, ctx)
+--  local final_body = core.response.hold_body_chunk(ctx)
+--  if not final_body then
+--      return
+--  end
+--  final_body = transform(final_body)
+--  ngx.arg[1] = final_body
+--  ...
+function _M.hold_body_chunk(ctx, hold_the_copy)
+    local body_buffer
+    local chunk, eof = arg[1], arg[2]
+    if eof then
+        body_buffer = ctx._body_buffer
+        if not body_buffer then
+            return chunk
+        end
+
+        body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
+        ctx._body_buffer = nil
+        return body_buffer
+    end
+
+    if type(chunk) == "string" and chunk ~= "" then
+        body_buffer = ctx._body_buffer
+        if not body_buffer then
+            body_buffer = {
+                chunk,
+                n = 1
+            }
+            ctx._body_buffer = body_buffer
+        else
+            local n = body_buffer.n + 1
+            body_buffer.n = n
+            body_buffer[n] = chunk
+        end
+    end
+
+    if not hold_the_copy then
+        -- flush the origin body chunk
+        arg[1] = nil
+    end
+    return nil
 end
 
 

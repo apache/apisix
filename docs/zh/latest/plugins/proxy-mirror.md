@@ -71,7 +71,7 @@ Last-Modified: Thu, 20 Feb 2020 14:21:41 GMT
 hello world
 ```
 
-> 由于指定的 mirror 地址是127.0.0.1:9797，所以验证此插件是否已经正常工作需要在端口为9797的服务上确认，例如，我们可以通过 python 启动一个简单的 server： python -m SimpleHTTPServer 9797。
+> 由于指定的 mirror 地址是 127.0.0.1:9797，所以验证此插件是否已经正常工作需要在端口为 9797 的服务上确认，例如，我们可以通过 python 启动一个简单的 server： python -m SimpleHTTPServer 9797。
 
 #### 禁用插件
 

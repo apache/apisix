@@ -22,9 +22,10 @@ if [ -z ${OPENRESTY_PREFIX} ]; then
     OPENRESTY_PREFIX="/usr/local/openresty"
 fi
 
-wget https://github.com/luarocks/luarocks/archive/v3.4.0.tar.gz
-tar -xf v3.4.0.tar.gz
-cd luarocks-3.4.0 || exit
+LUAROCKS_VER=3.8.0
+wget https://github.com/luarocks/luarocks/archive/v"$LUAROCKS_VER".tar.gz
+tar -xf v"$LUAROCKS_VER".tar.gz
+cd luarocks-"$LUAROCKS_VER" || exit
 
 OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
 OR_VER=$($OR_BIN -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
@@ -41,7 +42,7 @@ fi
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
-rm -rf luarocks-3.4.0
+rm -rf luarocks-"$LUAROCKS_VER"
 
 mkdir ~/.luarocks || true
 

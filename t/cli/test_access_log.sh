@@ -224,3 +224,40 @@ fi
 
 make stop
 echo "passed: should find upstream scheme"
+
+# check stream logs
+echo '
+apisix:
+    stream_proxy:                  # UDP proxy
+     udp:
+       - "127.0.0.1:9200"
+
+nginx_config:
+  stream:
+    enable_access_log: true
+    access_log_format: "$remote_addr $protocol test_stream_access_log_format"
+' > conf/config.yaml
+
+make init
+
+grep "test_stream_access_log_format" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: stream access_log_format in nginx.conf doesn't change"
+    exit 1
+fi
+echo "passed: stream access_log_format in nginx.conf is ok"
+
+# check if logs are being written
+make run
+sleep 0.1
+# sending single udp packet
+echo -n "hello" | nc -4u -w1 localhost 9200
+sleep 4
+tail -n 1 logs/access_stream.log > output.log
+
+if ! grep '127.0.0.1 UDP test_stream_access_log_format' output.log; then
+    echo "failed: should have found udp log entry"
+    cat output.log
+    exit 1
+fi
+echo "passed: logs are being dumped for stream proxy"

@@ -26,9 +26,9 @@ sudo apt-get update
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.0.0/build-apisix-openresty.sh
-    chmod +x build-apisix-openresty.sh
-    ./build-apisix-openresty.sh latest
+    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.6.0/build-apisix-base.sh
+    chmod +x build-apisix-base.sh
+    ./build-apisix-base.sh latest
 
     sudo apt-get install openresty-openssl111-debug-dev
     exit 0
@@ -40,4 +40,4 @@ else
     openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev
+sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev openresty-openssl111-debug-dev libldap2-dev

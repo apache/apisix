@@ -28,16 +28,14 @@ title: Stand-alone mode
 1. kubernetes(k8s)：声明式 API 场景，通过全量 yaml 配置来动态更新修改路由规则。
 2. 不同配置中心：配置中心的实现有很多，比如 Consul 等，使用全量 yaml 做中间转换桥梁。
 
-APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路由规则到内存，并且每间隔一定时间
-（默认 1 秒钟），都会尝试检测文件内容是否有更新，如果有更新则重新加载规则。
+APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路由规则到内存，并且每间隔一定时间（默认 1 秒钟），都会尝试检测文件内容是否有更新，如果有更新则重新加载规则。
 
 *注意*：重新加载规则并更新时，均是内存热更新，不会有工作进程的替换过程，是个热更新过程。
 
 由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
 Admin API 将不再被允许使用。
 
-通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` ，并禁用 Admin API 即可启
-用 Stand-alone 模式。
+通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` ，并禁用 Admin API 即可启用 Stand-alone 模式。
 
 参考下面示例：
 
@@ -64,7 +62,7 @@ routes:
 #END
 ```
 
-*注意*：如果`conf/apisix.yaml`末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
+*注意*：如果 `conf/apisix.yaml` 末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
 
 ### 配置 Router
 

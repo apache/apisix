@@ -33,7 +33,7 @@ script() {
     sudo rm -rf /usr/local/apisix
 
     # install APISIX with local version
-    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
+    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
 
     mkdir cli_tmp && cd cli_tmp
@@ -61,8 +61,13 @@ script() {
     # install test dependencies
     sudo pip install requests
 
+    # dismiss "maximum number of open file descriptors too small" warning
+    ulimit -n 10240
+    ulimit -n -S
+    ulimit -n -H
+
     for f in ./t/cli/test_*.sh; do
-        sudo PATH="$PATH" "$f"
+        PATH="$PATH" "$f"
     done
 }
 

@@ -38,10 +38,14 @@ title: request-validation
 
 ## 属性
 
-| Name          | Type   | Requirement | Default | Valid | Description                       |
-| ------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
-| header_schema | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
-| body_schema   | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
+> 注意, `header_schema` 与 `body_schema` 至少填写其中一个
+
+| Name             | Type   | Requirement | Default | Valid | Description                       |
+| ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
+| header_schema    | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
+| body_schema      | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
+| rejected_code | integer | 可选        |   400      |    [200,...,599]   | 自定义拒绝状态码 |
+| rejected_msg | string | 可选        |         |       | 自定义拒绝信息 |
 
 ## 如何启用
 
@@ -59,7 +63,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 "properties": {
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
-                }
+                },
+                "rejected_msg": "customize reject message"
             }
         }
     },
@@ -81,7 +86,7 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-如果 `Schema` 验证失败，将返回 `400 bad request` 错误。
+如果 `Schema` 验证失败，将返回 `400` 状态码与相应的拒绝信息。
 
 ## 禁用插件
 
@@ -248,5 +253,32 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             }
         }
     }
+}
+```
+
+**自定义拒绝信息:**
+
+```json
+{
+  "uri": "/get",
+  "plugins": {
+    "request-validation": {
+      "body_schema": {
+        "type": "object",
+        "required": ["required_payload"],
+        "properties": {
+          "required_payload": {"type": "string"},
+          "boolean_payload": {"type": "boolean"}
+        },
+        "rejected_msg": "customize reject message"
+      }
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:8080": 1
+    }
+  }
 }
 ```
