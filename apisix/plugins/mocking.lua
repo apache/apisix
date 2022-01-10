@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local ngx = ngx
 local xml2lua = require("xml2lua")
+local string = string
+local type = type
 
 local schema = {
     type = "object",
@@ -51,15 +53,16 @@ local function parse_content_type(content_type)
         return "", ""
     end
     local sep_idx = string.find(content_type, ";")
-    local type, charset
+    local typ, charset
     if sep_idx then
-        type = string.sub(content_type, 1, sep_idx - 1)
+        typ = string.sub(content_type, 1, sep_idx - 1)
         charset = string.sub(content_type, sep_idx + 1)
     else
-        type = content_type
+        typ = content_type
     end
-    return type, charset
+    return typ, charset
 end
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -70,16 +73,17 @@ function _M.check_schema(conf)
     if conf.content_type == "" then
         conf.content_type = "application/json;charset=utf8"
     end
-    local type, _ = parse_content_type(conf.content_type)
-    if type ~= "application/xml" and
-            type ~= "application/json" and
-            type ~= "text/plain" and
-            type ~= "text/html" and
-            type ~= "text/xml" then
+    local typ, _ = parse_content_type(conf.content_type)
+    if typ ~= "application/xml" and
+            typ ~= "application/json" and
+            typ ~= "text/plain" and
+            typ ~= "text/html" and
+            typ ~= "text/xml" then
         return false, "unsupported content type!"
     end
     return true
 end
+
 
 local function gen_string(example)
     if example ~= nil and type(example) == "string" then
@@ -93,6 +97,7 @@ local function gen_string(example)
     return table.concat(list)
 end
 
+
 local function gen_number(example)
     if example ~= nil and type(example) == "number" then
         return example
@@ -100,12 +105,14 @@ local function gen_number(example)
     return math.random() * 10000
 end
 
+
 local function gen_integer(example)
     if example ~= nil and type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
+
 
 local function gen_boolean(example)
     if example ~= nil and type(example) == "boolean" then
@@ -118,20 +125,22 @@ local function gen_boolean(example)
     return true
 end
 
+
 local function gen_base(property)
-    local type = string.lower(property.type)
+    local typ = string.lower(property.type)
     local example = property.example
-    if type == "string" then
+    if typ == "string" then
         return gen_string(example)
-    elseif type == "number" then
+    elseif typ == "number" then
         return gen_number(example)
-    elseif type == "integer" then
+    elseif typ == "integer" then
         return gen_integer(example)
-    elseif type == "boolean" then
+    elseif typ == "boolean" then
         return gen_boolean(example)
     end
     return nil
 end
+
 
 function gen_array(property)
     local output = {}
@@ -140,11 +149,11 @@ function gen_array(property)
     end
     local v = property.items
     local n = math.random(1, 3)
-    local type = string.lower(v.type)
+    local typ = string.lower(v.type)
     for i = 1, n do
-        if type == "array" then
+        if typ == "array" then
             table.insert(output, gen_array(v))
-        elseif type == "object" then
+        elseif typ == "object" then
             table.insert(output, gen_object(v))
         else
             table.insert(output, gen_base(v))
@@ -153,16 +162,17 @@ function gen_array(property)
     return output
 end
 
+
 function gen_object(property)
     local output = {}
     if property.properties == nil then
         return output
     end
     for k, v in pairs(property.properties) do
-        local type = string.lower(v.type)
-        if type == "array" then
+        local typ = string.lower(v.type)
+        if typ == "array" then
             output[k] = gen_array(v)
-        elseif type == "object" then
+        elseif typ == "object" then
             output[k] = gen_object(v)
         else
             output[k] = gen_base(v)
@@ -171,6 +181,7 @@ function gen_object(property)
     return output
 end
 
+
 function _M.access(conf)
     local response_content = ""
 
@@ -178,10 +189,10 @@ function _M.access(conf)
         response_content = conf.response_example
     else
         local output = gen_object(conf.response_schema)
-        local type, _ = parse_content_type(conf.content_type)
-        if type == "application/xml" or type == "text/xml" then
+        local typ, _ = parse_content_type(conf.content_type)
+        if typ == "application/xml" or typ == "text/xml" then
             response_content = xml2lua.toXml(output, "data")
-        elseif type == "application/json" or type == "text/plain" then
+        elseif typ == "application/json" or typ == "text/plain" then
             response_content = core.json.encode(output)
         else
             core.log.error("json schema body only support xml and json content type")
