@@ -44,6 +44,8 @@ done
 --- no_error_log
 [error]
 
+
+
 === TEST 2: set csrf plugin
 --- config
     location /t {
@@ -81,11 +83,14 @@ passed
 [error]
 
 
+
 === TEST 3: have csrf cookie
 --- request
 GET /hello
 --- response_header
 Set-Cookie
+
+
 
 === TEST4: block request
 --- request
@@ -95,6 +100,7 @@ POST /hello
 {"error_msg":"no csrf token in headers"}
 --- no_error_log
 [error]
+
 
 
 === TEST5: only header
@@ -108,6 +114,8 @@ apisix-csrf-token: wrongtoken
 --- no_error_log
 [error]
 
+
+
 === TEST6: only cookie
 --- request
 POST /hello
@@ -118,6 +126,7 @@ Cookie: apisix-csrf-token=testcookie
 {"error_msg":"no csrf token in headers"}
 --- no_error_log
 [error]
+
 
 
 === TEST7: header and cookie mismatch
@@ -131,6 +140,8 @@ Cookie: apisix-csrf-token=testcookie
 {"error_msg":"csrf token mismatch"}
 --- no_error_log
 [error]
+
+
 
 === TEST8: invalid csrf token
 --- request
