@@ -43,7 +43,7 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" }
+        password = { type = "string" },
     },
     required = {"username", "password"},
 }
