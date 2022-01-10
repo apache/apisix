@@ -68,6 +68,15 @@ property "request_headers" validation failed: wrong type: expected array, got st
         content_by_lua_block {
             local datas = {
                 {
+                    url = "/apisix/admin/upstreams/u1",
+                    data = [[{
+                        "nodes": {
+                            "127.0.0.1:1984": 1
+                        },
+                        "type": "roundrobin"
+                    }]],
+                },
+                {
                     url = "/apisix/admin/routes/auth",
                     data = [[{
                         "plugins": {
@@ -116,7 +125,12 @@ property "request_headers" validation failed: wrong type: expected array, got st
                         "plugins": {
                             "serverless-pre-function": {
                                 "phase": "rewrite",
-                                "functions": ["return function (conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"]
+                                "functions": [
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        core.response.exit(200, core.request.headers(ctx));
+                                    end"
+                                ]
                             }
                         },
                         "uri": "/echo"
@@ -136,13 +150,24 @@ property "request_headers" validation failed: wrong type: expected array, got st
                                 "uri": "/echo"
                             }
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1984": 1
-                            },
-                            "type": "roundrobin"
-                        },
+                        "upstream_id": "u1",
                         "uri": "/hello"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/2",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "host": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"]
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/empty"
                     }]],
                 },
             }
@@ -156,7 +181,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
         }
     }
 --- response_body eval
-"201passed\n" x 3
+"201passed\n" x 5
 
 
 
@@ -202,3 +227,24 @@ X-Forwarded-Host: apisix.apache.org
 qr/\"x-forwarded-host\":\"localhost\"/
 --- response_body_unlike eval
 qr/\"x-forwarded-host\":\"apisix.apache.org\"/
+
+
+
+=== TEST 7: hit route (not send upstream headers)
+--- request
+GET /empty
+--- more_headers
+Authorization: 222
+--- response_body_unlike eval
+qr/\"x-user-id\":\"i-am-an-user\"/
+
+
+
+=== TEST 8: hit route (not send client headers)
+--- request
+GET /empty
+--- more_headers
+Authorization: 333
+--- error_code: 403
+--- response_headers
+!Location
