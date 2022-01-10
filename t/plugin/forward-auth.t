@@ -74,10 +74,32 @@ property "request_headers" validation failed: wrong type: expected array, got st
                             "serverless-pre-function": {
                                 "phase": "rewrite",
                                 "functions": [
-                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"111\" then core.response.exit(200); end end",
-                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"222\" then core.response.set_header(\"X-User-ID\", \"i-am-an-user\"); core.response.exit(200); end end",
-                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"333\" then core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end",
-                                    "return function (conf, ctx) local core = require(\"apisix.core\"); if core.request.header(ctx, \"Authorization\") == \"444\" then core.response.exit(403, core.request.headers(ctx)); end end"
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        if core.request.header(ctx, \"Authorization\") == \"111\" then
+                                            core.response.exit(200);
+                                        end
+                                    end",
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        if core.request.header(ctx, \"Authorization\") == \"222\" then
+                                            core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
+                                            core.response.exit(200);
+                                        end
+                                    end",]] .. [[
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        if core.request.header(ctx, \"Authorization\") == \"333\" then
+                                            core.response.set_header(\"Location\", \"http://example.com/auth\");
+                                            core.response.exit(403);
+                                        end
+                                    end",
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        if core.request.header(ctx, \"Authorization\") == \"444\" then
+                                            core.response.exit(403, core.request.headers(ctx));
+                                        end
+                                    end"
                                 ]
                             }
                         },
