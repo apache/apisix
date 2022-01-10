@@ -39,11 +39,18 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## Attributes
 
+For consumer side:
+
 | Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
 | --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | username         | string  | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
 | password         | string  | required    |         |       | the user's password                                                                                                                                              |
-| hide_auth_header | boolean | optional    | false   |       | Whether to return the Authentication request headers to the upstream.                                                                                             |
+
+For route side:
+
+| Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
+| --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hide_credentials | boolean | optional    | false   |       | Whether to return the Authentication request headers to the upstream.                                                                                            |
 
 ## How To Enable
 

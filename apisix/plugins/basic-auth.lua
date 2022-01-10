@@ -31,7 +31,7 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
-        hide_auth_header = {
+        hide_credentials = {
             type = "boolean",
             default = false,
         }
@@ -43,11 +43,7 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" },
-        hide_auth_header = {
-            type = "boolean",
-            default = false,
-        }
+        password = { type = "string" }
     },
     required = {"username", "password"},
 }
@@ -170,8 +166,8 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Password is error" }
     end
 
-    -- 5. hide `Authentication` request header if `hide_auth_header` is `true`
-    if conf.hide_auth_header == true then
+    -- 5. hide `Authentication` request header if `hide_credentials` is `true`
+    if conf.hide_credentials == true then
         core.request.set_header(ctx, "Authentication", nil)
     end
 
