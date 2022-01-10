@@ -54,8 +54,8 @@ local endpoint_buffer = {}
 local empty_table = {}
 
 local function sort_cmp(left, right)
-    if left.ip ~= right.ip then
-        return left.ip < right.ip
+    if left.host ~= right.host then
+        return left.host < right.host
     end
     return left.port < right.port
 end
@@ -108,12 +108,12 @@ local function on_endpoint_modified(endpoint)
     local _, err
     _, err = endpoints_shared:safe_set(endpoint_key .. "#version", endpoint_version)
     if err then
-        core.log.emerg("set endpoint version into discovery DICT failed, ", err)
+        core.log.error("set endpoint version into discovery DICT failed, ", err)
         return
     end
     endpoints_shared:safe_set(endpoint_key, endpoint_content)
     if err then
-        core.log.emerg("set endpoint into discovery DICT failed, ", err)
+        core.log.error("set endpoint into discovery DICT failed, ", err)
         endpoints_shared:delete(endpoint_key .. "#version")
     end
 end
@@ -162,7 +162,7 @@ local function create_resource(group, version, kind, plural, namespace)
         end
 
         if self.field_selector and self.field_selector ~= "" then
-            uri = uri .. "&filedSelector=" .. self.field_selector
+            uri = uri .. "&fieldSelector=" .. self.field_selector
         end
 
         return uri
@@ -180,7 +180,7 @@ local function create_resource(group, version, kind, plural, namespace)
         end
 
         if self.field_selector and self.field_selector ~= "" then
-            uri = uri .. "&filedSelector=" .. self.field_selector
+            uri = uri .. "&fieldSelector=" .. self.field_selector
         end
 
         return uri
@@ -237,65 +237,71 @@ local function list_resource(httpc, resource)
 end
 
 local function watch_resource(httpc, resource)
-    local watch_seconds = 1800 + math.random(9, 999)
-    resource.overtime = watch_seconds
-    local http_seconds = watch_seconds + 120
-    httpc:set_timeouts(2000, 3000, http_seconds * 1000)
-    local res, err = httpc:request({
-        path = resource.path,
-        query = resource:watch_query(),
-        headers = {
-            ["Host"] = apiserver_host .. ":" .. apiserver_port,
-            ["Authorization"] = "Bearer " .. apiserver_token,
-            ["Accept"] = "application/json",
-            ["Connection"] = "keep-alive"
-        }
-    })
+    local max_watch_times = 3
 
-    core.log.info("--raw=" .. resource.path .. "?" .. resource:watch_query())
+    for _ = 0, max_watch_times do
+        local watch_seconds = 1800 + math.random(9, 999)
+        resource.overtime = watch_seconds
+        local http_seconds = watch_seconds + 120
+        httpc:set_timeouts(2000, 3000, http_seconds * 1000)
 
-    if err then
-        return false, "RequestError", err
-    end
+        local res, err = httpc:request({
+            path = resource.path,
+            query = resource:watch_query(),
+            headers = {
+                ["Host"] = apiserver_host .. ":" .. apiserver_port,
+                ["Authorization"] = "Bearer " .. apiserver_token,
+                ["Accept"] = "application/json",
+                ["Connection"] = "keep-alive"
+            }
+        })
 
-    if res.status ~= 200 then
-        return false, res.reason, res:read_body() or ""
-    end
+        core.log.info("--raw=" .. resource.path .. "?" .. resource:watch_query())
 
-    local remainder_body = ""
-    local body
-    local reader = res.body_reader
-    local gmatch_iterator
-    local captures
-    local captured_size = 0
-    while true do
-
-        body, err = reader()
         if err then
-            return false, "ReadBodyError", err
+            return false, "RequestError", err
         end
 
-        if not body then
-            break
+        if res.status ~= 200 then
+            return false, res.reason, res:read_body() or ""
         end
 
-        if #remainder_body ~= 0 then
-            body = remainder_body .. body
-        end
-
-        gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
-        if not gmatch_iterator then
-            return false, "GmatchError", err
-        end
+        local remainder_body = ""
+        local body
+        local reader = res.body_reader
+        local gmatch_iterator
+        local captures
+        local captured_size = 0
 
         while true do
+            body, err = reader()
+            if err then
+                return false, "ReadBodyError", err
+            end
+
+            if not body then
+                break
+            end
+
+            if #remainder_body ~= 0 then
+                body = remainder_body .. body
+            end
+
+            gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
+            if not gmatch_iterator then
+                return false, "GmatchError", err
+            end
+
             captures, err = gmatch_iterator()
+
             if err then
                 return false, "GmatchError", err
             end
+
             if not captures then
                 break
             end
+
             captured_size = captured_size + #captures[0]
             local v, _ = core.json.decode(captures[0])
             if not v or not v.object or v.object.kind ~= resource.kind then
@@ -319,94 +325,85 @@ local function watch_resource(httpc, resource)
             elseif type == BookmarkEvent then
                 --    do nothing
             end
-        end
 
-        if captured_size == #body then
-            remainder_body = ""
-        elseif captured_size == 0 then
-            remainder_body = body
-        else
-            remainder_body = string.sub(body, captured_size + 1)
+            if captured_size == #body then
+                remainder_body = ""
+            elseif captured_size == 0 then
+                remainder_body = body
+            else
+                remainder_body = string.sub(body, captured_size + 1)
+            end
         end
     end
-    watch_resource(httpc, resource)
 end
 
 local function fetch_resource(resource)
-    while true do
-        local ok
-        local reason, message
-        local retry_interval
-        repeat
-            local httpc = http.new()
-            resource.fetch_state = "connecting"
-            core.log.info("begin to connect ", apiserver_host, ":", apiserver_port)
-            ok, message = httpc:connect({
-                scheme = apiserver_schema,
-                host = apiserver_host,
-                port = apiserver_port,
-                ssl_verify = false
-            })
-            if not ok then
-                resource.fetch_state = "connecting"
-                core.log.error("connect apiserver failed , apiserver_host: ", apiserver_host,
-                        ", apiserver_port", apiserver_port, ", message : ", message)
-                retry_interval = 100
-                break
-            end
+    local ok
+    local reason, message
+    local httpc = http.new()
 
-            core.log.info("begin to list ", resource.plural)
-            resource.fetch_state = "listing"
-            if resource.pre_List ~= nil then
-                resource:pre_list()
-            end
-            ok, reason, message = list_resource(httpc, resource)
-            if not ok then
-                resource.fetch_state = "list failed"
-                core.log.error("list failed, resource: ", resource.plural,
-                        ", reason: ", reason, ", message : ", message)
-                retry_interval = 100
-                break
-            end
-            resource.fetch_state = "list finished"
-            if resource.post_List ~= nil then
-                resource:post_list()
-            end
+    resource.fetch_state = "connecting"
+    core.log.info("begin to connect ", apiserver_host, ":", apiserver_port)
 
-            core.log.info("begin to watch ", resource.plural)
-            resource.fetch_state = "watching"
-            ok, reason, message = watch_resource(httpc, resource)
-            if not ok then
-                resource.fetch_state = "watch failed"
-                core.log.error("watch failed, resource: ", resource.plural,
-                        ", reason: ", reason, ", message : ", message)
-                retry_interval = 0
-                break
-            end
-            resource.fetch_state = "watch finished"
-            retry_interval = 0
-        until true
+    ok, message = httpc:connect({
+        scheme = apiserver_schema,
+        host = apiserver_host,
+        port = apiserver_port,
+        ssl_verify = false
+    })
+
+    if not ok then
+        resource.fetch_state = "connecting"
+        core.log.error("connect apiserver failed , apiserver_host: ", apiserver_host,
+                ", apiserver_port", apiserver_port, ", message : ", message)
+        return false
     end
+
+    core.log.info("begin to list ", resource.plural)
+    resource.fetch_state = "listing"
+    if resource.pre_List ~= nil then
+        resource:pre_list()
+    end
+
+    ok, reason, message = list_resource(httpc, resource)
+    if not ok then
+        resource.fetch_state = "list failed"
+        core.log.error("list failed, resource: ", resource.plural,
+                ", reason: ", reason, ", message : ", message)
+        return false
+    end
+
+    resource.fetch_state = "list finished"
+    if resource.post_List ~= nil then
+        resource:post_list()
+    end
+
+    core.log.info("begin to watch ", resource.plural)
+    resource.fetch_state = "watching"
+    ok, reason, message = watch_resource(httpc, resource)
+    if not ok then
+        resource.fetch_state = "watch failed"
+        core.log.error("watch failed, resource: ", resource.plural,
+                ", reason: ", reason, ", message : ", message)
+        return false
+    end
+
+    resource.fetch_state = "watch finished"
+    return true
 end
 
 local function set_namespace_selector(conf, resource)
     local ns = conf.namespace_selector
     if ns == nil then
-        resource.namespace_filter = function(self, namespace)
-            return true
-        end
+        resource.namespace_selector = nil
     elseif ns.equal then
         resource.field_selector = "metadata.namespace%3D" .. ns.equal
-        resource.namespace_filter = function(self, namespace)
-            return true
-        end
+        resource.namespace_selector = nil
     elseif ns.not_equal then
         resource.field_selector = "metadata.namespace%21%3D" .. ns.not_equal
-        resource.namespace_filter = function(self, namespace)
-            return true
-        end
+        resource.namespace_selector = nil
     elseif ns.match then
-        resource.namespace_filter = function(self, namespace)
+        resource.namespace_selector = function(self, namespace)
             local match = conf.namespace_selector.match
             local m, err
             for _, v in ipairs(match) do
@@ -421,7 +418,7 @@ local function set_namespace_selector(conf, resource)
             return false
         end
     elseif ns.not_match then
-        resource.namespace_filter = function(self, namespace)
+        resource.namespace_selector = function(self, namespace)
             local not_match = conf.namespace_selector.not_match
             local m, err
             for _, v in ipairs(not_match) do
@@ -508,14 +505,14 @@ end
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
     local endpoint_content, _, _ = endpoints_shared:get_stale(endpoint_key)
     if not endpoint_content then
-        core.log.emerg("get empty endpoint content from discovery DIC, this should not happen ",
+        core.log.error("get empty endpoint content from discovery DIC, this should not happen ",
                 endpoint_key)
         return nil
     end
 
     local endpoint, _ = core.json.decode(endpoint_content)
     if not endpoint then
-        core.log.emerg("decode endpoint content failed, this should not happen, content : ",
+        core.log.error("decode endpoint content failed, this should not happen, content: ",
                 endpoint_content)
     end
 
@@ -584,7 +581,10 @@ function _M.init_worker()
 
     local timer_runner
     timer_runner = function()
-        fetch_resource(resource)
+        if not fetch_resource(resource) then
+            local retry_interval = 40
+            ngx.sleep(retry_interval)
+        end
         ngx.timer.at(0, timer_runner)
     end
     ngx.timer.at(0, timer_runner)

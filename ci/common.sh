@@ -84,12 +84,12 @@ install_k8s () {
     chmod +x ./kubectl
 
     echo -e "
-    kind: Cluster
-    apiVersion: kind.x-k8s.io/v1alpha4
-    networking:
-      apiServerAddress: 127.0.0.1
-      apiServerPort: 6443
-    " >kind.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  apiServerAddress: 127.0.0.1
+  apiServerPort: 6443
+"   >kind.yaml
 
     ./kind delete cluster --name apisix-test
     ./kind create cluster --name apisix-test --config ./kind.yaml
@@ -102,34 +102,34 @@ install_k8s () {
     done
 
     echo -e "
-    kind: ServiceAccount
-    apiVersion: v1
-    metadata:
-      name: apisix-test
-      namespace: default
-    ---
-    kind: ClusterRole
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: apisix-test
-    rules:
-      - apiGroups: [ \"\" ]
-        resources: [ endpoints ]
-        verbs: [ get,list,watch ]
-    ---
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-        name: apisix-test
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: apisix-test
-    subjects:
-      - kind: ServiceAccount
-        name: apisix-test
-        namespace: default
-    " >apisix-test-rbac.yaml
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: apisix-test
+  namespace: default
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: apisix-test
+rules:
+  - apiGroups: [ \"\" ]
+    resources: [ endpoints ]
+    verbs: [ get,list,watch ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+    name: apisix-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apisix-test
+subjects:
+  - kind: ServiceAccount
+    name: apisix-test
+    namespace: default
+"   >apisix-test-rbac.yaml
 
     ./kubectl apply -f ./apisix-test-rbac.yaml
     ./kubectl proxy -p 6445 &
