@@ -212,15 +212,17 @@ Location: http://example.com/auth
 
 
 
-=== TEST 6: hit route (ignore client X-Forwarded-XXX headers)
+=== TEST 6: hit route (check APISIX generated headers and ignore client headers)
 --- request
 GET /hello
 --- more_headers
 Authorization: 444
 X-Forwarded-Host: apisix.apache.org
 --- error_code: 403
---- response_body_like eval
-qr/\"x-forwarded-host\":\"localhost\"/
+--- response_body eval
+qr/\"x-forwarded-proto\":\"http\"/     and qr/\"x-forwarded-method\":\"GET\"/    and
+qr/\"x-forwarded-host\":\"localhost\"/ and qr/\"x-forwarded-uri\":\"\\\/hello\"/ and
+qr/\"x-forwarded-for\":\"127.0.0.1\"/
 --- response_body_unlike eval
 qr/\"x-forwarded-host\":\"apisix.apache.org\"/
 
