@@ -117,6 +117,7 @@ local function check_csrf_token(conf, ctx, token)
 
     local sign = gen_sign(random, expires, conf.key)
     if token_table["sign"] ~= sign then
+        core.log.error("Invalid signatures")
         return false
     end
 
