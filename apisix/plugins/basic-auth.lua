@@ -167,8 +167,9 @@ function _M.rewrite(conf, ctx)
     end
 
     -- 5. hide `Authentication` request header if `hide_credentials` is `true`
-    if conf.hide_credentials == true then
+    if conf.hide_credentials then
         core.request.set_header(ctx, "Authentication", nil)
+        core.log.info("clear Authentication header of request")
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)

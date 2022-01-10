@@ -50,7 +50,7 @@ For route side:
 
 | Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
 | --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| hide_credentials | boolean | optional    | false   |       | Whether to return the Authentication request headers to the upstream.                                                                                            |
+| hide_credentials | boolean | optional    | false   |       | Whether to pass the Authentication request headers to the upstream.                                                                                            |
 
 ## How To Enable
 

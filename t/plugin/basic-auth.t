@@ -356,3 +356,55 @@ GET /t
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: enable basic auth plugin using admin api, set hide_credentials = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log
+clear Authentication header of request
