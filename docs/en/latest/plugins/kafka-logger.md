@@ -56,7 +56,10 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | buffer_duration  | integer | optional    | 60             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
 | max_retry_count  | integer | optional    | 0              | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
 | retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
-| include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+| include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. Note: if the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitation. |
+| include_req_body_expr  | array  | optional    |          |         | When `include_req_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the request body when the result is true. |
+| include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
+| include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 | cluster_name     | integer | optional    | 1              | [0,...] | the name of the cluster. When there are two or more kafka clusters, you can specify different names. And this only works with async producer_type.|
 
 ### examples of meta_format
@@ -180,19 +183,9 @@ hello, world
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get `APISIX` variables or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
+| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get [APISIX variable](../apisix-variable.md) or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
 
  Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use kafka-logger plugin.
-
-**APISIX Variables**
-
-|   Variable Name  |      Description        | Usage Example  |
-|------------------|-------------------------|----------------|
-| route_id         | id of `route`          | $route_id      |
-| route_name       | name of `route`        | $route_name    |
-| service_id       | id of `service`        | $service_id    |
-| service_name     | name of `service`      | $service_name  |
-| consumer_name    | username of `consumer` | $consumer_name |
 
 ### Example
 

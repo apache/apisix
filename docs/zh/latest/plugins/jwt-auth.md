@@ -101,7 +101,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -110,20 +110,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
 
 1. 先增加一个 consumer：
-![](../../../assets/images/plugin/jwt-auth-1.png)
+
+![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
 
 然后在 consumer 页面中添加 jwt-auth 插件：
-![](../../../assets/images/plugin/jwt-auth-2.png)
+![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
 
 2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
 
-![](../../../assets/images/plugin/jwt-auth-3.png)
+![enabe jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## 测试插件
 
 #### 首先进行登录获取 `jwt-auth` token:
 
-* 没有额外的payload:
+* 没有额外的 payload:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -137,7 +138,7 @@ Server: APISIX web server
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
 ```
 
-* 有额外的payload:
+* 有额外的 payload:
 
 ```shell
 $ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -221,7 +222,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

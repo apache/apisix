@@ -17,32 +17,26 @@
 
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local logger_socket = require("resty.logger.socket")
 local plugin_name = "syslog"
 local ngx = ngx
-local buffers = {}
-local ipairs   = ipairs
-local stale_timer_running = false;
-local timer_at = ngx.timer.at
 
 
+local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
     type = "object",
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
-        name = {type = "string", default = "sys logger"},
+        max_retry_times = {type = "integer", minimum = 1, default = 1},
+        retry_interval = {type = "integer", minimum = 0, default = 1},
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
         sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
-        max_retry_times = {type = "integer", minimum = 1, default = 1},
-        retry_interval = {type = "integer", minimum = 0, default = 1},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
-        batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        buffer_duration = {type = "integer", minimum = 1, default = 60},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
@@ -54,6 +48,13 @@ local lrucache = core.lrucache.new({
 })
 
 
+-- syslog uses max_retry_times/retry_interval/timeout
+-- instead of max_retry_count/retry_delay/inactive_timeout
+local schema = batch_processor_manager:wrap_schema(schema)
+schema.max_retry_count = nil
+schema.retry_delay = nil
+schema.inactive_timeout = nil
+
 local _M = {
     version = 0.1,
     priority = 401,
@@ -63,7 +64,17 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    -- syslog uses max_retry_times/retry_interval/timeout
+    -- instead of max_retry_count/retry_delay/inactive_timeout
+    conf.max_retry_count = conf.max_retry_times
+    conf.retry_delay = conf.retry_interval
+    conf.inactive_timeout = conf.timeout
+    return true
 end
 
 
@@ -115,38 +126,11 @@ local function send_syslog_data(conf, log_message, api_ctx)
 end
 
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in ipairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
-
-
 -- log phase in APISIX
 function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
 
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    local log_buffer = buffers[conf]
-
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -167,28 +151,7 @@ function _M.log(conf, ctx)
         return send_syslog_data(conf, data, cp_ctx)
     end
 
-    local config = {
-        name = conf.name,
-        retry_delay = conf.retry_interval,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_times,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    local err
-    log_buffer, err = batch_processor:new(func, config)
-
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
-
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 

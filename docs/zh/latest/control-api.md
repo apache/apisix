@@ -37,6 +37,8 @@ apisix:
     port: 9090
 ```
 
+插件的 control API 在默认情况下不支持参数匹配，如果想启用参数匹配功能可以在 control 部分添加 `router: 'radixtree_uri_with_parameter'`
+
 注意: control API server 不应该被配置成监听公网地址。
 
 ## 通过插件添加的 control API
@@ -154,7 +156,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 每个 entry 包含以下字段：
 
 * src_type：表示 health checker 的来源。值是 `[routes,services,upstreams]` 其中之一
-* src_id：表示创建 health checker 的对象的id。例如，假设 id 为 1 的 Upstream 对象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
+* src_id：表示创建 health checker 的对象的 id。例如，假设 id 为 1 的 Upstream 对象创建了一个 health checker，那么 `src_type` 就是 `upstreams`，`src_id` 就是 1
 * name： 表示 health checker 的名称
 * nodes： health checker 的目标节点
 * healthy_nodes： 表示 health checker 检测到的健康节点

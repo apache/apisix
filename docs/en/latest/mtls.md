@@ -66,7 +66,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### How to configure
 
-You need to [build APISIX-Openresty](./how-to-build.md#step-6-build-openresty-for-apache-apisix) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
+You need to [build APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
 
 ```yaml
 etcd:

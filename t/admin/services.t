@@ -1220,7 +1220,7 @@ passed
                 ngx.HTTP_PATCH,
                 [[{
                     "labels": {
-	                    "build": "17"
+                        "build": "17"
                     }
                 }]],
                 [[{

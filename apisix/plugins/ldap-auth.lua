@@ -94,19 +94,23 @@ local function extract_auth_header(authorization)
         return nil, err
     end
 
+    if not m then
+        return nil, "Invalid authorization header format"
+    end
+
     local decoded = ngx.decode_base64(m[1])
 
     if not decoded then
-        return nil, "failed to decode authentication header: " .. m[1]
+        return nil, "Failed to decode authentication header: " .. m[1]
     end
 
     local res
     res, err = ngx_re.split(decoded, ":")
     if err then
-        return nil, "split authorization err:" .. err
+        return nil, "Split authorization err:" .. err
     end
     if #res < 2 then
-        return nil, "split authorization err: invalid decoded data: " .. decoded
+        return nil, "Split authorization err: invalid decoded data: " .. decoded
     end
 
     obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
@@ -131,10 +135,8 @@ function _M.rewrite(conf, ctx)
     end
 
     -- 2. try authenticate the user against the ldap server
-    local uid = "cn"
-    if conf.uid then
-        uid = conf.uid
-    end
+    local uid = conf.uid or "cn"
+
     local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
     local ld = lualdap.open_simple (conf.ldap_uri, userdn, user.password, conf.use_tls)
     if not ld then

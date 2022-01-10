@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                 "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
             },
             "vars":[
-                [ "status","==","200" ]
+                [ "status","==",200 ]
             ]
         }
     },
@@ -131,6 +131,6 @@ The `response-rewrite` plugin has been disabled now. It works for other plugins.
 
 `ngx.exit` will interrupt the execution of the current request and return status code to Nginx.
 
-![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
 
 However, if you execute `ngx.exit` during the access phase, it only interrupts the request processing phase, and the response phase will still process it, i.e. if you configure the `response-rewrite` plugin, it will force overwriting of your response information (e.g. response status code).

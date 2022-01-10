@@ -754,7 +754,7 @@ passed
                         "methods": ["GET"],
                         "uri": "/index.html",
                         "labels": {
-	                        "env": ["production", "release"]
+                            "env": ["production", "release"]
                         }
                 }]]
                 )

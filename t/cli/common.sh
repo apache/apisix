@@ -21,7 +21,14 @@
 
 set -ex
 
+check_failure() {
+    cat logs/error.log
+}
+
 clean_up() {
+    if [ $? -gt 0 ]; then
+        check_failure
+    fi
     make stop || true
     git checkout conf/config.yaml
 }

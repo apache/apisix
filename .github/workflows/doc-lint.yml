@@ -2,7 +2,7 @@ name: Doc Lint
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths:
       - '**/*.md'
 
@@ -10,10 +10,11 @@ jobs:
   markdownlint:
     name: 🍇 Markdown
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.4.0
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v2.4.1
+        uses: actions/setup-node@v2.5.1
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
@@ -21,3 +22,14 @@ jobs:
       - name: check category
         run: |
           ./utils/check-category.py
+      - name: check Chinese doc
+        run: |
+          sudo pip3 install zhon
+          ./utils/fix-zh-doc-segment.py > \
+            /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+          if grep "find broken newline in file: " /tmp/check.log; then
+            cat /tmp/error.log
+            echo "Newline can't appear in the middle of Chinese sentences."
+            echo "You need to run ./utils/fix-zh-doc-segment.py to fix them."
+            exit 1
+          fi

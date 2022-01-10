@@ -45,7 +45,8 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 | ---------------- | ------ | ----------- | ------- | ----- | -------------------------- |
 | header_schema    | object | optional    |         |       | schema for the header data |
 | body_schema      | object | optional    |         |       | schema for the body data   |
-| rejected_message | string | optional    |         |       | the custom rejected message |
+| rejected_code | integer | optional    |   400      |    [200,...,599]   | the custom rejected code |
+| rejected_msg | string | optional    |         |       | the custom rejected message |
 
 ## How To Enable
 
@@ -64,7 +65,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
                 },
-                "rejected_message": "customize reject message"
+                "rejected_msg": "customize reject message"
             }
         }
     },
@@ -271,7 +272,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
           "required_payload": {"type": "string"},
           "boolean_payload": {"type": "boolean"}
         },
-        "rejected_message": "customize reject message"
+        "rejected_msg": "customize reject message"
       }
     }
   },

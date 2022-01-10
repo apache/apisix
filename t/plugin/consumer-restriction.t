@@ -31,8 +31,8 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
             local conf = {
-		title = "whitelist",
-		whitelist = {
+        title = "whitelist",
+        whitelist = {
                     "jack1",
                     "jack2"
                 }
@@ -263,7 +263,8 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
                             "consumer-restriction": {
                                  "blacklist": [
                                      "jack1"
-                                 ]
+                                 ],
+                                 "rejected_msg": "request is forbidden"
                             }
                         }
                 }]]
@@ -302,7 +303,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is forbidden."}
+{"message":"request is forbidden"}
 --- no_error_log
 [error]
 

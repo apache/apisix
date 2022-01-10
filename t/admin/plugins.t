@@ -38,9 +38,87 @@ __DATA__
 
 === TEST 1: get plugins' name
 --- request
-GET /apisix/admin/plugins/list
---- response_body_like eval
-qr/\["real-ip","client-control","ext-plugin-pre-req","zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","ua-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","authz-casbin","wolf-rbac","ldap-auth","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","gzip","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function","ext-plugin-post-req"\]/
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require('cjson')
+            local code, _, body = t("/apisix/admin/plugins/list", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local tab = json.decode(body)
+            for _, v in ipairs(tab) do
+                ngx.say(v)
+            end
+        }
+    }
+--- request
+GET /t
+
+--- response_body
+real-ip
+client-control
+ext-plugin-pre-req
+zipkin
+request-id
+fault-injection
+serverless-pre-function
+batch-requests
+cors
+ip-restriction
+ua-restriction
+referer-restriction
+uri-blocker
+request-validation
+openid-connect
+authz-casbin
+wolf-rbac
+ldap-auth
+hmac-auth
+basic-auth
+jwt-auth
+key-auth
+consumer-restriction
+opa
+authz-keycloak
+proxy-mirror
+proxy-cache
+proxy-rewrite
+api-breaker
+limit-conn
+limit-count
+limit-req
+gzip
+server-info
+traffic-split
+redirect
+response-rewrite
+grpc-transcode
+grpc-web
+prometheus
+datadog
+echo
+http-logger
+splunk-hec-logging
+skywalking-logger
+google-cloud-logging
+sls-logger
+tcp-logger
+kafka-logger
+rocketmq-logger
+syslog
+udp-logger
+example-plugin
+aws-lambda
+azure-functions
+openwhisk
+serverless-post-function
+ext-plugin-post-req
+
 --- no_error_log
 [error]
 
@@ -66,7 +144,7 @@ GET /apisix/admin/plugins
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"rate":{"exclusiveMinimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200,"maximum":599}},"required":["rate","burst","key"],"type":"object"}
+                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"disable":{"type":"boolean"},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
                 ]]
                 )
 
@@ -298,7 +376,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
         }
     }
 --- response_body
-{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"enum":["remote_addr","server_addr"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
 --- no_error_log
 [error]
 

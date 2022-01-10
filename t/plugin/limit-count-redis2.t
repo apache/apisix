@@ -30,6 +30,19 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -70,12 +83,8 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -116,12 +125,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -172,12 +177,8 @@ failed to limit count: failed to change redis db, err: ERR invalid DB index
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -186,8 +187,6 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -229,12 +228,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -243,6 +238,8 @@ passed
 GET /hello
 --- response_body
 hello world
+--- error_log
+connection refused
 
 
 
@@ -284,12 +281,8 @@ hello world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -298,3 +291,82 @@ passed
 GET /hello
 --- raw_response_headers_unlike eval
 qr/X-RateLimit-Limit/
+
+
+
+=== TEST 10: configuration from the same group should be the same
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "show_limit_quota_header": false,
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001,
+                            "group": "redis"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "show_limit_quota_header": false,
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 2,
+                            "redis_timeout": 1001,
+                            "group": "redis"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- error_log
+[error]
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-count err: group conf mismatched"}

@@ -19,7 +19,6 @@ local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
 local log = require("apisix.core.log")
 local tostring = tostring
-local concat = table.concat
 local ngx = ngx
 local get_phase = ngx.get_phase
 
@@ -139,39 +138,24 @@ end
 global_lru_fun = new_lru_fun()
 
 
-local plugin_ctx, plugin_ctx_id
-do
-    local key_buf = {
-        nil,
-        nil,
-        nil,
-        nil,
-    }
+local function plugin_ctx_key_and_ver(api_ctx, extra_key)
+    local key = api_ctx.conf_type .. "#" .. api_ctx.conf_id
 
-    local function plugin_ctx_key_and_ver(api_ctx, extra_key)
-        key_buf[1] = api_ctx.conf_type
-        key_buf[2] = api_ctx.conf_id
-
-        local key
-        if extra_key then
-            key_buf[3] = extra_key
-            key = concat(key_buf, "#", 1, 3)
-        else
-            key = concat(key_buf, "#", 1, 2)
-        end
-
-        return key, api_ctx.conf_version
+    if extra_key then
+        key = key .. "#" .. extra_key
     end
 
-    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
-        local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
-        return lrucache(key, ver, create_obj_func, ...)
-    end
+    return key, api_ctx.conf_version
+end
 
-    function plugin_ctx_id(api_ctx, extra_key)
-        local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
-        return key .. "#" .. ver
-    end
+local function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
+    local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
+    return lrucache(key, ver, create_obj_func, ...)
+end
+
+local function plugin_ctx_id(api_ctx, extra_key)
+    local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
+    return key .. "#" .. ver
 end
 
 

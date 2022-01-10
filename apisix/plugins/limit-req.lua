@@ -29,9 +29,10 @@ local schema = {
     properties = {
         rate = {type = "number", exclusiveMinimum = 0},
         burst = {type = "number",  minimum = 0},
-        key = {type = "string",
-            enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for", "consumer_name"},
+        key = {type = "string"},
+        key_type = {type = "string",
+            enum = {"var", "var_combination"},
+            default = "var",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -50,7 +51,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 1001,        -- TODO: add a type field, may be a good idea
+    priority = 1001,
     name = plugin_name,
     schema = schema,
 }
@@ -83,17 +84,30 @@ function _M.access(conf, ctx)
         return 500
     end
 
+    local conf_key = conf.key
     local key
-    if conf.key == "consumer_name" then
-        if not ctx.consumer_name then
-            core.log.error("consumer not found.")
-            return 500, { message = "Consumer not found."}
+    if conf.key_type == "var_combination" then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
         end
-        key = ctx.consumer_name .. ctx.conf_type .. ctx.conf_version
+
+        if n_resolved == 0 then
+            key = nil
+        end
 
     else
-        key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+        key = ctx.var[conf_key]
     end
+
+    if key == nil then
+        core.log.info("The value of the configured key is empty, use client IP instead")
+        -- When the value of key is empty, use client IP instead
+        key = ctx.var["remote_addr"]
+    end
+
+    key = key .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)

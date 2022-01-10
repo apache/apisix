@@ -24,6 +24,8 @@ local tostring = tostring
 local unpack = unpack
 -- avoid loading other module since core.log is the most foundational one
 local tab_clear = require("table.clear")
+local ngx_errlog = require("ngx.errlog")
+local ngx_get_phase = ngx.get_phase
 
 
 local _M = {version = 0.4}
@@ -42,17 +44,27 @@ local log_levels = {
 }
 
 
-local cur_level = ngx.config.subsystem == "http" and
-                  require "ngx.errlog" .get_sys_filter_level()
+local cur_level
+
 local do_nothing = function() end
+
+
+local function update_log_level()
+    -- Nginx use `notice` level in init phase instead of error_log directive config
+    -- Ref to src/core/ngx_log.c's ngx_log_init
+    if ngx_get_phase() ~= "init" then
+        cur_level = ngx.config.subsystem == "http" and ngx_errlog.get_sys_filter_level()
+    end
+end
 
 
 function _M.new(prefix)
     local m = {version = _M.version}
     setmetatable(m, {__index = function(self, cmd)
         local log_level = log_levels[cmd]
-
         local method
+        update_log_level()
+
         if cur_level and (log_level > cur_level)
         then
             method = do_nothing
@@ -64,7 +76,10 @@ function _M.new(prefix)
 
         -- cache the lazily generated method in our
         -- module table
-        m[cmd] = method
+        if ngx_get_phase() ~= "init" then
+            self[cmd] = method
+        end
+
         return method
     end})
 
@@ -74,8 +89,9 @@ end
 
 setmetatable(_M, {__index = function(self, cmd)
     local log_level = log_levels[cmd]
-
     local method
+    update_log_level()
+
     if cur_level and (log_level > cur_level)
     then
         method = do_nothing
@@ -87,7 +103,10 @@ setmetatable(_M, {__index = function(self, cmd)
 
     -- cache the lazily generated method in our
     -- module table
-    _M[cmd] = method
+    if ngx_get_phase() ~= "init" then
+        self[cmd] = method
+    end
+
     return method
 end})
 

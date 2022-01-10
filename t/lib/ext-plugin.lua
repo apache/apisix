@@ -33,7 +33,7 @@ local extra_info = require("A6.ExtraInfo.Info")
 local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
 local extra_info_resp = require("A6.ExtraInfo.Resp")
-
+local extra_info_reqbody = require("A6.ExtraInfo.ReqBody")
 
 local _M = {}
 local builder = flatbuffers.Builder(0)
@@ -54,7 +54,7 @@ end
 
 
 function _M.go(case)
-    local sock = ngx.req.socket()
+    local sock = ngx.req.socket(true)
     local ty, data = ext.receive(sock)
     if not ty then
         ngx.log(ngx.ERR, data)
@@ -169,6 +169,8 @@ function _M.go(case)
             local entry = call_req:Args(1)
             assert(entry:Name() == "x")
             assert(entry:Value() == "z")
+        elseif case.get_request_body then
+            assert(call_req:Method() == a6_method.POST)
         else
             assert(call_req:Method() == a6_method.GET)
         end
@@ -186,6 +188,33 @@ function _M.go(case)
                     extra_info_var.AddName(builder, name)
                     local var_req = extra_info_var.End(builder)
                     build_extra_info(var_req, extra_info.Var)
+                    local req = extra_info_req.End(builder)
+                    builder:Finish(req)
+                    data = builder:Output()
+                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
+                    if not ok then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    ngx.log(ngx.WARN, "send extra info req successfully")
+
+                    local ty, data = ext.receive(sock)
+                    if not ty then
+                        ngx.log(ngx.ERR, data)
+                        return
+                    end
+
+                    assert(ty == constants.RPC_EXTRA_INFO, ty)
+                    local buf = flatbuffers.binaryArray.New(data)
+                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
+                    local res = resp:ResultAsString()
+                    assert(res == action.result, res)
+                end
+
+                if action.type == "reqbody" then
+                    extra_info_reqbody.Start(builder)
+                    local reqbody_req = extra_info_reqbody.End(builder)
+                    build_extra_info(reqbody_req, extra_info.ReqBody)
                     local req = extra_info_req.End(builder)
                     builder:Finish(req)
                     data = builder:Output()

@@ -739,3 +739,57 @@ hello world
     }
 --- response_body
 passed
+
+
+
+=== TEST 33: the element in allowlist is null
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ua-restriction")
+            local conf = {
+                allowlist = {
+                    "userdata: NULL",
+                    null,
+                    nil,
+                    ""
+                },
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "allowlist" validation failed: wrong type: expected array, got table
+done
+
+
+
+=== TEST 34: the element in denylist is null
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ua-restriction")
+            local conf = {
+                denylist = {
+                    "userdata: NULL",
+                    null,
+                    nil,
+                    ""
+                },
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "denylist" validation failed: wrong type: expected array, got table
+done

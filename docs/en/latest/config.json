@@ -1,5 +1,5 @@
 {
-  "version": "2.10.0",
+  "version": "2.11.0",
   "sidebar": [
     {
       "type": "category",
@@ -35,7 +35,6 @@
           "label": "General",
           "items": [
             "plugins/batch-requests",
-            "plugins/serverless",
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
@@ -52,6 +51,7 @@
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
+            "plugins/grpc-web",
             "plugins/fault-injection"
           ]
         },
@@ -67,7 +67,8 @@
             "plugins/openid-connect",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
-            "plugins/ldap-auth"
+            "plugins/ldap-auth",
+            "plugins/opa"
           ]
         },
         {
@@ -105,7 +106,8 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
-            "plugins/node-status"
+            "plugins/node-status",
+            "plugins/datadog"
           ]
         },
         {
@@ -113,13 +115,27 @@
           "label": "Loggers",
           "items": [
             "plugins/http-logger",
+            "plugins/skywalking-logger",
             "plugins/tcp-logger",
             "plugins/kafka-logger",
+            "plugins/rocketmq-logger",
             "plugins/udp-logger",
             "plugins/syslog",
             "plugins/log-rotate",
             "plugins/error-log-logger",
-            "plugins/sls-logger"
+            "plugins/sls-logger",
+            "plugins/google-cloud-logging",
+            "plugins/splunk-hec-logging"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Serverless",
+          "items": [
+            "plugins/serverless",
+            "plugins/azure-functions",
+            "plugins/openwhisk",
+            "plugins/aws-lambda"
           ]
         },
         {
@@ -211,7 +227,15 @@
         },
         {
           "type": "doc",
+          "id": "apisix-variable"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
         },
         {
           "type": "doc",

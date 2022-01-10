@@ -21,6 +21,10 @@ title: APISIX
 #
 -->
 
+## Apache APISIX : Software Architecture
+
+![flow-software-architecture](../../../assets/images/flow-software-architecture.png)
+
 ## Plugin Loading Process
 
 ![flow-load-plugin](../../../assets/images/flow-load-plugin.png)

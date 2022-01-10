@@ -26,7 +26,7 @@ sudo apt-get update
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.4.0/build-apisix-base.sh
+    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.6.0/build-apisix-base.sh
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 

@@ -68,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                 "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
             },
             "vars":[
-                [ "status","==","200" ]
+                [ "status","==",200 ]
             ]
         }
     },
@@ -105,7 +105,7 @@ X-Server-balancer_addr: 127.0.0.1:80
 
 ### 禁用插件
 
-禁用`response-rewrite`插件很简单。你不需要重新启动服务，只需要在插件配置中删除相应的 json 配置，它将立即生效。
+禁用 `response-rewrite` 插件很简单。你不需要重新启动服务，只需要在插件配置中删除相应的 json 配置，它将立即生效。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -123,8 +123,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## 注意事项
 
-`ngx.exit`将中断当前请求的执行，并返回状态码给 Nginx。
+`ngx.exit` 将中断当前请求的执行，并返回状态码给 Nginx。
 
-![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
 
-但是很多人可能会对`ngx.exit`理解出现偏差，即如果你在`access`阶段执行`ngx.exit`，只是中断了请求处理阶段，响应阶段仍然会处理。比如，如果你配置了`response-rewrite`插件，它会强制覆盖你的响应信息（如响应代码）。
+但是很多人可能会对 `ngx.exit` 理解出现偏差，即如果你在 `access` 阶段执行 `ngx.exit`，只是中断了请求处理阶段，响应阶段仍然会处理。比如，如果你配置了 `response-rewrite` 插件，它会强制覆盖你的响应信息（如响应代码）。

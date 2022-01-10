@@ -38,7 +38,7 @@ Here's an example, to proxying gRPC service by specified route:
 * attention: the `scheme` of the route's upstream must be `grpc` or `grpcs`.
 * attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service, so need to [config SSL certificate](certificate.md)
 * attention: APISIX also support to expose gRPC service with plaintext HTTP/2, which does not rely on TLS, usually used to proxy gRPC service in intranet environment
-* the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+* the grpc server example：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -65,6 +65,8 @@ $ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"n
   "message": "Hello apisix"
 }
 ```
+
+> grpcurl is a CLI tool, similar to curl, that acts as a gRPC client and lets you interact with a gRPC server. For installation, please check out the official [documentation](https://github.com/fullstorydev/grpcurl#installation).
 
 This means that the proxying is working.
 

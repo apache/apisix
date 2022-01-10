@@ -16,16 +16,14 @@
 --
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin_name = "tcp-logger"
 local tostring = tostring
-local buffers = {}
 local ngx = ngx
 local tcp = ngx.socket.tcp
-local ipairs   = ipairs
-local stale_timer_running = false
-local timer_at = ngx.timer.at
 
+
+local batch_processor_manager = bp_manager_mod.new("tcp logger")
 local schema = {
     type = "object",
     properties = {
@@ -34,12 +32,6 @@ local schema = {
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default= 1000},
-        name = {type = "string", default = "tcp logger"},
-        max_retry_count = {type = "integer", minimum = 0, default = 0},
-        retry_delay = {type = "integer", minimum = 0, default = 1},
-        buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 5},
-        batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
@@ -50,7 +42,7 @@ local _M = {
     version = 0.1,
     priority = 405,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
 }
 
 function _M.check_schema(conf)
@@ -100,36 +92,11 @@ local function send_tcp_data(conf, log_message)
     return res, err_msg
 end
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in ipairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
-
 
 function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
 
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    local log_buffer = buffers[conf]
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -149,27 +116,8 @@ function _M.log(conf, ctx)
         return send_tcp_data(conf, data)
     end
 
-    local config = {
-        name = conf.name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    local err
-    log_buffer, err = batch_processor:new(func, config)
-
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
+
 
 return _M
