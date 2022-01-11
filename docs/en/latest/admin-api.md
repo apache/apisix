@@ -554,7 +554,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |desc            |optional|upstream usage scenarios, and more.||
 |pass_host       |optional| `host` option when the request is sent to the upstream, can be one of [`pass`, `node`, `rewrite`], the default option is `pass`. `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`.||
 |upstream_host   |optional|Specify the host of the upstream request. This option is only valid if the `pass_host` is `rewrite`.||
-|scheme          |optional |The scheme used when talk with the upstream. The value is one of ['http', 'https', 'grpc', 'grpcs'], default to 'http'.||
+|scheme          |optional |The scheme used when talk with the upstream. For L7 proxy, the value is one of ['http', 'https', 'grpc', 'grpcs']. For L7 proxy, the value is one of ['tcp', 'udp', 'tls']. Default to 'http'. See below for more details.||
 |labels          |optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
 |update_time     |optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|1602883670|
@@ -581,13 +581,15 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 1. When it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
+Features below require APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix):
+
+The `scheme` can be set to `tls`, which actually means "TLS over TCP".
+
 `tls.client_cert/key` can be used to communicate with upstream via mTLS.
 Their formats are the same as SSL's `cert` and `key` fields.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 `keepalive_pool` allows the upstream to have its separate connection pool.
 Its children fields, like `requests`, can be used to configure the upstream keepalive options.
-This feature requires APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 **Config Example:**
 
