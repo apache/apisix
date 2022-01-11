@@ -83,6 +83,7 @@ basic-auth
 jwt-auth
 key-auth
 consumer-restriction
+forward-auth
 opa
 authz-keycloak
 proxy-mirror
