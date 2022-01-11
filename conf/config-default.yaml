@@ -344,6 +344,7 @@ plugins:                          # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
