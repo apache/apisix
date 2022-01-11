@@ -54,6 +54,7 @@ function _M.init_worker()
     local servers = local_conf.discovery.dns.servers
 
     local opts = {
+        ipv6 = local_conf.apisix.enable_ipv6,
         hosts = {},
         resolvConf = {},
         nameservers = servers,

@@ -91,6 +91,7 @@ local function dns_parse(domain, selector)
         local enable_resolv_search_opt = table.try_read_attr(local_conf, "apisix",
                                                              "enable_resolv_search_opt")
         local opts = {
+            ipv6 = local_conf.apisix.enable_ipv6,
             nameservers = table.clone(dns_resolvers),
             order = {"last", "A", "AAAA", "CNAME"}, -- avoid querying SRV
         }

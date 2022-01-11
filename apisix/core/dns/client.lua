@@ -130,7 +130,7 @@ end
 
 
 function _M.new(opts)
-    opts.ipv6 = true
+    opts.ipv6 = opts.ipv6 or true
     opts.timeout = 2000 -- 2 sec
     opts.retrans = 5 -- 5 retransmissions on receive timeout
 
