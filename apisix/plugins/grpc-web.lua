@@ -27,7 +27,6 @@ local ALLOW_METHOD_OPTIONS = "OPTIONS"
 local ALLOW_METHOD_POST = "POST"
 local CONTENT_ENCODING_BASE64 = "base64"
 local CONTENT_ENCODING_BINARY = "binary"
-local DEFAULT_CORS_CONTENT_TYPE = "application/grpc-web-text+proto"
 local DEFAULT_CORS_ALLOW_ORIGIN = "*"
 local DEFAULT_CORS_ALLOW_METHODS = ALLOW_METHOD_POST
 local DEFAULT_CORS_ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent"
@@ -123,8 +122,14 @@ function _M.header_filter(conf, ctx)
         core.response.set_header("Access-Control-Allow-Methods", DEFAULT_CORS_ALLOW_METHODS)
         core.response.set_header("Access-Control-Allow-Headers", DEFAULT_CORS_ALLOW_HEADERS)
     end
+
     core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
-    core.response.set_header("Content-Type", ctx.grpc_web_mime or DEFAULT_CORS_CONTENT_TYPE)
+
+    local response_mime = ctx.grpc_web_mime
+    if not response_mime then
+        response_mime = core.request.header(ctx, "Content-Type")
+    end
+    core.response.set_header("Content-Type", response_mime)
 end
 
 function _M.body_filter(conf, ctx)
