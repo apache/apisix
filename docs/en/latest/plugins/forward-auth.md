@@ -50,6 +50,8 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 
 ## Data Definition
 
+The request headers in the following list will have APISIX generated and sent to the `authorization` service.
+
 | Scheme | HTTP Method | Host | URI | Source IP |
 | -- | -- | -- | -- | -- |
 | X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
