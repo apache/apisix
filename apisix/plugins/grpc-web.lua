@@ -60,6 +60,8 @@ end
 
 function _M.access(conf, ctx)
     -- set context variable mime
+    -- When processing non gRPC Web requests, `mime` can be obtained in the context
+    -- and set to the `Content-Type` of the response
     ctx.grpc_web_mime = core.request.header(ctx, "Content-Type")
 
     local method = core.request.get_method()
