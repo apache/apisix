@@ -25,6 +25,7 @@ title: forward-auth
 
 - [**Description**](#description)
 - [**Attributes**](#attributes)
+- [**Data Definition**](#data-definition)
 - [**Example**](#example)
 
 ## Description
@@ -47,6 +48,11 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 | keepalive_timeout | integer | optional | 60000ms | [1000, ...]ms | keepalive idle timeout |
 | keepalive_pool | integer | optional | 5 | [1, ...]ms | Connection pool limit |
 
+## Data Definition
+
+| Scheme | HTTP Method | Host | URI | Source IP |
+| -- | -- | -- | -- | -- |
+| X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
 ## Example
 
 First, you need to setup an external authorization service. Here is an example of using Apache APISIX's serverless plugin to mock.
