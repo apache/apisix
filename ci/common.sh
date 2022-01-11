@@ -78,8 +78,10 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 install_k8s () {
     # create kubernetes cluster using kind
-    curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.11.1/kind-$(uname)-amd64"
-    curl -Lo ./kubectl "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"
+    KIND_VERSION="v0.11.1"
+    KUBECTL_VERSION="v1.22.0"
+    curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-$(uname)-amd64"
+    curl -Lo ./kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
     chmod +x ./kind
     chmod +x ./kubectl
 
