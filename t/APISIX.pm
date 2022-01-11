@@ -251,6 +251,8 @@ _EOC_
     if ($stream_tls_request) {
         # generate a springboard to send tls stream request
         $block->set_value("stream_conf_enable", 1);
+        # avoid conflict with stream_enable
+        $block->set_value("stream_enable");
         $block->set_value("request", "GET /stream_tls_request");
 
         my $sni = "nil";
@@ -420,7 +422,17 @@ _EOC_
     }
 
     proxy_pass apisix_backend;
+_EOC_
 
+    if ($version =~ m/\/apisix-nginx-module/) {
+        $stream_server_config .= <<_EOC_;
+    proxy_ssl_server_name on;
+    proxy_ssl_name \$upstream_sni;
+    set \$upstream_sni "apisix_backend";
+_EOC_
+    }
+
+    $stream_server_config .= <<_EOC_;
     log_by_lua_block {
         apisix.stream_log_phase()
     }
