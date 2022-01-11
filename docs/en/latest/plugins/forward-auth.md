@@ -55,6 +55,7 @@ The request headers in the following list will have APISIX generated and sent to
 | Scheme | HTTP Method | Host | URI | Source IP |
 | -- | -- | -- | -- | -- |
 | X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
+
 ## Example
 
 First, you need to setup an external authorization service. Here is an example of using Apache APISIX's serverless plugin to mock.
