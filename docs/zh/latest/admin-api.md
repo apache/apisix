@@ -559,7 +559,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | desc           | 可选                               | 辅助           | 上游服务描述、使用场景等。                                                                                                                                                                                                                                                                                                                                  |                                                  |
 | pass_host      | 可选                               | 枚举           | 请求发给上游时的 host 设置选型。 [`pass`，`node`，`rewrite`] 之一，默认是`pass`。`pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream`  node 中配置的 host； `rewrite`: 使用配置项 `upstream_host` 的值。                                                                                                                                                                        |                                                  |
 | upstream_host  | 可选                               | 辅助           | 指定上游请求的 host，只在 `pass_host` 配置为 `rewrite` 时有效。                                                                                                                                                                                                                                                                                                                  |                                                  |
-| scheme         | 可选                               | 辅助           | 跟上游通信时使用的 scheme。需要是 ['http', 'https', 'grpc', 'grpcs'] 其中的一个，默认是 'http'。                                                                                                                                                                                                                                                            |
+| scheme         | 可选                               | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，需要是 ['http', 'https', 'grpc', 'grpcs'] 其中的一个。对于 4 层代理，需要是 ['tcp', 'udp', 'tls'] 其中的一个。默认是 'http'。细节见下文。                                                                                                                                                                                                                                                           |
 | labels         | 可选                               | 匹配规则       | 标识附加属性的键值对                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
 | create_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | update_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
@@ -585,9 +585,12 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
+以下特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)：
+
+`scheme` 可以设置成 `tls`，表示 "TLS over TCP"。
+
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
