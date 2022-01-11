@@ -22,6 +22,7 @@ local insert_tab = table.insert
 local math_random = math.random
 local package_loaded = package.loaded
 local ipairs = ipairs
+local table_remove = table.remove
 local setmetatable = setmetatable
 
 
@@ -130,7 +131,16 @@ end
 
 
 function _M.new(opts)
-    opts.ipv6 = opts.ipv6 or true
+    if not opts.ipv6 then
+        opts.ipv6 = false
+        for i, v in ipairs(opts.order) do
+            if v == "AAAA" then
+                table_remove(opts.order, i)
+                break
+            end
+        end
+    end
+
     opts.timeout = 2000 -- 2 sec
     opts.retrans = 5 -- 5 retransmissions on receive timeout
 
