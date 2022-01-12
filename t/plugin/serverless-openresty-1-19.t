@@ -25,6 +25,8 @@ if ($version =~ m/\/1.17.8/) {
     plan('no_plan');
 }
 
+log_level('debug');
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
