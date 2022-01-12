@@ -103,5 +103,36 @@ jobs:
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.os_name }}_runner.sh do_install
 
+      - name: Setup kubernetes cluster
+        run: |
+          KIND_VERSION="v0.11.1"
+          KUBECTL_VERSION="v1.22.0"
+          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-$(uname)-amd64"
+          curl -Lo ./kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x ./kind
+          chmod +x ./kubectl
+
+          ./kind create cluster --name apisix-test --config ./t/discovery/kubernetes/kind.yaml
+
+          ./kubectl wait --for=condition=Ready nodes --all
+
+          ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
+
+          ./kubectl proxy -p 6645
+
+          KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
+
+          KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
+
+          KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}/token
+
+          mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
+          echo -n "$KUBERNETES_CLIENT_TOKEN_CONTENT" > ${KUBERNETES_CLIENT_TOKEN_FILE}
+
+          echo 'KUBERNETES_SERVICE_HOST=127.0.0.1'
+          echo 'KUBERNETES_SERVICE_PORT=6443'
+          echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
+          echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
+
       - name: Linux Script
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
