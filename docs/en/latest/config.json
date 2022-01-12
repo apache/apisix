@@ -51,6 +51,7 @@
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
+            "plugins/grpc-web",
             "plugins/fault-injection"
           ]
         },
@@ -66,7 +67,9 @@
             "plugins/openid-connect",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
-            "plugins/ldap-auth"
+            "plugins/ldap-auth",
+            "plugins/opa",
+            "plugins/forward-auth"
           ]
         },
         {
@@ -222,6 +225,10 @@
         {
           "type": "doc",
           "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "apisix-variable"
         },
         {
           "type": "doc",

@@ -39,8 +39,6 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        max_retry_count = {type = "integer", minimum = 1, default = 1},
-        batch_max_size = {type = "integer", minimum = 1, default = 5000},
         prefer_name = {type = "boolean", default = true}
     }
 }

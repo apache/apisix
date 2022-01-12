@@ -83,7 +83,6 @@ passed
 
 
 === TEST 2: hit
---- stream_enable
 --- stream_request eval
 mmm
 --- error_log
@@ -124,7 +123,6 @@ passed
 
 
 === TEST 4: hit
---- stream_enable
 --- stream_request eval
 mmm
 --- stream_response
