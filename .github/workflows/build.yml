@@ -114,7 +114,7 @@ jobs:
 
           ./kind create cluster --name apisix-test --config ./t/discovery/kubernetes/kind.yaml
 
-          ./kubectl wait --for=condition=Ready nodes --all
+          ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
           ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
 
