@@ -27,7 +27,6 @@ local ALLOW_METHOD_OPTIONS = "OPTIONS"
 local ALLOW_METHOD_POST = "POST"
 local CONTENT_ENCODING_BASE64 = "base64"
 local CONTENT_ENCODING_BINARY = "binary"
-local DEFAULT_CORS_CONTENT_TYPE = "application/grpc-web-text+proto"
 local DEFAULT_CORS_ALLOW_ORIGIN = "*"
 local DEFAULT_CORS_ALLOW_METHODS = ALLOW_METHOD_POST
 local DEFAULT_CORS_ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent"
@@ -60,6 +59,11 @@ function _M.check_schema(conf)
 end
 
 function _M.access(conf, ctx)
+    -- set context variable mime
+    -- When processing non gRPC Web requests, `mime` can be obtained in the context
+    -- and set to the `Content-Type` of the response
+    ctx.grpc_web_mime = core.request.header(ctx, "Content-Type")
+
     local method = core.request.get_method()
     if method == ALLOW_METHOD_OPTIONS then
         return 204
@@ -71,12 +75,14 @@ function _M.access(conf, ctx)
         return 400
     end
 
-    local mimetype = core.request.header(ctx, "Content-Type")
-    local encoding = grpc_web_content_encoding[mimetype]
+    local encoding = grpc_web_content_encoding[ctx.grpc_web_mime]
     if not encoding then
-        core.log.error("request Content-Type: `", mimetype, "` invalid")
+        core.log.error("request Content-Type: `", ctx.grpc_web_mime, "` invalid")
         return 400
     end
+
+    -- set context variable encoding method
+    ctx.grpc_web_encoding = encoding
 
     -- set grpc path
     if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
@@ -111,10 +117,6 @@ function _M.access(conf, ctx)
     core.request.set_header(ctx, "Content-Type", DEFAULT_PROXY_CONTENT_TYPE)
     -- set grpc body
     req_set_body_data(body)
-
-    -- set context variable
-    ctx.grpc_web_mime = mimetype
-    ctx.grpc_web_encoding = encoding
 end
 
 function _M.header_filter(conf, ctx)
@@ -124,7 +126,7 @@ function _M.header_filter(conf, ctx)
         core.response.set_header("Access-Control-Allow-Headers", DEFAULT_CORS_ALLOW_HEADERS)
     end
     core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
-    core.response.set_header("Content-Type", ctx.grpc_web_mime or DEFAULT_CORS_CONTENT_TYPE)
+    core.response.set_header("Content-Type", ctx.grpc_web_mime)
 end
 
 function _M.body_filter(conf, ctx)
