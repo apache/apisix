@@ -92,7 +92,7 @@ jobs:
 
         ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
 
-        ./kubectl proxy -p 6645 &
+        ./kubectl proxy -p 6445 &
 
         KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
