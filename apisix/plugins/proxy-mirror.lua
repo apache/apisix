@@ -36,7 +36,6 @@ local schema = {
         },
     },
     required = {"host"},
-    minProperties = 1,
 }
 
 local _M = {
@@ -69,9 +68,7 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    ctx.var.upstream_host = ctx.var.host
-
-    if not conf.sample_ratio or conf.sample_ratio == 1 then
+    if conf.sample_ratio == 1 then
         enable_mirror(ctx, conf.host)
     else
         local val = math_random()

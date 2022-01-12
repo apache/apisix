@@ -24,6 +24,7 @@ title: CHANGELOG
 ## Table of Contents
 
 - [2.11.0](#2110)
+- [2.10.3](#2103)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
@@ -79,34 +80,23 @@ title: CHANGELOG
 - :sunrise: ext-plugin 避免发送重复的 conf 请求 [#5183](https://github.com/apache/apisix/pull/5183)
 - :sunrise: 新增 ldap-auth 插件 [#3894](https://github.com/apache/apisix/pull/3894)
 
+## 2.10.3
+
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
+
 ## 2.10.2
 
-### Bugfix
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
 
-- 更正 response.set_header 行为，与 request.set_header 保持一致 [#5499](https://github.com/apache/apisix/pull/5499)
-- 修复 batch-requests 插件中 client ip 的问题 [#5476](https://github.com/apache/apisix/pull/5476)
-- 修复 upstream 被多条 routes 绑定时，负载不平衡的问题 [#5462](https://github.com/apache/apisix/pull/5462)
-- hmac-auth 插件检查是否缺少 X-HMAC-ALGORITHM header [#5467](https://github.com/apache/apisix/pull/5467)
-- 防止不可信的 request_uri [#5458](https://github.com/apache/apisix/pull/5458)
-- 修复用 PATCH 方法修改 boolean 参数的问题 [#5434](https://github.com/apache/apisix/pull/5432)
-- 修复 traffic-split 插件 upstream_key 重复的问题 [#5414](https://github.com/apache/apisix/pull/5414)
-- basic-auth 插件处理无效的 Authorization header [#5419](https://github.com/apache/apisix/pull/5419)
-
-### Change
-
-- 只记录不敏感的 consumer 信息 [#5445](https://github.com/apache/apisix/pull/5445)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
 
 ## 2.10.1
 
-### Bugfix
+**这是一个 LTS 维护版本，您可以在 `release/2.10` 分支中看到 CHANGELOG。**
 
-- 更正 zipkin 插件 response_span 的开始时间 [#5295](https://github.com/apache/apisix/pull/5295)
-- 避免发送过期 key 给 plugin runner [#5309](https://github.com/apache/apisix/pull/5309)
-- 更正 route 的 timeout 被 service 覆盖的问题 [#5219](https://github.com/apache/apisix/pull/5219)
-- 过滤掉初始化 etcd 数据时产生的空 plugin conf [#5204](https://github.com/apache/apisix/pull/5204)
-- 健康检查特定情况下会发送错误的 Host header [#5175](https://github.com/apache/apisix/pull/5175)
-- 升级 lua-resty-balancer 到 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
-- prometheus 插件修复偶发的 latency 为负数的问题 [#5150](https://github.com/apache/apisix/pull/5150)
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
 ## 2.10.0
 

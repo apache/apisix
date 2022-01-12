@@ -49,10 +49,10 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | Name             | Type   | Requirement  | Default      | Valid       | Description                                                                                |
 | -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
 | prefer_name      | boolean | optional    | true         | true/false  | If set to `false`, would use route/service id instead of name(default) with metric tags.   |
-| batch_max_size   | integer | optional    | 5000         | [1,...]     | Max buffer size of each batch                                                              |
+| batch_max_size   | integer | optional    | 1000         | [1,...]     | Max buffer size of each batch                                                              |
 | inactive_timeout | integer | optional    | 5            | [1,...]     | Maximum age in seconds when the buffer will be flushed if inactive                         |
 | buffer_duration  | integer | optional    | 60           | [1,...]     | Maximum age in seconds of the oldest entry in a batch before the batch must be processed   |
-| max_retry_count  | integer | optional    | 1            | [1,...]     | Maximum number of retries if one entry fails to reach dogstatsd server                     |
+| max_retry_count  | integer | optional    | 0            | [0,...]     | Maximum number of retries if one entry fails to reach dogstatsd server                     |
 
 ## Metadata
 
