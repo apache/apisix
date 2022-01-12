@@ -25,6 +25,8 @@ if ($version =~ m/\/1.17.8/) {
     plan('no_plan');
 }
 
+log_level('debug');
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -41,7 +43,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: run in the balancer phase
+=== TEST 1: run in the before_proxy phase
 --- config
     location /t {
         content_by_lua_block {
@@ -51,7 +53,7 @@ __DATA__
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
+                            "phase": "before_proxy",
                             "functions" : ["return function(conf, ctx) ngx.req.set_header('X-SERVERLESS', ctx.balancer_ip) end"]
                         }
                     },
@@ -92,7 +94,7 @@ connect() failed
 
 
 
-=== TEST 3: exit in the balancer phase
+=== TEST 3: exit in the before_proxy phase
 --- config
     location /t {
         content_by_lua_block {
@@ -102,7 +104,7 @@ connect() failed
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
+                            "phase": "before_proxy",
                             "functions" : ["return function(conf, ctx) ngx.exit(403) end"]
                         }
                     },
@@ -136,7 +138,7 @@ GET /log_request
 
 
 
-=== TEST 5: ensure balancer phase run correct time
+=== TEST 5: ensure before_proxy phase run correct time
 --- config
     location /t {
         content_by_lua_block {
@@ -146,8 +148,8 @@ GET /log_request
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
-                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'run balancer phase with ', ctx.balancer_ip) end"]
+                            "phase": "before_proxy",
+                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'run before_proxy phase with ', ctx.balancer_ip) end"]
                         }
                     },
                     "upstream": {
@@ -177,9 +179,9 @@ passed
 --- request
 GET /log_request
 --- grep_error_log eval
-qr/(run balancer phase with [\d.]+)/
+qr/(run before_proxy phase with [\d.]+)/
 --- grep_error_log_out
-run balancer phase with 0.0.0.0
-run balancer phase with 127.0.0.1
+run before_proxy phase with 0.0.0.0
+run before_proxy phase with 127.0.0.1
 --- error_log
 connect() failed
