@@ -41,10 +41,10 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 For consumer side:
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
-| --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| username         | string  | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
-| password         | string  | required    |         |       | the user's password                                                                                                                                              |
+| Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
+| -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username | string | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
+| password | string | required    |         |       | the user's password                                                                                                                                              |
 
 For route side:
 
