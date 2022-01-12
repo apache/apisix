@@ -133,7 +133,7 @@ end
 
 -- timeout in ms
 local function http_req(method, uri, body, myheaders, timeout)
-    if myheaders == nil then
+    if not myheaders then
         myheaders = new_headers()
     end
 
