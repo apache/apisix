@@ -20,7 +20,6 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
-log_level('info');
 run_tests;
 
 __DATA__
