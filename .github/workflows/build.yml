@@ -122,7 +122,7 @@ jobs:
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
-          KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
+          KUBERNETES_CLIENT_TOKEN_DIR="/var/run/secrets/kubernetes.io/serviceaccount"
 
           KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}/token
 
