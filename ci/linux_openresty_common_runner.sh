@@ -68,7 +68,6 @@ do_install() {
 
     # install vault cli capabilities
     install_vault_cli
-
 }
 
 script() {
