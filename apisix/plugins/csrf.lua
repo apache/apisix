@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local resty_sha256 = require("resty.sha256")
+local str = require("resty.string")
 local ngx = ngx
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
@@ -71,7 +72,7 @@ local function gen_sign(random, expires, key)
     sha256:update(core.json.encode(sign))
     local digest = sha256:final()
 
-    return ngx_encode_base64(digest)
+    return str.to_hex(digest)
 end
 
 

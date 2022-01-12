@@ -19,6 +19,15 @@ use t::APISIX 'no_plan';
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests();
 
 __DATA__
@@ -37,8 +46,6 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 --- no_error_log
@@ -75,8 +82,6 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -87,8 +92,8 @@ passed
 === TEST 3: have csrf cookie
 --- request
 GET /hello
---- response_header
-Set-Cookie
+--- response_headers_like
+Set-Cookie: apisix-csrf-token\s*=\s*[^;]+(.*)?$
 
 
 
@@ -152,3 +157,14 @@ Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwND
 --- error_code: 401
 --- response_body
 {"error_msg":"Failed to verify the csrf token signature"}
+
+
+
+=== TEST9: valid csrf token
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: eyJzaWduIjoiNGM2N2NmNmEyNWQyZmU1NDIzYmQ0NTFiM2IxODk2YzBiZWVhZWE0OTY0ZjUxMDFlZDNiYjUyMzFmMDhiZWU3NCIsInJhbmRvbSI6MC4xMzUwMTk0OTcyMjE1NiwiZXhwaXJlcyI6NzIwMH0=
+Cookie: apisix-csrf-token=eyJzaWduIjoiNGM2N2NmNmEyNWQyZmU1NDIzYmQ0NTFiM2IxODk2YzBiZWVhZWE0OTY0ZjUxMDFlZDNiYjUyMzFmMDhiZWU3NCIsInJhbmRvbSI6MC4xMzUwMTk0OTcyMjE1NiwiZXhwaXJlcyI6NzIwMH0=
+--- no_error_log
+[error]
