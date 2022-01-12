@@ -134,12 +134,12 @@ end
 function _M.new(opts)
     local local_conf = config_local.local_conf()
 
-    if opts.ipv6 == nil then
-        opts.ipv6 = local_conf.apisix.enable_ipv6
+    if opts.enable_ipv6 == nil then
+        opts.enable_ipv6 = local_conf.apisix.enable_ipv6
     end
 
     -- ensure the resolver throws an error when ipv6 is disabled
-    if not opts.ipv6 then
+    if not opts.enable_ipv6 then
         for i, v in ipairs(opts.order) do
             if v == "AAAA" then
                 table_remove(opts.order, i)
