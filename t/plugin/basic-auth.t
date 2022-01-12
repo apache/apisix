@@ -375,11 +375,11 @@ GET /t
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/get"
+                    "uri": "/echo"
                 }]]
                 )
 
@@ -398,13 +398,13 @@ passed
 
 
 
-=== TEST 16: verify
+=== TEST 16: verify Authorization request header is hidden
 --- request
-GET /get
+GET /echo
 --- more_headers
 Authorization: Basic Zm9vOmJhcg==
---- response_headers_like
-!Authentication
+--- response_headers
+!Authorization
 --- no_error_log
 [error]
 
@@ -425,11 +425,11 @@ Authorization: Basic Zm9vOmJhcg==
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/get"
+                    "uri": "/echo"
                 }]]
                 )
 
@@ -448,12 +448,12 @@ passed
 
 
 
-=== TEST 18: verify
+=== TEST 18: verify Authorization request header should not hidden
 --- request
-GET /get
+GET /echo
 --- more_headers
 Authorization: Basic Zm9vOmJhcg==
---- response_headers_like
-Authentication:
+--- response_headers
+Authorization: Basic Zm9vOmJhcg==
 --- no_error_log
 [error]
