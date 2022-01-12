@@ -169,17 +169,20 @@ local function watch(httpc, informer)
                 return false, "UnexpectedBody", captures[0]
             end
 
+            local object = v.object
+            informer.version = object.metadata.resourceVersion
+
             if type == _constants.AddedEvent then
                 if informer.on_added ~= nil then
-                    informer:on_added(v.object, _constants.WatchDrive)
+                    informer:on_added(object, _constants.WatchDrive)
                 end
             elseif type == _constants.DeletedEvent then
                 if informer.on_deleted ~= nil then
-                    informer:on_deleted(v.object)
+                    informer:on_deleted(object)
                 end
             elseif type == _constants.ModifiedEvent then
                 if informer.on_modified ~= nil then
-                    informer:on_modified(v.object)
+                    informer:on_modified(object)
                 end
                 -- elseif type == _constants.BookmarkEvent then
                 --    do nothing
