@@ -17,38 +17,38 @@
 
 BEGIN {
     my $token_var_file = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-    my $token_from_var = eval { `cat $token_var_file 2>/dev/null` };
-    if ($token_from_var){
+    my $token_from_var = eval {`cat $token_var_file 2>/dev/null`};
+    if ($token_from_var) {
 
-      our $yaml_config = <<_EOC_;
+        our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s: {}
+  kubernetes: {}
 _EOC_
-      our $token_file = $token_var_file;
-      our $token_value = $token_from_var;
+        our $token_file = $token_var_file;
+        our $token_value = $token_from_var;
 
     }
 
     my $token_tmp_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
-    my $token_from_tmp = eval { `cat $token_tmp_file 2>/dev/null` };
+    my $token_from_tmp = eval {`cat $token_tmp_file 2>/dev/null`};
     if ($token_from_tmp) {
 
-      our $yaml_config = <<_EOC_;
+        our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
 _EOC_
-      our $token_file = $token_tmp_file;
-      our $token_value = $token_from_tmp;
+        our $token_file = $token_tmp_file;
+        our $token_value = $token_from_tmp;
     }
 
     our $scale_ns_c = <<_EOC_;
@@ -105,11 +105,11 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
-    my $config = $block->config  // <<_EOC_;
+    my $config = $block->config // <<_EOC_;
         location /queries {
             content_by_lua_block {
               local core = require("apisix.core")
-              local d = require("apisix.discovery.k8s")
+              local d = require("apisix.discovery.kubernetes")
 
               ngx.sleep(1)
 
@@ -378,7 +378,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     service:
       host: "127.0.0.1"
       port: "6443"
@@ -403,7 +403,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     service:
       host: ${KUBERNETES_SERVICE_HOST}
       port: ${KUBERNETES_SERVICE_PORT}
@@ -428,7 +428,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
 --- request
@@ -450,7 +450,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     service:
       schema: http
       host: "127.0.0.1"
@@ -476,7 +476,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -500,7 +500,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -524,7 +524,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -548,7 +548,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -572,7 +572,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -596,7 +596,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
@@ -620,7 +620,7 @@ apisix:
   config_center: yaml
   enable_admin: false
 discovery:
-  k8s:
+  kubernetes:
     client:
       token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
     namespace_selector:
