@@ -96,7 +96,7 @@ local function get_full_log(ngx, conf)
         }
     end
 
-    local latency, upstream_latency, apisix_latency = _M.latency_details_in_ms(ctx)
+    local latency, upstream_latency, apisix_latency = latency_details_in_ms(ctx)
 
     local log =  {
         request = {
