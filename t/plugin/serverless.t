@@ -682,7 +682,7 @@ match uri /hello
 
 
 
-=== TEST 23: run in the balancer phase
+=== TEST 23: run in the before_proxy phase
 --- config
     location /t {
         content_by_lua_block {
@@ -692,7 +692,7 @@ match uri /hello
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
+                            "phase": "before_proxy",
                             "functions" : ["return function(conf, ctx) ngx.req.set_header('X-SERVERLESS', ctx.balancer_ip) end"]
                         }
                     },
@@ -736,7 +736,7 @@ x-serverless: 127.0.0.1
 
 
 
-=== TEST 25: exit in the balancer phase
+=== TEST 25: exit in the before_proxy phase
 --- config
     location /t {
         content_by_lua_block {
@@ -746,7 +746,7 @@ x-serverless: 127.0.0.1
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
+                            "phase": "before_proxy",
                             "functions" : ["return function(conf, ctx) ngx.exit(403) end"]
                         }
                     },
@@ -786,7 +786,7 @@ GET /log_request
 
 
 
-=== TEST 27: ensure balancer phase run correct time
+=== TEST 27: ensure before_proxy phase run correct time
 --- config
     location /t {
         content_by_lua_block {
@@ -796,8 +796,8 @@ GET /log_request
                  [[{
                     "plugins": {
                         "serverless-pre-function": {
-                            "phase": "balancer",
-                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'run balancer phase with ', ctx.balancer_ip) end"]
+                            "phase": "before_proxy",
+                            "functions" : ["return function(conf, ctx) ngx.log(ngx.WARN, 'run before_proxy phase with ', ctx.balancer_ip) end"]
                         }
                     },
                     "upstream": {
@@ -831,7 +831,7 @@ passed
 --- request
 GET /log_request
 --- grep_error_log eval
-qr/(run balancer phase with [\d.]+)/
+qr/(run before_proxy phase with [\d.]+)/
 --- grep_error_log_out
-run balancer phase with 0.0.0.0
-run balancer phase with 127.0.0.1
+run before_proxy phase with 0.0.0.0
+run before_proxy phase with 127.0.0.1

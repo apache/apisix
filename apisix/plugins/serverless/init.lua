@@ -35,7 +35,7 @@ return function(plugin_name, priority)
                 type = "string",
                 default = "access",
                 enum = {"rewrite", "access", "header_filter", "body_filter",
-                        "log", "balancer"}
+                        "log", "before_proxy"}
             },
             functions = {
                 type = "array",
@@ -114,7 +114,7 @@ return function(plugin_name, priority)
     end
 
     function _M.before_proxy(conf, ctx)
-        call_funcs('balancer', conf, ctx)
+        call_funcs('before_proxy', conf, ctx)
     end
 
     function _M.header_filter(conf, ctx)

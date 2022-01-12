@@ -148,6 +148,12 @@ stream {
 
         proxy_pass apisix_backend;
 
+        {% if use_apisix_openresty then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
+
         log_by_lua_block {
             apisix.stream_log_phase()
         }
