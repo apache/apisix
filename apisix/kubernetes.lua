@@ -23,12 +23,14 @@ local core = require("apisix.core")
 local http = require("resty.http")
 
 local _constants = {
-    AddedEven = "ADDED",
+    ErrorEvent = "ERROR",
+    AddedEvent = "ADDED",
     ModifiedEvent = "MODIFIED",
     DeletedEvent = "DELETED",
     BookmarkEvent = "BOOKMARK",
     ListDrive = "list",
     WatchDrive = "watch",
+    ErrorGone = 410,
 }
 
 local _apiserver = {
@@ -88,8 +90,7 @@ local function list(httpc, informer)
 end
 
 local function watch(httpc, informer)
-    local max_watch_times = 3
-
+    local max_watch_times = 5
     for _ = 0, max_watch_times do
         local watch_seconds = 1800 + math.random(9, 999)
         informer.overtime = watch_seconds
@@ -155,13 +156,20 @@ local function watch(httpc, informer)
 
             captured_size = captured_size + #captures[0]
             local v, _ = core.json.decode(captures[0])
-            if not v or not v.object or v.object.kind ~= informer.kind then
+
+            if not v or not v.object then
                 return false, "UnexpectedBody", captures[0]
             end
 
-            informer.version = v.object.metadata.resourceVersion
             local type = v.type
-            if type == _constants.AddedEven then
+            if type == _constants.ErrorEvent then
+                if v.object.code == _constants.ErrorGone then
+                    return true, "Success", nil
+                end
+                return false, "UnexpectedBody", captures[0]
+            end
+
+            if type == _constants.AddedEvent then
                 if informer.on_added ~= nil then
                     informer:on_added(v.object, _constants.WatchDrive)
                 end
@@ -186,6 +194,7 @@ local function watch(httpc, informer)
             end
         end
     end
+    return true, "Success", ""
 end
 
 local _informer_factory = {
@@ -200,7 +209,7 @@ function _informer_factory.new(group, version, kind, plural, namespace)
         version = "",
         continue = "",
         overtime = "1800",
-        limit = 30,
+        limit = 120,
         label_selector = "",
         field_selector = "",
     }
@@ -270,7 +279,7 @@ function _informer_factory.new(group, version, kind, plural, namespace)
         if not ok then
             self.fetch_state = "connecting"
             core.log.error("connect apiserver failed , _apiserver.host: ", _apiserver.host,
-                    ", _apiserver.port", _apiserver.port, ", message : ", message)
+                    ", _apiserver.port: ", _apiserver.port, ", message : ", message)
             return false
         end
 

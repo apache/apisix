@@ -98,7 +98,7 @@ local function on_endpoint_modified(endpoint)
         core.log.error("set endpoint version into discovery DICT failed, ", err)
         return
     end
-    endpoint_dict:safe_set(endpoint_key, endpoint_content)
+    _, err = endpoint_dict:safe_set(endpoint_key, endpoint_content)
     if err then
         core.log.error("set endpoint into discovery DICT failed, ", err)
         endpoint_dict:delete(endpoint_key .. "#version")
@@ -301,6 +301,14 @@ function _M.init_worker()
         else
             on_endpoint_deleted(object)
         end
+    end
+
+    endpoint_informer.pre_list = function(self)
+        endpoint_dict:flush_all()
+    end
+
+    endpoint_informer.post_list = function(self)
+        endpoint_dict:flush_expired()
     end
 
     local timer_runner
