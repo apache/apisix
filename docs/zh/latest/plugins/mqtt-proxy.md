@@ -88,6 +88,38 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 在 Docker 与 MacOS 结合使用的情况下，`host.docker.internal` 是 `host` 的正确参数。
 
+这个插件暴露了一个变量 `mqtt_client_id`，我们可以用它来通过客户端 ID 进行负载均衡。比如说:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "mqtt-proxy": {
+            "protocol_name": "MQTT",
+            "protocol_level": 4
+        }
+    },
+    "upstream": {
+        "type": "chash",
+        "key": "mqtt_client_id",
+        "nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1995,
+            "weight": 1
+        },
+        {
+            "host": "127.0.0.2",
+            "port": 1995,
+            "weight": 1
+        }
+        ]
+    }
+}'
+```
+
+不同客户端 ID 的 MQTT 连接将通过一致性哈希算法被转发到不同的节点。如果客户端 ID 为空，我们将通过客户端 IP 进行均衡。
+
 #### 禁用插件
 
 当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
