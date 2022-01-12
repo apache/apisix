@@ -1,0 +1,27 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: apisix-test
+  namespace: default
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: apisix-test
+rules:
+  - apiGroups: [ \"\" ]
+    resources: [ endpoints ]
+    verbs: [ get,list,watch ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apisix-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apisix-test
+subjects:
+  - kind: ServiceAccount
+    name: apisix-test
+    namespace: default
