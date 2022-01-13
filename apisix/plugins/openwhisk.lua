@@ -127,7 +127,7 @@ function _M.access(conf, ctx)
     if result.headers ~= nil then
         core.response.set_header(result.headers)
     end
-    
+
     local code = result.statusCode or res.status
     local body = result.body or res.body
     return code, body
