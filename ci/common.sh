@@ -46,6 +46,7 @@ rerun_flaky_tests() {
     fi
 
     echo "Rerun $(echo "$tests" | xargs)"
+    # run in verbose mode
     FLUSH_ETCD=1 TEST_NGINX_VERBOSE=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
