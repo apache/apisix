@@ -87,7 +87,7 @@ done
 --- request
 GET /t
 --- response_body
-property "i" validation failed: expected -1 to be greater than 0
+property "i" validation failed: expected -1 to be at least 0
 done
 --- no_error_log
 [error]
