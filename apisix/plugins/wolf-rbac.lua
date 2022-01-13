@@ -133,17 +133,23 @@ end
 
 -- timeout in ms
 local function http_req(method, uri, body, myheaders, timeout)
-    if myheaders == nil then myheaders = new_headers() end
+    if not myheaders then
+        myheaders = new_headers()
+    end
 
     local httpc = http.new()
     if timeout then
         httpc:set_timeout(timeout)
     end
 
-    local params = {method = method, headers = myheaders, body = body,
-                    ssl_verify = false}
-    local res, err = httpc:request_uri(uri, params)
-    if err then
+    local res, err = httpc:request_uri(uri, {
+        method = method,
+        headers = myheaders,
+        body = body,
+        ssl_verify = false
+    })
+
+    if not res then
         core.log.error("FAIL REQUEST [ ",core.json.delay_encode(
             {method = method, uri = uri, body = body, headers = myheaders}),
             " ] failed! res is nil, err:", err)
