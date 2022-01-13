@@ -107,9 +107,10 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local httpc = http.new()
         httpc:set_timeout(conf.timeout)
 
-        local res, err = httpc:request_uri(conf.function_uri, params)
+        local res
+        res, err = httpc:request_uri(conf.function_uri, params)
 
-        if not res or err then
+        if not res then
             core.log.error("failed to process ", plugin_name, ", err: ", err)
             return 503
         end
