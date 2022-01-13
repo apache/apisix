@@ -87,66 +87,21 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function reopen()
-    local target_pointer, err = io_open('logs/file_pointer', 'r')
-    if not target_pointer then
-        core.log.error("failed to open file, error info: " .. err)
-        core.response.exit(400, {error_msg = "failed to open file, error info: " .. err})
-    else
-        local pointer = target_pointer:read('*n')
-        target_pointer:close()
-        C.close(pointer)
-
-        local reset_pointer = io_open('logs/file_pointer', 'w+')
-        reset_pointer:write(-1)
-        reset_pointer:close()
-    end
-
-    core.response.exit(200, 'reopen file-logger successfully')
-end
-
-
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
     local fd = file_descriptors[conf.path]
-    local file = io_open(conf.path, 'r')
-    local file_pointer = io_open('logs/file_pointer', 'r')
-
-    if file_pointer then
-        local read_pointer = file_pointer:read('*n')
-        file_pointer:close()
-        if read_pointer < 0 and fd then
-            C.close(fd)
-            fd = nil
-            file_descriptors[conf.path] = nil
-        end
-    else
-        fd = file_descriptors[conf.path]
-    end
-
-    if not file then
-        file = io_open(conf.path, 'a+')
-        file:close()
-        if fd then
-            C.close(fd)
-            fd = nil
-            file_descriptors[conf.path] = nil
-        end
-    else
-        file:close()
-    end
-
 
     if not fd then
+        local file = io_open(conf.path, 'r')
+        if not file then
+            file = io_open(conf.path, 'a+')
+        end
+        file:close()
         fd = C.open(conf.path, oflags, mode)
-        local write_pointer = io_open('logs/file_pointer', 'w+')
-        write_pointer:write(fd)
-        write_pointer:close()
 
         if fd < 0 then
             local err = ffi.errno()
             core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
-
         else
             file_descriptors[conf.path] = fd
         end
@@ -169,17 +124,6 @@ function _M.log(conf, ctx)
     end
 
     write_file_data(conf, entry)
-end
-
-
-function _M.control_api()
-    return {
-        {
-            methods = {"PUT"},
-            uris = {"/v1/plugin/file-logger/reopen"},
-            handler = reopen,
-        }
-    }
 end
 
 
