@@ -118,7 +118,7 @@ function _M.access(conf, ctx)
     -- the response body, or set the status code and header.
     local result, err = core.json.decode(res.body)
 
-    if not result or err then
+    if not result then
         core.log.error("failed to parse openwhisk response data: ", err)
         return 503
     end
