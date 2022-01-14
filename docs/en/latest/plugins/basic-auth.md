@@ -137,8 +137,8 @@ hello, world
 ## Disable Plugin
 
 When you want to disable the `basic-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
