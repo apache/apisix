@@ -269,18 +269,7 @@ function _M.get_port(ctx)
 end
 
 
-function _M.get_path(ctx)
-    if not ctx then
-        ctx = ngx.ctx.api_ctx
-    end
-
-    return ctx.var.uri or ''
-end
-
-
-function _M.get_http_version()
-    return ngx.req.http_version()
-end
+_M.get_http_version = ngx.req.http_version
 
 
 _M.get_method = ngx.req.get_method

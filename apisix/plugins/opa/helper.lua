@@ -38,10 +38,10 @@ end
 local function build_http_request(conf, ctx)
     return {
         scheme  = core.request.get_scheme(ctx),
-        method  = core.request.get_method(ctx),
+        method  = core.request.get_method(),
         host    = core.request.get_host(ctx),
         port    = core.request.get_port(ctx),
-        path    = core.request.get_path(ctx),
+        path    = ctx.var.uri,
         headers = core.request.headers(ctx),
         query   = core.request.get_uri_args(ctx),
     }
