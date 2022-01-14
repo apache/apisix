@@ -63,13 +63,9 @@ end
 local function gen_sign(random, expires, key)
     local sha256 = resty_sha256:new()
 
-    local sign = {
-        random = random,
-        expires = expires,
-        key = key,
-    }
+    local sign = "{expires:" .. expires .. ",random:" .. random .. ",key:" .. key .. "}"
 
-    sha256:update(core.json.encode(sign))
+    sha256:update(sign)
     local digest = sha256:final()
 
     return str.to_hex(digest)

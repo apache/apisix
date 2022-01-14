@@ -26,6 +26,11 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
 });
 
 run_tests();
@@ -48,8 +53,6 @@ __DATA__
     }
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -84,8 +87,6 @@ done
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -103,8 +104,6 @@ POST /hello
 --- error_code: 401
 --- response_body
 {"error_msg":"no csrf token in headers"}
---- no_error_log
-[error]
 
 
 
@@ -116,8 +115,6 @@ apisix-csrf-token: wrongtoken
 --- error_code: 401
 --- response_body
 {"error_msg":"no csrf cookie"}
---- no_error_log
-[error]
 
 
 
@@ -129,8 +126,6 @@ Cookie: apisix-csrf-token=testcookie
 --- error_code: 401
 --- response_body
 {"error_msg":"no csrf token in headers"}
---- no_error_log
-[error]
 
 
 
@@ -143,8 +138,6 @@ Cookie: apisix-csrf-token=testcookie
 --- error_code: 401
 --- response_body
 {"error_msg":"csrf token mismatch"}
---- no_error_log
-[error]
 
 
 
@@ -155,6 +148,7 @@ POST /hello
 apisix-csrf-token: eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwNDEsInNpZ24iOiJqZnhDckk1TVwvMHI3VjdyWWRBSXNCeEg3emljY3VnV0dySGtYQkZ0QT0ifQ==
 Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwNDEsInNpZ24iOiJqZnhDckk1TVwvMHI3VjdyWWRBSXNCeEg3emljY3VnV0dySGtYQkZ0QT0ifQ==
 --- error_code: 401
+--- error_log: Invalid signatures
 --- response_body
 {"error_msg":"Failed to verify the csrf token signature"}
 
@@ -164,7 +158,5 @@ Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwND
 --- request
 POST /hello
 --- more_headers
-apisix-csrf-token: eyJzaWduIjoiNGM2N2NmNmEyNWQyZmU1NDIzYmQ0NTFiM2IxODk2YzBiZWVhZWE0OTY0ZjUxMDFlZDNiYjUyMzFmMDhiZWU3NCIsInJhbmRvbSI6MC4xMzUwMTk0OTcyMjE1NiwiZXhwaXJlcyI6NzIwMH0=
-Cookie: apisix-csrf-token=eyJzaWduIjoiNGM2N2NmNmEyNWQyZmU1NDIzYmQ0NTFiM2IxODk2YzBiZWVhZWE0OTY0ZjUxMDFlZDNiYjUyMzFmMDhiZWU3NCIsInJhbmRvbSI6MC4xMzUwMTk0OTcyMjE1NiwiZXhwaXJlcyI6NzIwMH0=
---- no_error_log
-[error]
+apisix-csrf-token: eyJzaWduIjoiZTlhNWVkOTBmZDc2YjRhMTYyMzg1ZDU2Y2ZhZDI1N2MxNmI0MWY1MjFjZWUwODczNzExM2NlYzZkZDQwMWJmNyIsInJhbmRvbSI6MC4zNjcxNDg2NDI2MjE0MywiZXhwaXJlcyI6NzIwMH0=
+Cookie: apisix-csrf-token=eyJzaWduIjoiZTlhNWVkOTBmZDc2YjRhMTYyMzg1ZDU2Y2ZhZDI1N2MxNmI0MWY1MjFjZWUwODczNzExM2NlYzZkZDQwMWJmNyIsInJhbmRvbSI6MC4zNjcxNDg2NDI2MjE0MywiZXhwaXJlcyI6NzIwMH0=
