@@ -98,7 +98,7 @@ Set-Cookie: apisix-csrf-token\s*=\s*[^;]+(.*)?$
 
 
 
-=== TEST4: block request
+=== TEST 4: block request
 --- request
 POST /hello
 --- error_code: 401
@@ -107,7 +107,7 @@ POST /hello
 
 
 
-=== TEST5: only header
+=== TEST 5: only header
 --- request
 POST /hello
 --- more_headers
@@ -118,7 +118,7 @@ apisix-csrf-token: wrongtoken
 
 
 
-=== TEST6: only cookie
+=== TEST 6: only cookie
 --- request
 POST /hello
 --- more_headers
@@ -129,7 +129,7 @@ Cookie: apisix-csrf-token=testcookie
 
 
 
-=== TEST7: header and cookie mismatch
+=== TEST 7: header and cookie mismatch
 --- request
 POST /hello
 --- more_headers
@@ -141,7 +141,7 @@ Cookie: apisix-csrf-token=testcookie
 
 
 
-=== TEST8: invalid csrf token
+=== TEST 8: invalid csrf token
 --- request
 POST /hello
 --- more_headers
@@ -154,7 +154,7 @@ Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwND
 
 
 
-=== TEST9: valid csrf token
+=== TEST 9: valid csrf token
 --- request
 POST /hello
 --- more_headers
