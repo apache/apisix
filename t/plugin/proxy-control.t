@@ -33,6 +33,10 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -72,8 +76,6 @@ __DATA__
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -120,8 +122,6 @@ a client request body is buffered to a temporary file
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
