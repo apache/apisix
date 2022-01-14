@@ -204,7 +204,7 @@ local function get_secret(conf, consumer_name)
     local secret = conf.secret
     if conf.vault then
         local res, err = vault.get(get_vault_path(consumer_name))
-        if not res or err then
+        if not res then
             return nil, err
         end
 
@@ -233,7 +233,7 @@ local function get_rsa_keypair(conf, consumer_name)
     local vout = {}
     if conf.vault then
         local res, err = vault.get(get_vault_path(consumer_name))
-        if not res or err then
+        if not res then
             return nil, nil, err
         end
 

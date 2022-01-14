@@ -65,6 +65,9 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local req_body, err = core.request.get_body()
 
         if err then
+            return 413, { error_msg = err }
+        end
+        if not req_body then
             core.log.error("error while reading request body: ", err)
             return 400
         end
