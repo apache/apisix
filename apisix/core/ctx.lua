@@ -143,14 +143,16 @@ do
         var_x_forwarded_proto = true,
     }
 
+    -- sort in alphabetical
     local apisix_var_names = {
+        balancer_ip = true,
+        balancer_port = true,
+        consumer_name = true,
+        mqtt_client_id = true,
         route_id = true,
         route_name = true,
         service_id = true,
         service_name = true,
-        consumer_name = true,
-        balancer_ip = true,
-        balancer_port = true,
     }
 
     local mt = {
