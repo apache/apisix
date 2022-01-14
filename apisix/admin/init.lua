@@ -166,7 +166,7 @@ local function run()
 
     if req_body then
         local data, err = core.json.decode(req_body)
-        if not data then
+        if err then
             core.log.error("invalid request body: ", req_body, " err: ", err)
             core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
