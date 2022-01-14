@@ -44,7 +44,7 @@ __DATA__
                 {address = "http://127.0.0.1:8199"},
                 {request_headers = {"test"}},
                 {address = 3233},
-                {hoaddressst = "http://127.0.0.1:8199", request_headers = "test"}
+                {address = "http://127.0.0.1:8199", request_headers = "test"}
             }
             local plugin = require("apisix.plugins.forward-auth")
 
