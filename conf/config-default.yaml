@@ -323,6 +323,7 @@ graphql:
 plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
+  - proxy-control                  # priority: 21990
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
