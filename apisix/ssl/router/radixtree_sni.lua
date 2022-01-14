@@ -104,7 +104,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
     end
 
     local parsed_pkey, err = apisix_ssl.fetch_pkey(sni, pkey)
-    if not parsed_cert then
+    if not parsed_pkey then
         return false, "failed to parse PEM priv key: " .. err
     end
 
