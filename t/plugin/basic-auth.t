@@ -398,7 +398,7 @@ GET /t
 
 
 
-=== TEST 15: enable basic auth plugin using admin api, set hide_credentials = true
+=== TEST 18: enable basic auth plugin using admin api, set hide_credentials = true
 --- config
     location /t {
         content_by_lua_block {
@@ -436,7 +436,7 @@ passed
 
 
 
-=== TEST 16: verify Authorization request header is hidden
+=== TEST 19: verify Authorization request header is hidden
 --- request
 GET /echo
 --- more_headers
@@ -448,7 +448,7 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 17: enable basic auth plugin using admin api, hide_credentials = false
+=== TEST 20: enable basic auth plugin using admin api, hide_credentials = false
 --- config
     location /t {
         content_by_lua_block {
@@ -486,7 +486,7 @@ passed
 
 
 
-=== TEST 18: verify Authorization request header should not hidden
+=== TEST 21: verify Authorization request header should not hidden
 --- request
 GET /echo
 --- more_headers
