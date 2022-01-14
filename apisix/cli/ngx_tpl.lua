@@ -77,7 +77,7 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     {% if ssl.ssl_trusted_certificate ~= nil then %}
@@ -147,6 +147,12 @@ stream {
         }
 
         proxy_pass apisix_backend;
+
+        {% if use_apisix_openresty then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
 
         log_by_lua_block {
             apisix.stream_log_phase()
@@ -248,7 +254,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;

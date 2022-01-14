@@ -44,7 +44,7 @@ jobs:
       run: |
         export VERSION=${{ steps.branch_env.outputs.version }}
         sudo gem install --no-document fpm
-        git clone -b v2.6.0 https://github.com/api7/apisix-build-tools.git
+        git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
 
         # move codes under build tool
         mkdir ./apisix-build-tools/apisix

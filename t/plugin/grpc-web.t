@@ -153,7 +153,6 @@ GET /grpc/a6.RouteService/GetAll
 --- error_code: 400
 --- response_headers
 Access-Control-Allow-Origin: *
-Content-Type: application/grpc-web-text+proto
 --- error_log
 request method: `GET` invalid
 
@@ -167,7 +166,7 @@ Content-Type: application/json
 --- error_code: 400
 --- response_headers
 Access-Control-Allow-Origin: *
-Content-Type: application/grpc-web-text+proto
+Content-Type: application/json
 --- error_log
 request Content-Type: `application/json` invalid
 
@@ -216,6 +215,6 @@ Content-Type: application/grpc-web
 --- error_code: 400
 --- response_headers
 Access-Control-Allow-Origin: *
-Content-Type: application/grpc-web-text+proto
+Content-Type: application/grpc-web
 --- error_log
 routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing

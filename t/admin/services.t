@@ -447,7 +447,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
 --- no_error_log
 [error]
 
@@ -474,7 +474,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
 --- no_error_log
 [error]
 
@@ -501,7 +501,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the requireds"}
+{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the required"}
 --- no_error_log
 [error]
 

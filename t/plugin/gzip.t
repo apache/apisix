@@ -537,10 +537,10 @@ Vary: upstream, Accept-Encoding
     }
 }
 --- response_body
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"types\" validation failed: object matches none of the requireds"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"min_length\" validation failed: expected 0 to be greater than 1"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"comp_level\" validation failed: expected 10 to be smaller than 9"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"types\" validation failed: object matches none of the required"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"min_length\" validation failed: expected 0 to be at least 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"comp_level\" validation failed: expected 10 to be at most 9"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"http_version\" validation failed: matches none of the enum values"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be greater than 1"}
-{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be at least 1"}
+{"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
