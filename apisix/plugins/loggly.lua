@@ -96,19 +96,7 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-    if conf.tags then
-        for i = 1, #conf.tags do
-            if not conf.tags[i]:sub(1, 4) ~= "tag=" then
-                conf.tags[i] = "tag=\"" .. conf.tags[i] .. "\""
-            end
-        end
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 local function generate_log_message(conf, ctx)
@@ -140,9 +128,13 @@ local function generate_log_message(conf, ctx)
     end
 
     local timestamp = log_util.get_rfc3339_zulu_timestamp()
-    local taglist = ""
+    local taglist = {}
     if conf.tags then
-        taglist = tab_concat(conf.tags, " ")
+        for i = 1, #conf.tags do
+            if not conf.tags[i]:sub(1, 4) ~= "tag=" then
+                core.table.insert(taglist, "tag=\"" .. conf.tags[i] .. "\"")
+            end
+        end
     end
     local message = {
         -- facility LOG_USER - random user level message
@@ -152,7 +144,7 @@ local function generate_log_message(conf, ctx)
         "apisix",                                            -- appname
         ctx.var.pid,                                         -- proc-id
         "-",                                                 -- msgid
-        "[" .. conf.customer_token .. "@41058 " .. taglist .. "]",
+        "[" .. conf.customer_token .. "@41058 " .. tab_concat(taglist, " ") .. "]",
         json_str
     }
 
@@ -198,18 +190,12 @@ local function send_data_over_udp(message)
     return res, err_msg
 end
 
-local function handle_log(entries, batch_max_size)
-    local data, err
-    if batch_max_size == 1 then
-        data, err = core.json.encode(entries[1]) -- encode as single {}
-    else
-        data, err = core.json.encode(entries) -- encode as array [{}]
+local function handle_log(entries)
+    local ok, err
+    for i = 1, #entries do
+        ok, err = send_data_over_udp(entries[i])
     end
-
-    if not data then
-        return false, 'error occurred while encoding the data: ' .. err
-    end
-    return send_data_over_udp(data)
+    return ok, err
 end
 
 function _M.log(conf, ctx)
