@@ -30,12 +30,7 @@ local consumers_lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     title = "work with route or service object",
-    properties = {
-        hide_auth_header = {
-            type = "boolean",
-            default = true,
-        }
-    },
+    properties = {},
 }
 
 local consumer_schema = {
@@ -44,10 +39,6 @@ local consumer_schema = {
     properties = {
         username = { type = "string" },
         password = { type = "string" },
-        hide_auth_header = {
-            type = "boolean",
-            default = true,
-        }
     },
     required = {"username", "password"},
 }
@@ -179,11 +170,6 @@ function _M.rewrite(conf, ctx)
     -- 4. check the password is correct
     if cur_consumer.auth_conf.password ~= password then
         return 401, { message = "Password is error" }
-    end
-
-    -- 5. hide `Authentication` header if `hide_auth_header` is `true`
-    if conf.hide_auth_header == true then
-        core.response.set_header("Authentication", "")
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
