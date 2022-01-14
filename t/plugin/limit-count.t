@@ -268,7 +268,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be strictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -310,7 +310,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be strictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -390,7 +390,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be strictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -431,7 +431,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be strictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -1345,7 +1345,7 @@ passed
 --- request
 GET /t
 --- response_body eval
-qr/property \"count\" validation failed: expected 0 to be strictly greater than 0/
+qr/property \"count\" validation failed: expected 0 to be greater than 0/
 --- no_error_log
 [error]
 
@@ -1367,6 +1367,6 @@ qr/property \"count\" validation failed: expected 0 to be strictly greater than 
 --- request
 GET /t
 --- response_body eval
-qr/property \"time_window\" validation failed: expected 0 to be strictly greater than 0/
+qr/property \"time_window\" validation failed: expected 0 to be greater than 0/
 --- no_error_log
 [error]

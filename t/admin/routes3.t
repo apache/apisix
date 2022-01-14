@@ -183,7 +183,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the requireds"}
+{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the required"}
 
 
 
