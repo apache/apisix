@@ -444,8 +444,8 @@ the post form is too large: request body in temp file not supported
 --- config
     location = /hello {
         content_by_lua_block {
-            local method = core.request.get_method()
-            ngx.say(method)
+            local core = require("apisix.core")
+            ngx.say(core.request.get_method())
         }
     }
 --- request
