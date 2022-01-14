@@ -2,13 +2,15 @@ name: CLI Test
 
 on:
   push:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -22,23 +24,23 @@ jobs:
         platform:
           - ubuntu-18.04
         job_name:
-          - linux_apisix_master_luarocks
           - linux_apisix_current_luarocks
           - linux_apisix_current_luarocks_in_customed_nginx
 
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 15
     env:
       SERVER_NAME: ${{ matrix.job_name }}
       OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
         with:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         env:
           cache-name: cache-deps
         with:

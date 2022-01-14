@@ -19,15 +19,49 @@
 
 set -ex
 
+function detect_aur_helper() {
+    if [[ $(which yay) ]]; then
+        AUR_HELPER=yay
+    elif [[ $(which pacaur) ]]; then
+        AUR_HELPER=pacaur
+    else
+        echo No available AUR helpers found. Please specify your AUR helper by AUR_HELPER.
+        exit 255
+    fi
+}
+
+function install_dependencies_with_aur() {
+    detect_aur_helper
+    $AUR_HELPER -S openresty --noconfirm
+    sudo pacman -S openssl --noconfirm
+
+    export OPENRESTY_PREFIX=/opt/openresty
+
+    sudo mkdir $OPENRESTY_PREFIX/openssl
+    sudo ln -s /usr/include $OPENRESTY_PREFIX/openssl/include
+    sudo ln -s /usr/lib $OPENRESTY_PREFIX/openssl/lib
+}
+
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
-    # add OpenResty source
-    sudo yum install yum-utils
-    sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
-    sudo yum check-update
+    sudo yum install -y yum-utils
 
-    # install OpenResty and some compilation tools
-    sudo yum install -y openresty curl git gcc openresty-openssl111-devel unzip pcre pcre-devel libldap2-dev
+    local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
+    if [ "${1}" == "centos" ]; then
+        # add APISIX source
+        sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+
+        # install apisix-base and some compilation tools
+        # shellcheck disable=SC2086
+        sudo yum install -y apisix-base $common_dep
+    else
+        # add OpenResty source
+        sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
+
+        # install OpenResty and some compilation tools
+        # shellcheck disable=SC2086
+        sudo yum install -y openresty $common_dep
+    fi
 }
 
 # Install dependencies on ubuntu and debian
@@ -66,6 +100,8 @@ function multi_distro_installation() {
         install_dependencies_with_apt "debian"
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         install_dependencies_with_apt "ubuntu"
+    elif grep -Eqi "Arch" /etc/issue || grep -Eq "Arch" /etc/*-release; then
+        install_dependencies_with_aur
     else
         echo "Non-supported operating system version"
     fi
@@ -89,15 +125,34 @@ function install_luarocks() {
 # Entry
 function main() {
     OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
-    if [[ "${OS_NAME}" == "linux" ]]; then
-        multi_distro_installation
-        install_luarocks
-        install_etcd
-    elif [[ "${OS_NAME}" == "darwin" ]]; then
-        install_dependencies_on_mac_osx
-    else
-        echo "Non-surported distribution"
+    if [[ "$#" == 0 ]]; then
+        if [[ "${OS_NAME}" == "linux" ]]; then
+            multi_distro_installation
+            install_luarocks
+            install_etcd
+        elif [[ "${OS_NAME}" == "darwin" ]]; then
+            install_dependencies_on_mac_osx
+        else
+            echo "Non-surported distribution"
+        fi
+        return
     fi
+
+    case_opt=$1
+    case "${case_opt}" in
+        "install_etcd")
+            install_etcd
+        ;;
+        "install_luarocks")
+            install_luarocks
+        ;;
+        "multi_distro_installation")
+            multi_distro_installation
+        ;;
+        *)
+            echo "Unsupported method: ${case_opt}"
+        ;;
+    esac
 }
 
-main
+main "$@"

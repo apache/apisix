@@ -57,7 +57,14 @@ title: batch-requests
 
 ## 如何启用
 
-本插件默认启用。
+你需要在 `config.yaml` 里面启用 batch-requests 插件：
+
+```
+# 加到 config.yaml
+plugins:
+  - ... # plugin you need
+  - batch-requests
+```
 
 ## 如何配置
 

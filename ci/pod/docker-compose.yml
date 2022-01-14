@@ -64,7 +64,7 @@ services:
       kafka_net:
 
   kafka-server1:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
@@ -79,7 +79,7 @@ services:
       kafka_net:
 
   kafka-server2:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
@@ -136,9 +136,26 @@ services:
       consul_net:
 
 
+  ## HashiCorp Vault
+  vault:
+    image: vault:1.9.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: [ "vault", "server", "-dev" ]
+    networks:
+      vault_net:
+
+
   ## OpenLDAP
   openldap:
-    image: bitnami/openldap:latest
+    image: bitnami/openldap:2.5.8
     environment:
       LDAP_ADMIN_USERNAME: amdin
       LDAP_ADMIN_PASSWORD: adminpassword
@@ -355,6 +372,62 @@ services:
     networks:
       apisix_net:
 
+  rocketmq_namesrv:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqnamesrv
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      rocketmq_net:
+
+  rocketmq_broker:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqbroker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    depends_on:
+      - rocketmq_namesrv
+    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
+    networks:
+      rocketmq_net:
+
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s /example.rego /echo.rego /data.json
+    volumes:
+      - type: bind
+        source: ./ci/pod/opa/example.rego
+        target: /example.rego
+      - type: bind
+        source: ./ci/pod/opa/echo.rego
+        target: /echo.rego
+      - type: bind
+        source: ./ci/pod/opa/data.json
+        target: /data.json
+    networks:
+      opa_net:
+
+  # Splunk HEC Logging Service
+  splunk:
+    image: splunk/splunk:8.2.3
+    restart: unless-stopped
+    ports:
+      - "18088:8088"
+    environment:
+      SPLUNK_PASSWORD: "ApacheAPISIX@666"
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
+      SPLUNK_HEC_SSL: "False"
+
 
 networks:
   apisix_net:
@@ -362,3 +435,6 @@ networks:
   kafka_net:
   nacos_net:
   skywalk_net:
+  rocketmq_net:
+  vault_net:
+  opa_net:

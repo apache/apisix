@@ -49,7 +49,7 @@ end
 
 function _M.rewrite(conf, ctx)
     if not ok then
-        core.log.error("need to build APISIX-OpenResty to support client restriction")
+        core.log.error("need to build APISIX-OpenResty to support client control")
         return 501
     end
 

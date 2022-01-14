@@ -21,23 +21,23 @@ title: 集成服务发现注册中心
 #
 -->
 
-* [摘要](#摘要)
-* [当前支持的注册中心](#当前支持的注册中心)
-* [如何扩展注册中心？](#如何扩展注册中心)
-  * [基本步骤](#基本步骤)
-  * [以 Eureka 举例](#以-eureka-举例)
-    * [实现 eureka.lua](#实现-eurekalua)
-    * [Eureka 与 APISIX 之间数据转换逻辑](#eureka-与-apisix-之间数据转换逻辑)
-* [注册中心配置](#注册中心配置)
-  * [初始化服务发现](#初始化服务发现)
-  * [Eureka 的配置](#eureka-的配置)
-* [upstream 配置](#upstream-配置)
+- [摘要](#摘要)
+- [当前支持的注册中心](#当前支持的注册中心)
+- [如何扩展注册中心？](#如何扩展注册中心)
+  - [基本步骤](#基本步骤)
+  - [以 Eureka 举例](#以-eureka-举例)
+    - [实现 eureka.lua](#实现-eurekalua)
+    - [Eureka 与 APISIX 之间数据转换逻辑](#eureka-与-apisix-之间数据转换逻辑)
+- [注册中心配置](#注册中心配置)
+  - [初始化服务发现](#初始化服务发现)
+  - [Eureka 的配置](#eureka-的配置)
+- [upstream 配置](#upstream-配置)
 
 ## 摘要
 
 当业务量发生变化时，需要对上游服务进行扩缩容，或者因服务器硬件故障需要更换服务器。如果网关是通过配置来维护上游服务信息，在微服务架构模式下，其带来的维护成本可想而知。再者因不能及时更新这些信息，也会对业务带来一定的影响，还有人为误操作带来的影响也不可忽视，所以网关非常必要通过服务注册中心动态获取最新的服务实例信息。架构图如下所示：
 
-![](../../assets/images/discovery-cn.png)
+![discovery through service registry](../../assets/images/discovery-cn.png)
 
 1. 服务启动时将自身的一些信息，比如服务名、IP、端口等信息上报到注册中心；各个服务与注册中心使用一定机制（例如心跳）通信，如果注册中心与服务长时间无法通信，就会注销该实例；当服务下线时，会删除注册中心的实例信息；
 2. 网关会准实时地从注册中心获取服务实例信息；
@@ -69,11 +69,13 @@ APISIX 要扩展注册中心其实是件非常容易的事情，其基本步骤�
 
 ### 以 Eureka 举例
 
-#### 实现 eureka.lua
+#### 实现 eureka 客户端
 
-首先在 `apisix/discovery/` 目录中添加 [`eureka.lua`](../../../apisix/discovery/eureka.lua);
+首先，在 `apisix/discovery` 下创建 `eureka` 目录；
 
-然后在 `eureka.lua` 实现用于初始化的 `init_worker` 函数以及用于获取服务实例节点列表的 `nodes` 函数即可：
+其次，在 `apisix/discovery/eureka` 目录中添加 [`init.lua`](../../../apisix/discovery/eureka/init.lua);
+
+然后在 `init.lua` 实现用于初始化的 `init_worker` 函数以及用于获取服务实例节点列表的 `nodes` 函数即可：
 
 ```lua
 local _M = {
@@ -93,6 +95,8 @@ end
 
 return _M
 ```
+
+最后，在 `apisix/discovery/eureka` 下的 `schema.lua` 里面提供 YAML 配置的 schema。
 
 #### Eureka 与 APISIX 之间数据转换逻辑
 
@@ -206,7 +210,7 @@ discovery:
 
 ## upstream 配置
 
-APISIX 是通过 `upstream.discovery_type`选择使用的服务发现， `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
+APISIX 是通过 `upstream.discovery_type` 选择使用的服务发现，`upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '

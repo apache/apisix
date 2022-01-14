@@ -27,6 +27,7 @@ title: Zipkin
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
+  - [run the Zipkin instance](#run-the-zipkin-instance)
 - [**Disable Plugin**](#disable-plugin)
 
 ## Name
@@ -87,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -95,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
 
-![](../../../assets/images/plugin/zipkin-1.png)
+![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png)
 
 ## Test Plugin
 
@@ -121,9 +122,9 @@ Then you can use a browser to access the webUI of Zipkin:
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../../assets/images/plugin/zipkin-1.jpg)
+![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
-![](../../../assets/images/plugin/zipkin-2.jpg)
+![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
 
 ## Disable Plugin
 
@@ -141,7 +142,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

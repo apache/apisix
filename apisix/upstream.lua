@@ -273,7 +273,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
-                 api_ctx.conf_version, up_conf)
+                 tostring(up_conf), up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then

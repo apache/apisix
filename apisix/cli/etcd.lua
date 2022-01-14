@@ -347,6 +347,13 @@ function _M.init(env, args)
                 util.die(errmsg)
             end
 
+            if res_put:find("CommonName of client sending a request against gateway", 1, true) then
+                errmsg = str_format("etcd \"client-cert-auth\" cannot be used with gRPC-gateway, "
+                                 .. "please configure the etcd username and password "
+                                 .. "in configuration file\n")
+                util.die(errmsg)
+            end
+
             if res_put:find("error", 1, true) then
                 is_success = false
                 if (index == host_count) then

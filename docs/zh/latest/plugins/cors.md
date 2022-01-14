@@ -72,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-请求下接口，发现接口已经返回了`CORS`相关的header，代表插件生效
+请求下接口，发现接口已经返回了 `CORS` 相关的header，代表插件生效
 
 ```shell
 curl http://127.0.0.1:9080/hello -v

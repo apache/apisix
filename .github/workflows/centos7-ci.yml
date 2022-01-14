@@ -5,10 +5,12 @@ on:
     branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -18,10 +20,11 @@ jobs:
   test_apisix:
     name: run ci on centos7
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v2.4.0
       with:
         submodules: recursive
 
@@ -34,14 +37,14 @@ jobs:
 
     - name: Linux launch common services
       run: |
-        project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+        make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
     - name: Build rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
         export VERSION=${{ steps.branch_env.outputs.version }}
         sudo gem install --no-document fpm
-        git clone -b v2.2.1 https://github.com/api7/apisix-build-tools.git
+        git clone -b v2.6.0 https://github.com/api7/apisix-build-tools.git
 
         # move codes under build tool
         mkdir ./apisix-build-tools/apisix
@@ -54,7 +57,7 @@ jobs:
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test
@@ -77,10 +80,3 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-    - name: Publish Artifact
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-      uses: actions/upload-artifact@v2.2.4
-      with:
-        name: "rpm"
-        path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"

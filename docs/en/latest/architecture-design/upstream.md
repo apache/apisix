@@ -35,7 +35,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 Create an upstream object use case:
 
-```json
+```shell
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
@@ -74,7 +74,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     },
     "upstream": {
          "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
         "type": "roundrobin",
         "retries": 2,

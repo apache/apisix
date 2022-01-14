@@ -31,9 +31,9 @@ title: syslog
 
 ## 定义
 
-`sys` 是一个将Log data请求推送到Syslog的插件。
+`sys` 是一个将 Log data 请求推送到 Syslog 的插件。
 
-这将提供将Log数据请求作为JSON对象发送的功能。
+这将提供将 Log 数据请求作为 JSON 对象发送的功能。
 
 ## 属性列表
 
@@ -46,10 +46,10 @@ title: syslog
 | tls              | boolean | 可选   | false        |               | 用于控制是否执行SSL验证                                                                                                              |
 | flush_limit      | integer | 可选   | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器。默认为4096（4KB）       |
 | drop_limit       | integer | 可选   | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃。默认为1048576（1MB） |
-| sock_type        | string  | 可选   | "tcp"        | ["tcp","udp"] | 用于传输层的IP协议类型。                                                                                                             |
+| sock_type        | string  | 可选   | "tcp"        | ["tcp","udp"] | 用于传输层的 IP 协议类型。                                                                                                             |
 | max_retry_times  | integer | 可选   | 1            | [1, ...]      | 连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                               |
 | retry_interval   | integer | 可选   | 1            | [0, ...]      | 重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                   |
-| pool_size        | integer | 可选   | 5            | [5, ...]      | sock：keepalive使用的Keepalive池大小。                                                                                               |
+| pool_size        | integer | 可选   | 5            | [5, ...]      | sock：keepalive 使用的 Keepalive 池大小。                                                                                               |
 | batch_max_size   | integer | 可选   | 1000         | [1, ...]      | 每批的最大大小                                                                                                                       |
 | buffer_duration  | integer | 可选   | 60           | [1, ...]      | 必须先处理批次中最旧条目的最大期限（以秒为单位）                                                                                     |
 | include_req_body | boolean | 可选   | false        |               | 是否包括请求 body                                                                                                                    |
@@ -91,7 +91,7 @@ hello, world
 
 ## 禁用插件
 
-想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
+想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

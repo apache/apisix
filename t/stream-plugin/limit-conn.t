@@ -189,3 +189,148 @@ GET /test_concurrency
 --- error_log
 Connection reset by peer
 --- stream_enable
+
+
+
+=== TEST 5: var combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 1,
+                            "default_conn_delay": 0.1,
+                            "key": "$remote_addr $server_addr",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: exceeding the burst
+--- request
+GET /test_concurrency
+--- response_body
+200
+200
+200
+503
+503
+--- error_log
+Connection reset by peer
+--- stream_enable
+
+
+
+=== TEST 7: var combination (not exceed the burst)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 1,
+                            "default_conn_delay": 0.1,
+                            "key": "$remote_port $server_addr",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: hit
+--- request
+GET /test_concurrency
+--- response_body
+200
+200
+200
+200
+200
+--- stream_enable
+
+
+
+=== TEST 9: bypass empty key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 1,
+                            "default_conn_delay": 0.1,
+                            "key": "$proxy_protocol_addr $proxy_protocol_port",
+                            "key_type": "var_combination"
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: hit
+--- request
+GET /test_concurrency
+--- response_body
+200
+200
+200
+503
+503
+--- error_log
+The value of the configured key is empty, use client IP instead
+--- stream_enable

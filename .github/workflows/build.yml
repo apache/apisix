@@ -5,10 +5,12 @@ on:
     branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -24,22 +26,26 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_openresty_mtls
-          - linux_tengine
 
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
         with:
           submodules: recursive
 
+      - name: Setup Go
+        uses: actions/setup-go@v2.1.5
+        with:
+          go-version: "1.15"
+
       - name: Cache deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         env:
           cache-name: cache-deps
         with:
@@ -56,13 +62,12 @@ jobs:
 
       - name: Linux launch common services
         run: |
-          project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          make compress-tar
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
 
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -72,6 +77,14 @@ jobs:
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+
+      - name: Build wasm code
+        if: startsWith(matrix.os_name, 'linux_openresty')
+        run: |
+          export TINYGO_VER=0.20.0
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
+          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
+          cd t/wasm && find . -type f -name "main.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -92,10 +105,3 @@ jobs:
 
       - name: Linux Script
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
-
-      - name: Publish Artifact
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: ${{ steps.branch_env.outputs.fullname }}
-          path: ${{ steps.branch_env.outputs.fullname }}

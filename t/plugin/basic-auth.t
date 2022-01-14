@@ -163,7 +163,46 @@ GET /hello
 
 
 
-=== TEST 6: verify, invalid username
+=== TEST 6: verify, invalid basic authorization header
+--- request
+GET /hello
+--- more_headers
+Authorization: Bad_header YmFyOmJhcgo=
+--- error_code: 401
+--- response_body
+{"message":"Invalid authorization header format"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: verify, invalid authorization value (bad base64 str)
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic aca_a
+--- error_code: 401
+--- response_body
+{"message":"Failed to decode authentication header: aca_a"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: verify, invalid authorization value (no password)
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic YmFy
+--- error_code: 401
+--- response_body
+{"message":"Split authorization err: invalid decoded data: bar"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: verify, invalid username
 --- request
 GET /hello
 --- more_headers
@@ -176,7 +215,7 @@ Authorization: Basic YmFyOmJhcgo=
 
 
 
-=== TEST 7: verify, invalid password
+=== TEST 10: verify, invalid password
 --- request
 GET /hello
 --- more_headers
@@ -189,7 +228,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 
-=== TEST 8: verify
+=== TEST 11: verify
 --- request
 GET /hello
 --- more_headers
@@ -203,7 +242,7 @@ find consumer foo
 
 
 
-=== TEST 9: invalid schema, only one field `username`
+=== TEST 12: invalid schema, only one field `username`
 --- config
     location /t {
         content_by_lua_block {
@@ -234,7 +273,7 @@ GET /t
 
 
 
-=== TEST 10: invalid schema, not field given
+=== TEST 13: invalid schema, not field given
 --- config
     location /t {
         content_by_lua_block {
@@ -264,7 +303,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 
 
 
-=== TEST 11: invalid schema, not a table
+=== TEST 14: invalid schema, not a table
 --- config
     location /t {
         content_by_lua_block {
@@ -293,7 +332,7 @@ GET /t
 
 
 
-=== TEST 12: get the default schema
+=== TEST 15: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -315,7 +354,7 @@ GET /t
 
 
 
-=== TEST 13: get the schema by schema_type
+=== TEST 16: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -337,7 +376,7 @@ GET /t
 
 
 
-=== TEST 14: get the schema by error schema_type
+=== TEST 17: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {

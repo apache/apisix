@@ -784,3 +784,39 @@ qr/sending a batch logs to http:\/\/127.0.0.1:1982\/hello\d?/
 --- grep_error_log_out
 sending a batch logs to http://127.0.0.1:1982/hello
 sending a batch logs to http://127.0.0.1:1982/hello1
+
+
+
+=== TEST 18: check log schema(include_resp_body_expr)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.http-logger")
+            local ok, err = plugin.check_schema({uri = "http://127.0.0.1",
+                                                 auth_header = "Basic 123",
+                                                 timeout = 3,
+                                                 name = "http-logger",
+                                                 max_retry_count = 2,
+                                                 retry_delay = 2,
+                                                 buffer_duration = 2,
+                                                 inactive_timeout = 2,
+                                                 batch_max_size = 500,
+                                                 include_resp_body = true,
+                                                 include_resp_body_expr = {
+                                                     {"bar", "<>", "foo"}
+                                                 }
+                                                 })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
+done
+--- no_error_log
+[error]
