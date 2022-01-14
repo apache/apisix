@@ -270,7 +270,6 @@ http {
 
     {% if use_apisix_openresty then %}
     apisix_delay_client_max_body_check on;
-    apisix_mirror_on_demand on;
     {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
@@ -360,6 +359,10 @@ http {
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
+    {% end %}
+
+    {% if use_apisix_openresty then %}
+    apisix_mirror_on_demand on;
     {% end %}
 
     {% if wasm then %}
