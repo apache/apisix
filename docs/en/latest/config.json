@@ -97,6 +97,7 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
