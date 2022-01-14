@@ -105,6 +105,7 @@ grpc-web
 prometheus
 datadog
 echo
+loggly
 http-logger
 splunk-hec-logging
 skywalking-logger
