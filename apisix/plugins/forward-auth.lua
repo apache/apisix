@@ -22,7 +22,7 @@ local http   = require("resty.http")
 local schema = {
     type = "object",
     properties = {
-        host = {type = "string"},
+        address = {type = "string"},
         ssl_verify = {
             type = "boolean",
             default = true,
@@ -57,7 +57,7 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
     },
-    required = {"host"}
+    required = {"address"}
 }
 
 
@@ -106,7 +106,7 @@ function _M.access(conf, ctx)
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
-    local res, err = httpc:request_uri(conf.host, params)
+    local res, err = httpc:request_uri(conf.address, params)
 
     -- block by default when authorization service is unavailable
     if not res then

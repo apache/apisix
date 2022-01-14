@@ -41,10 +41,10 @@ __DATA__
     location /t {
         content_by_lua_block {
             local test_cases = {
-                {host = "http://127.0.0.1:8199"},
+                {address = "http://127.0.0.1:8199"},
                 {request_headers = {"test"}},
-                {host = 3233},
-                {host = "http://127.0.0.1:8199", request_headers = "test"}
+                {address = 3233},
+                {address = "http://127.0.0.1:8199", request_headers = "test"}
             }
             local plugin = require("apisix.plugins.forward-auth")
 
@@ -56,8 +56,8 @@ __DATA__
     }
 --- response_body
 done
-property "host" is required
-property "host" validation failed: wrong type: expected string, got number
+property "address" is required
+property "address" validation failed: wrong type: expected string, got number
 property "request_headers" validation failed: wrong type: expected array, got string
 
 
@@ -137,7 +137,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
                     data = [[{
                         "plugins": {
                             "forward-auth": {
-                                "host": "http://127.0.0.1:1984/auth",
+                                "address": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"],
                                 "upstream_headers": ["X-User-ID"],
                                 "client_headers": ["Location"]
@@ -155,7 +155,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
                     data = [[{
                         "plugins": {
                             "forward-auth": {
-                                "host": "http://127.0.0.1:1984/auth",
+                                "address": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"]
                             },
                             "proxy-rewrite": {
