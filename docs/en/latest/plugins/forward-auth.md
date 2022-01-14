@@ -38,7 +38,7 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 
 | Name | Type | Requirement | Default | Valid | Description |
 | -- | -- | -- | -- | -- | -- |
-| host | string | required |  |  | Authorization service host (eg. https://localhost:9188) |
+| address | string | required |  |  | Authorization service address (eg. https://localhost/auth) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, no `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
 | upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream`. When it is not set, will not forward the `authorization` service response header to the `upstream`. |
@@ -70,7 +70,18 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
         "serverless-pre-function": {
             "phase": "rewrite",
             "functions": [
-                "return function (conf, ctx) local core = require(\"apisix.core\"); local authorization = core.request.header(ctx, \"Authorization\"); if authorization == \"123\" then core.response.exit(200); elseif authorization == \"321\" then core.response.set_header(\"X-User-ID\", \"i-am-user\"); core.response.exit(200); else core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end"
+                "return function (conf, ctx)
+                    local core = require(\"apisix.core\");
+                    local authorization = core.request.header(ctx, \"Authorization\");
+                    if authorization == \"123\" then
+                        core.response.exit(200);
+                    elseif authorization == \"321\" then
+                        core.response.set_header(\"X-User-ID\", \"i-am-user\");
+                        core.response.exit(200);
+                    else core.response.set_header(\"Location\", \"http://example.com/auth\");
+                        core.response.exit(403);
+                    end
+                end"
             ]
         }
     }
@@ -86,7 +97,7 @@ $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
     "uri": "/headers",
     "plugins": {
         "forward-auth": {
-            "host": "http://127.0.0.1:9080/auth",
+            "address": "http://127.0.0.1:9080/auth",
             "request_headers": ["Authorization"],
             "upstream_headers": ["X-User-ID"],
             "client_headers": ["Location"]
