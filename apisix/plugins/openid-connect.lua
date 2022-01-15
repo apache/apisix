@@ -293,28 +293,30 @@ function _M.rewrite(plugin_conf, ctx)
         -- the configured redirect URI after successful authentication.
         response, err = openidc.authenticate(conf)
 
-        if not response then
+        if err then
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
 
-        -- If the openidc module has returned a response, it may contain,
-        -- respectively, the access token, the ID token, and the userinfo.
-        -- Add respective headers to the request, if so configured.
+        if response then
+            -- If the openidc module has returned a response, it may contain,
+            -- respectively, the access token, the ID token, and the userinfo.
+            -- Add respective headers to the request, if so configured.
 
-        -- Add configured access token header, maybe.
-        add_access_token_header(ctx, conf, response.access_token)
+            -- Add configured access token header, maybe.
+            add_access_token_header(ctx, conf, response.access_token)
 
-        -- Add X-ID-Token header, maybe.
-        if response.id_token and conf.set_id_token_header then
-            local token = core.json.encode(response.id_token)
-            core.request.set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
-        end
+            -- Add X-ID-Token header, maybe.
+            if response.id_token and conf.set_id_token_header then
+                local token = core.json.encode(response.id_token)
+                core.request.set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
+            end
 
-        -- Add X-Userinfo header, maybe.
-        if response.user and conf.set_userinfo_header then
-            core.request.set_header(ctx, "X-Userinfo",
-                ngx_encode_base64(core.json.encode(response.user)))
+            -- Add X-Userinfo header, maybe.
+            if response.user and conf.set_userinfo_header then
+                core.request.set_header(ctx, "X-Userinfo",
+                    ngx_encode_base64(core.json.encode(response.user)))
+            end
         end
     end
 end
