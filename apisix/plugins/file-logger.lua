@@ -17,31 +17,12 @@
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
 local plugin       =   require("apisix.plugin")
-local ffi          =   require("ffi")
-local bit          =   require("bit")
-local C            =   ffi.C
 local ngx          =   ngx
 local io_open      =   io.open
 
 
 local plugin_name  =   "file-logger"
-local O_CREAT      =   00000040 -- create and open
-local O_APPEND     =   00000400 -- add content to the end of
-local O_WRONLY     =   00000001 -- write only open
-local S_IRUSR      =   00400    -- user has read permission
-local S_IWUSR      =   00200    -- user has write permission
-local S_IRGRP      =   00040    -- group has read permission
-local S_IROTH      =   00004    -- others have read permission
-local oflags = bit.bor(O_WRONLY, O_CREAT, O_APPEND)
-local mode = bit.bor(S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH)
 local file_descriptors = {}
-
-
-ffi.cdef [[
-    int open(const char * filename, int flags, int mode);
-    int write(int fd, const void * ptr, int numbytes);
-    int close(int fd);
-]]
 
 
 local schema = {
@@ -92,22 +73,13 @@ local function write_file_data(conf, log_message)
     local fd = file_descriptors[conf.path]
 
     if not fd then
-        local file = io_open(conf.path, 'r')
-        if not file then
-            file = io_open(conf.path, 'a+')
-        end
-        file:close()
-        fd = C.open(conf.path, oflags, mode)
-
-        if fd < 0 then
-            local err = ffi.errno()
-            core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
-        else
-            file_descriptors[conf.path] = fd
-        end
+        local file = io_open(conf.path, 'a+')
+        fd = file
+        file_descriptors[conf.path] = file
     end
 
-    C.write(fd, msg, #msg)
+    fd:write(msg)
+    fd:flush()
 end
 
 
