@@ -73,31 +73,33 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-然后你可以在对应的 `logs` 目录下找到 `file.log` 文件，且该日志中现有字段的 `route_id` 被删除。初次接受请求时会额外生成一个 `file_pointer` 文件，它用来保存打开目标输出文件的指针。
-
-> 通过 control API 重新打开该日志文件
-
-```shell
-$ curl -i http://localhost:9090/v1/plugin/file-logger/reopen -X PUT
-```
-
-然后下次请求时，会将之前缓冲区所有的日志数据刷新，到我们刚刚自定义的输出日志文件中。
+然后你可以在对应的 `logs` 目录下找到 `file.log` 文件。
 
 ## 插件元数据设置
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 file-logger 的 Route 或 Service 生效。 |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 http-logger 的 Route 或 Service 生效。 |
 
-**APISIX 变量**
+### 设置日志格式示例
 
-|       变量名      |           描述          |      使用示例    |
-|------------------|-------------------------|----------------|
-| route_id         | `route` 的 id           | $route_id      |
-| route_name       | `route` 的 name         | $route_name    |
-| service_id       | `service` 的 id         | $service_id    |
-| service_name     | `service` 的 name       | $service_name  |
-| consumer_name    | `consumer` 的 username  | $consumer_name |
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
 
 ## 禁用插件
 
