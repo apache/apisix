@@ -1,11 +1,11 @@
 . ./ci/common.sh
 
 install_dependencies() {
-  create_lua_deps
   apt-get -y update --fix-missing
   apt-get -y install lua5.1 liblua5.1-0-dev
   bash utils/install-dependencies.sh install_luarocks
   bash utils/install-dependencies.sh install_luarocks
+  create_lua_deps
   bash utils/install-dependencies.sh multi_distro_installation
 }
 
