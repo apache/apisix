@@ -199,7 +199,7 @@ passed
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"error_msg":"bad request body: object matches none of the requireds: [\"pipeline\"]"}
+{"error_msg":"bad request body: object matches none of the required: [\"pipeline\"]"}
 --- no_error_log
 [error]
 
@@ -1003,7 +1003,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation failed: expected 0 to be strictly greater than 0"\}/
+qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation failed: expected 0 to be greater than 0"\}/
 --- no_error_log
 [error]
 

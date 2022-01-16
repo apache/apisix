@@ -166,9 +166,9 @@ Let's take another real world example:
 
 Read [Admin API's Stream Route section](./admin-api.md#stream-route) for the complete options list.
 
-## Accept TLS over TCP
+## Accept TLS over TCP connection
 
-APISIX can accept TLS over TCP.
+APISIX can accept TLS over TCP connection.
 
 First of all, we need to enable TLS for the TCP address:
 
@@ -189,7 +189,6 @@ Third, we need to configure a stream route to match and proxy it to the upstream
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
     "upstream": {
         "nodes": {
             "127.0.0.1:1995": 1
@@ -215,3 +214,24 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 In this case, a connection handshaked with SNI `a.test.com` will be proxied to `127.0.0.1:5991`.
+
+## Proxy to TLS over TCP upstream
+
+APISIX also supports proxying to TLS over TCP upstream.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+        "scheme": "tls",
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+By setting the `scheme` to "tls", APISIX will do TLS handshake with the upstream.
+
+When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI "apisix_backend" will be used.

@@ -163,9 +163,9 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 完整的匹配选项列表参见 [Admin API 的 Stream Route](./admin-api.md#stream-route)。
 
-## 接收 TLS over TCP
+## 接收 TLS over TCP 连接
 
-APISIX 支持接收 TLS over TCP。
+APISIX 支持接收 TLS over TCP 连接。
 
 首先，我们需要给对应的 TCP 地址启用 TLS：
 
@@ -186,7 +186,6 @@ mTLS 也是支持的，参考 [保护路由](./mtls.md#保护路由)。
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
     "upstream": {
         "nodes": {
             "127.0.0.1:1995": 1
@@ -212,3 +211,24 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 在这里，握手时发送 SNI `a.test.com` 的连接会被代理到 `127.0.0.1:5991`。
+
+## 代理到 TLS over TCP 上游
+
+APISIX 还支持代理到 TLS over TCP 上游。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+        "scheme": "tls",
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+通过设置 `scheme` 为 tls，APISIX 将与上游进行 TLS 握手。
+
+当客户端也使用 TLS over TCP，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI "apisix_backend"。

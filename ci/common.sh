@@ -46,7 +46,8 @@ rerun_flaky_tests() {
     fi
 
     echo "Rerun $(echo "$tests" | xargs)"
-    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
+    # run in verbose mode
+    FLUSH_ETCD=1 TEST_NGINX_VERBOSE=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
 install_grpcurl () {
@@ -60,6 +61,18 @@ install_vault_cli () {
     VAULT_VERSION="1.9.0"
     wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
+}
+
+install_nodejs () {
+    NODEJS_PREFIX="/usr/local/node"
+    NODEJS_VERSION="16.13.1"
+    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    rm -f /usr/local/bin/node
+    rm -f /usr/local/bin/npm
+    mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
+    ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
+    ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819

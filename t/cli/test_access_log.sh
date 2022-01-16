@@ -251,7 +251,7 @@ echo "passed: stream access_log_format in nginx.conf is ok"
 make run
 sleep 0.1
 # sending single udp packet
-echo -n "hello" | nc -4u -w0 localhost 9200
+echo -n "hello" | nc -4u -w1 localhost 9200
 sleep 4
 tail -n 1 logs/access_stream.log > output.log
 

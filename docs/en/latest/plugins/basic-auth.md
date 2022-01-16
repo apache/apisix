@@ -39,10 +39,18 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## Attributes
 
+For consumer side:
+
 | Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
 | -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | username | string | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
 | password | string | required    |         |       | the user's password                                                                                                                                              |
+
+For route side:
+
+| Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
+| --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hide_credentials | boolean | optional    | false   |       | Whether to pass the Authorization request headers to the upstream.                                                                                            |
 
 ## How To Enable
 
@@ -129,8 +137,8 @@ hello, world
 ## Disable Plugin
 
 When you want to disable the `basic-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '

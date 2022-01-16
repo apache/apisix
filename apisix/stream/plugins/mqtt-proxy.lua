@@ -29,6 +29,7 @@ local schema = {
         protocol_name = {type = "string"},
         protocol_level = {type = "integer"},
         upstream = {
+            description = "Deprecated. We should configure upstream outside of the plugin",
             type = "object",
             properties = {
                 ip = {type = "string"}, -- deprecated, use "host" instead
@@ -57,13 +58,7 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
@@ -184,6 +179,11 @@ function _M.preread(conf, ctx)
     end
 
     core.log.info("mqtt client id: ", res.client_id)
+
+    -- when client id is missing, fallback to balance by client IP
+    if res.client_id ~= "" then
+        ctx.mqtt_client_id = res.client_id
+    end
 
     if not conf.upstream then
         return

@@ -22,7 +22,7 @@ title: Introducing APISIX's testing framework
 -->
 
 APISIX uses a testing framework based on our fork of test-nginx: https://github.com/iresty/test-nginx.
-For details, you can check the documentation of this project.
+For details, you can check the [documentation](https://metacpan.org/pod/Test::Nginx) of this project.
 
 If you want to test the CLI behavior of APISIX (`./bin/apisix`),
 you need to write a shell script in the t/cli directory to test it. You can refer to the existing test scripts for more details.
@@ -111,6 +111,32 @@ GET /index.html
 no valid upstream node
 ```
 
+## Preparing the upstream
+
+To test the code, we need to provide a mock upstream.
+
+For HTTP request, the upstream code is put in `t/lib/server.lua`. HTTP request with
+a given `path` will trigger the method in same name. For example, a call to `/server_port`
+will call the `_M.server_port`.
+
+For TCP request, a dummy upstream is used:
+
+```
+local sock = ngx.req.socket()
+local data = sock:receive("1")
+ngx.say("hello world")
+```
+
+If you want to custom the TCP upstream logic, you can use:
+
+```
+--- stream_upstream_code
+local sock = ngx.req.socket()
+local data = sock:receive("1")
+ngx.sleep(0.2)
+ngx.say("hello world")
+```
+
 ## Send request
 
 We can initiate a request with `request` and set the request headers with `more_headers`.
@@ -180,6 +206,23 @@ Sending multiple requests concurrently:
             end
 ```
 
+## Send TCP request
+
+We can use `stream_request` to send a TCP request, for example:
+
+```
+--- stream_request
+hello
+```
+
+To send a TLS over TCP request, we can combine `stream_tls_request` with `stream_sni`:
+
+```
+--- stream_tls_request
+mmm
+--- stream_sni: xx.com
+```
+
 ## Assertions
 
 The following assertions are commonly used.
@@ -203,6 +246,22 @@ Check response body.
 ```
 --- response_body
 [{"count":12, "port": "1982"}]
+```
+
+Check the TCP response.
+
+When the request is sent via `stream_request`:
+
+```
+--- stream_response
+receive stream response error: connection reset by peer
+```
+
+When the request is sent via `stream_tls_request`:
+
+```
+--- response_body
+receive stream response error: connection reset by peer
 ```
 
 Checking the error log (via grep error log with regular expression).
@@ -230,7 +289,10 @@ The test framework listens to multiple ports when it is started.
 * 1980/1981/1982/5044: HTTP upstream port
 * 1983: HTTPS upstream port
 * 1984: APISIX HTTP port. Can be used to verify HTTP related gateway logic, such as concurrent access to an API.
+* 1985: APISIX TCP port. Can be used to verify TCP related gateway logic, such as concurrent access to an API.
 * 1994: APISIX HTTPS port. Can be used to verify HTTPS related gateway logic, such as testing certificate matching logic.
+* 1995: TCP upstream port
+* 2005: APISIX TLS over TCP port. Can be used to verify TLS over TCP related gateway logic, such as concurrent access to an API.
 
 The methods in `t/lib/server.lua` are executed when accessing the upstream port. `_M.go` is the entry point for this file.
 When the request accesses the upstream `/xxx`, the `_M.xxx` method is executed. For example, a request for `/hello` will execute `_M.hello`.

@@ -75,6 +75,15 @@ install_dependencies() {
     # installing grpcurl
     install_grpcurl
 
+    # install nodejs
+    install_nodejs
+
+    # grpc-web server && client
+    cd t/plugin/grpc-web
+    ./setup.sh
+    # back to home directory
+    cd ../../../
+
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     create_lua_deps

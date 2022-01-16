@@ -1,0 +1,49 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package a6;
+
+option go_package = "./;a6";
+
+service RouteService {
+  rpc FlushAll (Empty) returns (Response) {}
+  rpc GetAll (Empty) returns (Response) {}
+  rpc Get (Request) returns (Response) {}
+  rpc Insert (Request) returns (Response) {}
+  rpc Update (Request) returns (Response) {}
+  rpc Remove (Request) returns (Response) {}
+}
+
+message Empty {}
+
+message Route {
+  string name = 1;
+  string path = 2;
+}
+
+message Request {
+  string id = 1;
+  Route route = 2;
+}
+
+message Response {
+  bool status = 1;
+  Route route = 2;
+  map <string, Route> routes = 3;
+}
