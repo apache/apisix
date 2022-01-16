@@ -20,6 +20,7 @@ local utils = require("apisix.admin.utils")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local type = type
 local tostring = tostring
+local ipairs = ipairs
 
 
 local _M = {
