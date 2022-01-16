@@ -86,7 +86,7 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(endpoint, params)
 
     -- block by default when decision is unavailable
-    if not res or err then
+    if not res then
         core.log.error("failed to process OPA decision, err: ", err)
         return 403
     end
@@ -94,7 +94,7 @@ function _M.access(conf, ctx)
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
-    if err or not data then
+    if not data then
         core.log.error("invalid response body: ", res.body, " err: ", err)
         return 503
     end
