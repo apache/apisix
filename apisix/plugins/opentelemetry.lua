@@ -41,8 +41,14 @@ local context = require("opentelemetry.context").new(context_storage)
 local carrier_new = require("opentelemetry.trace.propagation.carrier").new
 local trace_context = require("opentelemetry.trace.propagation.trace_context")
 
+local ngx     = ngx
 local ngx_var = ngx.var
 local ngx_req = ngx.req
+local table   = table
+local type    = type
+local pairs   = pairs
+local ipairs  = ipairs
+local unpack  = unpack
 
 local hostname
 
@@ -310,7 +316,7 @@ function _M.body_filter(conf, ctx)
         local span = context:current():span()
         if upstream_status and upstream_status >= 500 then
             span:set_status(span_status.error,
-                            "upstream response status: " .. tostring(upstream_status))
+                            "upstream response status: " .. upstream_status)
         end
 
         span:finish()

@@ -42,6 +42,18 @@ _EOC_
 
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->response_body) {
+        $block->set_value("response_body", "passed\n");
+    }
+
+    if (!$block->no_error_log && !$block->error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
     $block;
 });
 
@@ -107,12 +119,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -178,12 +184,6 @@ opentelemetry export span
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -253,12 +253,6 @@ qr/opentelemetry export span/
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -334,12 +328,6 @@ qr/opentelemetry export span/
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -411,12 +399,6 @@ opentelemetry export span
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -496,12 +478,6 @@ qr/opentelemetry export span/
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -583,12 +559,6 @@ opentelemetry export span
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
@@ -691,12 +661,6 @@ opentelemetry export span
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 

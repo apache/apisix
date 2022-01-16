@@ -31,9 +31,9 @@ title: opentelemetry
 
 ## 名字
 
-opentelemetry 提供符合 [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification) 协议规范的 Tracing 数据上报。
+[OpenTelemetry](https://opentelemetry.io/) 提供符合 [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification) 协议规范的 Tracing 数据上报。
 
-只支持 HTTP 协议 application/x-protobuf 类型的数据上报，相关协议标准：[OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
+只支持 `HTTP` 协议，且请求类型为 `application/x-protobuf` 的数据上报，相关协议标准：[OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
 
 ## 属性
 
@@ -55,7 +55,7 @@ opentelemetry 提供符合 [opentelemetry specification](https://github.com/open
 
 首先，你需要在 `config.yaml` 里面启用 opentelemetry 插件：
 
-```
+```yaml
 # 加到 config.yaml
 plugins:
   - ... # plugin you need

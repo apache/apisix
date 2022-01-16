@@ -31,9 +31,9 @@ title: opentelemetry
 
 ## Name
 
-opentelemetry report Tracing data according to [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification).
+[OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification).
 
-Just support reporting in HTTP with Content-Type=application/x-protobuf, the specification: [OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
+Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the specification: [OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
 
 ## Attributes
 
@@ -55,7 +55,7 @@ Just support reporting in HTTP with Content-Type=application/x-protobuf, the spe
 
 First of all, enable the opentelemetry plugin in the `config.yaml`:
 
-```
+```yaml
 # Add this in config.yaml
 plugins:
   - ... # plugin you need
