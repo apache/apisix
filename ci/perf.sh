@@ -4,7 +4,7 @@ install_dependencies() {
   apt-get -y update --fix-missing
   apt-get -y install lua5.1 liblua5.1-0-dev
   bash utils/install-dependencies.sh install_luarocks
-  bash utils/install-dependencies.sh install_luarocks
+  apt-get install -y openssl libssl-dev libz-dev
   create_lua_deps
   bash utils/install-dependencies.sh multi_distro_installation
 }

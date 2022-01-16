@@ -7,7 +7,7 @@ on:
     - cron:  '0 0 * * *'
 
 jobs:
-  build:
+  perf:
     runs-on: ubuntu-18.04
     timeout-minutes: 90
 
