@@ -36,7 +36,7 @@ nginx_config:
     access_log_format_escape: json      #override the access_log_format_escape value from `default` to `json`, together with curresponding configuration of access_log_format 
     access_log_format: '{"time":"$time_iso8601","host":"$hostname","server_ip":"$server_addr","client_ip":"$remote_addr"}'
   main_configuration_snippet: |
-    daemon on;
+    #daemon on;
   http_configuration_snippet: |
     log_format  server-log-format       #custom a server-log-format for server log
     '{"@timestamp":"$time_iso8601",'
@@ -68,7 +68,7 @@ nginx_config:
       access_log off;
 
       location /ysec_status {
-        req_status_show;
+        #req_status_show;
         allow 127.0.0.1;
         deny all;
       }
