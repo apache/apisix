@@ -26,7 +26,7 @@ run_perf_test() {
     ulimit -n 10240
     ulimit -n -S
     ulimit -n -H
-    ppython3 ./t/perf/test_http.py
+    python3 ./t/perf/test_http.py
 }
 
 case_opt=$1
