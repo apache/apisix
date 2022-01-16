@@ -170,7 +170,7 @@ function _M.init_processor(self)
     end
 
     local processor, err = batch_processor:new(flush, process_conf)
-    if err then
+    if not processor then
         return false, "create processor error: " .. err
     end
 

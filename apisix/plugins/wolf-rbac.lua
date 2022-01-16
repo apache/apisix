@@ -242,7 +242,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
     end
 
     local body, err = json.decode(res.body)
-    if err then
+    if not body then
         errmsg = 'check permission failed! parse response json failed!'
         core.log.error( "json.decode(", res.body, ") failed! err:", err)
         return {status = res.status, err = errmsg}
@@ -341,7 +341,7 @@ local function get_args()
                    1, true) then
         local req_body = req_get_body_data()
         args, err = json.decode(req_body)
-        if err then
+        if not args then
             core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
@@ -383,7 +383,7 @@ local function request_to_wolf_server(method, uri, headers, body)
 
     core.log.info("request [", request_debug, "] ....")
     local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
-    if err or not res then
+    if not res then
         core.log.error("request [", request_debug, "] failed! err: ", err)
         return core.response.exit(500,
             fail_response("request to wolf-server failed! " .. tostring(err))
@@ -401,7 +401,7 @@ local function request_to_wolf_server(method, uri, headers, body)
         )
     end
     local body, err = json.decode(res.body)
-    if err or not body then
+    if not body then
         core.log.error("request [", request_debug, "] failed! err:", err)
         return core.response.exit(500, fail_response("request to wolf-server failed!"))
     end
