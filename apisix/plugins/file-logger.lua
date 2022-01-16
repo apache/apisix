@@ -21,17 +21,14 @@ local ngx          =   ngx
 local io_open      =   io.open
 
 
-local plugin_name  =   "file-logger"
-local file
+local plugin_name = "file-logger"
 
 
 local schema = {
     type = "object",
     properties = {
         path = {
-            type = "string",
-            pattern = [[^[^*&%%\`]+$]],
-            err = "not a valid filename"
+            type = "string"
         },
     },
     required = {"path"}
@@ -70,13 +67,14 @@ end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
+    local file, err = io_open(conf.path, 'a+')
 
     if not file then
-        file = io_open(conf.path, 'a+')
+        core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
+    else
+        file:write(msg)
+        file:flush()
     end
-
-    file:write(msg)
-    file:flush()
 end
 
 
