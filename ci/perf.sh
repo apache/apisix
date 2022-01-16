@@ -22,7 +22,11 @@ install_wrk2() {
 run_perf_test() {
     sudo apt-get install -y python3-setuptools python3-wheel
     pip3 install -r t/perf/requirements.txt --user
-    sudo python3 ./t/perf/test_http.py
+    sudo chmod -R 777 ./
+    ulimit -n 10240
+    ulimit -n -S
+    ulimit -n -H
+    ppython3 ./t/perf/test_http.py
 }
 
 case_opt=$1

@@ -31,8 +31,5 @@ jobs:
       - name: Install wrk2
         run: sudo ./ci/perf.sh install_wrk2
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Perf Test
         run: ./ci/perf.sh run_perf_test
