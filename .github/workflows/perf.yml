@@ -25,14 +25,14 @@ jobs:
           path: deps
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Install Dependencies
         run: sudo ./ci/perf.sh install_dependencies
 
       - name: Install wrk2
         run: sudo ./ci/perf.sh install_wrk2
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Perf Test
-        run: sudo ./ci/perf.sh run_perf_test
+        run: ./ci/perf.sh run_perf_test
