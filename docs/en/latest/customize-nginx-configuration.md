@@ -78,7 +78,7 @@ nginx_config:
     {
       listen 45652;
       server_name 127.0.0.1;
-      access_log logs/server/access.log server-log-format;
+      access_log logs/server_access.log server-log-format;
 
       location / {
         # some normal configurations
