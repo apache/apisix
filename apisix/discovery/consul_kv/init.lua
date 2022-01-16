@@ -186,7 +186,7 @@ local function read_dump_srvs()
     end
 
     local entity, err  = core.json.decode(data)
-    if err then
+    if not entity then
         log.error("decoded dump data got error: ", err, ", file content: ", data)
         return
     end

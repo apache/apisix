@@ -115,7 +115,7 @@ local function send_to_google(oauth, entries)
         },
     })
 
-    if err then
+    if not res then
         return nil, "failed to write log to google, " .. err
     end
 
@@ -214,12 +214,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    local entry
-    entry, err = get_logger_entry(conf, ctx, oauth)
-    if err then
-        core.log.error(err)
-        return
-    end
+    local entry = get_logger_entry(conf, ctx, oauth)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return
