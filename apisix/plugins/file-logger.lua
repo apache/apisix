@@ -22,7 +22,7 @@ local io_open      =   io.open
 
 
 local plugin_name  =   "file-logger"
-local file_descriptors = {}
+local file
 
 
 local schema = {
@@ -30,7 +30,7 @@ local schema = {
     properties = {
         path = {
             type = "string",
-            match = [[^[^*&%%\`]+$]],
+            pattern = [[^[^*&%%\`]+$]],
             err = "not a valid filename"
         },
     },
@@ -70,16 +70,13 @@ end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message) .. "\n"
-    local fd = file_descriptors[conf.path]
 
-    if not fd then
-        local file = io_open(conf.path, 'a+')
-        fd = file
-        file_descriptors[conf.path] = file
+    if not file then
+        file = io_open(conf.path, 'a+')
     end
 
-    fd:write(msg)
-    fd:flush()
+    file:write(msg)
+    file:flush()
 end
 
 
