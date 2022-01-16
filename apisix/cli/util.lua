@@ -39,7 +39,7 @@ local function execute_cmd(cmd)
     local data, err = t:read("*all")
     t:close()
 
-    if err ~= nil then
+    if not data then
         return nil, "failed to read execution result of: "
                     .. cmd .. ", error info: " .. err
     end
@@ -78,12 +78,11 @@ function _M.read_file(file_path)
     end
 
     local data, err = file:read("*all")
-    if err ~= nil then
-        file:close()
+    file:close()
+    if not data then
         return false, "failed to read file: " .. file_path .. ", error info:" .. err
     end
 
-    file:close()
     return data
 end
 

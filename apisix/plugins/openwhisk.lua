@@ -103,7 +103,7 @@ function _M.access(conf, ctx)
 
     local res, err = httpc:request_uri(endpoint, params)
 
-    if not res or err then
+    if not res then
         core.log.error("failed to process openwhisk action, err: ", err)
         return 503
     end
