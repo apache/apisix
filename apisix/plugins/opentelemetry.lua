@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local plugin_name = "opentelemetry"
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
@@ -6,7 +22,8 @@ local process = require("ngx.process")
 local always_off_sampler_new = require("opentelemetry.trace.sampling.always_off_sampler").new
 local always_on_sampler_new = require("opentelemetry.trace.sampling.always_on_sampler").new
 local parent_base_sampler_new = require("opentelemetry.trace.sampling.parent_base_sampler").new
-local trace_id_ratio_sampler_new = require("opentelemetry.trace.sampling.trace_id_ratio_sampler").new
+local trace_id_ratio_sampler_new =
+                                require("opentelemetry.trace.sampling.trace_id_ratio_sampler").new
 
 local exporter_client_new = require("opentelemetry.trace.exporter.http_client").new
 local otlp_exporter_new = require("opentelemetry.trace.exporter.otlp").new
@@ -32,7 +49,11 @@ local hostname
 local attr_schema = {
     type = "object",
     properties = {
-        x_request_id_as_trace_id = {type = "boolean", description = "use x-request-id as new trace id", default = false},
+        x_request_id_as_trace_id = {
+            type = "boolean",
+            description = "use x-request-id as new trace id",
+            default = false,
+        },
         resource = {
             type = "object",
             description = "additional resource",
@@ -44,8 +65,13 @@ local attr_schema = {
             properties = {
                 address = {type = "string", description = "host:port", default = "127.0.0.1:4317"},
                 request_timeout = {type = "integer", description = "second uint", default = 3},
-                request_headers = {type = "object", description = "http headers",
-                                   additional_properties = {one_of = {{type = "boolean"}, {type = "number"}, {type = "string"}}}}
+                request_headers = {
+                    type = "object",
+                    description = "http headers",
+                    additional_properties = {
+                        one_of = {{type = "boolean"},{type = "number"}, {type = "string"}},
+                   },
+                }
             },
             default = {address = "127.0.0.1:4317", request_timeout = 3}
         },
@@ -53,11 +79,27 @@ local attr_schema = {
             type = "object",
             description = "batch span processor",
             properties = {
-                drop_on_queue_full = {type = "boolean", description = "if true, drop span when queue is full, otherwise force process batches"},
-                max_queue_size = {type = "integer", description = "maximum queue size to buffer spans for delayed processing"},
-                batch_timeout = {type = "number", description = "maximum duration for constructing a batch"},
-                inactive_timeout = {type = "number", description = "maximum duration for processing batches"},
-                max_export_batch_size = {type = "integer", description = "maximum number of spans to process in a single batch"}
+                drop_on_queue_full = {
+                    type = "boolean",
+                    description = "if true, drop span when queue is full,"
+                            .. " otherwise force process batches",
+                },
+                max_queue_size = {
+                    type = "integer",
+                    description = "maximum queue size to buffer spans for delayed processing",
+                },
+                batch_timeout = {
+                    type = "number",
+                    description = "maximum duration for constructing a batch",
+                },
+                inactive_timeout = {
+                    type = "number",
+                    description = "maximum duration for processing batches",
+                },
+                max_export_batch_size = {
+                    type = "integer",
+                    description = "maximum number of spans to process in a single batch",
+                }
             },
             default = {},
         },
@@ -79,7 +121,9 @@ local schema = {
                 options = {
                     type = "object",
                     properties = {
-                        fraction = {type = "number", title = "trace_id_ratio fraction", default = 0},
+                        fraction = {
+                            type = "number", title = "trace_id_ratio fraction", default = 0
+                        },
                         root = {
                             type = "object",
                             title = "parent_base root sampler",
@@ -93,7 +137,11 @@ local schema = {
                                 options = {
                                     type = "object",
                                     properties = {
-                                        fraction = {type = "number", title = "trace_id_ratio fraction parameter", default = 0},
+                                        fraction = {
+                                            type = "number",
+                                            title = "trace_id_ratio fraction parameter",
+                                            default = 0,
+                                        },
                                     },
                                     default = {fraction = 0}
                                 }
@@ -126,7 +174,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1100, -- last running plugin, but before serverless post func
+    priority = -1200, -- last running plugin, but before serverless post func
     name = plugin_name,
     schema = schema,
     attr_schema = attr_schema,
@@ -162,7 +210,8 @@ function _M.init()
 
     if plugin_info.x_request_id_as_trace_id then
         id_generator.new_ids = function()
-            return ngx_req.get_headers()["x-request-id"] or ngx_var.request_id, id_generator.new_span_id()
+            local trace_id = ngx_req.get_headers()["x-request-id"] or ngx_var.request_id
+            return trace_id, id_generator.new_span_id()
         end
     end
 end
@@ -180,7 +229,8 @@ local function fetch_tracer(conf, ctx)
                                                             plugin_info.collector.request_timeout,
                                                             plugin_info.collector.request_headers))
     -- create span processor
-    local batch_span_processor = batch_span_processor_new(exporter, plugin_info.batch_span_processor)
+    local batch_span_processor = batch_span_processor_new(exporter,
+                                                            plugin_info.batch_span_processor)
     -- create sampler
     local sampler
     local sampler_name = conf.sampler.name
@@ -188,7 +238,8 @@ local function fetch_tracer(conf, ctx)
     if sampler_name == "parent_base" then
         local root_sampler
         if sampler_options.root then
-            root_sampler = sampler_factory[sampler_options.root.name](sampler_options.root.options.fraction)
+            local name, fraction = sampler_options.root.name, sampler_options.root.options.fraction
+            root_sampler = sampler_factory[name](fraction)
         else
             root_sampler = always_off_sampler_new()
         end
@@ -225,28 +276,31 @@ local function fetch_tracer(conf, ctx)
     return tracer
 end
 
-function _M.access(conf, ctx)
+function _M.access(conf, api_ctx)
     -- extract trace context from the headers of downstream HTTP request
     local upstream_context = trace_context.extract(context, carrier_new())
-    local attributes = {attr.string("service", ctx.service_name), attr.string("route", ctx.route_name)}
+    local attributes = {
+        attr.string("service", api_ctx.service_name),
+        attr.string("route", api_ctx.route_name),
+    }
     if conf.tags then
         for _, tag in ipairs(conf.tags) do
             local key = tag.position .. "_" .. tag.name
-            local val = ctx.var[key]
+            local val = api_ctx.var[key]
             if val then
                 core.table.insert(attributes, attr.string(key, val))
             end
         end
     end
 
-    local context, span = fetch_tracer(conf, ctx):start(upstream_context, ctx.var.request_uri, {
+    local ctx, _ = fetch_tracer(conf, api_ctx):start(upstream_context, api_ctx.var.request_uri, {
         kind = span_kind.client,
         attributes = attributes,
     })
-    context:attach()
+    ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
-    trace_context.inject(context, carrier_new())
+    trace_context.inject(ctx, carrier_new())
 end
 
 function _M.body_filter(conf, ctx)
@@ -255,7 +309,8 @@ function _M.body_filter(conf, ctx)
         -- get span from current context
         local span = context:current():span()
         if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.error, "upstream response status: " .. tostring(upstream_status))
+            span:set_status(span_status.error,
+                            "upstream response status: " .. tostring(upstream_status))
         end
 
         span:finish()
