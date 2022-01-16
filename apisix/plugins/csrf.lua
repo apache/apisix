@@ -21,8 +21,9 @@ local ngx = ngx
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_time = ngx.time
-local cookie_time = ngx.cookie_time
+local ngx_cookie_time = ngx.cookie_time
 local math = math
+local SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 local schema = {
@@ -123,9 +124,8 @@ end
 
 
 function _M.access(conf, ctx)
-    local safe_methods = {"GET", "HEAD", "OPTIONS"}
     local method = core.request.get_method(ctx)
-    if core.table.array_find(safe_methods, method) then
+    if core.table.array_find(SAFE_METHODS, method) then
         return
     end
 
@@ -153,7 +153,7 @@ end
 function _M.header_filter(conf, ctx)
     local csrf_token = gen_csrf_token(conf)
     local cookie = conf.name .. "=" .. csrf_token .. ";path=/;SameSite=Lax;Expires="
-                   .. cookie_time(ngx_time() + conf.expires)
+                   .. ngx_cookie_time(ngx_time() + conf.expires)
     core.response.add_header("Set-Cookie", cookie)
 end
 

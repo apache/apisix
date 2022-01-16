@@ -31,7 +31,7 @@ title: csrf
 
 ## Description
 
-The `CSRF` plugin based on the `Double Submit Cookie` way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
+The `CSRF` plugin based on the [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
 
 In the following we define `GET`, `HEAD` and `OPTIONS` as the `safe-methods` and those other than these as `unsafe-methods`.
 
@@ -133,4 +133,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-CSRF plugin have been disabled.
+The CSRF plugin has been disabled.
