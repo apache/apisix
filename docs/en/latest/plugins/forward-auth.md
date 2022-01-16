@@ -38,7 +38,7 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 
 | Name | Type | Requirement | Default | Valid | Description |
 | -- | -- | -- | -- | -- | -- |
-| address | string | required |  |  | Authorization service address (eg. https://localhost/auth) |
+| uri | string | required |  |  | Authorization service uri (eg. https://localhost/auth) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
 | request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, no `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
 | upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream`. When it is not set, will not forward the `authorization` service response header to the `upstream`. |
@@ -97,7 +97,7 @@ $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
     "uri": "/headers",
     "plugins": {
         "forward-auth": {
-            "address": "http://127.0.0.1:9080/auth",
+            "uri": "http://127.0.0.1:9080/auth",
             "request_headers": ["Authorization"],
             "upstream_headers": ["X-User-ID"],
             "client_headers": ["Location"]
