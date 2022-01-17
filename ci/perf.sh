@@ -67,7 +67,6 @@ EOF
     git clone https://github.com/openresty/stapxx.git
     cd stapxx/
     git remote add philipp-classen https://github.com/philipp-classen/stapxx.git
-    git fetch philipp-classen master
     git switch --track philipp-classen/master
     cd ../
 
@@ -77,7 +76,6 @@ EOF
 
 
 run_perf_test() {
-    # export_prefix
     #openresty-debug
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
