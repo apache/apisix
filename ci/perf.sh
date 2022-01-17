@@ -66,9 +66,11 @@ run_perf_test() {
     ulimit -n -S
     ulimit -n -H
 
+    python3 ./t/perf/test_http.py >perf.txt 2>&1 &
+
     master_id=$(cat $PWD/logs/nginx.pid)
     worker_id=$(pgrep -P $master_id -n -f worker)
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $worker_id > /tmp/tmp.bt && python3 ./t/perf/test_http.py
+    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $worker_id > tmp.bt
 
 }
 
