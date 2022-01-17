@@ -36,7 +36,7 @@ EOF
     sudo apt-get install -y python3-setuptools python3-wheel
 
     # install systemtap
-    cd ../
+    cd /usr/local/
     wget http://sourceware.org/systemtap/ftp/releases/systemtap-4.6.tar.gz
     tar -zxf systemtap-4.6.tar.gz
     mv systemtap-4.6 systemtap
@@ -51,12 +51,25 @@ EOF
 
 
 run_perf_test() {
+    # export_prefix
+    # stapxx
+    export STAP_PLUS_HOME=/usr/local/stapxx
+    export PATH=$STAP_PLUS_HOME:$STAP_PLUS_HOME/samples:$PATH
+    # openresty-systemtap-toolkit
+    export PATH=$PATH:/usr/local/openresty-systemtap-toolkit
+    # FlameGraph
+    export PATH=$PATH:/usr/local/FlameGraph
+
     pip3 install -r t/perf/requirements.txt --user
     sudo chmod -R 777 ./
     ulimit -n 10240
     ulimit -n -S
     ulimit -n -H
-    python3 ./t/perf/test_http.py
+
+    master_id=$(cat $PWD/logs/nginx.pid)
+    worker_id=$(pgrep -P $master_id -n -f worker)
+    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $worker_id > /tmp/tmp.bt && python3 ./t/perf/test_http.py
+
 }
 
 case_opt=$1
