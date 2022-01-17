@@ -30,7 +30,12 @@ local consumers_lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     title = "work with route or service object",
-    properties = {},
+    properties = {
+        hide_credentials = {
+            type = "boolean",
+            default = false,
+        }
+    },
 }
 
 local consumer_schema = {
@@ -170,6 +175,11 @@ function _M.rewrite(conf, ctx)
     -- 4. check the password is correct
     if cur_consumer.auth_conf.password ~= password then
         return 401, { message = "Password is error" }
+    end
+
+    -- 5. hide `Authorization` request header if `hide_credentials` is `true`
+    if conf.hide_credentials then
+        core.request.set_header(ctx, "Authorization", nil)
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)

@@ -43,7 +43,9 @@ local _M = {
 }
 ```
 
-插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件名字作为哈希的 key 来保存不同插件的配置项。
+插件配置可存放于 Route 或 Service 中，键为 `plugins`，值是包含多个插件配置的对象。对象内部用插件名字作为 key 来保存不同插件的配置项。
+
+如下所示的配置中，包含 `limit-count` 和 `prometheus` 两种插件的配置：
 
 ```json
 {

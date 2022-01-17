@@ -323,6 +323,7 @@ graphql:
 plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
+  - proxy-control                  # priority: 21990
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
@@ -344,6 +345,7 @@ plugins:                          # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
@@ -362,6 +364,7 @@ plugins:                          # plugin list (sorted by priority)
   - response-rewrite               # priority: 899
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
+  - grpc-web                       # priority: 505
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
   - echo                           # priority: 412

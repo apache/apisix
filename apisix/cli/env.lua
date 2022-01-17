@@ -30,7 +30,7 @@ local tonumber = tonumber
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
     -- ulimit setting should be checked when APISIX starts
     local res, err = util.execute_cmd("ulimit -n")
-    if not res or err ~= nil then
+    if not res then
         error("failed to exec ulimit cmd \'ulimit -n \', err: " .. err)
     end
     local ulimit = tonumber(util.trim(res))

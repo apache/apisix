@@ -29,8 +29,7 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local type = type
-local req_read_body = ngx.req.read_body
-local req_get_body_data = ngx.req.get_body_data
+
 
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
@@ -139,6 +138,16 @@ local function run()
         seg_sub_path = core.table.concat(uri_segs, "/", 7)
     end
 
+    if seg_res == "stream_routes" then
+        local local_conf = core.config.local_conf()
+        if not local_conf.apisix.stream_proxy then
+            core.log.warn("stream mode is disabled, can not add any stream ",
+                          "routes")
+            core.response.exit(400, {error_msg = "stream mode is disabled, " ..
+                               "can not add stream routes"})
+        end
+    end
+
     local resource = resources[seg_res]
     if not resource then
         core.response.exit(404, {error_msg = "not found"})
@@ -158,77 +167,6 @@ local function run()
     if req_body then
         local data, err = core.json.decode(req_body)
         if err then
-            core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body: " .. err,
-                                     req_body = req_body})
-        end
-
-        req_body = data
-    end
-
-    local uri_args = ngx.req.get_uri_args() or {}
-    if uri_args.ttl then
-        if not tonumber(uri_args.ttl) then
-            core.response.exit(400, {error_msg = "invalid argument ttl: "
-                                                 .. "should be a number"})
-        end
-    end
-
-    local code, data = resource[method](seg_id, req_body, seg_sub_path,
-                                        uri_args)
-    if code then
-        data = strip_etcd_resp(data)
-        core.response.exit(code, data)
-    end
-end
-
-
-local function run_stream()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local local_conf = core.config.local_conf()
-    if not local_conf.apisix.stream_proxy then
-        core.log.warn("stream mode is disabled, can not add any stream ",
-                      "routes")
-        core.response.exit(400, {error_msg = "stream mode is disabled, " ..
-                                             "can not add stream routes"})
-    end
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-    end
-
-    local uri_segs = core.utils.split_uri(ngx.var.uri)
-    core.log.info("uri: ", core.json.delay_encode(uri_segs))
-
-    -- /apisix/admin/schema/route
-    local seg_res, seg_id = uri_segs[4], uri_segs[5]
-    local seg_sub_path = core.table.concat(uri_segs, "/", 6)
-    if seg_res == "schema" and seg_id == "plugins" then
-        -- /apisix/admin/schema/plugins/limit-count
-        seg_res, seg_id = uri_segs[5], uri_segs[6]
-        seg_sub_path = core.table.concat(uri_segs, "/", 7)
-    end
-
-    local resource = resources[seg_res]
-    if not resource then
-        core.response.exit(404, {error_msg = "not found"})
-    end
-
-    local method = str_lower(get_method())
-    if not resource[method] then
-        core.response.exit(404, {error_msg = "not found"})
-    end
-
-    req_read_body()
-    local req_body = req_get_body_data()
-
-    if req_body then
-        local data, err = core.json.decode(req_body)
-        if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
             core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
@@ -381,11 +319,6 @@ local uri_route = {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run,
-    },
-    {
-        paths = [[/apisix/admin/stream_routes/*]],
-        methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
-        handler = run_stream,
     },
     {
         paths = [[/apisix/admin/plugins/list]],

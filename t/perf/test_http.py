@@ -18,7 +18,7 @@
 #
 
 # Usage:
-# 1. pip3 install -r t/perf/requirements.txt
+# 1. pip3 install -r t/perf/requirements.txt --user
 # 2. python3 ./t/perf/test_http.py
 import http.client
 import os

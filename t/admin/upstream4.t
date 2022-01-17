@@ -142,7 +142,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
 
 
 
@@ -197,7 +197,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"retries\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"invalid configuration: property \"retries\" validation failed: expected -1 to be at least 0"}
 
 
 

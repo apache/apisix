@@ -62,6 +62,7 @@ GET /t
 --- response_body
 real-ip
 client-control
+proxy-control
 ext-plugin-pre-req
 zipkin
 request-id
@@ -83,6 +84,7 @@ basic-auth
 jwt-auth
 key-auth
 consumer-restriction
+forward-auth
 opa
 authz-keycloak
 proxy-mirror
@@ -98,6 +100,7 @@ traffic-split
 redirect
 response-rewrite
 grpc-transcode
+grpc-web
 prometheus
 datadog
 echo

@@ -72,7 +72,7 @@ __DATA__
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"keepalive_pool\" validation failed: property \"size\" validation failed: expected 0 to be greater than 1"}
+{"error_msg":"invalid configuration: property \"keepalive_pool\" validation failed: property \"size\" validation failed: expected 0 to be at least 1"}
 
 
 

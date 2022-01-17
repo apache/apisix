@@ -57,6 +57,15 @@ do_install() {
     # install grpcurl
     install_grpcurl
 
+    # install nodejs
+    install_nodejs
+
+    # grpc-web server && client
+    cd t/plugin/grpc-web
+    ./setup.sh
+    # back to home directory
+    cd ../../../
+
     # install vault cli capabilities
     install_vault_cli
 }
