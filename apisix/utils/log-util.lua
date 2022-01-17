@@ -96,7 +96,7 @@ local function get_full_log(ngx, conf)
         }
     end
 
-    local latency, upstream_latency, apisix_latency = _M.latency_details_in_ms(ctx)
+    local latency, upstream_latency, apisix_latency = latency_details_in_ms(ctx)
 
     local log =  {
         request = {
@@ -189,7 +189,7 @@ function _M.get_req_original(ctx, conf)
 end
 
 
-function _M.latency_details_in_ms(ctx)
+local function latency_details_in_ms(ctx)
     local latency = (ngx_now() - ngx.req.start_time()) * 1000
     local upstream_latency, apisix_latency = nil, latency
 
@@ -208,6 +208,7 @@ function _M.latency_details_in_ms(ctx)
     return latency, upstream_latency, apisix_latency
 end
 
+_M.latency_details_in_ms = latency_details_in_ms
 
 function _M.check_log_schema(conf)
     if conf.include_req_body_expr then
