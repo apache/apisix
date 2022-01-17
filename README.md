@@ -116,6 +116,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [CORS](docs/en/latest/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
   - [URI Blocker](docs/en/latest/plugins/uri-blocker.md): Block client request by URI.
   - [Request Validator](docs/en/latest/plugins/request-validation.md)
+  - [HashiCorp Vault](docs/en/latest/plugins/jwt-auth.md#enable-jwt-auth-with-vault-compatibility): Support secret management solution for accessing secrets from Vault secure storage backed in a low trust enviroment. Currently, RS256 keys (public-private keypairs) or secret keys can be linked from vault in [jwt-auth](docs/en/latest/plugins/jwt-auth.md) authentication plugin.
 
 - **OPS friendly**
 
