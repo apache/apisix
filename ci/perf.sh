@@ -5,7 +5,8 @@ set -ex
 install_dependencies() {
     apt-get -y update --fix-missing
     apt-get -y install lua5.1 liblua5.1-0-dev
-    bash utils/install-dependencies.sh multi_distro_installation
+    export_or_prefix
+    ./utils/linux-install-openresty.sh
     bash utils/install-dependencies.sh install_luarocks
     make deps
 }
@@ -68,9 +69,9 @@ run_perf_test() {
 
     python3 ./t/perf/test_http.py >perf.txt 2>&1 &
 
-    master_id=$(cat $PWD/logs/nginx.pid)
+    master_id=$(cat logs/nginx.pid)
     worker_id=$(pgrep -P $master_id -n -f worker)
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $worker_id > tmp.bt
+    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > tmp.bt
 
 }
 
