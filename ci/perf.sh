@@ -100,7 +100,7 @@ run_perf_test() {
 
     sleep 1
 
-    ln -s /usr/local/stapxx/stap++ /usr/bin/
+    sudo ln -s /usr/local/stapxx/stap++ /usr/bin/
     sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
 
     sudo /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
