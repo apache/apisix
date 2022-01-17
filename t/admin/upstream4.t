@@ -603,3 +603,150 @@ passed
             assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
+
+
+
+=== TEST 18: set upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: set service(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream_id": 1,
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: delete upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+            ngx.print("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 400 message: {"error_msg":"can not delete this upstream, route [1] is still using it now"}
+
+
+
+=== TEST 22: delete route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 23: delete service(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/services/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 24: delete upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
