@@ -88,7 +88,7 @@ run_perf_test() {
 
     # stapxx
     echo "export STAP_PLUS_HOME=/usr/local/stapxx" >> ~/.bashrc
-    echo "export PATH=$STAP_PLUS_HOME:$STAP_PLUS_HOME/samples:$PATH" >> ~/.bashrc
+    echo "export PATH=$PATH:/usr/local/stapxx:/usr/local/stapxx/samples" >> ~/.bashrc
     # openresty-systemtap-toolkit
     echo "export PATH=$PATH:/usr/local/openresty-systemtap-toolkit" >> ~/.bashrc
     # FlameGraph
