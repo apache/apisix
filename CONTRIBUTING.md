@@ -127,6 +127,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
 
+## Contributor T-shirt
+
+If you have contributed to Apache APISIX, no matter it's code contributions to fix a bug and add functionality, or documentation and evangelistic contributions to make Apache APISIX be understood and used by more developers, congratulations! You are eligible to receive the very special Contributor T-shirt! Go ahead and fill out the [Contributors Submissions form](https://docs.google.com/forms/d/e/1FAIpQLSdXEpCs60UK49UlOGdBCQSXr7DYz3enyT4GJPKrYQmYfVLPKQ/viewform).
+
+![Contributor T-shirt](https://static.apiseven.com/202108/1642392020136-19a7c07b-27de-4c29-9168-099532d2638f.jpg)
+
 ## Do you have questions about the source code?
 
 - **QQ Group**: 578997126(recommended), 552030619
