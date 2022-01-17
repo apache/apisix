@@ -31,7 +31,7 @@ jobs:
       - name: Install wrk2
         run: sudo ./ci/perf.sh install_wrk2
 
-      - name: Install wrk2
+      - name: Install SystemTap Tools
         run: sudo ./ci/perf.sh install_stap_tools
 
       - name: Setup tmate session
