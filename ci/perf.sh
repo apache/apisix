@@ -100,12 +100,11 @@ run_perf_test() {
 
     sleep 1
 
-    sudo ln -s /usr/local/stapxx/stap++ /usr/bin/
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
+    sudo lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
 
-    sudo /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
-    sudo /usr/local/FlameGraph/stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
-    sudo /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > perf_res/flame.svg
+    sudo fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
+    sudo stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
+    sudo flamegraph.pl /tmp/flame.cbt > perf_res/flame.svg
 }
 
 case_opt=$1
