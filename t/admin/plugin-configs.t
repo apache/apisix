@@ -483,7 +483,7 @@ passed
                             "127.0.0.1:8080": 1
                         },
                         "type": "roundrobin"
-                    },
+                    }
                 }]]
                 )
 
@@ -491,12 +491,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -514,12 +510,9 @@ passed
             ngx.print("[delete] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
-[delete] code: 400 message: {"error_msg":"can not delete this plugin config, route [1] is still using it now"}
---- no_error_log
-[error]
+{"error_msg":"can not delete this plugin config, route [1] is still using it now"}
+--- error_code: 400
 
 
 
@@ -537,12 +530,8 @@ GET /t
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
-[delete] code: 200 message: passed
---- no_error_log
-[error]
+passed
 
 
 
@@ -560,9 +549,5 @@ GET /t
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
-[delete] code: 200 message: passed
---- no_error_log
-[error]
+passed
