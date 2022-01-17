@@ -10,6 +10,8 @@ jobs:
   perf:
     runs-on: ubuntu-18.04
     timeout-minutes: 90
+    env:
+      OPENRESTY_VERSION: source
 
     steps:
       - name: Check out code
