@@ -92,10 +92,19 @@ run_perf_test() {
 
     python3 ./t/perf/test_http.py >/tmp/perf.txt 2>&1 &
 
+    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
+    # shellcheck disable=SC2016
+    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
+    # shellcheck disable=SC1090
+    source ~/.bashrc
+
     master_pid=$(cat logs/nginx.pid)
     worker_pid=$(pgrep -P $master_pid -n -f worker)
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $worker_pid > /tmp/tmp.bt
+    sudo lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $worker_pid > /tmp/tmp.bt
 
+    sudo fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
+    sudo stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
+    sudo flamegraph.pl /tmp/flame.cbt > /tmp/flame.svg
 }
 
 case_opt=$1
