@@ -64,12 +64,8 @@ EOF
     ./configure && make all && sudo make install &&  stap --version
     cd ..
 
-    git clone https://github.com/openresty/stapxx.git
-    cd stapxx/
-    git remote add philipp-classen https://github.com/philipp-classen/stapxx.git
-    git switch --track philipp-classen/master
-    cd ../
-
+    # see https://github.com/openresty/stapxx/pull/48
+    git clone https://github.com/philipp-classen/stapxx.git
     git clone https://github.com/openresty/openresty-systemtap-toolkit.git
     git clone https://github.com/brendangregg/FlameGraph.git
 }
