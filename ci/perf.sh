@@ -87,12 +87,12 @@ run_perf_test() {
     sleep 1
 
     # stapxx
-    echo "export STAP_PLUS_HOME=/usr/local/stapxx" >> ~/.bashrc
-    echo "export PATH=$PATH:/usr/local/stapxx:/usr/local/stapxx/samples" >> ~/.bashrc
+    export STAP_PLUS_HOME=/usr/local/stapxx
+    export PATH=/usr/local/stapxx:/usr/local/stapxx/samples:$PATH
     # openresty-systemtap-toolkit
-    echo "export PATH=$PATH:/usr/local/openresty-systemtap-toolkit" >> ~/.bashrc
+    export PATH=/usr/local/openresty-systemtap-toolkit:$PATH
     # FlameGraph
-    echo "export PATH=$PATH:/usr/local/FlameGraph" >> ~/.bashrc
+    export PATH=/usr/local/FlameGraph:$PATH
     source ~/.bashrc
 
     sudo env PATH=$PATH /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
