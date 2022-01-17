@@ -26,12 +26,11 @@ install_stap_tools() {
     codename=$(lsb_release -c | awk  '{print $2}')
     sudo tee /etc/apt/sources.list.d/ddebs.list << EOF
     deb http://ddebs.ubuntu.com/ ${codename}      main restricted universe multiverse
-    deb http://ddebs.ubuntu.com/ ${codename}-security main restricted universe multiverse
     deb http://ddebs.ubuntu.com/ ${codename}-updates  main restricted universe multiverse
     deb http://ddebs.ubuntu.com/ ${codename}-proposed main restricted universe multiverse
 EOF
 
-    sudo apt-get update || true
+    sudo apt-get update
     sudo apt-get install linux-image-$(uname -r)-dbgsym
     sudo apt install elfutils libdw-dev
     sudo apt-get install -y python3-setuptools python3-wheel
