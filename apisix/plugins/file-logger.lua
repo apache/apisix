@@ -70,10 +70,15 @@ local function write_file_data(conf, log_message)
     local file, err = io_open(conf.path, 'a+')
 
     if not file then
-        core.log.error("failed to open file: " .. conf.path .. ", error info: " .. err)
+        core.log.error("failed to open file: ", conf.path, ", error info: ", err)
     else
-        file:write(msg)
-        file:flush()
+        local ok, error = file:write(msg)
+        if not ok then
+            core.log.error("failed to write file: ", conf.path, ", error info: ", error)
+        else
+            file:flush()
+            file:close() 
+        end
     end
 end
 
