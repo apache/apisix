@@ -66,18 +66,18 @@ end
 
 
 local function write_file_data(conf, log_message)
-    local msg = core.json.encode(log_message) .. "\n"
+    local msg = core.json.encode(log_message)
     local file, err = io_open(conf.path, 'a+')
 
     if not file then
         core.log.error("failed to open file: ", conf.path, ", error info: ", err)
     else
-        local ok, error = file:write(msg)
+        local ok, err = file:write(msg, '\n')
         if not ok then
-            core.log.error("failed to write file: ", conf.path, ", error info: ", error)
+            file:close()
+            core.log.error("failed to write file: ", conf.path, ", error info: ", err)
         else
             file:flush()
-            file:close()
         end
     end
 end
