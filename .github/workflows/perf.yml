@@ -37,8 +37,18 @@ jobs:
       - name: Perf Test
         run: ./ci/perf.sh run_perf_test
 
-      - name: Download Result
-        uses: actions/download-artifact@v2
+      - name: Save perf result
+        uses: actions/upload-artifact@v2
         with:
-          name: perf result
-          path: perf_res
+          name: rps-and-latency
+          path: |
+            output/perf.txt
+          retention-days: 3
+
+      - name: Save flamegrpah
+        uses: actions/upload-artifact@v2
+        with:
+          name: flamegraphs
+          path: |
+            output/flame.svg
+          retention-days: 3

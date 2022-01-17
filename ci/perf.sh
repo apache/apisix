@@ -81,8 +81,8 @@ run_perf_test() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
 
-    mkdir perf_res
-    python3 ./t/perf/test_http.py >$PWD/perf_res/perf.txt 2>&1 &
+    mkdir output
+    python3 ./t/perf/test_http.py >$PWD/output/perf.txt 2>&1 &
 
     sleep 1
 
@@ -99,7 +99,7 @@ run_perf_test() {
 
     sudo env PATH=$PATH /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
     sudo env PATH=$PATH /usr/local/FlameGraph/stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
-    sudo env PATH=$PATH /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > $PWD/perf_res/flame.svg
+    sudo env PATH=$PATH /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > $PWD/output/flame.svg
 }
 
 case_opt=$1
