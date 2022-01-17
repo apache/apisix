@@ -90,7 +90,8 @@ run_perf_test() {
     sudo chmod -R 777 ./
     ulimit -n 10240
 
-    python3 ./t/perf/test_http.py >/tmp/perf.txt 2>&1 &
+    mkdir perf_res
+    python3 ./t/perf/test_http.py >perf_res/perf.txt 2>&1 &
 
     sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
     # shellcheck disable=SC2016
@@ -98,13 +99,11 @@ run_perf_test() {
     # shellcheck disable=SC1090
     source ~/.bashrc
 
-    master_pid=$(cat logs/nginx.pid)
-    worker_pid=$(pgrep -P $master_pid -n -f worker)
-    sudo lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $worker_pid > /tmp/tmp.bt
+    sudo lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
 
     sudo fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
     sudo stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
-    sudo flamegraph.pl /tmp/flame.cbt > /tmp/flame.svg
+    sudo flamegraph.pl /tmp/flame.cbt > perf_res/flame.svg
 }
 
 case_opt=$1
