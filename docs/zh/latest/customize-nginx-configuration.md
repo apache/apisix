@@ -59,3 +59,4 @@ nginx_config:
         tcp_nodelay off;
 ...
 ```
+注意`nginx_config`及其子项的格式缩进，在执行`./bin/apisix start`时，错误的缩进将导致更新`conf/nginx.conf`文件失败。
