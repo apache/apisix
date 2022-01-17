@@ -1,6 +1,9 @@
 name: Perf
 
 on:
+  push:
+    # only for test
+    branches: [flamegraph]
   schedule:
     - cron:  '0 0 * * *'
 
