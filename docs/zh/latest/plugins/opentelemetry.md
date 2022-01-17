@@ -95,18 +95,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 | 名称         | 类型   | 默认值   | 描述                                                  |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
-| x_request_id_as_trace_id | boolean | false | 使用当前请求 ID 作为新的 TraceID，必须确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}` |
+| trace_id_source | enum | random | 合法的取值：`random` 或 `x-request-id`，允许使用当前请求 ID 代替随机 ID 作为新的 TraceID，必须确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}` |
 | resource | object |   | 追加到 trace 的额外 [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) |
 | collector | object | {address = "127.0.0.1:4317", request_timeout = 3} | 数据采集服务 |
 | collector.address | string | 127.0.0.1:4317 | 数据采集服务地址 |
-| collector.request_timeout | integer | 3 | 数据采集服务上报请求超时时长 |
+| collector.request_timeout | integer | 3 | 数据采集服务上报请求超时时长，单位秒 |
 | collector.request_headers | object |  | 数据采集服务上报请求附加的 HTTP 请求头 |
 | batch_span_processor | object |  | trace span 处理器参数配置 |
 | batch_span_processor.drop_on_queue_full | boolean | true | 当处理器缓存队列慢试，丢弃新到来的 span |
 | batch_span_processor.max_queue_size | integer | 2048 | 处理器缓存队列容量最大值 |
-| batch_span_processor.batch_timeout | number | 5 | 单位秒，构造一批 span 超时时长 |
+| batch_span_processor.batch_timeout | number | 5 | 构造一批 span 超时时长，单位秒 |
 | batch_span_processor.max_export_batch_size | integer | 256 | 一批 span 的数量，每次上报的 span 数量 |
-| batch_span_processor.inactive_timeout | number | 2 | 每隔多长时间检查是否有一批 span 可以上报 |
+| batch_span_processor.inactive_timeout | number | 2 | 每隔多长时间检查是否有一批 span 可以上报，单位秒 |
 
 配置示例:
 

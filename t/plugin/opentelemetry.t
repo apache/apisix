@@ -128,8 +128,6 @@ GET /opentracing
 --- response_body
 opentracing
 --- wait: 1
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
@@ -195,8 +193,6 @@ opentracing
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -264,8 +260,6 @@ opentracing
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -337,8 +331,6 @@ GET /opentracing
 --- response_body
 opentracing
 --- wait: 1
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
@@ -410,8 +402,6 @@ opentracing
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -487,8 +477,6 @@ GET /opentracing
 --- response_body
 opentracing
 --- wait: 1
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
@@ -570,8 +558,6 @@ opentracing
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -583,8 +569,6 @@ traceparent: 00-00000000000000000000000000000001-0000000000000001-01
 --- response_body
 opentracing
 --- wait: 1
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
@@ -670,8 +654,6 @@ GET /opentracing
 --- response_body
 opentracing
 --- wait: 1
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
@@ -689,5 +671,3 @@ opentracing
 --- grep_error_log eval
 qr/opentelemetry export span/
 --- grep_error_log_out
---- no_error_log
-[error]

@@ -50,31 +50,35 @@ local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
 
-local hostname
+local lrucache = core.lrucache.new({
+    type = 'plugin', count = 128, ttl = 24 * 60 * 60,
+})
+
 
 local attr_schema = {
     type = "object",
     properties = {
-        x_request_id_as_trace_id = {
-            type = "boolean",
-            description = "use x-request-id as new trace id",
-            default = false,
+        trace_id_source = {
+            type = "string",
+            enum = {"x-request-id", "random"},
+            description = "alternate use x-request-id as trace id",
+            default = "random",
         },
         resource = {
             type = "object",
             description = "additional resource",
-            additional_properties = {{type = "boolean"}, {type = "number"}, {type = "string"}},
+            additionalProperties = {{type = "boolean"}, {type = "number"}, {type = "string"}},
         },
         collector = {
             type = "object",
-            description = "otel collector",
+            description = "opentelemetry collector",
             properties = {
                 address = {type = "string", description = "host:port", default = "127.0.0.1:4317"},
                 request_timeout = {type = "integer", description = "second uint", default = 3},
                 request_headers = {
                     type = "object",
                     description = "http headers",
-                    additional_properties = {
+                    additionalProperties = {
                         one_of = {{type = "boolean"},{type = "number"}, {type = "string"}},
                    },
                 }
@@ -160,23 +164,16 @@ local schema = {
             },
             default = {name = "always_off", options = {fraction = 0, root = {name = "always_off"}}}
         },
-        tags = {
+        additional_attributes = {
             type = "array",
             items = {
-                type = "object",
-                properties = {
-                    position = {
-                        type = "string",
-                        enum = {"http", "arg", "cookie"}
-                    },
-                    name = {
-                        type = "string", minLength = 1
-                    }
-                }
+                type = "string",
+                minLength = 1,
             }
         }
     }
 }
+
 
 local _M = {
     version = 0.1,
@@ -186,10 +183,13 @@ local _M = {
     attr_schema = attr_schema,
 }
 
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+
+local hostname
 local sampler_factory
 local plugin_info
 
@@ -214,7 +214,7 @@ function _M.init()
         return
     end
 
-    if plugin_info.x_request_id_as_trace_id then
+    if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
             local trace_id = ngx_req.get_headers()["x-request-id"] or ngx_var.request_id
             return trace_id, id_generator.new_span_id()
@@ -222,14 +222,8 @@ function _M.init()
     end
 end
 
-local tracers = {}
 
-local function fetch_tracer(conf, ctx)
-    local t = tracers[ctx.route_id]
-    if t and t.v == ctx.conf_version then
-        return t.tracer
-    end
-
+local function create_tracer_obj(conf)
     -- create exporter
     local exporter = otlp_exporter_new(exporter_client_new(plugin_info.collector.address,
                                                             plugin_info.collector.request_timeout,
@@ -276,22 +270,25 @@ local function fetch_tracer(conf, ctx)
         sampler = sampler,
     })
     -- create tracer
-    local tracer = tp:tracer("opentelemetry-lua")
-    tracers[ctx.route_id] = {tracer = tracer, v = ctx.conf_version}
-
-    return tracer
+    return tp:tracer("opentelemetry-lua")
 end
 
+
 function _M.access(conf, api_ctx)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
+    if not tracer then
+        core.log.error("failed to fetch tracer object: ", err)
+        return
+    end
+
     -- extract trace context from the headers of downstream HTTP request
     local upstream_context = trace_context.extract(context, carrier_new())
     local attributes = {
         attr.string("service", api_ctx.service_name),
         attr.string("route", api_ctx.route_name),
     }
-    if conf.tags then
-        for _, tag in ipairs(conf.tags) do
-            local key = tag.position .. "_" .. tag.name
+    if conf.additional_attributes then
+        for _, key in ipairs(conf.additional_attributes) do
             local val = api_ctx.var[key]
             if val then
                 core.table.insert(attributes, attr.string(key, val))
@@ -299,7 +296,7 @@ function _M.access(conf, api_ctx)
         end
     end
 
-    local ctx, _ = fetch_tracer(conf, api_ctx):start(upstream_context, api_ctx.var.request_uri, {
+    local ctx, _ = tracer:start(upstream_context, api_ctx.var.request_uri, {
         kind = span_kind.client,
         attributes = attributes,
     })
@@ -308,6 +305,7 @@ function _M.access(conf, api_ctx)
     -- inject trace context into the headers of upstream HTTP request
     trace_context.inject(ctx, carrier_new())
 end
+
 
 function _M.body_filter(conf, ctx)
     if ngx.arg[2] then
@@ -323,14 +321,5 @@ function _M.body_filter(conf, ctx)
     end
 end
 
-function _M.destroy()
-    if process.type() ~= "worker" then
-        return
-    end
-
-    for _, t in pairs(tracers) do
-        t.tracer.provider:shutdown()
-    end
-end
 
 return _M

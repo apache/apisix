@@ -47,9 +47,8 @@ Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the
 | sampler.options.root.name | string | optional | always_off | ["always_on", "always_off", "trace_id_ratio"] | sampling strategy
 | sampler.options.root.options | object | optional | {fraction = 0} | | sampling strategy parameters
 | sampler.options.root.options.fraction | number | optional | 0 | [0, 1] | trace_id_ratio fraction
-| tags | array[object] | optional | | | append to trace span attributes
-| tags.position | string | required | | ["http", "arg", "cookie"] | where variable in
-| tags.name | string | required | | | variable name
+| additional_attributes | array[string] | optional | | | append to trace span attributes
+| additional_attributes[0] | string | required | | | key of ctx.var
 
 ## How To Enable
 
@@ -95,18 +94,18 @@ We can set the collecting by specifying the configuration in `conf/config.yaml`.
 
 | Name         | Type   | Default  | Description                                                          |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
-| x_request_id_as_trace_id | boolean | false | use current request id as new TraceID, you should make sure the request id is match regex pattern: `[0-9a-f]{32}`|
+| trace_id_source | enum | random | alternate use x-request-id as trace id, valid value is `random` or `x-request-id`, if use `x-request-id`, please make sure it match regex pattern `[0-9a-f]{32}` |
 | resource | object |   | additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) append to trace |
 | collector | object | {address = "127.0.0.1:4317", request_timeout = 3} | otlp collector |
 | collector.address | string | 127.0.0.1:4317 | collector address |
-| collector.request_timeout | integer | 3 | report request timeout |
+| collector.request_timeout | integer | 3 | report request timeout(second) |
 | collector.request_headers | object |  | report request http headers |
 | batch_span_processor | object |  | trace span processor |
 | batch_span_processor.drop_on_queue_full | boolean | true | drop span when queue is full, otherwise force process batches |
 | batch_span_processor.max_queue_size | integer | 2048 | maximum queue size to buffer spans for delayed processing |
 | batch_span_processor.batch_timeout | number | 5 | maximum duration(second) for constructing a batch |
 | batch_span_processor.max_export_batch_size | integer | 256 | maximum number of spans to process in a single batch |
-| batch_span_processor.inactive_timeout | number | 2 | timer interval for processing batches |
+| batch_span_processor.inactive_timeout | number | 2 | timer interval(second) for processing batches |
 
 Here is an example:
 
