@@ -1,8 +1,6 @@
 name: Perf
 
 on:
-  push:
-    branches: [flamegraph]
   schedule:
     - cron:  '0 0 * * *'
 
@@ -37,18 +35,18 @@ jobs:
       - name: Perf Test
         run: ./ci/perf.sh run_perf_test
 
-      - name: Save perf result
+      - name: Upload perf result
         uses: actions/upload-artifact@v2
         with:
-          name: rps-and-latency
+          name: perf.txt
           path: |
             output/perf.txt
           retention-days: 3
 
-      - name: Save flamegrpah
+      - name: Upload flamegrpah
         uses: actions/upload-artifact@v2
         with:
-          name: flamegraphs
+          name: flamegraph.svg
           path: |
-            output/flame.svg
+            output/flamegraph.svg
           retention-days: 3

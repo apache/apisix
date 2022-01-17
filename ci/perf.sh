@@ -99,7 +99,7 @@ run_perf_test() {
 
     sudo env PATH=$PATH /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
     sudo env PATH=$PATH /usr/local/FlameGraph/stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
-    sudo env PATH=$PATH /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > $PWD/output/flame.svg
+    sudo env PATH=$PATH /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > $PWD/output/flamegraph.svg
 }
 
 case_opt=$1
