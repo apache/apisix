@@ -72,39 +72,34 @@ EOF
 
 
 run_perf_test() {
-    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
-    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
-    source ~/.bashrc
-
-    #openresty-debug
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
-
-    # stapxx
-    export STAP_PLUS_HOME=/usr/local/stapxx
-    export PATH=$STAP_PLUS_HOME:$STAP_PLUS_HOME/samples:$PATH
-
-    # openresty-systemtap-toolkit
-    export PATH=$PATH:/usr/local/openresty-systemtap-toolkit
-
-    # FlameGraph
-    export PATH=$PATH:/usr/local/FlameGraph
-
     sudo chmod -R 777 ./
     ulimit -n 10240
 
     pip3 install -r t/perf/requirements.txt --user
+
+    #openresty-debug
+    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
 
     mkdir perf_res
     python3 ./t/perf/test_http.py >perf_res/perf.txt 2>&1 &
 
     sleep 1
 
-    sudo lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
+    # stapxx
+    echo "export STAP_PLUS_HOME=/usr/local/stapxx" >> ~/.bashrc
+    echo "export PATH=$STAP_PLUS_HOME:$STAP_PLUS_HOME/samples:$PATH" >> ~/.bashrc
+    # openresty-systemtap-toolkit
+    echo "export PATH=$PATH:/usr/local/openresty-systemtap-toolkit" >> ~/.bashrc
+    # FlameGraph
+    echo "export PATH=$PATH:/usr/local/FlameGraph" >> ~/.bashrc
+    source ~/.bashrc
 
-    sudo fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
-    sudo stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
-    sudo flamegraph.pl /tmp/flame.cbt > perf_res/flame.svg
+    sudo env PATH=$PATH /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
+
+    sudo env PATH=$PATH /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
+    sudo env PATH=$PATH /usr/local/FlameGraph/stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
+    sudo env PATH=$PATH /usr/local/FlameGraph/flamegraph.pl /tmp/flame.cbt > perf_res/flame.svg
 }
 
 case_opt=$1
