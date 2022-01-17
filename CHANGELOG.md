@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.12.0](#2120)
 - [2.11.0](#2110)
 - [2.10.3](#2103)
 - [2.10.2](#2102)
@@ -49,6 +50,55 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.12.0
+
+### Change
+
+- change(serverless): rename "balancer" phase to "before_proxy" [#5992](https://github.com/apache/apisix/pull/5992)
+- change: don't promise to support Tengine [#5961](https://github.com/apache/apisix/pull/5961)
+- change: enable HTTP when stream proxy is set and enable_admin is true [#5867](https://github.com/apache/apisix/pull/5867)
+
+### Core
+
+- :sunrise: feat(L4): support TLS over TCP upstream [#6030](https://github.com/apache/apisix/pull/6030)
+- :sunrise: feat: support registering custom variable [#5941](https://github.com/apache/apisix/pull/5941)
+- :sunrise: feat(vault): vault lua module, integration with jwt-auth authentication plugin [#5745](https://github.com/apache/apisix/pull/5745)
+- :sunrise: feat: enable L4 stream logging [#5768](https://github.com/apache/apisix/pull/5768)
+- :sunrise: feat: add http_server_location_configuration_snippet configuration [#5740](https://github.com/apache/apisix/pull/5740)
+- :sunrise: feat: support resolve default value when environment not set [#5675](https://github.com/apache/apisix/pull/5675)
+- :sunrise: feat(wasm): run in http header_filter [#5544](https://github.com/apache/apisix/pull/5544)
+
+### Plugin
+
+- :sunrise: feat: support hide the authentication header in basic-auth with  a config [#6039](https://github.com/apache/apisix/pull/6039)
+- :sunrise: feat: set proxy_request_buffering dynamically [#6075](https://github.com/apache/apisix/pull/6075)
+- :sunrise: feat(mqtt): balance by client id [#6079](https://github.com/apache/apisix/pull/6079)
+- :sunrise: feat: add forward-auth plugin [#6037](https://github.com/apache/apisix/pull/6037)
+- :sunrise: feat(grpc-web): support gRPC-Web Proxy [#5964](https://github.com/apache/apisix/pull/5964)
+- :sunrise: feat(limit-count): add constant key type [#5984](https://github.com/apache/apisix/pull/5984)
+- :sunrise: feat(limit-count): allow sharing counter [#5881](https://github.com/apache/apisix/pull/5881)
+- :sunrise: feat(splunk): support splunk hec logging plugin [#5819](https://github.com/apache/apisix/pull/5819)
+- :sunrise: feat: basic support OPA plugin [#5734](https://github.com/apache/apisix/pull/5734)
+- :sunrise: feat: rocketmq logger [#5653](https://github.com/apache/apisix/pull/5653)
+- :sunrise: feat(mqtt-proxy): support using route's upstream [#5666](https://github.com/apache/apisix/pull/5666)
+- :sunrise: feat(ext-plugin): support to get request body [#5600](https://github.com/apache/apisix/pull/5600)
+- :sunrise: feat(plugins): aws lambda serverless [#5594](https://github.com/apache/apisix/pull/5594)
+- :sunrise: feat(http/kafka-logger): support to log response body [#5550](https://github.com/apache/apisix/pull/5550)
+- :sunrise: feat: Apache OpenWhisk plugin [#5518](https://github.com/apache/apisix/pull/5518)
+- :sunrise: feat(plugin): support google cloud logging service [#5538](https://github.com/apache/apisix/pull/5538)
+
+### Bugfix
+
+- fix: the prometheus labels are inconsistent when error-log-logger is enabled [#6055](https://github.com/apache/apisix/pull/6055)
+- fix(ipv6): allow disabling IPv6 resolve [#6023](https://github.com/apache/apisix/pull/6023)
+- fix(mqtt): handle properties for MQTT 5 [#5916](https://github.com/apache/apisix/pull/5916)
+- fix(sls-logger): unable to get millisecond part of the timestamp [#5820](https://github.com/apache/apisix/pull/5820)
+- fix(mqtt-proxy): client id can be empty [#5816](https://github.com/apache/apisix/pull/5816)
+- fix(ext-plugin): don't use stale key [#5782](https://github.com/apache/apisix/pull/5782)
+- fix(log-rotate): race between reopen log & compression [#5715](https://github.com/apache/apisix/pull/5715)
+- fix(batch-processor): we didn't free stale object actually [#5700](https://github.com/apache/apisix/pull/5700)
+- fix: data pollution after passive health check is changed [#5589](https://github.com/apache/apisix/pull/5589)
 
 ## 2.11.0
 

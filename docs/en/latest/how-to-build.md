@@ -81,10 +81,10 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ### Installation via Source Release Package
 
-1. Create a directory named `apisix-2.11.0`.
+1. Create a directory named `apisix-2.12.0`.
 
   ```shell
-  $ APISIX_VERSION='2.11.0'
+  $ APISIX_VERSION='2.12.0'
   $ mkdir apisix-${APISIX_VERSION}
   ```
 
