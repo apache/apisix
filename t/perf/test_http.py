@@ -128,7 +128,7 @@ def create_env():
 class TestHTTP(unittest.TestCase):
 
     def setUp(self):
-        self.duration = os.environ.get("APISIX_PERF_DURATION", "30")
+        self.duration = os.environ.get("APISIX_PERF_DURATION", "60")
         self.n_client = os.environ.get("APISIX_PERF_CLIENT", "100")
         self.n_thread = os.environ.get("APISIX_PERF_THREAD", "2")
         self.qps = os.environ.get("APISIX_PERF_QPS", "8000")

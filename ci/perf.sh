@@ -65,6 +65,12 @@ EOF
     cd ..
 
     git clone https://github.com/openresty/stapxx.git
+    cd stapxx/
+    git remote add philipp-classen https://github.com/philipp-classen/stapxx.git
+    git fetch philipp-classen master
+    git switch --track philipp-classen/master
+    cd ../
+
     git clone https://github.com/openresty/openresty-systemtap-toolkit.git
     git clone https://github.com/brendangregg/FlameGraph.git
 }
@@ -72,25 +78,29 @@ EOF
 
 run_perf_test() {
     # export_prefix
+    #openresty-debug
+    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
+
     # stapxx
     export STAP_PLUS_HOME=/usr/local/stapxx
     export PATH=$STAP_PLUS_HOME:$STAP_PLUS_HOME/samples:$PATH
+
     # openresty-systemtap-toolkit
     export PATH=$PATH:/usr/local/openresty-systemtap-toolkit
+
     # FlameGraph
     export PATH=$PATH:/usr/local/FlameGraph
 
     pip3 install -r t/perf/requirements.txt --user
     sudo chmod -R 777 ./
     ulimit -n 10240
-    ulimit -n -S
-    ulimit -n -H
 
-    python3 ./t/perf/test_http.py >perf.txt 2>&1 &
+    python3 ./t/perf/test_http.py >/tmp/perf.txt 2>&1 &
 
-    master_id=$(cat logs/nginx.pid)
-    worker_id=$(pgrep -P $master_id -n -f worker)
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=5 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > tmp.bt
+    master_pid=$(cat logs/nginx.pid)
+    worker_pid=$(pgrep -P $master_pid -n -f worker)
+    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $worker_pid > /tmp/tmp.bt
 
 }
 
