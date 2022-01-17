@@ -72,6 +72,10 @@ EOF
 
 
 run_perf_test() {
+    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
+    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
+    source ~/.bashrc
+
     #openresty-debug
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
@@ -86,10 +90,6 @@ run_perf_test() {
     # FlameGraph
     export PATH=$PATH:/usr/local/FlameGraph
 
-    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
-    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
-    source ~/.bashrc
-
     sudo chmod -R 777 ./
     ulimit -n 10240
 
@@ -97,6 +97,8 @@ run_perf_test() {
 
     mkdir perf_res
     python3 ./t/perf/test_http.py >perf_res/perf.txt 2>&1 &
+
+    sleep 1
 
     sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
 
