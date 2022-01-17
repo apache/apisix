@@ -86,20 +86,19 @@ run_perf_test() {
     # FlameGraph
     export PATH=$PATH:/usr/local/FlameGraph
 
-    pip3 install -r t/perf/requirements.txt --user
+    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
+    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
+    source ~/.bashrc
+
     sudo chmod -R 777 ./
     ulimit -n 10240
+
+    pip3 install -r t/perf/requirements.txt --user
 
     mkdir perf_res
     python3 ./t/perf/test_http.py >perf_res/perf.txt 2>&1 &
 
-    sudo sed -i 's/env_reset/!env_reset/g' /etc/sudoers
-    # shellcheck disable=SC2016
-    echo 'alias sudo="sudo env PATH=$PATH"' >> ~/.bashrc
-    # shellcheck disable=SC1090
-    source ~/.bashrc
-
-    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
+    sudo /usr/local/stapxx/samples/lj-lua-stacks.sxx --arg time=30 --skip-badvars -x $(pgrep -P $(cat logs/nginx.pid) -n -f worker) > /tmp/tmp.bt
 
     sudo /usr/local/openresty-systemtap-toolkit/fix-lua-bt /tmp/tmp.bt > /tmp/flame.bt
     sudo /usr/local/FlameGraph/stackcollapse-stap.pl /tmp/flame.bt > /tmp/flame.cbt
