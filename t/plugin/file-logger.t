@@ -42,7 +42,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.file-logger")
             local ok, err = plugin.check_schema({
-                path = "logs/file.log"
+                path = "file.log"
                 })
             if not ok then
                 ngx.say(err)
@@ -84,7 +84,7 @@ property "path" is required
                  [[{
                         "plugins": {
                             "file-logger": {
-                                "path": "logs/file.log"
+                                "path": "file.log"
                             }
                         },
                         "upstream": {
@@ -115,7 +115,7 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code, message = t("/hello", ngx.HTTP_GET)
-            local fd, err = io.open("logs/file.log", 'r')
+            local fd, err = io.open("file.log", 'r')
             local msg
 
             if fd then
