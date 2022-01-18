@@ -116,7 +116,8 @@ function _M.check_schema(conf)
 end
 
 
-    local tmp = {}
+local tmp = {}
+
 local function concat_new_uri(uri, ctx)
     local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not passed_uri_segs then
