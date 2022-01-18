@@ -27,7 +27,8 @@ local schema = {
         delay = { type = "integer" },
         -- specify response status,default 200
         response_status = { type = "integer", default = 200, minimum = 1 },
-        -- specify response content type,support application/xml,text/plain and application/json,default application/json
+        -- specify response content type, support application/xml, text/plain
+        -- and application/json, default application/json
         content_type = { type = "string", default = "application/json" },
         -- specify response body.
         response_example = { type = "string" },
