@@ -486,14 +486,14 @@ passed
                     }
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
 --- response_body
 passed
---- error_code: 201
 
 
 
@@ -503,15 +503,17 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_configs/1',
+            local code, message = t('/apisix/admin/plugin_configs/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{"action": "delete"}]]
                 )
-            ngx.print(body)
+            ngx.print("[delete] code: ", code, " message: ", message)
+        }
     }
 --- response_body
-{"error_msg":"can not delete this plugin config, route [1] is still using it now"}
+[delete] code: 400 message: {"error_msg":"can not delete this plugin config, route [1] is still using it now"}
+
 
 
 
@@ -540,13 +542,13 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_configs/1',
+            local code, message = t('/apisix/admin/plugin_configs/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{"action": "delete"}]]
                 )
-            ngx.say(body)
+            ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
 --- response_body
-passed
+[delete] code: 200 message: passed
