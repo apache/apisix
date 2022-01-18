@@ -60,4 +60,4 @@ nginx_config:
 ...
 ```
 
-Pay attention to the indent of `nginx_config` and sub indent of the sub entries, the incorrect indent may cause `./bin/apisix start` failed to generate Nginx configuration in `conf/nginx.conf`.
+Pay attention to the indent of `nginx_config` and sub indent of the sub entries, the incorrect indent may cause `./bin/apisix start` to fail to generate Nginx configuration in `conf/nginx.conf`.
