@@ -33,6 +33,10 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -42,7 +46,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: proxy_request_buffering off
 --- config
     location /t {
         content_by_lua_block {
@@ -59,8 +63,8 @@ __DATA__
                         }
                     },
                     "plugins": {
-                        "client-control": {
-                            "max_body_size": 5
+                        "proxy-control": {
+                            "request_buffering": false
                         }
                     }
             }]]
@@ -72,120 +76,63 @@ __DATA__
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
 
 
-=== TEST 2: hit, failed
---- request
-POST /hello
-123456
---- error_code: 413
-
-
-
-=== TEST 3: hit, failed with chunked
---- more_headers
-Transfer-Encoding: chunked
+=== TEST 2: hit, only the upstream server will buffer the request
 --- request eval
-qq{POST /hello
-6\r
-Hello \r
-0\r
-\r
+"POST /hello
+" . "12345" x 10240
+--- grep_error_log eval
+qr/a client request body is buffered to a temporary file/
+--- grep_error_log_out
+a client request body is buffered to a temporary file
+
+
+
+=== TEST 3: proxy_request_buffering on
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "proxy-control": {
+                            "request_buffering": true
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
 }
---- error_code: 413
---- error_log
-client intended to send too large chunked body
+--- response_body
+passed
 
 
 
 === TEST 4: hit
---- request
-POST /hello
-12345
-
-
-
-=== TEST 5: bad body size
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local json = require("toolkit.json")
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "client-control": {
-                            "max_body_size": -1
-                        }
-                    }
-            }]]
-            )
-
-        if code >= 300 then
-            ngx.status = code
-        end
-        ngx.print(body)
-    }
-}
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin client-control err: property \"max_body_size\" validation failed: expected -1 to be at least 0"}
-
-
-
-=== TEST 6: 0 means no limit
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local json = require("toolkit.json")
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "client-control": {
-                            "max_body_size": 0
-                        }
-                    }
-            }]]
-            )
-
-        if code >= 300 then
-            ngx.status = code
-        end
-        ngx.say(body)
-    }
-}
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 7: hit
---- request
-POST /hello
-1
+--- request eval
+"POST /hello
+" . "12345" x 10240
+--- grep_error_log eval
+qr/a client request body is buffered to a temporary file/
+--- grep_error_log_out
+a client request body is buffered to a temporary file
+a client request body is buffered to a temporary file

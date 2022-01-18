@@ -178,7 +178,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"break_response_code\" validation failed: expected 199 to be greater than 200"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"break_response_code\" validation failed: expected 199 to be at least 200"}
 --- no_error_log
 [error]
 

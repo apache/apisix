@@ -34,6 +34,7 @@ List in alphabetical order:
 | graphql_name     | the [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL | HeroComparison |
 | graphql_operation     | the operation type of GraphQL | mutation  |
 | graphql_root_fields     | the top level fields of GraphQL | ["hero"] |
+| mqtt_client_id   | the client id in MQTT protocol |   |
 | route_id         | id of `route`          |   |
 | route_name       | name of `route`        |   |
 | service_id       | id of `service`        |   |

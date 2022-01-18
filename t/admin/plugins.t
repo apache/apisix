@@ -62,6 +62,7 @@ GET /t
 --- response_body
 real-ip
 client-control
+proxy-control
 ext-plugin-pre-req
 zipkin
 request-id
