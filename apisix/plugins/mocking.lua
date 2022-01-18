@@ -19,6 +19,8 @@ local ngx = ngx
 local xml2lua = require("xml2lua")
 local string = string
 local type = type
+local table = table
+local math = math
 
 local schema = {
     type = "object",
