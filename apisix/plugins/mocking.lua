@@ -32,7 +32,7 @@ local schema = {
         content_type = { type = "string", default = "application/json" },
         -- specify response body.
         response_example = { type = "string" },
-        -- specify response json schema,if response_example is not nil,this conf will be ignore.
+        -- specify response json schema, if response_example is not nil, this conf will be ignore.
         -- generate random response by json schema.
         response_schema = { type = "object" },
         with_mock_header = { type = "boolean", default = true }
