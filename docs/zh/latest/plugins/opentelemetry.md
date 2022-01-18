@@ -47,9 +47,8 @@ title: opentelemetry
 | sampler.options.root.name | string | 可选 | always_off | ["always_on", "always_off", "trace_id_ratio"] | 采样算法
 | sampler.options.root.options | object | 可选 | {fraction = 0} | | 采样算法参数
 | sampler.options.root.options.fraction | number | 可选 | 0 | [0, 1] | trace_id_ratio 采样算法的百分比
-| tags | array[object] | 可选 | | | 追加到 trace span 的属性
-| tags.position | string | 必须 | | ["http", "arg", "cookie"] | 变量的位置
-| tags.name | string | 必须 | | | 变量的名称
+| additional_attributes | array[string] | optional | | | 追加到 trace span 的额外属性（变量名为 key，变量值为 value）
+| additional_attributes[0] | string | required | | | APISIX or Nginx 变量，例如 `http_header` or `route_id`
 
 ## 如何启用
 

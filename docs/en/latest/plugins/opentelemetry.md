@@ -47,8 +47,8 @@ Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the
 | sampler.options.root.name | string | optional | always_off | ["always_on", "always_off", "trace_id_ratio"] | sampling strategy
 | sampler.options.root.options | object | optional | {fraction = 0} | | sampling strategy parameters
 | sampler.options.root.options.fraction | number | optional | 0 | [0, 1] | trace_id_ratio fraction
-| additional_attributes | array[string] | optional | | | append to trace span attributes
-| additional_attributes[0] | string | required | | | key of ctx.var
+| additional_attributes | array[string] | optional | | | attributes (variable and its value) which will be appended to the trace span
+| additional_attributes[0] | string | required | | | APISIX or Nginx variable, like `http_header` or `route_id`
 
 ## How To Enable
 
@@ -94,7 +94,7 @@ We can set the collecting by specifying the configuration in `conf/config.yaml`.
 
 | Name         | Type   | Default  | Description                                                          |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
-| trace_id_source | enum | random | alternate use x-request-id as trace id, valid value is `random` or `x-request-id`, if use `x-request-id`, please make sure it match regex pattern `[0-9a-f]{32}` |
+| trace_id_source | enum | random | the source of trace id, the valid value is `random` or `x-request-id`. If `x-request-id` is set, the value of `x-request-id` request header will be used as trace id. Please make sure it match regex pattern `[0-9a-f]{32}` |
 | resource | object |   | additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) append to trace |
 | collector | object | {address = "127.0.0.1:4317", request_timeout = 3} | otlp collector |
 | collector.address | string | 127.0.0.1:4317 | collector address |

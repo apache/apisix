@@ -61,7 +61,7 @@ local attr_schema = {
         trace_id_source = {
             type = "string",
             enum = {"x-request-id", "random"},
-            description = "alternate use x-request-id as trace id",
+            description = "the source of trace id",
             default = "random",
         },
         resource = {
@@ -307,14 +307,32 @@ function _M.access(conf, api_ctx)
 end
 
 
-function _M.body_filter(conf, ctx)
+function _M.body_filter(conf, api_ctx)
     if ngx.arg[2] then
-        local upstream_status = core.response.get_upstream_status(ctx)
+        local upstream_status = core.response.get_upstream_status(api_ctx)
+        local ctx = context:current();
+        ctx:detach()
+
         -- get span from current context
-        local span = context:current():span()
+        local span = ctx:span()
         if upstream_status and upstream_status >= 500 then
             span:set_status(span_status.error,
                             "upstream response status: " .. upstream_status)
+        end
+
+        span:finish()
+    end
+end
+
+
+function _M.log(conf, api_ctx)
+    local ctx = context:current();
+    if ctx then
+        -- get span from current context
+        local span = ctx:span()
+        if upstream_status and upstream_status >= 500 then
+            span:set_status(span_status.error,
+                    "upstream response status: " .. upstream_status)
         end
 
         span:finish()
