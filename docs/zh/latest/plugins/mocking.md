@@ -185,7 +185,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ## 测试插件
-当mocking插件配置如下时：
+当 mocking 插件配置如下时：
 
 ```json
 {
