@@ -328,6 +328,7 @@ end
 function _M.log(conf, api_ctx)
     local ctx = context:current();
     if ctx then
+        local upstream_status = core.response.get_upstream_status(api_ctx)
         -- get span from current context
         local span = ctx:span()
         if upstream_status and upstream_status >= 500 then
