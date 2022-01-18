@@ -90,7 +90,7 @@ end
 
 local function check_csrf_token(conf, ctx, token)
     local token_str = ngx_decode_base64(token)
-    if token_str == nil then
+    if not token_str then
         core.log.error("csrf token base64 decode error")
         return false
     end
