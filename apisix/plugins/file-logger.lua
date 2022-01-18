@@ -78,6 +78,7 @@ local function write_file_data(conf, log_message)
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
         else
             file:flush()
+            file:close()
         end
     end
 end
