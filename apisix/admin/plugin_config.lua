@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local get_routes = require("apisix.router").http_routes
 local utils = require("apisix.admin.utils")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local type = type
 local tostring = tostring
+local ipairs = ipairs
 
 
 local _M = {
@@ -100,12 +102,30 @@ end
 
 
 function _M.delete(id)
+    if not id then
+        return 400, {error_msg = "missing plugin config id"}
+    end
+
+    local routes, routes_ver = get_routes()
+    if routes_ver and routes then
+        for _, route in ipairs(routes) do
+            if type(route) == "table" and route.value
+               and route.value.plugin_config_id
+               and tostring(route.value.plugin_config_id) == id then
+                return 400, {error_msg = "can not delete this plugin config,"
+                                         .. " route [" .. route.value.id
+                                         .. "] is still using it now"}
+            end
+        end
+    end
+
     local key = "/plugin_configs/" .. id
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete plugin config[", key, "]: ", err)
         return 503, {error_msg = err}
     end
+
 
     return res.status, res.body
 end
