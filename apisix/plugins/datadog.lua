@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local fetch_log = require("apisix.utils.log-util").get_full_log
-local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local udp = ngx.socket.udp
@@ -111,7 +110,6 @@ end
 
 function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
-    entry.latency, entry.upstream_latency, entry.apisix_latency = latency_details(ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
 
