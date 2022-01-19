@@ -49,9 +49,9 @@ function _M.access(conf, ctx)
     -- perform route matching
     if router.api.match(ctx, skip) then
         return
-    else
-        return 404
     end
+
+    return 404
 end
 
 
