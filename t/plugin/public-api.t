@@ -132,4 +132,3 @@ GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
 --- error_log
 custom-jwt-sign was triggered
-
