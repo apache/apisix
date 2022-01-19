@@ -53,7 +53,7 @@ title: jwt-auth
 | algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                                      |
 | exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                              |
 | base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                                        |
-| vault | object | 可选    |    |                             | Vault 是否用于密钥（HS256/HS512 的密钥或 RS256 的公钥和私钥）的存储和检索。该插件默认使用的 Vault 路径为 `kv/apisix/consumer/<consumer name>/jwt-auth` 用于检索密钥 |
+| vault | object | 可选    |    |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索 |
 
 **注意**: 要启用 Vault 集成，首先访问 [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)，更新您的 Vault 服务器配置、主机地址和访问令牌。您可以在 vault 属性下的 [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) 中查看 APISIX 的期望配置。
 
