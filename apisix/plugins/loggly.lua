@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
-local severity = require("apisix.plugins.slslog.rfc5424").severity
 local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local tostring = tostring
@@ -28,6 +27,17 @@ local udp = ngx.socket.udp
 local plugin_name = "loggly"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
+local severity = {
+    EMEGR = 0,              --  system is unusable
+    ALERT = 1,              --  action must be taken immediately
+    CRIT = 2,               --  critical conditions
+    ERR = 3,                --  error conditions
+    WARNING = 4,            --  warning conditions
+    NOTICE = 5,             --  normal but significant condition
+    INFO = 6,               --  informational
+    DEBUG = 7,              --  debug-level messages
+}
+
 local schema = {
     type = "object",
     properties = {
@@ -35,7 +45,8 @@ local schema = {
         severity = {
             type = "string",
             default = "INFO",
-            enum = {"DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR"},
+            enum = {"DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR",
+                    "debug", "info", "notice", "warning", "err", "crit", "alert", "emegr"},
             description = "base severity log level",
         },
         include_req_body = {type = "boolean", default = false},
@@ -138,7 +149,7 @@ local function generate_log_message(conf, ctx)
     end
     local message = {
         -- facility LOG_USER - random user level message
-        "<".. tostring(8 + severity[conf.severity]) .. ">1", -- <PRIVAL>1
+        "<".. tostring(8 + severity[conf.severity:upper()]) .. ">1", -- <PRIVAL>1
         timestamp,                                           -- timestamp
         ctx.var.host or "-",                                 -- hostname
         "apisix",                                            -- appname

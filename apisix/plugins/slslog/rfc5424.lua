@@ -81,10 +81,7 @@ local Severity = {
 local log_util = require("apisix.utils.log-util")
 
 
-local _M = {
-    version = 0.1,
-    severity = Severity
-}
+local _M = { version = 0.1 }
 
 function _M.encode(facility, severity, hostname, appname, pid, project,
                    logstore, access_key_id, access_key_secret, msg)
