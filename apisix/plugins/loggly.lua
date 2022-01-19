@@ -50,6 +50,14 @@ local schema = {
             description = "base severity log level",
         },
         include_req_body = {type = "boolean", default = false},
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         tags = {
             type = "array",
             minItems = 1,
@@ -92,6 +100,9 @@ local metadata_schema = {
             minimum = 1,
             default= defaults.timeout
         },
+        log_format = {
+            type = "object",
+        }
     }
 }
 
@@ -111,9 +122,16 @@ function _M.check_schema(conf, schema_type)
 end
 
 local function generate_log_message(conf, ctx)
-    local entry = log_util.get_full_log(ngx, {
-        include_req_body = conf.include_req_body
-    })
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local entry
+
+    if metadata and metadata.value.log_format
+       and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+    else
+        entry = log_util.get_full_log(ngx, conf)
+    end
 
     if conf.prefer_name then
         if entry.service_id and entry.service_id ~= "" then
@@ -162,6 +180,8 @@ end
 
 local function send_data_over_udp(message)
     local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
     if not metadata then
         core.log.info("received nil metadata: using metadata defaults: ",
                             core.json.delay_encode(defaults, true))
