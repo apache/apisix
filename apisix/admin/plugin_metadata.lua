@@ -119,6 +119,7 @@ function _M.get(key)
         return 503, {error_msg = err}
     end
 
+    utils.fix_count(res.body, key)
     return res.status, res.body
 end
 
