@@ -19,6 +19,8 @@ local ngx = ngx
 local xml2lua = require("xml2lua")
 local string = string
 local type = type
+local table = table
+local math = math
 
 local schema = {
     type = "object",
@@ -27,11 +29,12 @@ local schema = {
         delay = { type = "integer", default = 0 },
         -- specify response status,default 200
         response_status = { type = "integer", default = 200, minimum = 1 },
-        -- specify response content type,support application/xml,text/plain and application/json,default application/json
+        -- specify response content type, support application/xml, text/plain
+        -- and application/json, default application/json
         content_type = { type = "string", default = "application/json" },
         -- specify response body.
         response_example = { type = "string" },
-        -- specify response json schema,if response_example is not nil,this conf will be ignore.
+        -- specify response json schema, if response_example is not nil, this conf will be ignore.
         -- generate random response by json schema.
         response_schema = { type = "object" },
         with_mock_header = { type = "boolean", default = true }
