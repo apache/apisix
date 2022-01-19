@@ -65,7 +65,7 @@ EOF
     cd ..
 
     # see https://github.com/openresty/stapxx/pull/48
-    git clone https://github.com/philipp-classen/stapxx.git
+    git clone https://github.com/api7/stapxx.git -b luajit-gc64
     git clone https://github.com/openresty/openresty-systemtap-toolkit.git
     git clone https://github.com/brendangregg/FlameGraph.git
 }
