@@ -128,7 +128,8 @@
             "plugins/error-log-logger",
             "plugins/sls-logger",
             "plugins/google-cloud-logging",
-            "plugins/splunk-hec-logging"
+            "plugins/splunk-hec-logging",
+            "plugins/loggly"
           ]
         },
         {
