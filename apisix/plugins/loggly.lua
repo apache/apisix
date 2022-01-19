@@ -114,8 +114,6 @@ local function generate_log_message(conf, ctx)
     local entry = log_util.get_full_log(ngx, {
         include_req_body = conf.include_req_body
     })
-    entry.latency, entry.upstream_latency,
-        entry.apisix_latency = log_util.latency_details_in_ms(ctx)
 
     if conf.prefer_name then
         if entry.service_id and entry.service_id ~= "" then
