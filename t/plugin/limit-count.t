@@ -448,7 +448,7 @@ GET /t
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 61,
                                 "rejected_code": 503,
                                 "key": "remote_addr"
                             }
@@ -597,7 +597,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 80,
                                 "key": "remote_addr"
                             }
                         },
@@ -649,7 +649,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 1,
-                                "time_window": 60,
+                                "time_window": 80,
                                 "key": "remote_addr"
                             }
                         },
@@ -701,7 +701,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 82,
                                 "key": "remote_addr"
                             }
                         },
@@ -742,7 +742,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 1,
-                                "time_window": 60,
+                                "time_window": 82,
                                 "key": "remote_addr"
                             }
                         },
@@ -794,7 +794,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 83,
                                 "key": "remote_addr"
                             }
                         },
@@ -828,7 +828,7 @@ passed
 --- pipelined_requests eval
 ["GET /t", "GET /hello", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 200, 503, 200, 200, 200, 503]
+[200, 200, 200, 503, 200, 503, 503, 503]
 --- no_error_log
 [error]
 
@@ -1041,7 +1041,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 91,
                                 "rejected_code": 503,
                                 "key": "service_id"
                             }
@@ -1138,7 +1138,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 95,
                                 "rejected_code": 503
                             }
                         },
@@ -1272,7 +1272,7 @@ passed
                     "plugins": {
                         "limit-count": {
                             "count": 3,
-                            "time_window": 60,
+                            "time_window": 99,
                             "rejected_code": 503
                         }
                     },

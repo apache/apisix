@@ -63,7 +63,7 @@ __DATA__
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: failed to validate dependent schema for \"policy\": value should match only one schema, but matches none"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: else clause did not match"}
 --- no_error_log
 [error]
 
@@ -327,7 +327,7 @@ code: 200
                         "plugins": {
                             "limit-count": {
                                 "count": ]] .. count .. [[,
-                                "time_window": 60,
+                                "time_window": 69,
                                 "key": "remote_addr",
                                 "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
