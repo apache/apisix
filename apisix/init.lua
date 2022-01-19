@@ -392,7 +392,7 @@ function _M.http_access_phase()
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
-            {error_msg = "404 Route Not Found"})
+                    {error_msg = "404 Route Not Found"})
     end
 
     core.log.info("matched route: ",
