@@ -71,7 +71,7 @@ EOF
 }
 
 
-run_perf_test() {
+run_performance_test() {
     sudo chmod -R 777 ./
     ulimit -n 10240
 
@@ -82,7 +82,7 @@ run_perf_test() {
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
 
     mkdir output
-    python3 ./t/perf/test_http.py >$PWD/output/perf.txt 2>&1 &
+    python3 ./t/perf/test_http.py >$PWD/output/performance.txt 2>&1 &
 
     sleep 1
 
@@ -111,7 +111,7 @@ case $case_opt in
     (install_stap_tools)
         install_stap_tools
         ;;
-    (run_perf_test)
-        run_perf_test
+    (run_performance_test)
+        run_performance_test
         ;;
 esac

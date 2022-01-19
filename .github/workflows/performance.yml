@@ -1,4 +1,4 @@
-name: Perf
+name: Performance Test
 
 on:
   # only for test
@@ -8,7 +8,7 @@ on:
     - cron:  '0 0 * * *'
 
 jobs:
-  perf:
+  performance:
     runs-on: ubuntu-18.04
     timeout-minutes: 90
 
@@ -27,23 +27,23 @@ jobs:
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
       - name: Install Dependencies
-        run: sudo ./ci/perf.sh install_dependencies
+        run: sudo ./ci/performance_test.sh install_dependencies
 
       - name: Install wrk2
-        run: sudo ./ci/perf.sh install_wrk2
+        run: sudo ./ci/performance_test.sh install_wrk2
 
       - name: Install SystemTap Tools
-        run: sudo ./ci/perf.sh install_stap_tools
+        run: sudo ./ci/performance_test.sh install_stap_tools
 
       - name: Perf Test
-        run: ./ci/perf.sh run_perf_test
+        run: ./ci/performance_test.sh run_performance_test
 
-      - name: Upload perf result
+      - name: Upload Performance Test Result
         uses: actions/upload-artifact@v2
         with:
           name: perf.txt
           path: |
-            output/perf.txt
+            output/performance.txt
           retention-days: 3
 
       - name: Upload flamegrpah
