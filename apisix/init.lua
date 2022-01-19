@@ -380,9 +380,17 @@ function _M.http_access_phase()
         -- run global rule
         plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
-        core.log.info("not find any matched route")
-        return core.response.exit(404,
+        if router.api.has_route_not_under_apisix() or
+            core.string.has_prefix(uri, "/apisix/")
+        then
+            local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
+            local matched = router.api.match(api_ctx, skip)
+            if not matched then
+                core.log.info("not find any matched route")
+                return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
+            end
+        end
     end
 
     core.log.info("matched route: ",
