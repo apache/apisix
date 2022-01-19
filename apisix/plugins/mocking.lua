@@ -24,7 +24,7 @@ local schema = {
     type = "object",
     properties = {
         -- specify response delay time,default 0ms
-        delay = { type = "integer" },
+        delay = { type = "integer", default = 0 },
         -- specify response status,default 200
         response_status = { type = "integer", default = 200, minimum = 1 },
         -- specify response content type,support application/xml,text/plain and application/json,default application/json
@@ -135,6 +135,9 @@ local function gen_base(property)
     end
     return nil
 end
+
+
+local gen_array, gen_object
 
 function gen_array(property)
     local output = {}
