@@ -214,6 +214,8 @@ function _M.rewrite(conf, ctx)
     local uuid_val = get_request_id(conf.algorithm)
     if not headers[conf.header_name] then
         core.request.set_header(ctx, conf.header_name, uuid_val)
+    else
+        uuid_val = headers[conf.header_name]
     end
 
     if conf.include_in_response then
