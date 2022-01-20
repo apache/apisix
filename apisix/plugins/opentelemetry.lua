@@ -274,7 +274,7 @@ local function create_tracer_obj(conf)
 end
 
 
-function _M.access(conf, api_ctx)
+function _M.rewrite(conf, api_ctx)
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
@@ -310,7 +310,7 @@ end
 function _M.body_filter(conf, api_ctx)
     if ngx.arg[2] then
         local upstream_status = core.response.get_upstream_status(api_ctx)
-        local ctx = context:current();
+        local ctx = context:current()
         ctx:detach()
 
         -- get span from current context
@@ -326,9 +326,10 @@ end
 
 
 function _M.log(conf, api_ctx)
-    local ctx = context:current();
+    local ctx = context:current()
     if ctx then
         local upstream_status = core.response.get_upstream_status(api_ctx)
+
         -- get span from current context
         local span = ctx:span()
         if upstream_status and upstream_status >= 500 then

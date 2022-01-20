@@ -703,3 +703,25 @@ upstream status: 500
 qr/opentelemetry export span/
 --- grep_error_log_out
 opentelemetry export span
+
+
+
+=== TEST 23: test response empty body
+--- extra_init_by_lua
+    local otlp = require("opentelemetry.trace.exporter.otlp")
+    otlp.export_spans = function(self, spans)
+        ngx.log(ngx.INFO, "opentelemetry export span")
+    end
+
+    local opentelemetry = require("apisix.plugins.opentelemetry")
+    opentelemetry.body_filter = function()
+        ngx.log(ngx.INFO, "mock response empty body")
+    end
+--- request
+GET /specific_status
+--- response_body
+--- wait: 1
+--- grep_error_log eval
+qr/opentelemetry export span/
+--- grep_error_log_out
+opentelemetry export span
