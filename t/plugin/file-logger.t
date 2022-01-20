@@ -90,11 +90,11 @@ property "path" is required
                 )
 
             ngx.status = code
-            ngx.say(body)
+            ngx.say(code..body)
         }
     }
 --- response_body
-passed
+201passed
 
 
 
