@@ -56,10 +56,10 @@ jobs:
           retention-days: 3
 
       - name: Echo Result
-        if: |
-          github.event_name == 'pull_request' || github.event.label.name == 'performance'
-        uses: actions-ecosystem/action-create-comment@v1
+        uses: amondnet/vercel-action@v20
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            [Download Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./output
