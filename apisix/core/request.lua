@@ -223,7 +223,7 @@ function _M.get_body(max_size, ctx)
 
     local file_name = req_get_body_file()
     if not file_name then
-        return nil
+        return nil, "failed to read body"
     end
 
     log.info("attempt to read body from file: ", file_name)
