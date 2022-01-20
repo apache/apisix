@@ -118,6 +118,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [CORS](plugins/cors.md)：为你的 API 启用 CORS。
   - [URI 拦截器](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
   - [请求验证器](plugins/request-validation.md)。
+  - [CSRF](plugins/csrf.md)：基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式保护你的 API 远离 CSRF 攻击。
 
 - **运维友好**
 

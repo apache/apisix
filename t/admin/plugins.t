@@ -73,6 +73,7 @@ cors
 ip-restriction
 ua-restriction
 referer-restriction
+csrf
 uri-blocker
 request-validation
 openid-connect
