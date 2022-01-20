@@ -32,7 +32,7 @@ title: file-logger
 
 ## Name
 
-`file-logger` is a plugin which push a stream of Log data to a specified location. For example, the output path can be customized: `logs/file.log`.
+`file-logger` is a plugin that pushes a stream of log data to a specified location. For example, the output path can be customized: `logs/file.log`.
 
 ## Attributes
 
@@ -84,7 +84,7 @@ You can then find the `file.log` file in the corresponding `logs` directory.
 ### Example
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "log_format": {
     "host": "$host",

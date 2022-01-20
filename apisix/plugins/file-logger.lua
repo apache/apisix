@@ -74,12 +74,11 @@ local function write_file_data(conf, log_message)
     else
         local ok, err = file:write(msg, '\n')
         if not ok then
-            file:close()
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
         else
             file:flush()
-            file:close()
         end
+        file:close()
     end
 end
 

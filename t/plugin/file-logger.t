@@ -74,7 +74,46 @@ property "path" is required
 
 
 
-=== TEST 3: add plugin
+=== TEST 3: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "host": "$host",
+                        "client_ip": "$remote_addr"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "log_format": {
+                                "host": "$host",
+                                "client_ip": "$remote_addr"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -108,30 +147,73 @@ passed
 
 
 
-=== TEST 4: verify plugin
+=== TEST 5: verify plugin
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message = t("/hello", ngx.HTTP_GET)
+            local code = t("/hello", ngx.HTTP_GET)
             local fd, err = io.open("file.log", 'r')
             local msg
 
             if fd then
                 msg = fd:read()
-                fd:close()
             else
-                fd:close()
-                core.log.error("failed to open file: logs/file.log, error info: ", err)
+                core.log.error("failed to open file: file.log, error info: ", err)
             end
-            core.log.warn('msg: ', msg)
+            fd:close()
 
-            if msg then
+            local new_msg = core.json.decode(msg)
+            if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
+                and new_msg.host == '127.0.0.1'
+            then
+                msg = "write file log success"
                 ngx.status = code
-                ngx.say('write log success')
+                ngx.say(msg)
             end
         }
     }
 --- response_body
-write log success
+write file log success
+
+
+
+=== TEST 6: failed to open the path
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "/log/file.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            local code, messages = t("/hello", GET)
+            core.log.warn("messages: ", messages)
+            if code >= 300 then
+                ngx.status = code
+            end
+        }
+    }
+--- error_log
+failed to open file: /log/file.log, error info: /log/file.log: No such file or directory
