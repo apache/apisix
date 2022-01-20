@@ -425,7 +425,7 @@ POST
 
 
 
-=== TEST 14: get_body (failed to read body)
+=== TEST 14: get_body (request body has zero size)
 --- config
     location /t {
         content_by_lua_block {
@@ -439,4 +439,4 @@ POST
 --- request
 POST /t
 --- response_body
-failed to read body
+request body has zero size
