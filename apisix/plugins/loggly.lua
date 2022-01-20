@@ -231,11 +231,13 @@ end
 
 
 local function handle_log(entries)
-    local ok, err
     for i = 1, #entries do
-        ok, err = send_data_over_udp(entries[i])
+        local ok, err = send_data_over_udp(entries[i])
+        if not ok then
+            return false, err
+        end
     end
-    return ok, err
+    return true
 end
 
 
