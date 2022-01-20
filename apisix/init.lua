@@ -377,9 +377,8 @@ function _M.http_access_phase()
 
     local route = api_ctx.matched_route
     if not route then
-        -- run global rule
-        plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
+        -- whether the public API run global rules is
+        -- controlled by the configuration file
         if router.api.has_route_not_under_apisix() or
             core.string.has_prefix(uri, "/apisix/")
         then
@@ -389,6 +388,9 @@ function _M.http_access_phase()
                 return
             end
         end
+
+        -- run global rule when there is no matching route
+        plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
