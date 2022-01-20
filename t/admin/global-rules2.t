@@ -61,3 +61,91 @@ __DATA__
     }
 --- response_body
 {"action":"get","count":0,"node":{"dir":true,"key":"/apisix/global_rules","nodes":{}}}
+
+
+
+=== TEST 2: set global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: list global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/global_rules',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body_like
+{"action":"get","count":1,"node":\{"dir":true,"key":"/apisix/global_rules","nodes":.*
+
+
+
+=== TEST 4: delete global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE,
+                nil,
+                [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed
+--- no_error_log
+[error]
