@@ -23,7 +23,6 @@ title: loggly
 
 ## Summary
 
-- [Summary](#summary)
 - [Name](#name)
 - [Attributes](#attributes)
 - [Metadata](#metadata)
@@ -49,7 +48,6 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | customer_token           | string     | required      || A unique identifier is used when sending log data to Loggly to ensure that the logs are sent to the right organization account.                                                                                                                                           |
 | severity | string (enum) | optional | INFO | Log event severity level (choose between: "DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR" ) [case insensitive] |
 | tags         | array   | optional      |  | To aid in segmentation & filtering. They are metadata you can set and they will be included with any event that is transmitted to Loggly. |
-| prefer_name     | boolean     | optional     | true | If set to `false`, would use route/service id instead of name(default) inside log events.                                                                                                                                                                                                    |
 | include_req_body | boolean | optional    | false          | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. Note: if the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitation. |
 | include_resp_body| boolean | optional    | false         | Whether to include the response body. The response body is included if and only if it is `true`. |
 | include_resp_body_expr  | array  | optional    |          | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |

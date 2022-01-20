@@ -18,14 +18,15 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
-local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local tostring = tostring
+local pairs = pairs
 local tab_concat = table.concat
 local udp = ngx.socket.udp
 
 local plugin_name = "loggly"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
+
 
 local severity = {
     EMEGR = 0,              --  system is unusable
@@ -38,6 +39,16 @@ local severity = {
     DEBUG = 7,              --  debug-level messages
 }
 
+
+local severity_enums = {}
+do
+    for k, _ in pairs(severity) do
+        severity_enums[#severity_enums+1] = k
+        severity_enums[#severity_enums+1] = k:lower()
+    end
+end
+
+
 local schema = {
     type = "object",
     properties = {
@@ -45,8 +56,7 @@ local schema = {
         severity = {
             type = "string",
             default = "INFO",
-            enum = {"DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR",
-                    "debug", "info", "notice", "warning", "err", "crit", "alert", "emegr"},
+            enum = severity_enums,
             description = "base severity log level",
         },
         include_req_body = {type = "boolean", default = false},
@@ -62,10 +72,11 @@ local schema = {
             type = "array",
             minItems = 1,
             items = {
-                type = "string"
-            }
+                type = "string",
+                -- we prevent of having `tag=` prefix
+                pattern = "^(?!tag=)[ -~]*",
+            },
         },
-        prefer_name = {type = "boolean", default = true}
     },
     required = {"customer_token"}
 }
@@ -77,6 +88,7 @@ local defaults = {
     protocol = "syslog",
     timeout = 5000
 }
+
 
 local metadata_schema = {
     type = "object",
@@ -106,6 +118,7 @@ local metadata_schema = {
     }
 }
 
+
 local _M = {
     version = 0.1,
     priority = 411,
@@ -114,12 +127,24 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    return core.schema.check(schema, conf)
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return nil, err
+    end
+    return log_util.check_log_schema(conf)
 end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
+
 
 local function generate_log_message(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -133,20 +158,6 @@ local function generate_log_message(conf, ctx)
         entry = log_util.get_full_log(ngx, conf)
     end
 
-    if conf.prefer_name then
-        if entry.service_id and entry.service_id ~= "" then
-            local svc = service_fetch(entry.service_id)
-
-            if svc and svc.value.name ~= "" then
-                entry.service_id =  svc.value.name
-            end
-        end
-
-        if ctx.route_name and ctx.route_name ~= "" then
-            entry.route_id = ctx.route_name
-        end
-    end
-
     -- generate rfc5424 compliant syslog event
     local json_str, err = core.json.encode(entry)
     if not json_str then
@@ -158,25 +169,24 @@ local function generate_log_message(conf, ctx)
     local taglist = {}
     if conf.tags then
         for i = 1, #conf.tags do
-            if not conf.tags[i]:sub(1, 4) ~= "tag=" then
-                core.table.insert(taglist, "tag=\"" .. conf.tags[i] .. "\"")
-            end
+            core.table.insert(taglist, "tag=\"" .. conf.tags[i] .. "\"")
         end
     end
     local message = {
         -- facility LOG_USER - random user level message
-        "<".. tostring(8 + severity[conf.severity:upper()]) .. ">1", -- <PRIVAL>1
-        timestamp,                                           -- timestamp
-        ctx.var.host or "-",                                 -- hostname
-        "apisix",                                            -- appname
-        ctx.var.pid,                                         -- proc-id
-        "-",                                                 -- msgid
+        "<".. tostring(8 + severity[conf.severity:upper()]) .. ">1",-- <PRIVAL>1
+        timestamp,                                                  -- timestamp
+        ctx.var.host or "-",                                        -- hostname
+        "apisix",                                                   -- appname
+        ctx.var.pid,                                                -- proc-id
+        "-",                                                        -- msgid
         "[" .. conf.customer_token .. "@41058 " .. tab_concat(taglist, " ") .. "]",
         json_str
     }
 
     return tab_concat(message, " ")
 end
+
 
 local function send_data_over_udp(message)
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -219,6 +229,7 @@ local function send_data_over_udp(message)
     return res, err_msg
 end
 
+
 local function handle_log(entries)
     local ok, err
     for i = 1, #entries do
@@ -226,6 +237,7 @@ local function handle_log(entries)
     end
     return ok, err
 end
+
 
 function _M.log(conf, ctx)
     local log_data = generate_log_message(conf, ctx)
@@ -239,5 +251,6 @@ function _M.log(conf, ctx)
 
     batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, handle_log)
 end
+
 
 return _M
