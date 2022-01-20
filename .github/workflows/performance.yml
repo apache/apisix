@@ -1,9 +1,11 @@
 name: Performance Test
 
 on:
-  issues:
-    types:
-      - labeled
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 
 jobs:
   performance:
