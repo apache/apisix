@@ -117,9 +117,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 启用具有 Vault 兼容性的 jwt-auth
 
-有时候在生产中拥有一个集中式密钥管理解决方案，如 `Vault` 是很自然的。您不必每次在您的组织更改部分签署密钥（HS256/HS512 的密钥或 RS256 的 public_key 和 private_key）时更新 APISIX 消费者。或者出于隐私考虑，您不想通过 APISIX admin APIs 使用密钥。APISIX 在这里为您提供了保障，`jwt-auth` 能够引用 Vault 的密钥。
+有时候在生产中拥有一个集中式密钥管理解决方案，如 `Vault` 是很自然的。您不必每次在您的组织更改部分签署密钥（HS256/HS512 的密钥或 RS256 的 public_key 和 private_key）时更新 APISIX Consumer。或者出于隐私考虑，您不想通过 APISIX admin APIs 使用密钥。APISIX 在这里为您提供了保障，`jwt-auth` 能够引用 Vault 的密钥。
 
-**注意**：对于该集成支持的早期版本，该插件期望存储在 Vault 路径中的密钥名称为「`secret`，`public_key`，`private_key`」其中之一，方可成功使用该密钥。在未来的版本中，我们将添加对引用自定义命名键的支持。
+**注意**：对于该集成支持的早期版本，该插件期望存储在 Vault 路径中的密钥名称为「`secret`，`public_key`，`private_key`」其中之一，方可成功使用该密钥。
 
 要启用 Vault 的兼容性，只需要在 `jwt-auth` 插件内添加空的 Vault 对象。
 
@@ -138,7 +138,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-这里插件在 Vault 路径（`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`）中为消费者配置的用户名 `jack` 查找密钥 `secret`，并将其用于后续签名和 `jwt` 验证。如果在同一路径中没有找到密钥，该插件就会记录错误，无法执行 `jwt` 验证。
+这里插件在 Vault 路径（`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`）中为 Consumer 配置的用户名 `jack` 查找密钥 `secret`，并将其用于后续签名和 `jwt` 验证。如果在同一路径中没有找到密钥，该插件就会记录错误，无法执行 `jwt` 验证。
 
 2. RS256 rsa 密钥对, 包括公钥和私钥都存粗在 Vault 中。
 
@@ -158,7 +158,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 该插件在 Vault kv 路径（`<vault.prefix from conf.yaml>/consumer/kowalski/jwt-auth`）中为插件 Vault 配置中提到的用户名 `kowalski` 查询 `public_key` 和 `private_key` 密钥。如果没有找到，认证失败。
 
-3. 公钥在消费者配置中，而私钥在 Vault 中。
+3. 公钥在 Consumer 配置中，而私钥在 Vault 中。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -175,7 +175,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-这个插件使用消费者配置中的 rsa 公钥，并直接使用从 Vault 中获取的私钥。
+这个插件使用 Consumer 配置中的 rsa 公钥，并直接使用从 Vault 中获取的私钥。
 
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
 
