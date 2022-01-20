@@ -56,9 +56,8 @@ jobs:
           retention-days: 3
 
       - name: Echo Result
-        run: |
-          curl -X POST \
-          -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          -H 'Accept: application/vnd.github.v3+json' \
-          https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
-          --data '{"test":"test"}'
+        uses: ./.github/actions/action-create-comment
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        body: |
+          [Performance Result](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
