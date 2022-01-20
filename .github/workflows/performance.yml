@@ -1,14 +1,13 @@
 name: Performance Test
 
 on:
-  # only for test
-  pull_request:
-    branches: [master]
-  schedule:
-    - cron:  '0 0 * * *'
+  issues:
+    types:
+      - labeled
 
 jobs:
   performance:
+    if: github.event.label.name == 'performance'
     runs-on: ubuntu-18.04
     timeout-minutes: 90
 
@@ -53,3 +52,12 @@ jobs:
           path: |
             output/flamegraph.svg
           retention-days: 3
+
+      - name: Echo Result
+        if: |
+          github.event_name == 'pull_request' || github.event.label.name == 'performance'
+        uses: actions-ecosystem/action-create-comment@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            [Download Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)
