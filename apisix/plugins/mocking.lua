@@ -21,6 +21,7 @@ local string = string
 local type = type
 local table = table
 local math = math
+local pairs = pairs
 
 local schema = {
     type = "object",
