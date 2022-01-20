@@ -56,12 +56,7 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return nil, err
-    end
-    return log_util.check_log_schema(conf)
+    return core.schema.check(schema, conf)
 end
 
 

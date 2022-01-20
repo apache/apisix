@@ -40,41 +40,36 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.file-logger")
-            local ok, err = plugin.check_schema({
-                path = "file.log"
-                })
-            if not ok then
-                ngx.say(err)
-            end
+            local configs = {
+                -- full configuration
+                {
+                    path = "file.log"
+                },
+                -- property "path" is required
+                {
+                    path = nil
+                }
+            }
 
-            ngx.say("done")
+            local plugin = require("apisix.plugins.file-logger")
+
+            for i = 1, #configs do
+                ok, err = plugin.check_schema(configs[i])
+                if err then
+                    ngx.say(err)
+                else
+                    ngx.say("done")
+                end
+            end
         }
     }
---- response_body
+--- response_body_like
 done
-
-
-
-=== TEST 2: path is missing check
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.file-logger")
-            local ok, err = plugin.check_schema()
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- no_error_log
 property "path" is required
 
 
 
-=== TEST 3: add plugin metadata
+=== TEST 2: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -89,16 +84,18 @@ property "path" is required
                 }]]
                 )
 
-            ngx.status = code
-            ngx.say(code..body)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- response_body
-201passed
+passed
 
 
 
-=== TEST 4: add plugin
+=== TEST 3: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -132,7 +129,7 @@ passed
 
 
 
-=== TEST 5: verify plugin
+=== TEST 4: verify plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -164,7 +161,7 @@ write file log success
 
 
 
-=== TEST 6: failed to open the path
+=== TEST 5: failed to open the path
 --- config
     location /t {
         content_by_lua_block {
