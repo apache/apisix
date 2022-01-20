@@ -86,17 +86,6 @@ property "path" is required
                         "host": "$host",
                         "client_ip": "$remote_addr"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "host": "$host",
-                                "client_ip": "$remote_addr"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -104,12 +93,8 @@ property "path" is required
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
