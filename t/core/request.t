@@ -422,21 +422,3 @@ the post form is too large: request body in temp file not supported
 POST /t
 --- response_body
 POST
-
-
-
-=== TEST 14: get_body (request body has zero size)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local body, err = core.request.get_body()
-            if not body then
-                ngx.say(err)
-            end
-        }
-    }
---- request
-POST /t
---- response_body
-request body has zero size
