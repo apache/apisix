@@ -73,6 +73,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Dubbo Proxy](docs/en/latest/plugins/dubbo-proxy.md): Dynamic HTTP to Dubbo proxy.
   - [Dynamic MQTT Proxy](docs/en/latest/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
   - [gRPC proxy](docs/en/latest/grpc-proxy.md): Proxying gRPC traffic.
+  - [gRPC Web Proxy](docs/en/latest/plugins/grpc-web.md): Proxying gRPC Web traffic to gRPC Service.
   - [gRPC transcoding](docs/en/latest/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
   - Proxy Websocket
   - Proxy Protocol
