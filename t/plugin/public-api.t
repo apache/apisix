@@ -123,6 +123,9 @@ property "uri" validation failed: wrong type: expected string, got number
 GET /gen_token?key=user-key
 --- error_log
 direct-wolf-rbac-userinfo was triggered
+--- response_body eval
+qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/ or
+qr/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9/
 
 
 
