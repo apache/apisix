@@ -185,6 +185,14 @@ function _M.log(conf, ctx)
             core.log.info("custom log format entry: ", core.json.delay_encode(entry))
         else
             entry = log_util.get_full_log(ngx, conf)
+
+            -- log custom labels of route
+            local route = ctx.matched_route and ctx.matched_route.value
+            if route and route.labels then
+                entry.route = {}
+                entry.route.labels = route.labels
+            end
+
             core.log.info("full log entry: ", core.json.delay_encode(entry))
         end
     end
