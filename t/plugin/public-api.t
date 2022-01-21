@@ -135,3 +135,10 @@ GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
 --- error_log
 direct-wolf-rbac-userinfo was triggered
+
+
+
+=== TEST 5: missing route
+--- request
+GET /apisix/plugin/balalbala
+--- error_code: 404
