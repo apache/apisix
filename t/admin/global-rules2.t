@@ -95,10 +95,6 @@ __DATA__
     }
 --- response_body
 {"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
@@ -143,9 +139,5 @@ GET /t
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
---- request
-GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
