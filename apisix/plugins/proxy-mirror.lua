@@ -16,8 +16,10 @@
 --
 local core          = require("apisix.core")
 local math_random = math.random
-local plugin_name   = "proxy-mirror"
+local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
+
+local plugin_name   = "proxy-mirror"
 local schema = {
     type = "object",
     properties = {
@@ -34,7 +36,6 @@ local schema = {
         },
     },
     required = {"host"},
-    minProperties = 1,
 }
 
 local _M = {
@@ -55,19 +56,26 @@ function _M.check_schema(conf)
 end
 
 
+local function enable_mirror(ctx, host)
+    ctx.var.upstream_mirror_host = host
+
+    if has_mod then
+        apisix_ngx_client.enable_mirror()
+    end
+end
+
+
 function _M.rewrite(conf, ctx)
     core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    ctx.var.upstream_host = ctx.var.host
-
-    if not conf.sample_ratio or conf.sample_ratio == 1 then
-        ctx.var.upstream_mirror_host = conf.host
+    if conf.sample_ratio == 1 then
+        enable_mirror(ctx, conf.host)
     else
         local val = math_random()
         core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio,
                                 ", random value: ", val)
         if val < conf.sample_ratio then
-            ctx.var.upstream_mirror_host = conf.host
+            enable_mirror(ctx, conf.host)
         end
     end
 

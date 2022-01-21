@@ -114,14 +114,13 @@ local function send_to_splunk(conf, entries)
         headers = request_headers,
     })
 
-    if err then
+    if not res then
         return false, "failed to write log to splunk, " .. err
     end
 
     if res.status ~= 200 then
-        local body
-        body, err = core.json.decode(res.body)
-        if err then
+        local body = core.json.decode(res.body)
+        if not body then
             return false, "failed to send splunk, http status code: " .. res.status
         else
             return false, "failed to send splunk, " .. body.text

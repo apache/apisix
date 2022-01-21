@@ -26,8 +26,6 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_openresty_mtls
-          - linux_tengine
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90

@@ -685,3 +685,82 @@ passed
 [error]
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: group conf mismatched"}
+
+
+
+=== TEST 20: group with constant key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key_type": "constant",
+                            "group": "afafafhao2"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: hit multiple paths
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello_chunked"
+            local ress = {}
+            for i = 1, 4 do
+                local httpc = http.new()
+                local uri
+                if i % 2 == 1 then
+                    uri = uri1
+                else
+                    uri = uri2
+                end
+
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- grep_error_log eval
+qr/limit key: afafafhao2:remote_addr/
+--- grep_error_log_out
+limit key: afafafhao2:remote_addr
+limit key: afafafhao2:remote_addr
+limit key: afafafhao2:remote_addr
+limit key: afafafhao2:remote_addr
+--- response_body
+[200,200,503,503]

@@ -143,14 +143,16 @@ do
         var_x_forwarded_proto = true,
     }
 
+    -- sort in alphabetical
     local apisix_var_names = {
+        balancer_ip = true,
+        balancer_port = true,
+        consumer_name = true,
+        mqtt_client_id = true,
         route_id = true,
         route_name = true,
         service_id = true,
         service_name = true,
-        consumer_name = true,
-        balancer_ip = true,
-        balancer_port = true,
     }
 
     local mt = {
@@ -215,11 +217,19 @@ do
                 key = sub_str(key, 9)
                 val = get_parsed_graphql()[key]
 
-            elseif apisix_var_names[key] then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx[key]
-
             else
-                val = get_var(key, t._request)
+                local getter = apisix_var_names[key]
+                if getter then
+                    if getter == true then
+                        val = ngx.ctx.api_ctx and ngx.ctx.api_ctx[key]
+                    else
+                        -- the getter is registered by ctx.register_var
+                        val = getter(ngx.ctx.api_ctx)
+                    end
+
+                else
+                    val = get_var(key, t._request)
+                end
             end
 
             if val ~= nil and not no_cacheable_var_names[key] then
@@ -238,6 +248,18 @@ do
             t._cache[key] = val
         end,
     }
+
+function _M.register_var(name, getter)
+    if type(getter) ~= "function" then
+        error("the getter of registered var should be a function")
+    end
+
+    if apisix_var_names[name] then
+        error(name .. " is registered")
+    end
+
+    apisix_var_names[name] = getter
+end
 
 function _M.set_vars_meta(ctx)
     local var = tablepool.fetch("ctx_var", 0, 32)

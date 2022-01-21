@@ -31,10 +31,11 @@ title: 插件开发
 - [编写执行逻辑](#编写执行逻辑)
   - [conf 参数](#conf-参数)
   - [ctx 参数](#ctx-参数)
+- [注册公共接口](#注册公共接口)
+- [注册控制接口](#注册控制接口)
+- [注册自定义变量](#注册自定义变量)
 - [编写测试用例](#编写测试用例)
   - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
-  - [注册公共接口](#注册公共接口)
-  - [注册控制接口](#注册控制接口)
 
 ## 检查外部依赖
 
@@ -52,9 +53,7 @@ nginx_config:
 
 插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
-注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
-可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
-插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
+注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 
 ## 插件命名，优先级和其他
 
@@ -122,8 +121,7 @@ local _M = {
 
 ## 配置描述与校验
 
-定义插件的配置项，以及对应的 [JSON Schema](https://json-schema.org) 描述，并完成对 JSON 的校验，这样方便对配置的数据规
-格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 example-plugin 插件为例，看看他的配置数据：
+定义插件的配置项，以及对应的 [JSON Schema](https://json-schema.org) 描述，并完成对 JSON 的校验，这样方便对配置的数据规格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 example-plugin 插件为例，看看他的配置数据：
 
 ```json
 {
@@ -308,6 +306,87 @@ function _M.access(conf, ctx)
 end
 ```
 
+## 注册公共接口
+
+插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
+
+```lua
+local function gen_token()
+    -- ...
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/sign",
+            handler = gen_token,
+        }
+    }
+end
+```
+
+注意注册的接口会暴露到外网。
+你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
+
+## 注册控制接口
+
+如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
+
+Take a look at example-plugin plugin:
+
+```lua
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
+end
+```
+
+如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。通过以下命令进行测试：
+
+```shell
+curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
+```
+
+[查看更多有关 control API 介绍](./control-api.md)
+
+## 注册自定义变量
+
+我们可以在APISIX的许多地方使用变量。例如，在 http-logger 中自定义日志格式，用它作为 `limit-*` 插件的键。在某些情况下，内置的变量是不够的。因此，APISIX允许开发者在全局范围内注册他们的变量，并将它们作为普通的内置变量使用。
+
+例如，让我们注册一个叫做 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值。
+
+```
+local core = require "apisix.core"
+
+core.ctx.register_var("a6_labels_zone", function(ctx)
+    local route = ctx.matched_route and ctx.matched_route.value
+    if route and route.labels then
+        return route.labels.zone
+    end
+    return nil
+end)
+```
+
+此后，任何对 `$a6_labels_zone` 的获取操作都会调用注册的获取器来获取数值。
+
+注意，自定义变量不能用于依赖 Nginx 指令的功能，如 `access_log_format`。
+
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
@@ -352,56 +431,3 @@ done
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。
-
-### 注册公共接口
-
-插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
-
-```lua
-local function gen_token()
-    -- ...
-end
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
-    }
-end
-```
-
-注意注册的接口会暴露到外网。
-你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
-
-### 注册控制接口
-
-如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
-
-Take a look at example-plugin plugin:
-
-```lua
-local function hello()
-    local args = ngx.req.get_uri_args()
-    if args["json"] then
-        return 200, {msg = "world"}
-    else
-        return 200, "world\n"
-    end
-end
-
-
-function _M.control_api()
-    return {
-        {
-            methods = {"GET"},
-            uris = {"/v1/plugin/example-plugin/hello"},
-            handler = hello,
-        }
-    }
-end
-```
-
-如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。

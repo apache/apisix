@@ -71,7 +71,6 @@ Creates a stream route, and enable plugin `mqtt-proxy`.
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
     "plugins": {
         "mqtt-proxy": {
             "protocol_name": "MQTT",
@@ -88,6 +87,40 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
     }
 }'
 ```
+
+In case Docker is used in combination with MacOS `host.docker.internal` is the right parameter for `host`.
+
+This plugin exposes a variable `mqtt_client_id`, and we can use it to load balance via the client id. For example:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "mqtt-proxy": {
+            "protocol_name": "MQTT",
+            "protocol_level": 4
+        }
+    },
+    "upstream": {
+        "type": "chash",
+        "key": "mqtt_client_id",
+        "nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1995,
+            "weight": 1
+        },
+        {
+            "host": "127.0.0.2",
+            "port": 1995,
+            "weight": 1
+        }
+        ]
+    }
+}'
+```
+
+MQTT connections with different client ID will be forwarded to different node via the consistent hash algorithm. If the client ID is missing, we will balance via client IP instead.
 
 ## Delete Plugin
 

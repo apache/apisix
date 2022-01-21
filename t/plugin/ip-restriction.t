@@ -86,7 +86,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like eval
-qr/failed to validate item 1: object matches none of the requireds/
+qr/failed to validate item 1: object matches none of the required/
 --- no_error_log
 [error]
 
@@ -115,7 +115,7 @@ qr/failed to validate item 1: object matches none of the requireds/
 --- request
 GET /t
 --- response_body_like eval
-qr/failed to validate item 1: object matches none of the requireds/
+qr/failed to validate item 1: object matches none of the required/
 --- no_error_log
 [error]
 
@@ -567,7 +567,7 @@ GET /hello
 --- request
 GET /t
 --- response_body_like eval
-qr/failed to validate item 1: object matches none of the requireds/
+qr/failed to validate item 1: object matches none of the required/
 --- no_error_log
 [error]
 

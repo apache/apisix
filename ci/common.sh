@@ -31,6 +31,30 @@ create_lua_deps() {
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 }
 
+rerun_flaky_tests() {
+    if tail -1 "$1" | grep "Result: PASS"; then
+        exit 0
+    fi
+
+    if ! tail -1 "$1" | grep "Result: FAIL"; then
+        # CI failure not caused by failed test
+        exit 1
+    fi
+
+    local tests
+    local n_test
+    tests="$(awk '/^t\/.*.t\s+\(.+ Failed: .+\)/{ print $1 }' "$1")"
+    n_test="$(echo "$tests" | wc -l)"
+    if [ "$n_test" -gt 3 ]; then
+        # too many tests failed
+        exit 1
+    fi
+
+    echo "Rerun $(echo "$tests" | xargs)"
+    # run in verbose mode
+    FLUSH_ETCD=1 TEST_NGINX_VERBOSE=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
+}
+
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
@@ -42,6 +66,18 @@ install_vault_cli () {
     VAULT_VERSION="1.9.0"
     wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
+}
+
+install_nodejs () {
+    NODEJS_PREFIX="/usr/local/node"
+    NODEJS_VERSION="16.13.1"
+    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    rm -f /usr/local/bin/node
+    rm -f /usr/local/bin/npm
+    mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
+    ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
+    ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,4 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-find lua -type d | sort | awk '{print "$(INSTALL) -d $(INST_LUADIR)/apisix/" $0 "\n" "$(INSTALL) " $0 "/*.lua $(INST_LUADIR)/apisix/" $0 "/\n" }'
+
+set -ex
+
+npm install
+
+CGO_ENABLED=0 go build -o grpc-web-server server.go
+
+./grpc-web-server > grpc-web-server.log 2>&1 || (cat grpc-web-server.log && exit 1)&

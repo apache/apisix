@@ -48,6 +48,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
 * Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
+* Follow the [PR manners](https://raw.githubusercontent.com/apache/apisix/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 ## Contribution Guidelines for Documentation
 
@@ -127,6 +128,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
+
+## Contributor T-shirt
+
+If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the very special Contributor T-shirt! It's always been the community effort that has made Apache APISIX be understood and used by more developers. Go ahead and fill out the [Contributors Submissions form](https://docs.google.com/forms/d/e/1FAIpQLSdXEpCs60UK49UlOGdBCQSXr7DYz3enyT4GJPKrYQmYfVLPKQ/viewform).
+
+![Contributor T-shirt](https://static.apiseven.com/202108/1642392020136-19a7c07b-27de-4c29-9168-099532d2638f.jpg)
 
 ## Do you have questions about the source code?
 

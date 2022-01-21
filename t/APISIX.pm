@@ -212,6 +212,7 @@ my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
     apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     wasm_vm wasmtime;
 _EOC_
 }
@@ -250,6 +251,8 @@ _EOC_
     if ($stream_tls_request) {
         # generate a springboard to send tls stream request
         $block->set_value("stream_conf_enable", 1);
+        # avoid conflict with stream_enable
+        $block->set_value("stream_enable");
         $block->set_value("request", "GET /stream_tls_request");
 
         my $sni = "nil";
@@ -334,6 +337,11 @@ _EOC_
     }
 
     my $stream_enable = $block->stream_enable;
+    if ($block->stream_request) {
+        # Like stream_tls_request, if stream_request is given, automatically enable stream
+        $stream_enable = 1;
+    }
+
     my $stream_conf_enable = $block->stream_conf_enable;
     my $extra_stream_config = $block->extra_stream_config // '';
     my $stream_upstream_code = $block->stream_upstream_code // <<_EOC_;
@@ -348,6 +356,7 @@ _EOC_
 
     lua_shared_dict lrucache-lock-stream 10m;
     lua_shared_dict plugin-limit-conn-stream 10m;
+    lua_shared_dict etcd-cluster-health-check-stream 10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -413,7 +422,17 @@ _EOC_
     }
 
     proxy_pass apisix_backend;
+_EOC_
 
+    if ($version =~ m/\/apisix-nginx-module/) {
+        $stream_server_config .= <<_EOC_;
+    proxy_ssl_server_name on;
+    proxy_ssl_name \$upstream_sni;
+    set \$upstream_sni "apisix_backend";
+_EOC_
+    }
+
+    $stream_server_config .= <<_EOC_;
     log_by_lua_block {
         apisix.stream_log_phase()
     }
@@ -762,11 +781,17 @@ _EOC_
 
         location = /proxy_mirror {
             internal;
+_EOC_
 
+    if ($version !~ m/\/apisix-nginx-module/) {
+        $config .= <<_EOC_;
             if (\$upstream_mirror_host = "") {
                 return 200;
             }
+_EOC_
+    }
 
+    $config .= <<_EOC_;
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;

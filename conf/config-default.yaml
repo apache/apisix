@@ -323,6 +323,7 @@ graphql:
 plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
+  - proxy-control                  # priority: 21990
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
@@ -333,6 +334,7 @@ plugins:                          # plugin list (sorted by priority)
   - ip-restriction                 # priority: 3000
   - ua-restriction                 # priority: 2999
   - referer-restriction            # priority: 2990
+  - csrf                           # priority: 2980
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
@@ -344,6 +346,7 @@ plugins:                          # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
@@ -362,6 +365,7 @@ plugins:                          # plugin list (sorted by priority)
   - response-rewrite               # priority: 899
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
+  - grpc-web                       # priority: 505
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
   - echo                           # priority: 412
@@ -408,6 +412,7 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+    metric_prefix: apisix_
     enable_export_server: true
     export_addr:
       ip: 127.0.0.1

@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local fetch_log = require("apisix.utils.log-util").get_full_log
-local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local service_fetch = require("apisix.http.service").get
 local ngx = ngx
 local udp = ngx.socket.udp
@@ -39,8 +38,6 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        max_retry_count = {type = "integer", minimum = 1, default = 1},
-        batch_max_size = {type = "integer", minimum = 1, default = 5000},
         prefer_name = {type = "boolean", default = true}
     }
 }
@@ -113,7 +110,6 @@ end
 
 function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
-    entry.latency, entry.upstream_latency, entry.apisix_latency = latency_details(ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
 

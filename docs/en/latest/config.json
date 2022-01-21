@@ -51,6 +51,7 @@
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
+            "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking"
           ]
@@ -67,7 +68,9 @@
             "plugins/openid-connect",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
-            "plugins/ldap-auth"
+            "plugins/ldap-auth",
+            "plugins/opa",
+            "plugins/forward-auth"
           ]
         },
         {
@@ -79,7 +82,8 @@
             "plugins/ip-restriction",
             "plugins/ua-restriction",
             "plugins/referer-restriction",
-            "plugins/consumer-restriction"
+            "plugins/consumer-restriction",
+            "plugins/csrf"
           ]
         },
         {
@@ -95,6 +99,7 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
@@ -223,6 +228,10 @@
         {
           "type": "doc",
           "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "apisix-variable"
         },
         {
           "type": "doc",

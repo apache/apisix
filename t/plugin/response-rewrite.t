@@ -79,7 +79,7 @@ done
 --- request
 GET /t
 --- response_body
-property "status_code" validation failed: expected 599 to be smaller than 598
+property "status_code" validation failed: expected 599 to be at most 598
 --- no_error_log
 [error]
 

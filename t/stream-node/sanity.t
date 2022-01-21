@@ -57,7 +57,6 @@ passed
 
 
 === TEST 2: hit route
---- stream_enable
 --- stream_request eval
 mmm
 --- stream_response
@@ -223,7 +222,6 @@ passed
 
 
 === TEST 9: hit route
---- stream_enable
 --- stream_request eval
 mmm
 --- stream_response
@@ -312,7 +310,6 @@ passed
 
 
 === TEST 12: hit route
---- stream_enable
 --- stream_request eval
 mmm
 --- stream_response

@@ -62,7 +62,7 @@ done
 --- request
 GET /t
 --- response_body
-property "sample_ratio" validation failed: expected -0.1 to be greater than 1e-05
+property "sample_ratio" validation failed: expected -0.1 to be at least 1e-05
 done
 --- no_error_log
 [error]
@@ -85,7 +85,7 @@ done
 --- request
 GET /t
 --- response_body
-property "sample_ratio" validation failed: expected 2 to be smaller than 1
+property "sample_ratio" validation failed: expected 2 to be at most 1
 done
 --- no_error_log
 [error]

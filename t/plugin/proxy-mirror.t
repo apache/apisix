@@ -482,7 +482,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"sample_ratio\" validation failed: expected 10 to be smaller than 1"}
+{"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"sample_ratio\" validation failed: expected 10 to be at most 1"}
 --- no_error_log
 [error]
 

@@ -62,7 +62,7 @@ done
 --- request
 GET /t
 --- response_body_like eval
-qr/object matches none of the requireds/
+qr/object matches none of the required/
 --- no_error_log
 [error]
 
@@ -1652,7 +1652,7 @@ qr/string too long/
 --- request
 GET /t
 --- response_body_like eval
-qr/object matches none of the requireds/
+qr/object matches none of the required/
 --- error_code: 400
 --- no_error_log
 [error]
@@ -1776,7 +1776,7 @@ qr/opentracing/
 --- request
 GET /t
 --- response_body_like eval
-qr/expected 10000 to be smaller than 599/
+qr/expected 10000 to be at most 599/
 --- error_code: 400
 --- no_error_log
 [error]
@@ -1813,7 +1813,7 @@ qr/expected 10000 to be smaller than 599/
 --- request
 GET /t
 --- response_body_like eval
-qr/object matches none of the requireds/
+qr/object matches none of the required/
 --- error_code: 400
 --- no_error_log
 [error]

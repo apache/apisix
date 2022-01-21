@@ -66,7 +66,6 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **全平台**
 
   - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
-  - 运行环境: OpenResty 和 Tengine 都支持。
   - 支持 ARM64: 不用担心底层技术的锁定。
 
 - **多协议**
@@ -75,6 +74,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+  - [gRPC Web 代理](plugins/grpc-web.md)：通过 APISIX 代理 gRPC Web 请求到上游 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
   - Websocket 代理
   - Proxy Protocol
@@ -98,8 +98,8 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
   - [支持全路径匹配和前缀匹配](../../en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
   - [支持使用 Nginx 所有内置变量做为路由的条件](../../en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
-  - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
-  - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
+  - 支持[各类操作符做为路由的判断条件](https://github.com/api7/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
+  - 支持[自定义路由匹配函数](https://github.com/api7/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6：支持使用 IPv6 格式匹配路由
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
@@ -119,6 +119,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [CORS](plugins/cors.md)：为你的 API 启用 CORS。
   - [URI 拦截器](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
   - [请求验证器](plugins/request-validation.md)。
+  - [CSRF](plugins/csrf.md)：基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式保护你的 API 远离 CSRF 攻击。
 
 - **运维友好**
 
@@ -219,7 +220,6 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 | 插件热更新                             | 是                                      | 否                     |
 | 用户自定义：负载均衡算法、路由             | 是                                      | 否                     |
 | resty <--> gRPC 转码                  | 是                                      | 否                     |
-| 支持 Tengine 作为运行时                 | 是                                      | 否                     |
 | MQTT 协议支持                          | 是                                      | 否                     |
 | 配置生效时间                            | 事件通知，低于 1 毫秒更新                  | 定期轮询，5 秒           |
 | 自带控制台                             | 是                                      | 否                     |
