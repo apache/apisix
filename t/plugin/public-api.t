@@ -158,3 +158,62 @@ direct-wolf-rbac-userinfo was triggered
 --- request
 GET /apisix/plugin/balalbala
 --- error_code: 404
+
+
+
+=== TEST 6: setup route (protect public API)
+--- config
+    location /t {
+        content_by_lua_block {
+            local datas = {
+                {
+                    uri = "/apisix/admin/consumers",
+                    data = [[{
+                        "username": "bob",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "testkey"
+                            }
+                        }
+                    }]]
+                },
+                {
+                    uri = "/apisix/admin/routes/custom-jwt-sign",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {
+                                "uri": "/apisix/plugin/jwt/sign"
+                            },
+                            "key-auth": {}
+                        },
+                        "uri": "/gen_token"
+                    }]],
+                }
+            }
+
+            local t = require("lib.test_admin").test
+
+            for _, data in ipairs(datas) do
+                local code, body = t(data.uri, ngx.HTTP_PUT, data.data)
+                ngx.say(code..body)
+            end
+        }
+    }
+--- response_body
+201passed
+200passed
+
+
+
+=== TEST 7: hit route (with key-auth header)
+--- request
+GET /gen_token?key=user-key
+--- more_headers
+apikey: testkey
+
+
+
+=== TEST 8: hit route (without key-auth header)
+--- request
+GET /gen_token?key=user-key
+--- error_code: 401
