@@ -122,7 +122,7 @@ property "uri" validation failed: wrong type: expected string, got number
 --- request
 GET /gen_token?key=user-key
 --- error_log
-direct-wolf-rbac-userinfo was triggered
+custom-jwt-sign was triggered
 --- response_body eval
 qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/ or
 qr/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9/
@@ -134,4 +134,4 @@ qr/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9/
 GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
 --- error_log
-custom-jwt-sign was triggered
+direct-wolf-rbac-userinfo was triggered
