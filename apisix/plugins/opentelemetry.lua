@@ -43,7 +43,6 @@ local trace_context = require("opentelemetry.trace.propagation.trace_context")
 
 local ngx     = ngx
 local ngx_var = ngx.var
-local ngx_req = ngx.req
 local table   = table
 local type    = type
 local pairs   = pairs
@@ -216,7 +215,7 @@ function _M.init()
 
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
-            local trace_id = ngx_req.get_headers()["x-request-id"] or ngx_var.request_id
+            local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
             return trace_id, id_generator.new_span_id()
         end
     end
@@ -325,9 +324,12 @@ function _M.body_filter(conf, api_ctx)
 end
 
 
+-- body_filter maybe not called because of empty http body response
+-- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
     local ctx = context:current()
     if ctx then
+        -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
