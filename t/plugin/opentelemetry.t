@@ -71,7 +71,6 @@ run_tests;
 __DATA__
 
 === TEST 1: add plugin
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -106,7 +105,6 @@ __DATA__
 
 
 === TEST 2: trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -120,7 +118,6 @@ opentelemetry export span
 
 
 === TEST 3: use default always_off sampler
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -152,7 +149,6 @@ opentelemetry export span
 
 
 === TEST 4: not trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -164,7 +160,6 @@ qr/opentelemetry export span/
 
 
 === TEST 5: use trace_id_ratio sampler, default fraction = 0
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -199,7 +194,6 @@ qr/opentelemetry export span/
 
 
 === TEST 6: not trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -211,7 +205,6 @@ qr/opentelemetry export span/
 
 
 === TEST 7: use trace_id_ratio sampler, fraction = 1.0
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +242,6 @@ qr/opentelemetry export span/
 
 
 === TEST 8: trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -263,7 +255,6 @@ opentelemetry export span
 
 
 === TEST 9: use parent_base sampler, default root sampler = always_off
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -298,7 +289,6 @@ opentelemetry export span
 
 
 === TEST 10: not trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -310,7 +300,6 @@ qr/opentelemetry export span/
 
 
 === TEST 11: use parent_base sampler, root sampler = always_on
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -350,7 +339,6 @@ qr/opentelemetry export span/
 
 
 === TEST 12: trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -364,7 +352,6 @@ opentelemetry export span
 
 
 === TEST 13: use parent_base sampler, root sampler = trace_id_ratio with default fraction = 0
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -404,7 +391,6 @@ opentelemetry export span
 
 
 === TEST 14: not trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -416,7 +402,6 @@ qr/opentelemetry export span/
 
 
 === TEST 15: trigger opentelemetry, trace_flag = 1
---- SKIP
 --- request
 GET /opentracing
 --- more_headers
@@ -432,7 +417,6 @@ opentelemetry export span
 
 
 === TEST 16: use parent_base sampler, root sampler = trace_id_ratio with fraction = 1
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -475,7 +459,6 @@ opentelemetry export span
 
 
 === TEST 17: trigger opentelemetry
---- SKIP
 --- request
 GET /opentracing
 --- response_body
@@ -489,7 +472,6 @@ opentelemetry export span
 
 
 === TEST 18: not trigger opentelemetry, trace_flag = 0
---- SKIP
 --- request
 GET /opentracing
 --- more_headers
@@ -503,7 +485,6 @@ qr/opentelemetry export span/
 
 
 === TEST 19: set additional_attributes
---- SKIP
 --- config
     location /t {
         content_by_lua_block {
@@ -640,7 +621,6 @@ plugin_attr:
 
         ngx.log(ngx.INFO, "opentelemetry export span")
     end
---- SKIP
 --- request
 GET /opentracing?foo=bar&a=b
 --- more_headers
