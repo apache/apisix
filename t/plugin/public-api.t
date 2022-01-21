@@ -103,6 +103,17 @@ property "uri" validation failed: wrong type: expected string, got number
                         "uri": "/apisix/plugin/wolf-rbac/user_info"
                     }]],
                 },
+                {
+                    uri = "/apisix/admin/routes/wrong-public-api",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {
+                                "uri": "/apisix/plugin/balalbala"
+                            }
+                        },
+                        "uri": "/wrong-public-api"
+                    }]]
+                }
             }
 
             local t = require("lib.test_admin").test
@@ -114,7 +125,7 @@ property "uri" validation failed: wrong type: expected string, got number
         }
     }
 --- response_body eval
-"201passed\n" x 3
+"201passed\n" x 4
 
 
 
@@ -154,14 +165,21 @@ direct-wolf-rbac-userinfo was triggered
 
 
 
-=== TEST 5: missing route
+=== TEST 5: missing route (non-exist public API)
 --- request
 GET /apisix/plugin/balalbala
 --- error_code: 404
 
 
 
-=== TEST 6: setup route (protect public API)
+=== TEST 6: hit route (wrong public-api uri)
+--- request
+GET /wrong-public-api
+--- error_code: 404
+
+
+
+=== TEST 7: setup route (protect public API)
 --- config
     location /t {
         content_by_lua_block {
@@ -205,7 +223,7 @@ GET /apisix/plugin/balalbala
 
 
 
-=== TEST 7: hit route (with key-auth header)
+=== TEST 8: hit route (with key-auth header)
 --- request
 GET /gen_token?key=user-key
 --- more_headers
@@ -213,7 +231,7 @@ apikey: testkey
 
 
 
-=== TEST 8: hit route (without key-auth header)
+=== TEST 9: hit route (without key-auth header)
 --- request
 GET /gen_token?key=user-key
 --- error_code: 401
