@@ -119,13 +119,29 @@ property "uri" validation failed: wrong type: expected string, got number
 
 
 === TEST 3: hit route (custom-jwt-sign)
---- request
-GET /gen_token?key=user-key
---- error_log
-custom-jwt-sign was triggered
---- response_body eval
-qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/ or
-qr/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9/
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body, jwt = t("/gen_token?key=user-key", ngx.HTTP_GET, "", nil, {apikey = "testkey"})
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local header = string.sub(jwt, 1, 36)
+
+            if header == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" or
+               header == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" then
+                ngx.say("passed")
+                return
+            end
+
+            ngx.say("failed")
+        }
+    }
+--- response_body
+passed
 
 
 
