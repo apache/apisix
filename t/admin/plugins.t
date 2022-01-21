@@ -115,6 +115,7 @@ kafka-logger
 rocketmq-logger
 syslog
 udp-logger
+file-logger
 example-plugin
 aws-lambda
 azure-functions
