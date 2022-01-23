@@ -66,6 +66,8 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
+--- no_error_log
+[error]
 
 
 
@@ -75,6 +77,8 @@ GET /hello
 --- error_code: 200
 --- response_body
 hello world
+--- no_error_log
+[error]
 
 
 
@@ -117,6 +121,8 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
+--- no_error_log
+[error]
 
 
 
@@ -126,3 +132,5 @@ GET /hello
 --- error_code: 200
 --- response_body
 {"field1":"hello"}
+--- no_error_log
+[error]
