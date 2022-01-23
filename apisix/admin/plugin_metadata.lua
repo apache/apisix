@@ -18,6 +18,7 @@ local error   = error
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
+local utils   = require("apisix.admin.utils")
 local api_router = require("apisix.api_router")
 
 local injected_mark = "injected metadata_schema"
@@ -119,6 +120,7 @@ function _M.get(key)
         return 503, {error_msg = err}
     end
 
+    utils.fix_count(res.body, key)
     return res.status, res.body
 end
 
