@@ -236,7 +236,7 @@ Success! Data written to: kv/apisix/consumer/jim/jwt-auth
 
 
 
-=== TEST 8: create consumer for RS256 algorithm with keypair fetched from vault
+=== TEST 8: create consumer for RS256 algorithm with key pair fetched from vault
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +266,7 @@ passed
 
 
 
-=== TEST 9: sign a jwt with with rsa keypair and access /secure-endpoint
+=== TEST 9: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -334,7 +334,7 @@ passed
 
 
 
-=== TEST 12: sign a jwt with with rsa keypair and access /secure-endpoint
+=== TEST 12: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {

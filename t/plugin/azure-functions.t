@@ -296,7 +296,7 @@ Authz-Header - test_key
 
 
 
-=== TEST 8: check if apikey doesn't get overrided passed by client to the gateway
+=== TEST 8: check if apikey doesn't get overridden passed by client to the gateway
 --- config
     location /t {
         content_by_lua_block {

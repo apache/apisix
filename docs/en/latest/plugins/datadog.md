@@ -91,7 +91,7 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 
 ## How To Enable
 
-The following is an example on how to enable the datadog plugin for a specific route. We are assumming your datadog agent is already up an running.
+The following is an example on how to enable the datadog plugin for a specific route. We are assuming your datadog agent is already up an running.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
