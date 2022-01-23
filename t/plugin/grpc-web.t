@@ -74,65 +74,81 @@ passed
 
 === TEST 2: Flush all data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js FLUSH
+node ./t/plugin/grpc-web/client.js BIN FLUSH
+node ./t/plugin/grpc-web/client.js TEXT FLUSH
 --- response_body
+[]
 []
 
 
 
 === TEST 3: Insert first data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js POST 1 route01 path01
+node ./t/plugin/grpc-web/client.js BIN POST 1 route01 path01
+node ./t/plugin/grpc-web/client.js TEXT POST 1 route01 path01
 --- response_body
+[["1",{"name":"route01","path":"path01"}]]
 [["1",{"name":"route01","path":"path01"}]]
 
 
 
 === TEST 4: Update data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js PUT 1 route01 hello
+node ./t/plugin/grpc-web/client.js BIN PUT 1 route01 hello
+node ./t/plugin/grpc-web/client.js TEXT PUT 1 route01 hello
 --- response_body
+[["1",{"name":"route01","path":"hello"}]]
 [["1",{"name":"route01","path":"hello"}]]
 
 
 
 === TEST 5: Insert second data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js POST 2 route02 path02
+node ./t/plugin/grpc-web/client.js BIN POST 2 route02 path02
+node ./t/plugin/grpc-web/client.js TEXT POST 2 route02 path02
 --- response_body
+[["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}]]
 [["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}]]
 
 
 
 === TEST 6: Insert third data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js POST 3 route03 path03
+node ./t/plugin/grpc-web/client.js BIN POST 3 route03 path03
+node ./t/plugin/grpc-web/client.js TEXT POST 3 route03 path03
 --- response_body
+[["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
 [["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
 
 
 
 === TEST 7: Delete first data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js DEL 1
+node ./t/plugin/grpc-web/client.js BIN DEL 3
+node ./t/plugin/grpc-web/client.js TEXT DEL 2
 --- response_body
-[["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
+[["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}]]
+[["1",{"name":"route01","path":"hello"}]]
 
 
 
 === TEST 8: Get second data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js GET 2
+node ./t/plugin/grpc-web/client.js BIN GET 1
+node ./t/plugin/grpc-web/client.js TEXT GET 1
 --- response_body
-{"name":"route02","path":"path02"}
+{"name":"route01","path":"hello"}
+{"name":"route01","path":"hello"}
 
 
 
 === TEST 9: Get all data through APISIX gRPC-Web Proxy
 --- exec
-node ./t/plugin/grpc-web/client.js all
+node ./t/plugin/grpc-web/client.js BIN all
+node ./t/plugin/grpc-web/client.js TEXT all
 --- response_body
-[["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
+[["1",{"name":"route01","path":"hello"}]]
+[["1",{"name":"route01","path":"hello"}]]
 
 
 

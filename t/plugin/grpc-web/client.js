@@ -18,7 +18,13 @@
 global.XMLHttpRequest = require('xhr2')
 
 const {Empty, Request, Route} = require('./a6/routes_pb')
-const {RouteServiceClient} = require('./a6/routes_grpc_web_pb')
+const RouteServiceBinProtocolClient = require('./a6/routes_grpc_web_bin_pb').RouteServiceClient
+const RouteServiceTextProtocolClient = require('./a6/routes_grpc_web_text_pb').RouteServiceClient
+
+const MODE_TEXT = "TEXT"
+const MODE_BIN  = "BIN"
+
+const modes = [MODE_TEXT, MODE_BIN];
 
 const FUNCTION_ALL = "ALL"
 const FUNCTION_GET = "GET"
@@ -31,12 +37,14 @@ const functions = [FUNCTION_ALL, FUNCTION_GET, FUNCTION_POST, FUNCTION_PUT, FUNC
 
 class gRPCWebClient {
     constructor() {
-        this.client = new RouteServiceClient("http://127.0.0.1:1984/grpc", null, null)
+        this.clients = {}
+        this.clients[MODE_BIN] = new RouteServiceBinProtocolClient("http://127.0.0.1:1984/grpc")
+        this.clients[MODE_TEXT] = new RouteServiceTextProtocolClient("http://127.0.0.1:1984/grpc")
     };
 
-    flush() {
+    flush(mode) {
         let request = new Empty()
-        this.client.flushAll(request, {}, function (error, response) {
+        this.clients[mode].flushAll(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -45,9 +53,9 @@ class gRPCWebClient {
         });
     }
 
-    all() {
+    all(mode) {
         let request = new Empty()
-        this.client.getAll(request, {}, function (error, response) {
+        this.clients[mode].getAll(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -56,14 +64,14 @@ class gRPCWebClient {
         });
     }
 
-    get(params) {
+    get(mode, params) {
         if (params[0] === null) {
             console.log("route ID invalid")
             return
         }
         let request = new Request()
         request.setId(params[0])
-        this.client.get(request, {}, function (error, response) {
+        this.clients[mode].get(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -72,7 +80,7 @@ class gRPCWebClient {
         });
     }
 
-    post(params) {
+    post(mode, params) {
         if (params[0] === null) {
             console.log("route ID invalid")
             return
@@ -91,7 +99,7 @@ class gRPCWebClient {
         route.setName(params[1])
         route.setPath(params[2])
         request.setRoute(route)
-        this.client.insert(request, {}, function (error, response) {
+        this.clients[mode].insert(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -100,7 +108,7 @@ class gRPCWebClient {
         });
     }
 
-    put(params) {
+    put(mode, params) {
         if (params[0] === null) {
             console.log("route ID invalid")
             return
@@ -119,7 +127,7 @@ class gRPCWebClient {
         route.setName(params[1])
         route.setPath(params[2])
         request.setRoute(route)
-        this.client.update(request, {}, function (error, response) {
+        this.clients[mode].update(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -128,14 +136,14 @@ class gRPCWebClient {
         })
     }
 
-    del() {
+    del(mode) {
         if (params[0] === null) {
             console.log("route ID invalid")
             return
         }
         let request = new Request()
         request.setId(params[0])
-        this.client.remove(request, {}, function (error, response) {
+        this.clients[mode].remove(request, {}, function (error, response) {
             if (error) {
                 console.log(error)
                 return
@@ -148,31 +156,37 @@ class gRPCWebClient {
 
 const arguments = process.argv.splice(2)
 
-if (arguments.length === 0) {
-    console.log("please input dispatch function, e.g: node client.js insert arg_id arg_name arg_path")
+if (arguments.length < 2) {
+    console.log("please input dispatch function, e.g: node client.js [mode] [action] [params...]")
     return
 }
 
-const func = arguments[0].toUpperCase()
+const mode = arguments[0].toUpperCase()
+if (!modes.includes(mode)) {
+    console.log("dispatch mode not found")
+    return
+}
+
+const func = arguments[1].toUpperCase()
 if (!functions.includes(func)) {
     console.log("dispatch function not found")
     return
 }
 
-const params = arguments.splice(1)
+const params = arguments.splice(2)
 
 let grpc = new gRPCWebClient();
 
 if (func === FUNCTION_GET) {
-    grpc.get(params)
+    grpc.get(mode, params)
 } else if (func === FUNCTION_POST) {
-    grpc.post(params)
+    grpc.post(mode, params)
 } else if (func === FUNCTION_PUT) {
-    grpc.put(params)
+    grpc.put(mode, params)
 } else if (func === FUNCTION_DEL) {
-    grpc.del(params)
+    grpc.del(mode, params)
 } else if (func === FUNCTION_FLUSH) {
-    grpc.flush()
+    grpc.flush(mode)
 } else {
-    grpc.all()
+    grpc.all(mode)
 }
