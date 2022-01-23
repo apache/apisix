@@ -339,4 +339,4 @@ fi
 
 make stop
 
-echo "pass: ccept changes to /apisix/plugins successfully"
+echo "pass: accept changes to /apisix/plugins successfully"
