@@ -102,6 +102,7 @@ redirect
 response-rewrite
 grpc-transcode
 grpc-web
+public-api
 prometheus
 datadog
 echo
