@@ -64,7 +64,7 @@ __DATA__
 --- request
 GET /t
 --- error_code: 200
---- response_body
+--- response_body chomp
 passed
 --- no_error_log
 [error]
@@ -75,7 +75,7 @@ passed
 --- request
 GET /hello
 --- error_code: 200
---- response_body
+--- response_body chomp
 hello world
 --- no_error_log
 [error]
@@ -119,7 +119,7 @@ hello world
 --- request
 GET /t
 --- error_code: 200
---- response_body
+--- response_body chomp
 passed
 --- no_error_log
 [error]
@@ -130,7 +130,7 @@ passed
 --- request
 GET /hello
 --- error_code: 200
---- response_body
+--- response_body chomp
 {"field1":"hello"}
 --- no_error_log
 [error]
