@@ -64,7 +64,7 @@ __DATA__
 --- request
 GET /t
 --- error_code: 200
---- response_body chomp
+--- response_body
 passed
 --- no_error_log
 [error]
@@ -119,7 +119,7 @@ hello world
 --- request
 GET /t
 --- error_code: 200
---- response_body chomp
+--- response_body
 passed
 --- no_error_log
 [error]
