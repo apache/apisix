@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
-local json_encode = require("toolkit.json").encode
 local ngx = ngx
 local tostring = tostring
 local pairs = pairs
@@ -160,7 +159,11 @@ local function generate_log_message(conf, ctx)
     end
 
     -- generate rfc5424 compliant syslog event
-    local json_str = json_encode(entry)
+    local json_str, err = core.json.encode(entry)
+    if not json_str then
+        core.log.error('error occurred while encoding the data: ', err)
+        return nil
+    end
 
     local timestamp = log_util.get_rfc3339_zulu_timestamp()
     local taglist = {}
