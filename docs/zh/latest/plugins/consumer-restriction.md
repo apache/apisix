@@ -46,7 +46,6 @@ title: consumer-restriction
 | rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
 | allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的HTTP methods列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
-
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
 * **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
@@ -186,7 +185,6 @@ jack1访问：
 curl -u jack2019:123456 http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ```
-
 
 ### 如何限制 `service_id`
 
