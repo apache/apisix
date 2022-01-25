@@ -155,6 +155,7 @@ HTTP/1.1 403 Forbidden
 ...
 {"message":"The consumer_name is forbidden."}
 ```
+
 增加`jack1` `GET`访问能力：
 
 ```shell
