@@ -32,7 +32,7 @@ local schema = {
         response_status = { type = "integer", default = 200, minimum = 1 },
         -- specify response content type, support application/xml, text/plain
         -- and application/json, default application/json
-        content_type = { type = "string", default = "application/json" },
+        content_type = { type = "string", default = "application/json;charset=utf8" },
         -- specify response body.
         response_example = { type = "string" },
         -- specify response json schema, if response_example is not nil, this conf will be ignore.
@@ -55,17 +55,13 @@ local _M = {
 
 local function parse_content_type(content_type)
     if not content_type then
-        return "", ""
+        return ""
     end
-    local sep_idx = string.find(content_type, ";")
-    local typ, charset
-    if sep_idx then
-        typ = string.sub(content_type, 1, sep_idx - 1)
-        charset = string.sub(content_type, sep_idx + 1)
-    else
-        typ = content_type
+    local m = ngx.re.match(content_type, "([ -~]*);([ -~]*)")
+    if #m == 2 then
+        return m[1], m[2]
     end
-    return typ, charset
+    return content_type
 end
 
 function _M.check_schema(conf)
@@ -74,22 +70,22 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.content_type == "" then
-        conf.content_type = "application/json;charset=utf8"
-    end
-    local typ, _ = parse_content_type(conf.content_type)
-    if typ ~= "application/xml" and
-            typ ~= "application/json" and
-            typ ~= "text/plain" and
-            typ ~= "text/html" and
-            typ ~= "text/xml" then
+    local typ = parse_content_type(conf.content_type)
+    local support_content_type = {
+        ["application/xml"] = true,
+        ["application/json"] = true,
+        ["text/plain"] = true,
+        ["text/html"] = true,
+        ["text/xml"] = true
+    }
+    if not support_content_type[typ] then
         return false, "unsupported content type!"
     end
     return true
 end
 
 local function gen_string(example)
-    if example ~= nil and type(example) == "string" then
+    if type(example) == "string" then
         return example
     end
     local n = math.random(1, 10)
@@ -101,21 +97,21 @@ local function gen_string(example)
 end
 
 local function gen_number(example)
-    if example ~= nil and type(example) == "number" then
+    if type(example) == "number" then
         return example
     end
     return math.random() * 10000
 end
 
 local function gen_integer(example)
-    if example ~= nil and type(example) == "number" then
+    if type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
 
 local function gen_boolean(example)
-    if example ~= nil and type(example) == "boolean" then
+    if type(example) == "boolean" then
         return example
     end
     local r = math.random(0, 1)
