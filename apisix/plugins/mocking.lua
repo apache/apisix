@@ -77,7 +77,7 @@ function _M.check_schema(conf)
     if conf.content_type == "" then
         conf.content_type = "application/json;charset=utf8"
     end
-    local typ, _ = parse_content_type(conf.content_type)
+    local typ = parse_content_type(conf.content_type)
     if typ ~= "application/xml" and
             typ ~= "application/json" and
             typ ~= "text/plain" and
