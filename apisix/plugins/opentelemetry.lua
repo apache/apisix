@@ -295,7 +295,7 @@ function _M.rewrite(conf, api_ctx)
         end
     end
 
-    local ctx, _ = tracer:start(upstream_context, api_ctx.var.request_uri, {
+    local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
         kind = span_kind.client,
         attributes = attributes,
     })

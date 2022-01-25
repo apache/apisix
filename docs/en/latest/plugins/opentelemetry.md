@@ -90,7 +90,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## How to set collecting
 
-We can set the collecting by specifying the configuration in `conf/config.yaml`.
+You can set the collecting by specifying the configuration in `conf/config.yaml`.
 
 | Name         | Type   | Default  | Description                                                          |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
