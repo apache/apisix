@@ -28,7 +28,7 @@ Currently, only a few APIs are implemented. Please follow [wasm-nginx-module](ht
 
 ## Programming model
 
-The plugin supports the follwing concepts from Proxy WASM:
+The plugin supports the following concepts from Proxy WASM:
 
 ```
                     Wasm Virtual Machine
