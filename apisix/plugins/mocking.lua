@@ -29,7 +29,7 @@ local schema = {
         -- specify response delay time,default 0ms
         delay = { type = "integer", default = 0 },
         -- specify response status,default 200
-        response_status = { type = "integer", default = 200, minimum = 1 },
+        response_status = { type = "integer", default = 200, minimum = 100 },
         -- specify response content type, support application/xml, text/plain
         -- and application/json, default application/json
         content_type = { type = "string", default = "application/json" },
