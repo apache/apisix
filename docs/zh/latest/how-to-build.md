@@ -81,10 +81,10 @@ $ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.11.0` 的目录。
+1. 创建一个名为 `apisix-2.12.0` 的目录。
 
   ```shell
-  $ APISIX_VERSION='2.11.0'
+  $ APISIX_VERSION='2.12.0'
   $ mkdir apisix-${APISIX_VERSION}
   ```
 
