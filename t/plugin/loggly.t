@@ -322,7 +322,7 @@ qr/message received: <10>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[token-1\@41058 ]/
 
 
 
-=== TEST 7: collect response body
+=== TEST 7: collect response full log
 --- config
     location /t {
         content_by_lua_block {
@@ -342,3 +342,167 @@ opentracing
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
 qr/message received: <10>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[token-1\@41058 ] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[\d.]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[\d.]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+
+=== TEST 8: collect response log with include_resp_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "batch_max_size": 1,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            local code, _, body = t("/opentracing", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+opentracing
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 ] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[\d.]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[\d.]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+
+
+=== TEST 9: collect log with include_resp_body_expr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "batch_max_size": 1,
+                                "include_resp_body": true,
+                                "include_resp_body_expr": [
+                                    ["arg_bar", "==", "bar"]
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            -- this will include resp body
+            local code, _, body = t("/opentracing?bar=bar", "GET")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- response_body
+passed
+opentracing
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 ] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{"bar":"bar"\},"size":[\d]+,"uri":"\/opentracing\?bar=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?bar=bar"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[\d.]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[\d.]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+
+
+
+=== TEST 10: collect log with include_resp_body_expr mismatch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/opentracing?foo=bar", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- response_body
+opentracing
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 ] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{"foo":"bar"\},"size":[\d]+,"uri":"\/opentracing\?foo=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?foo=bar"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[\d.]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[\d.]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+
+
+=== TEST 11: collect log with log_format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/loggly',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "host":"127.0.0.1",
+                        "port": 8126,
+                        "log_format":{
+                            "host":"$host",
+                            "client":"$remote_addr"
+                        }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+
+            local code, _, body = t("/opentracing?foo=bar", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+opentracing
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 ] \{"client":"[\d.]+","host":"[\d.]+","route_id":"1"\}/
