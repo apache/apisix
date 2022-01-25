@@ -29,7 +29,7 @@ local schema = {
         -- specify response delay time,default 0ms
         delay = { type = "integer", default = 0 },
         -- specify response status,default 200
-        response_status = { type = "integer", default = 200, minimum = 1 },
+        response_status = { type = "integer", default = 200, minimum = 100 },
         -- specify response content type, support application/xml, text/plain
         -- and application/json, default application/json
         content_type = { type = "string", default = "application/json;charset=utf8" },
@@ -85,7 +85,7 @@ function _M.check_schema(conf)
 end
 
 local function gen_string(example)
-    if type(example) == "string" then
+    if example and type(example) == "string" then
         return example
     end
     local n = math.random(1, 10)
@@ -97,21 +97,21 @@ local function gen_string(example)
 end
 
 local function gen_number(example)
-    if type(example) == "number" then
+    if example and type(example) == "number" then
         return example
     end
     return math.random() * 10000
 end
 
 local function gen_integer(example)
-    if type(example) == "number" then
+    if example and type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
 
 local function gen_boolean(example)
-    if type(example) == "boolean" then
+    if example and type(example) == "boolean" then
         return example
     end
     local r = math.random(0, 1)
@@ -161,7 +161,7 @@ end
 
 function gen_object(property)
     local output = {}
-    if property.properties == nil then
+    if not property.properties then
         return output
     end
     for k, v in pairs(property.properties) do
