@@ -121,7 +121,7 @@ HTTP/1.1 403 Forbidden
 
 ### 如何限制 `allowed_by_methods`
 
-下面是一个示例，在指定的route上开启了`consumer-restriction`插件，限制`jack1`只能使用`POST`进行访问：
+下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 `jack1` 只能使用 `POST` 进行访问：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -147,7 +147,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件**
 
-jack1访问：
+jack1 访问：
 
 ```shell
 curl -u jack2019:123456 http://127.0.0.1:9080/index.html
@@ -156,7 +156,7 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-增加`jack1` `GET`访问能力：
+增加 `jack1` `GET` 访问能力：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -180,7 +180,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-jack1访问：
+jack1 访问：
 
 ```shell
 curl -u jack2019:123456 http://127.0.0.1:9080/index.html
