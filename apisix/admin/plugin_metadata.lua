@@ -14,12 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local error   = error
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
 local utils   = require("apisix.admin.utils")
-local api_router = require("apisix.api_router")
 
 local injected_mark = "injected metadata_schema"
 local _M = {
