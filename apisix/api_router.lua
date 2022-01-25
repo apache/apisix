@@ -108,7 +108,7 @@ function fetch_api_router()
                 core.table.insert(routes, {
                         methods = route.methods,
                         paths = route.uri,
-                        handler = function (api_ctx, skip_global_rule)
+                        handler = function (api_ctx)
                             local code, body
 
                             local metadata = plugin_mod.plugin_metadata(name)
@@ -124,11 +124,6 @@ function fetch_api_router()
                                         end
                                     end
                                 end
-                            end
-
-                            if not skip_global_rule then
-                                plugin_mod.run_global_rules(api_ctx,
-                                    apisix_router.global_rules, nil)
                             end
 
                             code, body = route.handler(api_ctx)
@@ -156,7 +151,7 @@ function _M.has_route_not_under_apisix()
 end
 
 
-function _M.match(api_ctx, skip_global_rule)
+function _M.match(api_ctx)
     local api_router = core.lrucache.global("api_router", plugin_mod.load_times, fetch_api_router)
     if not api_router then
         core.log.error("failed to fetch valid api router")
@@ -166,7 +161,7 @@ function _M.match(api_ctx, skip_global_rule)
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.request_method
 
-    local ok = api_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, skip_global_rule)
+    local ok = api_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
     return ok
 end
 
