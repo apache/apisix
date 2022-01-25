@@ -185,6 +185,7 @@ jack1访问：
 curl -u jack2019:123456 http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ```
+
 ### 如何限制 `service_id`
 
 `service_id` 方式需要与授权插件一起配合使用，这里以 key-auth 授权插件为例。
