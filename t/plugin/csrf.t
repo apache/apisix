@@ -73,7 +73,8 @@ done
                     },
                     "plugins": {
                         "csrf": {
-                            "key": "userkey"
+                            "key": "userkey",
+                            "expires": 1000000000
                         }
                     }
                 }]]
@@ -145,8 +146,8 @@ Cookie: apisix-csrf-token=testcookie
 --- request
 POST /hello
 --- more_headers
-apisix-csrf-token: eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwNDEsInNpZ24iOiJqZnhDckk1TVwvMHI3VjdyWWRBSXNCeEg3emljY3VnV0dySGtYQkZ0QT0ifQ==
-Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwNDEsInNpZ24iOiJqZnhDckk1TVwvMHI3VjdyWWRBSXNCeEg3emljY3VnV0dySGtYQkZ0QT0ifQ==
+apisix-csrf-token: eyJyYW5kb20iOjAuMTYwOTgzMDYwMTg0NDksInNpZ24iOiI2YTEyYmViYTI4MzAyNDg4MDRmNGU0N2VkZDY5MWFmNjg5N2IyNzQ4YTY1YWMwMDJiMGFjMzFlN2NlMDdlZTViIiwiZXhwaXJlcyI6MTc0MzExOTkxMX0=
+Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMTYwOTgzMDYwMTg0NDksInNpZ24iOiI2YTEyYmViYTI4MzAyNDg4MDRmNGU0N2VkZDY5MWFmNjg5N2IyNzQ4YTY1YWMwMDJiMGFjMzFlN2NlMDdlZTViIiwiZXhwaXJlcyI6MTc0MzExOTkxMX0=
 --- error_code: 401
 --- error_log: Invalid signatures
 --- response_body
@@ -158,5 +159,45 @@ Cookie: apisix-csrf-token=eyJleHBpcmVzIjo3MjAwLCJyYW5kb20iOjAuMjE2ODAxOTYyNTEwND
 --- request
 POST /hello
 --- more_headers
-apisix-csrf-token: eyJzaWduIjoiZTlhNWVkOTBmZDc2YjRhMTYyMzg1ZDU2Y2ZhZDI1N2MxNmI0MWY1MjFjZWUwODczNzExM2NlYzZkZDQwMWJmNyIsInJhbmRvbSI6MC4zNjcxNDg2NDI2MjE0MywiZXhwaXJlcyI6NzIwMH0=
-Cookie: apisix-csrf-token=eyJzaWduIjoiZTlhNWVkOTBmZDc2YjRhMTYyMzg1ZDU2Y2ZhZDI1N2MxNmI0MWY1MjFjZWUwODczNzExM2NlYzZkZDQwMWJmNyIsInJhbmRvbSI6MC4zNjcxNDg2NDI2MjE0MywiZXhwaXJlcyI6NzIwMH0=
+apisix-csrf-token: eyJyYW5kb20iOjAuNDI5ODYzMTk3MTYxMzksInNpZ24iOiI0ODRlMDY4NTkxMWQ5NmJhMDc5YzQ1ZGI0OTE2NmZkYjQ0ODhjODVkNWQ0NmE1Y2FhM2UwMmFhZDliNjE5OTQ2IiwiZXhwaXJlcyI6MjY0MzExOTYyNH0=
+Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNDI5ODYzMTk3MTYxMzksInNpZ24iOiI0ODRlMDY4NTkxMWQ5NmJhMDc5YzQ1ZGI0OTE2NmZkYjQ0ODhjODVkNWQ0NmE1Y2FhM2UwMmFhZDliNjE5OTQ2IiwiZXhwaXJlcyI6MjY0MzExOTYyNH0=
+
+
+
+=== TEST 10: expired csrf token
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "csrf": {
+                            "key": "userkey",
+                            "expires": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yjg2MjBhNTg1N2FjZmIzNjIxOTNhYWVlN2RkYjY5NmM0NWYwZjE5YjY5Zjg3NjM4ZTllNGNjNjYxYjQwNiIsImV4cGlyZXMiOjE2NDMxMjAxOTN9
+Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yjg2MjBhNTg1N2FjZmIzNjIxOTNhYWVlN2RkYjY5NmM0NWYwZjE5YjY5Zjg3NjM4ZTllNGNjNjYxYjQwNiIsImV4cGlyZXMiOjE2NDMxMjAxOTN9
+--- error_code: 401
+--- error_log: token has expired
