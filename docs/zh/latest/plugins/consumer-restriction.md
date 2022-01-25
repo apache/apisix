@@ -121,6 +121,7 @@ HTTP/1.1 403 Forbidden
 ```
 
 ### 如何限制 `allowed_by_methods`
+
 下面是一个示例，在指定的route上开启了`consumer-restriction`插件，限制`jack1`只能使用`POST`进行访问：
 
 ```shell
