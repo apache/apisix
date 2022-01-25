@@ -62,7 +62,7 @@ property "uri" validation failed: wrong type: expected string, got number
 --- config
     location /t {
         content_by_lua_block {
-            local datas = {
+            local data = {
                 {
                     uri = "/apisix/admin/consumers",
                     data = [[{
@@ -118,7 +118,7 @@ property "uri" validation failed: wrong type: expected string, got number
 
             local t = require("lib.test_admin").test
 
-            for _, data in ipairs(datas) do
+            for _, data in ipairs(data) do
                 local code, body = t(data.uri, ngx.HTTP_PUT, data.data)
                 ngx.say(code..body)
             end
@@ -183,7 +183,7 @@ GET /wrong-public-api
 --- config
     location /t {
         content_by_lua_block {
-            local datas = {
+            local data = {
                 {
                     uri = "/apisix/admin/consumers",
                     data = [[{
@@ -211,7 +211,7 @@ GET /wrong-public-api
 
             local t = require("lib.test_admin").test
 
-            for _, data in ipairs(datas) do
+            for _, data in ipairs(data) do
                 local code, body = t(data.uri, ngx.HTTP_PUT, data.data)
                 ngx.say(code..body)
             end
