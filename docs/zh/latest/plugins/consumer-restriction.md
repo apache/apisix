@@ -155,7 +155,7 @@ HTTP/1.1 403 Forbidden
 ...
 {"message":"The consumer_name is forbidden."}
 ```
-增加`jack1`使用`GET`访问权限：
+增加`jack1` `GET`访问能力：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
