@@ -16,7 +16,6 @@
 --
 local require = require
 local router = require("apisix.utils.router")
-local apisix_router = require("apisix.router")
 local plugin_mod = require("apisix.plugin")
 local ip_restriction = require("apisix.plugins.ip-restriction")
 local core = require("apisix.core")
