@@ -26,50 +26,6 @@ local type = type
 local _M = {}
 local match_opts = {}
 local has_route_not_under_apisix
-local interceptors = {
-    ["ip-restriction"] = {
-        run = function (conf, ctx)
-            return ip_restriction.access(conf, ctx)
-        end,
-        schema = ip_restriction.schema,
-    }
-}
-
-
-_M.interceptors_schema = {
-    ["$comment"] = "this is the mark for our interceptors schema",
-    type = "array",
-    items = {
-        type = "object",
-        minItems = 1,
-        properties = {
-            name = {
-                type = "string",
-                enum = {},
-            },
-            conf = {
-                type = "object",
-            }
-        },
-        required = {"name", "conf"},
-        dependencies = {
-            name = {
-                oneOf = {}
-            }
-        }
-    }
-}
-for name, attrs in pairs(interceptors) do
-    core.table.insert(_M.interceptors_schema.items.properties.name.enum, name)
-    core.table.insert(_M.interceptors_schema.items.dependencies.name.oneOf, {
-        properties = {
-            name = {
-                enum = {name},
-            },
-            conf = attrs.schema,
-        }
-    })
-end
 
 
 local fetch_api_router
@@ -108,24 +64,7 @@ function fetch_api_router()
                         methods = route.methods,
                         paths = route.uri,
                         handler = function (api_ctx)
-                            local code, body
-
-                            local metadata = plugin_mod.plugin_metadata(name)
-                            if metadata and metadata.value.interceptors then
-                                for _, rule in ipairs(metadata.value.interceptors) do
-                                    local f = interceptors[rule.name]
-                                    if f == nil then
-                                        core.log.error("unknown interceptor: ", rule.name)
-                                    else
-                                        code, body = f.run(rule.conf, api_ctx)
-                                        if code or body then
-                                            return core.response.exit(code, body)
-                                        end
-                                    end
-                                end
-                            end
-
-                            code, body = route.handler(api_ctx)
+                            local code, body = route.handler(api_ctx)
                             if code or body then
                                 core.response.exit(code, body)
                             end

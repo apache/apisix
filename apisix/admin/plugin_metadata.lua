@@ -61,14 +61,6 @@ local function check_conf(plugin_name, conf)
     end
     local schema = plugin_object.metadata_schema
 
-    -- inject interceptors schema to each plugins
-    if schema.properties.interceptors
-      and api_router.interceptors_schema['$comment'] ~= schema.properties.interceptors['$comment']
-    then
-        error("'interceptors' can not be used as the name of metadata schema's field")
-    end
-    schema.properties.interceptors = api_router.interceptors_schema
-
     core.log.info("schema: ", core.json.delay_encode(schema))
     core.log.info("conf: ", core.json.delay_encode(conf))
 
