@@ -71,7 +71,7 @@ __DATA__
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: failed to validate dependent schema for \"policy\": value should match only one schema, but matches none"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: then clause did not match"}
 --- no_error_log
 [error]
 
