@@ -26,6 +26,10 @@ local cached_tab = {}
 local _M = {
     version = 0.1,
     decode = require("cjson.safe").decode,
+    -- This method produces the same encoded string when the input is not changed.
+    -- Different calls with cjson.encode will produce different string because
+    -- it doesn't maintain the object key order.
+    stably_encode = require("dkjson").encode
 }
 
 

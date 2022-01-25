@@ -19,6 +19,8 @@ local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
+local ngx           = ngx
+local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
@@ -27,7 +29,6 @@ local ipairs        = ipairs
 local pairs         = pairs
 local type          = type
 local local_plugins = core.table.new(32, 0)
-local ngx           = ngx
 local tostring      = tostring
 local error         = error
 local is_http       = ngx.config.subsystem == "http"
@@ -600,6 +601,19 @@ function _M.get_all(attrs)
     end
 
     return http_plugins, stream_plugins
+end
+
+
+-- conf_version returns a version which only depends on the value of conf,
+-- instead of where this plugin conf belongs to
+function _M.conf_version(conf)
+    if not conf._version then
+        local data = core.json.stably_encode(conf)
+        conf._version = tostring(crc32(data))
+        core.log.info("init plugin-level conf version: ", conf._version, ", from ", data)
+    end
+
+    return conf._version
 end
 
 
