@@ -165,7 +165,7 @@ end
 
 function gen_object(property)
     local output = {}
-    if property.properties == nil then
+    if not property.properties then
         return output
     end
     for k, v in pairs(property.properties) do
