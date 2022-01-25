@@ -82,10 +82,15 @@ function execute_func(premature, self, batch)
     --- based on the current retry policy.
     local ok, err, n = self.func(batch.entries, self.batch_max_size)
     if not ok then
-        core.log.error("Batch Processor[", self.name, "] failed to process entries [",
-                       #batch.entries + 1 - (n or -1), "/", #batch.entries ,"]: ", err)
+        if n then
+            core.log.error("Batch Processor[", self.name, "] failed to process entries [",
+                            #batch.entries + 1 - (n or -1), "/", #batch.entries ,"]: ", err)
+            batch.entries = slice_batch(batch.entries, n)
+        else
+            core.log.error("Batch Processor[", self.name,
+                           "] failed to process entries: ", err)
+        end
 
-        batch.entries = slice_batch(batch.entries, n)
         batch.retry_count = batch.retry_count + 1
         if batch.retry_count <= self.max_retry_count and #batch.entries > 0 then
             schedule_func_exec(self, self.retry_delay,
