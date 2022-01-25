@@ -89,7 +89,7 @@ function _M.check_schema(conf)
 end
 
 local function gen_string(example)
-    if example ~= nil and type(example) == "string" then
+    if example and type(example) == "string" then
         return example
     end
     local n = math.random(1, 10)
