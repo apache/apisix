@@ -56,7 +56,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	var p fastjson.Parser
 	v, err := p.ParseBytes(data)
 	if err != nil {
-		proxywasm.LogErrorf("erorr decoding plugin configuration: %v", err)
+		proxywasm.LogErrorf("error decoding plugin configuration: %v", err)
 		return types.OnPluginStartStatusFailed
 	}
 	headers := v.GetArray("headers")

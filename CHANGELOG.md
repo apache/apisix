@@ -167,7 +167,7 @@ title: Changelog
 - fix(grpc-transcode): support converting nested message [#4859](https://github.com/apache/apisix/pull/4859)
 - fix(authz-keycloak): set permissions as empty table when lazy_load_path is false [#4845](https://github.com/apache/apisix/pull/4845)
 - fix(proxy-cache): keep cache_method same with nginx's proxy_cache_methods [#4814](https://github.com/apache/apisix/pull/4814)
-- fix(admin): inject updatetime when the requst is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
+- fix(admin): inject updatetime when the request is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
 - fix(admin): check username for updating consumer [#4756](https://github.com/apache/apisix/pull/4756)
 - fix(error-log-logger): avoid sending stale error log [#4690](https://github.com/apache/apisix/pull/4690)
 - fix(grpc-transcode): handle enum type [#4706](https://github.com/apache/apisix/pull/4706)
