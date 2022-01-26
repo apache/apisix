@@ -31,7 +31,6 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -328,7 +327,7 @@ GET /a
 
 
 
-=== TEST 17: customize export uri, missing plugin, use default
+=== TEST 18: customize export uri, missing plugin, use default
 --- yaml_config
 plugin_attr:
     x:
@@ -339,7 +338,7 @@ GET /apisix/prometheus/metrics
 
 
 
-=== TEST 18: customize export uri, missing attr, use default
+=== TEST 19: customize export uri, missing attr, use default
 --- yaml_config
 plugin_attr:
     prometheus:
@@ -350,7 +349,7 @@ GET /apisix/prometheus/metrics
 
 
 
-=== TEST 19: set sys plugins
+=== TEST 20: set sys plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -399,14 +398,14 @@ passed
 
 
 
-=== TEST 20: hit batch-process-metrics
+=== TEST 21: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 21: check sys logger metrics
+=== TEST 22: check sys logger metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -415,7 +414,7 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
 
 
 
-=== TEST 22: set zipkin plugins
+=== TEST 23: set zipkin plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -453,14 +452,14 @@ passed
 
 
 
-=== TEST 23: hit batch-process-metrics
+=== TEST 24: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 24: check zipkin log metrics
+=== TEST 25: check zipkin log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -469,7 +468,7 @@ qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="
 
 
 
-=== TEST 25: set http plugins
+=== TEST 26: set http plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -514,14 +513,14 @@ passed
 
 
 
-=== TEST 26: hit batch-process-metrics
+=== TEST 27: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 27: check http log metrics
+=== TEST 28: check http log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -530,7 +529,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
 
 
 
-=== TEST 28: set tcp-logger plugins
+=== TEST 29: set tcp-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -576,14 +575,14 @@ passed
 
 
 
-=== TEST 29:  trigger metrics batch-process-metrics
+=== TEST 30:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 30: check tcp log metrics
+=== TEST 31: check tcp log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -592,7 +591,7 @@ qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 31: set udp-logger plugins
+=== TEST 32: set udp-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -635,14 +634,14 @@ passed
 
 
 
-=== TEST 32:  trigger metrics batch-process-metrics
+=== TEST 33:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 33: check udp log metrics
+=== TEST 34: check udp log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -651,7 +650,7 @@ qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 34: set sls-logger plugins
+=== TEST 35: set sls-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -699,14 +698,14 @@ passed
 
 
 
-=== TEST 35:  trigger metrics batch-process-metrics
+=== TEST 36:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 36: check sls-logger metrics
+=== TEST 37: check sls-logger metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -715,7 +714,7 @@ qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 37: create service and route both with name
+=== TEST 38: create service and route both with name
 --- config
     location /t {
         content_by_lua_block {
@@ -764,14 +763,14 @@ passed
 
 
 
-=== TEST 38: pipeline of client request
+=== TEST 39: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
 
 
 
-=== TEST 39: fetch the prometheus metric data
+=== TEST 40: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -779,7 +778,7 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",con
 
 
 
-=== TEST 40: set route name but remove service name
+=== TEST 41: set route name but remove service name
 --- config
     location /t {
         content_by_lua_block {
@@ -807,14 +806,14 @@ passed
 
 
 
-=== TEST 41: pipeline of client request
+=== TEST 42: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
 
 
 
-=== TEST 42: fetch the prometheus metric data
+=== TEST 43: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -822,7 +821,7 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",no
 
 
 
-=== TEST 43: set service name but remove route name
+=== TEST 44: set service name but remove route name
 --- config
     location /t {
         content_by_lua_block {
@@ -870,14 +869,14 @@ passed
 
 
 
-=== TEST 44: pipeline of client request
+=== TEST 45: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
 
 
 
-=== TEST 45: fetch the prometheus metric data
+=== TEST 46: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
@@ -885,7 +884,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",
 
 
 
-=== TEST 46: remove both name, but still set prefer_name to true
+=== TEST 47: remove both name, but still set prefer_name to true
 --- config
     location /t {
         content_by_lua_block {
@@ -914,14 +913,14 @@ passed
 
 
 
-=== TEST 47: pipeline of client request
+=== TEST 48: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
 
 
 
-=== TEST 48: fetch the prometheus metric data
+=== TEST 49: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
