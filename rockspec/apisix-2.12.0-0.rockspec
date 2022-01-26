@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.12.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.12.0",
 }
 
 description = {
@@ -58,7 +58,7 @@ dependencies = {
     "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
-    "api7-dkjson = 0.1.1",
+    "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.3.1",
     "graphql = 0.0.2",
@@ -73,7 +73,6 @@ dependencies = {
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
-    "opentelemetry-lua = 0.1-1",
 }
 
 build = {

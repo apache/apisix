@@ -81,10 +81,10 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ### Installation via Source Release Package
 
-1. Create a directory named `apisix-2.11.0`.
+1. Create a directory named `apisix-2.12.0`.
 
   ```shell
-  $ APISIX_VERSION='2.11.0'
+  $ APISIX_VERSION='2.12.0'
   $ mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -246,7 +246,7 @@ Run the specified test case using the following command.
 $ prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-For more details on the test cases, see the [testing framwork](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md).
+For more details on the test cases, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md).
 
 ## Step 5: Update Admin API token to Protect Apache APISIX
 
