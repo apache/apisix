@@ -90,6 +90,8 @@ if [ ! $code -eq 201 ]; then
     exit 1
 fi
 
+sleep 0.5
+
 code=$(curl -v -k -i -m 20 -o /dev/null -s http://127.0.0.1:9092/prometheus/metrics || echo 'ouch')
 if [ "$code" != "ouch" ]; then
     echo "failed: should listen at previous prometheus address"
@@ -162,6 +164,8 @@ if [ ! $code -eq 201 ]; then
     echo "failed: initialize prometheus metrics public API failed #2"
     exit 1
 fi
+
+sleep 0.5
 
 if ! curl -s http://127.0.0.1:9092/apisix/prometheus/metrics | grep "apisix_ci_prefix_" | wc -l; then
     echo "failed: should use custom metric prefix"
