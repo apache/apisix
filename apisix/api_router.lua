@@ -17,7 +17,6 @@
 local require = require
 local router = require("apisix.utils.router")
 local plugin_mod = require("apisix.plugin")
-local ip_restriction = require("apisix.plugins.ip-restriction")
 local core = require("apisix.core")
 local ipairs = ipairs
 local type = type
@@ -39,7 +38,6 @@ function fetch_api_router()
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.api
         if api_fun then
-            local name = plugin.name
             local api_routes = api_fun()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
