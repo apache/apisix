@@ -125,7 +125,7 @@ wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
   sudo cp -a etcd etcdctl /usr/bin/
-nohup ./etcd >/tmp/etcd.log 2>&1 & 
+nohup etcd >/tmp/etcd.log 2>&1 & 
 ```
 
 ## Step 3: Manage Apache APISIX Server
@@ -191,11 +191,13 @@ apisix help
 ## Step 4: Run Test Cases
 
 1. Install `cpanminus`, the package manager for `perl`and dependencies.
+
 ```shell
 cd /bin 
 curl -L https://cpanmin.us/ -o cpanm
 chmod +x cpanm
 ```
+
 2. Then install the test-nginx dependencies via `cpanm`:
 
   ```shell
