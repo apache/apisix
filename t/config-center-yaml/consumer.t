@@ -73,7 +73,7 @@ property "username" validation failed
 --- apisix_yaml
 routes:
   - uri: /apisix/plugin/jwt/sign
-    plugins: 
+    plugins:
         public-api: {}
 consumers:
   - username: jwt
@@ -93,7 +93,7 @@ plugin jwt-auth err: property "key" is required
 --- apisix_yaml
 routes:
   - uri: /apisix/plugin/jwt/sign
-    plugins: 
+    plugins:
         public-api: {}
 consumers:
   - username: jwt

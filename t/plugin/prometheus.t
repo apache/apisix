@@ -615,7 +615,7 @@ apisix:
     enable_admin: false
 --- apisix_yaml
 routes:
-  - 
+  -
     uri: /apisix/prometheus/metrics
     plugins:
         public-api: {}
