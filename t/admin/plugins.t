@@ -68,7 +68,6 @@ zipkin
 request-id
 fault-injection
 serverless-pre-function
-batch-requests
 cors
 ip-restriction
 ua-restriction
