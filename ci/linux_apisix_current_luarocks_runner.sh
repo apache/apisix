@@ -30,11 +30,13 @@ script() {
     export_or_prefix
     openresty -V
 
-    sudo rm -rf /usr/local/apisix
+    sudo rm -rf /usr/local/share/lua/5.1/apisix
 
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+    # ensure all files under ../apisix is installed
+    diff -rq ../apisix /usr/local/share/lua/5.1/apisix || exit 1
 
     mkdir cli_tmp && cd cli_tmp
 
