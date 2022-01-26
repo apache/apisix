@@ -30,7 +30,7 @@ script() {
     export_or_prefix
     openresty -V
 
-    sudo rm -rf /usr/local/share/lua/5.1/apisix
+    sudo rm -rf /usr/local/apisix
 
     # run the test case in an empty folder
     mkdir tmp && cd tmp
@@ -38,8 +38,6 @@ script() {
 
     # install APISIX by luarocks
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
-    # ensure all files under ../apisix is installed
-    diff -rq ../apisix /usr/local/share/lua/5.1/apisix || exit 1
     cp ../bin/apisix /usr/local/bin/apisix
 
     # show install files
