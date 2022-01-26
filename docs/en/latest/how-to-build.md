@@ -105,7 +105,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 4. Install the runtime dependent Lua libraries.
 
   ```shell
-  Switch to the apisix-${APISIX_VERSION} directory
+  # Switch to the apisix-${APISIX_VERSION} directory
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
