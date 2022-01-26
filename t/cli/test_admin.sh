@@ -261,6 +261,8 @@ if [ ! $code -eq 201 ]; then
     exit 1
 fi
 
+sleep 0.5
+
 # first time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
 if [ ! $code -eq 200 ]; then
@@ -285,6 +287,8 @@ if [ ! $code -eq 200 ]; then
     echo "failed: initialize node status public API failed #2"
     exit 1
 fi
+
+sleep 0.5
 
 # second time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
