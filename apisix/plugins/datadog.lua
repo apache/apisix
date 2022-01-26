@@ -217,7 +217,7 @@ function _M.log(conf, ctx)
             end
         end
 
-        -- Releasing the UDP socket desciptor
+        -- Releasing the UDP socket descriptor
         ok, err = sock:close()
         if not ok then
             core.log.error("failed to close the UDP connection, host[",

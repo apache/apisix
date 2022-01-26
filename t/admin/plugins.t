@@ -103,9 +103,11 @@ redirect
 response-rewrite
 grpc-transcode
 grpc-web
+public-api
 prometheus
 datadog
 echo
+loggly
 http-logger
 splunk-hec-logging
 skywalking-logger
@@ -116,6 +118,7 @@ kafka-logger
 rocketmq-logger
 syslog
 udp-logger
+file-logger
 example-plugin
 aws-lambda
 azure-functions

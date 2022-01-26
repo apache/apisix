@@ -373,21 +373,23 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
-    if router.api.has_route_not_under_apisix() or
-        core.string.has_prefix(uri, "/apisix/")
-    then
-        local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
-        local matched = router.api.match(api_ctx, skip)
-        if matched then
-            return
-        end
-    end
-
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
-        -- run global rule
+        -- whether the public API run global rules is
+        -- controlled by the configuration file
+        if router.api.has_route_not_under_apisix() or
+            core.string.has_prefix(uri, "/apisix/")
+        then
+            local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
+            local matched = router.api.match(api_ctx, skip)
+            if matched then
+                return
+            end
+        end
+
+        -- run global rule when there is no matching route
         plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
         core.log.info("not find any matched route")

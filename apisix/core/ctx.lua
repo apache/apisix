@@ -53,7 +53,7 @@ local function parse_graphql(ctx)
 
     local body, err = request.get_body(max_size, ctx)
     if not body then
-        return nil, "failed to read graphql body: " .. err
+        return nil, "failed to read graphql body: " .. (err or "request body has zero size")
     end
 
     local ok, res = pcall(gq_parse, body)

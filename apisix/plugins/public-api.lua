@@ -14,32 +14,45 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local ngx = ngx
-local socket = ngx.req.socket
 
-local _M = {}
+local core   = require("apisix.core")
+local router = require("apisix.router")
 
-function _M.go()
-    local sock, err = socket()
-    if not sock then
-        core.log.error("failed to get the request socket: ", err)
-        return
-     end
+local schema = {
+    type = "object",
+    properties = {
+        uri = {type = "string"},
+    },
+}
 
-    while true do
-        local data, err = sock:receive()
 
-        if not data then
-            if err and err ~= "no more data" then
-                core.log.error("socket error, returning: ", err)
-            end
+local _M = {
+    version = 0.1,
+    priority = 501,
+    name = "public-api",
+    schema = schema,
+}
 
-            return
-        else
-            core.log.warn("message received: ", data)
-        end
-    end
+
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
 end
+
+
+function _M.access(conf, ctx)
+    local local_conf = core.config.local_conf()
+
+    -- overwrite the uri in the ctx when the user has set the target uri
+    ctx.var.uri = conf.uri or ctx.var.uri
+    local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
+
+    -- perform route matching
+    if router.api.match(ctx, skip) then
+        return
+    end
+
+    return 404
+end
+
 
 return _M
