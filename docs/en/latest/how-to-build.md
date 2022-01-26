@@ -195,8 +195,6 @@ $ apisix help
 $ cd /bin 
 $ curl -L https://cpanmin.us/ -o cpanm
 $ chmod +x cpanm
-# When you use the Nginx binary installation path, you need to install the dependency packages
-$ yum -y install perl-Digest-MD5 perl-ExtUtils-MakeMaker perl-Digest-SHA
 ```
 2. Then install the test-nginx dependencies via `cpanm`:
 
