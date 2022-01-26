@@ -37,7 +37,14 @@ function _M.find_method(protos, service, method)
         return nil
     end
 
-    return loaded.index[service][method]
+    local res = loaded.index[service][method]
+    if not res then
+        return nil
+    end
+
+    -- restore pb state
+    pb.state(protos.pb_state)
+    return res
 end
 
 
