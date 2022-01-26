@@ -125,7 +125,7 @@ $ wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v
 $ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
     cd etcd-v${ETCD_VERSION}-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
-$ nohup etcd &
+$ nohup ./etcd >/tmp/etcd.log 2>&1 & 
 ```
 
 ## Step 3: Manage Apache APISIX Server
@@ -190,8 +190,14 @@ $ apisix help
 
 ## Step 4: Run Test Cases
 
-1. Install `cpanminus`, the package manager for `perl`.
-
+1. Install `cpanminus`, the package manager for `perl`and dependencies.
+```shell
+$ cd /bin 
+$ curl -L https://cpanmin.us/ -o cpanm
+$ chmod +x cpanm
+# When you use the Nginx binary installation path, you need to install the dependency packages
+$ yum -y install perl-Digest-MD5 perl-ExtUtils-MakeMaker perl-Digest-SHA
+```
 2. Then install the test-nginx dependencies via `cpanm`:
 
   ```shell
@@ -201,6 +207,7 @@ $ apisix help
 3. Run the `git clone` command to clone the latest source code locally, please use the version we forked out：
 
   ```shell
+  $ yum -y install git
   $ git clone https://github.com/iresty/test-nginx.git
   ```
 
