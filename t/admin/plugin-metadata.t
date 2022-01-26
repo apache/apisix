@@ -295,7 +295,7 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
 
 
 
-=== TEST 16: not unwanted data, PUT
+=== TEST 9: not unwanted data, PUT
 --- config
     location /t {
         content_by_lua_block {
@@ -330,7 +330,7 @@ GET /t
 
 
 
-=== TEST 17: not unwanted data, GET
+=== TEST 10: not unwanted data, GET
 --- config
     location /t {
         content_by_lua_block {
@@ -362,7 +362,7 @@ GET /t
 
 
 
-=== TEST 18: not unwanted data, DELETE
+=== TEST 11: not unwanted data, DELETE
 --- config
     location /t {
         content_by_lua_block {
