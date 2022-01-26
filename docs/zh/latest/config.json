@@ -105,6 +105,7 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
+            "plugins/opentelemetry",
             "plugins/node-status"
           ]
         },
