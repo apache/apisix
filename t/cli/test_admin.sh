@@ -235,8 +235,9 @@ echo "pass: sync /apisix/plugins from etcd when disabling admin successfully"
 # ignore changes to /apisix/plugins/ due to init_etcd
 echo '
 apisix:
-  enable_admin: false
+  enable_admin: true
 plugins:
+  - public-api
   - node-status
 nginx_config:
   error_log_level:  info
@@ -245,6 +246,20 @@ nginx_config:
 rm logs/error.log
 make init
 make run
+
+# initialize node-status public API routes
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d "{
+        \"uri\": \"/apisix/status\",
+        \"plugins\": {
+            \"public-api\": {}
+        }
+    }")
+if [ ! $code -eq 200 ]; then
+    echo "failed: initialize node status public API failed"
+    exit 1
+fi
 
 # first time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
@@ -274,6 +289,7 @@ echo '
 apisix:
   enable_admin: false
 plugins:
+  - public-api
   - node-status
 stream_plugins:
 ' > conf/config.yaml
@@ -292,7 +308,7 @@ fi
 sleep 0.5
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
+if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; then
     echo "failed: first time load http plugins list failed"
     exit 1
 fi
