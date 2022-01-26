@@ -39,7 +39,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
-            local  = {}
+            local conf = {}
 
             local ok, err = plugin.check_schema(conf)
             if not ok then
