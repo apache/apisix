@@ -204,7 +204,7 @@ function _M.access(conf)
         response_content = conf.response_example
     else
         local output = gen_object(conf.response_schema)
-        local typ, _ = parse_content_type(conf.content_type)
+        local typ = parse_content_type(conf.content_type)
         if typ == "application/xml" or typ == "text/xml" then
             response_content = xml2lua.toXml(output, "data")
 
