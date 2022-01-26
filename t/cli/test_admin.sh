@@ -256,7 +256,7 @@ code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0
             \"public-api\": {}
         }
     }")
-if [ ! $code -eq 200 ]; then
+if [ ! $code -eq 201 ]; then
     echo "failed: initialize node status public API failed"
     exit 1
 fi
