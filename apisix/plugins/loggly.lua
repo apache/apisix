@@ -265,7 +265,7 @@ local function send_bulk_over_http(message, metadata, conf)
         if not body then
             return false, "failed to send log to loggly, http status code: " .. res.status
         else
-            return false, "failed to send log to loggly, " .. body.response
+            return false, "failed to send log to loggly, " .. res.body
         end
     end
 
