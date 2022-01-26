@@ -75,12 +75,12 @@ end
 
 local function gen_csrf_token(conf)
     local random = math.random()
-    local expires_timestamp = ngx_time() + conf.expires
-    local sign = gen_sign(random, expires_timestamp, conf.key)
+    local timestamp = ngx_time()
+    local sign = gen_sign(random, timestamp, conf.key)
 
     local token = {
         random = random,
-        expires = expires_timestamp,
+        expires = timestamp,
         sign = sign,
     }
 
@@ -113,7 +113,8 @@ local function check_csrf_token(conf, ctx, token)
         core.log.error("no expires in token")
         return false
     end
-    if ngx_time() > expires then
+    local time_now = ngx_time()
+    if time_now - expires > conf.expires then
         core.log.error("token has expired")
         return false
     end

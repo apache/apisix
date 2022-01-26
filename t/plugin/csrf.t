@@ -164,7 +164,7 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNDI5ODYzMTk3MTYxMzksInNpZ24iOiI0ODRlMD
 
 
 
-=== TEST 10: expired csrf token
+=== TEST 10: change expired
 --- config
     location /t {
         content_by_lua_block {
@@ -194,6 +194,12 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNDI5ODYzMTk3MTYxMzksInNpZ24iOiI0ODRlMD
             ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 11: expired csrf token
 --- request
 POST /hello
 --- more_headers
