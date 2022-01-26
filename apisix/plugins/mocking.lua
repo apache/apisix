@@ -22,6 +22,8 @@ local type = type
 local table = table
 local math = math
 local pairs = pairs
+local ngx_re = ngx.re
+local json = core.json
 
 local schema = {
     type = "object",
@@ -57,12 +59,13 @@ local function parse_content_type(content_type)
     if not content_type then
         return ""
     end
-    local m = ngx.re.match(content_type, "([ -~]*);([ -~]*)")
-    if #m == 2 then
+    local m = ngx_re.match(content_type, "([ -~]*);([ -~]*)")
+    if m and #m == 2 then
         return m[1], m[2]
     end
     return content_type
 end
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -84,6 +87,7 @@ function _M.check_schema(conf)
     return true
 end
 
+
 local function gen_string(example)
     if example and type(example) == "string" then
         return example
@@ -96,6 +100,7 @@ local function gen_string(example)
     return table.concat(list)
 end
 
+
 local function gen_number(example)
     if example and type(example) == "number" then
         return example
@@ -103,12 +108,14 @@ local function gen_number(example)
     return math.random() * 10000
 end
 
+
 local function gen_integer(example)
     if example and type(example) == "number" then
         return math.floor(example)
     end
     return math.random(1, 10000)
 end
+
 
 local function gen_boolean(example)
     if example and type(example) == "boolean" then
@@ -121,16 +128,23 @@ local function gen_boolean(example)
     return true
 end
 
+
 local function gen_base(property)
     local typ = string.lower(property.type)
     local example = property.example
     if typ == "string" then
         return gen_string(example)
-    elseif typ == "number" then
+    end
+
+    if typ == "number" then
         return gen_number(example)
-    elseif typ == "integer" then
+    end
+
+    if typ == "integer" then
         return gen_integer(example)
-    elseif typ == "boolean" then
+    end
+
+    if typ == "boolean" then
         return gen_boolean(example)
     end
     return nil
@@ -150,14 +164,17 @@ function gen_array(property)
     for i = 1, n do
         if typ == "array" then
             table.insert(output, gen_array(v))
+
         elseif typ == "object" then
             table.insert(output, gen_object(v))
+
         else
             table.insert(output, gen_base(v))
         end
     end
     return output
 end
+
 
 function gen_object(property)
     local output = {}
@@ -168,14 +185,17 @@ function gen_object(property)
         local typ = string.lower(v.type)
         if typ == "array" then
             output[k] = gen_array(v)
+
         elseif typ == "object" then
             output[k] = gen_object(v)
+
         else
             output[k] = gen_base(v)
         end
     end
     return output
 end
+
 
 function _M.access(conf)
     local response_content = ""
@@ -187,8 +207,10 @@ function _M.access(conf)
         local typ, _ = parse_content_type(conf.content_type)
         if typ == "application/xml" or typ == "text/xml" then
             response_content = xml2lua.toXml(output, "data")
+
         elseif typ == "application/json" or typ == "text/plain" then
-            response_content = core.json.encode(output)
+            response_content = json.encode(output)
+
         else
             core.log.error("json schema body only support xml and json content type")
         end
@@ -198,6 +220,7 @@ function _M.access(conf)
     if conf.with_mock_header then
         ngx.header["x-mock-by"] = "APISIX/" .. core.version.VERSION
     end
+
     if conf.delay > 0 then
         ngx.sleep(conf.delay)
     end
