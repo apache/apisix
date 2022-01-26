@@ -52,7 +52,7 @@ jobs:
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
           helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm install etcd bitnami/etcd --set replicaCount=3 --set auth.rbac.enabled=false
+          helm install etcd bitnami/etcd --set replicaCount=3 --set auth.rbac.create=false
           kubectl wait pods -l app.kubernetes.io/instance=etcd --for=condition=Ready --timeout=300s --all
 
 
