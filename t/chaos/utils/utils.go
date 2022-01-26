@@ -184,7 +184,6 @@ func SetPrometheusMetricsPublicAPI(e *httpexpect.Expect) *httpexpect.Response {
 				"type": "roundrobin"
 			}
 		}`,
-		ExpectStatusRange: expectStatusRange,
 	})
 }
 
