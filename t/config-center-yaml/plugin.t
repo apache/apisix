@@ -153,7 +153,12 @@ GET /apisix/prometheus/metrics
 
 === TEST 4: enable plugin and its router
 --- apisix_yaml
+routes:
+  - uri: /apisix/prometheus/metrics
+    plugins:
+        public-api: {}
 plugins:
+  - name: public-api
   - name: prometheus
 --- request
 GET /apisix/prometheus/metrics
