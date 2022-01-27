@@ -79,8 +79,13 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
             }
         }
     },
-    "uri": "/hello",
-    "host": "127.0.0.1"
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "uri": "/hello"
 }'
 ```
 
@@ -89,7 +94,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 使用上游的配置，如果你的上流服务返回 500，连续 3 次。客户端将会收到 502（break_response_code）应答。
 
 ```shell
-$ curl -i "http://127.0.0.1:9080/get"
+$ curl -i "http://127.0.0.1:9080/hello"
 HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
 Connection: keep-alive
