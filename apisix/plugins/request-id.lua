@@ -211,8 +211,9 @@ end
 
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
-    local uuid_val = get_request_id(conf.algorithm)
+    local uuid_val
     if not headers[conf.header_name] then
+        uuid_val = get_request_id(conf.algorithm)
         core.request.set_header(ctx, conf.header_name, uuid_val)
     else
         uuid_val = headers[conf.header_name]
