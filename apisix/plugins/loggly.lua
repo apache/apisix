@@ -235,7 +235,7 @@ end
 
 local function send_bulk_over_http(message, metadata, conf)
     local endpoint = path.join(metadata.value.host, "bulk", conf.customer_token, "tag", "bulk")
-    local has_prefix = metadata.value.host:find("http")
+    local has_prefix = core.string.has_prefix(metadata.value.host, "http")
     if not has_prefix then
         if metadata.value.protocol == "http" then
             endpoint = "http://" .. endpoint
