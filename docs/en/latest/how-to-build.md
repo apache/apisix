@@ -190,7 +190,7 @@ apisix help
 
 ## Step 4: Run Test Cases
 
-1. Install `cpanminus`, the package manager for `perl`and dependencies.
+1. Install `cpanminus`, the package manager for `perl`.
 
 ```shell
 cd /bin
