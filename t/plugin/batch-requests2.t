@@ -33,6 +33,7 @@ add_block_preprocessor(sub {
 
     my $extra_yaml_config = <<_EOC_;
 plugins:
+    - public-api
     - batch-requests
 _EOC_
 
@@ -43,7 +44,35 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: customize uri, not found
+=== TEST 1: pre-create public API route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/batch-requests"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: customize uri, not found
 --- yaml_config
 plugin_attr:
     batch-requests:
@@ -85,7 +114,35 @@ plugin_attr:
 
 
 
-=== TEST 2: customize uri, found
+=== TEST 3: create public API route for custom uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/foo/bar"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: customize uri, found
 --- yaml_config
 plugin_attr:
     batch-requests:
@@ -149,7 +206,7 @@ plugin_attr:
 
 
 
-=== TEST 3: customize uri, missing plugin, use default
+=== TEST 5: customize uri, missing plugin, use default
 --- yaml_config
 plugin_attr:
     x:
@@ -188,7 +245,7 @@ plugin_attr:
 
 
 
-=== TEST 4: customize uri, missing attr, use default
+=== TEST 6: customize uri, missing attr, use default
 --- yaml_config
 plugin_attr:
     batch-requests:
