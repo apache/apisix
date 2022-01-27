@@ -356,64 +356,7 @@ GET /hello
 
 
 
-=== TEST 13: set route(return response schema: array case)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                           "plugins": {
-                               "mocking": {
-                                   "delay": 1,
-                                   "content_type": "text/plain",
-                                   "response_status": 200,
-                                   "response_schema": {
-                                       "type": "object",
-                                       "properties": {
-                                           "field1":{
-                                               "type":"array",
-                                               "items":{
-                                                   "type":"string"
-                                               }
-                                           }
-                                       }
-                                   }
-                               }
-                           },
-                           "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 200
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 14: hit route(return response schema: object case)
---- request
-GET /hello
---- error_code: 200
---- response_body_like
-^\{\"field1\":\[.*\]\}$
---- no_error_log
-[error]
-
-
-
-=== TEST 15: set route(return response header: application/json)
+=== TEST 13: set route(return response header: application/json)
 --- config
        location /t {
            content_by_lua_block {
@@ -449,7 +392,7 @@ passed
 
 
 
-=== TEST 16: hit route(return response schema: object case)
+=== TEST 14: hit route(return response header: application/json)
 --- request
 GET /hello
 --- error_code: 200
