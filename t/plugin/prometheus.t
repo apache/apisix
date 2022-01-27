@@ -30,6 +30,19 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -47,48 +60,52 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 2: set it in route
+=== TEST 2: setup public API route and test route
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {
-                        "prometheus": {}
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
+            local data = {
+                {
+                    url = "/apisix/admin/routes/1",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {}
                         },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/metrics",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/prometheus/metrics"
+                    }]]
+                },
+            }
 
-            if code >= 300 then
-                ngx.status = code
+            local t = require("lib.test_admin").test
+
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(code..body)
             end
-            ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
+--- response_body eval
+"201passed\n" x 2
 
 
 
@@ -97,8 +114,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body_like
 apisix_etcd_reachable 1
---- no_error_log
-[error]
 
 
 
@@ -107,8 +122,6 @@ apisix_etcd_reachable 1
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -117,8 +130,6 @@ apisix_etcd_reachable 1
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 200, 404, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -127,8 +138,6 @@ apisix_etcd_reachable 1
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -168,12 +177,8 @@ PATCH /apisix/prometheus/metrics
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -182,8 +187,6 @@ passed
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 404, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -192,8 +195,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -202,8 +203,6 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -233,12 +232,8 @@ qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",no
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -261,12 +256,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -275,8 +266,6 @@ passed
 ["GET /hello1", "GET /not_found", "GET /hello1", "GET /hello1"]
 --- error_code eval
 [200, 404, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -285,8 +274,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="2",service="1",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -305,12 +292,8 @@ qr/apisix_bandwidth\{type="egress",route="2",service="1",consumer="",node="127.0
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -341,12 +324,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -355,8 +334,6 @@ passed
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 404, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -395,13 +372,9 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
 
 
 
@@ -410,8 +383,6 @@ passed
 ["GET /hello3", "GET /hello3"]
 --- error_code eval
 [404, 404]
---- no_error_log
-[error]
 
 
 
@@ -420,8 +391,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",consumer="",node="127.0.0.1"\} 2/
---- no_error_log
-[error]
 
 
 
@@ -430,8 +399,6 @@ qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host=
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/.*apisix_http_latency_bucket\{type="apisix".*/
---- no_error_log
-[error]
 
 
 
@@ -461,12 +428,8 @@ qr/.*apisix_http_latency_bucket\{type="apisix".*/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -489,12 +452,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -503,8 +462,6 @@ passed
 ["GET /mysleep?seconds=1", "GET /mysleep?seconds=1", "GET /mysleep?seconds=1"]
 --- error_code eval
 [200, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -513,8 +470,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_latency_bucket\{type="apisix".*service=\"3\".*le=\"500.*/
---- no_error_log
-[error]
 
 
 
@@ -532,12 +487,8 @@ qr/apisix_http_latency_bucket\{type="apisix".*service=\"3\".*le=\"500.*/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -555,12 +506,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -569,8 +516,6 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="consumers"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -579,8 +524,6 @@ qr/apisix_etcd_modify_indexes\{key="consumers"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="global_rules"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -589,8 +532,6 @@ qr/apisix_etcd_modify_indexes\{key="global_rules"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="max_modify_index"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -599,8 +540,6 @@ qr/apisix_etcd_modify_indexes\{key="max_modify_index"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="protos"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -609,8 +548,6 @@ qr/apisix_etcd_modify_indexes\{key="protos"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="routes"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -619,8 +556,6 @@ qr/apisix_etcd_modify_indexes\{key="routes"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="services"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -629,8 +564,6 @@ qr/apisix_etcd_modify_indexes\{key="services"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="ssls"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -639,8 +572,6 @@ qr/apisix_etcd_modify_indexes\{key="ssls"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="stream_routes"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -649,8 +580,6 @@ qr/apisix_etcd_modify_indexes\{key="stream_routes"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -659,8 +588,6 @@ qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -669,8 +596,6 @@ qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
---- no_error_log
-[error]
 
 
 
@@ -679,8 +604,6 @@ qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_node_info\{hostname=".*"\} 1/
---- no_error_log
-[error]
 
 
 
@@ -692,6 +615,10 @@ apisix:
     enable_admin: false
 --- apisix_yaml
 routes:
+  -
+    uri: /apisix/prometheus/metrics
+    plugins:
+        public-api: {}
   -
     uri: /hello
     upstream:
@@ -705,5 +632,3 @@ GET /apisix/prometheus/metrics
 qr/apisix_/
 --- response_body_unlike eval
 qr/etcd/
---- no_error_log
-[error]
