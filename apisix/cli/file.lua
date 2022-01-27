@@ -22,17 +22,14 @@ local util = require("apisix.cli.util")
 local pairs = pairs
 local type = type
 local tonumber = tonumber
-local tostring = tostring
 local getmetatable = getmetatable
 local getenv = os.getenv
-local os_time = os.time
 local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
 local str_char = string.char
 local tab_insert = table.insert
 local tab_concat = table.concat
-local randomseed = math.randomseed
 local random = math.random
 
 
@@ -62,9 +59,6 @@ end
 
 local function generate_random_str(len)
     local rand_tab = {}
-
-    -- set random seed
-    randomseed(tostring(os_time()):reverse():sub(1, 5))
 
     for _ = 1, len do
         if random(1, 3) == 1 then

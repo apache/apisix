@@ -35,6 +35,7 @@ local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
 local os_rename = os.rename
+local os_time = os.time
 local table_insert = table.insert
 local getenv = os.getenv
 local max = math.max
@@ -44,6 +45,7 @@ local str_byte = string.byte
 local str_sub = string.sub
 local str_len = string.len
 local str_format = string.format
+local randomseed = math.randomseed
 
 local _M = {}
 
@@ -162,6 +164,9 @@ local function init(env)
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
                 .. " is low.", env.ulimit, min_ulimit))
     end
+
+    -- set random seed
+    randomseed(tostring(os_time()):reverse():sub(1, 5))
 
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
