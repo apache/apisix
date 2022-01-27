@@ -71,7 +71,8 @@ install_vault_cli () {
 install_yq_cli () {
     YQ_VERSION="4.17.2"
     wget https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64
-    mv yq_linux_amd64 /usr/local/bin/yq
+    mv ./yq_linux_amd64 /usr/local/bin/yamlq
+    chmod +x /usr/local/bin/yamlq
 }
 
 install_nodejs () {
