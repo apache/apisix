@@ -409,8 +409,7 @@ function _M.api()
 end
 ```
 
-Note that the public API is exposed to the public.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+Note that the public API will not be exposed by default, you will need to use the [public-api plugin](plugins/public-api.md) to expose it.
 
 ## register control API
 

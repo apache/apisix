@@ -326,8 +326,7 @@ function _M.api()
 end
 ```
 
-注意注册的接口会暴露到外网。
-你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
+注意，注册的接口将不会默认暴露，您需要使用[public-api 插件](plugins/public-api.md)来暴露它。
 
 ## 注册控制接口
 
