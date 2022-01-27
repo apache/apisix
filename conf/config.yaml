@@ -43,5 +43,5 @@
 apisix:
   admin_key:
     - name: admin
-      key: ${{APISIX_ADMIN_API_KEY}}
+      key: ${{APISIX_ADMIN_API_TOKEN}}
       role: admin

@@ -37,6 +37,7 @@ local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
 local set_upstream    = apisix_upstream.set_by_route
 local upstream_util   = require("apisix.utils.upstream")
+local cli_util        = require("apisix.cli.util")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
@@ -54,6 +55,7 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
+local getenv          = os.getenv
 local control_api_router
 
 local is_http = false
@@ -85,6 +87,12 @@ function _M.http_init(args)
         if not ok then
             core.log.error("failed to load the configuration: ", err)
         end
+    end
+
+    local is_cli_token = getenv(cli_util.ADMIN_TOKEN_TAG_KEY)
+    if is_cli_token and tonumber(is_cli_token) == 1 then
+        core.log.warn("admin token has been automatically created by the system, ",
+                        "value: `", getenv(cli_util.ADMIN_TOKEN_KEY), "`")
     end
 end
 

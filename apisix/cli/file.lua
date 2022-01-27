@@ -30,6 +30,8 @@ local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
 local str_char = string.char
+local tab_insert = table.insert
+local tab_concat = table.concat
 local randomseed = math.randomseed
 local random = math.random
 
@@ -59,8 +61,7 @@ end
 
 
 local function generate_random_str(len)
-    local rand_str = ""
-    local rand_num = 0
+    local rand_tab = {}
 
     -- set random seed
     randomseed(tostring(os_time()):reverse():sub(1, 5))
@@ -68,19 +69,17 @@ local function generate_random_str(len)
     for _ = 1, len do
         if random(1, 3) == 1 then
             -- generate [A - Z]
-            rand_num = str_char(random(0, 25) + 65)
+            tab_insert(rand_tab, str_char(random(0, 25) + 65))
         elseif random(1, 3) == 2 then
             -- generate [a - z]
-            rand_num = str_char(random(0, 25) + 97)
+            tab_insert(rand_tab, str_char(random(0, 25) + 97))
         else
             -- generate [0 - 9]
-            rand_num = random(0, 9)
+            tab_insert(rand_tab, random(0, 9))
         end
-
-        rand_str = rand_str .. rand_num
     end
 
-    return rand_str
+    return tab_concat(rand_tab)
 end
 
 
@@ -117,6 +116,8 @@ local function resolve_conf_var(conf)
                     return v
                 end
 
+                -- the admin token environment variable is not set
+                -- the system will generate a random token
                 if var == util.ADMIN_TOKEN_KEY then
                     if not exported_vars then
                         exported_vars = {}

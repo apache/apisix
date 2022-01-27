@@ -199,14 +199,13 @@ local function init(env)
 
             if str_sub(admin.key, 1, str_len(util.ADMIN_TOKEN_PREFIX)) ==
                        util.ADMIN_TOKEN_PREFIX then
-                env.openresty_args = str_format("%s=1 %s", util.ADMIN_TOKEN_TAG_KEY,
+                env.openresty_args = str_format("%s=%s %s=1 %s", util.ADMIN_TOKEN_KEY,
+                                                admin.key, util.ADMIN_TOKEN_TAG_KEY,
                                                 env.openresty_args)
-                env.openresty_args = str_format("%s=%s %s", util.ADMIN_TOKEN_KEY,
-                                                admin.key, env.openresty_args)
 
                 help = str_format("\nNOTICE: environment variable `%s` not detected, " ..
                                   "admin token has been created automatically by the system, "..
-                                  "value: [%s]\n", util.ADMIN_TOKEN_KEY, admin.key)
+                                  "value: `%s`\n", util.ADMIN_TOKEN_KEY, admin.key)
                 stderr:write(help)
             end
 
