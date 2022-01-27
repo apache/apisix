@@ -43,5 +43,5 @@
 apisix:
   admin_key:
     - name: admin
-      key: ${{APISIX_ADMIN_API_TOKEN}}
+      key: ${{APISIX_ADMIN_API_TOKEN}} # When deploying to a production environment, it is recommended to update the KEY
       role: admin
