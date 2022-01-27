@@ -76,6 +76,22 @@ plugin_attr:
 
 IP=127.0.0.1 PORT=9092 make run
 
+# initialize prometheus metrics public API route #1
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/metrics1 \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d "{
+        \"uri\": \"/prometheus/metrics\",
+        \"plugins\": {
+            \"public-api\": {}
+        }
+    }")
+if [ ! $code -eq 201 ]; then
+    echo "failed: initialize prometheus metrics public API failed #1"
+    exit 1
+fi
+
+sleep 0.5
+
 code=$(curl -v -k -i -m 20 -o /dev/null -s http://127.0.0.1:9092/prometheus/metrics || echo 'ouch')
 if [ "$code" != "ouch" ]; then
     echo "failed: should listen at previous prometheus address"
@@ -134,6 +150,22 @@ plugin_attr:
 ' > conf/config.yaml
 
 IP=127.0.0.1 PORT=9092 make run
+
+# initialize prometheus metrics public API route #2
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/metrics2 \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d "{
+        \"uri\": \"/apisix/prometheus/metrics\",
+        \"plugins\": {
+            \"public-api\": {}
+        }
+    }")
+if [ ! $code -eq 201 ]; then
+    echo "failed: initialize prometheus metrics public API failed #2"
+    exit 1
+fi
+
+sleep 0.5
 
 if ! curl -s http://127.0.0.1:9092/apisix/prometheus/metrics | grep "apisix_ci_prefix_" | wc -l; then
     echo "failed: should use custom metric prefix"
