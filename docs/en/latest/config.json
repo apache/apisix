@@ -82,7 +82,8 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
-            "plugins/csrf"
+            "plugins/csrf",
+            "plugins/public-api"
           ]
         },
         {
