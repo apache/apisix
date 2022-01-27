@@ -24,7 +24,12 @@ local stderr = io.stderr
 local str_format = string.format
 local tonumber = tonumber
 
-local _M = {}
+local _M = {
+    DEFAULT_ADMIN_TOKEN = "edd1c9f034335f136f87ad84b625c8f1",
+    ADMIN_TOKEN_KEY = "APISIX_ADMIN_API_KEY",
+    ADMIN_TOKEN_TAG_KEY = "APISIX_ADMIN_API_KEY_BY_CLI",
+    ADMIN_TOKEN_PREFIX = "APISIX:GEN:",
+}
 
 
 -- Note: The `execute_cmd` return value will have a line break at the end,

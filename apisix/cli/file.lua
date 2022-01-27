@@ -22,11 +22,17 @@ local util = require("apisix.cli.util")
 local pairs = pairs
 local type = type
 local tonumber = tonumber
+local tostring = tostring
 local getmetatable = getmetatable
 local getenv = os.getenv
+local os_time = os.time
 local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
+local str_char = string.char
+local randomseed = math.randomseed
+local random = math.random
+
 
 local _M = {}
 local exported_vars
@@ -49,6 +55,32 @@ local function tab_is_array(t)
     end
 
     return #t == count
+end
+
+
+local function generate_random_str(len)
+    local rand_str = ""
+    local rand_num = 0
+
+    -- set random seed
+    randomseed(tostring(os_time()):reverse():sub(1, 5))
+
+    for _ = 1, len do
+        if random(1, 3) == 1 then
+            -- generate [A - Z]
+            rand_num = str_char(random(0, 25) + 65)
+        elseif random(1, 3) == 2 then
+            -- generate [a - z]
+            rand_num = str_char(random(0, 25) + 97)
+        else
+            -- generate [0 - 9]
+            rand_num = random(0, 9)
+        end
+
+        rand_str = rand_str .. rand_num
+    end
+
+    return rand_str
 end
 
 
@@ -83,6 +115,18 @@ local function resolve_conf_var(conf)
                     exported_vars[var] = v
                     var_used = true
                     return v
+                end
+
+                if var == util.ADMIN_TOKEN_KEY then
+                    if not exported_vars then
+                        exported_vars = {}
+                    end
+
+                    local token = generate_random_str(32)
+                    token = util.ADMIN_TOKEN_PREFIX .. token
+                    exported_vars[var] = token
+                    var_used = true
+                    return token
                 end
 
                 err = "failed to handle configuration: " ..

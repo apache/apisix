@@ -42,6 +42,7 @@ local floor = math.floor
 local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
+local str_len = string.len
 local str_format = string.format
 
 local _M = {}
@@ -173,27 +174,16 @@ local function init(env)
         util.die(err, "\n")
     end
 
-    -- check the Admin API token
-    local checked_admin_key = false
-    if yaml_conf.apisix.enable_admin and yaml_conf.apisix.allow_admin then
-        for _, allow_ip in ipairs(yaml_conf.apisix.allow_admin) do
-            if allow_ip == "127.0.0.0/24" then
-                checked_admin_key = true
-            end
-        end
-    end
-
-    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+    if yaml_conf.apisix.enable_admin then
         local help = [[
 
-%s
-Please modify "admin_key" in conf/config.yaml .
-
+%s, please modify "admin_key" in conf/config.yaml.
 ]]
+
         if type(yaml_conf.apisix.admin_key) ~= "table" or
            #yaml_conf.apisix.admin_key == 0
         then
-            util.die(help:format("ERROR: missing valid Admin API token."))
+            util.die(help:format("ERROR: missing valid Admin API token"))
         end
 
         for _, admin in ipairs(yaml_conf.apisix.admin_key) do
@@ -204,14 +194,26 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             if admin.key == "" then
-                util.die(help:format("ERROR: missing valid Admin API token."), "\n")
+                util.die(help:format("ERROR: missing valid Admin API token"))
             end
 
-            if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
+            if str_sub(admin.key, 1, str_len(util.ADMIN_TOKEN_PREFIX)) ==
+                       util.ADMIN_TOKEN_PREFIX then
+                env.openresty_args = str_format("%s=1 %s", util.ADMIN_TOKEN_TAG_KEY,
+                                                env.openresty_args)
+                env.openresty_args = str_format("%s=%s %s", util.ADMIN_TOKEN_KEY,
+                                                admin.key, env.openresty_args)
+
+                help = str_format("\nNOTICE: environment variable `%s` not detected, " ..
+                                  "admin token has been created automatically by the system, "..
+                                  "value: [%s]\n", util.ADMIN_TOKEN_KEY, admin.key)
+                stderr:write(help)
+            end
+
+            if admin.key == util.DEFAULT_ADMIN_TOKEN then
+                -- admin token using default value
                 stderr:write(
-                    help:format([[WARNING: using fixed Admin API token has security risk.]]),
-                    "\n"
-                )
+                        help:format("WARNING: using default Admin API token has security risk"))
             end
         end
     end
