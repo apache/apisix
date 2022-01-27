@@ -46,16 +46,15 @@ plugin_attr:
 
 假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，现在 APISIX 会在 `172.1.1.1:9092` 上暴露指标。
 
-**在 2.6 版本之前，指标会直接暴露到数据面的端口上，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。**
-
-如果你依然想要这样的行为，你可以这么配置：
+如果你依然想要让指标暴露在数据面的端口上，你可以这么配置：
 
 ```
 plugin_attr:
   prometheus:
     enable_export_server: false
 ```
+
+同时，您还需要使用 [public-api](public-api.md) 插件来暴露它。
 
 ## 如何开启插件
 
