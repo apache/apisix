@@ -129,4 +129,4 @@ $ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
 HTTP/1.1 401 UNAUTHORIZED
 ```
 
-It will still respond to a text JWT. If we don't add `apikey` to the request header, it will respond with a 401 block request.
+It will still respond to a text JWT. If we don't add `apikey` to the request header, it will respond with a 401 block request. In this way, we have implemented a plugin approach to protect the public API.
