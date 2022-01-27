@@ -68,8 +68,8 @@ script() {
     ulimit -n -H
 
     # set default admin token
-    sudo yamlq e -i '.apisix.admin_key[0].key = edd1c9f034335f136f87ad84b625c8f1' conf/config-default.yaml
-    sudo yamlq e -i '.apisix.admin_key[1].key = 4054f7cf07e344346cd3f287985e76a2' conf/config-default.yaml
+    sudo yamlq e -i '.apisix.admin_key[0].key = "edd1c9f034335f136f87ad84b625c8f1"' conf/config-default.yaml
+    sudo yamlq e -i '.apisix.admin_key[1].key = "4054f7cf07e344346cd3f287985e76a2"' conf/config-default.yaml
 
     for f in ./t/cli/test_*.sh; do
         PATH="$PATH" "$f"
