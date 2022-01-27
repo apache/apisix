@@ -16,6 +16,7 @@
 --
 local core        = require("apisix.core")
 local config_util = require("apisix.core.config_util")
+local pb          = require("pb")
 local protoc      = require("protoc")
 local pcall       = pcall
 local ipairs      = ipairs
@@ -29,6 +30,10 @@ local lrucache_proto = core.lrucache.new({
 local proto_fake_file = "filename for loaded"
 
 local function compile_proto(content)
+    -- clear pb state
+    pb.state(nil)
+
+    protoc.reload()
     local _p  = protoc.new()
     -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
     -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
@@ -44,7 +49,23 @@ local function compile_proto(content)
         return nil, "failed to load proto content"
     end
 
-    return _p.loaded
+    local compiled = _p.loaded
+    -- fetch pb state
+    compiled.pb_state = pb.state(nil)
+
+    local index = {}
+    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
+        local method_index = {}
+        for _, m in ipairs(s.method) do
+            method_index[m.name] = m
+        end
+
+        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
+    end
+
+    compiled[proto_fake_file].index = index
+
+    return compiled
 end
 
 
@@ -71,24 +92,7 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local compiled, err = compile_proto(content)
-
-    if not compiled then
-        return nil, err
-    end
-
-    local index = {}
-    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
-        local method_index = {}
-        for _, m in ipairs(s.method) do
-            method_index[m.name] = m
-        end
-
-        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
-    end
-
-    compiled[proto_fake_file].index = index
-    return compiled
+    return compile_proto(content)
 end
 
 

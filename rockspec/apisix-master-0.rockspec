@@ -73,6 +73,7 @@ dependencies = {
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
+    "opentelemetry-lua = 0.1-1",
 }
 
 build = {

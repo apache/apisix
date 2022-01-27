@@ -68,7 +68,6 @@ zipkin
 request-id
 fault-injection
 serverless-pre-function
-batch-requests
 cors
 ip-restriction
 ua-restriction
@@ -106,6 +105,7 @@ public-api
 prometheus
 datadog
 echo
+loggly
 http-logger
 splunk-hec-logging
 skywalking-logger

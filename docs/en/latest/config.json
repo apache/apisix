@@ -109,6 +109,7 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
+            "plugins/opentelemetry",
             "plugins/node-status",
             "plugins/datadog"
           ]
@@ -129,7 +130,8 @@
             "plugins/sls-logger",
             "plugins/google-cloud-logging",
             "plugins/splunk-hec-logging",
-            "plugins/file-logger"
+            "plugins/file-logger",
+            "plugins/loggly"
           ]
         },
         {

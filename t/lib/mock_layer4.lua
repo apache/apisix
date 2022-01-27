@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local json_decode = require("toolkit.json").decode
+local json_encode = require("toolkit.json").encode
 local ngx = ngx
 local socket = ngx.req.socket
 
 local _M = {}
 
-function _M.go()
+function _M.dogstatsd()
     local sock, err = socket()
     if not sock then
         core.log.error("failed to get the request socket: ", err)
@@ -34,11 +36,42 @@ function _M.go()
             if err and err ~= "no more data" then
                 core.log.error("socket error, returning: ", err)
             end
-
             return
-        else
-            core.log.warn("message received: ", data)
         end
+        core.log.warn("message received: ", data)
+    end
+end
+
+
+function _M.loggly()
+    local sock, err = socket()
+    if not sock then
+        core.log.error("failed to get the request socket: ", err)
+        return
+     end
+
+    while true do
+        local data, err = sock:receive()
+
+        if not data then
+            if err and err ~= "no more data" then
+                core.log.error("socket error, returning: ", err)
+            end
+            return
+        end
+        local m, err = ngx.re.match(data, "(^[ -~]*] )([ -~]*)")
+        if not m then
+            core.log.error("unknown data received, failed to extract: ", err)
+            return
+        end
+        if #m ~= 2 then
+            core.log.error("failed to match two (header, log body) subgroups", #m)
+        end
+        -- m[1] contains syslog header header <14>1 .... & m[2] contains actual log body
+        local logbody = json_decode(m[2])
+        -- order keys
+        logbody = json_encode(logbody)
+        core.log.warn("message received: ", m[1] .. logbody)
     end
 end
 
