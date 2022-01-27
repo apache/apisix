@@ -111,7 +111,6 @@ if ! echo "$out"; then
     echo "failed: allow configuring node_listen as a number in the default config"
     exit 1
 fi
-git checkout conf/config-default.yaml
 
 echo "passed: allow configuring node_listen as a number in the default config"
 
