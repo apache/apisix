@@ -51,7 +51,7 @@ title: clickhouse-logger
 
 ## How To Enable
 
-The following is an example of how to enable the `click-logger` for a specific route. 
+The following is an example of how to enable the `click-logger` for a specific route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -85,6 +85,7 @@ HTTP/1.1 200 OK
 ...
 hello, world
 ```
+
 ## Metadata
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
@@ -128,7 +129,8 @@ CREATE TABLE default.test (
 ) ENGINE = MergeTree()
 ```
 
-On clickhouse run `select * from default.test;`, will got below row：
+On clickhouse run `select * from default.test;`, will got below row:
+
 ```
 ┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐
 │ 127.0.0.1 │ 127.0.0.1 │ 1        │ 2022-01-17T10:03:10+08:00 │

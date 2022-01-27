@@ -34,7 +34,6 @@ title: clickhouse-logger
 
 `clickhouse-logger` 是一个插件，可将Log数据请求推送到clickhouse服务器。
 
-
 ## 属性列表
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
@@ -49,7 +48,6 @@ title: clickhouse-logger
 | batch_max_size   | integer | 可选   | 100           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `clickhouse` 。 |
 | max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
 | retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
-
 
 ## 如何开启
 
@@ -118,6 +116,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KE
 ```
 
 创建logtable
+
 ```sql
 CREATE TABLE default.test (
   `host` String,
