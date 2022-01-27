@@ -135,6 +135,10 @@ function _M.access(conf, ctx)
         return
     end
 
+    if conf.expires == 0 then
+        return
+    end
+
     local header_token = core.request.header(ctx, conf.name)
     if not header_token or header_token == "" then
         return 401, {error_msg = "no csrf token in headers"}

@@ -207,3 +207,44 @@ apisix-csrf-token: eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yjg2MjBhN
 Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yjg2MjBhNTg1N2FjZmIzNjIxOTNhYWVlN2RkYjY5NmM0NWYwZjE5YjY5Zjg3NjM4ZTllNGNjNjYxYjQwNiIsImV4cGlyZXMiOjE2NDMxMjAxOTN9
 --- error_code: 401
 --- error_log: token has expired
+
+
+
+=== TEST 12: set expires 0
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "csrf": {
+                            "key": "userkey",
+                            "expires": 0
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: request pass when expires is 0
+--- request
+POST /hello
