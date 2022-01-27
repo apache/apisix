@@ -49,7 +49,6 @@ title: clickhouse-logger
 | max_retry_count  | integer | optional   | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.        |
 | retry_delay      | integer | optional   | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.             |
 
-
 ## How To Enable
 
 The following is an example of how to enable the `click-logger` for a specific route. 
@@ -86,7 +85,6 @@ HTTP/1.1 200 OK
 ...
 hello, world
 ```
-
 ## Metadata
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
@@ -117,7 +115,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KE
     }
 }'
 ```
+
 create logtable
+
 ```sql
 CREATE TABLE default.test (
   `host` String,
@@ -153,4 +153,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-

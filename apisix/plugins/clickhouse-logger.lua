@@ -193,9 +193,9 @@ function _M.log(conf, ctx)
         else
             local log_table = {}
             for i = 1, #entries do
-                table.insert(log_table, core.json.encode(entries[i]))
+                core.table.insert(log_table, core.json.encode(entries[i]))
             end
-            data = table.concat(log_table, " ")  -- assemble multi items as string "{} {}"
+            data = core.table.concat(log_table, " ")  -- assemble multi items as string "{} {}"
         end
 
         if not data then

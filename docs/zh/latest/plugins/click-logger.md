@@ -117,7 +117,6 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KE
 }'
 ```
 
-
 创建logtable
 ```sql
 CREATE TABLE default.test (
@@ -130,12 +129,12 @@ CREATE TABLE default.test (
 ```
 
 在clickhouse上执行`select * from default.test;`，将得到类似下面的数据：
+
 ```
 ┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐
 │ 127.0.0.1 │ 127.0.0.1 │ 1        │ 2022-01-17T10:03:10+08:00 │
 └───────────┴───────────┴──────────┴───────────────────────────┘
 ```
-
 
 ## 禁用插件
 
@@ -155,4 +154,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
