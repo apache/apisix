@@ -161,9 +161,9 @@ apisix:
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
+grep -E "WARNING: using default Admin API token has security risk" output.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    echo "failed: need to show `WARNING: using default Admin API token has security risk`"
     exit 1
 fi
 
