@@ -245,10 +245,6 @@
           "id": "wasm"
         },
         {
-          "type": "doc",
-          "id": "plugin-interceptors"
-        },
-        {
           "type": "link",
           "label": "CODE_STYLE",
           "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
