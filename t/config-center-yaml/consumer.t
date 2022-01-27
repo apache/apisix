@@ -71,6 +71,10 @@ property "username" validation failed
 
 === TEST 2: validate the plugin under consumer
 --- apisix_yaml
+routes:
+  - uri: /apisix/plugin/jwt/sign
+    plugins:
+        public-api: {}
 consumers:
   - username: jwt
     plugins:
@@ -87,6 +91,10 @@ plugin jwt-auth err: property "key" is required
 
 === TEST 3: provide default value for the plugin
 --- apisix_yaml
+routes:
+  - uri: /apisix/plugin/jwt/sign
+    plugins:
+        public-api: {}
 consumers:
   - username: jwt
     plugins:
