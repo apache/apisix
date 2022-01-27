@@ -345,49 +345,6 @@ passed
 
 
 
-=== TEST 11: set route(return response schema: object case)
---- config
-       location /t {
-           content_by_lua_block {
-               local t = require("lib.test_admin").test
-               local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                           "plugins": {
-                               "mocking": {
-                                   "delay": 1,
-                                   "content_type": "text/plain",
-                                   "response_status": 200,
-                                   "response_schema": {
-                                       "type": "object",
-                                       "properties": {
-                                           "field1":{
-                                               "type":"object"
-                                           }
-                                       }
-                                   }
-                               }
-                           },
-                           "uri": "/hello"
-                   }]]
-                   )
-
-               if code >= 300 then
-                   ngx.status = code
-               end
-               ngx.say(body)
-           }
-       }
---- request
-GET /t
---- error_code: 200
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
 === TEST 12: hit route(return response schema: object case)
 --- request
 GET /hello
@@ -450,7 +407,7 @@ passed
 GET /hello
 --- error_code: 200
 --- response_body_like
-^{"field1":[.*]}$
+^\{\"field1\":\[.*\]\}$
 --- no_error_log
 [error]
 
