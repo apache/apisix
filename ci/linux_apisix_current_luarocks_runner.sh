@@ -20,6 +20,7 @@
 
 do_install() {
     export_or_prefix
+    install_yq_cli
 
     ./utils/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
@@ -65,6 +66,10 @@ script() {
     ulimit -n 10240
     ulimit -n -S
     ulimit -n -H
+
+    # set default admin token
+    sudo yq e -i '.apisix.admin_key[0].key = edd1c9f034335f136f87ad84b625c8f1' conf/config-default.yaml
+    sudo yq e -i '.apisix.admin_key[1].key = 4054f7cf07e344346cd3f287985e76a2' conf/config-default.yaml
 
     for f in ./t/cli/test_*.sh; do
         PATH="$PATH" "$f"

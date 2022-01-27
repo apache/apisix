@@ -209,7 +209,7 @@ local function init(env)
                                                 env.openresty_args)
 
                 help = str_format("\nNOTICE: environment variable `%s` not detected, " ..
-                                  "admin token has been created automatically by the system, "..
+                                  "admin token has been created automatically by the apisix, "..
                                   "value: `%s`\n", util.ADMIN_TOKEN_KEY, admin.key)
                 stderr:write(help)
             end

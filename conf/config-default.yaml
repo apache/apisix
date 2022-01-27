@@ -91,12 +91,12 @@ apisix:
   admin_key:
     -
       name: admin
-      key: ""
+      key: ""                     # admin role api token
       role: admin                 # admin: manage all configuration data
                                   # viewer: only can view configuration data
     -
       name: viewer
-      key: ""
+      key: ""                     # viewer role api token
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI

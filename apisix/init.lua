@@ -91,7 +91,7 @@ function _M.http_init(args)
 
     local is_cli_token = getenv(cli_util.ADMIN_TOKEN_TAG_KEY)
     if is_cli_token and tonumber(is_cli_token) == 1 then
-        core.log.warn("admin token has been automatically created by the system, ",
+        core.log.warn("admin token has been automatically created by the apisix, ",
                         "value: `", getenv(cli_util.ADMIN_TOKEN_KEY), "`")
     end
 end
