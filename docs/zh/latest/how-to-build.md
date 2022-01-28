@@ -113,6 +113,10 @@ $ sudo yum install ./apisix/*.rpm
   $ make install
   ```
 
+- 4.1 `make deps` 安装 `lualdap` 失败, 错误信息如: `Could not find header file for LDAP`
+
+      解决方案: 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
+
 ## 步骤2：安装 ETCD
 
 如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
