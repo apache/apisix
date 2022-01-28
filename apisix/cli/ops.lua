@@ -209,9 +209,17 @@ local function init(env)
                                                 env.openresty_args)
 
                 help = str_format("\nNOTICE: environment variable `%s` not detected, " ..
-                                  "admin token has been created automatically by the apisix, "..
-                                  "value: `%s`\n", util.ADMIN_TOKEN_KEY, admin.key)
+                                  "admin token has been created automatically by the apisix, " ..
+                                  "value: `%s`, this token is only used for development " ..
+                                  "and debugging, and will be invalid after restarting.\n",
+                                  util.ADMIN_TOKEN_KEY, admin.key)
                 stderr:write(help)
+            else
+                local admin_token = getenv(util.ADMIN_TOKEN_KEY)
+                if admin_token and admin.key == admin_token then
+                    env.openresty_args = str_format("%s=%s %s", util.ADMIN_TOKEN_KEY,
+                                                    admin_token, env.openresty_args)
+                end
             end
 
             if admin.key == util.DEFAULT_ADMIN_TOKEN then
