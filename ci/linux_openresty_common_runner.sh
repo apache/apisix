@@ -68,6 +68,9 @@ do_install() {
 
     # install vault cli capabilities
     install_vault_cli
+
+    # install yq cli
+    install_yq_cli
 }
 
 script() {
@@ -80,6 +83,9 @@ script() {
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
+
+    # set default admin token
+    setting_default_admin_token
 
     # ensure grpc server example is already started
     for (( i = 0; i <= 100; i++ )); do

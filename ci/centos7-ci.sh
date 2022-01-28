@@ -43,6 +43,9 @@ install_dependencies() {
     # install vault cli capabilities
     install_vault_cli
 
+    # install yq cli
+    install_yq_cli
+
     # install test::nginx
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
@@ -91,6 +94,10 @@ install_dependencies() {
 
 run_case() {
     export_or_prefix
+
+    # set default admin token
+    setting_default_admin_token
+
     make init
     ./utils/set-dns.sh
     # run test cases
