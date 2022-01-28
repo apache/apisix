@@ -40,6 +40,3 @@ exit_if_not_customed_nginx() {
 }
 
 unset APISIX_PROFILE
-
-# set default admin token environment variables
-export APISIX_ADMIN_API_TOKEN="edd1c9f034335f136f87ad84b625c8f1"

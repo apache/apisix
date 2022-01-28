@@ -49,7 +49,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git openresty curl openresty-openssl111-dev unzip make gcc libldap2-dev
         ./utils/linux-install-luarocks.sh
-        ./utils/set-default-token.sh && make deps && make init && make run
+        ./utils/set-default-token.sh
+        make deps
+        make init
+        make run
 
     - name: run upstream
       run: |
