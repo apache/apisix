@@ -32,6 +32,23 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 10420;
+        location /loggly/bulk/tok/tag/bulk {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.ERR, "loggly body: ", data)
+                ngx.log(ngx.ERR, "loggly tags: " .. require("toolkit.json").encode(headers["X-LOGGLY-TAG"]))
+                ngx.say("ok")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -190,5 +207,5 @@ GET /opentracing
 --- response_body
 opentracing
 --- error_log
-Batch Processor[http logger] successfully processed the entries
+Batch Processor[clickhouse logger] successfully processed the entries
 --- wait: 0.5

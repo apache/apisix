@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local batch_processor = require("apisix.utils.batch-processor")
+local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
@@ -24,12 +24,9 @@ local plugin          = require("apisix.plugin")
 
 local ngx      = ngx
 local tostring = tostring
-local ipairs   = ipairs
-local timer_at = ngx.timer.at
 
 local plugin_name = "clickhouse-logger"
-local stale_timer_running = false
-local buffers = {}
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
 local schema = {
     type = "object",
@@ -59,7 +56,7 @@ local metadata_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 399,
+    priority = 398,
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,
@@ -105,7 +102,6 @@ local function send_http_data(conf, log_message)
                 .. "port[" .. tostring(port) .. "] " .. err
         end
     end
-    url_decoded.query['database'] = conf.database
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
@@ -117,6 +113,7 @@ local function send_http_data(conf, log_message)
             ["Content-Type"] = "application/json",
             ["X-ClickHouse-User"] = conf.user,
             ["X-ClickHouse-Key"] = conf.password,
+            ["X-ClickHouse-Database"] = conf.database
         }
     })
 
@@ -137,24 +134,6 @@ local function send_http_data(conf, log_message)
 end
 
 
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in ipairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
-                          core.json.delay_encode(key))
-            buffers[key] = nil
-        end
-    end
-
-    stale_timer_running = false
-end
-
-
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata("http-logger")
     core.log.info("metadata: ", core.json.delay_encode(metadata))
@@ -168,19 +147,7 @@ function _M.log(conf, ctx)
         entry = log_util.get_full_log(ngx, conf)
     end
 
-    if not entry.route_id then
-        entry.route_id = "no-matched"
-    end
-
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
-
-    local log_buffer = buffers[conf]
-    if log_buffer then
-        log_buffer:push(entry)
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -205,27 +172,8 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    local config = {
-        name = conf.name,
-        retry_delay = conf.retry_delay,
-        batch_max_size = conf.batch_max_size,
-        max_retry_count = conf.max_retry_count,
-        route_id = ctx.var.route_id,
-        server_addr = ctx.var.server_addr,
-    }
-
-    local err
-    log_buffer, err = batch_processor:new(func, config)
-
-    if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
-        return
-    end
-
-    buffers[conf] = log_buffer
-    log_buffer:push(entry)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 
 return _M
-
