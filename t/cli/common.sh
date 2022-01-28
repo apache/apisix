@@ -42,4 +42,4 @@ exit_if_not_customed_nginx() {
 unset APISIX_PROFILE
 
 # set default admin token environment variables
-source ../../utils/set-env-token.sh
+source ./utils/set-env-token.sh
