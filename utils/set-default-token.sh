@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,28 +17,14 @@
 # limitations under the License.
 #
 
-# 'make init' operates scripts and related configuration files in the current directory
-# The 'apisix' command is a command in the /usr/local/apisix,
-# and the configuration file for the operation is in the /usr/local/apisix/conf
-
 set -ex
 
-check_failure() {
-    cat logs/error.log
-}
+# download yq cli
+YQ_VERSION="4.17.2"
+wget https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64
+mv ./yq_linux_amd64 /usr/local/bin/yamlq
+chmod +x /usr/local/bin/yamlq
 
-clean_up() {
-    if [ $? -gt 0 ]; then
-        check_failure
-    fi
-    make stop || true
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-exit_if_not_customed_nginx() {
-    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
-}
-
-unset APISIX_PROFILE
+# set default admin token
+sudo yamlq e -i '.apisix.admin_key[0].key = "edd1c9f034335f136f87ad84b625c8f1"' conf/config-default.yaml
+sudo yamlq e -i '.apisix.admin_key[1].key = "4054f7cf07e344346cd3f287985e76a2"' conf/config-default.yaml

@@ -20,7 +20,6 @@
 
 do_install() {
     export_or_prefix
-    install_yq_cli
 
     ./utils/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
@@ -56,6 +55,9 @@ script() {
 
     cd ..
 
+    # set default admin token
+    ./utils/set-default-token.sh
+
     # apisix cli test
     ./utils/set-dns.sh
 
@@ -67,8 +69,6 @@ script() {
     ulimit -n -S
     ulimit -n -H
 
-    # set default admin token
-    setting_default_admin_token
 
     for f in ./t/cli/test_*.sh; do
         PATH="$PATH" "$f"

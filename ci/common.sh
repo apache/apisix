@@ -68,19 +68,6 @@ install_vault_cli () {
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
-install_yq_cli () {
-    YQ_VERSION="4.17.2"
-    wget https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64
-    mv ./yq_linux_amd64 /usr/local/bin/yamlq
-    chmod +x /usr/local/bin/yamlq
-}
-
-setting_default_admin_token () {
-    # set default admin token
-    sudo yamlq e -i '.apisix.admin_key[0].key = "edd1c9f034335f136f87ad84b625c8f1"' conf/config-default.yaml
-    sudo yamlq e -i '.apisix.admin_key[1].key = "4054f7cf07e344346cd3f287985e76a2"' conf/config-default.yaml
-}
-
 install_nodejs () {
     NODEJS_PREFIX="/usr/local/node"
     NODEJS_VERSION="16.13.1"

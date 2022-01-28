@@ -43,8 +43,6 @@ install_dependencies() {
     # install vault cli capabilities
     install_vault_cli
 
-    # install yq cli
-    install_yq_cli
 
     # install test::nginx
     yum install -y cpanminus perl
@@ -96,9 +94,10 @@ run_case() {
     export_or_prefix
 
     # set default admin token
-    setting_default_admin_token
+    ./utils/set-default-token.sh
 
     make init
+
     ./utils/set-dns.sh
     # run test cases
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
