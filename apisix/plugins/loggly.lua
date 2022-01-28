@@ -292,7 +292,7 @@ local function handle_log(entries)
         for i = 1, #entries do
             local ok, err = send_data_over_udp(entries[i], metadata)
             if not ok then
-                return false, err
+                return false, err, i
             end
         end
     else
