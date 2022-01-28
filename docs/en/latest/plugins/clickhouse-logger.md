@@ -48,6 +48,7 @@ title: clickhouse-logger
 | batch_max_size   | integer | optional   | 100           | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the clickhouse.  |
 | max_retry_count  | integer | optional   | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.        |
 | retry_delay      | integer | optional   | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.             |
+| ssl_verify       | boolean | optional   | true          | [true,false] | verify ssl.             |
 
 ## How To Enable
 

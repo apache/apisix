@@ -48,6 +48,7 @@ title: clickhouse-logger
 | batch_max_size   | integer | 可选   | 100           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `clickhouse` 。 |
 | max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
 | retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
+| ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。             |
 
 ## 如何开启
 

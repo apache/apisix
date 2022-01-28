@@ -70,7 +70,8 @@ __DATA__
                 "logtable": "t",
                 "endpoint_addr": "http://127.0.0.1:8123",
                 "max_retry_count": 1,
-                "name": "clickhouse logger"
+                "name": "clickhouse logger",
+                "ssl_verify": false
             })
 
             if not ok then

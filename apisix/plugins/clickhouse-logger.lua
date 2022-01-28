@@ -40,7 +40,8 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
-        batch_max_size = {type = "integer", minimum = 1, default = 100}
+        batch_max_size = {type = "integer", minimum = 1, default = 100},
+        ssl_verify = {type = "boolean", default = true},
     },
     required = {"endpoint_addr", "user", "password", "database", "logtable"}
 }
@@ -80,10 +81,12 @@ local function send_http_data(conf, log_message)
 
     core.log.info("sending a batch logs to ", conf.endpoint_addr)
 
-    if ((not port) and url_decoded.scheme == "https") then
-        port = 443
-    elseif not port then
-        port = 80
+    if not port then
+        if url_decoded.scheme == "https" then
+            port = 443
+        else
+            port = 80
+        end
     end
 
     local httpc = http.new()
@@ -95,7 +98,7 @@ local function send_http_data(conf, log_message)
             .. tostring(port) .. "] " .. err
     end
 
-    if url_decoded.scheme == "https" then
+    if url_decoded.scheme == "https" and conf.ssl_verify then
         ok, err = httpc:ssl_handshake(true, host, false)
         if not ok then
             return false, "failed to perform SSL with host[" .. host .. "] "
