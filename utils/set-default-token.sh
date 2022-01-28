@@ -24,7 +24,11 @@ YQ_VERSION="4.17.2"
 wget https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64
 mv ./yq_linux_amd64 /usr/local/bin/yamlq
 chmod +x /usr/local/bin/yamlq
+ln -s /usr/local/bin/yamlq /usr/bin/yamlq
 
 # set default admin token
 sudo yamlq e -i '.apisix.admin_key[0].key = "edd1c9f034335f136f87ad84b625c8f1"' conf/config-default.yaml
 sudo yamlq e -i '.apisix.admin_key[1].key = "4054f7cf07e344346cd3f287985e76a2"' conf/config-default.yaml
+
+# set default admin token env variable
+export APISIX_ADMIN_API_TOKEN="edd1c9f034335f136f87ad84b625c8f1"
