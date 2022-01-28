@@ -63,17 +63,38 @@ local function set_metrics(self, count)
 end
 
 
+local function slice_batch(batch, n)
+    local slice = {}
+    local idx = 1
+    for i = n or 1, #batch do
+        slice[idx] = batch[i]
+        idx = idx + 1
+    end
+    return slice
+end
+
+
 function execute_func(premature, self, batch)
     if premature then
         return
     end
 
-    local ok, err = self.func(batch.entries, self.batch_max_size)
+    -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
+    -- entries have been successfully consumed and hence reschedule the job for entries with
+    -- index first_fail to #entries based on the current retry policy.
+    local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
     if not ok then
-        core.log.error("Batch Processor[", self.name,
-                       "] failed to process entries: ", err)
+        if first_fail then
+            core.log.error("Batch Processor[", self.name, "] failed to process entries [",
+                            #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
+            batch.entries = slice_batch(batch.entries, first_fail)
+        else
+            core.log.error("Batch Processor[", self.name,
+                           "] failed to process entries: ", err)
+        end
+
         batch.retry_count = batch.retry_count + 1
-        if batch.retry_count <= self.max_retry_count then
+        if batch.retry_count <= self.max_retry_count and #batch.entries > 0 then
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
