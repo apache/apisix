@@ -21,6 +21,10 @@ workers(3);
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -82,3 +86,31 @@ GET /hello
 qr/server [1-2]/
 --- error_log
 err:status = 502
+
+
+
+=== TEST 2: test complex host
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://nacos:nacos#!&[]()@127.0.0.1:8858"
+      fetch_interval: 1
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+
+#END
+--- request
+GET /hello
+--- timeout: 10
+--- error_code_like: ^(?:50\d)$
+--- error_log
+nacos login fail
+--- no_error_log
+lua entry thread aborted
