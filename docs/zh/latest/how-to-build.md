@@ -117,6 +117,15 @@ $ sudo yum install ./apisix/*.rpm
 
       解决方案: 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
 
+5. 如果您不再需要 Apache APISIX 运行时，执行卸载：
+
+```shell
+  # 卸载 apisix 命令
+  $ make uninstall
+```
+
+  请注意，该操作将完整**删除**相关文件。
+
 ## 步骤2：安装 ETCD
 
 如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
