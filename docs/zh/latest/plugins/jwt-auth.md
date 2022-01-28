@@ -51,7 +51,7 @@ title: jwt-auth
 
 ## 接口
 
-插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [public-api](public-api.md) 插件来暴露它。
+插件会增加 `/apisix/plugin/jwt/sign` 这个接口，需要通过 [public-api](public-api.md) 插件来暴露它。
 
 ## 如何启用
 

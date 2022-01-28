@@ -326,7 +326,7 @@ function _M.api()
 end
 ```
 
-注意，注册的接口将不会默认暴露，您需要使用[public-api 插件](plugins/public-api.md)来暴露它。
+注意，注册的接口将不会默认暴露，需要使用[public-api 插件](plugins/public-api.md)来暴露它。
 
 ## 注册控制接口
 
