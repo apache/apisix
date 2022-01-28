@@ -56,7 +56,7 @@ script() {
     cd ..
 
     # set default admin token
-    ./utils/set-default-token.sh
+    ./utils/set-config-token.sh
 
     # apisix cli test
     ./utils/set-dns.sh

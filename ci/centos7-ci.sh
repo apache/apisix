@@ -94,7 +94,7 @@ run_case() {
     export_or_prefix
 
     # set default admin token
-    ./utils/set-default-token.sh
+    ./utils/set-config-token.sh
 
     make init
 

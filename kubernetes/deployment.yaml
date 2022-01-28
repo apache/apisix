@@ -77,8 +77,6 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-            - name: APISIX_ADMIN_API_TOKEN
-              value: "edd1c9f034335f136f87ad84b625c8f1"
           image: "apache/apisix:latest"
           imagePullPolicy: IfNotPresent
           name: apisix-gw-deployment

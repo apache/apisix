@@ -17,16 +17,5 @@
 # limitations under the License.
 #
 
-set -ex
-
-# download yq cli
-wget https://github.com/mikefarah/yq/releases/download/v4.17.2/yq_linux_amd64 -O /usr/local/bin/yamlq
-chmod +x /usr/local/bin/yamlq
-
-# set default admin token
-sudo /usr/local/bin/yamlq e -i '.apisix.admin_key[0].key = "edd1c9f034335f136f87ad84b625c8f1"' conf/config-default.yaml
-sudo /usr/local/bin/yamlq e -i '.apisix.admin_key[1].key = "4054f7cf07e344346cd3f287985e76a2"' conf/config-default.yaml
-
-# set default admin token env variable
-echo 'APISIX_ADMIN_API_TOKEN="edd1c9f034335f136f87ad84b625c8f1"' >> ~/.bashrc
-source ~/.bashrc
+# set default admin token environment variables
+export APISIX_ADMIN_API_TOKEN="edd1c9f034335f136f87ad84b625c8f1"
