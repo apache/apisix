@@ -51,7 +51,7 @@ title: clickhouse-logger
 
 ## How To Enable
 
-The following is an example of how to enable the `click-logger` for a specific route.
+The following is an example of how to enable the `clickhouse-logger` for a specific route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
