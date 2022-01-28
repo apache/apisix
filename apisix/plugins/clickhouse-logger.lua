@@ -138,7 +138,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata("http-logger")
+    local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
     local entry
 
