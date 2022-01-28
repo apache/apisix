@@ -30,6 +30,19 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -67,13 +80,9 @@ __DATA__
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: then clause did not match"}
---- no_error_log
-[error]
 
 
 
@@ -113,12 +122,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -183,20 +188,14 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 4: up the limit
 --- request
 GET /hello
---- no_error_log
-[error]
 --- error_log
 try to lock with key route#1#redis
 unlock with key route#1#redis
@@ -208,8 +207,6 @@ unlock with key route#1#redis
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -218,8 +215,6 @@ unlock with key route#1#redis
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -300,12 +295,8 @@ unlock with key route#1#redis
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -314,8 +305,6 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -324,8 +313,6 @@ passed
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -366,12 +353,8 @@ passed
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code eval
 200
---- no_error_log
-[error]
 
 
 
@@ -388,6 +371,8 @@ failed to limit count: ERR invalid password
 === TEST 12: multi request for TEST 10
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
+--- no_error_log
+[alert]
 --- error_code eval
 [500, 404, 404, 500]
 
@@ -446,9 +431,5 @@ failed to limit count: ERR invalid password
             end
         }
     }
---- request
-GET /t
 --- error_code eval
 200
---- no_error_log
-[error]
