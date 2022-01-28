@@ -22,6 +22,7 @@ local path = require("pl.path")
 local http = require("resty.http")
 local ngx = ngx
 local tostring = tostring
+local tonumber = tonumber
 local pairs = pairs
 local tab_concat = table.concat
 local udp = ngx.socket.udp
@@ -85,6 +86,10 @@ local schema = {
             type = "boolean",
             default = true
         },
+        severity_map = {
+            type = "object",
+            description = "upstream response code vs syslog severity mapping"
+        }
     },
     required = {"customer_token"}
 }
@@ -145,6 +150,19 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+
+    if conf.severity_map then
+        for k, v in pairs(conf.severity_map) do
+            local rcode = tonumber(k)
+            if not rcode or rcode < 100 or rcode >= 600 then
+                return nil, "expecting severity_map with http response code([100,599]) as keys"
+            end
+            local s = severity[v:upper()]
+            if not s then
+                return nil, "expecting severity_map severity level keywords as values"
+            end
+        end
+    end
     return log_util.check_log_schema(conf)
 end
 
@@ -184,9 +202,18 @@ local function generate_log_message(conf, ctx)
             core.table.insert(taglist, "tag=\"" .. conf.tags[i] .. "\"")
         end
     end
+
+    local message_severity = severity[conf.severity:upper()]
+    if conf.severity_map then
+        local resp_code = conf.severity_map[tostring(ngx.status)]
+        if resp_code then
+            message_severity = severity[resp_code:upper()]
+        end
+    end
+
     local message = {
         -- facility LOG_USER - random user level message
-        "<".. tostring(8 + severity[conf.severity:upper()]) .. ">1",-- <PRIVAL>1
+        "<".. tostring(8 + message_severity) .. ">1",-- <PRIVAL>1
         timestamp,                                                  -- timestamp
         ctx.var.host or "-",                                        -- hostname
         "apisix",                                                   -- appname
