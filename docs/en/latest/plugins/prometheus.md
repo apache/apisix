@@ -46,7 +46,7 @@ plugin_attr:
 
 Assume environment variable `INTRANET_IP` is `172.1.1.1`, now APISIX will export the metrics via `172.1.1.1:9092`.
 
-If you still want expose the metrics via the data plane port (default: 9080), you can configure it like this:
+If you still want to expose the metrics via the data plane port (default: 9080), you can configure it like this:
 
 ```
 plugin_attr:
