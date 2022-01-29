@@ -60,19 +60,18 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.clickhouse-logger")
-            local ok, err = plugin.check_schema({
-                "timeout": 3,
-                "retry_delay": 1,
-                "batch_max_size": 500,
-                "user": "default",
-                "password": "a",
-                "database": "default",
-                "logtable": "t",
-                "endpoint_addr": "http://127.0.0.1:8123",
-                "max_retry_count": 1,
-                "name": "clickhouse logger",
-                "ssl_verify": false
-            })
+            local ok, err = plugin.check_schema({timeout = 3,
+                                                 retry_delay = 1,
+                                                 batch_max_size = 500,
+                                                 user = "default",
+                                                 password = "a",
+                                                 database = "default",
+                                                 logtable = "t",
+                                                 endpoint_addr = "http://127.0.0.1:8123",
+                                                 max_retry_count = 1,
+                                                 name = "clickhouse logger",
+                                                 ssl_verify = false
+                                                 })
 
             if not ok then
                 ngx.say(err)
@@ -91,13 +90,12 @@ passed
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.clickhouse-logger")
-            local ok, err = plugin.check_schema({
-                "user": "default",
-                "password": "a",
-                "database": "default",
-                "logtable": "t",
-                "endpoint_addr": "http://127.0.0.1:8123"
-            })
+            local ok, err = plugin.check_schema({user = "default",
+                                                 password = "a",
+                                                 database = "default",
+                                                 logtable = "t",
+                                                 endpoint_addr = "http://127.0.0.1:8123"
+                                                 })
 
             if not ok then
                 ngx.say(err)
@@ -116,14 +114,13 @@ passed
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.clickhouse-logger")
-            local ok, err = plugin.check_schema({
-                log_id = "syslog",
-                max_retry_count = 0,
-                retry_delay = 1,
-                buffer_duration = 60,
-                inactive_timeout = 10,
-                batch_max_size = 100,
-            })
+            local ok, err = plugin.check_schema({log_id = "syslog",
+                                                 max_retry_count = 0,
+                                                 retry_delay = 1,
+                                                 buffer_duration = 60,
+                                                 inactive_timeout = 10,
+                                                 batch_max_size = 100,
+                                                 })
             if not ok then
                 ngx.say(err)
             else
