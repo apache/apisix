@@ -300,6 +300,11 @@ etcd:
 
 
 #discovery:                       # service discovery center
+#  consul:
+#    servers:
+#      - "http://consul-node:8500" # use the real address of your consul server
+#    dc: "dc1"                     # (optional) your consul dc
+#    alc_token: "abc"              # (optional) your consul alc token
 #  dns:
 #    servers:
 #      - "127.0.0.1:8600"         # use the real address of your dns server
