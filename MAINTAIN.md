@@ -22,7 +22,9 @@
 ### Release patch version
 
 1. Create a [pull request](https://github.com/apache/apisix/commit/d13e7f7f0b3f6001cb634598e533a23658927285) (contains the changelog and version change) to master
+   > The changelog only needs to provide a link to the minor branch.
 2. Create a [pull request](https://github.com/apache/apisix/commit/19587ed9f71dd20c5e8dbdc2f79c8f96296e73e3) (contains the backport commits, and the change in step 1) to minor branch
+   > This should include those PRs that contain the `need backport` tag since the last patch release. Also, the title of these PRs need to be added to the changelog of the minor branch.
 3. Merge it into minor branch
 4. Package a vote artifact to Apache's dev-apisix repo. The artifact can be created
 via `VERSION=x.y.z make release-src`
