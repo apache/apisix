@@ -61,6 +61,12 @@ local router
 
 
 local function check_token(ctx)
+    local local_conf = core.config.local_conf()
+    if not local_conf or not local_conf.apisix
+       or not local_conf.apisix.admin_key then
+        return true
+    end
+
     local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key
                       or ctx.var.cookie_x_api_key
     if not req_token then
@@ -68,7 +74,6 @@ local function check_token(ctx)
     end
 
     local admin
-    local local_conf = core.config.local_conf()
     for i, row in ipairs(local_conf.apisix.admin_key) do
         if req_token == row.key then
             admin = row
