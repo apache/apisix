@@ -100,7 +100,7 @@ run_case() {
 
     ./utils/set-dns.sh
     # run test cases
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    source ./utils/set-env-token.sh && FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 
