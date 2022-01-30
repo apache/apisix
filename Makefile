@@ -35,7 +35,7 @@ ENV_APISIX             ?= $(CURDIR)/bin/apisix
 ENV_GIT                ?= git
 ENV_TAR                ?= tar
 ENV_INSTALL            ?= install
-ENV_RM                 ?= rm
+ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
@@ -345,9 +345,9 @@ install: runtime
 .PHONY: uninstall
 uninstall:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	$(ENV_RM) -vfr /usr/local/apisix
-	$(ENV_RM) -vfr $(ENV_INST_LUADIR)/apisix
-	$(ENV_RM) -vf $(ENV_INST_BINDIR)/apisix
+	$(ENV_RM) -r /usr/local/apisix
+	$(ENV_RM) -r $(ENV_INST_LUADIR)/apisix
+	$(ENV_RM) $(ENV_INST_BINDIR)/apisix
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
