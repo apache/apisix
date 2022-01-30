@@ -117,7 +117,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
         Solution: set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
 
-5. If you have no more need of the Apache APISIX runtime, uninstall it.
+5. If you have no more need for the Apache APISIX runtime, you could uninstall it like this.
 
 ```shell
   # Uninstall apisix command
