@@ -117,6 +117,15 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
         Solution: set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
 
+5. If you have no more need for the Apache APISIX runtime, you could uninstall it like this.
+
+```shell
+  # Uninstall apisix command
+  $ make uninstall
+```
+
+  Attention please, this operation will totally **remove** the related files.
+
 ## Step 2: Install ETCD
 
 This step is required if you have installed only Apache APISIX via RPM, Docker or source code but not ETCD.
