@@ -24,7 +24,7 @@ title: Control API
 The control API can be used to
 
 * expose APISIX internal state
-* control the behavior of a single isolate APISIX data panel
+* control the behavior of a single isolate APISIX data plane
 
 By default, the control API server is enabled and listens to `127.0.0.1:9090`. You can change it via
 the `control` section under `apisix` in `conf/config.yaml`:
