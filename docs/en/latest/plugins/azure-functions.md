@@ -144,7 +144,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Now any request with path `azure/HttpTrigger1` will invoke the azure function. Here the extra path (where the magic character `*` has been used) upto the query params have been forwarded.
+Now any request with path `azure/HttpTrigger1` will invoke the azure function. Here the extra path (where the magic character `*` has been used) up to the query params have been forwarded.
 
 ```shell
 curl -i -XGET http://127.0.0.1:9080/azure/HttpTrigger1\?name\=APISIX

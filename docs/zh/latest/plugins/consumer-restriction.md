@@ -27,6 +27,7 @@ title: consumer-restriction
   - [属性](#属性)
   - [示例](#示例)
     - [如何限制 consumer_name](#如何限制-consumer_name)
+    - [如何限制 allowed_by_methods](#如何限制-allowed_by_methods)
     - [如何限制 service_id](#如何限制-service_id)
   - [禁用插件](#禁用插件)
 
@@ -43,6 +44,7 @@ title: consumer-restriction
 | blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
 | rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
+| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的HTTP methods列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
@@ -115,6 +117,74 @@ curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
 HTTP/1.1 403 Forbidden
 ...
 {"message":"The consumer_name is forbidden."}
+```
+
+### 如何限制 `allowed_by_methods`
+
+下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 `jack1` 只能使用 `POST` 进行访问：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST"]
+            }]
+        }
+    }
+}'
+```
+
+**测试插件**
+
+jack1 访问：
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 403 Forbidden
+...
+{"message":"The consumer_name is forbidden."}
+```
+
+增加 `jack1` `GET` 访问能力：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST","GET"]
+            }]
+        }
+    }
+}'
+```
+
+jack1 访问：
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 200 OK
 ```
 
 ### 如何限制 `service_id`

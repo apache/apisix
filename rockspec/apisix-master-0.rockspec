@@ -51,14 +51,14 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
     "nginx-lua-prometheus = 0.20210206",
-    "jsonschema = 0.9.5",
+    "jsonschema = 0.9.7",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
     "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
-    "dkjson = 2.5-2",
+    "api7-dkjson = 0.1.1",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.3.1",
     "graphql = 0.0.2",
@@ -73,6 +73,7 @@ dependencies = {
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
+    "opentelemetry-lua = 0.1-1",
 }
 
 build = {

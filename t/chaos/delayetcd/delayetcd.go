@@ -115,6 +115,10 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		apisixPod = &apisixPods[0]
 	})
 
+	ginkgo.It("setup prometheus metrics public API", func() {
+		utils.SetPrometheusMetricsPublicAPI(e)
+	})
+
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)

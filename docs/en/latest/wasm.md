@@ -28,7 +28,7 @@ Currently, only a few APIs are implemented. Please follow [wasm-nginx-module](ht
 
 ## Programming model
 
-The plugin supports the follwing concepts from Proxy WASM:
+The plugin supports the following concepts from Proxy WASM:
 
 ```
                     Wasm Virtual Machine
@@ -102,3 +102,11 @@ Here is the mapping between Proxy WASM callbacks and APISIX's phases:
 For example, when the first request hits the route which has WASM plugin configured.
 * `proxy_on_http_request_headers`: run in the access/rewrite phase, depends on the configuration of `http_request_phase`.
 * `proxy_on_http_response_headers`: run in the header_filter phase.
+
+## Example
+
+We have reimplemented some Lua plugin via Wasm, under `t/wasm/` of this repo:
+
+* fault-injection
+* forward-auth
+* response-rewrite

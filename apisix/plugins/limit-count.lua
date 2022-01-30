@@ -16,6 +16,7 @@
 --
 local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
+local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
@@ -108,32 +109,23 @@ local schema = {
         show_limit_quota_header = {type = "boolean", default = true}
     },
     required = {"count", "time_window"},
-    dependencies = {
-        policy = {
-            oneOf = {
-                {
-                    properties = {
-                        policy = {
-                            enum = {"local"},
-                        },
-                    },
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
                 },
-                core.table.merge({
-                    properties = {
-                        policy = {
-                            enum = {"redis"},
-                        },
-                    },
-                }, policy_to_additional_properties.redis),
-                core.table.merge({
-                    properties = {
-                        policy = {
-                            enum = {"redis-cluster"},
-                        },
-                    },
-                }, policy_to_additional_properties["redis-cluster"]),
-            }
-        }
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
     }
 }
 
@@ -252,7 +244,10 @@ function _M.access(conf, ctx)
 
     -- here we add a separator ':' to mark the boundary of the prefix and the key itself
     if not conf.group then
-        key = ctx.conf_type .. ctx.conf_version .. ':' .. key
+        -- Here we use plugin-level conf version to prevent the counter from being resetting
+        -- because of the change elsewhere.
+        -- A route which reuses a previous route's ID will inherits its counter.
+        key = ctx.conf_type .. apisix_plugin.conf_version(conf) .. ':' .. key
     else
         key = conf.group .. ':' .. key
     end

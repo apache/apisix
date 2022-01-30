@@ -20,6 +20,8 @@ local http              = require("resty.http")
 local ngx_encode_base64 = ngx.encode_base64
 local tostring          = tostring
 
+local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z]]
+
 local schema = {
     type = "object",
     properties = {
@@ -29,8 +31,9 @@ local schema = {
             default = true,
         },
         service_token = {type = "string"},
-        namespace = {type = "string", maxLength = 256},
-        action = {type = "string", maxLength = 256},
+        namespace = {type = "string", maxLength = 256, pattern = name_pattern},
+        package = {type = "string", maxLength = 256, pattern = name_pattern},
+        action = {type = "string", maxLength = 256, pattern = name_pattern},
         result = {
             type = "boolean",
             default = true,
@@ -91,23 +94,44 @@ function _M.access(conf, ctx)
     end
 
     -- OpenWhisk action endpoint
+    local package = conf.package and conf.package .. "/" or ""
     local endpoint = conf.api_host .. "/api/v1/namespaces/" .. conf.namespace ..
-        "/actions/" .. conf.action
+        "/actions/" .. package .. conf.action
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
     local res, err = httpc:request_uri(endpoint, params)
 
-    if not res or err then
+    if not res then
         core.log.error("failed to process openwhisk action, err: ", err)
         return 503
     end
 
-    -- setting response headers
-    core.response.set_header(res.headers)
+    -- check if res.body is nil
+    if res.body == nil then
+        return res.status, res.body
+    end
 
-    return res.status, res.body
+    -- parse OpenWhisk JSON response
+    -- OpenWhisk supports two types of responses, the user can return only
+    -- the response body, or set the status code and header.
+    local result, err = core.json.decode(res.body)
+
+    if not result then
+        core.log.error("failed to parse openwhisk response data: ", err)
+        return 503
+    end
+
+    -- setting response headers
+    if result.headers ~= nil then
+        core.response.set_header(result.headers)
+    end
+
+    local code = result.statusCode or res.status
+    local body = result.body or res.body
+    return code, body
+
 end
 
 

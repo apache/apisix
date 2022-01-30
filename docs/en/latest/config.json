@@ -1,5 +1,5 @@
 {
-  "version": "2.11.0",
+  "version": "2.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -81,7 +81,8 @@
             "plugins/ip-restriction",
             "plugins/ua-restriction",
             "plugins/referer-restriction",
-            "plugins/consumer-restriction"
+            "plugins/consumer-restriction",
+            "plugins/csrf"
           ]
         },
         {
@@ -97,6 +98,7 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
@@ -107,6 +109,7 @@
             "plugins/prometheus",
             "plugins/zipkin",
             "plugins/skywalking",
+            "plugins/opentelemetry",
             "plugins/node-status",
             "plugins/datadog"
           ]
@@ -126,7 +129,9 @@
             "plugins/error-log-logger",
             "plugins/sls-logger",
             "plugins/google-cloud-logging",
-            "plugins/splunk-hec-logging"
+            "plugins/splunk-hec-logging",
+            "plugins/file-logger",
+            "plugins/loggly"
           ]
         },
         {

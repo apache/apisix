@@ -204,7 +204,7 @@ local function get_secret(conf, consumer_name)
     local secret = conf.secret
     if conf.vault then
         local res, err = vault.get(get_vault_path(consumer_name))
-        if not res or err then
+        if not res then
             return nil, err
         end
 
@@ -233,12 +233,12 @@ local function get_rsa_keypair(conf, consumer_name)
     local vout = {}
     if conf.vault then
         local res, err = vault.get(get_vault_path(consumer_name))
-        if not res or err then
+        if not res then
             return nil, nil, err
         end
 
         if not res.data then
-            return nil, nil, "keypairs could not found in vault: " .. core.json.encode(res)
+            return nil, nil, "key pairs could not found in vault: " .. core.json.encode(res)
         end
         vout = res.data
     end
@@ -372,7 +372,7 @@ function _M.rewrite(conf, ctx)
 
     local auth_secret, err = algorithm_handler(consumer)
     if not auth_secret then
-        core.log.error("failed to retrive secrets, err: ", err)
+        core.log.error("failed to retrieve secrets, err: ", err)
         return 503, {message = "failed to verify jwt"}
     end
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)

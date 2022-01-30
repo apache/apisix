@@ -77,7 +77,7 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     {% if ssl.ssl_trusted_certificate ~= nil then %}
@@ -254,7 +254,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;
@@ -267,11 +267,6 @@ http {
     {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
     uninitialized_variable_warn off;
-
-    {% if use_apisix_openresty then %}
-    apisix_delay_client_max_body_check on;
-    apisix_mirror_on_demand on;
-    {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
@@ -360,6 +355,11 @@ http {
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
+    {% end %}
+
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     {% end %}
 
     {% if wasm then %}

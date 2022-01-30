@@ -9,12 +9,10 @@ jobs:
     steps:
       - name: Check out code.
         uses: actions/checkout@v2.4.0
-      - name: Install
+      - name: spell check
         run: |
-          wget -O - -q https://git.io/misspell | sh -s -- -b .
-      - name: Misspell
-        run: |
-          git grep --cached -l '' | xargs ./misspell -error
+          pip install codespell==2.1.0
+          git grep --cached -l '' | xargs codespell --ignore-words=.ignore_words
       - name: Merge conflict
         run: |
           grep "^<<<<<<< HEAD" $(git grep --cached -l '' | xargs) && exit 1 || true

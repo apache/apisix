@@ -166,6 +166,27 @@ func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
 	})
 }
 
+func SetPrometheusMetricsPublicAPI(e *httpexpect.Expect) *httpexpect.Response {
+	return caseCheck(httpTestCase{
+		E:                 e,
+		Method:            http.MethodPut,
+		Path:              "/apisix/admin/routes/metrics",
+		Headers:           map[string]string{"X-API-KEY": token},
+		Body:              `{
+			"uri": "/apisix/prometheus/metrics",
+			"plugins": {
+				"public-api": {}
+			},
+			"upstream": {
+				"nodes": {
+					"httpbin.default.svc.cluster.local:8000": 1
+				},
+				"type": "roundrobin"
+			}
+		}`,
+	})
+}
+
 func TestPrometheusEtcdMetric(e *httpexpect.Expect, expectEtcd int) *httpexpect.Response {
 	return caseCheck(httpTestCase{
 		E:          e,

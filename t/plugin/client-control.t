@@ -144,7 +144,7 @@ POST /hello
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin client-control err: property \"max_body_size\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin client-control err: property \"max_body_size\" validation failed: expected -1 to be at least 0"}
 
 
 

@@ -53,7 +53,7 @@ local function parse_graphql(ctx)
 
     local body, err = request.get_body(max_size, ctx)
     if not body then
-        return nil, "failed to read graphql body: " .. err
+        return nil, "failed to read graphql body: " .. (err or "request body has zero size")
     end
 
     local ok, res = pcall(gq_parse, body)
@@ -143,14 +143,16 @@ do
         var_x_forwarded_proto = true,
     }
 
+    -- sort in alphabetical
     local apisix_var_names = {
+        balancer_ip = true,
+        balancer_port = true,
+        consumer_name = true,
+        mqtt_client_id = true,
         route_id = true,
         route_name = true,
         service_id = true,
         service_name = true,
-        consumer_name = true,
-        balancer_ip = true,
-        balancer_port = true,
     }
 
     local mt = {

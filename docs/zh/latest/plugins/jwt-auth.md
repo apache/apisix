@@ -118,7 +118,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
 
-![enabe jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
+![enable jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## 测试插件
 

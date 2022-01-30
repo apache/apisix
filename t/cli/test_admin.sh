@@ -235,8 +235,9 @@ echo "pass: sync /apisix/plugins from etcd when disabling admin successfully"
 # ignore changes to /apisix/plugins/ due to init_etcd
 echo '
 apisix:
-  enable_admin: false
+  enable_admin: true
 plugins:
+  - public-api
   - node-status
 nginx_config:
   error_log_level:  info
@@ -246,10 +247,26 @@ rm logs/error.log
 make init
 make run
 
+# initialize node-status public API routes #1
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d "{
+        \"uri\": \"/apisix/status\",
+        \"plugins\": {
+            \"public-api\": {}
+        }
+    }")
+if [ ! $code -eq 201 ]; then
+    echo "failed: initialize node status public API failed #1"
+    exit 1
+fi
+
+sleep 0.5
+
 # first time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
 if [ ! $code -eq 200 ]; then
-    echo "failed: first time check node status api failed"
+    echo "failed: first time check node status api failed #1"
     exit 1
 fi
 
@@ -257,10 +274,26 @@ fi
 make init
 sleep 1
 
+# initialize node-status public API routes #2
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d "{
+        \"uri\": \"/apisix/status\",
+        \"plugins\": {
+            \"public-api\": {}
+        }
+    }")
+if [ ! $code -eq 200 ]; then
+    echo "failed: initialize node status public API failed #2"
+    exit 1
+fi
+
+sleep 0.5
+
 # second time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
 if [ ! $code -eq 200 ]; then
-    echo "failed: second time check node status api failed"
+    echo "failed: second time check node status api failed #1"
     exit 1
 fi
 
@@ -274,6 +307,7 @@ echo '
 apisix:
   enable_admin: false
 plugins:
+  - public-api
   - node-status
 stream_plugins:
 ' > conf/config.yaml
@@ -285,14 +319,15 @@ make run
 # first time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
 if [ ! $code -eq 200 ]; then
-    echo "failed: first time check node status api failed"
+    echo "failed: first time check node status api failed #2"
     exit 1
 fi
 
 sleep 0.5
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
+if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
+   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
     echo "failed: first time load http plugins list failed"
     exit 1
 fi
@@ -304,7 +339,7 @@ if ! grep -E 'failed to read stream plugin list from local file' logs/error.log;
 fi
 
 # mock another instance add /apisix/plugins
-res=$(etcdctl put "/apisix/plugins" '[{"name":"node-status"},{"name":"example-plugin"},{"stream":true,"name":"mqtt-proxy"}]')
+res=$(etcdctl put "/apisix/plugins" '[{"name":"node-status"},{"name":"example-plugin"},{"name":"public-api"},{"stream":true,"name":"mqtt-proxy"}]')
 if [[ $res != "OK" ]]; then
     echo "failed: failed to set /apisix/plugins to add more plugins"
     exit 1
@@ -315,12 +350,13 @@ sleep 0.5
 # second time check node status api
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/status)
 if [ ! $code -eq 200 ]; then
-    echo "failed: second time check node status api failed"
+    echo "failed: second time check node status api failed #2"
     exit 1
 fi
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"node-status":true}' logs/error.log; then
+if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
+   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
     echo "failed: second time load http plugins list failed"
     exit 1
 fi
@@ -339,4 +375,4 @@ fi
 
 make stop
 
-echo "pass: ccept changes to /apisix/plugins successfully"
+echo "pass: accept changes to /apisix/plugins successfully"

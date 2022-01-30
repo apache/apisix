@@ -742,7 +742,7 @@ qr/unhealthy TCP increment.*foo.com.*127.0.0.1:1988/
 --- request
 GET /t
 --- response_body_like eval
-qr/expected 0 to be greater than 1/
+qr/expected 0 to be at least 1/
 --- error_code chomp
 400
 
@@ -791,7 +791,7 @@ qr/expected 0 to be greater than 1/
 --- request
 GET /t
 --- response_body_like eval
-qr/expected 65536 to be smaller than 65535/
+qr/expected 65536 to be at most 65535/
 --- error_code chomp
 400
 

@@ -62,16 +62,17 @@ GET /t
 --- response_body
 real-ip
 client-control
+proxy-control
 ext-plugin-pre-req
 zipkin
 request-id
 fault-injection
 serverless-pre-function
-batch-requests
 cors
 ip-restriction
 ua-restriction
 referer-restriction
+csrf
 uri-blocker
 request-validation
 openid-connect
@@ -100,9 +101,11 @@ redirect
 response-rewrite
 grpc-transcode
 grpc-web
+public-api
 prometheus
 datadog
 echo
+loggly
 http-logger
 splunk-hec-logging
 skywalking-logger
@@ -113,6 +116,7 @@ kafka-logger
 rocketmq-logger
 syslog
 udp-logger
+file-logger
 example-plugin
 aws-lambda
 azure-functions

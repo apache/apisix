@@ -158,6 +158,7 @@ Lua code can be used to send multiple requests.
 One request after another:
 
 ```
+--- config
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
@@ -174,12 +175,14 @@ One request after another:
                 end
                 ports_count[res.body] = (ports_count[res.body] or 0) + 1
             end
-
+        }
+    }
 ```
 
 Sending multiple requests concurrently:
 
 ```
+--- config
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
@@ -204,6 +207,8 @@ Sending multiple requests concurrently:
             for i, th in ipairs(t) do
                 ngx.thread.wait(th)
             end
+        }
+    }
 ```
 
 ## Send TCP request

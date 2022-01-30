@@ -23,8 +23,6 @@ title: nacos
 
 ## Service discovery via Nacos
 
-This is experimental discovery module for Nacos.
-
 The performance of this module needs to be improved:
 
 1. send the request parallelly.

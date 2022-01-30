@@ -41,10 +41,10 @@ __DATA__
     location /t {
         content_by_lua_block {
             local test_cases = {
-                {host = "http://127.0.0.1:8199"},
+                {uri = "http://127.0.0.1:8199"},
                 {request_headers = {"test"}},
-                {host = 3233},
-                {host = "http://127.0.0.1:8199", request_headers = "test"}
+                {uri = 3233},
+                {uri = "http://127.0.0.1:8199", request_headers = "test"}
             }
             local plugin = require("apisix.plugins.forward-auth")
 
@@ -56,8 +56,8 @@ __DATA__
     }
 --- response_body
 done
-property "host" is required
-property "host" validation failed: wrong type: expected string, got number
+property "uri" is required
+property "uri" validation failed: wrong type: expected string, got number
 property "request_headers" validation failed: wrong type: expected array, got string
 
 
@@ -66,7 +66,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
 --- config
     location /t {
         content_by_lua_block {
-            local datas = {
+            local data = {
                 {
                     url = "/apisix/admin/upstreams/u1",
                     data = [[{
@@ -137,7 +137,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
                     data = [[{
                         "plugins": {
                             "forward-auth": {
-                                "host": "http://127.0.0.1:1984/auth",
+                                "uri": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"],
                                 "upstream_headers": ["X-User-ID"],
                                 "client_headers": ["Location"]
@@ -155,7 +155,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
                     data = [[{
                         "plugins": {
                             "forward-auth": {
-                                "host": "http://127.0.0.1:1984/auth",
+                                "uri": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"]
                             },
                             "proxy-rewrite": {
@@ -170,7 +170,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
 
             local t = require("lib.test_admin").test
 
-            for _, data in ipairs(datas) do
+            for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
                 ngx.say(code..body)
             end
