@@ -22,11 +22,23 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1: set route, missing redis host
+=== TEST 1: set route, missing redis_cluster_nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -59,17 +71,13 @@ __DATA__
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: else clause did not match"}
---- no_error_log
-[error]
 
 
 
-=== TEST 2: set route, with redis host and port and redis_cluster_name
+=== TEST 2: set route, with redis_cluster_nodes and redis_cluster_name
 --- config
     location /t {
         content_by_lua_block {
@@ -108,12 +116,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -185,20 +189,14 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 4: up the limit
 --- request
 GET /hello
---- no_error_log
-[error]
 --- error_log
 try to lock with key route#1#redis-cluster
 unlock with key route#1#redis-cluster
@@ -210,8 +208,6 @@ unlock with key route#1#redis-cluster
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -220,8 +216,6 @@ unlock with key route#1#redis-cluster
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -264,12 +258,8 @@ unlock with key route#1#redis-cluster
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -285,8 +275,6 @@ passed
 
         }
     }
---- request
-GET /t
 --- response_body
 code: 200
 code: 200
@@ -308,8 +296,6 @@ code: 200
 code: 200
 code: 200
 code: 200
---- no_error_log
-[error]
 --- timeout: 10
 
 
@@ -362,8 +348,6 @@ code: 200
             end
         }
     }
---- request
-GET /t
 --- response_body
 code: 200
 code: 200
@@ -375,8 +359,6 @@ code: 200
 code: 200
 code: 503
 code: 503
---- no_error_log
-[error]
 
 
 
@@ -420,12 +402,8 @@ code: 503
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -434,3 +412,5 @@ passed
 GET /hello
 --- response_body
 hello world
+--- error_log
+connection refused

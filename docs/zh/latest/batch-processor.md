@@ -68,7 +68,10 @@ function _M.log(conf, ctx)
         -- serialize to json array core.json.encode(entries)
         -- process/send data
         return true
-        -- return false, err_msg if failed
+        -- return false, err_msg, first_fail if failed
+        -- first_fail(optional) indicates first_fail-1 entries have been successfully processed
+        -- and during processing of entries[first_fail], the error occurred. So the batch processor
+        -- only retries for the entries having index >= first_fail as per the retry policy.
     end
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
@@ -118,7 +121,7 @@ local err
 local func = function(entries)
     ...
     return true
-    -- return false, err_msg if failed
+    -- return false, err_msg, first_fail if failed
 end
 log_buffer, err = batch_processor:new(func, config_bat)
 
