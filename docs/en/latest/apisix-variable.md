@@ -26,18 +26,18 @@ additional variables.
 
 List in alphabetical order:
 
-|   Variable Name  |      Description        | Example      |
-|------------------|-------------------------| ---------    |
-| balancer_ip      | the IP of picked upstream server | 1.1.1.1 |
-| balancer_port    | the port of picked upstream server | 80 |
-| consumer_name    | username of `consumer` |   |
-| graphql_name     | the [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL | HeroComparison |
-| graphql_operation     | the operation type of GraphQL | mutation  |
-| graphql_root_fields     | the top level fields of GraphQL | ["hero"] |
-| mqtt_client_id   | the client id in MQTT protocol |   |
-| route_id         | id of `route`          |   |
-| route_name       | name of `route`        |   |
-| service_id       | id of `service`        |   |
-| service_name     | name of `service`      |   |
+|   Variable Name  |  Origin | Description        | Example      |
+|------------------|---------|--------------------| ---------    |
+| balancer_ip      | core    | the IP of picked upstream server | 1.1.1.1 |
+| balancer_port    | core    | the port of picked upstream server | 80 |
+| consumer_name    | core    | username of `consumer` |   |
+| graphql_name     | core    | the [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL | HeroComparison |
+| graphql_operation     | core    | the operation type of GraphQL | mutation  |
+| graphql_root_fields     | core    | the top level fields of GraphQL | ["hero"] |
+| mqtt_client_id   | mqtt-proxy | the client id in MQTT protocol |   |
+| route_id         | core    | id of `route`          |   |
+| route_name       | core    | name of `route`        |   |
+| service_id       | core    | id of `service`        |   |
+| service_name     | core    | name of `service`      |   |
 
 You can also [register your own variable](./plugin-develop.md#register-custom-variable).
