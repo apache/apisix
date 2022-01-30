@@ -129,7 +129,7 @@ passed
         }
     }
 --- response_body
-value should match only one schema, but matches none
+{"error_msg":"failed to check the configuration of plugin clickhouse-logger err: property \"endpoint_addr\" is required"}
 
 
 
@@ -205,5 +205,5 @@ GET /opentracing
 --- response_body
 opentracing
 --- error_log
-Batch Processor[clickhouse logger] successfully processed the entries
+Batch Processor[clickhouse logger] failed to process entries
 --- wait: 0.5
