@@ -56,6 +56,9 @@ run_tests();
 __DATA__
 
 === TEST 1: Full configuration verification
+--- yaml_config
+plugins:
+  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -86,6 +89,9 @@ passed
 
 
 === TEST 2: Basic configuration verification
+--- yaml_config
+plugins:
+  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -110,6 +116,9 @@ passed
 
 
 === TEST 3: auth configure undefined
+--- yaml_config
+plugins:
+  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -128,12 +137,14 @@ passed
             end
         }
     }
---- response_body
-{"error_msg":"failed to check the configuration of plugin clickhouse-logger err: property \"endpoint_addr\" is required"}
-
+--- response_body eval
+qr/\{"error_msg":"failed to check the configuration of plugin clickhouse-logger err: property \\"endpoint_addr\\" is required"\}/
 
 
 === TEST 4: add plugin on routes
+--- yaml_config
+plugins:
+  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
