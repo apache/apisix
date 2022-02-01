@@ -85,8 +85,7 @@ jobs:
 
       - name: Run test cases
         run: |
-#          . ./ci/common.sh
           export_or_prefix
           export PERL5LIB=.:$PERL5LIB
           prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee /tmp/test.result
-#          rerun_flaky_tests /tmp/test.result
+
