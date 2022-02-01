@@ -77,15 +77,20 @@ jobs:
 
           ./kubectl proxy -p 6445 &
 
+      - name: Linux Get dependencies
+        run: |
+          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+
       - name: Linux Before install
         run: |
-          sudo ./ci/linux_openresty_common_runner.sh before_install
+          sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Linux Install
         run: |
-          sudo --preserve-env=OPENRESTY_VERSION ./ci/linux_openresty_common_runner.sh do_install
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
 
-      - name: Linux Script
+      - name: Run test cases
         run: |
           ./ci/kubernetes-discovery-ci.sh run_case
 
