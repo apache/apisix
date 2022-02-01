@@ -122,6 +122,9 @@ return {
                 { required = { "not_match" } }
             },
         },
+        label_selector = {
+            type = "string",
+        }
     },
     default = {
         service = {

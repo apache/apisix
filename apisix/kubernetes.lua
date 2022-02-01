@@ -28,9 +28,16 @@ local _constants = {
     ModifiedEvent = "MODIFIED",
     DeletedEvent = "DELETED",
     BookmarkEvent = "BOOKMARK",
+
     ListDrive = "list",
     WatchDrive = "watch",
-    ErrorGone = 410,
+
+    Success = "Success",
+    RequestError = "RequestError",
+    ReadBodyError = "ReadBodyError",
+    UnexpectedBody = "UnexpectedBody",
+    GmatchError = "GmatchError",
+    ResourceGone = "ResourceGone",
 }
 
 local _apiserver = {
@@ -43,7 +50,7 @@ local _apiserver = {
 local empty_table = {}
 
 local function list(httpc, informer)
-    local res, err = httpc:request({
+    local response, err = httpc:request({
         path = informer.path,
         query = informer:list_query(),
         headers = {
@@ -56,21 +63,22 @@ local function list(httpc, informer)
 
     core.log.info("--raw=" .. informer.path .. "?" .. informer:list_query())
 
-    if not res then
-        return false, "RequestError", err or ""
+    if not response then
+        return false, _constants.RequestError, err or ""
     end
 
-    if res.status ~= 200 then
-        return false, res.reason, res:read_body() or ""
+    if response.status ~= 200 then
+        return false, response.reason, response:read_body() or ""
     end
-    local body, err = res:read_body()
+
+    local body, err = response:read_body()
     if err then
-        return false, "ReadBodyError", err
+        return false, _constants.ReadBodyError, err
     end
 
     local data, _ = core.json.decode(body)
     if not data or data.kind ~= informer.list_kind then
-        return false, "UnexpectedBody", body
+        return false, _constants.UnexpectedBody, body
     end
 
     informer.version = data.metadata.resourceVersion
@@ -86,18 +94,96 @@ local function list(httpc, informer)
         list(httpc, informer)
     end
 
-    return true, "Success", ""
+    return true, _constants.Success, ""
+end
+
+local function split_event (body, dispatch_event)
+    local gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
+    if not gmatch_iterator then
+        return nil, _constants.GmatchError, err
+    end
+
+    local captures
+    local captured_size = 0
+    local ok, reason
+    while true do
+        captures, err = gmatch_iterator()
+
+        if err then
+            return nil, _constants.GmatchError, err
+        end
+
+        if not captures then
+            break
+        end
+
+        captured_size = captured_size + #captures[0]
+
+        ok, reason, err = dispatch_event(captures[0])
+        if not ok then
+            return nil, reason, err
+        end
+    end
+
+    local remainder_body
+    if captured_size == #body then
+        remainder_body = ""
+    elseif captured_size == 0 then
+        remainder_body = body
+    elseif captured_size < #body then
+        remainder_body = string.sub(body, captured_size + 1)
+    end
+
+    return remainder_body, _constants.Success, nil
 end
 
 local function watch(httpc, informer)
-    local max_watch_times = 5
-    for _ = 0, max_watch_times do
+
+    local dispatch_event = function(event_string)
+        local event, _ = core.json.decode(event_string)
+
+        if not event or not event.type or not event.object then
+            return false, _constants.UnexpectedBody, event_string
+        end
+
+        local type = event.type
+
+        if type == _constants.ErrorEvent then
+            if event.object.code == 410 then
+                return false, _constants.ResourceGone, nil
+            end
+            return false, _constants.UnexpectedBody, event_string
+        end
+
+        local object = event.object
+        informer.version = object.metadata.resourceVersion
+
+        if type == _constants.AddedEvent then
+            if informer.on_added ~= nil then
+                informer:on_added(object, _constants.WatchDrive)
+            end
+        elseif type == _constants.DeletedEvent then
+            if informer.on_deleted ~= nil then
+                informer:on_deleted(object)
+            end
+        elseif type == _constants.ModifiedEvent then
+            if informer.on_modified ~= nil then
+                informer:on_modified(object)
+            end
+            -- elseif type == _constants.BookmarkEvent then
+            --    do nothing
+        end
+        return true, _constants.Success, nil
+    end
+
+    local watch_times = 5
+    for _ = 0, watch_times do
         local watch_seconds = 1800 + math.random(9, 999)
         informer.overtime = watch_seconds
         local http_seconds = watch_seconds + 120
         httpc:set_timeouts(2000, 3000, http_seconds * 1000)
 
-        local res, err = httpc:request({
+        local response, err = httpc:request({
             path = informer.path,
             query = informer:watch_query(),
             headers = {
@@ -111,93 +197,41 @@ local function watch(httpc, informer)
         core.log.info("--raw=" .. informer.path .. "?" .. informer:watch_query())
 
         if err then
-            return false, "RequestError", err
+            return false, _constants.RequestError, err
         end
 
-        if res.status ~= 200 then
-            return false, res.reason, res:read_body() or ""
+        if response.status ~= 200 then
+            return false, response.reason, response:read_body() or ""
         end
 
-        local remainder_body = ""
+        local remainder_body
         local body
-        local reader = res.body_reader
-        local gmatch_iterator
-        local captures
-        local captured_size = 0
+        local reason
 
         while true do
-            body, err = reader()
+            body, err = response.body_reader()
             if err then
-                return false, "ReadBodyError", err
+                return false, _constants.ReadBodyError, err
             end
 
             if not body then
                 break
             end
 
-            if #remainder_body ~= 0 then
+            if remainder_body ~= nil and #remainder_body > 0 then
                 body = remainder_body .. body
             end
 
-            gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
-            if not gmatch_iterator then
-                return false, "GmatchError", err
-            end
-
-            captures, err = gmatch_iterator()
-
-            if err then
-                return false, "GmatchError", err
-            end
-
-            if not captures then
-                break
-            end
-
-            captured_size = captured_size + #captures[0]
-            local v, _ = core.json.decode(captures[0])
-
-            if not v or not v.object then
-                return false, "UnexpectedBody", captures[0]
-            end
-
-            local type = v.type
-            if type == _constants.ErrorEvent then
-                if v.object.code == _constants.ErrorGone then
-                    return true, "Success", nil
+            remainder_body, reason, err = split_event(body, dispatch_event)
+            if reason ~= _constants.Success then
+                if reason == _constants.ResourceGone then
+                    return true, _constants.Success, nil
                 end
-                return false, "UnexpectedBody", captures[0]
-            end
-
-            local object = v.object
-            informer.version = object.metadata.resourceVersion
-
-            if type == _constants.AddedEvent then
-                if informer.on_added ~= nil then
-                    informer:on_added(object, _constants.WatchDrive)
-                end
-            elseif type == _constants.DeletedEvent then
-                if informer.on_deleted ~= nil then
-                    informer:on_deleted(object)
-                end
-            elseif type == _constants.ModifiedEvent then
-                if informer.on_modified ~= nil then
-                    informer:on_modified(object)
-                end
-                -- elseif type == _constants.BookmarkEvent then
-                --    do nothing
-            end
-
-            if captured_size == #body then
-                remainder_body = ""
-            elseif captured_size == 0 then
-                remainder_body = body
-            else
-                remainder_body = string.sub(body, captured_size + 1)
+                return false, reason, err
             end
         end
     end
-    return true, "Success", ""
+    return true, _constants.Success, nil
 end
 
 local _informer_factory = {

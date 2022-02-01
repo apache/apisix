@@ -40,7 +40,7 @@ local endpoint_lrucache = core.lrucache.new({
 local endpoint_buffer = {}
 local empty_table = {}
 
-local function sort_cmp(left, right)
+local function sort_nodes_cmp(left, right)
     if left.host ~= right.host then
         return left.host < right.host
     end
@@ -84,7 +84,7 @@ local function on_endpoint_modified(endpoint)
 
     for _, ports in pairs(endpoint_buffer) do
         for _, nodes in pairs(ports) do
-            core.table.sort(nodes, sort_cmp)
+            core.table.sort(nodes, sort_nodes_cmp)
         end
     end
 
@@ -112,7 +112,15 @@ local function on_endpoint_deleted(endpoint)
     endpoint_dict:delete(endpoint_key)
 end
 
-local function set_namespace_selector(conf, informer)
+local function setup_label_selector(conf, informer)
+    local ls = conf.label_selector
+    if ls == nil or ls == "" then
+        return
+    end
+    informer.label_selector = ngx.escape_uri(ls)
+end
+
+local function setup_namespace_selector(conf, informer)
     local ns = conf.namespace_selector
     if ns == nil then
         informer.namespace_selector = nil
@@ -172,7 +180,7 @@ local function read_env(key)
     return true, key, nil
 end
 
-local function read_conf(conf, apiserver)
+local function setup_apiserver(conf, apiserver)
 
     apiserver.schema = conf.service.schema
 
@@ -219,8 +227,6 @@ local function read_conf(conf, apiserver)
         return false, "invalid kubernetes discovery configuration:" ..
                 "should set one of [client.token,client.token_file] but none"
     end
-
-    default_weight = conf.default_weight or 50
 
     return true, nil
 end
@@ -270,7 +276,11 @@ function _M.init_worker()
         return
     end
 
-    local ok, err = read_conf(local_conf.discovery.kubernetes, kubernetes.apiserver)
+    local discovery_conf = local_conf.discovery.kubernetes
+
+    default_weight = discovery_conf.default_weight or 50
+
+    local ok, err = setup_apiserver(discovery_conf, kubernetes.apiserver)
     if not ok then
         error(err)
         return
@@ -279,14 +289,13 @@ function _M.init_worker()
     local endpoint_informer = kubernetes.informer_factory.new("", "v1",
             "Endpoints", "endpoints", "")
 
-    set_namespace_selector(local_conf.discovery.kubernetes, endpoint_informer)
+    setup_label_selector(discovery_conf, endpoint_informer)
+    setup_namespace_selector(discovery_conf, endpoint_informer)
 
     endpoint_informer.on_added = function(self, object, drive)
-        if self.namespace_selector ~= nil then
-            if self:namespace_selector(object.metadata.namespace) then
-                on_endpoint_modified(object)
-            end
-        else
+        if self.namespace_selector == nil then
+            on_endpoint_modified(object)
+        elseif self:namespace_selector(object.metadata.namespace) then
             on_endpoint_modified(object)
         end
     end
@@ -313,7 +322,7 @@ function _M.init_worker()
 
     local timer_runner
     timer_runner = function(premature, informer)
-        if informer:list_watch() then
+        if not informer:list_watch() then
             local retry_interval = 40
             ngx.sleep(retry_interval)
         end
