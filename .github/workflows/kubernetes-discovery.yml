@@ -1,4 +1,4 @@
-name: CI Centos7
+name: Kuberbetes Discovery
 
 on:
   push:
