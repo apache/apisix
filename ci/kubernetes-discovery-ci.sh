@@ -45,7 +45,6 @@ install_dependencies_in_centos() {
 
 run_case() {
     export_or_prefix
-    make init
 
     # run test cases
     prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee /tmp/test.result
