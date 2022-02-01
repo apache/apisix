@@ -87,7 +87,7 @@ jobs:
 
       - name: Run test cases
         run: |
-          ./ci/kubernetes-discovery-ci.sh run_case
+          ./ci/kubernetes-discovery.sh run_case
 
       - name: Build rpm package
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}

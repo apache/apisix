@@ -98,7 +98,7 @@ _EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
-env KUBERNETES_SERVICE_PORT=45853;
+env KUBERNETES_SERVICE_PORT=6443;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
 _EOC_
@@ -366,7 +366,7 @@ discovery:
   kubernetes:
     service:
       host: "127.0.0.1"
-      port: "45853"
+      port: "6443"
     client:
       token: "${KUBERNETES_CLIENT_TOKEN}"
 --- request
