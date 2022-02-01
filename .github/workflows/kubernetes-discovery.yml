@@ -77,52 +77,16 @@ jobs:
 
           ./kubectl proxy -p 6445 &
 
-      - name: Linux Before install
+      - name: Linux Install
         run: |
           sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
           sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
-
-      - name: Linux Install
-        run: |
           sudo --preserve-env=OPENRESTY_VERSION ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Run test cases
         run: |
-          ./ci/kubernetes-discovery-ci.sh run_case
-
-      - name: Build rpm package
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          sudo gem install --no-document fpm
-          git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
-
-          # move codes under build tool
-          mkdir ./apisix-build-tools/apisix
-          for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
-
-          cd apisix-build-tools
-          make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
-          cd ..
-          rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
-
-      - name: Run centos7 docker and mapping apisix into container
-        run: |
-          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 -v /tmp:/tmp --dns-search apache.org docker.io/centos:7 /bin/bash
-          # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
-
-      - name: Install dependencies
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery-ci.sh install_dependencies"
-
-      - name: Install rpm package
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
-          # Dependencies are attached with rpm, so revert `make deps`
-          docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
-          docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
-
-      - name: Run test cases
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery-ci.sh run_case"
+#          . ./ci/common.sh
+          export_or_prefix
+          export PERL5LIB=.:$PERL5LIB
+          prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee /tmp/test.result
+#          rerun_flaky_tests /tmp/test.result
