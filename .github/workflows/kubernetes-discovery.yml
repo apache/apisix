@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  kuberbets-discovery:
     strategy:
       fail-fast: false
       matrix:
@@ -113,7 +113,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery-ci.sh install_dependencies_in_centos"
+          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery-ci.sh install_dependencies"
 
       - name: Install rpm package
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}

@@ -18,7 +18,7 @@
 
 . ./ci/common.sh
 
-install_dependencies_in_centos() {
+install_dependencies() {
     export_or_prefix
 
     # install development tools
