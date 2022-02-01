@@ -79,6 +79,7 @@ jobs:
 
       - name: Linux Before install
         run: |
+          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
           sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 
       - name: Linux Install
