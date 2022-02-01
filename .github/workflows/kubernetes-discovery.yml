@@ -60,6 +60,8 @@ jobs:
           ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
           ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
+          
+          ./kubectl apply -f ./t/discovery/kubernetes/endpoints.yaml
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 

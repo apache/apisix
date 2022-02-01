@@ -54,7 +54,7 @@ _EOC_
     our $scale_ns_c = <<_EOC_;
 [
   {
-    "op": "replace_endpoints",
+    "op": "replace_subsets",
     "name": "ep",
     "namespace": "ns-c",
     "subsets": [
@@ -98,7 +98,7 @@ _EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
-env KUBERNETES_SERVICE_PORT=6443;
+env KUBERNETES_SERVICE_PORT=45853;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
 _EOC_
@@ -147,26 +147,7 @@ _EOC_
                         ["Host"] = "127.0.0.1:6445"
                     }
 
-                    if op.op == "create_namespace" then
-                        method = "POST"
-                        path = "/api/v1/namespaces"
-                        local t = { metadata = { name = op.name } }
-                        body = core.json.encode(t, true)
-                        headers["Content-Type"] = "application/json"
-                    end
-
-                    if op.op == "create_endpoints" then
-                        method = "POST"
-                        path = "/api/v1/namespaces/" .. op.namespace .. "/endpoints"
-                        local t = {
-                            metadata = { name = op.name, namespace = op.namespace },
-                            subsets = op.subsets,
-                        }
-                        body = core.json.encode(t, true)
-                        headers["Content-Type"] = "application/json"
-                    end
-
-                    if op.op == "replace_endpoints" then
+                    if op.op == "replace_subsets" then
                         method = "PATCH"
                         path = "/api/v1/namespaces/" .. op.namespace .. "/endpoints/" .. op.name
                         if #op.subsets == 0 then
@@ -175,6 +156,14 @@ _EOC_
                             local t = { { op = "replace", path = "/subsets", value = op.subsets } }
                             body = core.json.encode(t, true)
                         end
+                        headers["Content-Type"] = "application/json-patch+json"
+                    end
+
+                    if op.op == "replace_labels" then
+                        method = "PATCH"
+                        path = "/api/v1/namespaces/" .. op.namespace .. "/endpoints/" .. op.name
+                        local t = { { op = "replace", path = "/metadata/labels", value = op.labels } }
+                        body = core.json.encode(t, true)
                         headers["Content-Type"] = "application/json-patch+json"
                     end
 
@@ -222,11 +211,7 @@ __DATA__
 POST /operators
 [
   {
-    "op": "create_namespace",
-    "name": "ns-a"
-  },
-  {
-    "op": "create_endpoints",
+    "op": "replace_subsets",
     "namespace": "ns-a",
     "name": "ep",
     "subsets": [
@@ -269,7 +254,7 @@ POST /operators
     "name": "ns-b"
   },
   {
-    "op": "create_endpoints",
+    "op": "replace_subsets",
     "namespace": "ns-b",
     "name": "ep",
     "subsets": [
@@ -312,7 +297,7 @@ POST /operators
     "name": "ns-c"
   },
   {
-    "op": "create_endpoints",
+    "op": "replace_subsets",
     "namespace": "ns-c",
     "name": "ep",
     "subsets": [
@@ -381,7 +366,7 @@ discovery:
   kubernetes:
     service:
       host: "127.0.0.1"
-      port: "6443"
+      port: "45853"
     client:
       token: "${KUBERNETES_CLIENT_TOKEN}"
 --- request
@@ -637,7 +622,87 @@ qr{ 0 0 0 0 2 2 }
 
 
 
-=== TEST 14: scale endpoints
+=== TEST 14: use label selector
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+discovery:
+  kubernetes:
+    client:
+      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+    label_selector: |-
+       first=1,second
+--- request eval
+[
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"labels\":{}}]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-b\",\"labels\":{}}]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{}}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"labels\":{\"first\":\"1\" }}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-b\",\"labels\":{\"first\":\"1\",\"second\":\"o\" }}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"2\",\"second\":\"o\" }}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"1\" }}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+"POST /operators
+[{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"1\",\"second\":\"o\" }}]",
+
+"GET /queries
+[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+
+]
+--- response_body eval
+[
+    "DONE\n",
+    "DONE\n",
+    "DONE\n",
+    "{ 0 0 0 }\n",
+    "DONE\n",
+    "{ 0 0 0 }\n",
+    "DONE\n",
+    "{ 0 2 0 }\n",
+    "DONE\n",
+    "{ 0 2 0 }\n",
+    "DONE\n",
+    "{ 0 2 0 }\n",
+    "DONE\n",
+    "{ 0 2 2 }\n",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: scale endpoints
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -645,7 +710,7 @@ qr{ 0 0 0 0 2 2 }
 [\"ns-a/ep:p1\",\"ns-a/ep:p2\"]",
 
 "POST /operators
-[{\"op\":\"replace_endpoints\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"subsets\":[]}]",
+[{\"op\":\"replace_subsets\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"subsets\":[]}]",
 
 "GET /queries
 [\"ns-a/ep:p1\",\"ns-a/ep:p2\"]",
