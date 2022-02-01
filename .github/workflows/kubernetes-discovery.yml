@@ -34,6 +34,18 @@ jobs:
       OPENRESTY_VERSION: default
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
+        run: |
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+
       - name: Setup kubernetes cluster
         run: |
           KIND_VERSION="v0.11.1"
@@ -64,18 +76,6 @@ jobs:
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
           
           ./kubectl proxy -p 6445 &
-
-      - name: Check out code
-        uses: actions/checkout@v2.4.0
-        with:
-          submodules: recursive
-
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
-        run: |
-          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
 
       - name: Install dependencies
         run: |
