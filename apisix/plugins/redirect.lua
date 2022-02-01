@@ -150,6 +150,8 @@ function _M.rewrite(conf, ctx)
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
+    local proxy_proto = core.request.header(ctx, "x-forwarded-proto")
+    local _scheme = proxy_proto and proxy_proto or ctx.var.scheme
     if conf.http_to_https and ctx.var.scheme == "http" then
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
