@@ -18,24 +18,6 @@
 
 . ./ci/common.sh
 
-install_dependencies_in_ubuntu() {
-    export_or_prefix
-
-    # install openresty
-    ./utils/linux-install-openresty.sh
-
-    # install luarocks
-    ./utils/linux-install-luarocks.sh
-
-    # install test::nginx
-    apt install -y cpanminus perl
-    cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
-
-    # install dependencies
-    git clone https://github.com/iresty/test-nginx.git test-nginx
-    create_lua_deps
-}
-
 install_dependencies_in_centos() {
     export_or_prefix
 

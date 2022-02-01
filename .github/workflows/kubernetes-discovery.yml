@@ -54,36 +54,40 @@ jobs:
           curl -Lo ./kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
           chmod +x ./kind
           chmod +x ./kubectl
-          
+
           ./kind create cluster --name apisix-test --config ./t/discovery/kubernetes/kind.yaml
-          
+
           ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
-          
+
           ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
-          
+
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
-          
+
           KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
-          
+
           KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}/token
-          
+
           mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
           echo -n "$KUBERNETES_CLIENT_TOKEN_CONTENT" > ${KUBERNETES_CLIENT_TOKEN_FILE}
-          
+
           echo 'KUBERNETES_SERVICE_HOST=127.0.0.1'
           echo 'KUBERNETES_SERVICE_PORT=6443'
           echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
-          
+
           ./kubectl proxy -p 6445 &
 
-      - name: Install dependencies
+      - name: Linux Before install
         run: |
-          sudo ./ci/kubernetes-discovery-ci.sh install_dependencies_in_ubuntu
+          sudo ./ci/linux_openresty_common_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION ./ci/linux_openresty_common_runner.sh do_install
 
       - name: Linux Script
         run: |
-          sudo ./ci/kubernetes-discovery-ci.sh run_case
+          ./ci/kubernetes-discovery-ci.sh run_case
 
       - name: Build rpm package
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -91,11 +95,11 @@ jobs:
           export VERSION=${{ steps.branch_env.outputs.version }}
           sudo gem install --no-document fpm
           git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
-          
+
           # move codes under build tool
           mkdir ./apisix-build-tools/apisix
           for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
-          
+
           cd apisix-build-tools
           make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
           cd ..
