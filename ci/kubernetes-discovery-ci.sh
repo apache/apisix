@@ -28,7 +28,7 @@ install_dependencies_in_ubuntu() {
     ./utils/linux-install-luarocks.sh
 
     # install test::nginx
-    yum install -y cpanminus perl
+    apt install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # install dependencies
@@ -64,7 +64,7 @@ install_dependencies_in_centos() {
 run_case() {
     export_or_prefix
     make init
-    ./utils/set-dns.sh
+
     # run test cases
     prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
