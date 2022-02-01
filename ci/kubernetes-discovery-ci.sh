@@ -45,8 +45,7 @@ install_dependencies_in_centos() {
 
 run_case() {
     export_or_prefix
-
-    # run test cases
+    export PERL5LIB=.:$PERL5LIB
     prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
