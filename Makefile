@@ -275,7 +275,7 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery
 	$(ENV_INSTALL) apisix/discovery/*.lua $(ENV_INST_LUADIR)/apisix/discovery/
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul_kv,dns,eureka,nacos}
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul_kv,dns,eureka,nacos,kubernetes}
 	$(ENV_INSTALL) apisix/discovery/consul_kv/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul_kv
 	$(ENV_INSTALL) apisix/discovery/dns/*.lua $(ENV_INST_LUADIR)/apisix/discovery/dns
 	$(ENV_INSTALL) apisix/discovery/eureka/*.lua $(ENV_INST_LUADIR)/apisix/discovery/eureka
