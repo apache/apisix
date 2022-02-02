@@ -38,9 +38,6 @@ local schema = {
         logtable = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "clickhouse logger"},
-        max_retry_count = {type = "integer", minimum = 0, default = 0},
-        retry_delay = {type = "integer", minimum = 0, default = 1},
-        batch_max_size = {type = "integer", minimum = 1, default = 100},
         ssl_verify = {type = "boolean", default = true},
     },
     required = {"endpoint_addr", "user", "password", "database", "logtable"}
@@ -59,7 +56,7 @@ local _M = {
     version = 0.1,
     priority = 398,
     name = plugin_name,
-    schema = schema,
+    schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema,
 }
 

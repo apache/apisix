@@ -137,8 +137,9 @@ plugins:
             end
         }
     }
---- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin clickhouse-logger err: property \\"endpoint_addr\\" is required"\}/
+--- response_body
+property "endpoint_addr" is required
+
 
 
 === TEST 4: add plugin on routes
@@ -170,28 +171,37 @@ plugins:
                         "uri": "/opentracing"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "clickhouse-logger": {
-                                    "user": "default",
-                                    "password": "a",
-                                    "database": "default",
-                                    "logtable": "t",
-                                    "endpoint_addr": "http://127.0.0.1:8123"
+                    "action":"set",
+                    "node":{
+                        "value":{
+                            "uri":"/opentracing",
+                            "upstream":{
+                                "scheme":"http",
+                                "nodes":{
+                                    "127.0.0.1:1982":1
                                 }
                             },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
+                            "plugins":{
+                                "clickhouse-logger":{
+                                    "batch_max_size":1000,
+                                    "max_retry_count":0,
+                                    "retry_delay":1,
+                                    "ssl_verify":true,
+                                    "endpoint_addr":"http://127.0.0.1:8123",
+                                    "password":"a",
+                                    "buffer_duration":60,
+                                    "timeout":3,
+                                    "user":"default",
+                                    "name":"clickhouse-logger",
+                                    "database":"default",
+                                    "logtable":"t",
+                                    "inactive_timeout":5
+                                }
                             },
-                            "uri": "/opentracing"
+                            "id":"1"
                         },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                        "key":"/apisix/routes/1"
+                    }
                 }]]
                 )
 

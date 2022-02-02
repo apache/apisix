@@ -95,20 +95,10 @@ hello, world
 
  Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use clickhouse-logger plugin.
 
-**APISIX Variables**
-
-|   Variable Name  |      Description        | Usage Example  |
-|------------------|-------------------------|----------------|
-| route_id         | id of `route`          | $route_id      |
-| route_name       | name of `route`        | $route_name    |
-| service_id       | id of `service`        | $service_id    |
-| service_name     | name of `service`      | $service_name  |
-| consumer_name    | username of `consumer` | $consumer_name |
-
 ### Example
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/clickhouse-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -118,7 +108,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KE
 }'
 ```
 
-create logtable
+create clickhouse log table
 
 ```sql
 CREATE TABLE default.test (
