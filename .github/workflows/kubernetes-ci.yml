@@ -1,4 +1,4 @@
-name: Kubernetes Discovery
+name: CI Kubernetes
 
 on:
   push:
@@ -55,13 +55,13 @@ jobs:
           chmod +x ./kind
           chmod +x ./kubectl
 
-          ./kind create cluster --name apisix-test --config ./t/discovery/kubernetes/kind.yaml
+          ./kind create cluster --name apisix-test --config ./t_kubernetes/configs/kind.yaml
 
           ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
-          ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
+          ./kubectl apply -f ./t_kubernetes/configs/account.yaml
 
-          ./kubectl apply -f ./t/discovery/kubernetes/endpoints.yaml
+          ./kubectl apply -f ./t_kubernetes/configs/endpoints.yaml
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
@@ -88,40 +88,3 @@ jobs:
       - name: Run test cases
         run: |
           ./ci/kubernetes-discovery.sh run_case
-
-      - name: Build rpm package
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          export VERSION=${{ steps.branch_env.outputs.version }}
-          sudo gem install --no-document fpm
-          git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
-
-          # move codes under build tool
-          mkdir ./apisix-build-tools/apisix
-          for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
-
-          cd apisix-build-tools
-          make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
-          cd ..
-          rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
-
-      - name: Run centos7 docker and mapping apisix into container
-        run: |
-          docker run -itd -v /home/runner/work/apisix/apisix:/apisix -v /tmp:/tmp --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
-
-      - name: Install dependencies
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery.sh cleanup"
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery.sh install_dependencies"
-
-      - name: Install rpm package
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
-          # Dependencies are attached with rpm, so revert `make deps`
-          docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
-          docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
-
-      - name: Run test cases
-        run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/kubernetes-discovery.sh run_case"

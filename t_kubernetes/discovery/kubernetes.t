@@ -78,14 +78,7 @@ _EOC_
 
 }
 
-use t::APISIX;
-
-my $kubernetes_discovery_ci = eval {`cat kubernetes_discovery_ci 2>/dev/null`};
-if ($kubernetes_discovery_ci) {
-    plan('no_plan');
-} else {
-    plan(skip_all => "not drive by kubernetes-discovery workflow");
-}
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 log_level('debug');

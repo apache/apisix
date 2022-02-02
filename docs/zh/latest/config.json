@@ -174,7 +174,8 @@
             "discovery",
             "discovery/dns",
             "discovery/nacos",
-            "discovery/eureka"
+            "discovery/eureka",
+            "discovery/kubernetes"
           ]
         },
         {
