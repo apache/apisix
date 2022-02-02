@@ -19,6 +19,7 @@
 . ./ci/common.sh
 
 cleanup() {
+   rm -rf kubernetes_discovery_ci
    rm -rf test-result
    rm -rf deps
    rm -rf test-nginx
@@ -58,6 +59,7 @@ install_dependencies() {
 run_case() {
     export_or_prefix
     export PERL5LIB=.:$PERL5LIB
+    echo "true" > kubernetes_discovery_ci
     prove -Itest-nginx/lib -r t/discovery/kubernetes/kubernetes.t | tee test-result
     rerun_flaky_tests test-result
 }

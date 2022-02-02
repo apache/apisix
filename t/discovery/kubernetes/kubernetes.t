@@ -80,12 +80,11 @@ _EOC_
 
 use t::APISIX;
 
-my $out = eval { `resty -e "local s=ngx.socket.tcp();print(s:connect(\"127.0.0.1\",6443))"` };
-
-if ($out !~ 1 ) {
-    plan(skip_all => "kubernetes not patched");
-} else {
+my $kubernetes_discovery_ci = eval {`cat kubernetes_discovery_ci 2>/dev/null`};
+if ($kubernetes_discovery_ci) {
     plan('no_plan');
+} else {
+    plan(skip_all => "kubernetes not patched");
 }
 
 repeat_each(1);
