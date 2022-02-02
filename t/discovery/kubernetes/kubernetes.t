@@ -84,7 +84,7 @@ my $kubernetes_discovery_ci = eval {`cat kubernetes_discovery_ci 2>/dev/null`};
 if ($kubernetes_discovery_ci) {
     plan('no_plan');
 } else {
-    plan(skip_all => "kubernetes not patched");
+    plan(skip_all => "not drive by kubernetes-discovery workflow");
 }
 
 repeat_each(1);
