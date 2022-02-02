@@ -87,4 +87,4 @@ jobs:
 
       - name: Run test cases
         run: |
-          ./ci/kubernetes-discovery.sh run_case
+          ./ci/kubernetes-ci.sh run_case
