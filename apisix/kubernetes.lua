@@ -176,8 +176,8 @@ local function watch(httpc, informer)
         return true, _constants.Success, nil
     end
 
-    local watch_times = 5
-    for _ = 0, watch_times do
+    local watch_times = 8
+    for _ = 1, watch_times do
         local watch_seconds = 1800 + math.random(9, 999)
         informer.overtime = watch_seconds
         local http_seconds = watch_seconds + 120

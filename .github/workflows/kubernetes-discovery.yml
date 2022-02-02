@@ -1,4 +1,4 @@
-name: Kuberbetes Discovery
+name: Kubernetes Discovery
 
 on:
   push:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  kuberbets-discovery:
+  kubernetes-discovery:
     strategy:
       fail-fast: false
       matrix:
@@ -60,7 +60,7 @@ jobs:
           ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
           ./kubectl apply -f ./t/discovery/kubernetes/account.yaml
-          
+
           ./kubectl apply -f ./t/discovery/kubernetes/endpoints.yaml
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
@@ -95,11 +95,11 @@ jobs:
           export VERSION=${{ steps.branch_env.outputs.version }}
           sudo gem install --no-document fpm
           git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
-          
+
           # move codes under build tool
           mkdir ./apisix-build-tools/apisix
           for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
-          
+
           cd apisix-build-tools
           make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
           cd ..
