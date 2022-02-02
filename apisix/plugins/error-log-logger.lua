@@ -21,6 +21,7 @@ local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local http = require("resty.http")
+local url = require("net.url")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -55,6 +56,17 @@ local metadata_schema = {
                 service_instance_name = {type="string", default = "APISIX Service Instance"},
             },
         },
+        clickhouse = {
+            type = "object",
+            properties = {
+                endpoint_addr = {schema_def.uri_def, default="http://127.0.0.1:8123"},
+                user = {type = "string", default = "default"},
+                password = {type = "string", default = ""},
+                database = {type = "string", default = ""},
+                logtable = {type = "string", default = ""},
+            },
+            required = {"endpoint_addr", "user", "password", "database", "logtable"}
+        },
         host = {schema_def.host_def, description = "Deprecated, use `tcp.host` instead."},
         port = {type = "integer", minimum = 0, description = "Deprecated, use `tcp.port` instead."},
         tls = {type = "boolean", default = false,
@@ -75,6 +87,7 @@ local metadata_schema = {
     oneOf = {
         {required = {"skywalking"}},
         {required = {"tcp"}},
+        {required = {"clickhouse"}},
         -- for compatible with old schema
         {required = {"host", "port"}}
     }
@@ -214,6 +227,75 @@ local function send_to_skywalking(log_message)
 end
 
 
+local function send_to_clickhouse(log_message)
+    local err_msg
+    local res = true
+    local url_decoded = url.parse(config.clickhouse.endpoint_addr)
+    local host = url_decoded.host
+    local port = url_decoded.port
+    core.log.info("sending a batch logs to ", config.clickhouse.endpoint_addr)
+
+    if ((not port) and url_decoded.scheme == "https") then
+        port = 443
+    elseif not port then
+        port = 80
+    end
+
+    local httpc = http.new()
+    httpc:set_timeout(config.timeout * 1000)
+    local ok, err = httpc:connect(host, port)
+    if not ok then
+        return false, "failed to connect to host[" .. host .. "] port["
+            .. tostring(port) .. "] " .. err
+    end
+
+    if url_decoded.scheme == "https" then
+        ok, err = httpc:ssl_handshake(true, host, false)
+        if not ok then
+            return false, "failed to perform SSL with host[" .. host .. "] "
+                .. "port[" .. tostring(port) .. "] " .. err
+        end
+    end
+
+    local entries = {}
+    for i = 1, #log_message, 2 do
+        table.insert(entries, core.json.encode({data=log_message[i]}))
+    end
+
+    local httpc_res, httpc_err = httpc:request({
+        method = "POST",
+        path = url_decoded.path,
+        query = url_decoded.query,
+        body = "INSERT INTO " .. config.clickhouse.logtable .." FORMAT JSONEachRow " .. table.concat(entries, " "),
+        keepalive_timeout = config.keepalive * 1000,
+        headers = {
+            ["Content-Type"] = "application/json",
+            ["X-ClickHouse-User"] = config.clickhouse.user,
+            ["X-ClickHouse-Key"] = config.clickhouse.password,
+            ["X-ClickHouse-Database"] = config.clickhouse.database
+        }
+    })
+
+    if not httpc_res then
+        return false, "error while sending data to clickhouse["
+            .. config.clickhouse.endpoint_addr .. "] " .. httpc_err
+    end
+
+    -- some error occurred in the server
+    if httpc_res.status >= 400 then
+        res =  false
+        err_msg = string.format(
+            "server returned status code[%s] clickhouse[%s] body[%s]",
+            httpc_res.status,
+            config.clickhouse.endpoint_addr.endpoint_addr,
+            httpc_res:read_body()
+        )
+    end
+
+    return res, err_msg
+end
+
+
 local function update_filter(value)
     local level = log_level[value.level]
     local status, err = errlog.set_filter_level(level)
@@ -230,6 +312,8 @@ end
 local function send(data)
     if config.skywalking then
         return send_to_skywalking(data)
+    elseif config.clickhouse then
+        return send_to_clickhouse(data)
     end
     return send_to_tcp_server(data)
 end
@@ -247,7 +331,7 @@ local function process()
             core.log.warn("set log filter failed for ", err)
             return
         end
-        if not (config.tcp or config.skywalking) then
+        if not (config.tcp or config.skywalking or config.clickhouse) then
             config.tcp = {
                 host = config.host,
                 port =  config.port,
