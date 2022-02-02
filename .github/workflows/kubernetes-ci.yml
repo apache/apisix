@@ -61,7 +61,7 @@ jobs:
 
           ./kubectl apply -f ./t_kubernetes/configs/account.yaml
 
-          ./kubectl apply -f ./t_kubernetes/configs/endpoints.yaml
+          ./kubectl apply -f ./t_kubernetes/configs/endpoint.yaml
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
