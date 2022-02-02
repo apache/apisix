@@ -78,7 +78,15 @@ _EOC_
 
 }
 
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+my $out = eval { `resty -e "local s=ngx.socket.tcp();print(s:connect(\"127.0.0.1\",6443))"` };
+
+if ($out !~ m/function:/) {
+    plan(skip_all => "kubernetes not patched");
+} else {
+    plan('no_plan');
+}
 
 repeat_each(1);
 log_level('debug');
