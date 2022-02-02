@@ -27,7 +27,7 @@ local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
-local kubernetes = require("apisix.kubernetes")
+local kubernetes = require("apisix.discovery.kubernetes.kubernetes")
 local endpoint_dict = ngx.shared.discovery
 
 local default_weight = 0
