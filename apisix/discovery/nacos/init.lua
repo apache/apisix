@@ -236,7 +236,18 @@ local function is_grpc(scheme)
 
     return false
 end
-
+local function compareService(last_service_info,service_info)
+    if not last_service_info or not service_info then
+        return false
+    end
+    if last_service_info.namespace_id == service_info.namespace_id and
+            last_service_info.group_name == service_info.group_name and
+            last_service_info.service_name == service_info.service_name then
+        return true
+    else
+        return false
+    end
+end
 local function fetch_full_registry(premature)
     if premature then
         return
@@ -259,7 +270,17 @@ local function fetch_full_registry(premature)
         return
     end
 
+    table.sort(infos,function(a,b)
+        return a.namespace_id .. a.group_name .. a.service_name > b.namespace_id .. b.group_name .. b.service_name
+    end)
+    local last_service_info
+
     for _, service_info in ipairs(infos) do
+        if compareService(last_service_info,service_info) then
+            goto CONTINUE
+        end
+        last_service_info = service_info
+
         local data, err
         local namespace_id = service_info.namespace_id
         local group_name = service_info.group_name
