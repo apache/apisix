@@ -161,6 +161,14 @@ deps: runtime
 	fi
 
 
+### undeps : Uninstallation dependencies
+.PHONY: undeps
+undeps:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_LUAROCKS) purge --tree=deps
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+
 ### utils : Installation tools
 .PHONY: utils
 utils:
