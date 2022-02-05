@@ -266,7 +266,7 @@ local function get_apiserver(conf)
 end
 
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
-    local endpoint_content, _, _ = endpoint_dict:get_stale(endpoint_key)
+    local endpoint_content = endpoint_dict:get_stale(endpoint_key)
     if not endpoint_content then
         core.log.error("get empty endpoint content from discovery DIC, this should not happen ",
                 endpoint_key)
@@ -296,7 +296,7 @@ function _M.nodes(service_name)
 
     local endpoint_key = match[1]
     local endpoint_port = match[2]
-    local endpoint_version, _, _ = endpoint_dict:get_stale(endpoint_key .. "#version")
+    local endpoint_version = endpoint_dict:get_stale(endpoint_key .. "#version")
     if not endpoint_version then
         core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
         return nil

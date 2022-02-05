@@ -268,7 +268,7 @@ local function list_watch(self, apiserver)
     })
 
     if not ok then
-        self.fetch_state = "connecting"
+        self.fetch_state = "connect failed"
         core.log.error("connect apiserver failed , apiserver.host: ", apiserver.host,
                 ", apiserver.port: ", apiserver.port, ", message : ", message)
         return false
