@@ -598,31 +598,7 @@ qr{ 0 0 0 0 2 2 }
 
 
 
-=== TEST 13: use namespace selector not_match with regex
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-discovery:
-  kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      not_match: ["ns-[ab]"]
---- request
-GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 0 0 0 0 2 2 }
---- no_error_log
-[error]
-
-
-
-=== TEST 14: use label selector
+=== TEST 13: use label selector
 --- yaml_config
 apisix:
   node_listen: 1984

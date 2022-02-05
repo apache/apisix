@@ -23,11 +23,12 @@ local tonumber = tonumber
 local tostring = tostring
 local os = os
 local error = error
+local pcall = pcall
 local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
-local kubernetes = require("apisix.discovery.kubernetes.kubernetes")
+local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
 local endpoint_dict = ngx.shared.discovery
 
 local default_weight = 0
@@ -47,8 +48,13 @@ local function sort_nodes_cmp(left, right)
     return left.port < right.port
 end
 
-local function on_endpoint_modified(endpoint)
-    core.log.debug(core.json.encode(endpoint, true))
+local function on_endpoint_modified(informer, endpoint)
+    if informer.namespace_selector ~= nil and
+            not informer:namespace_selector(endpoint.metadata.namespace) then
+        return
+    end
+
+    core.log.debug(core.json.delay_encode(endpoint))
     core.table.clear(endpoint_buffer)
 
     local subsets = endpoint.subsets
@@ -105,32 +111,50 @@ local function on_endpoint_modified(endpoint)
     end
 end
 
-local function on_endpoint_deleted(endpoint)
-    core.log.debug(core.json.encode(endpoint, true))
+local function on_endpoint_deleted(informer, endpoint)
+    if informer.namespace_selector ~= nil and
+            not informer:namespace_selector(endpoint.metadata.namespace) then
+        return
+    end
+
+    core.log.debug(core.json.delay_encode(endpoint))
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
     endpoint_dict:delete(endpoint_key .. "#version")
     endpoint_dict:delete(endpoint_key)
 end
 
+local function pre_list(informer)
+    endpoint_dict:flush_all()
+end
+
+local function post_list(informer)
+    endpoint_dict:flush_expired()
+end
+
 local function setup_label_selector(conf, informer)
-    local ls = conf.label_selector
-    if ls == nil or ls == "" then
-        return
-    end
-    informer.label_selector = ngx.escape_uri(ls)
+    informer.label_selector = conf.label_selector
 end
 
 local function setup_namespace_selector(conf, informer)
     local ns = conf.namespace_selector
     if ns == nil then
         informer.namespace_selector = nil
-    elseif ns.equal then
-        informer.field_selector = "metadata.namespace%3D" .. ns.equal
+        return
+    end
+
+    if ns.equal then
+        informer.field_selector = "metadata.namespace=" .. ns.equal
         informer.namespace_selector = nil
-    elseif ns.not_equal then
-        informer.field_selector = "metadata.namespace%21%3D" .. ns.not_equal
+        return
+    end
+
+    if ns.not_equal then
+        informer.field_selector = "metadata.namespace!=" .. ns.not_equal
         informer.namespace_selector = nil
-    elseif ns.match then
+        return
+    end
+
+    if ns.match then
         informer.namespace_selector = function(self, namespace)
             local match = conf.namespace_selector.match
             local m, err
@@ -145,7 +169,10 @@ local function setup_namespace_selector(conf, informer)
             end
             return false
         end
-    elseif ns.not_match then
+        return
+    end
+
+    if ns.not_match then
         informer.namespace_selector = function(self, namespace)
             local not_match = conf.namespace_selector.not_match
             local m, err
@@ -160,6 +187,7 @@ local function setup_namespace_selector(conf, informer)
             end
             return true
         end
+        return
     end
 end
 
@@ -180,55 +208,61 @@ local function read_env(key)
     return true, key, nil
 end
 
-local function setup_apiserver(conf, apiserver)
+local function get_apiserver(conf)
+    local apiserver = {
+        schema = "",
+        host = "",
+        port = "",
+        token = ""
+    }
 
     apiserver.schema = conf.service.schema
 
     local ok, value, message
     ok, value, message = read_env(conf.service.host)
     if not ok then
-        return false, message
+        return nil, message
     end
 
     apiserver.host = value
     if apiserver.host == "" then
-        return false, "get empty host value"
+        return nil, "get empty host value"
     end
 
     ok, value, message = read_env(conf.service.port)
     if not ok then
-        return false, message
+        return nil, message
     end
 
     apiserver.port = tonumber(value)
     if not apiserver.port or apiserver.port <= 0 or apiserver.port > 65535 then
-        return false, "get invalid port value: " .. apiserver.port
+        return nil, "get invalid port value: " .. apiserver.port
     end
 
     -- we should not check if the apiserver.token is empty here
     if conf.client.token then
         ok, value, message = read_env(conf.client.token)
         if not ok then
-            return false, message
+            return nil, message
         end
         apiserver.token = value
     elseif conf.client.token_file and conf.client.token_file ~= "" then
         ok, value, message = read_env(conf.client.token_file)
         if not ok then
-            return false, message
+            return nil, message
         end
         local apiserver_token_file = value
 
         apiserver.token, message = util.read_file(apiserver_token_file)
         if not apiserver.token then
-            return false, message
+            return nil, message
         end
     else
-        return false, "invalid kubernetes discovery configuration:" ..
+        return nil, "invalid kubernetes discovery configuration:" ..
                 "should set one of [client.token,client.token_file] but none"
     end
 
-    return true, nil
+    return apiserver, nil
 end
 
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
@@ -280,56 +314,38 @@ function _M.init_worker()
 
     default_weight = discovery_conf.default_weight or 50
 
-    local ok, err = setup_apiserver(discovery_conf, kubernetes.apiserver)
-    if not ok then
+    local apiserver, err = get_apiserver(discovery_conf)
+    if not apiserver then
         error(err)
         return
     end
 
-    local endpoint_informer = kubernetes.informer_factory.new("", "v1",
+    local endpoints_informer = informer_factory.new("", "v1",
             "Endpoints", "endpoints", "")
 
-    setup_label_selector(discovery_conf, endpoint_informer)
-    setup_namespace_selector(discovery_conf, endpoint_informer)
+    setup_namespace_selector(discovery_conf, endpoints_informer)
+    setup_label_selector(discovery_conf, endpoints_informer)
 
-    endpoint_informer.on_added = function(self, object, drive)
-        if self.namespace_selector == nil then
-            on_endpoint_modified(object)
-        elseif self:namespace_selector(object.metadata.namespace) then
-            on_endpoint_modified(object)
-        end
-    end
-
-    endpoint_informer.on_modified = endpoint_informer.on_added
-
-    endpoint_informer.on_deleted = function(self, object)
-        if self.namespace_selector ~= nil then
-            if self:namespace_selector(object.metadata.namespace) then
-                on_endpoint_deleted(object)
-            end
-        else
-            on_endpoint_deleted(object)
-        end
-    end
-
-    endpoint_informer.pre_list = function(self)
-        endpoint_dict:flush_all()
-    end
-
-    endpoint_informer.post_list = function(self)
-        endpoint_dict:flush_expired()
-    end
+    endpoints_informer.on_added = on_endpoint_modified
+    endpoints_informer.on_modified = on_endpoint_modified
+    endpoints_informer.on_deleted = on_endpoint_deleted
+    endpoints_informer.pre_list = pre_list
+    endpoints_informer.post_list = post_list
 
     local timer_runner
-    timer_runner = function(premature, informer)
-        if not informer:list_watch() then
+    timer_runner = function(premature)
+        if premature then
+            return
+        end
+        local status, ok = pcall(endpoints_informer.list_watch, endpoints_informer, apiserver)
+        if not status or not ok then
             local retry_interval = 40
             ngx.sleep(retry_interval)
         end
-        ngx.timer.at(0, timer_runner, informer)
+        ngx.timer.at(0, timer_runner)
     end
 
-    ngx.timer.at(0, timer_runner, endpoint_informer)
+    ngx.timer.at(0, timer_runner)
 end
 
 return _M
