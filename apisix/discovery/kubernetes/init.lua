@@ -310,6 +310,11 @@ function _M.init_worker()
         return
     end
 
+    if not endpoint_dict then
+        error("get empty endpoint_dict")
+        return
+    end
+
     local discovery_conf = local_conf.discovery.kubernetes
 
     default_weight = discovery_conf.default_weight or 50
