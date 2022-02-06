@@ -122,6 +122,8 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 ```shell
   # Uninstall apisix command
   $ make uninstall
+  # Purge dependencies
+  $ make undeps
 ```
 
   Attention please, this operation will totally **remove** the related files.

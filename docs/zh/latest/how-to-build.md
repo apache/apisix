@@ -122,6 +122,8 @@ $ sudo yum install ./apisix/*.rpm
 ```shell
   # 卸载 apisix 命令
   $ make uninstall
+  # 卸载依赖
+  $ make undeps
 ```
 
   请注意，该操作将完整**删除**相关文件。
