@@ -48,6 +48,7 @@ local function sort_nodes_cmp(left, right)
     if left.host ~= right.host then
         return left.host < right.host
     end
+
     return left.port < right.port
 end
 
@@ -208,7 +209,8 @@ local function read_env(key)
             return value, nil
         end
     end
-    return key, nil
+
+    return key
 end
 
 local function get_apiserver(conf)
@@ -309,6 +311,7 @@ function _M.nodes(service_name)
         core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
         return nil
     end
+
     return endpoint_lrucache(service_name, endpoint_version,
             create_endpoint_lrucache, endpoint_key, endpoint_port)
 end

@@ -189,6 +189,7 @@ local function dispatch_event(event_string, informer)
         -- elseif type == "BOOKMARK" then
         --    do nothing
     end
+
     return true
 end
 
@@ -248,6 +249,7 @@ local function watch(httpc, apiserver, informer)
             end
         end
     end
+
     return true
 end
 
@@ -303,6 +305,7 @@ local function list_watch(informer, apiserver)
     end
 
     informer.fetch_state = "watch finished"
+
     return true
 end
 
