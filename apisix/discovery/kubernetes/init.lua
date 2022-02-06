@@ -29,7 +29,10 @@ local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
-local endpoint_dict = ngx.shared.discovery
+local endpoint_dict = ngx.shared["discovery"]
+if not endpoint_dict then
+    error("failed to get ngx.shared.dict discovery when load kubernetes discovery plugin ")
+end
 
 local default_weight = 0
 
@@ -198,14 +201,14 @@ local function read_env(key)
         -- '$', '{', '}' == 36,123,125
         if a == 36 and b == 123 and c == 125 then
             local env = string.sub(key, 3, #key - 1)
-            local val = os.getenv(env)
-            if not val then
-                return false, nil, "not found environment variable " .. env
+            local value = os.getenv(env)
+            if not value then
+                return nil, "not found environment variable " .. env
             end
-            return true, val, nil
+            return value, nil
         end
     end
-    return true, key, nil
+    return key, nil
 end
 
 local function get_apiserver(conf)
@@ -217,52 +220,56 @@ local function get_apiserver(conf)
     }
 
     apiserver.schema = conf.service.schema
-
-    local ok, value, message
-    ok, value, message = read_env(conf.service.host)
-    if not ok then
-        return nil, message
+    if apiserver.schema ~= "http" and apiserver.schema ~= "https" then
+        return nil, "service.schema should set to one of [http,https] but " .. apiserver.schema
     end
 
-    apiserver.host = value
+    local err
+    apiserver.host, err = read_env(conf.service.host)
+    if err then
+        return nil, err
+    end
+
     if apiserver.host == "" then
-        return nil, "get empty host value"
+        return nil, "service.host should set to non-empty string"
     end
 
-    ok, value, message = read_env(conf.service.port)
-    if not ok then
-        return nil, message
+    local port
+    port, err = read_env(conf.service.port)
+    if err then
+        return nil, err
     end
 
-    apiserver.port = tonumber(value)
+    apiserver.port = tonumber(port)
     if not apiserver.port or apiserver.port <= 0 or apiserver.port > 65535 then
-        return nil, "get invalid port value: " .. apiserver.port
+        return nil, "invalid port value: ", apiserver.port
     end
 
-    -- we should not check if the apiserver.token is empty here
     if conf.client.token then
-        ok, value, message = read_env(conf.client.token)
-        if not ok then
-            return nil, message
+        apiserver.token, err = read_env(conf.client.token)
+        if err then
+            return nil, err
         end
-        apiserver.token = value
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        ok, value, message = read_env(conf.client.token_file)
-        if not ok then
-            return nil, message
+        local file
+        file, err = read_env(conf.client.token_file)
+        if err then
+            return nil, err
         end
-        local apiserver_token_file = value
 
-        apiserver.token, message = util.read_file(apiserver_token_file)
-        if not apiserver.token then
-            return nil, message
+        apiserver.token, err = util.read_file(file)
+        if err then
+            return nil, err
         end
     else
-        return nil, "invalid kubernetes discovery configuration:" ..
-                "should set one of [client.token,client.token_file] but none"
+        return nil, "one of [client.token,client.token_file] should be set but none"
     end
 
-    return apiserver, nil
+    if apiserver.schema == "https" and apiserver.token == "" then
+        return nil, "service.host should set to non-empty string when service.schema is https"
+    end
+
+    return apiserver
 end
 
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
@@ -273,10 +280,11 @@ local function create_endpoint_lrucache(endpoint_key, endpoint_port)
         return nil
     end
 
-    local endpoint, _ = core.json.decode(endpoint_content)
+    local endpoint = core.json.decode(endpoint_content)
     if not endpoint then
         core.log.error("decode endpoint content failed, this should not happen, content: ",
                 endpoint_content)
+        return nil
     end
 
     return endpoint[endpoint_port]
@@ -310,23 +318,22 @@ function _M.init_worker()
         return
     end
 
-    if not endpoint_dict then
-        error("get empty endpoint_dict")
-        return
-    end
-
     local discovery_conf = local_conf.discovery.kubernetes
 
     default_weight = discovery_conf.default_weight or 50
 
     local apiserver, err = get_apiserver(discovery_conf)
-    if not apiserver then
+    if err then
         error(err)
         return
     end
 
-    local endpoints_informer = informer_factory.new("", "v1",
+    local endpoints_informer, err = informer_factory.new("", "v1",
             "Endpoints", "endpoints", "")
+    if err then
+        error(err)
+        return
+    end
 
     setup_namespace_selector(discovery_conf, endpoints_informer)
     setup_label_selector(discovery_conf, endpoints_informer)

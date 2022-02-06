@@ -19,7 +19,7 @@ local ngx = ngx
 local ipairs = ipairs
 local string = string
 local math = math
-local setmetatable = setmetatable
+local type = type
 local core = require("apisix.core")
 local http = require("resty.http")
 
@@ -72,7 +72,7 @@ local function list(httpc, apiserver, informer)
         return false, "ReadBodyError", err
     end
 
-    local data, _ = core.json.decode(body)
+    local data = core.json.decode(body)
     if not data or data.kind ~= informer.list_kind then
         return false, "UnexpectedBody", body
     end
@@ -90,7 +90,7 @@ local function list(httpc, apiserver, informer)
         list(httpc, informer)
     end
 
-    return true, "Success", ""
+    return true
 end
 
 local function watch_query(informer)
@@ -115,7 +115,7 @@ local function watch_query(informer)
     return ngx.encode_args(arguments)
 end
 
-local function split_event (body, dispatch_event)
+local function split_event (body, callback, ...)
     local gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
     if not gmatch_iterator then
         return nil, "GmatchError", err
@@ -137,7 +137,7 @@ local function split_event (body, dispatch_event)
 
         captured_size = captured_size + #captures[0]
 
-        ok, reason, err = dispatch_event(captures[0])
+        ok, reason, err = callback(captures[0], ...)
         if not ok then
             return nil, reason, err
         end
@@ -152,48 +152,47 @@ local function split_event (body, dispatch_event)
         remainder_body = string.sub(body, captured_size + 1)
     end
 
-    return remainder_body, "Success", nil
+    return remainder_body, "Success"
+end
+
+local function dispatch_event(event_string, informer)
+    local event, _ = core.json.decode(event_string)
+
+    if not event or not event.type or not event.object then
+        return false, "UnexpectedBody", event_string
+    end
+
+    local tp = event.type
+
+    if tp == "ERROR" then
+        if event.object.code == 410 then
+            return false, "ResourceGone", nil
+        end
+        return false, "UnexpectedBody", event_string
+    end
+
+    local object = event.object
+    informer.version = object.metadata.resourceVersion
+
+    if tp == "ADDED" then
+        if informer.on_added ~= nil then
+            informer:on_added(object, "watch")
+        end
+    elseif tp == "DELETED" then
+        if informer.on_deleted ~= nil then
+            informer:on_deleted(object)
+        end
+    elseif tp == "MODIFIED" then
+        if informer.on_modified ~= nil then
+            informer:on_modified(object)
+        end
+        -- elseif type == "BOOKMARK" then
+        --    do nothing
+    end
+    return true
 end
 
 local function watch(httpc, apiserver, informer)
-
-    local dispatch_event = function(event_string)
-        local event, _ = core.json.decode(event_string)
-
-        if not event or not event.type or not event.object then
-            return false, "UnexpectedBody", event_string
-        end
-
-        local type = event.type
-
-        if type == "ERROR" then
-            if event.object.code == 410 then
-                return false, "ResourceGone", nil
-            end
-            return false, "UnexpectedBody", event_string
-        end
-
-        local object = event.object
-        informer.version = object.metadata.resourceVersion
-
-        if type == "ADDED" then
-            if informer.on_added ~= nil then
-                informer:on_added(object, "watch")
-            end
-        elseif type == "DELETED" then
-            if informer.on_deleted ~= nil then
-                informer:on_deleted(object)
-            end
-        elseif type == "MODIFIED" then
-            if informer.on_modified ~= nil then
-                informer:on_modified(object)
-            end
-            -- elseif type == "BOOKMARK" then
-            --    do nothing
-        end
-        return true, "Success", nil
-    end
-
     local watch_times = 8
     for _ = 1, watch_times do
         local watch_seconds = 1800 + math.random(9, 999)
@@ -240,24 +239,24 @@ local function watch(httpc, apiserver, informer)
                 body = remainder_body .. body
             end
 
-            remainder_body, reason, err = split_event(body, dispatch_event)
+            remainder_body, reason, err = split_event(body, dispatch_event, informer)
             if reason ~= "Success" then
                 if reason == "ResourceGone" then
-                    return true, "Success", nil
+                    return true
                 end
                 return false, reason, err
             end
         end
     end
-    return true, "Success", nil
+    return true
 end
 
-local function list_watch(self, apiserver)
+local function list_watch(informer, apiserver)
     local ok
     local reason, message
     local httpc = http.new()
 
-    self.fetch_state = "connecting"
+    informer.fetch_state = "connecting"
     core.log.info("begin to connect ", apiserver.host, ":", apiserver.port)
 
     ok, message = httpc:connect({
@@ -268,42 +267,42 @@ local function list_watch(self, apiserver)
     })
 
     if not ok then
-        self.fetch_state = "connect failed"
+        informer.fetch_state = "connect failed"
         core.log.error("connect apiserver failed , apiserver.host: ", apiserver.host,
                 ", apiserver.port: ", apiserver.port, ", message : ", message)
         return false
     end
 
-    core.log.info("begin to list ", self.kind)
-    self.fetch_state = "listing"
-    if self.pre_List ~= nil then
-        self:pre_list()
+    core.log.info("begin to list ", informer.kind)
+    informer.fetch_state = "listing"
+    if informer.pre_List ~= nil then
+        informer:pre_list()
     end
 
-    ok, reason, message = list(httpc, apiserver, self)
+    ok, reason, message = list(httpc, apiserver, informer)
     if not ok then
-        self.fetch_state = "list failed"
-        core.log.error("list failed, kind: ", self.kind,
+        informer.fetch_state = "list failed"
+        core.log.error("list failed, kind: ", informer.kind,
                 ", reason: ", reason, ", message : ", message)
         return false
     end
 
-    self.fetch_state = "list finished"
-    if self.post_List ~= nil then
-        self:post_list()
+    informer.fetch_state = "list finished"
+    if informer.post_List ~= nil then
+        informer:post_list()
     end
 
-    core.log.info("begin to watch ", self.kind)
-    self.fetch_state = "watching"
-    ok, reason, message = watch(httpc, apiserver, self)
+    core.log.info("begin to watch ", informer.kind)
+    informer.fetch_state = "watching"
+    ok, reason, message = watch(httpc, apiserver, informer)
     if not ok then
-        self.fetch_state = "watch failed"
-        core.log.error("watch failed, kind: ", self.kind,
+        informer.fetch_state = "watch failed"
+        core.log.error("watch failed, kind: ", informer.kind,
                 ", reason: ", reason, ", message : ", message)
         return false
     end
 
-    self.fetch_state = "watch finished"
+    informer.fetch_state = "watch finished"
     return true
 end
 
@@ -311,19 +310,45 @@ local _M = {
 }
 
 function _M.new(group, version, kind, plural, namespace)
+    local tp
+    tp = type(group)
+    if tp ~= nil and tp ~= "string" then
+        return nil, "group should set to string or nil type but " .. tp
+    end
+
+    tp = type(namespace)
+    if tp ~= nil and tp ~= "string" then
+        return nil, "namespace should set to string or nil type but " .. tp
+    end
+
+    tp = type(version)
+    if tp ~= "string" or version == "" then
+        return nil, "version should set to non-empty string"
+    end
+
+    tp = type(kind)
+    if tp ~= "string" or kind == "" then
+        return nil, "kind should set to non-empty string"
+    end
+
+    tp = type(plural)
+    if tp ~= "string" or plural == "" then
+        return nil, "plural should set to non-empty string"
+    end
+
     local path = ""
-    if group == "" then
+    if group == nil or group == "" then
         path = path .. "/api/" .. version
     else
         path = path .. "/apis/" .. group .. "/" .. version
     end
 
-    if namespace ~= "" then
+    if namespace ~= nil and namespace ~= "" then
         path = path .. "/namespace/" .. namespace
     end
     path = path .. "/" .. plural
 
-    return setmetatable({}, { __index = {
+    return {
         kind = kind,
         list_kind = kind .. "List",
         plural = plural,
@@ -336,7 +361,6 @@ function _M.new(group, version, kind, plural, namespace)
         continue = "",
         list_watch = list_watch
     }
-    })
 end
 
 return _M
