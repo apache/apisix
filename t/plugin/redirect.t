@@ -1001,7 +1001,9 @@ Location: /hello?type=string&name=json
 --- no_error_log
 [error]
 
-=== TEST 40: redirect
+
+
+=== TEST 41: redirect
 --- config
     location /t {
         content_by_lua_block {
@@ -1039,6 +1041,3 @@ GET /t
 passed
 --- no_error_log
 [error]
-
-
-
