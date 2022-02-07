@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.10.4](#2104)
 - [2.10.3](#2103)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
@@ -48,6 +49,10 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.4
+
+- 修正 batch-requests 插件未正确覆盖 real ip 请求头 [#6251](https://github.com/apache/apisix/pull/6251)
 
 ## 2.10.3
 
