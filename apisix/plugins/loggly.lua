@@ -18,6 +18,8 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
+local path = require("pl.path")
+local http = require("resty.http")
 local ngx = ngx
 local tostring = tostring
 local pairs = pairs
@@ -76,6 +78,12 @@ local schema = {
                 -- we prevent of having `tag=` prefix
                 pattern = "^(?!tag=)[ -~]*",
             },
+            default = {"apisix"}
+        },
+        ssl_verify = {
+            -- applicable for https protocol
+            type = "boolean",
+            default = true
         },
     },
     required = {"customer_token"}
@@ -104,8 +112,8 @@ local metadata_schema = {
         protocol = {
             type = "string",
             default = defaults.protocol,
-            -- more methods coming soon
-            enum = {"syslog"}
+            -- in case of http and https, we use bulk endpoints
+            enum = {"syslog", "http", "https"}
         },
         timeout = {
             type = "integer",
@@ -158,13 +166,17 @@ local function generate_log_message(conf, ctx)
         entry = log_util.get_full_log(ngx, conf)
     end
 
-    -- generate rfc5424 compliant syslog event
     local json_str, err = core.json.encode(entry)
     if not json_str then
         core.log.error('error occurred while encoding the data: ', err)
         return nil
     end
 
+    if metadata.value.protocol ~= "syslog" then
+        return json_str
+    end
+
+    -- generate rfc5424 compliant syslog event
     local timestamp = log_util.get_rfc3339_zulu_timestamp()
     local taglist = {}
     if conf.tags then
@@ -188,23 +200,12 @@ local function generate_log_message(conf, ctx)
 end
 
 
-local function send_data_over_udp(message)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-
-    if not metadata then
-        core.log.info("received nil metadata: using metadata defaults: ",
-                            core.json.delay_encode(defaults, true))
-        metadata = {}
-        metadata.value = defaults
-    end
+local function send_data_over_udp(message, metadata)
     local err_msg
     local res = true
     local sock = udp()
     local host, port = metadata.value.host, metadata.value.port
     sock:settimeout(metadata.value.timeout)
-
-    core.log.info("sending a batch logs to ", host, ":", port)
 
     local ok, err = sock:setpeername(host, port)
 
@@ -232,13 +233,72 @@ local function send_data_over_udp(message)
 end
 
 
-local function handle_log(entries)
-    for i = 1, #entries do
-        local ok, err = send_data_over_udp(entries[i])
-        if not ok then
-            return false, err
+local function send_bulk_over_http(message, metadata, conf)
+    local endpoint = path.join(metadata.value.host, "bulk", conf.customer_token, "tag", "bulk")
+    local has_prefix = core.string.has_prefix(metadata.value.host, "http")
+    if not has_prefix then
+        if metadata.value.protocol == "http" then
+            endpoint = "http://" .. endpoint
+        else
+            endpoint = "https://" .. endpoint
         end
     end
+
+    local httpc = http.new()
+    httpc:set_timeout(metadata.value.timeout)
+    local res, err = httpc:request_uri(endpoint, {
+        ssl_verify = conf.ssl_verify,
+        method = "POST",
+        body = message,
+        headers = {
+            ["Content-Type"] = "application/json",
+            ["X-LOGGLY-TAG"] = conf.tags
+        },
+    })
+
+    if not res then
+        return false, "failed to write log to loggly, " .. err
+    end
+
+    if res.status ~= 200 then
+        local body = core.json.decode(res.body)
+        if not body then
+            return false, "failed to send log to loggly, http status code: " .. res.status
+        else
+            return false, "failed to send log to loggly, http status code: " .. res.status
+                          .. " response body: ".. res.body
+        end
+    end
+
+    return true
+end
+
+
+local handle_http_payload
+
+local function handle_log(entries)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    if not metadata then
+        core.log.info("received nil metadata: using metadata defaults: ",
+                            core.json.delay_encode(defaults, true))
+        metadata = {}
+        metadata.value = defaults
+    end
+    core.log.info("sending a batch logs to ", metadata.value.host)
+
+    if metadata.value.protocol == "syslog" then
+        for i = 1, #entries do
+            local ok, err = send_data_over_udp(entries[i], metadata)
+            if not ok then
+                return false, err, i
+            end
+        end
+    else
+        return handle_http_payload(entries, metadata)
+    end
+
     return true
 end
 
@@ -247,6 +307,12 @@ function _M.log(conf, ctx)
     local log_data = generate_log_message(conf, ctx)
     if not log_data then
         return
+    end
+
+    handle_http_payload = function (entries, metadata)
+        -- loggly bulk endpoint expects entries concatenated in newline("\n")
+        local message = tab_concat(entries, "\n")
+        return send_bulk_over_http(message, metadata, conf)
     end
 
     if batch_processor_manager:add_entry(conf, log_data) then
