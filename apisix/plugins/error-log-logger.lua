@@ -268,7 +268,8 @@ local function send_to_clickhouse(log_message)
         method = "POST",
         path = url_decoded.path,
         query = url_decoded.query,
-        body = "INSERT INTO " .. config.clickhouse.logtable .." FORMAT JSONEachRow " .. table.concat(entries, " "),
+        body = "INSERT INTO " .. config.clickhouse.logtable .." FORMAT JSONEachRow "
+               .. table.concat(entries, " "),
         keepalive_timeout = config.keepalive * 1000,
         headers = {
             ["Content-Type"] = "application/json",
