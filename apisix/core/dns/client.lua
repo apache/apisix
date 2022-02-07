@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require = require
+local config_local = require("apisix.core.config_local")
 local log = require("apisix.core.log")
 local json = require("apisix.core.json")
 local table = require("apisix.core.table")
@@ -22,6 +23,7 @@ local insert_tab = table.insert
 local math_random = math.random
 local package_loaded = package.loaded
 local ipairs = ipairs
+local table_remove = table.remove
 local setmetatable = setmetatable
 
 
@@ -130,7 +132,22 @@ end
 
 
 function _M.new(opts)
-    opts.ipv6 = true
+    local local_conf = config_local.local_conf()
+
+    if opts.enable_ipv6 == nil then
+        opts.enable_ipv6 = local_conf.apisix.enable_ipv6
+    end
+
+    -- ensure the resolver throws an error when ipv6 is disabled
+    if not opts.enable_ipv6 then
+        for i, v in ipairs(opts.order) do
+            if v == "AAAA" then
+                table_remove(opts.order, i)
+                break
+            end
+        end
+    end
+
     opts.timeout = 2000 -- 2 sec
     opts.retrans = 5 -- 5 retransmissions on receive timeout
 

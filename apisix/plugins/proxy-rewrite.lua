@@ -199,8 +199,6 @@ function _M.rewrite(conf, ctx)
         return
     end
 
-    -- reform header from object into array, so can avoid use pairs,
-    -- which is NYI
     if not conf.headers_arr then
         conf.headers_arr = {}
 
@@ -211,8 +209,8 @@ function _M.rewrite(conf, ctx)
 
     local field_cnt = #conf.headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.req.set_header(conf.headers_arr[i],
-                           core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
+        core.request.set_header(ctx, conf.headers_arr[i],
+                                core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
 
     if conf.method then

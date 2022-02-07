@@ -162,6 +162,12 @@ end
 
 
 local function set_common_header(data)
+    local local_conf = core.config.local_conf()
+    local real_ip_hdr = core.table.try_read_attr(local_conf, "nginx_config", "http",
+                                                 "real_ip_header")
+    -- we don't need to handle '_' to '-' as Nginx won't treat 'X_REAL_IP' as 'X-Real-IP'
+    real_ip_hdr = str_lower(real_ip_hdr)
+
     local outer_headers = core.request.headers(nil)
     for i,req in ipairs(data.pipeline) do
         for k, v in pairs(data.headers) do
@@ -179,6 +185,8 @@ local function set_common_header(data)
                 end
             end
         end
+
+        req.headers[real_ip_hdr] = core.request.get_remote_client_ip()
     end
 end
 

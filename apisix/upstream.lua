@@ -24,6 +24,7 @@ local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
+local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
@@ -38,6 +39,19 @@ else
         return nil, "need to build APISIX-OpenResty to support upstream mTLS"
     end
 end
+
+local set_stream_upstream_tls
+if not is_http then
+    local ok, apisix_ngx_stream_upstream = pcall(require, "resty.apisix.stream.upstream")
+    if ok then
+        set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
+    else
+        set_stream_upstream_tls = function ()
+            return nil, "need to build APISIX-OpenResty to support TLS over TCP upstream"
+        end
+    end
+end
+
 
 
 local HTTP_CODE_UPSTREAM_UNAVAILABLE = 503
@@ -273,7 +287,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
-                 api_ctx.conf_version, up_conf)
+                 tostring(up_conf), up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
@@ -284,6 +298,19 @@ function _M.set_by_route(route, api_ctx)
         local ok, err = fill_node_info(up_conf, nil, true)
         if not ok then
             return 503, err
+        end
+
+        local scheme = up_conf.scheme
+        if scheme == "tls" then
+            local ok, err = set_stream_upstream_tls()
+            if not ok then
+                return 503, err
+            end
+
+            local sni = apisix_ssl.server_name()
+            if sni then
+                ngx_var.upstream_sni = sni
+            end
         end
 
         return
@@ -450,6 +477,11 @@ local function filter_upstream(value, parent)
     end
 
     value.parent = parent
+
+    if not is_http and value.scheme == "http" then
+        -- For L4 proxy, the default scheme is "tcp"
+        value.scheme = "tcp"
+    end
 
     if not value.nodes then
         return

@@ -41,7 +41,7 @@ Both plug-ins receive the same parameters.
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"] |                                                                                                                                                     |
+| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] |                                                                                                                                                     |
 | functions | array[string] | required    |            |                                                                          | A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially. |
 
 Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br />
@@ -71,12 +71,14 @@ ngx.say(count)
 
 Since `v2.6`, we pass the `conf` and `ctx` as the first two arguments to the servelss function, like a regular plugin.
 
+Prior to `v2.12.0`, the phase `before_proxy` used to be called `balancer`. Considering that this method actually runs after `access` and before the request goes upstream, and has nothing to do with `balancer`, the new naming would be more appropriate.
+
 ## How To Enable
 
 Here's an example, enable the serverless plugin on the specified route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -87,12 +89,12 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
         "serverless-post-function": {
             "phase": "rewrite",
             "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
-        },
+        }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -123,7 +125,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

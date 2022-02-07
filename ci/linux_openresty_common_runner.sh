@@ -54,8 +54,20 @@ do_install() {
     CGO_ENABLED=0 go build
     cd ../../
 
-    # installing grpcurl
+    # install grpcurl
     install_grpcurl
+
+    # install nodejs
+    install_nodejs
+
+    # grpc-web server && client
+    cd t/plugin/grpc-web
+    ./setup.sh
+    # back to home directory
+    cd ../../../
+
+    # install vault cli capabilities
+    install_vault_cli
 }
 
 script() {
@@ -80,7 +92,8 @@ script() {
     done
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    FLUSH_ETCD=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    rerun_flaky_tests /tmp/test.result
 }
 
 after_success() {

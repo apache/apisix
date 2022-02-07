@@ -2,12 +2,12 @@ name: CLI Test
 
 on:
   push:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -24,7 +24,6 @@ jobs:
         platform:
           - ubuntu-18.04
         job_name:
-          - linux_apisix_master_luarocks
           - linux_apisix_current_luarocks
           - linux_apisix_current_luarocks_in_customed_nginx
 
@@ -41,7 +40,7 @@ jobs:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         env:
           cache-name: cache-deps
         with:

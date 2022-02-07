@@ -49,7 +49,7 @@ local schema = {
         },
         server = {
             type = "string",
-            default = "http://127.0.0.1:10080"
+            default = "http://127.0.0.1:12180"
         },
         header_prefix = {
             type = "string",
@@ -133,17 +133,23 @@ end
 
 -- timeout in ms
 local function http_req(method, uri, body, myheaders, timeout)
-    if myheaders == nil then myheaders = new_headers() end
+    if not myheaders then
+        myheaders = new_headers()
+    end
 
     local httpc = http.new()
     if timeout then
         httpc:set_timeout(timeout)
     end
 
-    local params = {method = method, headers = myheaders, body = body,
-                    ssl_verify = false}
-    local res, err = httpc:request_uri(uri, params)
-    if err then
+    local res, err = httpc:request_uri(uri, {
+        method = method,
+        headers = myheaders,
+        body = body,
+        ssl_verify = false
+    })
+
+    if not res then
         core.log.error("FAIL REQUEST [ ",core.json.delay_encode(
             {method = method, uri = uri, body = body, headers = myheaders}),
             " ] failed! res is nil, err:", err)
@@ -236,7 +242,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
     end
 
     local body, err = json.decode(res.body)
-    if err then
+    if not body then
         errmsg = 'check permission failed! parse response json failed!'
         core.log.error( "json.decode(", res.body, ") failed! err:", err)
         return {status = res.status, err = errmsg}
@@ -335,7 +341,7 @@ local function get_args()
                    1, true) then
         local req_body = req_get_body_data()
         args, err = json.decode(req_body)
-        if err then
+        if not args then
             core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
@@ -377,7 +383,7 @@ local function request_to_wolf_server(method, uri, headers, body)
 
     core.log.info("request [", request_debug, "] ....")
     local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
-    if err or not res then
+    if not res then
         core.log.error("request [", request_debug, "] failed! err: ", err)
         return core.response.exit(500,
             fail_response("request to wolf-server failed! " .. tostring(err))
@@ -395,7 +401,7 @@ local function request_to_wolf_server(method, uri, headers, body)
         )
     end
     local body, err = json.decode(res.body)
-    if err or not body then
+    if not body then
         core.log.error("request [", request_debug, "] failed! err:", err)
         return core.response.exit(500, fail_response("request to wolf-server failed!"))
     end

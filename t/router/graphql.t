@@ -308,3 +308,12 @@ query {
     }
 }
 --- error_code: 404
+
+
+
+=== TEST 15: no body
+--- request
+POST /hello
+--- error_code: 404
+--- error_log
+failed to read graphql body: request body has zero size

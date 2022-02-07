@@ -28,7 +28,7 @@ Currently, only a few APIs are implemented. Please follow [wasm-nginx-module](ht
 
 ## Programming model
 
-The plugin supports the follwing concepts from Proxy WASM:
+The plugin supports the following concepts from Proxy WASM:
 
 ```
                     Wasm Virtual Machine
@@ -65,6 +65,7 @@ wasm:
     - name: wasm_log # the name of the plugin
       priority: 7999 # priority
       file: t/wasm/log/main.go.wasm # the path of `.wasm` file
+      http_request_phase: access # default to "access", can be one of ["access", "rewrite"]
 ```
 
 That's all. Now you can use the wasm plugin as a regular plugin.
@@ -93,4 +94,19 @@ Attributes below can be configured in the plugin:
 
 | Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
 | --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-|  conf         | string | required |   |          | the plugin ctx configuration which can be fetched via Proxy WASM SDK |
+|  conf         | string | required |   |  != ""      | the plugin ctx configuration which can be fetched via Proxy WASM SDK |
+
+Here is the mapping between Proxy WASM callbacks and APISIX's phases:
+
+* `proxy_on_configure`: run once there is not PluginContext for the new configuration.
+For example, when the first request hits the route which has WASM plugin configured.
+* `proxy_on_http_request_headers`: run in the access/rewrite phase, depends on the configuration of `http_request_phase`.
+* `proxy_on_http_response_headers`: run in the header_filter phase.
+
+## Example
+
+We have reimplemented some Lua plugin via Wasm, under `t/wasm/` of this repo:
+
+* fault-injection
+* forward-auth
+* response-rewrite

@@ -174,6 +174,11 @@ nginx_config:                     # config for render the template to generate n
   #  - TEST_ENV
 
   stream:
+    enable_access_log: false         # enable access log or not, default false
+    access_log: logs/access_stream.log
+    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time"
+                                            # create your custom log format by visiting http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default       # allows setting json or default characters escaping in variables
     lua_shared_dict:
       etcd-cluster-health-check-stream: 10m
       lrucache-lock-stream: 10m
@@ -190,6 +195,9 @@ nginx_config:                     # config for render the template to generate n
     # The configuration should be well indented!
   http_server_configuration_snippet: |
     # Add custom Nginx http server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_server_location_configuration_snippet: |
+    # Add custom Nginx http server location configuration to nginx.conf.
     # The configuration should be well indented!
   http_admin_configuration_snippet: |
     # Add custom Nginx admin server configuration to nginx.conf.
@@ -278,6 +286,19 @@ etcd:
                                   # the default value is true, e.g. the certificate will be verified strictly.
     #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
 
+# HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
+# wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
+# server HTTP APIs. By default, APISIX doesn't need this configuration.
+# vault:
+#   host: "http://0.0.0.0:8200"   # The host address where the vault server is running.
+#   timeout: 10                   # request timeout 30 seconds
+#   token: root                   # Authentication token to access Vault HTTP APIs
+#   prefix: kv/apisix             # APISIX supports vault kv engine v1, where sensitive data are being stored
+                                  # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforcement of
+                                  # policies, generate limited scoped tokens and tightly control the data that can be accessed
+                                  # from APISIX.
+
+
 #discovery:                       # service discovery center
 #  dns:
 #    servers:
@@ -302,16 +323,18 @@ graphql:
 plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
+  - proxy-control                  # priority: 21990
   - ext-plugin-pre-req             # priority: 12000
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
   - serverless-pre-function        # priority: 10000
-  - batch-requests                 # priority: 4010
+  #- batch-requests                # priority: 4010
   - cors                           # priority: 4000
   - ip-restriction                 # priority: 3000
   - ua-restriction                 # priority: 2999
   - referer-restriction            # priority: 2990
+  - csrf                           # priority: 2980
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
@@ -323,6 +346,8 @@ plugins:                          # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - forward-auth                   # priority: 2002
+  - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
   - proxy-mirror                   # priority: 1010
@@ -340,18 +365,31 @@ plugins:                          # plugin list (sorted by priority)
   - response-rewrite               # priority: 899
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
+  - grpc-web                       # priority: 505
+  - public-api                     # priority: 501
   - prometheus                     # priority: 500
+  - datadog                        # priority: 495
   - echo                           # priority: 412
+  - loggly                         # priority: 411
   - http-logger                    # priority: 410
+  - splunk-hec-logging             # priority: 409
+  - skywalking-logger              # priority: 408
+  - google-cloud-logging           # priority: 407
   - sls-logger                     # priority: 406
   - tcp-logger                     # priority: 405
   - kafka-logger                   # priority: 403
+  - rocketmq-logger                # priority: 402
   - syslog                         # priority: 401
   - udp-logger                     # priority: 400
+  - file-logger                    # priority: 399
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
   #- skywalking                    # priority: -1100
+  #- opentelemetry                 # priority: -1200
+  - aws-lambda                     # priority: -1899
+  - azure-functions                # priority: -1900
+  - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
 
@@ -376,8 +414,24 @@ plugin_attr:
     service_name: APISIX
     service_instance_name: APISIX Instance Name
     endpoint_addr: http://127.0.0.1:12800
+  opentelemetry:
+    trace_id_source: x-request-id
+    resource:
+      service.name: APISIX
+    collector:
+      address: 127.0.0.1:4317
+      request_timeout: 3
+      request_headers:
+        Authorization: token
+    batch_span_processor:
+      drop_on_queue_full: false
+      max_queue_size: 1024
+      batch_timeout: 2
+      inactive_timeout: 1
+      max_export_batch_size: 16
   prometheus:
     export_uri: /apisix/prometheus/metrics
+    metric_prefix: apisix_
     enable_export_server: true
     export_addr:
       ip: 127.0.0.1

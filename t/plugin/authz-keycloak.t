@@ -208,7 +208,7 @@ done
 --- request
 GET /t
 --- response_body
-allOf 1 failed: object matches none of the requireds: ["discovery"] or ["token_endpoint"]
+allOf 1 failed: object matches none of the required: ["discovery"] or ["token_endpoint"]
 done
 --- no_error_log
 [error]
@@ -231,7 +231,7 @@ done
 --- request
 GET /t
 --- response_body
-allOf 2 failed: object matches none of the requireds: ["client_id"] or ["audience"]
+allOf 2 failed: object matches none of the required: ["client_id"] or ["audience"]
 done
 --- no_error_log
 [error]
@@ -258,7 +258,7 @@ done
 --- request
 GET /t
 --- response_body
-allOf 3 failed: object matches none of the requireds
+allOf 3 failed: object matches none of the required
 done
 --- no_error_log
 [error]

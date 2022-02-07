@@ -211,3 +211,48 @@ GET /opentracing
 --- grep_error_log eval
 qr/zipkin start_child_span apisix.response_span time: nil/
 --- grep_error_log_out
+
+
+
+=== TEST 11: check not error with limit count
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 1,
+                                "service_name": "APISIX"
+                            },
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 403,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- pipelined_requests eval
+["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
+--- error_code eval
+[200, 200, 200, 403]
+--- no_error_log
+[error]

@@ -23,7 +23,7 @@ title: 证书
 
 `APISIX` 支持通过 TLS 扩展 SNI 实现加载特定的 SSL 证书以实现对 https 的支持。
 
-SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的SSL证书发送给客户端。
+SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的 SSL 证书发送给客户端。
 
 ### 单一域名指定
 
@@ -105,8 +105,8 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 
 ### 泛域名
 
-一个 SSL 证书的域名也可能包含泛域名，如`*.test.com`，它代表所有以`test.com`结尾的域名都可以使用该证书。
-比如`*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
+一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。
+比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
 
 看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来:
 
@@ -150,7 +150,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ### 多域名的情况
 
-如果一个 SSL 证书包含多个独立域名，比如`www.test.com`和`mail.test.com`，
+如果一个 SSL 证书包含多个独立域名，比如 `www.test.com` 和 `mail.test.com`，
 你可以把它们都放入 `snis` 数组中，就像这样：
 
 ```json

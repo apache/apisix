@@ -27,6 +27,7 @@ title: consumer-restriction
   - [属性](#属性)
   - [示例](#示例)
     - [如何限制 consumer_name](#如何限制-consumer_name)
+    - [如何限制 allowed_by_methods](#如何限制-allowed_by_methods)
     - [如何限制 service_id](#如何限制-service_id)
   - [禁用插件](#禁用插件)
 
@@ -42,11 +43,13 @@ title: consumer-restriction
 | whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
+| rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
+| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的HTTP methods列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
 * **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
-* **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
+* **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制 service 的访问，需要结合授权插件一起使用。
 
 ## 示例
 
@@ -116,9 +119,77 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
+### 如何限制 `allowed_by_methods`
+
+下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 `jack1` 只能使用 `POST` 进行访问：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST"]
+            }]
+        }
+    }
+}'
+```
+
+**测试插件**
+
+jack1 访问：
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 403 Forbidden
+...
+{"message":"The consumer_name is forbidden."}
+```
+
+增加 `jack1` `GET` 访问能力：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "basic-auth": {},
+        "consumer-restriction": {
+            "allowed_by_methods":[{
+                "user": "jack1",
+                "methods": ["POST","GET"]
+            }]
+        }
+    }
+}'
+```
+
+jack1 访问：
+
+```shell
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+HTTP/1.1 200 OK
+```
+
 ### 如何限制 `service_id`
 
-`service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
+`service_id` 方式需要与授权插件一起配合使用，这里以 key-auth 授权插件为例。
 
 1、创建两个 service
 
@@ -167,7 +238,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-3、在 route 上开启 `key-auth` 插件并绑定 `service_id` 为`1`
+3、在 route 上开启 `key-auth` 插件并绑定 `service_id` 为 `1`
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

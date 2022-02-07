@@ -34,7 +34,7 @@ apisix:
 
 make init
 
-if ! grep "resolver 127.0.0.1 \[::1\]:5353 valid=30;" conf/nginx.conf > /dev/null; then
+if ! grep "resolver 127.0.0.1 \[::1\]:5353 valid=30 ipv6=on;" conf/nginx.conf > /dev/null; then
     echo "failed: dns_resolver_valid doesn't take effect"
     exit 1
 fi
@@ -52,8 +52,8 @@ apisix:
 
 make init
 
-count=$(grep -c "resolver 127.0.0.1 \[::1\]:5353 valid=30;" conf/nginx.conf)
-if [ "$count" -ne 1 ]; then
+count=$(grep -c "resolver 127.0.0.1 \[::1\]:5353 valid=30 ipv6=on;" conf/nginx.conf)
+if [ "$count" -ne 2 ]; then
     echo "failed: dns_resolver_valid doesn't take effect"
     exit 1
 fi
@@ -73,10 +73,26 @@ apisix:
 
 make init
 
-count=$(grep -c "resolver 127.0.0.1 \[::1\] \[::2\];" conf/nginx.conf)
-if [ "$count" -ne 1 ]; then
+count=$(grep -c "resolver 127.0.0.1 \[::1\] \[::2\] ipv6=on;" conf/nginx.conf)
+if [ "$count" -ne 2 ]; then
     echo "failed: can't handle IPv6 resolver w/o bracket"
     exit 1
 fi
 
 echo "pass: handle IPv6 resolver w/o bracket"
+
+# ipv6 config test
+echo '
+apisix:
+  enable_ipv6: false
+  dns_resolver:
+    - 127.0.0.1
+  dns_resolver_valid: 30
+' > conf/config.yaml
+
+make init
+
+if ! grep "resolver 127.0.0.1 valid=30 ipv6=off;" conf/nginx.conf > /dev/null; then
+    echo "failed: ipv6 config doesn't take effect"
+    exit 1
+fi

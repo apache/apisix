@@ -62,24 +62,8 @@ routes:
         "127.0.0.1:50053": 1
       type: roundrobin
 #END
---- config
-    location /t {
-        content_by_lua_block {
-            local ngx_pipe = require("ngx.pipe")
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHello")
-            if not proc then
-                ngx.say(err)
-                return
-            end
-            local data, err = proc:stdout_read_all()
-            if not data then
-                ngx.say(err)
-                return
-            end
-            ngx.say(data:sub(1, -2))
-            return
-        }
-    }
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
 --- response_body
 {
   "message": "Hello apisix"
@@ -107,24 +91,8 @@ routes:
         "127.0.0.1:50053": 1
       type: roundrobin
 #END
---- config
-    location /t {
-        content_by_lua_block {
-            local ngx_pipe = require("ngx.pipe")
-            local proc, err = ngx_pipe.spawn("grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{\"name\":\"apisix\"}' 127.0.0.1:1984 helloworld.Greeter.SayHelloBidirectionalStream")
-            if not proc then
-                ngx.say(err)
-                return
-            end
-            local data, err = proc:stdout_read_all()
-            if not data then
-                ngx.say(err)
-                return
-            end
-            ngx.say(data:sub(1, -2))
-            return
-        }
-    }
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHelloBidirectionalStream
 --- response_body
 {
   "message": "Hello apisix"

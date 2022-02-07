@@ -40,10 +40,13 @@ apisix:
       - "127.0.0.1:9211"
 ```
 
-如果你需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
+如果 `apisix.enable_admin` 为 true，上面的配置会同时启用 HTTP 和 stream 代理。
+
+如果你设置 `enable_admin` 为 false，且需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
 
 ```yaml
 apisix:
+  enable_admin: false
   stream_proxy: # TCP/UDP proxy
     only: false
     tcp: # TCP proxy address list
@@ -68,11 +71,15 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 例子中 APISIX 对客户端 IP 为 `127.0.0.1` 的请求代理转发到上游主机 `127.0.0.1:1995`。
-更多用例，请参照 [test case](../../../t/stream-node/sanity.t).
+更多用例，请参照 [test case](../../../t/stream-node/sanity.t)。
 
 ## 更多 route 匹配选项
 
-我们可以添加更多的选项来匹配 route 。
+我们可以添加更多的选项来匹配 route。目前 Stream Route 配置支持 3 个字段进行过滤：
+
+- server_addr: 接受 Stream Route 连接的 APISIX 服务器的地址。
+- server_port: 接受 Stream Route 连接的 APISIX 服务器的端口。
+- remote_addr: 发出请求的客户端地址。
 
 例如
 
@@ -92,11 +99,73 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 例子中 APISIX 会把服务器地址为 `127.0.0.1`, 端口为 `2000` 代理到上游地址 `127.0.0.1:1995`。
 
+让我们再举一个实际场景的例子：
+
+1. 将此配置放在 `config.yaml` 中
+
+   ```yaml
+   apisix:
+     stream_proxy: # TCP/UDP proxy
+       tcp: # TCP proxy address list
+         - 9100 # by default uses 0.0.0.0
+         - "127.0.0.10:9101"
+   ```
+
+2. 现在运行一个 mysql docker 容器并将端口 3306 暴露给主机
+
+   ```shell
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   # check it using a mysql client that it works
+   $ mysql --host=127.0.0.1 --port=3306 -u root -p
+   Enter password:
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 25
+   ...
+   mysql>
+   ```
+
+3. 现在我们将创建一个带有服务器过滤的 stream 路由：
+
+   ```shell
+   curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+   {
+       "server_addr": "127.0.0.10",
+       "server_port": 9101,
+       "upstream": {
+           "nodes": {
+               "127.0.0.1:3306": 1
+           },
+           "type": "roundrobin"
+       }
+   }'
+   ```
+
+   每当 APISIX 服务器 `127.0.0.10` 和端口 `9101` 收到连接时，它只会将请求转发到 mysql 上游。让我们测试一下：
+
+4. 向 `9100` 发出请求（在 config.yaml 中启用 stream 代理端口），过滤器匹配失败。
+
+   ```shell
+   $ mysql --host=127.0.0.1 --port=9100 -u root -p
+   Enter password:
+   ERROR 2013 (HY000): Lost connection to MySQL server at 'reading initial communication packet', system error: 2
+   ```
+
+  下面的请求匹配到了 stream 路由，所以它可以正常代理到 mysql。
+
+   ```shell
+   mysql --host=127.0.0.10 --port=9101 -u root -p
+   Enter password:
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 26
+   ...
+   mysql>
+   ```
+
 完整的匹配选项列表参见 [Admin API 的 Stream Route](./admin-api.md#stream-route)。
 
-## 接收 TLS over TCP
+## 接收 TLS over TCP 连接
 
-APISIX 支持接收 TLS over TCP。
+APISIX 支持接收 TLS over TCP 连接。
 
 首先，我们需要给对应的 TCP 地址启用 TLS：
 
@@ -117,7 +186,6 @@ mTLS 也是支持的，参考 [保护路由](./mtls.md#保护路由)。
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
     "upstream": {
         "nodes": {
             "127.0.0.1:1995": 1
@@ -143,3 +211,24 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```
 
 在这里，握手时发送 SNI `a.test.com` 的连接会被代理到 `127.0.0.1:5991`。
+
+## 代理到 TLS over TCP 上游
+
+APISIX 还支持代理到 TLS over TCP 上游。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+        "scheme": "tls",
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+通过设置 `scheme` 为 tls，APISIX 将与上游进行 TLS 握手。
+
+当客户端也使用 TLS over TCP，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI "apisix_backend"。

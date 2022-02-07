@@ -424,3 +424,126 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: labels exist if only route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : ["return function(conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        ngx.say(core.json.encode(ctx.matched_route.value.labels));
+                                        end"]
+                        }
+                    },
+                    "labels": {
+                        "version": "v2"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: hit routes
+--- request
+GET /hello
+--- response_body
+{"version":"v2"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: labels exist if merge route and service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.sleep(0.6) -- wait for sync
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : ["return function(conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        ngx.say(core.json.encode(ctx.matched_route.value.labels));
+                                        end"]
+                        }
+                    },
+                    "labels": {
+                        "version": "v2"
+                    },
+                    "uri": "/hello",
+                    "service_id": 1
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: hit routes
+--- request
+GET /hello
+--- response_body
+{"version":"v2"}
+--- no_error_log
+[error]

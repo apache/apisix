@@ -7,7 +7,7 @@ on:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -26,8 +26,6 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
-          - linux_openresty_mtls
-          - linux_tengine
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -42,12 +40,12 @@ jobs:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v2.1.4
+        uses: actions/setup-go@v2.1.5
         with:
           go-version: "1.15"
 
       - name: Cache deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         env:
           cache-name: cache-deps
         with:
@@ -69,7 +67,7 @@ jobs:
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
-          make compress-tar project_version=${{ steps.branch_env.outputs.version }}
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
 
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -86,7 +84,7 @@ jobs:
           export TINYGO_VER=0.20.0
           wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
           sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
-          cd t/wasm && find . -type f -name "main.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
+          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -107,10 +105,3 @@ jobs:
 
       - name: Linux Script
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
-
-      - name: Publish Artifact
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') && matrix.os_name == 'linux_openresty' }}
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: ${{ steps.branch_env.outputs.fullname }}
-          path: ${{ steps.branch_env.outputs.fullname }}

@@ -80,8 +80,13 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
             }
         }
     },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
     "uri": "/hello",
-    "host": "127.0.0.1",
 }'
 ```
 
@@ -90,7 +95,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (break_response_code) response.
 
 ```shell
-$ curl -i -X POST "http://127.0.0.1:9080/get"
+$ curl -i -X POST "http://127.0.0.1:9080/hello"
 HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
 Connection: keep-alive
@@ -101,7 +106,7 @@ Server: APISIX/1.5
 
 ## Disable Plugin
 
-When you want to disable the `api-breader` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
+When you want to disable the `api-breaker` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

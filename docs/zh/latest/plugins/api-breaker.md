@@ -37,15 +37,15 @@ title: api-breaker
 
 由代码逻辑自动按**触发不健康状态**的次数递增运算：
 
-每当上游服务返回`unhealthy.http_statuses`配置中的状态码(比如：500)，达到`unhealthy.failures`次时(比如：3 次)，认为上游服务处于不健康状态。
+每当上游服务返回 `unhealthy.http_statuses` 配置中的状态码(比如：500)，达到 `unhealthy.failures` 次时(比如：3 次)，认为上游服务处于不健康状态。
 
 第一次触发不健康状态，**熔断 2 秒**。
 
-然后，2 秒过后重新开始转发请求到上游服务，如果继续返回`unhealthy.http_statuses`状态码，记数再次达到`unhealthy.failures`次时，**熔断 4 秒**（倍数方式）。
+然后，2 秒过后重新开始转发请求到上游服务，如果继续返回 `unhealthy.http_statuses` 状态码，记数再次达到 `unhealthy.failures` 次时，**熔断 4 秒**（倍数方式）。
 
 依次类推，2, 4, 8, 16, 32, 64, ..., 256, 最大到 300。 300 是 `max_breaker_sec` 的最大值，允许自定义修改。
 
-在不健康状态时，当转发请求到上游服务并返回`healthy.http_statuses`配置中的状态码(比如：200)，达到`healthy.successes`次时(比如：3 次)，认为上游服务恢复健康状态。
+在不健康状态时，当转发请求到上游服务并返回 `healthy.http_statuses` 配置中的状态码(比如：200)，达到 `healthy.successes` 次时(比如：3 次)，认为上游服务恢复健康状态。
 
 ## 属性列表
 
@@ -60,7 +60,7 @@ title: api-breaker
 
 ## 启用方式
 
-这是一个示例，在指定的路由上启用`api-breaker`插件。
+这是一个示例，在指定的路由上启用 `api-breaker` 插件。
 应答 500 或 503 连续 3 次，触发熔断。应答 200 连续 1 次，恢复健康。
 
 ```shell
@@ -79,8 +79,13 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
             }
         }
     },
-    "uri": "/hello",
-    "host": "127.0.0.1"
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "uri": "/hello"
 }'
 ```
 
@@ -89,7 +94,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 使用上游的配置，如果你的上流服务返回 500，连续 3 次。客户端将会收到 502（break_response_code）应答。
 
 ```shell
-$ curl -i "http://127.0.0.1:9080/get"
+$ curl -i "http://127.0.0.1:9080/hello"
 HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
 Connection: keep-alive
@@ -100,7 +105,7 @@ Server: APISIX/1.5
 
 ## 禁用插件
 
-当想禁用`api-breaker`插件时，非常简单，只需要在插件配置中删除相应的 json 配置，无需重启服务，即可立即生效：
+当想禁用 `api-breaker` 插件时，非常简单，只需要在插件配置中删除相应的 json 配置，无需重启服务，即可立即生效：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

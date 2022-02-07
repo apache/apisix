@@ -30,7 +30,7 @@ serverless 的插件有两个，分别是 `serverless-pre-function` 和 `serverl
 
 | 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                   | 描述                                                                                       |
 | --------- | ------------- | -------- | ---------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| phase     | string        | 可选 | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"] |                                                                                            |
+| phase     | string        | 可选 | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] |                                                                                            |
 | functions | array[string] | 必须 |            |                                                                          | 指定运行的函数列表，是数组类型，里面可以包含一个函数，也可以是多个函数，按照先后顺序执行。 |
 
 需要注意的是，这里只接受函数，而不接受其他类型的 Lua 代码。比如匿名函数是合法的：
@@ -60,6 +60,8 @@ ngx.say(count)
 
 从 `v2.6` 版本开始，我们会把 `conf` 和 `ctx` 作为头两个参数传递给 serverless 函数，就跟一般的插件一样。
 
+`v2.12.0` 版本之前，`before_proxy` 这个 phase 曾被称作 `balancer`。考虑到这一方法事实上运行在 `access` 之后，代理到上游之前，跟 `balancer` 没有关系，新的命名会更加贴切。
+
 ## 示例
 
 ### 启动插件
@@ -67,7 +69,7 @@ ngx.say(count)
 下面是一个示例，在指定的 route 上开启了 serverless 插件:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -78,12 +80,12 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
         "serverless-post-function": {
             "phase": "rewrite",
             "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
-        },
+        }
     },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -112,7 +114,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

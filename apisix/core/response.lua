@@ -101,7 +101,9 @@ local function set_header(append, ...)
     if count == 1 then
         local headers = select(1, ...)
         if type(headers) ~= "table" then
-            error("should be a table if only one argument", 2)
+            -- response.set_header(name, nil)
+            ngx_header[headers] = nil
+            return
         end
 
         for k, v in pairs(headers) do
@@ -162,8 +164,6 @@ end
 --  final_body = transform(final_body)
 --  ngx.arg[1] = final_body
 --  ...
---
--- Inspired by kong.response.get_raw_body()
 function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]

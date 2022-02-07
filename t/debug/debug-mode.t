@@ -48,7 +48,6 @@ loaded plugin and sort by priority: 11011 name: zipkin
 loaded plugin and sort by priority: 11010 name: request-id
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
-loaded plugin and sort by priority: 4010 name: batch-requests
 loaded plugin and sort by priority: 4000 name: cors
 loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2990 name: referer-restriction
@@ -81,6 +80,7 @@ loaded plugin and sort by priority: 410 name: http-logger
 loaded plugin and sort by priority: 406 name: sls-logger
 loaded plugin and sort by priority: 405 name: tcp-logger
 loaded plugin and sort by priority: 403 name: kafka-logger
+loaded plugin and sort by priority: 402 name: rocketmq-logger
 loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
@@ -347,7 +347,6 @@ passed
 
 === TEST 10: hit route
 --- debug_config eval: $::debug_config
---- stream_enable
 --- stream_request eval
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response

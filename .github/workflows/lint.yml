@@ -3,26 +3,16 @@ name: ❄️ Lint
 on: [pull_request]
 
 jobs:
-  trailing-whitespace:
-    name: 🌌 Trailing whitespace
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - uses: actions/checkout@v2.4.0
-      - name: 🧹 Check for trailing whitespace
-        run: "! git grep -EIn $'[ \t]+$'"
   misc:
     name: misc checker
     runs-on: ubuntu-latest
     steps:
       - name: Check out code.
         uses: actions/checkout@v2.4.0
-      - name: Install
+      - name: spell check
         run: |
-          wget -O - -q https://git.io/misspell | sh -s -- -b .
-      - name: Misspell
-        run: |
-          git grep --cached -l '' | xargs ./misspell -error
+          pip install codespell==2.1.0
+          git grep --cached -l '' | xargs codespell --ignore-words=.ignore_words
       - name: Merge conflict
         run: |
           grep "^<<<<<<< HEAD" $(git grep --cached -l '' | xargs) && exit 1 || true
@@ -39,7 +29,7 @@ jobs:
         uses: actions/checkout@v2.4.0
 
       - name: Setup Nodejs env
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v2.5.1
         with:
           node-version: '12'
 

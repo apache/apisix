@@ -7,7 +7,7 @@ on:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -44,7 +44,7 @@ jobs:
       run: |
         export VERSION=${{ steps.branch_env.outputs.version }}
         sudo gem install --no-document fpm
-        git clone -b v2.5.0 https://github.com/api7/apisix-build-tools.git
+        git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
 
         # move codes under build tool
         mkdir ./apisix-build-tools/apisix
@@ -57,7 +57,7 @@ jobs:
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test
@@ -80,10 +80,3 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-    - name: Publish Artifact
-      if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-      uses: actions/upload-artifact@v2.2.4
-      with:
-        name: "rpm"
-        path: "./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"

@@ -62,7 +62,7 @@ done
 --- request
 GET /t
 --- response_body
-property "sample_ratio" validation failed: expected -0.1 to be greater than 1e-05
+property "sample_ratio" validation failed: expected -0.1 to be at least 1e-05
 done
 --- no_error_log
 [error]
@@ -85,7 +85,7 @@ done
 --- request
 GET /t
 --- response_body
-property "sample_ratio" validation failed: expected 2 to be smaller than 1
+property "sample_ratio" validation failed: expected 2 to be at most 1
 done
 --- no_error_log
 [error]
@@ -371,52 +371,7 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 
 
 
-=== TEST 13: check not error with limit count
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "zipkin": {
-                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
-                                "sample_ratio": 1,
-                                "service_name": "APISIX"
-                            },
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 403,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/opentracing"
-                }]])
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- pipelined_requests eval
-["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
---- error_code eval
-[200, 200, 200, 403]
---- no_error_log
-[error]
-
-
-
-=== TEST 14: check zipkin headers
+=== TEST 13: check zipkin headers
 --- config
     location /t {
         content_by_lua_block {
@@ -455,7 +410,7 @@ passed
 
 
 
-=== TEST 15: set x-b3-sampled if sampled
+=== TEST 14: set x-b3-sampled if sampled
 --- request
 GET /echo
 --- response_headers
@@ -463,7 +418,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 16: don't sample if disabled
+=== TEST 15: don't sample if disabled
 --- request
 GET /echo
 --- more_headers
@@ -473,7 +428,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 17: don't sample if disabled (old way)
+=== TEST 16: don't sample if disabled (old way)
 --- request
 GET /echo
 --- more_headers
@@ -483,7 +438,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 18: sample according to the header
+=== TEST 17: sample according to the header
 --- config
     location /t {
         content_by_lua_block {
@@ -522,7 +477,7 @@ passed
 
 
 
-=== TEST 19: don't sample by default
+=== TEST 18: don't sample by default
 --- request
 GET /echo
 --- response_headers
@@ -530,7 +485,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 20: sample if needed
+=== TEST 19: sample if needed
 --- request
 GET /echo
 --- more_headers
@@ -540,7 +495,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 21: sample if debug
+=== TEST 20: sample if debug
 --- request
 GET /echo
 --- more_headers
@@ -550,7 +505,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 22: sample if needed (old way)
+=== TEST 21: sample if needed (old way)
 --- request
 GET /echo
 --- more_headers
@@ -560,7 +515,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 23: don't cache the per-req sample ratio
+=== TEST 22: don't cache the per-req sample ratio
 --- config
     location /t {
         content_by_lua_block {

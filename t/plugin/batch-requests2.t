@@ -30,13 +30,49 @@ add_block_preprocessor(sub {
     if (!$block->no_error_log && !$block->error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - public-api
+    - batch-requests
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
 });
 
 run_tests;
 
 __DATA__
 
-=== TEST 1: customize uri, not found
+=== TEST 1: pre-create public API route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/batch-requests"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: customize uri, not found
 --- yaml_config
 plugin_attr:
     batch-requests:
@@ -78,7 +114,35 @@ plugin_attr:
 
 
 
-=== TEST 2: customize uri, found
+=== TEST 3: create public API route for custom uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/foo/bar"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: customize uri, found
 --- yaml_config
 plugin_attr:
     batch-requests:
@@ -142,7 +206,7 @@ plugin_attr:
 
 
 
-=== TEST 3: customize uri, missing plugin, use default
+=== TEST 5: customize uri, missing plugin, use default
 --- yaml_config
 plugin_attr:
     x:
@@ -181,7 +245,7 @@ plugin_attr:
 
 
 
-=== TEST 4: customize uri, missing attr, use default
+=== TEST 6: customize uri, missing attr, use default
 --- yaml_config
 plugin_attr:
     batch-requests:
@@ -217,3 +281,154 @@ plugin_attr:
             ngx.status = 200
         }
     }
+
+
+
+=== TEST 7: ensure real ip header is overridden
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                        "x-real-ip": "127.0.0.2"
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+
+
+
+=== TEST 8: ensure real ip header is overridden, header from the pipeline
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "headers": {
+                            "x-real-ip": "127.0.0.2"
+                        },
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+
+
+
+=== TEST 9: ensure real ip header is overridden, header has underscore
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "headers": {
+                            "x_real-ip": "127.0.0.2"
+                        },
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed

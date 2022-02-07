@@ -38,13 +38,12 @@ title: limit-req
 
 | 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
 | ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
-| burst         | integer | 必须   |        | burst >= 0                                                              | 请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
-| key_type      | string | 可选   |  "var"      | ["var", "var_combination"]                                          | key 的类型 |
-| key           | string  | 必须   |        |  | 用来做请求计数的依据。如果 `key_type` 为 "var"，那么 key 会被当作变量名称，如 "remote_addr" 和 "consumer_name"。如果 `key_type` 为 "var_combination"，那么 key 会当作变量组合，如 "$remote_addr $consumer_name"。如果 key 的值为空，$remote_addr 会被作为默认 key。 |
+| rate          | integer | 必须   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `burst`）的请求会被加上延时。                                             |
+| burst         | integer | 必须   |        | burst >= 0                                                              | t请求速率超过 （`rate` + `burst`）的请求会被直接拒绝。                                                                                            |
+| key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
 | rejected_code | integer | 可选   | 503    | [200,...,599]                                                              | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 | rejected_msg       | string | 可选                                |            | 非空                                          | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
-| nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
+| nodelay       | boolean | 可选   | false  |                                                                         | 如果 nodelay 为 true， 请求速率超过 `rate` 但没有超过 （`rate` + `burst`）的请求不会加上延迟, 如果是 false，则会加上延迟。 |
 | allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
 
 ## 示例
@@ -70,13 +69,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
 ```
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
+这里以 `route` 为例（`service` 的使用是同样的方法），在指定的 `route` 上启用 `limit-req` 插件，并设置 `key_type` 为 `var_combination`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -95,7 +94,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -131,7 +130,7 @@ Server: APISIX web server
 </html>
 ```
 
-同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."` ，当你超过，就会收到如下的响应体：
+同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."`，当你超过，就会收到如下的响应体：
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
@@ -145,11 +144,11 @@ Server: APISIX web server
 
 这就表示 limit req 插件生效了。
 
-### 如何在`consumer`上使用
+### 如何在 `consumer`上使用
 
-consumer上开启`limit-req`插件，需要与授权插件一起配合使用，这里以key-auth授权插件为例。
+consumer上开启 `limit-req` 插件，需要与授权插件一起配合使用，这里以 key-auth 授权插件为例。
 
-1、将`limit-req`插件绑定到consumer上
+1、将 `limit-req` 插件绑定到consumer上
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -169,7 +168,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-2、创建`route`并开启`key-auth`插件
+2、创建 `route` 并开启 `key-auth` 插件
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -192,7 +191,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件**
 
-未超过`rate + burst` 的值
+未超过 `rate + burst` 的值
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
@@ -200,7 +199,7 @@ HTTP/1.1 200 OK
 ......
 ```
 
-当超过`rate + burst` 的值
+当超过 `rate + burst` 的值
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
@@ -215,7 +214,7 @@ HTTP/1.1 403 Forbidden
 </html>
 ```
 
-说明绑在`consumer`上的 `limit-req`插件生效了
+说明绑在 `consumer`上的 `limit-req` 插件生效了
 
 ## 移除插件
 
@@ -229,13 +228,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
 ```
 
-移除`consumer`上的 `limit-req` 插件
+移除 `consumer`上的 `limit-req` 插件
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

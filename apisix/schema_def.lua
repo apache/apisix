@@ -237,7 +237,7 @@ local health_checker = {
                         },
                         successes = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         }
@@ -259,24 +259,38 @@ local health_checker = {
                         },
                         tcp_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 2
                         },
                         timeouts = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 7
                         },
                         http_failures = {
                             type = "integer",
-                            minimum = 1,
+                            minimum = 0,
                             maximum = 254,
                             default = 5
                         },
                     }
                 }
+            },
+            default = {
+                type = "http",
+                healthy = {
+                    http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+                                      300, 301, 302, 303, 304, 305, 306, 307, 308 },
+                    successes = 0,
+                },
+                unhealthy = {
+                    http_statuses = { 429, 500, 503 },
+                    tcp_failures = 0,
+                    timeouts = 0,
+                    http_failures = 0,
+                },
             }
         }
     },
@@ -438,7 +452,10 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http", "https"}
+            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp"},
+            description = "The scheme of the upstream." ..
+                " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
+                " For L4 proxy, it can be one of tcp/tls/udp."
         },
         labels = labels_def,
         discovery_type = {

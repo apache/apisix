@@ -17,18 +17,19 @@
 
 local lfs = require("lfs")
 local log = require("apisix.core.log")
+local io = require("apisix.core.io")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local clear_header = ngx.req.clear_header
-local tonumber = tonumber
-local error    = error
-local type     = type
-local str_fmt  = string.format
+local tonumber  = tonumber
+local error     = error
+local type      = type
+local str_fmt   = string.format
 local str_lower = string.lower
-local io_open  = io.open
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 local req_get_body_file = ngx.req.get_body_file
+local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
 
@@ -150,15 +151,26 @@ function _M.set_uri_args(ctx, args)
 end
 
 
-local function get_file(file_name)
-    local f, err = io_open(file_name, 'r')
-    if not f then
-        return nil, err
+function _M.get_post_args(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
     end
 
-    local req_body = f:read("*all")
-    f:close()
-    return req_body
+    if not ctx.req_post_args then
+        req_read_body()
+
+        -- use 0 to avoid truncated result and keep the behavior as the
+        -- same as other platforms
+        local args, err = req_get_post_args(0)
+        if not args then
+            -- do we need a way to handle huge post forms?
+            log.error("the post form is too large: ", err)
+            args = {}
+        end
+        ctx.req_post_args = args
+    end
+
+    return ctx.req_post_args
 end
 
 
@@ -179,8 +191,6 @@ end
 
 
 function _M.get_body(max_size, ctx)
-    -- TODO: improve the check with set client_max_body dynamically
-    -- which requires to change Nginx source code
     if max_size then
         local var = ctx and ctx.var or ngx.var
         local content_length = tonumber(var.http_content_length)
@@ -230,7 +240,7 @@ function _M.get_body(max_size, ctx)
         end
     end
 
-    local req_body, err = get_file(file_name)
+    local req_body, err = io.get_file(file_name)
     return req_body, err
 end
 
@@ -259,8 +269,9 @@ function _M.get_port(ctx)
 end
 
 
-function _M.get_http_version()
-    return ngx.req.http_version()
-end
+_M.get_http_version = ngx.req.http_version
+
+
+_M.get_method = ngx.req.get_method
 
 return _M

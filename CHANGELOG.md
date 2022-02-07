@@ -23,6 +23,10 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.12.0](#2120)
+- [2.11.0](#2110)
+- [2.10.3](#2103)
+- [2.10.2](#2102)
 - [2.10.1](#2101)
 - [2.10.0](#2100)
 - [2.9.0](#290)
@@ -47,17 +51,102 @@ title: Changelog
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-## 2.10.1
+## 2.12.0
+
+### Change
+
+- change(serverless): rename "balancer" phase to "before_proxy" [#5992](https://github.com/apache/apisix/pull/5992)
+- change: don't promise to support Tengine [#5961](https://github.com/apache/apisix/pull/5961)
+- change: enable HTTP when stream proxy is set and enable_admin is true [#5867](https://github.com/apache/apisix/pull/5867)
+
+### Core
+
+- :sunrise: feat(L4): support TLS over TCP upstream [#6030](https://github.com/apache/apisix/pull/6030)
+- :sunrise: feat: support registering custom variable [#5941](https://github.com/apache/apisix/pull/5941)
+- :sunrise: feat(vault): vault lua module, integration with jwt-auth authentication plugin [#5745](https://github.com/apache/apisix/pull/5745)
+- :sunrise: feat: enable L4 stream logging [#5768](https://github.com/apache/apisix/pull/5768)
+- :sunrise: feat: add http_server_location_configuration_snippet configuration [#5740](https://github.com/apache/apisix/pull/5740)
+- :sunrise: feat: support resolve default value when environment not set [#5675](https://github.com/apache/apisix/pull/5675)
+- :sunrise: feat(wasm): run in http header_filter [#5544](https://github.com/apache/apisix/pull/5544)
+
+### Plugin
+
+- :sunrise: feat: support hide the authentication header in basic-auth with  a config [#6039](https://github.com/apache/apisix/pull/6039)
+- :sunrise: feat: set proxy_request_buffering dynamically [#6075](https://github.com/apache/apisix/pull/6075)
+- :sunrise: feat(mqtt): balance by client id [#6079](https://github.com/apache/apisix/pull/6079)
+- :sunrise: feat: add forward-auth plugin [#6037](https://github.com/apache/apisix/pull/6037)
+- :sunrise: feat(grpc-web): support gRPC-Web Proxy [#5964](https://github.com/apache/apisix/pull/5964)
+- :sunrise: feat(limit-count): add constant key type [#5984](https://github.com/apache/apisix/pull/5984)
+- :sunrise: feat(limit-count): allow sharing counter [#5881](https://github.com/apache/apisix/pull/5881)
+- :sunrise: feat(splunk): support splunk hec logging plugin [#5819](https://github.com/apache/apisix/pull/5819)
+- :sunrise: feat: basic support OPA plugin [#5734](https://github.com/apache/apisix/pull/5734)
+- :sunrise: feat: rocketmq logger [#5653](https://github.com/apache/apisix/pull/5653)
+- :sunrise: feat(mqtt-proxy): support using route's upstream [#5666](https://github.com/apache/apisix/pull/5666)
+- :sunrise: feat(ext-plugin): support to get request body [#5600](https://github.com/apache/apisix/pull/5600)
+- :sunrise: feat(plugins): aws lambda serverless [#5594](https://github.com/apache/apisix/pull/5594)
+- :sunrise: feat(http/kafka-logger): support to log response body [#5550](https://github.com/apache/apisix/pull/5550)
+- :sunrise: feat: Apache OpenWhisk plugin [#5518](https://github.com/apache/apisix/pull/5518)
+- :sunrise: feat(plugin): support google cloud logging service [#5538](https://github.com/apache/apisix/pull/5538)
 
 ### Bugfix
 
-- fix(zipkin): response_span doesn't have correct start time [#5295](https://github.com/apache/apisix/pull/5295)
-- fix(ext-plugin): don't use stale key [#5309](https://github.com/apache/apisix/pull/5309)
-- fix: route's timeout should not be overwrittern by service [#5219](https://github.com/apache/apisix/pull/5219)
-- fix: filter nil plugin conf triggered by etcd dir init [#5204](https://github.com/apache/apisix/pull/5204)
-- fix: pass correct host header to health checker target nodes [#5175](https://github.com/apache/apisix/pull/5175)
-- fix: upgrade lua-resty-balancer to 0.04 [#5144](https://github.com/apache/apisix/pull/5144)
-- fix(prometheus): avoid negative latency caused by inconsistent Nginx metrics [#5150](https://github.com/apache/apisix/pull/5150)
+- fix: the prometheus labels are inconsistent when error-log-logger is enabled [#6055](https://github.com/apache/apisix/pull/6055)
+- fix(ipv6): allow disabling IPv6 resolve [#6023](https://github.com/apache/apisix/pull/6023)
+- fix(mqtt): handle properties for MQTT 5 [#5916](https://github.com/apache/apisix/pull/5916)
+- fix(sls-logger): unable to get millisecond part of the timestamp [#5820](https://github.com/apache/apisix/pull/5820)
+- fix(mqtt-proxy): client id can be empty [#5816](https://github.com/apache/apisix/pull/5816)
+- fix(ext-plugin): don't use stale key [#5782](https://github.com/apache/apisix/pull/5782)
+- fix(log-rotate): race between reopen log & compression [#5715](https://github.com/apache/apisix/pull/5715)
+- fix(batch-processor): we didn't free stale object actually [#5700](https://github.com/apache/apisix/pull/5700)
+- fix: data pollution after passive health check is changed [#5589](https://github.com/apache/apisix/pull/5589)
+
+## 2.11.0
+
+### Change
+
+- change(wolf-rbac): change default port number and add `authType` parameter to documentation [#5477](https://github.com/apache/apisix/pull/5477)
+
+### Core
+
+- :sunrise: feat: support advanced matching based on post form [#5409](https://github.com/apache/apisix/pull/5409)
+- :sunrise: feat: initial wasm support [#5288](https://github.com/apache/apisix/pull/5288)
+- :sunrise: feat(control): expose services[#5271](https://github.com/apache/apisix/pull/5271)
+- :sunrise: feat(control): add dump upstream api [#5259](https://github.com/apache/apisix/pull/5259)
+- :sunrise: feat: etcd cluster single node failure APISIX startup failure [#5158](https://github.com/apache/apisix/pull/5158)
+- :sunrise: feat: support specify custom sni in etcd conf [#5206](https://github.com/apache/apisix/pull/5206)
+
+### Plugin
+
+- :sunrise: feat(plugin): azure serverless functions [#5479](https://github.com/apache/apisix/pull/5479)
+- :sunrise: feat(kafka-logger): supports logging request body [#5501](https://github.com/apache/apisix/pull/5501)
+- :sunrise: feat: provide skywalking logger plugin [#5478](https://github.com/apache/apisix/pull/5478)
+- :sunrise: feat(plugins): Datadog for metrics collection [#5372](https://github.com/apache/apisix/pull/5372)
+- :sunrise: feat(limit-* plugin):  fallback to remote_addr when key is missing [#5422](https://github.com/apache/apisix/pull/5422)
+- :sunrise: feat(limit-count): support multiple variables as key [#5378](https://github.com/apache/apisix/pull/5378)
+- :sunrise: feat(limit-conn): support multiple variables as key [#5354](https://github.com/apache/apisix/pull/5354)
+- :sunrise: feat(proxy-rewrite): rewrite method [#5292](https://github.com/apache/apisix/pull/5292)
+- :sunrise: feat(limit-req): support multiple variables as key [#5302](https://github.com/apache/apisix/pull/5302)
+- :sunrise: feat(proxy-cache): support memory-based strategy [#5028](https://github.com/apache/apisix/pull/5028)
+- :sunrise: feat(ext-plugin): avoid sending conf request more times [#5183](https://github.com/apache/apisix/pull/5183)
+- :sunrise: feat: Add ldap-auth plugin [#3894](https://github.com/apache/apisix/pull/3894)
+
+## 2.10.3
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2103)
+
+## 2.10.2
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2102)
+
+## 2.10.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2101)
 
 ## 2.10.0
 
@@ -128,7 +217,7 @@ title: Changelog
 - fix(grpc-transcode): support converting nested message [#4859](https://github.com/apache/apisix/pull/4859)
 - fix(authz-keycloak): set permissions as empty table when lazy_load_path is false [#4845](https://github.com/apache/apisix/pull/4845)
 - fix(proxy-cache): keep cache_method same with nginx's proxy_cache_methods [#4814](https://github.com/apache/apisix/pull/4814)
-- fix(admin): inject updatetime when the requst is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
+- fix(admin): inject updatetime when the request is PATCH with sub path [#4765](https://github.com/apache/apisix/pull/4765)
 - fix(admin): check username for updating consumer [#4756](https://github.com/apache/apisix/pull/4756)
 - fix(error-log-logger): avoid sending stale error log [#4690](https://github.com/apache/apisix/pull/4690)
 - fix(grpc-transcode): handle enum type [#4706](https://github.com/apache/apisix/pull/4706)

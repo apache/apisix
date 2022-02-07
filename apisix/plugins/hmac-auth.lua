@@ -291,6 +291,10 @@ local function validate(ctx, params)
         return nil, {message = "access key or signature missing"}
     end
 
+    if not params.algorithm then
+        return nil, {message = "algorithm missing"}
+    end
+
     local consumer, err = get_consumer(params.access_key)
     if err then
         return nil, err

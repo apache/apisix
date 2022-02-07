@@ -29,6 +29,7 @@ local schema = {
         protocol_name = {type = "string"},
         protocol_level = {type = "integer"},
         upstream = {
+            description = "Deprecated. We should configure upstream outside of the plugin",
             type = "object",
             properties = {
                 ip = {type = "string"}, -- deprecated, use "host" instead
@@ -41,7 +42,7 @@ local schema = {
             },
         }
     },
-    required = {"protocol_name", "protocol_level", "upstream"},
+    required = {"protocol_name", "protocol_level"},
 }
 
 
@@ -57,36 +58,42 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
-local function parse_mqtt(data)
-    local res = {}
-    res.packet_type_flags_byte = str_byte(data, 1, 1)
-    if res.packet_type_flags_byte < 16 or res.packet_type_flags_byte > 32 then
-        return nil, "Received unexpected MQTT packet type+flags: "
-                    .. res.packet_type_flags_byte
-    end
-
-    local parsed_pos = 1
-    res.remaining_len = 0
+local function decode_variable_byte_int(data, offset)
     local multiplier = 1
-    for i = 2, 5 do
-        parsed_pos = i
+    local len = 0
+    local pos
+    for i = offset, offset + 3 do
+        pos = i
         local byte = str_byte(data, i, i)
-        res.remaining_len = res.remaining_len + bit.band(byte, 127) * multiplier
+        len = len + bit.band(byte, 127) * multiplier
         multiplier = multiplier * 128
         if bit.band(byte, 128) == 0 then
             break
         end
     end
+
+    return len, pos
+end
+
+
+local function parse_msg_hdr(data)
+    local packet_type_flags_byte = str_byte(data, 1, 1)
+    if packet_type_flags_byte < 16 or packet_type_flags_byte > 32 then
+        return nil, nil,
+            "Received unexpected MQTT packet type+flags: " .. packet_type_flags_byte
+    end
+
+    local len, pos = decode_variable_byte_int(data, 2)
+    return len, pos
+end
+
+
+local function parse_mqtt(data, parsed_pos)
+    local res = {}
 
     local protocol_len = str_byte(data, parsed_pos + 1, parsed_pos + 1) * 256
                          + str_byte(data, parsed_pos + 2, parsed_pos + 2)
@@ -96,10 +103,15 @@ local function parse_mqtt(data)
 
     res.protocol_ver = str_byte(data, parsed_pos + 1, parsed_pos + 1)
     parsed_pos = parsed_pos + 1
-    if res.protocol_ver == 4 then
-        parsed_pos = parsed_pos + 3
-    elseif res.protocol_ver == 5 then
-        parsed_pos = parsed_pos + 9
+
+    -- skip control flags & keepalive
+    parsed_pos = parsed_pos + 3
+
+    if res.protocol_ver == 5 then
+        -- skip properties
+        local property_len
+        property_len, parsed_pos = decode_variable_byte_int(data, parsed_pos + 1)
+        parsed_pos = parsed_pos + property_len
     end
 
     local client_id_len = str_byte(data, parsed_pos + 1, parsed_pos + 1) * 256
@@ -111,7 +123,13 @@ local function parse_mqtt(data)
         return res
     end
 
-    res.client_id = str_sub(data, parsed_pos + 1, parsed_pos + client_id_len)
+    if client_id_len == 0 then
+        -- A Server MAY allow a Client to supply a ClientID that has a length of zero bytes
+        res.client_id = ""
+    else
+        res.client_id = str_sub(data, parsed_pos + 1, parsed_pos + client_id_len)
+    end
+
     parsed_pos = parsed_pos + client_id_len
 
     res.expect_len = parsed_pos
@@ -120,34 +138,32 @@ end
 
 
 function _M.preread(conf, ctx)
-    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
-    -- core.log.warn(" ctx: ", core.json.encode(ctx, true))
     local sock = ngx.req.socket()
-    local data, err = sock:peek(16)
+    -- the header format of MQTT CONNECT can be found in
+    -- https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901033
+    local data, err = sock:peek(5)
     if not data then
-        core.log.error("failed to read first 16 bytes: ", err)
+        core.log.error("failed to read the msg header: ", err)
         return 503
     end
 
-    local res, err = parse_mqtt(data)
-    if not res then
-        core.log.error("failed to parse the first 16 bytes: ", err)
+    local remain_len, pos, err = parse_msg_hdr(data)
+    if not remain_len then
+        core.log.error("failed to parse the msg header: ", err)
         return 503
     end
 
+    local data, err = sock:peek(pos + remain_len)
+    if not data then
+        core.log.error("failed to read the Connect Command: ", err)
+        return 503
+    end
+
+    local res = parse_mqtt(data, pos)
     if res.expect_len > #data then
-        data, err = sock:peek(res.expect_len)
-        if not data then
-            core.log.error("failed to read ", res.expect_len, " bytes: ", err)
-            return 503
-        end
-
-        res = parse_mqtt(data)
-        if res.expect_len > #data then
-            core.log.error("failed to parse mqtt request, expect len: ",
-                           res.expect_len, " but got ", #data)
-            return 503
-        end
+        core.log.error("failed to parse mqtt request, expect len: ",
+                        res.expect_len, " but got ", #data)
+        return 503
     end
 
     if res.protocol and res.protocol ~= conf.protocol_name then
@@ -163,6 +179,15 @@ function _M.preread(conf, ctx)
     end
 
     core.log.info("mqtt client id: ", res.client_id)
+
+    -- when client id is missing, fallback to balance by client IP
+    if res.client_id ~= "" then
+        ctx.mqtt_client_id = res.client_id
+    end
+
+    if not conf.upstream then
+        return
+    end
 
     local host = conf.upstream.host
     if not host then

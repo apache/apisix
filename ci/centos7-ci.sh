@@ -40,6 +40,9 @@ install_dependencies() {
     cp ./etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
     rm -rf etcd-v3.4.0-linux-amd64
 
+    # install vault cli capabilities
+    install_vault_cli
+
     # install test::nginx
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
@@ -72,6 +75,15 @@ install_dependencies() {
     # installing grpcurl
     install_grpcurl
 
+    # install nodejs
+    install_nodejs
+
+    # grpc-web server && client
+    cd t/plugin/grpc-web
+    ./setup.sh
+    # back to home directory
+    cd ../../../
+
     # install dependencies
     git clone https://github.com/iresty/test-nginx.git test-nginx
     create_lua_deps
@@ -82,7 +94,8 @@ run_case() {
     make init
     ./utils/set-dns.sh
     # run test cases
-    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ -r t/
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    rerun_flaky_tests /tmp/test.result
 }
 
 case_opt=$1

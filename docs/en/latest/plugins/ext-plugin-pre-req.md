@@ -43,6 +43,7 @@ The result of external plugins execution will affect the behavior of the current
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner with their configuration    |
+| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the plugin runner is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
 
 ## How To Enable
 
@@ -61,7 +62,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -91,7 +92,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

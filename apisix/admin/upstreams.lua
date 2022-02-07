@@ -127,8 +127,6 @@ function _M.delete(id)
     end
 
     local routes, routes_ver = get_routes()
-    core.log.info("routes: ", core.json.delay_encode(routes, true))
-    core.log.info("routes_ver: ", routes_ver)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
             if type(route) == "table" and route.value

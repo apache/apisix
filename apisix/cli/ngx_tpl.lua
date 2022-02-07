@@ -77,11 +77,18 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     {% if ssl.ssl_trusted_certificate ~= nil then %}
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
+
+    # for stream logs, off by default
+    {% if stream.enable_access_log == true then %}
+    log_format main escape={* stream.access_log_format_escape *} '{* stream.access_log_format *}';
+
+    access_log {* stream.access_log *} main buffer=16384 flush=3;
     {% end %}
 
     # stream configuration snippet starts
@@ -141,6 +148,12 @@ stream {
 
         proxy_pass apisix_backend;
 
+        {% if use_apisix_openresty then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
+
         log_by_lua_block {
             apisix.stream_log_phase()
         }
@@ -148,7 +161,7 @@ stream {
 }
 {% end %}
 
-{% if not (stream_proxy and stream_proxy.only ~= false) then %}
+{% if enable_admin or not (stream_proxy and stream_proxy.only ~= false) then %}
 http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
@@ -241,7 +254,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;
@@ -254,10 +267,6 @@ http {
     {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
     uninitialized_variable_warn off;
-
-    {% if use_apisix_openresty then %}
-    apisix_delay_client_max_body_check on;
-    {% end %}
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     {% end %}
@@ -346,6 +355,11 @@ http {
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
     }
+    {% end %}
+
+    {% if use_apisix_openresty then %}
+    apisix_delay_client_max_body_check on;
+    apisix_mirror_on_demand on;
     {% end %}
 
     {% if wasm then %}
@@ -573,6 +587,12 @@ http {
             set $ctx_ref                     '';
             set $from_error_page             '';
 
+            # http server location configuration snippet starts
+            {% if http_server_location_configuration_snippet then %}
+            {* http_server_location_configuration_snippet *}
+            {% end %}
+            # http server location configuration snippet ends
+
             {% if enabled_plugins["dubbo-proxy"] then %}
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
@@ -702,9 +722,11 @@ http {
         location = /proxy_mirror {
             internal;
 
+            {% if not use_apisix_openresty then %}
             if ($upstream_mirror_host = "") {
                 return 200;
             }
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;

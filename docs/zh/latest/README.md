@@ -66,7 +66,6 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **全平台**
 
   - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
-  - 运行环境: OpenResty 和 Tengine 都支持。
   - 支持 ARM64: 不用担心底层技术的锁定。
 
 - **多协议**
@@ -75,10 +74,10 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+  - [gRPC Web 代理](plugins/grpc-web.md)：通过 APISIX 代理 gRPC Web 请求到上游 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
   - Websocket 代理
   - Proxy Protocol
-  - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
   - HTTP(S) 反向代理
   - [SSL](certificate.md)：动态加载 SSL 证书。
 
@@ -99,8 +98,8 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
   - [支持全路径匹配和前缀匹配](../../en/latest/router-radixtree.md#how-to-use-libradixtree-in-apisix)
   - [支持使用 Nginx 所有内置变量做为路由的条件](../../en/latest/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
-  - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
-  - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
+  - 支持[各类操作符做为路由的判断条件](https://github.com/api7/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
+  - 支持[自定义路由匹配函数](https://github.com/api7/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6：支持使用 IPv6 格式匹配路由
   - 支持路由的[自动过期(TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
@@ -120,6 +119,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [CORS](plugins/cors.md)：为你的 API 启用 CORS。
   - [URI 拦截器](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
   - [请求验证器](plugins/request-validation.md)。
+  - [CSRF](plugins/csrf.md)：基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式保护你的 API 远离 CSRF 攻击。
 
 - **运维友好**
 
@@ -136,7 +136,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
   - [故障注入](plugins/fault-injection.md)
   - [REST Admin API](admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
-  - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](plugins/http-logger.md), [TCP Logger](plugins/tcp-logger.md), [Kafka Logger](plugins/kafka-logger.md), [UDP Logger](plugins/udp-logger.md))
+  - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)、[File Logger](plugins/file-logger.md)）
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**
@@ -144,6 +144,17 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [插件可以用 Java/Go/Python 编写](../../zh/latest/external-plugin.md)
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
+
+- **多语言支持**
+- Apache APISIX 是一个通过 `RPC` 和 `WASM` 支持不同语言来进行插件开发的网关.
+  ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
+  - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
+  - WASM 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的 WASM 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 WASM 字节码，即可运行在 APISIX 中的 WASM 虚拟机中。
+
+- **Serverless**
+  - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.
+  - [Azure functions](docs/en/latest/plugins/azure-functions.md): 能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
+  - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): 与Apache OpenWhisk集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
 
 ## 立刻开始
 
@@ -209,7 +220,6 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 | 插件热更新                             | 是                                      | 否                     |
 | 用户自定义：负载均衡算法、路由             | 是                                      | 否                     |
 | resty <--> gRPC 转码                  | 是                                      | 否                     |
-| 支持 Tengine 作为运行时                 | 是                                      | 否                     |
 | MQTT 协议支持                          | 是                                      | 否                     |
 | 配置生效时间                            | 事件通知，低于 1 毫秒更新                  | 定期轮询，5 秒           |
 | 自带控制台                             | 是                                      | 否                     |
@@ -222,7 +232,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ### 贡献者变化
 
-![contributor-over-time](../../assets/images/contributor-over-time.png)
+> [访问此处](https://www.apiseven.com/contributor-graph) 使用贡献者数据服务。
+
+[![贡献者变化](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## 视频和文章
 

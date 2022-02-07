@@ -24,7 +24,7 @@ title: Control API
 The control API can be used to
 
 * expose APISIX internal state
-* control the behavior of a single isolate APISIX data panel
+* control the behavior of a single isolate APISIX data plane
 
 By default, the control API server is enabled and listens to `127.0.0.1:9090`. You can change it via
 the `control` section under `apisix` in `conf/config.yaml`:
@@ -37,6 +37,9 @@ apisix:
     ip: "127.0.0.1"
     port: 9090
 ```
+
+The control API server does not support parameter matching by default, if you want to enable parameter matching in plugin's control API
+you can add `router: 'radixtree_uri_with_parameter'` to the `control` section.
 
 Note that the control API server should not be configured to listen to the public traffic!
 
@@ -306,9 +309,9 @@ Return all services info in the format below:
           "type": "roundrobin",
           "nodes": [
             {
-              "port": 80,
+              "port": 1980,
               "weight": 1,
-              "host": "39.97.63.215"
+              "host": "127.0.0.1"
             }
           ]
       },
@@ -355,9 +358,9 @@ Return specific service info with **service_id** in the format below:
       "type": "roundrobin",
       "nodes": [
         {
-          "port": 80,
+          "port": 1980,
           "weight": 1,
-          "host": "39.97.63.215"
+          "host": "127.0.0.1"
         }
       ]
     },
