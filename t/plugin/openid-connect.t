@@ -16,6 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -1426,6 +1427,10 @@ passed
 GET /t
 --- response_body
 true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by introspection
 --- no_error_log
 [error]
 
@@ -1497,18 +1502,20 @@ GET /t
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{ "plugins": {
+                 [[{
+                        "plugins": {
                             "openid-connect": {
-                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                "redirect_uri": "https://iresty.com",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://localhost:3000",
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "bearer_only": true,
-                                "scope": "apisix",
                                 "use_jwks": true,
-                                "token_signing_alg_values_expected": "RS256"
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
                             }
                         },
                         "upstream": {
@@ -1519,20 +1526,22 @@ GET /t
                         },
                         "uri": "/hello"
                 }]],
-                [[{ "node": {
+                [[{
+                    "node": {
                         "value": {
                             "plugins": {
                                 "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
+                                    "client_id": "course_management",
+                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                    "redirect_uri": "http://localhost:3000",
                                     "ssl_verify": false,
                                     "timeout": 10,
                                     "bearer_only": true,
-                                    "scope": "apisix",
                                     "use_jwks": true,
-                                    "token_signing_alg_values_expected": "RS256"
+                                    "realm": "University",
+                                    "introspection_endpoint_auth_method": "client_secret_post",
+                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
                                 }
                             },
                             "upstream": {
@@ -1564,26 +1573,54 @@ passed
 
 
 
-=== TEST 26: Access route with valid token.
+=== TEST 26: Obtain valid token and access route with it.
 --- config
     location /t {
         content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
-                method = "GET",
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
                     headers = {
-                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                        ".eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk" ..
-                        "4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCB" ..
-                        "jb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqX" ..
-                        "RyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w",
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 })
-            ngx.status = res.status
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
             if res.status == 200 then
-                ngx.say(true)
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
             end
         }
     }
@@ -1591,36 +1628,11 @@ passed
 GET /t
 --- response_body
 true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by jwk
 --- no_error_log
 [error]
 
 
-
-=== TEST 27: Access route with invalid token. Should return 401.
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                        ".eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk" ..
-                        "4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCB" ..
-                        "jb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqX" ..
-                        "RyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7",
-                    }
-                })
-            ngx.status = res.status
-            if res.status == 200 then
-                ngx.say(true)
-            end
-        }
-    }
---- request
-GET /t
---- error_code: 401
---- error_log
-jwt signature verification failed

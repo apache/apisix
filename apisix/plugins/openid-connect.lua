@@ -196,6 +196,7 @@ local function introspect(ctx, conf)
         end
 
         -- Token successfully validated.
+        core.log.debug("token validate successfully by ", conf.public_key and "public_key" or "jwk")
         return res, err, token, nil
     else
         -- Validate token against introspection endpoint.
@@ -210,6 +211,7 @@ local function introspect(ctx, conf)
 
         -- Token successfully validated and response from the introspection
         -- endpoint contains the userinfo.
+        core.log.debug("token validate successfully by introspection")
         return res, err, token, res
     end
 end
