@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.12.1](#2121)
 - [2.12.0](#2120)
 - [2.11.0](#2110)
 - [2.10.3](#2103)
@@ -50,6 +51,12 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.12.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.12` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.12/CHANGELOG.md#2121](https://github.com/apache/apisix/blob/release/2.12/CHANGELOG.md#2121)
 
 ## 2.12.0
 
