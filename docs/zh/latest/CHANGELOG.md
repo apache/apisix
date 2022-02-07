@@ -52,7 +52,9 @@ title: CHANGELOG
 
 ## 2.10.4
 
-- 修正 batch-requests 插件未正确覆盖 real ip 请求头 [#6251](https://github.com/apache/apisix/pull/6251)
+### Bugfix
+
+- batch-requests 插件应当覆盖 real ip 请求头 [#6251](https://github.com/apache/apisix/pull/6251)
 
 ## 2.10.3
 
