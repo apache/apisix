@@ -32,7 +32,7 @@ title: public-api
 The `public-api` plugin is used to enhance the plugin public API access control.
 When current users develop custom plugins, they can register some public APIs for fixed functionality, such as the `/apisix/plugin/jwt/sign` API in `jwt-auth`. These APIs can only apply limited plugins for access control (currently only `ip-restriction`) by way of plugin interceptors.
 
-With the `public-api` plugin, we put the all public API into general HTTP API router, which is consistent with the normal route registered by the user and can apply any plugin. The public API added in the user plugin is no longer open by default by APISIX, but the user manually configures the route for it, and the user can configure any uri and plugin.
+With the `public-api` plugin, we put all public APIs into the general HTTP API router, which is consistent with the normal Route registered by the user and can apply any plugin. The public API added in the user plugin is no longer expose by default by APISIX, and the user has to manually configure the Route for it, the user can configure any uri and plugin.
 
 ## Attributes
 
