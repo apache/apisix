@@ -19,7 +19,7 @@
 . ./ci/common.sh
 
 before_install() {
-    sudo cpanm --notest Test::Nginx | sudo tee build.log > /dev/null 2>&1 || (cat build.log && exit 1)
+    sudo cpanm --notest Test::Nginx | tee build.log > /dev/null 2>&1 || (cat build.log && exit 1)
 
     # launch deps env
     make ci-env-up
