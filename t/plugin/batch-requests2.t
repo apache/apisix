@@ -227,7 +227,7 @@ plugin_attr:
 
 
 
-=== TEST 7: ensure real ip header is overridden
+=== TEST 5: ensure real ip header is overridden
 --- config
     location = /aggregate {
         content_by_lua_block {
@@ -276,7 +276,7 @@ passed
 
 
 
-=== TEST 8: ensure real ip header is overridden, header from the pipeline
+=== TEST 6: ensure real ip header is overridden, header from the pipeline
 --- config
     location = /aggregate {
         content_by_lua_block {
@@ -327,7 +327,7 @@ passed
 
 
 
-=== TEST 9: ensure real ip header is overridden, header has underscore
+=== TEST 7: ensure real ip header is overridden, header has underscore
 --- config
     location = /aggregate {
         content_by_lua_block {
