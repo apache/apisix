@@ -88,7 +88,14 @@ local schema = {
         },
         severity_map = {
             type = "object",
-            description = "upstream response code vs syslog severity mapping"
+            description = "upstream response code vs syslog severity mapping",
+            patternProperties = {
+                [".*"] = {
+                    description = "keys are HTTP status code, values are severity",
+                    type = "string",
+                    enum = severity_enums
+                },
+            },
         }
     },
     required = {"customer_token"}
@@ -152,16 +159,15 @@ function _M.check_schema(conf, schema_type)
     end
 
     if conf.severity_map then
+        local cache = {}
         for k, v in pairs(conf.severity_map) do
             local rcode = tonumber(k)
             if not rcode or rcode < 100 or rcode >= 600 then
                 return nil, "expecting severity_map with http response code([100,599]) as keys"
             end
-            local s = severity[v:upper()]
-            if not s then
-                return nil, "expecting severity_map severity level keywords as values"
-            end
+            cache[k] = severity[v:upper()]
         end
+        conf._severity_cache = cache
     end
     return log_util.check_log_schema(conf)
 end
@@ -204,11 +210,8 @@ local function generate_log_message(conf, ctx)
     end
 
     local message_severity = severity[conf.severity:upper()]
-    if conf.severity_map then
-        local resp_code = conf.severity_map[tostring(ngx.status)]
-        if resp_code then
-            message_severity = severity[resp_code:upper()]
-        end
+    if conf._severity_cache and conf._severity_cache[tostring(ngx.status)] then
+        message_severity = conf._severity_cache[tostring(ngx.status)]
     end
 
     local message = {
