@@ -58,7 +58,7 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-rep
 这种安装方式适用于 CentOS 7 操作系统，请运行以下命令安装 Apache APISIX。
 
 ```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.3-0.el7.x86_64.rpm
+sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2.10.4-0.el7.x86_64.rpm
 ```
 
 ### 通过 Docker 安装
@@ -71,16 +71,16 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.10.3` 的目录。
+1. 创建一个名为 `apisix-2.10.4` 的目录。
 
   ```shell
-  mkdir apisix-2.10.3
+  mkdir apisix-2.10.4
   ```
 
 2. 下载 Apache APISIX Release 源码包：
 
   ```shell
-  wget https://downloads.apache.org/apisix/2.10.3/apache-apisix-2.10.3-src.tgz
+  wget https://downloads.apache.org/apisix/2.10.4/apache-apisix-2.10.4-src.tgz
   ```
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考[Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
@@ -88,14 +88,14 @@ sudo yum install -y https://repos.apiseven.com/packages/centos/7/x86_64/apisix-2
 3. 解压 Apache APISIX Release 源码包：
 
   ```shell
-  tar zxvf apache-apisix-2.10.3-src.tgz -C apisix-2.10.3
+  tar zxvf apache-apisix-2.10.4-src.tgz -C apisix-2.10.4
   ```
 
 4. 安装运行时依赖的 Lua 库：
 
   ```shell
-  # 切换到 apisix-2.10.3 目录
-  cd apisix-2.10.3
+  # 切换到 apisix-2.10.4 目录
+  cd apisix-2.10.4
   # 安装依赖
   LUAROCKS_SERVER=https://luarocks.cn make deps
   # 安装 apisix 命令
