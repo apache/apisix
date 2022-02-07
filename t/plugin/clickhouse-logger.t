@@ -123,13 +123,12 @@ plugins:
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.clickhouse-logger")
-            local ok, err = plugin.check_schema({log_id = "syslog",
-                                                 max_retry_count = 0,
-                                                 retry_delay = 1,
-                                                 buffer_duration = 60,
-                                                 inactive_timeout = 10,
-                                                 batch_max_size = 100,
+            local ok, err = plugin.check_schema({user = "default",
+                                                 password = "a",
+                                                 database = "default",
+                                                 logtable = "t"
                                                  })
+
             if not ok then
                 ngx.say(err)
             else
@@ -211,12 +210,6 @@ plugins:
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
 
 
