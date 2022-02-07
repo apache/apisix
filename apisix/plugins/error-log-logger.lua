@@ -235,10 +235,12 @@ local function send_to_clickhouse(log_message)
     local port = url_decoded.port
     core.log.info("sending a batch logs to ", config.clickhouse.endpoint_addr)
 
-    if ((not port) and url_decoded.scheme == "https") then
-        port = 443
-    elseif not port then
-        port = 80
+    if not port then
+        if url_decoded.scheme == "https" then
+            port = 443
+        else
+            port = 80
+        end
     end
 
     local httpc = http.new()
