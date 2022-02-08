@@ -54,7 +54,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-同时，您还需要使用 [public-api](public-api.md) 插件来暴露它。
+同时，您还需要使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何开启插件
 

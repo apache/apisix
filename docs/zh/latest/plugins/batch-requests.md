@@ -52,7 +52,7 @@ title: batch-requests
 
 ## 接口
 
-插件会增加 `/apisix/batch-requests` 这个接口，需要通过 [public-api](public-api.md) 插件来暴露它。
+插件会增加 `/apisix/batch-requests` 这个接口，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何启用
 

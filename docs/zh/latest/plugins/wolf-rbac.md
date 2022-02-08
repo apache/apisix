@@ -51,7 +51,7 @@ rbac 功能由 [wolf](https://github.com/iGeeky/wolf) 提供, 有关 `wolf` 的�
 * /apisix/plugin/wolf-rbac/change_pwd
 * /apisix/plugin/wolf-rbac/user_info
 
-需要通过 [public-api](public-api.md) 插件来暴露它。
+需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 依赖项
 
