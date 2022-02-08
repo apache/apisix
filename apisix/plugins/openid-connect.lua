@@ -196,7 +196,8 @@ local function introspect(ctx, conf)
         end
 
         -- Token successfully validated.
-        core.log.debug("token validate successfully by ", (conf.public_key and "public_key") or (conf.use_jwks and "jwks"))
+        local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
+        core.log.debug("token validate successfully by ", method)
         return res, err, token, nil
     else
         -- Validate token against introspection endpoint.
