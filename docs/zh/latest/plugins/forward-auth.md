@@ -42,7 +42,7 @@ Forward Auth 巧妙地将认证和授权逻辑移到了一个专门的外部服�
 | -- | -- | -- | -- | -- | -- |
 | host | string | 必须 |  |  | 设置 `authorization` 服务的地址 (eg. https://localhost:9188) |
 | ssl_verify | boolean | 可选 | true |   | 是否验证证书 |
-| request_headers | array[string] | 可选 |  |  | 设置需要由 `client` 转发到 `authorization` 服务的请求头。未设置时，只有APISIX的(X-Forwarded-XXX)会被转发到 `authorization` 服务。 |
+| request_headers | array[string] | 可选 |  |  | 设置需要由 `client` 转发到 `authorization` 服务的请求头。未设置时，只有 Apache APISIX 的(X-Forwarded-XXX)会被转发到 `authorization` 服务。 |
 | upstream_headers | array[string] | 可选 |  |  | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。
 | client_headers | array[string] | 可选 |  |  | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。 |
 | timeout | integer | 可选 | 3000ms | [1, 60000]ms | `authorization` 服务请求超时时间 |
