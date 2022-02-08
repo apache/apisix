@@ -281,3 +281,154 @@ plugin_attr:
             ngx.status = 200
         }
     }
+
+
+
+=== TEST 7: ensure real ip header is overridden
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                        "x-real-ip": "127.0.0.2"
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+
+
+
+=== TEST 8: ensure real ip header is overridden, header from the pipeline
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "headers": {
+                            "x-real-ip": "127.0.0.2"
+                        },
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+
+
+
+=== TEST 9: ensure real ip header is overridden, header has underscore
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/c",
+                        "headers": {
+                            "x_real-ip": "127.0.0.2"
+                        },
+                        "method": "PUT"
+                    }]
+                }]=],
+                [=[[
+                {
+                    "status": 201,
+                    "body":"C",
+                    "headers": {
+                        "Client-IP": "127.0.0.1",
+                        "Client-IP-From-Hdr": "127.0.0.1"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["Client-IP"] = ngx.var.remote_addr
+            ngx.header["Client-IP-From-Hdr"] = ngx.req.get_headers()["x-real-ip"]
+            ngx.print("C")
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed

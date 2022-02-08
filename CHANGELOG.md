@@ -23,8 +23,10 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.12.1](#2121)
 - [2.12.0](#2120)
 - [2.11.0](#2110)
+- [2.10.4](#2104)
 - [2.10.3](#2103)
 - [2.10.2](#2102)
 - [2.10.1](#2101)
@@ -50,6 +52,12 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.12.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.12` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.12/CHANGELOG.md#2121](https://github.com/apache/apisix/blob/release/2.12/CHANGELOG.md#2121)
 
 ## 2.12.0
 
@@ -129,6 +137,12 @@ title: Changelog
 - :sunrise: feat(proxy-cache): support memory-based strategy [#5028](https://github.com/apache/apisix/pull/5028)
 - :sunrise: feat(ext-plugin): avoid sending conf request more times [#5183](https://github.com/apache/apisix/pull/5183)
 - :sunrise: feat: Add ldap-auth plugin [#3894](https://github.com/apache/apisix/pull/3894)
+
+## 2.10.4
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.10` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2104](https://github.com/apache/apisix/blob/release/2.10/CHANGELOG.md#2104)
 
 ## 2.10.3
 
