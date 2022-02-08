@@ -227,10 +227,6 @@
         },
         {
           "type": "doc",
-          "id": "plugin-interceptors"
-        },
-        {
-          "type": "doc",
           "id": "CODE_STYLE"
         },
         {
