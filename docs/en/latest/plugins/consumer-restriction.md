@@ -27,6 +27,7 @@ title: consumer-restriction
   - [Attributes](#attributes)
   - [Example](#example)
     - [How to restrict consumer_name](#how-to-restrict-consumer_name)
+    - [How to restrict allowed_by_methods](#how-to-restrict-allowed_by_methods)
     - [How to restrict service_id](#how-to-restrict-service_id)
   - [Disable Plugin](#disable-plugin)
 
@@ -186,7 +187,7 @@ curl -u jack2019:123456 http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ```
 
-## How to restrict `service_id`
+### How to restrict `service_id`
 
 The `service_id` method needs to be used together with the authorization plug-in. Here, the key-auth authorization plug-in is taken as an example.
 

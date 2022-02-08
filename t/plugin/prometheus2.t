@@ -30,11 +30,62 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1: set route with key-auth enabled for consumer metrics
+=== TEST 1: pre-create public API route
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/metrics",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/prometheus/metrics"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/metrics-custom-uri",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/a"
+                    }]]
+                },
+            }
+
+            local t = require("lib.test_admin").test
+
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(code..body)
+            end
+        }
+    }
+--- response_body eval
+"201passed\n" x 2
+
+
+
+=== TEST 2: set route with key-auth enabled for consumer metrics
 --- config
     location /t {
         content_by_lua_block {
@@ -62,36 +113,28 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 2: pipeline of client request without api-key
+=== TEST 3: pipeline of client request without api-key
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [401, 401, 401, 401]
---- no_error_log
-[error]
 
 
 
-=== TEST 3: fetch the prometheus metric data: consumer is empty
+=== TEST 4: fetch the prometheus metric data: consumer is empty
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 4: set consumer for metrics data collection
+=== TEST 5: set consumer for metrics data collection
 --- config
     location /t {
         content_by_lua_block {
@@ -125,38 +168,30 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 5: pipeline of client request with successfully authorized
+=== TEST 6: pipeline of client request with successfully authorized
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
 apikey: auth-one
 --- error_code eval
 [200, 200, 200, 200]
---- no_error_log
-[error]
 
 
 
-=== TEST 6: fetch the prometheus metric data: consumer is jack
+=== TEST 7: fetch the prometheus metric data: consumer is jack
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 7: set route(id: 9)
+=== TEST 8: set route(id: 9)
 --- config
     location /t {
         content_by_lua_block {
@@ -185,16 +220,12 @@ qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 8: set it in global rule
+=== TEST 9: set it in global rule
 --- config
     location /t {
         content_by_lua_block {
@@ -214,37 +245,29 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 9: 404 Route Not Found
+=== TEST 10: 404 Route Not Found
 --- request
 GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
-=== TEST 10: fetch the prometheus metric data: 404 Route Not Found
+=== TEST 11: fetch the prometheus metric data: 404 Route Not Found
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 11: hit routes(uri = "/foo*", host = "foo.com")
+=== TEST 12: hit routes(uri = "/foo*", host = "foo.com")
 --- request
 GET /foo1
 --- more_headers
@@ -252,22 +275,18 @@ Host: foo.com
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
---- no_error_log
-[error]
 
 
 
-=== TEST 12: fetch the prometheus metric data: hit routes(uri = "/foo*", host = "foo.com")
+=== TEST 13: fetch the prometheus metric data: hit routes(uri = "/foo*", host = "foo.com")
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 13: hit routes(uri = "/bar*", host = "bar.com")
+=== TEST 14: hit routes(uri = "/bar*", host = "bar.com")
 --- request
 GET /bar1
 --- more_headers
@@ -275,22 +294,18 @@ Host: bar.com
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
---- no_error_log
-[error]
 
 
 
-=== TEST 14: fetch the prometheus metric data: hit routes(uri = "/bar*", host = "bar.com")
+=== TEST 15: fetch the prometheus metric data: hit routes(uri = "/bar*", host = "bar.com")
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 15: customize export uri, not found
+=== TEST 16: customize export uri, not found
 --- yaml_config
 plugin_attr:
     prometheus:
@@ -298,12 +313,10 @@ plugin_attr:
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
-=== TEST 16: customize export uri, found
+=== TEST 17: customize export uri, found
 --- yaml_config
 plugin_attr:
     prometheus:
@@ -311,12 +324,10 @@ plugin_attr:
 --- request
 GET /a
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 17: customize export uri, missing plugin, use default
+=== TEST 18: customize export uri, missing plugin, use default
 --- yaml_config
 plugin_attr:
     x:
@@ -324,12 +335,10 @@ plugin_attr:
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 18: customize export uri, missing attr, use default
+=== TEST 19: customize export uri, missing attr, use default
 --- yaml_config
 plugin_attr:
     prometheus:
@@ -337,12 +346,10 @@ plugin_attr:
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 19: set sys plugins
+=== TEST 20: set sys plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -386,23 +393,19 @@ GET /apisix/prometheus/metrics
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 20: hit batch-process-metrics
+=== TEST 21: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 21: check sys logger metrics
+=== TEST 22: check sys logger metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -411,7 +414,7 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
 
 
 
-=== TEST 22: set zipkin plugins
+=== TEST 23: set zipkin plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -444,23 +447,19 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 23: hit batch-process-metrics
+=== TEST 24: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 24: check zipkin log metrics
+=== TEST 25: check zipkin log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -469,7 +468,7 @@ qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="
 
 
 
-=== TEST 25: set http plugins
+=== TEST 26: set http plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -509,23 +508,19 @@ qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 26: hit batch-process-metrics
+=== TEST 27: hit batch-process-metrics
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 27: check http log metrics
+=== TEST 28: check http log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -534,7 +529,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
 
 
 
-=== TEST 28: set tcp-logger plugins
+=== TEST 29: set tcp-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -575,23 +570,19 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 29:  trigger metrics batch-process-metrics
+=== TEST 30:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 30: check tcp log metrics
+=== TEST 31: check tcp log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -600,7 +591,7 @@ qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 31: set udp-logger plugins
+=== TEST 32: set udp-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -638,23 +629,19 @@ qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="12
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 32:  trigger metrics batch-process-metrics
+=== TEST 33:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 33: check udp log metrics
+=== TEST 34: check udp log metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -663,7 +650,7 @@ qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 34: set sls-logger plugins
+=== TEST 35: set sls-logger plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -706,23 +693,19 @@ qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="12
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 35:  trigger metrics batch-process-metrics
+=== TEST 36:  trigger metrics batch-process-metrics
 --- request
 GET /batch-process-metrics-10
 --- error_code: 404
 
 
 
-=== TEST 36: check sls-logger metrics
+=== TEST 37: check sls-logger metrics
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
@@ -731,7 +714,7 @@ qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="12
 
 
 
-=== TEST 37: create service and route both with name
+=== TEST 38: create service and route both with name
 --- config
     location /t {
         content_by_lua_block {
@@ -774,36 +757,28 @@ qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="12
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 38: pipeline of client request
+=== TEST 39: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 39: fetch the prometheus metric data
+=== TEST 40: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 40: set route name but remove service name
+=== TEST 41: set route name but remove service name
 --- config
     location /t {
         content_by_lua_block {
@@ -826,35 +801,27 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",con
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 41: pipeline of client request
+=== TEST 42: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 42: fetch the prometheus metric data
+=== TEST 43: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 43: set service name but remove route name
+=== TEST 44: set service name but remove route name
 --- config
     location /t {
         content_by_lua_block {
@@ -896,36 +863,28 @@ qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",no
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 44: pipeline of client request
+=== TEST 45: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 45: fetch the prometheus metric data
+=== TEST 46: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]
 
 
 
-=== TEST 46: remove both name, but still set prefer_name to true
+=== TEST 47: remove both name, but still set prefer_name to true
 --- config
     location /t {
         content_by_lua_block {
@@ -949,28 +908,20 @@ qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 47: pipeline of client request
+=== TEST 48: pipeline of client request
 --- request
 GET /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
-=== TEST 48: fetch the prometheus metric data
+=== TEST 49: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_bandwidth\{type="egress",route="1",service="1",consumer="",node="127.0.0.1"\} \d+/
---- no_error_log
-[error]

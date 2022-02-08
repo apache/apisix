@@ -461,3 +461,85 @@ GET /t
 done
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: use custom variable in the logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "host": "$host",
+                        "labels": "$a6_route_labels",
+                        "client_ip": "$remote_addr"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return body
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 1,
+                                "concat_method": "json"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "labels": {
+                            "k": "v"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit route and report http logger
+--- extra_init_by_lua
+    local core = require "apisix.core"
+
+    core.ctx.register_var("a6_route_labels", function(ctx)
+        local route = ctx.matched_route and ctx.matched_route.value
+        if route and route.labels then
+            return route.labels
+        end
+        return nil
+    end)
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- no_error_log
+[error]
+--- error_log eval
+qr/request log: \{"client_ip":"127.0.0.1","host":"localhost","labels":\{"k":"v"\},"route_id":"1"\}/

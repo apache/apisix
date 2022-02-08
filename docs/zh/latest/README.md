@@ -74,6 +74,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+  - [gRPC Web 代理](plugins/grpc-web.md)：通过 APISIX 代理 gRPC Web 请求到上游 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
   - Websocket 代理
   - Proxy Protocol
@@ -135,7 +136,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
   - [故障注入](plugins/fault-injection.md)
   - [REST Admin API](admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
-  - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)）
+  - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)、[File Logger](plugins/file-logger.md)）
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**

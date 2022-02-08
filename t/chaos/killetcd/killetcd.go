@@ -81,6 +81,10 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 	stopChan := make(chan bool)
 
+	ginkgo.It("setup prometheus metrics public API", func() {
+		utils.SetPrometheusMetricsPublicAPI(e)
+	})
+
 	ginkgo.It("check if everything works", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)

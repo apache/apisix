@@ -23,8 +23,6 @@ title: nacos
 
 ## 基于 [Nacos](https://nacos.io/zh-cn/docs/what-is-nacos.html) 的服务发现
 
-Nacos 服务发现模块目前是实验性的。
-
 当前模块的性能有待改进：
 
 1. 并行发送请求。

@@ -81,10 +81,10 @@ $ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.11.0` 的目录。
+1. 创建一个名为 `apisix-2.12.0` 的目录。
 
   ```shell
-  $ APISIX_VERSION='2.11.0'
+  $ APISIX_VERSION='2.12.0'
   $ mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -112,6 +112,21 @@ $ sudo yum install ./apisix/*.rpm
   # 安装 apisix 命令
   $ make install
   ```
+
+- 4.1 `make deps` 安装 `lualdap` 失败, 错误信息如: `Could not find header file for LDAP`
+
+      解决方案: 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
+
+5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
+
+```shell
+  # 卸载 apisix 命令
+  $ make uninstall
+  # 卸载依赖
+  $ make undeps
+```
+
+  请注意，该操作将完整**删除**相关文件。
 
 ## 步骤2：安装 ETCD
 
