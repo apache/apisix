@@ -1631,6 +1631,6 @@ true
 --- grep_error_log eval
 qr/token validate successfully by \w+/
 --- grep_error_log_out
-token validate successfully by jwk
+token validate successfully by jwks
 --- no_error_log
 [error]
