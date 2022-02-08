@@ -59,7 +59,7 @@ request_headers属性中转发到 `authorization` 服务中的APISIX内容清单
 
 ## 示例
 
-首先, 你需要设置一个认证服务。这里使用的是APISIX无服务器插件模拟的示例。
+首先, 你需要设置一个认证服务。这里使用的是 Apache APISIX 无服务器插件模拟的示例。
 
 ```shell
 $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
@@ -78,7 +78,7 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 }'
 ```
 
-下一步, 我们创建一个测试路由.
+下一步, 我们创建一个测试路由。
 
 ```shell
 $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
@@ -104,10 +104,10 @@ $ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
 
 我们可以进行下面三个测试：
 
-1. **request_headers** 从 `client`转发请求头到 `authorization` 服务
+1. **request_headers** 从 `client` 转发请求头到 `authorization` 服务
 
 ```shell
-$ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
 {
     "headers": {
         "Authorization": "123",
@@ -119,7 +119,7 @@ $ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
 2. **upstream_headers** 转发 `authorization` 服务响应头到 `upstream`
 
 ```shell
-$ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 {
     "headers": {
         "Authorization": "321",
@@ -132,7 +132,7 @@ $ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 3. **client_headers** 当授权失败时转发 `authorization` 服务响应头到 `client`
 
 ```shell
-$ curl -i http://127.0.0.1:9080/headers
+curl -i http://127.0.0.1:9080/headers
 HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
 ```
