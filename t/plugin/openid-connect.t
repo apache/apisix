@@ -1634,3 +1634,34 @@ qr/token validate successfully by \w+/
 token validate successfully by jwks
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: Access route with an invalid token.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Access route using a fake access token.
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false
+--- error_log
+OIDC introspection failed: invalid jwt: invalid jwt string
