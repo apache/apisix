@@ -29,7 +29,7 @@ HTTP(s) -> APISIX -> gRPC server
 
 #### Attributes
 
-* `content`: `.proto` file's content.
+* `content`: `.proto` or `.pb` file's content.
 
 #### Add a proto
 
@@ -50,6 +50,67 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
         string message = 1;
     }"
 }'
+```
+
+If your `.proto` file contains imports, or you want to combine multiple `.proto` files into a proto,
+you can use `.pb` file to create the proto.
+
+Assumed we have a `.proto` called `proto/helloworld.proto`, which imports another proto file:
+
+```proto
+syntax = "proto3";
+
+package helloworld;
+import "proto/import.proto";
+...
+```
+
+First of all, let's create a `.pb` file from `.proto` files:
+
+```shell
+protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
+```
+
+The output binary file `proto.pb` will contain both `helloworld.proto` and `import.proto`.
+
+Then we can submit the content of `proto.pb` as the `content` field of the proto.
+
+As the content is binary, we need to encode it in base64 first. Here we use a Python script to do it:
+
+```python
+#!/usr/bin/env python
+# coding: utf-8
+# save this file as upload_pb.py
+import base64
+import sys
+# sudo pip install requests
+import requests
+
+if len(sys.argv) <= 1:
+    print("bad argument")
+    sys.exit(1)
+with open(sys.argv[1], 'rb') as f:
+    content = base64.b64encode(f.read())
+id = sys.argv[2]
+api_key = "edd1c9f034335f136f87ad84b625c8f1" # Change it
+
+reqParam = {
+    "content": content,
+}
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/proto/" + id, json=reqParam, headers={
+    "X-API-KEY": api_key,
+})
+print(resp.status_code)
+print(resp.text)
+```
+
+Create proto:
+
+```bash
+chmod +x ./upload_pb.pb
+./upload_pb.py proto.pb 1
+# 200
+# {"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"},"action":"set"}
 ```
 
 ## Attribute List
