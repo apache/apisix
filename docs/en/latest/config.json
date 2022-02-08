@@ -82,7 +82,8 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
-            "plugins/csrf"
+            "plugins/csrf",
+            "plugins/public-api"
           ]
         },
         {
@@ -242,10 +243,6 @@
         {
           "type": "doc",
           "id": "wasm"
-        },
-        {
-          "type": "doc",
-          "id": "plugin-interceptors"
         },
         {
           "type": "link",

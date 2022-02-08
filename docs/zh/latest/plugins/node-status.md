@@ -40,7 +40,7 @@ title: node-status
 
 ## 插件接口
 
-插件增加接口 `/apisix/status`，可通过 [interceptors](../plugin-interceptors.md) 保护该接口。
+插件增加接口 `/apisix/status`，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 启用插件
 
