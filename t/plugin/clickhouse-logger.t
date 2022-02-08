@@ -17,6 +17,7 @@
 
 use t::APISIX 'no_plan';
 
+log_level("info");
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -143,6 +144,9 @@ property "endpoint_addr" is required
 
 === TEST 4: add plugin on routes
 --- yaml_config
+apisix:
+    node_listen: 1984
+    admin_key: null
 plugins:
   - clickhouse-logger
 --- config
@@ -210,6 +214,8 @@ plugins:
             ngx.say(body)
         }
     }
+--- response_body
+passed
 
 
 
@@ -218,6 +224,4 @@ plugins:
 GET /opentracing
 --- response_body
 opentracing
---- error_log
-Batch Processor[clickhouse logger] failed to process entries
---- wait: 0.5
+--- wait: 2

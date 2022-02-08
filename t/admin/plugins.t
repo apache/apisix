@@ -117,6 +117,7 @@ rocketmq-logger
 syslog
 udp-logger
 file-logger
+clickhouse-logger
 example-plugin
 aws-lambda
 azure-functions

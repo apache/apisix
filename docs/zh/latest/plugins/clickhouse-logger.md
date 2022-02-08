@@ -41,8 +41,8 @@ title: clickhouse-logger
 | endpoint_addr    | string  | 必须   |               |         | `clickhouse` 服务器的 endpoint。                   |
 | database         | string  | 必须   |               |         | 使用的数据库。                                    |
 | logtable         | string  | 必须   |               |         | 写入的表名 。    |
-| user             | string  | 必须   |               |         |clickhouse的用户。 |
-| password         | string  | 必须   |               |         |clickhouse的密码 。  |
+| user             | string  | 必须   |               |         | clickhouse的用户。 |
+| password         | string  | 必须   |               |         | clickhouse的密码 。  |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                     |
 | batch_max_size   | integer | 可选   | 100           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `clickhouse` 。 |
