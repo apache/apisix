@@ -260,6 +260,7 @@ install: runtime
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
+	# Lua directories listed in alphabetical order
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix
 	$(ENV_INSTALL) apisix/*.lua $(ENV_INST_LUADIR)/apisix/
 
@@ -316,6 +317,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
 	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
+	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/prometheus
 	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(ENV_INST_LUADIR)/apisix/plugins/prometheus/
 
@@ -325,11 +329,11 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
+	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
-	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
@@ -344,9 +348,6 @@ install: runtime
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
-	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
 
 
 ### uninstall : Uninstall the apisix
