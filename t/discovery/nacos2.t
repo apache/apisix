@@ -94,7 +94,7 @@ err:status = 502
 discovery:
   nacos:
       host:
-        - "http://nacos:nacos#!&[]()@127.0.0.1:8858"
+        - "http://nacos:nacos#!&[]()*@127.0.0.1:8858"
       fetch_interval: 1
 --- apisix_yaml
 routes:
@@ -112,5 +112,3 @@ GET /hello
 --- error_code_like: ^(?:50\d)$
 --- error_log
 nacos login fail
---- no_error_log
-lua entry thread aborted
