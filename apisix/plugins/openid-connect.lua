@@ -92,6 +92,12 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = true
+        },
+        set_userinfo_detail_header = {
+            description = "Whether the user info token should be added in the X-Userinfo-Detail-* in scope" ..
+                "header to the request for downstream.",
+            type = "boolean",
+            default = false
         }
     },
     required = {"client_id", "client_secret", "discovery"}
@@ -316,6 +322,13 @@ function _M.rewrite(plugin_conf, ctx)
             if response.user and conf.set_userinfo_header then
                 core.request.set_header(ctx, "X-Userinfo",
                     ngx_encode_base64(core.json.encode(response.user)))
+            end
+            -- Add X-Userinfo-Detail header, maybe.
+            if response.user and conf.set_userinfo_detail_header then
+                for k in string.gmatch(conf.scope..' ', '(.-)'..' ')
+                do
+                    core.request.set_header(ctx, 'X-Userinfo-Detail-'..k,response.user[k])
+                end 
             end
         end
     end
