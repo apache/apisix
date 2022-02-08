@@ -29,9 +29,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           sourceRunId: ${{ github.event.workflow_run.id }}
-      - name: Label when approved by commiters
+      - name: Label when approved by committers
         uses: ./.github/actions/label-when-approved-action
-        id: label-when-approved-by-commiters
+        id: label-when-approved-by-committers
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           label: 'approved'
