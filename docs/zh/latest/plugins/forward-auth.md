@@ -137,4 +137,4 @@ HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
 ```
 
-最后,你可以通过在路由中移除的方式禁用`forward-auth`插件。
+最后,你可以通过在路由中移除的方式禁用 `forward-auth` 插件。
