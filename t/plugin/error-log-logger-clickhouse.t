@@ -34,10 +34,10 @@ __DATA__
             local ok, err = plugin.check_schema(
                 {
                     clickhouse = {
-                                user = default,
-                                password = a,
-                                database = default,
-                                logtable = t,
+                                user = "default",
+                                password = "a",
+                                database = "default",
+                                logtable = "t",
                                 endpoint_addr = "http://127.0.0.1:8123"
                     }
                 },
