@@ -30,7 +30,6 @@ title: forward-auth
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-
 ## 名字
 
 `forward-auth` 插件使用的是经典外部认证。在认证失败的时候，我们可以实现自定义错误或者重定向到认证页面。
@@ -45,7 +44,7 @@ Forward Auth 巧妙地将认证和授权逻辑移到了一个专门的外部服�
 | ssl_verify | boolean | 可选 | true |   | 是否验证证书 |
 | request_headers | array[string] | 可选 |  |  | 设置需要由 `client` 转发到 `authorization` 服务的请求头。未设置时，只有APISIX的（X-Forwarded-XXX）会被转发到 `authorization` 服务。 |
 | upstream_headers | array[string] | 可选 |  |  | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。 
-| client_headers | array[string] | 可选 |  |  | 认证失败时，由`authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。 |
+| client_headers | array[string] | 可选 |  |  | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。 |
 | timeout | integer | 可选 | 3000ms | [1, 60000]ms | `authorization` 服务请求超时时间 |
 | keepalive | boolean | 可选 | true |  | HTTP 长连接 |
 | keepalive_timeout | integer | 可选 | 60000ms | [1000, ...]ms | 长连接空闲时间 |
@@ -54,7 +53,6 @@ Forward Auth 巧妙地将认证和授权逻辑移到了一个专门的外部服�
 ## 数据定义
 
 request_headers属性中转发到 `authorization` 服务中的APISIX内容清单 
-
 | Scheme | HTTP Method | Host | URI | Source IP |
 | -- | -- | -- | -- | -- |
 | X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
