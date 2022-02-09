@@ -148,7 +148,6 @@ do
         balancer_ip = true,
         balancer_port = true,
         consumer_name = true,
-        mqtt_client_id = true,
         route_id = true,
         route_name = true,
         service_id = true,
@@ -252,10 +251,6 @@ do
 function _M.register_var(name, getter)
     if type(getter) ~= "function" then
         error("the getter of registered var should be a function")
-    end
-
-    if apisix_var_names[name] then
-        error(name .. " is registered")
     end
 
     apisix_var_names[name] = getter
