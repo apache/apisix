@@ -62,7 +62,7 @@ request_headers属性中转发到 `authorization` 服务中的 Apache APISIX 内
 首先, 你需要设置一个认证服务。这里使用的是 Apache APISIX 无服务器插件模拟的示例。
 
 ```shell
-$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -81,7 +81,7 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 下一步, 我们创建一个测试路由。
 
 ```shell
-$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
+curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
     -d '{
     "uri": "/headers",
