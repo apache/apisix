@@ -255,7 +255,7 @@ function _M.init()
 
     local fn = function()
         local now = ngx_time()
-        -- If ttl remaining time is less than half, then flush the ttl  
+        -- If ttl remaining time is less than half, then flush the ttl
         if now - start_at >= (report_ttl / 2) then
             start_at = now
             report(nil, report_ttl)
