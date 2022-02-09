@@ -29,12 +29,9 @@ local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
-local endpoint_dict = ngx.shared["discovery"]
-if not endpoint_dict then
-    error("failed to get ngx.shared.dict discovery when load kubernetes discovery plugin ")
-end
 
-local default_weight = 0
+local endpoint_dict
+local default_weight
 
 local endpoint_lrucache = core.lrucache.new({
     ttl = 300,
@@ -52,8 +49,9 @@ local function sort_nodes_cmp(left, right)
     return left.port < right.port
 end
 
+
 local function on_endpoint_modified(informer, endpoint)
-    if informer.namespace_selector ~= nil and
+    if informer.namespace_selector and
             not informer:namespace_selector(endpoint.metadata.namespace) then
         return
     end
@@ -63,7 +61,7 @@ local function on_endpoint_modified(informer, endpoint)
 
     local subsets = endpoint.subsets
     for _, subset in ipairs(subsets or empty_table) do
-        if subset.addresses ~= nil then
+        if subset.addresses then
             local addresses = subset.addresses
             for _, port in ipairs(subset.ports or empty_table) do
                 local port_name
@@ -115,8 +113,9 @@ local function on_endpoint_modified(informer, endpoint)
     end
 end
 
+
 local function on_endpoint_deleted(informer, endpoint)
-    if informer.namespace_selector ~= nil and
+    if informer.namespace_selector and
             not informer:namespace_selector(endpoint.metadata.namespace) then
         return
     end
@@ -127,17 +126,21 @@ local function on_endpoint_deleted(informer, endpoint)
     endpoint_dict:delete(endpoint_key)
 end
 
+
 local function pre_list(informer)
     endpoint_dict:flush_all()
 end
+
 
 local function post_list(informer)
     endpoint_dict:flush_expired()
 end
 
+
 local function setup_label_selector(conf, informer)
     informer.label_selector = conf.label_selector
 end
+
 
 local function setup_namespace_selector(conf, informer)
     local ns = conf.namespace_selector
@@ -195,6 +198,7 @@ local function setup_namespace_selector(conf, informer)
     end
 end
 
+
 local function read_env(key)
     if #key > 3 then
         local a, b = string.byte(key, 1, 2)
@@ -212,6 +216,7 @@ local function read_env(key)
 
     return key
 end
+
 
 local function get_apiserver(conf)
     local apiserver = {
@@ -244,7 +249,7 @@ local function get_apiserver(conf)
 
     apiserver.port = tonumber(port)
     if not apiserver.port or apiserver.port <= 0 or apiserver.port > 65535 then
-        return nil, "invalid port value: ", apiserver.port
+        return nil, "invalid port value: " .. apiserver.port
     end
 
     if conf.client.token then
@@ -273,6 +278,7 @@ local function get_apiserver(conf)
 
     return apiserver
 end
+
 
 local function create_endpoint_lrucache(endpoint_key, endpoint_port)
     local endpoint_content = endpoint_dict:get_stale(endpoint_key)
@@ -316,7 +322,14 @@ function _M.nodes(service_name)
             create_endpoint_lrucache, endpoint_key, endpoint_port)
 end
 
+
 function _M.init_worker()
+    -- TODO: maybe we can read dict name from discovery config
+    endpoint_dict = ngx.shared.discovery
+    if not endpoint_dict then
+        error("failed to get ngx.shared.dict discovery")
+    end
+
     if process.type() ~= "privileged agent" then
         return
     end
@@ -352,12 +365,19 @@ function _M.init_worker()
         if premature then
             return
         end
-        local status, ok = pcall(endpoints_informer.list_watch, endpoints_informer, apiserver)
-        if not status or not ok then
-            local retry_interval = 40
-            ngx.sleep(retry_interval)
+
+        local ok, status = pcall(endpoints_informer.list_watch, endpoints_informer, apiserver)
+
+        local retry_interval = 0
+        if not ok then
+            core.log.error("list_watch failed, kind: ", endpoints_informer.kind,
+                    ", reason: ", "RuntimeException", ", message : ", status)
+            retry_interval = 40
+        elseif not status then
+            retry_interval = 40
         end
-        ngx.timer.at(0, timer_runner)
+
+        ngx.timer.at(retry_interval, timer_runner)
     end
 
     ngx.timer.at(0, timer_runner)

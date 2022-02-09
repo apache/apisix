@@ -30,7 +30,7 @@ local function list_query(informer)
         limit = informer.limit,
     }
 
-    if informer.continue ~= nil and informer.continue ~= "" then
+    if informer.continue and informer.continue ~= "" then
         arguments.continue = informer.continue
     end
 
@@ -44,6 +44,7 @@ local function list_query(informer)
 
     return ngx.encode_args(arguments)
 end
+
 
 local function list(httpc, apiserver, informer)
     local response, err = httpc:request({
@@ -79,19 +80,20 @@ local function list(httpc, apiserver, informer)
 
     informer.version = data.metadata.resourceVersion
 
-    if informer.on_added ~= nil then
+    if informer.on_added then
         for _, item in ipairs(data.items or empty_table) do
             informer:on_added(item, "list")
         end
     end
 
     informer.continue = data.metadata.continue
-    if informer.continue ~= nil and informer.continue ~= "" then
+    if informer.continue and informer.continue ~= "" then
         list(httpc, informer)
     end
 
     return true
 end
+
 
 local function watch_query(informer)
     local arguments = {
@@ -100,7 +102,7 @@ local function watch_query(informer)
         timeoutSeconds = informer.overtime,
     }
 
-    if informer.version ~= nil and informer.version ~= "" then
+    if informer.version and informer.version ~= "" then
         arguments.resourceVersion = informer.version
     end
 
@@ -114,6 +116,7 @@ local function watch_query(informer)
 
     return ngx.encode_args(arguments)
 end
+
 
 local function split_event (body, callback, ...)
     local gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
@@ -155,6 +158,7 @@ local function split_event (body, callback, ...)
     return remainder_body, "Success"
 end
 
+
 local function dispatch_event(event_string, informer)
     local event, _ = core.json.decode(event_string)
 
@@ -175,15 +179,15 @@ local function dispatch_event(event_string, informer)
     informer.version = object.metadata.resourceVersion
 
     if tp == "ADDED" then
-        if informer.on_added ~= nil then
+        if informer.on_added then
             informer:on_added(object, "watch")
         end
     elseif tp == "DELETED" then
-        if informer.on_deleted ~= nil then
+        if informer.on_deleted then
             informer:on_deleted(object)
         end
     elseif tp == "MODIFIED" then
-        if informer.on_modified ~= nil then
+        if informer.on_modified then
             informer:on_modified(object)
         end
         -- elseif type == "BOOKMARK" then
@@ -192,6 +196,7 @@ local function dispatch_event(event_string, informer)
 
     return true
 end
+
 
 local function watch(httpc, apiserver, informer)
     local watch_times = 8
@@ -236,7 +241,7 @@ local function watch(httpc, apiserver, informer)
                 break
             end
 
-            if remainder_body ~= nil and #remainder_body > 0 then
+            if remainder_body and #remainder_body > 0 then
                 body = remainder_body .. body
             end
 
@@ -252,6 +257,7 @@ local function watch(httpc, apiserver, informer)
 
     return true
 end
+
 
 local function list_watch(informer, apiserver)
     local ok
@@ -277,7 +283,7 @@ local function list_watch(informer, apiserver)
 
     core.log.info("begin to list ", informer.kind)
     informer.fetch_state = "listing"
-    if informer.pre_List ~= nil then
+    if informer.pre_List then
         informer:pre_list()
     end
 
@@ -290,7 +296,7 @@ local function list_watch(informer, apiserver)
     end
 
     informer.fetch_state = "list finished"
-    if informer.post_List ~= nil then
+    if informer.post_List then
         informer:post_list()
     end
 
@@ -315,12 +321,12 @@ local _M = {
 function _M.new(group, version, kind, plural, namespace)
     local tp
     tp = type(group)
-    if tp ~= nil and tp ~= "string" then
+    if tp ~= "nil" and tp ~= "string" then
         return nil, "group should set to string or nil type but " .. tp
     end
 
     tp = type(namespace)
-    if tp ~= nil and tp ~= "string" then
+    if tp ~= "nil" and tp ~= "string" then
         return nil, "namespace should set to string or nil type but " .. tp
     end
 
@@ -340,13 +346,13 @@ function _M.new(group, version, kind, plural, namespace)
     end
 
     local path = ""
-    if group == nil or group == "" then
+    if group or group == "" then
         path = path .. "/api/" .. version
     else
         path = path .. "/apis/" .. group .. "/" .. version
     end
 
-    if namespace ~= nil and namespace ~= "" then
+    if namespace and namespace ~= "" then
         path = path .. "/namespace/" .. namespace
     end
     path = path .. "/" .. plural
