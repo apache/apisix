@@ -137,5 +137,5 @@ If you have contributed to Apache APISIX, no matter it is a code contribution to
 
 ## Do you have questions about the source code?
 
-- **QQ Group**: 578997126(recommended), 552030619
+- **QQ Group**: 781365357(recommended), 578997126, 552030619
 - Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
