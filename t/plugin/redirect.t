@@ -1003,7 +1003,7 @@ Location: /hello?type=string&name=json
 
 
 
-=== TEST 41: redirect
+=== TEST 41: enable http_to_https (pass X-Forwarded-Proto)
 --- config
     location /t {
         content_by_lua_block {
