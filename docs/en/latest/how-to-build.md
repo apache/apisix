@@ -23,7 +23,7 @@ title: How to build Apache APISIX
 
 ## Step 1: Install Apache APISIX
 
-You can install Apache APISIX via RPM Repository, Docker, Helm Chart, and source release package. Please choose one from the following options.
+You can install Apache APISIX via RPM Repository, Docker, Helm Chart, source release package, and source release package ( LTS version ). Please choose one from the following options.
 
 ### Installation via RPM Repository(CentOS 7)
 
@@ -130,7 +130,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
 ### LTS version Installation via Source Release Package
 
-The current LTS VERSION of Apache APISIX is `2.10.4`. Set `APISIX VERSION` in [install by source package](# Install by source package) to `2.10.4` and follow the other steps.
+The current LTS VERSION of Apache APISIX is `2.10.3`. Set `APISIX VERSION` in [install by source package](# Install by source package) to `2.10.3` and follow the other steps.
 
 ## Step 2: Install ETCD
 
