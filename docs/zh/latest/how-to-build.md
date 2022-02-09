@@ -130,7 +130,7 @@ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装 LTS 版本
 
-目前 Apache APISIX 的 LTS 版本为 `2.10.4`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.4` ，其他步骤按顺序进行即可。
+目前 Apache APISIX 的 LTS 版本为 `2.10.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.3` ，其他步骤按顺序进行即可。
 
 ## 步骤2：安装 ETCD
 
