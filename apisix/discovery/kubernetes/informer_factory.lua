@@ -276,7 +276,7 @@ local function list_watch(informer, apiserver)
 
     if not ok then
         informer.fetch_state = "connect failed"
-        core.log.error("connect apiserver failed , apiserver.host: ", apiserver.host,
+        core.log.error("connect apiserver failed, apiserver.host: ", apiserver.host,
                 ", apiserver.port: ", apiserver.port, ", message : ", message)
         return false
     end
@@ -346,7 +346,7 @@ function _M.new(group, version, kind, plural, namespace)
     end
 
     local path = ""
-    if group or group == "" then
+    if group == nil or group == "" then
         path = path .. "/api/" .. version
     else
         path = path .. "/apis/" .. group .. "/" .. version
