@@ -1022,8 +1022,7 @@ Location: /hello?type=string&name=json
                     ],
                     "plugins": {
                         "redirect": {
-                            "uri": "https://$host$request_uri",
-                            "ret_code": 301
+                            "http_to_https": true
                         }
                     }
                 }]]
