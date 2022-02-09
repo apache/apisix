@@ -14,25 +14,23 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core        = require("apisix.core")
-local config_util = require("apisix.core.config_util")
-local pb          = require("pb")
-local protoc      = require("protoc")
-local pcall       = pcall
-local ipairs      = ipairs
+local core          = require("apisix.core")
+local config_util   = require("apisix.core.config_util")
+local pb            = require("pb")
+local protoc        = require("protoc")
+local pcall         = pcall
+local ipairs        = ipairs
+local decode_base64 = ngx.decode_base64
+
+
 local protos
-
-
 local lrucache_proto = core.lrucache.new({
     ttl = 300, count = 100
 })
 
 local proto_fake_file = "filename for loaded"
 
-local function compile_proto(content)
-    -- clear pb state
-    pb.state(nil)
-
+local function compile_proto_text(content)
     protoc.reload()
     local _p  = protoc.new()
     -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
@@ -50,8 +48,6 @@ local function compile_proto(content)
     end
 
     local compiled = _p.loaded
-    -- fetch pb state
-    compiled.pb_state = pb.state(nil)
 
     local index = {}
     for _, s in ipairs(compiled[proto_fake_file].service or {}) do
@@ -65,6 +61,54 @@ local function compile_proto(content)
 
     compiled[proto_fake_file].index = index
 
+    return compiled
+end
+
+
+local function compile_proto_bin(content)
+    content = decode_base64(content)
+    if not content then
+        return nil
+    end
+
+    -- pb.load doesn't return err
+    local ok = pb.load(content)
+    if not ok then
+        return nil
+    end
+
+    local index = {}
+    for name, _, methods in pb.services() do
+        local method_index = {}
+        for _, m in ipairs(methods) do
+            method_index[m.name] = m
+        end
+        -- remove the prefix '.'
+        index[name:sub(2)] = method_index
+    end
+
+    local compiled = {}
+    compiled[proto_fake_file] = {}
+    compiled[proto_fake_file].index = index
+
+    return compiled
+end
+
+
+local function compile_proto(content)
+    -- clear pb state
+    pb.state(nil)
+
+    local compiled, err = compile_proto_text(content)
+    if not compiled then
+        compiled = compile_proto_bin(content)
+        if not compiled then
+            return nil, err
+        end
+    end
+
+    -- fetch pb state
+    compiled.pb_state = pb.state(nil)
     return compiled
 end
 
