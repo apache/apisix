@@ -27,7 +27,7 @@ HTTP(s) -> APISIX -> gRPC server
 
 ### 参数
 
-* `content`: `.proto` 文件的内容
+* `content`: `.proto` 或 `.pb` 文件的内容
 
 ### 添加proto
 
@@ -48,6 +48,67 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
         string message = 1;
     }"
 }'
+```
+
+如果你的 `.proto` 文件包含 import，或者你想把多个 `.proto` 文件合并成一个 proto。
+你可以使用 `.pb` 文件来创建 proto。
+
+假设我们有一个 `.proto` 叫 `proto/helloworld.proto`，它导入了另一个 proto 文件：
+
+```proto
+syntax = "proto3";
+
+package helloworld;
+import "proto/import.proto";
+...
+```
+
+首先，让我们从 `.proto`文件创建一个`.pb`文件。
+
+```shell
+protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
+```
+
+输出的二进制文件 `proto.pb` 将同时包含 `helloworld.proto` 和 `import.proto`。
+
+然后我们可以将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
+
+由于内容是二进制的，我们需要先对其进行 base64 编码。这里我们用一个 Python 脚本来做。
+
+```python
+#!/usr/bin/env python
+# coding: utf-8
+# save this file as upload_pb.py
+import base64
+import sys
+# sudo pip install requests
+import requests
+
+if len(sys.argv) <= 1:
+    print("bad argument")
+    sys.exit(1)
+with open(sys.argv[1], 'rb') as f:
+    content = base64.b64encode(f.read())
+id = sys.argv[2]
+api_key = "edd1c9f034335f136f87ad84b625c8f1" # Change it
+
+reqParam = {
+    "content": content,
+}
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/proto/" + id, json=reqParam, headers={
+    "X-API-KEY": api_key,
+})
+print(resp.status_code)
+print(resp.text)
+```
+
+创建proto：
+
+```bash
+chmod +x ./upload_pb.pb
+./upload_pb.py proto.pb 1
+# 200
+# {"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"},"action":"set"}
 ```
 
 ## 参数列表
