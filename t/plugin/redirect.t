@@ -1034,9 +1034,15 @@ Location: /hello?type=string&name=json
             ngx.say(body)
         }
     }
+
+
+
+=== TEST 42: enable http_to_https (pass X-Forwarded-Proto)
 --- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: http
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello
