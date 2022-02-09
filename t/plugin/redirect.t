@@ -1007,7 +1007,7 @@ Location: /hello?type=string&name=json
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("plugin.redirect").test
+            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
