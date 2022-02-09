@@ -52,7 +52,7 @@ Forward Auth 巧妙地将认证和授权逻辑移到了一个专门的外部服�
 
 ## 数据定义
 
-request_headers属性中转发到 `authorization` 服务中的 Apache APISIX 内容清单
+request_headers 属性中转发到 `authorization` 服务中的 Apache APISIX 内容清单
 | Scheme | HTTP Method | Host | URI | Source IP |
 | -- | -- | -- | -- | -- |
 | X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
