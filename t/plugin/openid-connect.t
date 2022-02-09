@@ -16,6 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -1426,6 +1427,10 @@ passed
 GET /t
 --- response_body
 true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by introspection
 --- no_error_log
 [error]
 
@@ -1487,3 +1492,176 @@ GET /t
 {"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_userinfo_header":true,"ssl_verify":false,"timeout":3}
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: Update plugin with ID provider jwks endpoint for token verification.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://localhost:3000",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "use_jwks": true,
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                    "client_id": "course_management",
+                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                    "redirect_uri": "http://localhost:3000",
+                                    "ssl_verify": false,
+                                    "timeout": 10,
+                                    "bearer_only": true,
+                                    "use_jwks": true,
+                                    "realm": "University",
+                                    "introspection_endpoint_auth_method": "client_secret_post",
+                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: Obtain valid token and access route with it.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by jwks
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: Access route with an invalid token.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Access route using a fake access token.
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false
+--- error_log
+OIDC introspection failed: invalid jwt: invalid jwt string
