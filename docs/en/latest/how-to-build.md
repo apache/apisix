@@ -128,6 +128,10 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
   Attention please, this operation will totally **remove** the related files.
 
+### LTS version Installation via Source Release Package
+
+The current LTS VERSION of Apache APISIX is `2.10.4`. Set `APISIX VERSION` in [install by source package](# Install by source package) to `2.10.4` and follow the other steps.
+
 ## Step 2: Install ETCD
 
 This step is required if you have installed only Apache APISIX via RPM, Docker or source code but not ETCD.
