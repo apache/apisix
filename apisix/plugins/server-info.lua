@@ -26,8 +26,8 @@ local type = type
 
 local load_time = os.time()
 local plugin_name = "server-info"
--- local default_report_interval = 60
-local default_report_ttl = 30
+local default_report_ttl = 36
+local lease_id
 
 local schema = {
     type = "object",
@@ -80,9 +80,8 @@ local function get_boot_time()
 end
 
 
-local function initialize_server_info()
+local function uninitialize_server_info()
     local boot_time = get_boot_time()
-    core.log.error("boot_time: ", boot_time)
     return {
         etcd_version     = "unknown",
         hostname         = core.utils.gethostname(),
@@ -101,17 +100,16 @@ local function get()
     end
 
     if not data then
-        return initialize_server_info()     -- first time
+        return uninitialize_server_info()
     end
 
-    core.log.error("server_info: ", data)
     local server_info, err = core.json.decode(data)
     if not server_info then
         core.log.error("failed to decode server_info: ", err)
         return nil, err
     end
 
-    return server_info  -- return a copy
+    return server_info
 end
 
 
@@ -119,39 +117,23 @@ local function get_server_info()
     local info, err = get()
     if not info then
         core.log.error("failed to get server_info: ", err)
-        return 500 -- internal server error
+        return 500
     end
 
     return 200, info
 end
 
-local function heartbeat(id)
-    local res, err = core.etcd.keepalive(id)
-    core.log.error("keepalive: ", res, err)
-    if not res then
-        core.log.error("send heartbeat failed: ", err)
-        return false, err
-    end
-    return true, nil
-end
 
 local function report(premature, report_ttl)
     if premature then
         return
     end
 
-    -- get apisix server info data
+    -- get apisix node info
     local server_info, err = get()
     if not server_info then
         core.log.error("failed to get server_info: ", err)
     end
-
-    local lease_id, err =internal_status.get("lease_id")
-    if err ~= nil then
-        core.log.error("get error: ",err)
-        return nil, err
-    end
-
 
     if server_info.etcd_version == "unknown" then
         local res, err = core.etcd.server_version()
@@ -176,55 +158,47 @@ local function report(premature, report_ttl)
         if not newres then
             core.log.error("failed to set server_info: ", err)
         end
-        core.log.error("initial server_info: ", core.json.encode(server_info))
-        core.log.error("first lease_id: ", newres.body.lease_id)
-        lease_id = newres.body.lease_id
+
+        -- set lease_id to ngx dict
+        local ok, err = internal_status:set("lease_id", newres.body.lease_id)
+        if not ok then
+            core.log.error("failed to save boot_time to shdict: ", err)
+        end
+
         return
     end
 
-    local _, err = internal_status:set("lease_id", res.body.node.lease_id)
-    if err ~= nil then
-        core.log.error("failed to save boot_time to shdict: ", err)
-    end
-
-    core.log.error("second lease_id: ", lease_id)
-
-    core.log.error("write new server_info data", core.json.encode(server_info))
-   
+    local res, _ = core.etcd.get(key)
     local ok = core.table.deep_eq(server_info, res.body.node.value)
+    -- not equal, update it
     if not ok then
-
-        core.log.error("server_info: ", core.json.encode(server_info))
-        core.log.error("etcd_info: ", core.json.encode(res.body.node))
-
-
         local newres, err = core.etcd.set(key, server_info, report_ttl)
         if not newres then
             core.log.error("failed to set server_info to etcd: ", err)
             return false, err
         end
-        
-        -- lease_id Need to convert from dec to hex
 
-        local _, err = internal_status:set("lease_id", res.body.node.lease_id)
+        -- update lease_id
+        local _, err = internal_status:set("lease_id", res.body.lease_id)
         if err ~= nil then
-            core.log.error("failed to save boot_time to shdict: ", err)
+            core.log.error("failed to set lease_id to shdict: ", err)
         end
 
-        core.log.error("lease_id: ", lease_id)
         return
     end
 
+    -- get lease_id from ngx dict
+    lease_id, err = internal_status:get("lease_id")
+    if err ~= nil then
+        core.log.error("failed to get lease_id from shdict: ",err)
+    end
+
     -- call keepalive
-    core.log.error("third lease_id: ", lease_id)
-    local hexid = string.format("%x", lease_id)
-    local h, err = heartbeat(hexid)
-    if not h then
-        core.log.error("report server_info failed: ", err)
+    local _, err = core.etcd.keepalive(lease_id)
+    if err ~= nil then
+        core.log.error("send heartbeat failed: ", err)
         return false, err
     end
-    core.log.error("log keepalive: ", h)
-
 
     local data, err = core.json.encode(server_info)
     if not data then
@@ -238,7 +212,6 @@ local function report(premature, report_ttl)
         return false, err
     end
 end
-
 
 
 function _M.check_schema(conf)
@@ -277,11 +250,12 @@ function _M.init()
     end
 
     -- local report_ttl = attr and attr.report_ttl or default_report_ttl
-    local report_ttl = 30
+    local report_ttl = attr and attr.report_ttl or default_report_ttl
     local start_at = ngx_time()
 
     local fn = function()
         local now = ngx_time()
+        -- If ttl remaining time is less than half, then flush the ttl  
         if now - start_at >= (report_ttl / 2) then
             start_at = now
             report(nil, report_ttl)
