@@ -136,7 +136,15 @@ Follow the steps below to install Apache APISIX via the source release package.
 
 The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
 
+<<<<<<< HEAD
 To install this version, set `APISIX_VERSION`
+=======
+### LTS version Installation via Source Release Package
+
+The current LTS VERSION of Apache APISIX is `2.10.4`. Set `APISIX VERSION` in [install by source package](# Install by source package) to `2.10.4` and follow the other steps.
+
+## Step 2: Install ETCD
+>>>>>>> docs: added installation mode for LTS version
 
 Set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
 
