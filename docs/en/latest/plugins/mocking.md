@@ -208,7 +208,7 @@ Content-Type: application/json;charset=utf8
 Transfer-Encoding: chunked
 Connection: keep-alive
 x-mock-by: APISIX/2.10.0
-Server: TAPISIX/2.10.0
+Server: APISIX/2.10.0
 
 {"a":1,"b":2}
 ```
