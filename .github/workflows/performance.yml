@@ -45,9 +45,6 @@ jobs:
       - name: Perf Test
         run: ./ci/performance_test.sh run_performance_test
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Upload Performance Test Result
         uses: actions/upload-artifact@v2
         with:
