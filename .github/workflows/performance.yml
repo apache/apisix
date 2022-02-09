@@ -60,10 +60,3 @@ jobs:
           path: |
             output/flamegraph.svg
           retention-days: 3
-
-      - name: Echo Result
-        uses: ./.github/actions/action-create-comment
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            [Performance Result](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
