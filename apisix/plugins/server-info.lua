@@ -152,23 +152,27 @@ local function report(premature, report_ttl)
 
     -- get inside etcd data, if not exist, create it
     local key = "/data_plane/server_info/" .. server_info.id
-    local res, _ = core.etcd.get(key)
+    local res, err = core.etcd.get(key)
+    if err ~= nil then
+        core.log.error("failed to get server_info from etcd: ", err)
+    end
+
     if  not res.body.node then
         local newres, err = core.etcd.set(key, server_info, report_ttl)
         if not newres then
             core.log.error("failed to set server_info: ", err)
+            return
         end
 
         -- set lease_id to ngx dict
-        local ok, err = internal_status:set("lease_id", newres.body.lease_id)
-        if not ok then
+        local _, err = internal_status:set("lease_id", newres.body.lease_id)
+        if err ~= nil then
             core.log.error("failed to save boot_time to shdict: ", err)
         end
 
         return
     end
 
-    local res, _ = core.etcd.get(key)
     local ok = core.table.deep_eq(server_info, res.body.node.value)
     -- not equal, update it
     if not ok then
@@ -236,7 +240,6 @@ end
 
 
 function _M.init()
-    -- core.log.info("server info: ", core.json.delay_encode(get()))
     if core.config ~= require("apisix.core.config_etcd") then
         -- we don't need to report server info if etcd is not in use.
         return
@@ -249,7 +252,6 @@ function _M.init()
         return
     end
 
-    -- local report_ttl = attr and attr.report_ttl or default_report_ttl
     local report_ttl = attr and attr.report_ttl or default_report_ttl
     local start_at = ngx_time()
 
