@@ -36,13 +36,12 @@ add_block_preprocessor(sub {
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 10420;
-        location /loggly/bulk/tok/tag/bulk {
+        location /clickhouse-logger/test {
             content_by_lua_block {
                 ngx.req.read_body()
                 local data = ngx.req.get_body_data()
                 local headers = ngx.req.get_headers()
-                ngx.log(ngx.ERR, "loggly body: ", data)
-                ngx.log(ngx.ERR, "loggly tags: " .. require("toolkit.json").encode(headers["X-LOGGLY-TAG"]))
+                ngx.log(ngx.ERR, "clickhouse body: ", data)
                 ngx.say("ok")
             }
         }
@@ -58,8 +57,6 @@ __DATA__
 
 === TEST 1: Full configuration verification
 --- yaml_config
-plugins:
-  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -71,7 +68,7 @@ plugins:
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:8123",
+                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test",
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -91,8 +88,6 @@ passed
 
 === TEST 2: Basic configuration verification
 --- yaml_config
-plugins:
-  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -101,7 +96,7 @@ plugins:
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:8123"
+                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test"
                                                  })
 
             if not ok then
@@ -118,8 +113,6 @@ passed
 
 === TEST 3: auth configure undefined
 --- yaml_config
-plugins:
-  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -147,8 +140,6 @@ property "endpoint_addr" is required
 apisix:
     node_listen: 1984
     admin_key: null
-plugins:
-  - clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -162,7 +153,7 @@ plugins:
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:8123"
+                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test"
                             }
                         },
                         "upstream": {
@@ -190,7 +181,7 @@ plugins:
                                     "max_retry_count":0,
                                     "retry_delay":1,
                                     "ssl_verify":true,
-                                    "endpoint_addr":"http://127.0.0.1:8123",
+                                    "endpoint_addr":"http://127.0.0.1:10420/clickhouse-logger/test",
                                     "password":"a",
                                     "buffer_duration":60,
                                     "timeout":3,
@@ -224,4 +215,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- wait: 2
+--- grep_error_log_out
+clickhouse body:
+--- wait: 5
