@@ -23,7 +23,7 @@ title: 如何构建 Apache APISIX
 
 ## 步骤1：安装 Apache APISIX
 
-你可以通过 RPM 仓库、Docker、Helm Chart、源码包等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
+你可以通过 RPM 仓库、Docker、Helm Chart、源码包、源码包（LTS 版本）等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
 ### 通过 RPM 仓库安装（CentOS 7）
 
@@ -127,6 +127,10 @@ $ sudo yum install ./apisix/*.rpm
 ```
 
   请注意，该操作将完整**删除**相关文件。
+
+### 通过源码包安装 LTS 版本
+
+目前 Apache APISIX 的 LTS 版本为 `2.10.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.3` ，其他步骤按顺序进行即可。
 
 ## 步骤2：安装 ETCD
 
