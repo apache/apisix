@@ -212,7 +212,7 @@ apisix help
 ```shell
 curl -L https://cpanmin.us/ -o cpanm
 chmod +x cpanm
-# optional
+# 可选
 sudo mv cpanm /bin
 ```
 
