@@ -7,12 +7,6 @@ on:
       - 'docs/**'
       - '**/*.md'
 
-permissions:
-  # All other permissions are set to none
-  checks: write
-  contents: read
-  pull-requests: write
-
 jobs:
   performance:
     if: github.event_name == 'pull_request' || github.event.label.name == 'performance'
