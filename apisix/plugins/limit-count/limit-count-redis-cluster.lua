@@ -18,6 +18,7 @@
 local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
+local string = string
 local tostring = tostring
 local ipairs = ipairs
 
@@ -36,6 +37,10 @@ local script = [=[
     end
     return redis.call('incrby', KEYS[1], -1)
 ]=]
+
+--- compact the redis lua script
+script = string.gsub(script, "    ", "")
+script = string.gsub(script, ", ", ",")
 
 
 local function new_redis_cluster(conf)

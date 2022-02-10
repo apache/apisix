@@ -18,6 +18,7 @@ local redis_new = require("resty.redis").new
 local core = require("apisix.core")
 local assert = assert
 local setmetatable = setmetatable
+local string = string
 local tostring = tostring
 
 
@@ -36,6 +37,10 @@ local script = [=[
     end
     return redis.call('incrby', KEYS[1], -1)
 ]=]
+
+--- compact the redis lua script
+script = string.gsub(script, "    ", "")
+script = string.gsub(script, ", ", ",")
 
 
 function _M.new(plugin_name, limit, window, conf)
