@@ -193,9 +193,10 @@ apisix help
 1. Install `cpanminus`, the package manager for `perl`.
 
 ```shell
-cd /bin
 curl -L https://cpanmin.us/ -o cpanm
 chmod +x cpanm
+# optional
+sudo mv cpanm /bin
 ```
 
 2. Then install the test-nginx dependencies via `cpanm`:
