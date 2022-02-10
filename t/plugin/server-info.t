@@ -71,8 +71,6 @@ GET /t
 qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
 --- no_error_log
 [error]
---- error_log
-timer created to report server info, ttl: 60
 
 
 
