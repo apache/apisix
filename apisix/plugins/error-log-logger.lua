@@ -252,7 +252,7 @@ local function send_to_clickhouse(log_message)
     end
 
     if url_decoded.scheme == "https" then
-        ok, err = httpc:ssl_handshake(true, host, false)
+        ok, err = httpc:ssl_handshake(true, host, true)
         if not ok then
             return false, "failed to perform SSL with host[" .. host .. "] "
                 .. "port[" .. tostring(port) .. "] " .. err
