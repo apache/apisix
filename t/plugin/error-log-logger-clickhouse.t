@@ -16,12 +16,41 @@
 #
 use t::APISIX 'no_plan';
 
-log_level('debug');
+log_level("info");
 repeat_each(1);
 no_long_string();
 no_root_location();
-worker_connections(128);
-run_tests;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 10420;
+        location /error-logger-clickhouse/test {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.ERR, "clickhouse error body: ", data)
+                ngx.say("ok")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+});
+
+run_tests();
 
 __DATA__
 
@@ -38,7 +67,7 @@ __DATA__
                                 password = "a",
                                 database = "default",
                                 logtable = "t",
-                                endpoint_addr = "http://127.0.0.1:8123"
+                                endpoint_addr = "http://127.0.0.1:10420/error-logger-clickhouse/test"
                     }
                 },
                 core.schema.TYPE_METADATA
@@ -79,20 +108,20 @@ plugins:
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:8123/log"
+                                "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
                     },
                     "inactive_timeout": 1
                 }]]
                 )
             ngx.sleep(2)
-            core.log.warn("this is a warning message for test.")
+            core.log.warn("this is a warning message for test2.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/Batch Processor\[error-log-logger\] failed to process entries: error while sending data to clickhouse\[http:\/\/127.0.0.1:8123\/log\] connection refused, context: ngx.timer/
+--- grep_error_log_out
+clickhouse error body:
 --- wait: 3
 
 
@@ -117,21 +146,21 @@ plugins:
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:8123/log"
+                                "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
                     },
                     "batch_max_size": 15,
                     "inactive_timeout": 1
                 }]]
                 )
             ngx.sleep(2)
-            core.log.error("this is an error message for test.")
+            core.log.error("this is an error message for test3.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- grep_error_log_out
+this is an error message for test3.
 --- wait: 5
 
 
@@ -147,14 +176,15 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.warn("this is a warning message for test.")
+            core.log.warn("this is a warning message for test4.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- grep_error_log_out
+clickhouse body:
+this is a warning message for test4.
 --- wait: 5
 
 
@@ -170,15 +200,17 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.error("this is an error message for test.")
-            core.log.warn("this is a warning message for test.")
+            core.log.error("this is an error message for test5.")
+            core.log.warn("this is a warning message for test5.")
         }
     }
 --- request
 GET /tg
 --- response_body
+--- grep_error_log_out
+clickhouse body:
 --- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*\},\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*\"\}\}.*/
+this is an error message for test5.
 --- wait: 5
 
 
@@ -194,14 +226,15 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.info("this is an info message for test.")
+            core.log.info("this is an info message for test6.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- no_error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- grep_error_log_out
+clickhouse body:
+this is an info message for test6.
 --- wait: 5
 
 
