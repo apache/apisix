@@ -116,6 +116,10 @@ nacos login fail
 
 
 === TEST 3: same service is registered in route, service and upstream, de-duplicate
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_admin: true
 --- extra_yaml_config
 discovery:
   nacos:
@@ -127,7 +131,6 @@ discovery:
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-           -- use nacos-service5
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -149,7 +152,6 @@ discovery:
                 ngx.status = code
             end
 
-            -- use nacos-service7
             local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
                 [[{
