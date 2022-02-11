@@ -113,21 +113,6 @@ local function get()
 end
 
 
-local function set(key, value, ttl, modified_index)
-    local res, err = core.etcd.atomic_set(key, value, ttl, modified_index)
-    if not res then
-        core.log.error("failed to set server_info: ", err)
-        return
-    end
-
-    -- set lease_id to ngx dict
-    local _, err = internal_status:set("lease_id", res.body.lease_id)
-    if err ~= nil then
-        core.log.error("failed to save lease_id to shdict: ", err)
-    end
-end
-
-
 local function get_server_info()
     local info, err = get()
     if not info then
@@ -136,6 +121,15 @@ local function get_server_info()
     end
 
     return 200, info
+end
+
+
+local function set_lease_id(id)
+        -- update lease_id
+        local _, err = internal_status:set("lease_id", id)
+        if err ~= nil then
+            core.log.error("failed to set lease_id to shdict: ", err)
+        end
 end
 
 
@@ -172,18 +166,31 @@ local function report(premature, report_ttl)
         core.log.error("failed to get server_info from etcd: ", err)
     end
 
-    local modified_index = res.body.node.modifiedIndex
-
     if  not res.body.node then
-        set(key, server_info, report_ttl, modified_index)
+        local res_new, err = core.etcd.set(key, server_info, report_ttl)
+        if not res_new then
+            core.log.error("failed to set server_info: ", err)
+            return
+        end
+
+        -- set lease_id to ngx dict
+        set_lease_id(res_new.body.lease_id)
 
         return
     end
 
+    local modified_index = res.body.node.modifiedIndex
     local ok = core.table.deep_eq(server_info, res.body.node.value)
     -- not equal, update it
     if not ok then
-        set(key, server_info, report_ttl, modified_index)
+        local res_new, err = core.etcd.atomic_set(key, server_info, report_ttl, modified_index)
+        if not res_new then
+            core.log.error("failed to set server_info to etcd: ", err)
+            return
+        end
+        -- update lease_id to ngx dict
+        set_lease_id(res_new.body.lease_id)
+
 
         return
     end
