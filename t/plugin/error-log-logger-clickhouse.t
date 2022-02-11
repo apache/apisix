@@ -40,7 +40,10 @@ add_block_preprocessor(sub {
                 ngx.req.read_body()
                 local data = ngx.req.get_body_data()
                 local headers = ngx.req.get_headers()
-                ngx.log(ngx.ERR, "clickhouse error body: ", data)
+                ngx.log(ngx.WARN, "clickhouse error log body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
+                end
                 ngx.say("ok")
             }
         }
@@ -121,7 +124,11 @@ plugins:
 GET /tg
 --- response_body
 --- grep_error_log_out
-clickhouse error body:
+"this is a warning message for test2."
+"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
+"clickhouse headers: X-ClickHouse-Key:a"
+"clickhouse headers: X-ClickHouse-User:default"
+"clickhouse headers: X-ClickHouse-Database:default"
 --- wait: 3
 
 
@@ -153,14 +160,18 @@ plugins:
                 }]]
                 )
             ngx.sleep(2)
-            core.log.error("this is an error message for test3.")
+            core.log.warn("this is an error message for test3.")
         }
     }
 --- request
 GET /tg
 --- response_body
 --- grep_error_log_out
-this is an error message for test3.
+"this is an error message for test3."
+"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
+"clickhouse headers: X-ClickHouse-Key:a"
+"clickhouse headers: X-ClickHouse-User:default"
+"clickhouse headers: X-ClickHouse-Database:default"
 --- wait: 5
 
 
@@ -183,8 +194,11 @@ plugins:
 GET /tg
 --- response_body
 --- grep_error_log_out
-clickhouse body:
-this is a warning message for test4.
+"this is a warning message for test4."
+"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
+"clickhouse headers: X-ClickHouse-Key:a"
+"clickhouse headers: X-ClickHouse-User:default"
+"clickhouse headers: X-ClickHouse-Database:default"
 --- wait: 5
 
 
@@ -200,7 +214,6 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.error("this is an error message for test5.")
             core.log.warn("this is a warning message for test5.")
         }
     }
@@ -208,9 +221,11 @@ plugins:
 GET /tg
 --- response_body
 --- grep_error_log_out
-clickhouse body:
---- error_log eval
-this is an error message for test5.
+"this is a warning message for test5."
+"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
+"clickhouse headers: X-ClickHouse-Key:a"
+"clickhouse headers: X-ClickHouse-User:default"
+"clickhouse headers: X-ClickHouse-Database:default"
 --- wait: 5
 
 
@@ -233,8 +248,7 @@ plugins:
 GET /tg
 --- response_body
 --- grep_error_log_out
-clickhouse body:
-this is an info message for test6.
+"this is an info message for test6."
 --- wait: 5
 
 
