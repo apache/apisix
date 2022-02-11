@@ -209,12 +209,7 @@ apisix help
 
 1. 安装 `perl` 的包管理器 `cpanminus`。
 
-```shell
-curl -L https://cpanmin.us/ -o cpanm
-chmod +x cpanm
-# 可选
-sudo mv cpanm /bin
-```
+详情请参考：[安装包管理器 `cpanmius` ](https://metacpan.org/pod/App::cpanminus#INSTALLATION)。
 
 2. 然后通过 `cpanm` 来安装 test-nginx 的依赖：
 
