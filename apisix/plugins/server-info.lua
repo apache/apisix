@@ -80,7 +80,7 @@ local function get_boot_time()
 end
 
 
-local function uninitialize_server_info()
+local function uninitialized_server_info()
     local boot_time = get_boot_time()
     return {
         etcd_version     = "unknown",
@@ -100,7 +100,7 @@ local function get()
     end
 
     if not data then
-        return uninitialize_server_info()
+        return uninitialized_server_info()
     end
 
     local server_info, err = core.json.decode(data)
@@ -110,6 +110,21 @@ local function get()
     end
 
     return server_info
+end
+
+
+local function set(key, value, ttl, modified_index)
+    local res, err = core.etcd.atomic_set(key, value, ttl, modified_index)
+    if not res then
+        core.log.error("failed to set server_info: ", err)
+        return
+    end
+
+    -- set lease_id to ngx dict
+    local _, err = internal_status:set("lease_id", res.body.lease_id)
+    if err ~= nil then
+        core.log.error("failed to save lease_id to shdict: ", err)
+    end
 end
 
 
@@ -157,18 +172,10 @@ local function report(premature, report_ttl)
         core.log.error("failed to get server_info from etcd: ", err)
     end
 
-    if  not res.body.node then
-        local newres, err = core.etcd.set(key, server_info, report_ttl)
-        if not newres then
-            core.log.error("failed to set server_info: ", err)
-            return
-        end
+    local modified_index = res.body.node.modifiedIndex
 
-        -- set lease_id to ngx dict
-        local _, err = internal_status:set("lease_id", newres.body.lease_id)
-        if err ~= nil then
-            core.log.error("failed to save boot_time to shdict: ", err)
-        end
+    if  not res.body.node then
+        set(key, server_info, report_ttl, modified_index)
 
         return
     end
@@ -176,17 +183,7 @@ local function report(premature, report_ttl)
     local ok = core.table.deep_eq(server_info, res.body.node.value)
     -- not equal, update it
     if not ok then
-        local newres, err = core.etcd.set(key, server_info, report_ttl)
-        if not newres then
-            core.log.error("failed to set server_info to etcd: ", err)
-            return false, err
-        end
-
-        -- update lease_id
-        local _, err = internal_status:set("lease_id", res.body.lease_id)
-        if err ~= nil then
-            core.log.error("failed to set lease_id to shdict: ", err)
-        end
+        set(key, server_info, report_ttl, modified_index)
 
         return
     end
