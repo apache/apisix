@@ -56,7 +56,6 @@ run_tests();
 __DATA__
 
 === TEST 1: Full configuration verification
---- yaml_config
 --- config
     location /t {
         content_by_lua_block {
@@ -87,7 +86,6 @@ passed
 
 
 === TEST 2: Basic configuration verification
---- yaml_config
 --- config
     location /t {
         content_by_lua_block {
@@ -112,7 +110,6 @@ passed
 
 
 === TEST 3: auth configure undefined
---- yaml_config
 --- config
     location /t {
         content_by_lua_block {
@@ -136,7 +133,6 @@ property "endpoint_addr" is required
 
 
 === TEST 4: add plugin on routes
---- yaml_config
 apisix:
     node_listen: 1984
     admin_key: null
@@ -216,5 +212,5 @@ GET /opentracing
 --- response_body
 opentracing
 --- grep_error_log_out
-clickhouse body:
+"clickhouse body: INSERT INTO t FORMAT JSONEachRow"
 --- wait: 5
