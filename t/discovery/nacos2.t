@@ -119,7 +119,7 @@ nacos login fail
 --- yaml_config
 apisix:
   node_listen: 1984
-  enable_admin: true
+  admin_key: null
 --- extra_yaml_config
 discovery:
   nacos:
