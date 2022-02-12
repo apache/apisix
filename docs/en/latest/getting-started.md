@@ -23,13 +23,13 @@ title: Getting Started
 
 ## Summary
 
-This article is a quick start guide for Apache APISIX. The Quick Start is divided into the following three steps:
+This documentation is a quick start guide for Apache APISIX. The Quick Start is divided into the following three steps:
 
 1. Install Apache APISIX via [Docker Compose](https://docs.docker.com/compose/).
 1. Create a route and bind it with a Upstream.
 1. Use `curl` command to verify that the results returned after binding are as expected.
 
-In addition, this article provides some advanced operations on how to use Apache APISIX, including adding authentication, prefixing Route, using the APISIX Dashboard, and troubleshooting.
+In addition, this documentation provides some advanced operations on how to use Apache APISIX, including adding authentication, prefixing Route, using the APISIX Dashboard, and troubleshooting.
 
 We will use the following `echo` endpoint as an example, which will return the parameters we passed.
 
@@ -134,7 +134,7 @@ Now we have a running instance of Apache APISIX! Next, let's create a Route.
 
 ### How it works
 
-Apache APISIX provides users with a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](https://github.com/apache/apisix-dashboard). In this article, we use the Admin API to walk you through the procedures of creating a Route.
+Apache APISIX provides users with a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](https://github.com/apache/apisix-dashboard). In this documentation, we use the Admin API to walk you through the procedures of creating a Route.
 
 We can create a [Route](./architecture-design/route.md) and connect it to an Upstream service(also known as the [Upstream](./architecture-design/upstream.md)). When a `Request` arrives at Apache APISIX, Apache APISIX knows which Upstream the request should be forwarded to.
 
