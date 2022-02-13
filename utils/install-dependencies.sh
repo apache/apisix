@@ -133,7 +133,7 @@ function main() {
         elif [[ "${OS_NAME}" == "darwin" ]]; then
             install_dependencies_on_mac_osx
         else
-            echo "Non-surported distribution"
+            echo "Non-supported distribution"
         fi
         return
     fi

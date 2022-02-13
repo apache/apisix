@@ -54,7 +54,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-You may need to use [public-api](public-api.md) plugin to expose it.
+And expose it by using [public-api](public-api.md) plugin.
 
 ## How to enable it
 
