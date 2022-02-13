@@ -42,7 +42,7 @@ fi
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
-rm -rf luarocks-"$LUAROCKS_VER"
+rm -rf luarocks-"$LUAROCKS_VER" luarocks-"$LUAROCKS_VER".tar.gz
 
 mkdir ~/.luarocks || true
 
