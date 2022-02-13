@@ -125,10 +125,11 @@ http://127.0.0.1:9411/zipkin
 
 ![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
 
-### Run the Jaeger instance 
+### Run the Jaeger instance
 
 除了对接 Zipkin，该插件也支持将 traces 上报到 Jaeger。下面运行在`docker`环境上的示例：
 首先，运行 Jaeger 后端服务：
+
 ```
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
@@ -138,6 +139,7 @@ docker run -d --name jaeger \
 ```
 
 创建路由，并且配置 Zipkin：
+
 ```
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -169,6 +171,7 @@ HTTP/1.1 200 OK
 ```
 
 然后在浏览器中打开 Jaeger WebUI 查询 traces：
+
 ```
 http://127.0.0.1:16686
 ```
@@ -176,8 +179,6 @@ http://127.0.0.1:16686
 ![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
 
 ![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
-
-
 
 ## 禁用插件
 

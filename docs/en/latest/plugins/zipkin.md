@@ -33,10 +33,9 @@ title: Zipkin
 
 ## Name
 
-[Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html). 
+[Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
 It's also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), which are support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) format. And of course, it can  integrate other tracing systems adapted to Zipkin v1/v2 format as well.
-
 
 ## Attributes
 
@@ -128,10 +127,11 @@ http://127.0.0.1:9411/zipkin
 
 ![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
 
-### Run the Jaeger instance 
+### Run the Jaeger instance
 
 Besides Zipkin, this plugin supports reporting the traces to Jaeger as well. Here is a sample run on docker.
 Run Jaeger backend on docker first:
+
 ```
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
@@ -141,6 +141,7 @@ docker run -d --name jaeger \
 ```
 
 Create a route with Zipkin plugin like Ziplin's example:
+
 ```
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -172,6 +173,7 @@ HTTP/1.1 200 OK
 ```
 
 Then you can access the WebUI of Jaeger to view traceson browser:
+
 ```
 http://127.0.0.1:16686
 ```
@@ -179,7 +181,6 @@ http://127.0.0.1:16686
 ![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
 
 ![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
-
 
 ## Disable Plugin
 
