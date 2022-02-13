@@ -22,7 +22,6 @@ local path = require("pl.path")
 local http = require("resty.http")
 local ngx = ngx
 local tostring = tostring
-local tonumber = tonumber
 local pairs = pairs
 local tab_concat = table.concat
 local udp = ngx.socket.udp
@@ -90,12 +89,13 @@ local schema = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",
             patternProperties = {
-                [".*"] = {
+                ["^[1-5][0-9]{2}$"] = {
                     description = "keys are HTTP status code, values are severity",
                     type = "string",
                     enum = severity_enums
                 },
             },
+            additionalProperties = false
         }
     },
     required = {"customer_token"}
@@ -161,10 +161,6 @@ function _M.check_schema(conf, schema_type)
     if conf.severity_map then
         local cache = {}
         for k, v in pairs(conf.severity_map) do
-            local rcode = tonumber(k)
-            if not rcode or rcode < 100 or rcode >= 600 then
-                return nil, "expecting severity_map with http response code([100,599]) as keys"
-            end
             cache[k] = severity[v:upper()]
         end
         conf._severity_cache = cache
