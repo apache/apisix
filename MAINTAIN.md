@@ -34,12 +34,13 @@ via `VERSION=x.y.z make release-src`
 7. Move the vote artifact to Apache's apisix repo
 8. Register the release info in https://reporter.apache.org/addrelease.html?apisix
 9. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.2) from the minor branch
-10. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
+10. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3) if the version number is the largest
 11. Update APISIX rpm package
     > Go to [apisix-build-tools](https://github.com/api7/apisix-build-tools) repository and create a new tag named `apisix-${x.y.z}` to automatically submit the
     package to yum repo
 12. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601) in [APISIX docker repository](https://github.com/apache/apisix-docker), and create new branch from master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
-13. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
+13. Update [APISIX helm chart](https://github.com/apache/apisix-helm-chart/pull/234) if the version number is the largest
+14. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
 
 ### Release minor version
 
@@ -57,4 +58,5 @@ via `VERSION=x.y.z make release-src`
 10. Update APISIX rpm package.
     > Go to [apisix-build-tools](https://github.com/api7/apisix-build-tools) repository and create a new tag named `apisix-${x.y.z}` to automatically submit the rpm package to yum repo
 11. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601) in [APISIX docker repository](https://github.com/apache/apisix-docker), and create new branch from master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
-12. Send the [ANNOUNCE email](https://lists.apache.org/thread/4s4msqwl1tq13p9dnv3hx7skbgpkozw1) to dev@apisix.apache.org & announce@apache.org
+12. Update [APISIX helm chart](https://github.com/apache/apisix-helm-chart/pull/234)
+13. Send the [ANNOUNCE email](https://lists.apache.org/thread/4s4msqwl1tq13p9dnv3hx7skbgpkozw1) to dev@apisix.apache.org & announce@apache.org
