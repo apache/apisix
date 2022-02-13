@@ -219,10 +219,6 @@ local function set(key, value, ttl)
             return nil, grant_err
         end
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true, lease = data.body.ID})
-        if not res then
-            return nil, err
-        end
-        res.body.lease_id = data.body.ID
     else
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true})
     end
@@ -302,6 +298,7 @@ function _M.atomic_set(key, value, ttl, mod_revision)
         value = value,
     }
     res.status = 201
+    res.body.lease_id = lease_id
 
     return res, nil
 end
