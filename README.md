@@ -42,7 +42,7 @@ The technical architecture of Apache APISIX:
 ## Community
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
-- QQ Group - 578997126
+- QQ Group - 781365357
 - Slack Workspace - Please [subscribe the mailing list](https://apisix.apache.org/docs/general/subscribe-guide) then ask for invitation link
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [bilibili video](https://space.bilibili.com/551921247)

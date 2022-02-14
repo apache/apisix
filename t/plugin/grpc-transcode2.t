@@ -230,3 +230,155 @@ location /t {
 {"message":"Hello world, name: John"}
 --- error_log
 failed to encode request data to protobuf
+
+
+
+=== TEST 6: set binary rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+
+            local content = t.read_file("t/grpc_server_example/proto.pb")
+            local data = {content = ngx.encode_base64(content)}
+            local code, body = t.test('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.TestImport",
+                            "method": "Run"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: hit route
+--- request
+POST /grpctest
+{"body":"world","user":{"name":"Hello"}}
+--- more_headers
+Content-Type: application/json
+--- response_body chomp
+{"body":"Hello world"}
+
+
+
+=== TEST 8: service/method not found
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/service_not_found",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.TestImportx",
+                            "method": "Run"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/method_not_found",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.TestImport",
+                            "method": "Runx"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit route
+--- request
+POST /service_not_found
+{"body":"world","user":{"name":"Hello"}}
+--- more_headers
+Content-Type: application/json
+--- error_log
+Undefined service method
+--- error_code: 503
+
+
+
+=== TEST 10: hit route
+--- request
+POST /method_not_found
+{"body":"world","user":{"name":"Hello"}}
+--- more_headers
+Content-Type: application/json
+--- error_log
+Undefined service method
+--- error_code: 503

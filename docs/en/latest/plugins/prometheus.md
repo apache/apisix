@@ -46,16 +46,15 @@ plugin_attr:
 
 Assume environment variable `INTRANET_IP` is `172.1.1.1`, now APISIX will export the metrics via `172.1.1.1:9092`.
 
-**Before version `2.6`, the metrics are exposed via the data plane port,
-you may need to use [interceptors](../plugin-interceptors.md) to protect it.**
-
-If you still want this behavior, you can configure it like this:
+If you still want to expose the metrics via the data plane port (default: 9080), you can configure it like this:
 
 ```
 plugin_attr:
   prometheus:
     enable_export_server: false
 ```
+
+And expose it by using [public-api](public-api.md) plugin.
 
 ## How to enable it
 

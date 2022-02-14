@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local host_pattern = [[^http(s)?:\/\/[a-zA-Z0-9-_.:\@%]+$]]
+local host_pattern = [[^http(s)?:\/\/([a-zA-Z0-9-_.]+:.+\@)?[a-zA-Z0-9-_.:]+$]]
 local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
 
 

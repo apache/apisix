@@ -67,7 +67,8 @@
             "plugins/basic-auth",
             "plugins/openid-connect",
             "plugins/hmac-auth",
-            "plugins/authz-casbin"
+            "plugins/authz-casbin",
+            "plugins/forward-auth"
           ]
         },
         {
@@ -225,10 +226,6 @@
         {
           "type": "doc",
           "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
-          "id": "plugin-interceptors"
         },
         {
           "type": "doc",
