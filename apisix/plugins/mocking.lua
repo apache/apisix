@@ -14,16 +14,25 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
 local ngx = ngx
-local xml2lua = require("xml2lua")
 local string = string
 local type = type
 local table = table
 local math = math
 local pairs = pairs
-local ngx_re = ngx.re
+
+local core = require("apisix.core")
+local xml2lua = require("xml2lua")
 local json = core.json
+local ngx_re = ngx.re
+
+local support_content_type = {
+    ["application/xml"] = true,
+    ["application/json"] = true,
+    ["text/plain"] = true,
+    ["text/html"] = true,
+    ["text/xml"] = true
+}
 
 local schema = {
     type = "object",
@@ -59,7 +68,7 @@ local function parse_content_type(content_type)
     if not content_type then
         return ""
     end
-    local m = ngx_re.match(content_type, "([ -~]*);([ -~]*)")
+    local m = ngx_re.match(content_type, "([ -~]*);([ -~]*)", "jo")
     if m and #m == 2 then
         return m[1], m[2]
     end
@@ -74,13 +83,6 @@ function _M.check_schema(conf)
     end
 
     local typ = parse_content_type(conf.content_type)
-    local support_content_type = {
-        ["application/xml"] = true,
-        ["application/json"] = true,
-        ["text/plain"] = true,
-        ["text/html"] = true,
-        ["text/xml"] = true
-    }
     if not support_content_type[typ] then
         return false, "unsupported content type!"
     end
@@ -129,9 +131,46 @@ local function gen_boolean(example)
 end
 
 
-local function gen_base(property)
+local gen_array, gen_object, gen_by_property
+
+function gen_array(property)
+    local output = {}
+    if property.items == nil then
+        return nil
+    end
+    local v = property.items
+    local n = math.random(1, 3)
+    for i = 1, n do
+        table.insert(output, gen_by_property(v))
+    end
+    return output
+end
+
+
+function gen_object(property)
+    local output = {}
+    if not property.properties then
+        return output
+    end
+    for k, v in pairs(property.properties) do
+        output[k] = gen_by_property(v)
+    end
+    return output
+end
+
+
+function gen_by_property(property)
     local typ = string.lower(property.type)
     local example = property.example
+
+    if typ == "array" then
+        return gen_array(property)
+    end
+
+    if typ == "object" then
+        return gen_object(property)
+    end
+
     if typ == "string" then
         return gen_string(example)
     end
@@ -147,53 +186,8 @@ local function gen_base(property)
     if typ == "boolean" then
         return gen_boolean(example)
     end
+
     return nil
-end
-
-
-local gen_array, gen_object
-
-function gen_array(property)
-    local output = {}
-    if property.items == nil then
-        return nil
-    end
-    local v = property.items
-    local n = math.random(1, 3)
-    local typ = string.lower(v.type)
-    for i = 1, n do
-        if typ == "array" then
-            table.insert(output, gen_array(v))
-
-        elseif typ == "object" then
-            table.insert(output, gen_object(v))
-
-        else
-            table.insert(output, gen_base(v))
-        end
-    end
-    return output
-end
-
-
-function gen_object(property)
-    local output = {}
-    if not property.properties then
-        return output
-    end
-    for k, v in pairs(property.properties) do
-        local typ = string.lower(v.type)
-        if typ == "array" then
-            output[k] = gen_array(v)
-
-        elseif typ == "object" then
-            output[k] = gen_object(v)
-
-        else
-            output[k] = gen_base(v)
-        end
-    end
-    return output
 end
 
 

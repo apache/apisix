@@ -20,7 +20,19 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
-log_level('info');
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -51,13 +63,9 @@ __DATA__
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -67,8 +75,6 @@ GET /hello
 --- error_code: 200
 --- response_body chomp
 hello world
---- no_error_log
-[error]
 
 
 
@@ -106,13 +112,9 @@ hello world
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -122,8 +124,6 @@ GET /hello
 --- error_code: 200
 --- response_body chomp
 {"field1":"hello"}
---- no_error_log
-[error]
 
 
 
@@ -161,13 +161,9 @@ GET /hello
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -177,8 +173,6 @@ GET /hello
 --- error_code: 200
 --- response_body chomp
 {"field1":4}
---- no_error_log
-[error]
 
 
 
@@ -216,13 +210,9 @@ GET /hello
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -231,9 +221,6 @@ passed
 GET /hello
 --- error_code: 200
 --- response_body chomp
-{"field1":5.5}
---- no_error_log
-[error]
 
 
 
@@ -271,13 +258,9 @@ GET /hello
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -287,8 +270,6 @@ GET /hello
 --- error_code: 200
 --- response_body chomp
 {"field1":true}
---- no_error_log
-[error]
 
 
 
@@ -325,13 +306,9 @@ GET /hello
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -341,8 +318,6 @@ GET /hello
 --- error_code: 200
 --- response_body chomp
 {"field1":{}}
---- no_error_log
-[error]
 
 
 
@@ -377,8 +352,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -388,5 +361,3 @@ GET /hello
 --- error_code: 200
 --- response_headers
 Content-Type: application/json
---- no_error_log
-[error]
