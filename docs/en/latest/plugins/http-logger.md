@@ -53,7 +53,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 | include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
 | include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 | concat_method    | string  | optional    | "json"        | ["json", "new_line"] | Enum type: `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
-| ssl_verify       | boolean | optional    | true          | [false, true] | Whether to verify certificate. |
+| ssl_verify       | boolean | optional    | false          | [false, true] | Whether to verify certificate. |
 
 ## How To Enable
 

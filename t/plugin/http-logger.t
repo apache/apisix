@@ -364,7 +364,7 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
                                 "inactive_timeout": 2,
-                                "ssl_verify": true
+                                "ssl_verify": false
                             }
                         },
                         "upstream": {
@@ -386,7 +386,7 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                     "retry_delay": 2,
                                     "buffer_duration": 2,
                                     "inactive_timeout": 2,
-                                    "ssl_verify": true
+                                    "ssl_verify": false
                                 }
                             },
                             "upstream": {
