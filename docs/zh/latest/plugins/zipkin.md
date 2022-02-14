@@ -31,7 +31,7 @@ title: zipkin
 
 ## 名字
 
-[Zipkin](https://github.com/openzipkin/zipkin)是开源的分布调用链追踪系统。该插件基于[Zipkin API规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息，并上报 Zipkin Collector。
+[Zipkin](https://github.com/openzipkin/zipkin) 是开源的分布调用链追踪系统。该插件基于[Zipkin API规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息，并上报 Zipkin Collector。
 
 > 它还能够与适配了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) 的 [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)。当然，它也能够与其它支持 Zipkin v1/v2 数据格式的调用链追踪系统集成。
 
