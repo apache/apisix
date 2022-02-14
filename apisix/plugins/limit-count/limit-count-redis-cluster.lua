@@ -18,7 +18,6 @@
 local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
-local string = string
 local tostring = tostring
 local ipairs = ipairs
 

@@ -23,6 +23,7 @@ local C           = ffi.C
 local ffi_cast    = ffi.cast
 local ngx         = ngx
 
+
 ffi.cdef[[
     int memcmp(const void *s1, const void *s2, size_t n);
 ]]
