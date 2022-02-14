@@ -1,0 +1,41 @@
+> local list_prefix = "*"
+---
+title: APISIX Plugin Development Docs
+---
+
+## $(ldoc.title)
+
+### $(module.name)
+
+$(module.summary) $(module.description)
+
+> for kind, items in module.kinds() do
+>    for item in items() do
+>       if item.type == "function" then
+#### $(item.name)
+>       end -- if item.type
+
+$(ldoc.descript(item))
+>       if item.retgroups then
+>           local groups = item.retgroups
+
+**Returns:**
+
+>          for i, group in ldoc.ipairs(groups) do
+>             for r in group:iter() do
+>                local type, ctypes = item:return_type(r);
+$(list_prefix) type: `$(type)`, desc: $(r.text)
+>             end -- for r in group:iter()
+>          end -- for i,group
+>       end -- if item.retgroups
+
+>       if item.usage then
+**Usage**
+
+>          for usage in item.usage:iter() do
+$(usage)
+>          end -- for usage in item.usage:iter()
+>          local usage = item.usage
+>       end -- if item.usage
+>    end -- end for item in items()
+> end -- for kinds, items
