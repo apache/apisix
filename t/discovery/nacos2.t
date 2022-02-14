@@ -141,8 +141,8 @@ discovery:
                         "scheme": "http",
                         "type": "roundrobin",
                         "discovery_args": {
-                          "namespace_id": "test_ns",
-                          "group_name": "test_group"
+                          "namespace_id": "public",
+                          "group_name": "DEFAULT_GROUP"
                         }
                     }
                 }]]
@@ -162,8 +162,8 @@ discovery:
                         "pass_host": "pass",
                         "service_name": "APISIX-NACOS",
                         "discovery_args": {
-                          "namespace_id": "test_ns",
-                          "group_name": "test_group"
+                          "namespace_id": "public",
+                          "group_name": "DEFAULT_GROUP"
                         }
                     }
                 }]]
@@ -182,8 +182,8 @@ discovery:
                     "pass_host": "pass",
                     "service_name": "APISIX-NACOS",
                     "discovery_args": {
-                    "namespace_id": "test_ns",
-                    "group_name": "test_group"
+                    "namespace_id": "public",
+                    "group_name": "DEFAULT_GROUP"
                     }
                 }]]
             )
@@ -207,7 +207,7 @@ discovery:
 
             local body = json_decode(res.body)
             local services = body.services
-            local service = services["test_ns"]["test_group"]["APISIX-NACOS"]
+            local service = services["public"]["DEFAULT_GROUP"]["APISIX-NACOS"]
             local number = table.getn(service)
             ngx.say(number)
         }
