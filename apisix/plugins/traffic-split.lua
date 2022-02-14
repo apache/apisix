@@ -238,6 +238,7 @@ function _M.access(conf, ctx)
 
     for _, rule in ipairs(conf.rules) do
         if not rule.match then
+            match_passed = true
             weighted_upstreams = rule.weighted_upstreams
             break
         end
