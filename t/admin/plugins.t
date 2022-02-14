@@ -69,7 +69,6 @@ request-id
 fault-injection
 serverless-pre-function
 mocking
-batch-requests
 cors
 ip-restriction
 ua-restriction
