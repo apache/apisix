@@ -151,3 +151,56 @@ plugin_proxy_rewrite get method: GET
 --- response_body
 property "method" validation failed: matches none of the enum values
 done
+
+
+
+=== TEST 6: set route(rewrite method with headers)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/uri/plugin_proxy_rewrite",
+                                "method": "POST",
+                                "scheme": "http",
+                                "host": "apisix.iresty.com",
+                                "headers":{
+                                    "x-api-version":"v1"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 7: hit route(with out header)
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /uri/plugin_proxy_rewrite
+host: localhost
+x-api-version: v1
+x-real-ip: 127.0.0.1
+--- grep_error_log_out
+plugin_proxy_rewrite get method: POST
