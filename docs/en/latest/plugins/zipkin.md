@@ -140,7 +140,7 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one:1.31
 ```
 
-Create a route with Zipkin plugin like Ziplin's example:
+Create a route with Zipkin plugin like Zipkin's example:
 
 ```
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
