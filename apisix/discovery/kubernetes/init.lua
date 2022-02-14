@@ -273,7 +273,7 @@ local function get_apiserver(conf)
     end
 
     if apiserver.schema == "https" and apiserver.token == "" then
-        return nil, "service.host should set to non-empty string when service.schema is https"
+        return nil, "apiserver.token should set to non-empty string when service.schema is https"
     end
 
     return apiserver
@@ -304,7 +304,7 @@ local _M = {
 
 function _M.nodes(service_name)
     local pattern = "^(.*):(.*)$"  -- namespace/name:port_name
-    local match, _ = ngx.re.match(service_name, pattern, "jo")
+    local match = ngx.re.match(service_name, pattern, "jo")
     if not match then
         core.log.info("get unexpected upstream service_name:　", service_name)
         return nil

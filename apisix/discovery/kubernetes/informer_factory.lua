@@ -227,6 +227,7 @@ local function watch(httpc, apiserver, informer)
             return false, response.reason, response:read_body() or ""
         end
 
+        local ok
         local remainder_body
         local body
         local reason
