@@ -125,10 +125,15 @@ local function get_server_info()
 end
 
 
-local function set(key,value,ttl, modified_index)
+local function set(key, value, ttl, modified_index)
     local res_new, err = core.etcd.atomic_set(key, value, ttl, modified_index)
     if not res_new then
         core.log.error("failed to set server_info: ", err)
+        return 503, {error_msg = err}
+    end
+
+    if not res_new.body.lease_id then
+        core.log.error("failed to get lease_id: ", err)
         return 503, {error_msg = err}
     end
 
