@@ -91,7 +91,7 @@ Then add prometheus plugin:
 
 ## How to fetch the metric data
 
-We fetch the metric data from the specified url `/apisix/prometheus/metrics`. 
+We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
 First you need to setup the route for the metrics API, which will use the [public-api](public-api.md) plugin.
 
