@@ -35,7 +35,7 @@ title: Zipkin
 
 [Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-It's also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), which are support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) format. And of course, it can  integrate other tracing systems adapted to Zipkin v1/v2 format as well.
+It's also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), which are support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) format. And of course, it can integrate other tracing systems adapted to Zipkin v1/v2 format as well.
 
 ## Attributes
 
