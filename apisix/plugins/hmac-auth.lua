@@ -244,7 +244,13 @@ local function generate_signature(ctx, secret_key, params)
 
             -- whether to encode the uri parameters
             if type(param) == "table" then
+                local vals = {}
                 for _, val in pairs(param) do
+                    core.table.insert(vals, val)
+                end
+                core.table.sort(vals)
+
+                for _, val in pairs(vals) do
                     core.table.insert(query_tab, encode_or_not(key) .. "=" .. encode_or_not(val))
                 end
             else
