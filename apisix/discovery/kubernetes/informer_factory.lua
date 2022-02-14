@@ -121,7 +121,7 @@ end
 local function split_event (body, callback, ...)
     local gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
     if not gmatch_iterator then
-        return nil, "GmatchError", err
+        return false, nil, "GmatchError", err
     end
 
     local captures
@@ -131,7 +131,7 @@ local function split_event (body, callback, ...)
         captures, err = gmatch_iterator()
 
         if err then
-            return nil, "GmatchError", err
+            return false, nil, "GmatchError", err
         end
 
         if not captures then
@@ -142,7 +142,7 @@ local function split_event (body, callback, ...)
 
         ok, reason, err = callback(captures[0], ...)
         if not ok then
-            return nil, reason, err
+            return false, nil, reason, err
         end
     end
 
@@ -155,7 +155,7 @@ local function split_event (body, callback, ...)
         remainder_body = string.sub(body, captured_size + 1)
     end
 
-    return remainder_body, "Success"
+    return true, remainder_body
 end
 
 
@@ -245,8 +245,9 @@ local function watch(httpc, apiserver, informer)
                 body = remainder_body .. body
             end
 
-            remainder_body, reason, err = split_event(body, dispatch_event, informer)
-            if reason ~= "Success" then
+            local ok
+            ok, remainder_body, reason, err = split_event(body, dispatch_event, informer)
+            if not ok and reason ~= "Success" then
                 if reason == "ResourceGone" then
                     return true
                 end

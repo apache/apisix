@@ -327,7 +327,7 @@ function _M.init_worker()
     -- TODO: maybe we can read dict name from discovery config
     endpoint_dict = ngx.shared.discovery
     if not endpoint_dict then
-        error("failed to get Nginx shared dict: discovery, please check your APISIX version")
+        error("failed to get nginx shared dict: discovery, please check your APISIX version")
     end
 
     if process.type() ~= "privileged agent" then
