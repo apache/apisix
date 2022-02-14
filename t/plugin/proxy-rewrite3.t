@@ -200,7 +200,7 @@ passed
 GET /hello HTTP/1.1
 --- response_body
 uri: /uri/plugin_proxy_rewrite
-host: localhost
+host: apisix.iresty.com
 x-api-version: v1
 x-real-ip: 127.0.0.1
 --- grep_error_log_out
