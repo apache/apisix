@@ -160,7 +160,7 @@ end
 
 
 local function dispatch_event(event_string, informer)
-    local event, _ = core.json.decode(event_string)
+    local event = core.json.decode(event_string)
 
     if not event or not event.type or not event.object then
         return false, "UnexpectedBody", event_string
@@ -246,9 +246,8 @@ local function watch(httpc, apiserver, informer)
                 body = remainder_body .. body
             end
 
-            local ok
             ok, remainder_body, reason, err = split_event(body, dispatch_event, informer)
-            if not ok and reason ~= "Success" then
+            if not ok then
                 if reason == "ResourceGone" then
                     return true
                 end
