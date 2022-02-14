@@ -41,7 +41,10 @@ add_block_preprocessor(sub {
                 ngx.req.read_body()
                 local data = ngx.req.get_body_data()
                 local headers = ngx.req.get_headers()
-                ngx.log(ngx.ERR, "clickhouse body: ", data)
+                ngx.log(ngx.WARN, "clickhouse body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
+                end
                 ngx.say("ok")
             }
         }
@@ -133,9 +136,6 @@ property "endpoint_addr" is required
 
 
 === TEST 4: add plugin on routes
-apisix:
-    node_listen: 1984
-    admin_key: null
 --- config
     location /t {
         content_by_lua_block {
@@ -211,6 +211,9 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- grep_error_log_out
-"clickhouse body: INSERT INTO t FORMAT JSONEachRow"
+--- error_log
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: X-ClickHouse-Key:a
+clickhouse headers: X-ClickHouse-User:default
+clickhouse headers: X-ClickHouse-Database:default
 --- wait: 5

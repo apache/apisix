@@ -95,7 +95,7 @@ local function send_http_data(conf, log_message)
             .. tostring(port) .. "] " .. err
     end
 
-    if url_decoded.scheme == "https" and conf.ssl_verify then
+    if url_decoded.scheme == "https" then
         ok, err = httpc:ssl_handshake(true, host, conf.ssl_verify)
         if not ok then
             return false, "failed to perform SSL with host[" .. host .. "] "
