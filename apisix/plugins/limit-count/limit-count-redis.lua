@@ -18,7 +18,6 @@ local redis_new = require("resty.redis").new
 local core = require("apisix.core")
 local assert = assert
 local setmetatable = setmetatable
-local string = string
 local tostring = tostring
 
 
