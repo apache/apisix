@@ -53,6 +53,7 @@ title: http-logger
 | include_resp_body| boolean | 可选   | false         | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | concat_method    | string  | 可选   | "json"        | ["json", "new_line"] | 枚举类型： `json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
+| ssl_verify       | boolean | optional    | true          | [false, true] | 是否验证证书。 |
 
 ## 如何开启
 

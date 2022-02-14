@@ -60,6 +60,7 @@ done
                                                  buffer_duration = 2,
                                                  inactive_timeout = 2,
                                                  batch_max_size = 500,
+                                                 ssl_verify = false,
                                                  })
             if not ok then
                 ngx.say(err)
@@ -281,7 +282,8 @@ Batch Processor[http logger] successfully processed the entries
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
-                                "inactive_timeout": 2
+                                "inactive_timeout": 2,
+                                "ssl_verify": true
                             }
                         },
                         "upstream": {
@@ -302,7 +304,8 @@ Batch Processor[http logger] successfully processed the entries
                                     "max_retry_count": 1,
                                     "retry_delay": 2,
                                     "buffer_duration": 2,
-                                    "inactive_timeout": 2
+                                    "inactive_timeout": 2,
+                                    "ssl_verify": true
                                 }
                             },
                             "upstream": {
@@ -360,7 +363,8 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
-                                "inactive_timeout": 2
+                                "inactive_timeout": 2,
+                                "ssl_verify": true
                             }
                         },
                         "upstream": {
@@ -381,7 +385,8 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                     "max_retry_count": 1,
                                     "retry_delay": 2,
                                     "buffer_duration": 2,
-                                    "inactive_timeout": 2
+                                    "inactive_timeout": 2,
+                                    "ssl_verify": true
                                 }
                             },
                             "upstream": {
