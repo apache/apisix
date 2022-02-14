@@ -19,6 +19,7 @@
 . ./ci/common.sh
 
 before_install() {
+    # shellcheck disable=SC2024
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 
     # launch deps env

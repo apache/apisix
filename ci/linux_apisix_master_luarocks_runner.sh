@@ -37,6 +37,7 @@ script() {
     cp -r ../utils ./
 
     # install APISIX by luarocks
+    # shellcheck disable=SC2024
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
 
