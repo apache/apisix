@@ -88,7 +88,7 @@ local function list(httpc, apiserver, informer)
 
     informer.continue = data.metadata.continue
     if informer.continue and informer.continue ~= "" then
-        list(httpc, informer)
+        list(httpc, apiserver, informer)
     end
 
     return true
