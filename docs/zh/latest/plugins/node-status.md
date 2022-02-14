@@ -56,7 +56,17 @@ plugins:                          # plugin list
   ......
 ```
 
-启动 `APISIX` 之后，即可访问该插件提供的接口，获得基本的状态信息。
+2. 为状态 API 配置路由，它将使用 [public-api](public-api.md) 插件。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/status",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
 
 ## 测试插件
 

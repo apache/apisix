@@ -91,7 +91,21 @@ Then add prometheus plugin:
 
 ## How to fetch the metric data
 
-We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+We fetch the metric data from the specified url `/apisix/prometheus/metrics`. 
+
+First you need to setup the route for the metrics API, which will use the [public-api](public-api.md) plugin.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/prometheus/metrics",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+Then, we can get the metrics.
 
 ```
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
@@ -119,18 +133,18 @@ And we can check the status at prometheus console:
 
 ## How to specify export uri
 
-We can change the default export uri in the `plugin_attr` section of `conf/config.yaml`.
+We have the [public-api](public-api.md) plugin, customizing the export uri becomes even easier. We just need to set the `uri` you want when creating the route and change the configuration of the `public-api` plugin.
 
-| Name       | Type   | Default                      | Description                       |
-| ---------- | ------ | ---------------------------- | --------------------------------- |
-| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics |
-
-Here is an example:
-
-```yaml
-plugin_attr:
-  prometheus:
-    export_uri: /apisix/metrics
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/metrics",
+    "plugins": {
+        "public-api": {
+            "uri": "/apisix/prometheus/metrics"
+        }
+    }
+}'
 ```
 
 ### Grafana dashboard
