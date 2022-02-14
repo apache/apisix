@@ -21,7 +21,7 @@ local str_find = string.find
 local ffi         = require("ffi")
 local C           = ffi.C
 local ffi_cast    = ffi.cast
-
+local ngx         = ngx
 
 ffi.cdef[[
     int memcmp(const void *s1, const void *s2, size_t n);
@@ -75,6 +75,14 @@ function _M.rfind_char(s, ch, idx)
         end
     end
     return nil
+end
+
+
+-- reduce network consumption by compressing string indentation
+function _M.compress_script(s)
+    s = ngx.re.gsub(s, [[^\s+]], "", "mjo")
+    s = ngx.re.gsub(s, [[,\s+]], ",", "mjo")
+    return s
 end
 
 
