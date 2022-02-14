@@ -403,7 +403,6 @@ passed
                 local port = tonumber(res.body)
                 ports[i] = port
             end
-            table.sort(ports)
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?id=2"
             for i = 3, 4 do
