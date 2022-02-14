@@ -1034,9 +1034,6 @@ Location: /hello?type=string&name=json
             ngx.say(body)
         }
     }
-
-
-
 --- request
 GET /t
 --- response_body
