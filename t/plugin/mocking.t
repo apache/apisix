@@ -221,6 +221,7 @@ passed
 GET /hello
 --- error_code: 200
 --- response_body chomp
+{"field1":5.5}
 
 
 
