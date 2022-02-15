@@ -85,6 +85,18 @@ local schema = {
             type = "boolean",
             default = true
         },
+        severity_map = {
+            type = "object",
+            description = "upstream response code vs syslog severity mapping",
+            patternProperties = {
+                ["^[1-5][0-9]{2}$"] = {
+                    description = "keys are HTTP status code, values are severity",
+                    type = "string",
+                    enum = severity_enums
+                },
+            },
+            additionalProperties = false
+        }
     },
     required = {"customer_token"}
 }
@@ -145,6 +157,14 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+
+    if conf.severity_map then
+        local cache = {}
+        for k, v in pairs(conf.severity_map) do
+            cache[k] = severity[v:upper()]
+        end
+        conf._severity_cache = cache
+    end
     return log_util.check_log_schema(conf)
 end
 
@@ -184,9 +204,15 @@ local function generate_log_message(conf, ctx)
             core.table.insert(taglist, "tag=\"" .. conf.tags[i] .. "\"")
         end
     end
+
+    local message_severity = severity[conf.severity:upper()]
+    if conf._severity_cache and conf._severity_cache[tostring(ngx.status)] then
+        message_severity = conf._severity_cache[tostring(ngx.status)]
+    end
+
     local message = {
         -- facility LOG_USER - random user level message
-        "<".. tostring(8 + severity[conf.severity:upper()]) .. ">1",-- <PRIVAL>1
+        "<".. tostring(8 + message_severity) .. ">1",-- <PRIVAL>1
         timestamp,                                                  -- timestamp
         ctx.var.host or "-",                                        -- hostname
         "apisix",                                                   -- appname
