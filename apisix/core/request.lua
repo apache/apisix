@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Get the information of the client request.
+--
+-- @module core.request
+
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
@@ -60,9 +64,25 @@ local function _validate_header_name(name)
     return name
 end
 
+---
+-- Returns all headers of the current request
+--
+-- @function core.request.headers
+-- @tparam table context the context of the current request
+-- @treturn table all headers
+-- @usage
+-- local headers = core.request.headers(ctx)
 _M.headers = _headers
 
-
+---
+-- Returns the value of the header with the specified name
+--
+-- @function core.request.header
+-- @tparam table context the context of the current request
+-- @tparam string header the header name, example: "Authorization"
+-- @treturn string the value of the header
+-- @usage
+-- local auth_header = core.request.header(ctx, "Authorization")
 function _M.header(ctx, name)
     if not ctx then
         ctx = ngx.ctx.api_ctx

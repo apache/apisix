@@ -1,4 +1,9 @@
 > local list_prefix = "*"
+> local iter = ldoc.modules.iter
+>
+> local function trim_newline(s)
+>   return (s:gsub("\n", "\r"))
+> end
 ---
 title: APISIX Plugin Development Docs
 ---
@@ -12,10 +17,33 @@ $(module.summary) $(module.description)
 > for kind, items in module.kinds() do
 >    for item in items() do
 >       if item.type == "function" then
+
 #### $(item.name)
 >       end -- if item.type
 
 $(ldoc.descript(item))
+>       if item.params and #item.params > 0 then
+>          local subnames = module.kinds:type_of(item).subnames
+>          if subnames then
+
+**$(subnames)**
+
+>          end -- if subnames
+>          -- print the parameters
+>          for parm in iter(item.params) do
+>             local param = item:subparam(parm)
+>             for p in iter(param) do
+>                local name = item:display_name_of(p)
+>                local tp  = item:type_of_param(p)
+* type: `$(tp)`, def: `$(name)`, desc:$(item.params.map[p])
+>                if tp ~= '' then
+>                end -- if tp
+>
+>             end -- for p
+>          end -- for parm
+>       end -- if item.params and #item.params > 0
+>
+>       -- print the returns
 >       if item.retgroups then
 >           local groups = item.retgroups
 
@@ -33,7 +61,9 @@ $(list_prefix) type: `$(type)`, desc: $(r.text)
 **Usage**
 
 >          for usage in item.usage:iter() do
-$(usage)
+```lua
+$(trim_newline(usage))
+```
 >          end -- for usage in item.usage:iter()
 >          local usage = item.usage
 >       end -- if item.usage
