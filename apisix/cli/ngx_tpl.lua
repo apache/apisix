@@ -587,6 +587,10 @@ http {
             set $ctx_ref                     '';
             set $from_error_page             '';
 
+            {% if wasm then %}
+            set $wasm_process_req_body       '';
+            {% end %}
+
             # http server location configuration snippet starts
             {% if http_server_location_configuration_snippet then %}
             {* http_server_location_configuration_snippet *}
