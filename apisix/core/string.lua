@@ -80,6 +80,9 @@ end
 
 
 -- reduce network consumption by compressing string indentation
+-- this method should be used with caution
+-- it will remove the spaces at the beginning of each line
+-- remove the spaces after `,` character
 function _M.compress_script(s)
     s = ngx.re.gsub(s, [[^\s+]], "", "mjo")
     s = ngx.re.gsub(s, [[,\s+]], ",", "mjo")
