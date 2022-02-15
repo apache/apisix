@@ -81,9 +81,10 @@ GET /t
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("github.com")
+            local domain = "github.com"
+            local ip_info, err = core.utils.dns_parse(domain)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
             end
             ngx.say(require("toolkit.json").encode(ip_info))
         }
@@ -102,9 +103,10 @@ qr/"address":.+,"name":"github.com"/
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("github.com")
+            local domain = "github.com"
+            local ip_info, err = core.utils.dns_parse(domain)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
             ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.get_resolver()))
@@ -257,9 +259,10 @@ res:JohnDavid
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("test.com")
+            local domain = "test.com"
+            local ip_info, err = core.utils.dns_parse(domain)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
                 return
             end
             ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
@@ -283,9 +286,10 @@ apisix:
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("apisix")
+            local domain = "apisix"
+            local ip_info, err = core.utils.dns_parse(domain)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
                 return
             end
             ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
@@ -309,9 +313,10 @@ apisix:
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("apisix")
+            local domain = "apisix"
+            local ip_info, err = core.utils.dns_parse(domain)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
                 return
             end
             ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
