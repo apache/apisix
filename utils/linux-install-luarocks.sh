@@ -25,6 +25,7 @@ fi
 LUAROCKS_VER=3.8.0
 wget https://github.com/luarocks/luarocks/archive/v"$LUAROCKS_VER".tar.gz
 tar -xf v"$LUAROCKS_VER".tar.gz
+rm -f luarocks-"$LUAROCKS_VER".tar.gz
 cd luarocks-"$LUAROCKS_VER" || exit
 
 OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
@@ -42,7 +43,7 @@ fi
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
-rm -rf luarocks-"$LUAROCKS_VER" luarocks-"$LUAROCKS_VER".tar.gz
+rm -rf luarocks-"$LUAROCKS_VER"
 
 mkdir ~/.luarocks || true
 
