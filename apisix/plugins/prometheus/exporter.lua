@@ -88,7 +88,7 @@ function _M.init()
             {"state"})
 
     metrics.requests = prometheus:gauge("http_requests_total",
-            "The total number of client requests")
+            "The total number of client requests since APISIX started")
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
