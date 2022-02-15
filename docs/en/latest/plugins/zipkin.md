@@ -112,16 +112,12 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 Here is a test example:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
 
-Then you can use a browser to access the webUI of Zipkin:
-
-```
-http://127.0.0.1:9411/zipkin
-```
+Then you can use a browser to access `http://127.0.0.1:9411/zipkin`, the webUI of Zipkin:
 
 ![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
@@ -167,16 +163,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 Access the service:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
 
-Then you can access the WebUI of Jaeger to view traceson browser:
-
-```
-http://127.0.0.1:16686
-```
+Then you can access `http://127.0.0.1:16686`, the WebUI of Jaeger, to view traceson browser:
 
 ![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
 
@@ -189,7 +181,7 @@ When you want to disable the zipkin plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
