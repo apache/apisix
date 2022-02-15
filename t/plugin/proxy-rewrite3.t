@@ -197,6 +197,6 @@ passed
 
 === TEST 7: hit route(with header)
 --- request
-GET /hello HTTP/1.1
+GET /hello
 --- error_log
 plugin_proxy_rewrite get method: POST
