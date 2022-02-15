@@ -53,7 +53,6 @@ script() {
     # apisix cli test
     # todo: need a more stable way
 
-    # shellcheck disable=SC2260 disable=SC2216
     grep '\[error\]' /usr/local/apisix/logs/error.log > /tmp/error.log | true
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
