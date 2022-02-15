@@ -165,7 +165,7 @@ done
                         "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/uri/plugin_proxy_rewrite",
+                                "uri": "/plugin_proxy_rewrite",
                                 "method": "POST",
                                 "scheme": "http",
                                 "host": "apisix.iresty.com",
@@ -199,9 +199,6 @@ passed
 --- request
 GET /hello HTTP/1.1
 --- response_body
-uri: /uri/plugin_proxy_rewrite
-host: apisix.iresty.com
-x-api-version: v1
-x-real-ip: 127.0.0.1
+uri: /plugin_proxy_rewrite
 --- error_log
 plugin_proxy_rewrite get method: POST
