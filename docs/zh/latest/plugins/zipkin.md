@@ -127,7 +127,7 @@ http://127.0.0.1:9411/zipkin
 
 ### Run the Jaeger instance
 
-除了对接 Zipkin，该插件也支持将 traces 上报到 Jaeger。下面运行在`docker`环境上的示例：
+除了对接 Zipkin，该插件也支持将 traces 上报到 Jaeger。下面运行在 docker 环境上的示例：
 首先，运行 Jaeger 后端服务：
 
 ```
