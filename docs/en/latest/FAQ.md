@@ -566,3 +566,43 @@ The difference between `plugin-metadata` and `plugin-configs`:
 
 - Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
 - Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
+
+
+## How to match `host` is xxx*.xxx.com
+
+The regular matching of host is achieved through the `vars` field of route.
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "vars": [
+        ["host", "~~", "test(\\w+|).foo.com"]
+    ],
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+Test request:
+
+```shell
+# The host matched successfully
+$ curl -H 'Host:test111.foo.com' http://127.0.0.1:9080 -I
+HTTP/1.1 200 OK
+...
+
+# The host match successfully
+$ curl -H 'Host:test.foo.com' http://127.0.0.1:9080 -I
+HTTP/1.1 200 Not Found
+...
+
+# The host match failed
+$ curl -H 'Host:tes.foo.com' http://127.0.0.1:9080 -I
+HTTP/1.1 404 Not Found
+...
+```
