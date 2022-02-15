@@ -58,5 +58,5 @@ jobs:
 # you can view the generated flamegraph by
 # 1. open https://github.com/apache/apisix/actions
 # 2. click the "Performance Test" button
-# 3. choose the workflows that belong to your commit
+# 3. choose the workflows that belong to your commits
 # we need a way to have this address automatically appear in the comments of the PR running this workflow.
