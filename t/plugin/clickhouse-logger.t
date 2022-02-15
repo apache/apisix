@@ -149,7 +149,9 @@ property "endpoint_addr" is required
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test"
+                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "batch_max_size":1,
+                                "inactive_timeout":1
                             }
                         },
                         "upstream": {
@@ -173,7 +175,7 @@ property "endpoint_addr" is required
                             },
                             "plugins":{
                                 "clickhouse-logger":{
-                                    "batch_max_size":1000,
+                                    "batch_max_size":1,
                                     "max_retry_count":0,
                                     "retry_delay":1,
                                     "ssl_verify":true,
@@ -185,7 +187,7 @@ property "endpoint_addr" is required
                                     "name":"clickhouse-logger",
                                     "database":"default",
                                     "logtable":"t",
-                                    "inactive_timeout":5
+                                    "inactive_timeout":1
                                 }
                             },
                             "id":"1"
@@ -213,7 +215,7 @@ GET /opentracing
 opentracing
 --- error_log
 clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: X-ClickHouse-Key:a
-clickhouse headers: X-ClickHouse-User:default
-clickhouse headers: X-ClickHouse-Database:default
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
 --- wait: 5
