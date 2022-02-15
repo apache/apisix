@@ -79,7 +79,7 @@ passed
 === TEST 2: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- grep_error_log_out
+--- error_log
 plugin_proxy_rewrite get method: POST
 
 
@@ -125,7 +125,7 @@ passed
 === TEST 4: hit route(upstream uri: should be /hello)
 --- request
 GET /hello
---- grep_error_log_out
+--- error_log
 plugin_proxy_rewrite get method: GET
 
 
@@ -195,7 +195,7 @@ passed
 
 
 
-=== TEST 7: hit route(with out header)
+=== TEST 7: hit route(with header)
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -203,5 +203,5 @@ uri: /uri/plugin_proxy_rewrite
 host: apisix.iresty.com
 x-api-version: v1
 x-real-ip: 127.0.0.1
---- grep_error_log_out
+--- error_log
 plugin_proxy_rewrite get method: POST
