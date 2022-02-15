@@ -246,6 +246,9 @@ local function generate_signature(ctx, secret_key, params)
             if type(param) == "table" then
                 local vals = {}
                 for _, val in pairs(param) do
+                    if type(val) == "boolean" then
+                        val = ""
+                    end
                     core.table.insert(vals, val)
                 end
                 core.table.sort(vals)
