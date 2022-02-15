@@ -104,22 +104,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 e.g. 用 docker:
 
 ```
-sudo docker run -d -p 9411:9411 openzipkin/zipkin
+docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
 测试示例:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
 
-打开浏览器，访问 Zipkin 的 web 页面：
-
-```
-http://127.0.0.1:9411/zipkin
-```
+在浏览器访问`http://127.0.0.1:9411/zipkin`，在 Zipkin WebUI 上查询 traces：
 
 ![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
@@ -127,7 +123,7 @@ http://127.0.0.1:9411/zipkin
 
 ### Run the Jaeger instance
 
-除了对接 Zipkin，该插件也支持将 traces 上报到 Jaeger。下面运行在 docker 环境上的示例：
+除了对接 Zipkin，该插件也支持将 traces 上报到 Jaeger。下面运行在`docker`环境上的示例：
 首先，运行 Jaeger 后端服务：
 
 ```
@@ -165,16 +161,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 访问服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
 
-然后在浏览器中打开 Jaeger WebUI 查询 traces：
-
-```
-http://127.0.0.1:16686
-```
+然后在浏览器中打开`http://127.0.0.1:16686`，在 Jaeger WebUI 上查询 traces：
 
 ![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
 
@@ -185,7 +177,7 @@ http://127.0.0.1:16686
 当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
