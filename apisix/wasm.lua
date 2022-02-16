@@ -76,7 +76,7 @@ local function http_request_wrapper(self, conf, ctx)
         return 503
     end
 
-    -- $wasm_process_req_body is predefined in Nginx conf
+    -- $wasm_process_req_body is predefined in ngx_tpl.lua
     local handle_body = ctx.var.wasm_process_req_body
     if handle_body ~= '' then
         local body, err = core.request.get_body()
