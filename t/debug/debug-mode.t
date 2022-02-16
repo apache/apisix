@@ -48,7 +48,6 @@ loaded plugin and sort by priority: 11011 name: zipkin
 loaded plugin and sort by priority: 11010 name: request-id
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
-loaded plugin and sort by priority: 4010 name: batch-requests
 loaded plugin and sort by priority: 4000 name: cors
 loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2990 name: referer-restriction
@@ -83,6 +82,7 @@ loaded plugin and sort by priority: 403 name: kafka-logger
 loaded plugin and sort by priority: 402 name: rocketmq-logger
 loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
+loaded plugin and sort by priority: 398 name: clickhouse-logger
 loaded plugin and sort by priority: 0 name: example-plugin
 loaded plugin and sort by priority: -2000 name: serverless-post-function
 loaded plugin and sort by priority: -3000 name: ext-plugin-post-req

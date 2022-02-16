@@ -43,8 +43,11 @@ def check_segment(root):
             with open(fn) as f:
                 lines = f.readlines()
                 new_lines = [lines[0]]
+                skip = False
                 for i in range(1, len(lines)):
-                    if need_fold(lines[i-1], lines[i]):
+                    if lines[i-1].startswith('```'):
+                        skip = not skip
+                    if not skip and need_fold(lines[i-1], lines[i]):
                         new_lines[-1] = new_lines[-1].rstrip("\r\n") + lines[i]
                     else:
                         new_lines.append(lines[i])

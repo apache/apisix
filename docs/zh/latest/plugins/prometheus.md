@@ -46,16 +46,15 @@ plugin_attr:
 
 假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，现在 APISIX 会在 `172.1.1.1:9092` 上暴露指标。
 
-**在 2.6 版本之前，指标会直接暴露到数据面的端口上，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。**
-
-如果你依然想要这样的行为，你可以这么配置：
+如果你依然想要让指标暴露在数据面的端口（默认：9080）上，你可以这么配置：
 
 ```
 plugin_attr:
   prometheus:
     enable_export_server: false
 ```
+
+并使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何开启插件
 
@@ -228,13 +227,15 @@ apisix_etcd_reachable 1
 apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="",consumer="",node="127.0.0.1"} 4
 apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="",consumer="",node="127.0.0.1"} 4
 apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""} 1
+# HELP apisix_http_requests_total The total number of client requests
+# TYPE apisix_http_requests_total gauge
+apisix_http_requests_total 1191780
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
 apisix_nginx_http_current_connections{state="active"} 2
 apisix_nginx_http_current_connections{state="handled"} 11994
 apisix_nginx_http_current_connections{state="reading"} 0
-apisix_nginx_http_current_connections{state="total"} 1191780
 apisix_nginx_http_current_connections{state="waiting"} 1
 apisix_nginx_http_current_connections{state="writing"} 1
 # HELP apisix_nginx_metric_errors_total Number of nginx-lua-prometheus errors

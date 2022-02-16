@@ -14,21 +14,24 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core        = require("apisix.core")
-local config_util = require("apisix.core.config_util")
-local protoc      = require("protoc")
-local pcall       = pcall
-local ipairs      = ipairs
+local core          = require("apisix.core")
+local config_util   = require("apisix.core.config_util")
+local pb            = require("pb")
+local protoc        = require("protoc")
+local pcall         = pcall
+local ipairs        = ipairs
+local decode_base64 = ngx.decode_base64
+
+
 local protos
-
-
 local lrucache_proto = core.lrucache.new({
     ttl = 300, count = 100
 })
 
 local proto_fake_file = "filename for loaded"
 
-local function compile_proto(content)
+local function compile_proto_text(content)
+    protoc.reload()
     local _p  = protoc.new()
     -- the loaded proto won't appears in _p.loaded without a file name after lua-protobuf=0.3.2,
     -- which means _p.loaded after _p:load(content) is always empty, so we can pass a fake file
@@ -44,7 +47,69 @@ local function compile_proto(content)
         return nil, "failed to load proto content"
     end
 
-    return _p.loaded
+    local compiled = _p.loaded
+
+    local index = {}
+    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
+        local method_index = {}
+        for _, m in ipairs(s.method) do
+            method_index[m.name] = m
+        end
+
+        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
+    end
+
+    compiled[proto_fake_file].index = index
+
+    return compiled
+end
+
+
+local function compile_proto_bin(content)
+    content = decode_base64(content)
+    if not content then
+        return nil
+    end
+
+    -- pb.load doesn't return err
+    local ok = pb.load(content)
+    if not ok then
+        return nil
+    end
+
+    local index = {}
+    for name, _, methods in pb.services() do
+        local method_index = {}
+        for _, m in ipairs(methods) do
+            method_index[m.name] = m
+        end
+        -- remove the prefix '.'
+        index[name:sub(2)] = method_index
+    end
+
+    local compiled = {}
+    compiled[proto_fake_file] = {}
+    compiled[proto_fake_file].index = index
+
+    return compiled
+end
+
+
+local function compile_proto(content)
+    -- clear pb state
+    pb.state(nil)
+
+    local compiled, err = compile_proto_text(content)
+    if not compiled then
+        compiled = compile_proto_bin(content)
+        if not compiled then
+            return nil, err
+        end
+    end
+
+    -- fetch pb state
+    compiled.pb_state = pb.state(nil)
+    return compiled
 end
 
 
@@ -71,24 +136,7 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local compiled, err = compile_proto(content)
-
-    if not compiled then
-        return nil, err
-    end
-
-    local index = {}
-    for _, s in ipairs(compiled[proto_fake_file].service or {}) do
-        local method_index = {}
-        for _, m in ipairs(s.method) do
-            method_index[m.name] = m
-        end
-
-        index[compiled[proto_fake_file].package .. '.' .. s.name] = method_index
-    end
-
-    compiled[proto_fake_file].index = index
-    return compiled
+    return compile_proto(content)
 end
 
 
