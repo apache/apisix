@@ -59,7 +59,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 9900,
+    priority = 10900,
     name = "mocking",
     schema = schema,
 }
