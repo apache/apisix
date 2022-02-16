@@ -7,5 +7,5 @@ no_lua_ref = true
 all = false
 no_space_before_args = true
 ext = "md"
-template = true -- use the ldoc.ltp template
+template = true -- use the ldoc.ltp as markdown template
 template_escape = ">"

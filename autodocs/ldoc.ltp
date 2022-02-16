@@ -1,6 +1,5 @@
-> local list_prefix = "*"
 > local iter = ldoc.modules.iter
->
+> local display_name = ldoc.display_name
 > local function trim_newline(s)
 >   return (s:gsub("\n", "\r"))
 > end
@@ -13,15 +12,24 @@ title: APISIX Plugin Development Docs
 ### $(module.name)
 
 $(module.summary) $(module.description)
-
+>
 > for kind, items in module.kinds() do
 >    for item in items() do
+
+#### $(trim_newline(display_name(item)))
 >       if item.type == "function" then
+>          if item.summary and item.summary ~= '' then
 
-#### $(item.name)
+**Summary**: $(item.summary)
+>          end -- if item.summary
+>          if item.description and item.description ~= '' then
+
+**Description**:
+
+```text$(trim_newline(item.description))
+```
+>          end -- if item.description
 >       end -- if item.type
-
-$(ldoc.descript(item))
 >       if item.params and #item.params > 0 then
 >          local subnames = module.kinds:type_of(item).subnames
 >          if subnames then
@@ -35,7 +43,7 @@ $(ldoc.descript(item))
 >             for p in iter(param) do
 >                local name = item:display_name_of(p)
 >                local tp  = item:type_of_param(p)
-* type: `$(tp)`, def: `$(name)`, desc:$(item.params.map[p])
+* **$(name)**($(tp)):$(item.params.map[p])
 >                if tp ~= '' then
 >                end -- if tp
 >
@@ -52,7 +60,7 @@ $(ldoc.descript(item))
 >          for i, group in ldoc.ipairs(groups) do
 >             for r in group:iter() do
 >                local type, ctypes = item:return_type(r);
-$(list_prefix) type: `$(type)`, desc: $(r.text)
+* `$(type)`: $(r.text)
 >             end -- for r in group:iter()
 >          end -- for i,group
 >       end -- if item.retgroups
