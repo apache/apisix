@@ -31,7 +31,7 @@ title: mocking
 
 ## 简介
 
-Mock API插件，绑定该插件后将随机返回指定格式的mock数据，不再转发到后端。
+Mock API 插件，绑定该插件后将随机返回指定格式的`mock`数据，不再转发到后端。
 
 ## 属性
 
@@ -45,8 +45,8 @@ Mock API插件，绑定该插件后将随机返回指定格式的mock数据，�
 | with_mock_header | boolean | 可选 | true  |                                                                 | 是否返回响应头："x-mock-by: APISIX/{version}"，默认返回，指定为false则不返回        |
 
 支持的字段类型：`string`, `number`, `integer`, `boolean`, `object`, `array`
-基础数据类型（string,number,integer,boolean）可通过配置example属性指定生成的响应值，未配置时随机返回。
-以下是一个JSON-Schema实例：
+基础数据类型（`string`,`number`,`integer`,`boolean`）可通过配置`example`属性指定生成的响应值，未配置时随机返回。
+以下是一个`jsonschema`实例：
 
 ```json
 {
@@ -94,7 +94,7 @@ Mock API插件，绑定该插件后将随机返回指定格式的mock数据，�
 }
 ```
 
-以下为该JSON-Schema可能生成的返回对象：
+以下为该`jsonschema`可能生成的返回对象：
 
 ```json
 {
@@ -231,4 +231,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-现在就已经移除了 mocking 插件了。其他插件的开启和移除也是同样的方法。
+现在就已经移除了`mocking`插件了。其他插件的开启和移除也是同样的方法。

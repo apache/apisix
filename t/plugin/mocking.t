@@ -63,7 +63,6 @@ __DATA__
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -72,7 +71,6 @@ passed
 === TEST 2: hit route(return response example:"hello world")
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 hello world
 
@@ -112,7 +110,6 @@ hello world
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -121,7 +118,6 @@ passed
 === TEST 4: hit route(return response schema: string case)
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 {"field1":"hello"}
 
@@ -161,7 +157,6 @@ GET /hello
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -170,7 +165,6 @@ passed
 === TEST 6: hit route(return response schema: integer case)
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 {"field1":4}
 
@@ -210,7 +204,6 @@ GET /hello
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -219,7 +212,6 @@ passed
 === TEST 8: hit route(return response schema: number case)
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 {"field1":5.5}
 
@@ -259,7 +251,6 @@ GET /hello
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -268,7 +259,6 @@ passed
 === TEST 10: hit route(return response schema: boolean case)
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 {"field1":true}
 
@@ -307,7 +297,6 @@ GET /hello
                ngx.say(body)
            }
        }
---- error_code: 200
 --- response_body
 passed
 
@@ -316,7 +305,6 @@ passed
 === TEST 12: hit route(return response schema: object case)
 --- request
 GET /hello
---- error_code: 200
 --- response_body chomp
 {"field1":{}}
 
@@ -348,9 +336,6 @@ GET /hello
                ngx.say(body)
            }
        }
---- request
-GET /t
---- error_code: 200
 --- response_body
 passed
 
@@ -359,6 +344,5 @@ passed
 === TEST 14: hit route(return response header: application/json)
 --- request
 GET /hello
---- error_code: 200
 --- response_headers
 Content-Type: application/json
