@@ -14,17 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local ngx = ngx
-local string = string
-local type = type
-local table = table
-local math = math
-local pairs = pairs
-
 local core = require("apisix.core")
 local xml2lua = require("xml2lua")
+
 local json = core.json
+local math = math
+local ngx = ngx
 local ngx_re = ngx.re
+local pairs = pairs
+local string = string
+local table = table
+local type = type
 
 local support_content_type = {
     ["application/xml"] = true,

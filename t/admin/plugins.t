@@ -67,8 +67,8 @@ ext-plugin-pre-req
 zipkin
 request-id
 fault-injection
-serverless-pre-function
 mocking
+serverless-pre-function
 cors
 ip-restriction
 ua-restriction
