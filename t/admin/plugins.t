@@ -96,7 +96,6 @@ limit-conn
 limit-count
 limit-req
 gzip
-server-info
 traffic-split
 redirect
 response-rewrite
