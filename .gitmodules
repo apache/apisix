@@ -7,3 +7,6 @@
 [submodule "t/grpc_server_example"]
 	path = t/grpc_server_example
 	url = https://github.com/api7/grpc_server_example
+[submodule ".github/actions/action-shellcheck"]
+	path = .github/actions/action-shellcheck
+	url = https://github.com/ludeeus/action-shellcheck
