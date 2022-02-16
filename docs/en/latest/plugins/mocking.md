@@ -203,12 +203,10 @@ Use curl to access:
 ```shell
 $ curl http://127.0.0.1:9080/test-mock -i
 HTTP/1.1 201 Created
-Date: Fri, 14 Jan 2022 11:49:34 GMT
+...
 Content-Type: application/json;charset=utf8
-Transfer-Encoding: chunked
-Connection: keep-alive
 x-mock-by: APISIX/2.10.0
-Server: APISIX/2.10.0
+...
 
 {"a":1,"b":2}
 ```
