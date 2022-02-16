@@ -147,8 +147,6 @@ apisix:
             ngx.say("ok")
         }
     }
---- request
-GET /t
 --- response_body
 ok
 
@@ -181,8 +179,6 @@ apisix:
 --- stream_request eval
 m
 --- stream_response: ok
---- no_error_log
-[error]
 
 
 
