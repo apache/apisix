@@ -41,7 +41,7 @@ Mock API plugin，Binding the plugin returns random mock data in the specified f
 | response_status | integer| optional  | 200 |                                                                 | response http status code                                            |
 | content_type    | string | optional  | application/json |                                                                 | response header Content-Type。                                            |
 | response_example| string | optional  |        |                                                                 | response body                                            |
-| response_schema | object | optional  |        |                                                                 | The jSON-schema object for the response is specified. This property takes effect if the `response_example` is not specified                                            |
+| response_schema | object | optional  |        |                                                                 | The jsonschema object for the response is specified. This property takes effect if the `response_example` is not specified                                            |
 | with_mock_header | boolean | optional | true  |                                                                 | Whether to return the response header: "x-mock-by: APISIX/{version}", returned by default, false does not return        |
 
 Supported field types: `string`, `number`, `integer`, `boolean`, `object`, `array`
