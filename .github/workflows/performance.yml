@@ -9,7 +9,7 @@ on:
 
 jobs:
   performance:
-    if: github.event_name == 'pull_request' || github.event.label.name == 'performance'
+    if: github.event_name == 'pull_request' && github.event.label.name == 'performance'
     runs-on: ubuntu-18.04
     timeout-minutes: 45
 
