@@ -152,12 +152,8 @@ GET /server_port?name=jack&age=18
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -170,8 +166,6 @@ host: 127.0.0.1
 uri: /uri
 host: 127.0.0.1
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -219,12 +213,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -235,8 +225,6 @@ GET /uri?name=jack
 uri: /uri
 host: test.com
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -287,12 +275,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -305,8 +289,6 @@ host: 127.0.0.1
 uri: /uri
 host: localhost
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -358,8 +340,6 @@ x-real-ip: 127.0.0.1
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -467,8 +447,6 @@ chash_key: "hello"
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -492,8 +470,6 @@ location /t {
 }
 --- response_body eval
 qr/1980, 1981, 1982, 1980, 1981, 1982, 1980, 1981, 1982/
---- no_error_log
-[error]
 
 
 
@@ -561,8 +537,6 @@ qr/1980, 1981, 1982, 1980, 1981, 1982, 1980, 1981, 1982/
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -585,8 +559,6 @@ location /t {
 }
 --- response_body eval
 qr/1980, 1980, 1980, 1980, 1981, 1981, 1982, 1982/
---- no_error_log
-[error]
 
 
 
@@ -677,12 +649,8 @@ qr/1980, 1980, 1980, 1980, 1981, 1981, 1982, 1982/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -706,8 +674,6 @@ location /t {
 }
 --- response_body eval
 qr/1980, 1981, 1982, 1980, 1981, 1982, 1980, 1981, 1982/
---- no_error_log
-[error]
 
 
 

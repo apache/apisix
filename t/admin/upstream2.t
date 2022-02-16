@@ -286,10 +286,6 @@ no valid upstream node
             ngx.print(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/{"error_msg":"invalid configuration: property \\\"timeout\\\" validation failed: property \\\"(connect|send|read)\\\" validation failed: expected 0 to be greater than 0"}/
---- no_error_log
-[error]
