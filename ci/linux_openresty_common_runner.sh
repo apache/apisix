@@ -91,8 +91,11 @@ script() {
         sleep 1
     done
 
-    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    # fetch prove test cases
+    find t/**/*.t ! -wholename "*/${APISIX_PROVE_IGNORED_DIR}/*" -type f | tee /tmp/prove.t > /dev/null
+
+    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r - < test-cases.t
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r - < /tmp/prove.t | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

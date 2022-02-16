@@ -93,8 +93,10 @@ run_case() {
     export_or_prefix
     make init
     ./utils/set-dns.sh
+    # fetch prove test cases
+    find t/**/*.t ! -wholename "*/${APISIX_PROVE_IGNORED_DIR}/*" -type f | tee /tmp/prove.t > /dev/null
     # run test cases
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r - < /tmp/prove.t | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 
