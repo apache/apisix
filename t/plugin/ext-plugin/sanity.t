@@ -115,8 +115,8 @@ hello world
 --- error_log
 get conf token: 233
 --- no_error_log
-[error]
 flush conf token lrucache
+[error]
 --- grep_error_log eval
 qr/(sending|receiving) rpc type: \d data length:/
 --- grep_error_log_out
@@ -271,8 +271,6 @@ receiving rpc type: 1 data length:
 --- error_log
 flush conf token lrucache
 flush conf token in shared dict
---- no_error_log
-[error]
 
 
 
@@ -334,8 +332,6 @@ hello world
     }
 --- error_log eval
 qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
---- no_error_log
-[error]
 
 
 
@@ -384,8 +380,6 @@ hello world
 --- error_log
 refresh cache and try again
 flush conf token in shared dict
---- no_error_log
-[error]
 
 
 
@@ -549,8 +543,6 @@ hello world
     }
 --- error_log eval
 qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
---- no_error_log
-[error]
 
 
 
