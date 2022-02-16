@@ -31,7 +31,7 @@ title: mocking
 
 ## Name
 
-Mock API plugin，Binding the plugin returns random mock data in the specified format and is no longer forwarded to the back end.
+Mock API plugin, When the plugin is bound, it returns random mock data in the specified format and is no longer forwarded to the upstreams.
 
 ## Attributes
 
