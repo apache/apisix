@@ -197,7 +197,7 @@ function _M.init(env, args)
         local res, err
         local retry_time = 0
         
-        local health_check_retry = tonumber(yaml_conf.etcd.health_check_retry or  2)
+        local health_check_retry = tonumber(yaml_conf.etcd.health_check_retry) or 2
         while retry_time < health_check_retry do
             res, err = request(version_url, yaml_conf)
             -- In case of failure, request returns nil followed by an error message.
