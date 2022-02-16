@@ -8,7 +8,7 @@ body:
         The more information you fill in, the better we can help you.
 
         - Please use English on public channel.
-        - Encourage using words rather than pictures to describe errors.
+        - Encourage using words rather than pictures to describe your demand.
         - Encourage pre-searching with keywords in the issue.
   - type: textarea
     id: description
