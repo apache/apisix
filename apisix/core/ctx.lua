@@ -48,7 +48,8 @@ local fetch_graphql_data = {
     [GRAPHQL_REQ_METHOD_HTTP_GET] = function(ctx, max_size)
         local body = request.get_uri_args(ctx)[GRAPHQL_REQ_DATA_KEY]
         if not body then
-            return nil, "failed to read graphql data, args[ " .. GRAPHQL_REQ_DATA_KEY .. "] is nil"
+            return nil, "failed to read graphql data, args[ " ..
+                        GRAPHQL_REQ_DATA_KEY .. "] is nil"
         end
 
         return body
@@ -68,7 +69,8 @@ local fetch_graphql_data = {
             end
 
             if not res[GRAPHQL_REQ_DATA_KEY] then
-                return nil, "failed to read graphql data, json body[ " .. GRAPHQL_REQ_DATA_KEY .. "] is nil"
+                return nil, "failed to read graphql data, json body[ " ..
+                            GRAPHQL_REQ_DATA_KEY .. "] is nil"
             end
 
             body = res[GRAPHQL_REQ_DATA_KEY]
