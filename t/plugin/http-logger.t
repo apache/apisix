@@ -362,9 +362,9 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
-                                "buffer_duration": 2,
-                                "inactive_timeout": 2,
-                                "ssl_verify": false
+                                "buffer_duration": 1,
+                                "inactive_timeout": 1,
+                                "ssl_verify": true
                             }
                         },
                         "upstream": {
@@ -384,9 +384,9 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                     "batch_max_size": 1,
                                     "max_retry_count": 1,
                                     "retry_delay": 2,
-                                    "buffer_duration": 2,
-                                    "inactive_timeout": 2,
-                                    "ssl_verify": false
+                                    "buffer_duration": 1,
+                                    "inactive_timeout": 1,
+                                    "ssl_verify": true
                                 }
                             },
                             "upstream": {
@@ -424,8 +424,8 @@ GET /hello1
 --- response_body
 hello1 world
 --- error_log
-Batch Processor[http logger] successfully processed the entries
---- wait: 1.5
+failed to perform SSL with host[127.0.0.1] port[9999] handshake failed
+--- wait: 3
 
 
 
