@@ -52,6 +52,10 @@ local fetch_graphql_data = {
                         GRAPHQL_REQ_DATA_KEY .. "] is nil"
         end
 
+        if type(body) == "table" then
+            body = body[1]
+        end
+
         return body
     end,
 
@@ -61,7 +65,7 @@ local fetch_graphql_data = {
             return nil, "failed to read graphql data, " .. (err or "request body has zero size")
         end
 
-        if request.header(nil, "Content-Type") == GRAPHQL_REQ_MIME_JSON then
+        if request.header(ctx, "Content-Type") == GRAPHQL_REQ_MIME_JSON then
             local res
             res, err = json.decode(body)
             if not res then
