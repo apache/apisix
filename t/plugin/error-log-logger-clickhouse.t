@@ -123,12 +123,11 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- grep_error_log_out
-"this is a warning message for test2."
-"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
-"clickhouse headers: X-ClickHouse-Key:a"
-"clickhouse headers: X-ClickHouse-User:default"
-"clickhouse headers: X-ClickHouse-Database:default"
+--- error_log
+clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
 --- wait: 3
 
 
@@ -166,12 +165,11 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- grep_error_log_out
-"this is an error message for test3."
-"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
-"clickhouse headers: X-ClickHouse-Key:a"
-"clickhouse headers: X-ClickHouse-User:default"
-"clickhouse headers: X-ClickHouse-Database:default"
+--- error_log
+clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
 --- wait: 5
 
 
@@ -193,12 +191,11 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- grep_error_log_out
-"this is a warning message for test4."
-"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
-"clickhouse headers: X-ClickHouse-Key:a"
-"clickhouse headers: X-ClickHouse-User:default"
-"clickhouse headers: X-ClickHouse-Database:default"
+--- error_log
+clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
 --- wait: 5
 
 
@@ -220,12 +217,11 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- grep_error_log_out
-"this is a warning message for test5."
-"clickhouse error log body: INSERT INTO t FORMAT JSONEachRow"
-"clickhouse headers: X-ClickHouse-Key:a"
-"clickhouse headers: X-ClickHouse-User:default"
-"clickhouse headers: X-ClickHouse-Database:default"
+--- error_log
+clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
 --- wait: 5
 
 
@@ -247,8 +243,8 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- grep_error_log_out
-"this is an info message for test6."
+--- error_log
+this is an info message for test6
 --- wait: 5
 
 
