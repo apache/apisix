@@ -77,7 +77,6 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 
 当您要禁用这个插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
-
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
