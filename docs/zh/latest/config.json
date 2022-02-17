@@ -120,6 +120,7 @@
             "plugins/kafka-logger",
             "plugins/rocketmq-logger",
             "plugins/udp-logger",
+            "plugins/clickhouse-logger",
             "plugins/syslog",
             "plugins/log-rotate",
             "plugins/error-log-logger",

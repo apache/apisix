@@ -146,8 +146,6 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
 

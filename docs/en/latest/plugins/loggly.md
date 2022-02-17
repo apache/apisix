@@ -46,7 +46,8 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | Name          | Type              | Requirement   | Default                                                                                                                                                                                           | Description                                                                                                                                                                      |
 | ----------------------- | ---- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | customer_token           | string     | required      || A unique identifier is used when sending log data to Loggly to ensure that the logs are sent to the right organization account.                                                                                                                                           |
-| severity | string (enum) | optional | INFO | Log event severity level (choose between: "DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR" ) [case insensitive] |
+| severity | string (enum) | optional | INFO | Syslog log event severity level (choose between: "DEBUG", "INFO", "NOTICE", "WARNING", "ERR", "CRIT", "ALERT", "EMEGR" ) [case insensitive] |
+| severity_map | object | optional | nil | A sophisticated way of mapping upstream HTTP response code to SYSLOG severity. A set of key value pairs where keys are HTTP response code and values are one of the 8 SYSLOG severity keywords ("alert", "err" ...) Eg. {"410": "CRIT"} |
 | tags         | array   | optional      |  | To aid in segmentation & filtering. They are metadata you can set and they will be included with any event that is transmitted to Loggly. |
 | include_req_body | boolean | optional    | false          | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. Note: if the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitation. |
 | include_resp_body| boolean | optional    | false         | Whether to include the response body. The response body is included if and only if it is `true`. |
@@ -83,6 +84,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "customer_token":"0e6fe4bf-376e-40f4-b25f-1d55cb29f5a2",
             "tags":["apisix", "testroute"],
             "severity":"info",
+            "severity_map":{
+                "503": "err",
+                "410": "alert"
+            },
             "buffer_duration":60,
             "max_retry_count":0,
             "retry_delay":1,

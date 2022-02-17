@@ -54,6 +54,22 @@ _EOC_
                 ngx.say("ok")
             }
         }
+
+        location /loggly/503 {
+            content_by_lua_block {
+                ngx.status = 503
+                ngx.say("service temporarily unavailable")
+                ngx.exit(ngx.OK)
+            }
+        }
+
+        location /loggly/410 {
+            content_by_lua_block {
+                ngx.status = 410
+                ngx.say("expired link")
+                ngx.exit(ngx.OK)
+            }
+        }
     }
 _EOC_
 
@@ -572,3 +588,99 @@ opentracing
 --- error_log
 loggly body: {"route_id":"1"}
 loggly tags: "apisix"
+
+
+
+=== TEST 13: test setup for collecting syslog with severity based on http response code
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "batch_max_size": 1,
+                                "severity_map": {
+                                    "503": "ERR",
+                                    "410": "ALERT"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:10420": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/loggly/*"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+
+            local code, body = t('/apisix/admin/plugin_metadata/loggly',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "host":"127.0.0.1",
+                        "port": 8126,
+                        "log_format":{
+                            "route_id": "$route_id"
+                        }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+passed
+
+
+
+=== TEST 14: syslog PRIVAL 9 for type severity level ALERT
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, _ = t("/loggly/410", "GET")
+            ngx.print(body)
+        }
+    }
+--- response_body
+expired link
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <9>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"route_id":"1"\}/
+
+
+
+=== TEST 15: syslog PRIVAL 11 for type severity level ERR
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, _ = t("/loggly/503", "GET")
+            ngx.print(body)
+        }
+    }
+--- response_body
+service temporarily unavailable
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <11>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"route_id":"1"\}/
