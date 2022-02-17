@@ -31,9 +31,6 @@ generate_docs() {
     cd autodocs/output
     ldoc -c ../config.ld ../../apisix/core/request.lua
     ldoc -c ../config.ld ../../apisix/core/id.lua
-
-    cd ../
-    tar -zcvf pdk.tar.gz output
 }
 
 case_opt=$1
