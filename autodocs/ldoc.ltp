@@ -38,8 +38,8 @@ $(module.summary) $(module.description)
 
 >          end -- if subnames
 >          -- print the parameters
->          for parm in iter(item.params) do
->             local param = item:subparam(parm)
+>          for par in iter(item.params) do
+>             local param = item:subparam(par)
 >             for p in iter(param) do
 >                local name = item:display_name_of(p)
 >                local tp  = item:type_of_param(p)
@@ -48,7 +48,7 @@ $(module.summary) $(module.description)
 >                end -- if tp
 >
 >             end -- for p
->          end -- for parm
+>          end -- for par
 >       end -- if item.params and #item.params > 0
 >
 >       -- print the returns
