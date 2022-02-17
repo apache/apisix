@@ -80,8 +80,3 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-    - name: Set up tmate session
-      if: ${{ failure() }}
-      uses: ./.github/actions/action-tmate
-      timeout-minutes: 15

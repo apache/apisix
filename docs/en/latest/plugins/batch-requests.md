@@ -47,7 +47,7 @@ None
 ## API
 
 This plugin will add `/apisix/batch-requests` as the endpoint.
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+You may need to use [public-api](public-api.md) plugin to expose it.
 
 ## How To Enable
 

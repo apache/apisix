@@ -40,14 +40,11 @@ end
 
 
 function _M.access(conf, ctx)
-    local local_conf = core.config.local_conf()
-
     -- overwrite the uri in the ctx when the user has set the target uri
     ctx.var.uri = conf.uri or ctx.var.uri
-    local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
 
     -- perform route matching
-    if router.api.match(ctx, skip) then
+    if router.api.match(ctx) then
         return
     end
 

@@ -579,7 +579,10 @@ local function _automatic_fetch(premature, self)
                     end
                 end
 
-                ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
+                -- etcd watch timeout is an expected error, so there is no need for resync_delay
+                if err ~= "timeout" then
+                    ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
+                end
             elseif not ok then
                 -- no error. reentry the sync with different state
                 ngx_sleep(0.05)

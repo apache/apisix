@@ -157,7 +157,33 @@ passed
 
 
 
-=== TEST 4: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
+=== TEST 4: create public API route (jwt-auth sign)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: sign a jwt and access/verify /secure-endpoint, fails as no secret entry into vault
 --- config
     location /t {
         content_by_lua_block {
@@ -191,7 +217,7 @@ failed to sign jwt, err: secret could not found in vault
 
 
 
-=== TEST 5: store HS256 secret into vault
+=== TEST 6: store HS256 secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/jack/jwt-auth secret=$3nsitiv3-c8d3
 --- response_body
@@ -199,7 +225,7 @@ Success! Data written to: kv/apisix/consumer/jack/jwt-auth
 
 
 
-=== TEST 6: sign a HS256 jwt and access/verify /secure-endpoint
+=== TEST 7: sign a HS256 jwt and access/verify /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -228,7 +254,7 @@ successfully invoked secure endpoint
 
 
 
-=== TEST 7: store rsa key pairs into vault from local filesystem
+=== TEST 8: store rsa key pairs into vault from local filesystem
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/jim/jwt-auth public_key=@t/certs/public.pem private_key=@t/certs/private.pem
 --- response_body
@@ -236,7 +262,7 @@ Success! Data written to: kv/apisix/consumer/jim/jwt-auth
 
 
 
-=== TEST 8: create consumer for RS256 algorithm with key pair fetched from vault
+=== TEST 9: create consumer for RS256 algorithm with key pair fetched from vault
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +292,7 @@ passed
 
 
 
-=== TEST 9: sign a jwt with with rsa key pair and access /secure-endpoint
+=== TEST 10: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +321,7 @@ successfully invoked secure endpoint
 
 
 
-=== TEST 10: store rsa private key into vault from local filesystem
+=== TEST 11: store rsa private key into vault from local filesystem
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/consumer/john/jwt-auth private_key=@t/certs/private.pem
 --- response_body
@@ -303,7 +329,7 @@ Success! Data written to: kv/apisix/consumer/john/jwt-auth
 
 
 
-=== TEST 11: create consumer for RS256 algorithm with private key fetched from vault and public key in consumer schema
+=== TEST 12: create consumer for RS256 algorithm with private key fetched from vault and public key in consumer schema
 --- config
     location /t {
         content_by_lua_block {
@@ -334,7 +360,7 @@ passed
 
 
 
-=== TEST 12: sign a jwt with with rsa key pair and access /secure-endpoint
+=== TEST 13: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {

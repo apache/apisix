@@ -35,6 +35,7 @@ ENV_APISIX             ?= $(CURDIR)/bin/apisix
 ENV_GIT                ?= git
 ENV_TAR                ?= tar
 ENV_INSTALL            ?= install
+ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
@@ -160,6 +161,14 @@ deps: runtime
 	fi
 
 
+### undeps : Uninstallation dependencies
+.PHONY: undeps
+undeps:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_LUAROCKS) purge --tree=deps
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+
 ### utils : Installation tools
 .PHONY: utils
 utils:
@@ -251,6 +260,7 @@ install: runtime
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
+	# Lua directories listed in alphabetical order
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix
 	$(ENV_INSTALL) apisix/*.lua $(ENV_INST_LUADIR)/apisix/
 
@@ -307,6 +317,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
 	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
+	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/prometheus
 	$(ENV_INSTALL) apisix/plugins/prometheus/*.lua $(ENV_INST_LUADIR)/apisix/plugins/prometheus/
 
@@ -316,11 +329,11 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
+	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
-	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
@@ -336,8 +349,15 @@ install: runtime
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
-	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
+
+### uninstall : Uninstall the apisix
+.PHONY: uninstall
+uninstall:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_RM) -r /usr/local/apisix
+	$(ENV_RM) -r $(ENV_INST_LUADIR)/apisix
+	$(ENV_RM) $(ENV_INST_BINDIR)/apisix
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
 ### test : Run the test case

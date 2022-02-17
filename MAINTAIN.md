@@ -21,8 +21,10 @@
 
 ### Release patch version
 
-1. Create a [pull request](https://github.com/apache/apisix/commit/d13e7f7f0b3f6001cb634598e533a23658927285) (contains the changelog and version change) to master
-2. Create a [pull request](https://github.com/apache/apisix/commit/19587ed9f71dd20c5e8dbdc2f79c8f96296e73e3) (contains the backport commits, and the change in step 1) to minor branch
+1. Create a [pull request](https://github.com/apache/apisix/commit/7db31a1a7186b966bc0f066539d4de8011871012) (contains the changelog and version change) to master
+   > The changelog only needs to provide a link to the minor branch.
+2. Create a [pull request](https://github.com/apache/apisix/commit/21d7673c6e8ff995677456cdebc8ded5afbb3d0a) (contains the backport commits, and the change in step 1) to minor branch
+   > This should include those PRs that contain the `need backport` tag since the last patch release. Also, the title of these PRs need to be added to the changelog of the minor branch.
 3. Merge it into minor branch
 4. Package a vote artifact to Apache's dev-apisix repo. The artifact can be created
 via `VERSION=x.y.z make release-src`
@@ -32,12 +34,13 @@ via `VERSION=x.y.z make release-src`
 7. Move the vote artifact to Apache's apisix repo
 8. Register the release info in https://reporter.apache.org/addrelease.html?apisix
 9. Create a [GitHub release](https://github.com/apache/apisix/releases/tag/2.10.2) from the minor branch
-10. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3)
+10. Update [APISIX's website](https://github.com/apache/apisix-website/commit/f9104bdca50015722ab6e3714bbcd2d17e5c5bb3) if the version number is the largest
 11. Update APISIX rpm package
     > Go to [apisix-build-tools](https://github.com/api7/apisix-build-tools) repository and create a new tag named `apisix-${x.y.z}` to automatically submit the
     package to yum repo
 12. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601) in [APISIX docker repository](https://github.com/apache/apisix-docker), and create new branch from master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
-13. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
+13. Update [APISIX helm chart](https://github.com/apache/apisix-helm-chart/pull/234) if the version number is the largest
+14. Send the [ANNOUNCE email](https://lists.apache.org/thread.html/ree7b06e6eac854fd42ba4f302079661a172f514a92aca2ef2f1aa7bb%40%3Cdev.apisix.apache.org%3E) to dev@apisix.apache.org & announce@apache.org
 
 ### Release minor version
 
@@ -55,4 +58,5 @@ via `VERSION=x.y.z make release-src`
 10. Update APISIX rpm package.
     > Go to [apisix-build-tools](https://github.com/api7/apisix-build-tools) repository and create a new tag named `apisix-${x.y.z}` to automatically submit the rpm package to yum repo
 11. Update [APISIX docker](https://github.com/apache/apisix-docker/commit/829d45559c303bea7edde5bebe9fcf4938071601) in [APISIX docker repository](https://github.com/apache/apisix-docker), and create new branch from master, named as `release/apisix-${version}`, e.g. `release/apisix-2.10.2`
-12. Send the [ANNOUNCE email](https://lists.apache.org/thread/4s4msqwl1tq13p9dnv3hx7skbgpkozw1) to dev@apisix.apache.org & announce@apache.org
+12. Update [APISIX helm chart](https://github.com/apache/apisix-helm-chart/pull/234)
+13. Send the [ANNOUNCE email](https://lists.apache.org/thread/4s4msqwl1tq13p9dnv3hx7skbgpkozw1) to dev@apisix.apache.org & announce@apache.org

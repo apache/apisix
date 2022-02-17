@@ -23,7 +23,6 @@ local ngx = ngx
 local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
-local ipairs = ipairs
 local tostring = tostring
 
 local plugin_name = "datadog"
@@ -64,12 +63,14 @@ local _M = {
     metadata_schema = metadata_schema,
 }
 
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
     return core.schema.check(schema, conf)
 end
+
 
 local function generate_tag(entry, const_tags)
     local tags
@@ -108,6 +109,118 @@ local function generate_tag(entry, const_tags)
 end
 
 
+local function send_metric_over_udp(entry, metadata)
+    local err_msg
+    local sock = udp()
+    local host, port = metadata.value.host, metadata.value.port
+
+    local ok, err = sock:setpeername(host, port)
+    if not ok then
+        return false, "failed to connect to UDP server: host[" .. host
+                      .. "] port[" .. tostring(port) .. "] err: " .. err
+    end
+
+    -- Generate prefix & suffix according dogstatsd udp data format.
+    local suffix = generate_tag(entry, metadata.value.constant_tags)
+    local prefix = metadata.value.namespace
+    if prefix ~= "" then
+        prefix = prefix .. "."
+    end
+
+    -- request counter
+    ok, err = sock:send(format("%s:%s|%s%s", prefix .. "request.counter", 1, "c", suffix))
+    if not ok then
+        err_msg = "error sending request.counter: " .. err
+        core.log.error("failed to report request count to dogstatsd server: host[" .. host
+                       .. "] port[" .. tostring(port) .. "] err: " .. err)
+    end
+
+    -- request latency histogram
+    ok, err = sock:send(format("%s:%s|%s%s", prefix .. "request.latency",
+                               entry.latency, "h", suffix))
+    if not ok then
+        err_msg = "error sending request.latency: " .. err
+        core.log.error("failed to report request latency to dogstatsd server: host["
+                       .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+    end
+
+    -- upstream latency
+    if entry.upstream_latency then
+        ok, err = sock:send(format("%s:%s|%s%s", prefix .. "upstream.latency",
+                                   entry.upstream_latency, "h", suffix))
+        if not ok then
+            err_msg = "error sending upstream.latency: " .. err
+            core.log.error("failed to report upstream latency to dogstatsd server: host["
+                           .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+        end
+    end
+
+    -- apisix_latency
+    ok, err = sock:send(format("%s:%s|%s%s", prefix .. "apisix.latency",
+                               entry.apisix_latency, "h", suffix))
+    if not ok then
+        err_msg = "error sending apisix.latency: " .. err
+        core.log.error("failed to report apisix latency to dogstatsd server: host[" .. host
+                       .. "] port[" .. tostring(port) .. "] err: " .. err)
+    end
+
+    -- request body size timer
+    ok, err = sock:send(format("%s:%s|%s%s", prefix .. "ingress.size",
+                               entry.request.size, "ms", suffix))
+    if not ok then
+        err_msg = "error sending ingress.size: " .. err
+        core.log.error("failed to report req body size to dogstatsd server: host[" .. host
+                       .. "] port[" .. tostring(port) .. "] err: " .. err)
+    end
+
+    -- response body size timer
+    ok, err = sock:send(format("%s:%s|%s%s", prefix .. "egress.size",
+                               entry.response.size, "ms", suffix))
+    if not ok then
+        err_msg = "error sending egress.size: " .. err
+        core.log.error("failed to report response body size to dogstatsd server: host["
+                       .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
+    end
+
+    ok, err = sock:close()
+    if not ok then
+        core.log.error("failed to close the UDP connection, host[",
+                       host, "] port[", port, "] ", err)
+    end
+
+    if not err_msg then
+        return true
+    end
+
+    return false, err_msg
+end
+
+
+local function push_metrics(entries)
+    -- Fetching metadata details
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    if not metadata then
+        core.log.info("received nil metadata: using metadata defaults: ",
+                      core.json.delay_encode(defaults, true))
+        metadata = {}
+        metadata.value = defaults
+    end
+    core.log.info("sending batch metrics to dogstatsd: ", metadata.value.host,
+                  ":", metadata.value.port)
+
+    for i = 1, #entries do
+        local ok, err = send_metric_over_udp(entries[i], metadata)
+        if not ok then
+            return false, err, i
+        end
+    end
+
+    return true
+end
+
+
 function _M.log(conf, ctx)
     local entry = fetch_log(ngx, {})
     entry.balancer_ip = ctx.balancer_ip or ""
@@ -132,103 +245,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    -- Generate a function to be executed by the batch processor
-    local func = function(entries, batch_max_size)
-        -- Fetching metadata details
-        local metadata = plugin.plugin_metadata(plugin_name)
-        if not metadata then
-            core.log.info("received nil metadata: using metadata defaults: ",
-                                core.json.delay_encode(defaults, true))
-            metadata = {}
-            metadata.value = defaults
-        end
-
-        -- Creating a udp socket
-        local sock = udp()
-        local host, port = metadata.value.host, metadata.value.port
-        core.log.info("sending batch metrics to dogstatsd: ", host, ":", port)
-
-        local ok, err = sock:setpeername(host, port)
-
-        if not ok then
-            return false, "failed to connect to UDP server: host[" .. host
-                        .. "] port[" .. tostring(port) .. "] err: " .. err
-        end
-
-        -- Generate prefix & suffix according dogstatsd udp data format.
-        local prefix = metadata.value.namespace
-        if prefix ~= "" then
-            prefix = prefix .. "."
-        end
-
-        core.log.info("datadog batch_entry: ", core.json.delay_encode(entries, true))
-        for _, entry in ipairs(entries) do
-            local suffix = generate_tag(entry, metadata.value.constant_tags)
-
-            -- request counter
-            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                            "request.counter", 1, "c", suffix))
-            if not ok then
-                core.log.error("failed to report request count to dogstatsd server: host[" .. host
-                        .. "] port[" .. tostring(port) .. "] err: " .. err)
-            end
-
-
-            -- request latency histogram
-            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                        "request.latency", entry.latency, "h", suffix))
-            if not ok then
-                core.log.error("failed to report request latency to dogstatsd server: host["
-                        .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
-            end
-
-            -- upstream latency
-            if entry.upstream_latency then
-                local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                "upstream.latency", entry.upstream_latency, "h", suffix))
-                if not ok then
-                    core.log.error("failed to report upstream latency to dogstatsd server: host["
-                                .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
-                end
-            end
-
-            -- apisix_latency
-            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                    "apisix.latency", entry.apisix_latency, "h", suffix))
-            if not ok then
-                core.log.error("failed to report apisix latency to dogstatsd server: host[" .. host
-                        .. "] port[" .. tostring(port) .. "] err: " .. err)
-            end
-
-            -- request body size timer
-            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                            "ingress.size", entry.request.size, "ms", suffix))
-            if not ok then
-                core.log.error("failed to report req body size to dogstatsd server: host[" .. host
-                        .. "] port[" .. tostring(port) .. "] err: " .. err)
-            end
-
-            -- response body size timer
-            local ok, err = sock:send(format("%s:%s|%s%s", prefix ..
-                                            "egress.size", entry.response.size, "ms", suffix))
-            if not ok then
-                core.log.error("failed to report response body size to dogstatsd server: host["
-                        .. host .. "] port[" .. tostring(port) .. "] err: " .. err)
-            end
-        end
-
-        -- Releasing the UDP socket descriptor
-        ok, err = sock:close()
-        if not ok then
-            core.log.error("failed to close the UDP connection, host[",
-                            host, "] port[", port, "] ", err)
-        end
-
-        -- Returning at the end and ensuring the resource has been released.
-        return true
-    end
-
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, push_metrics)
 end
 
 return _M

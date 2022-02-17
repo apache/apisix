@@ -400,12 +400,8 @@ request latency is nil
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -430,13 +426,9 @@ passed
             ngx.say(json.encode(ress))
         }
     }
---- request
-GET /t
 --- timeout: 10s
 --- response_body
 [200,200]
---- no_error_log
-[error]
 
 
 
@@ -450,8 +442,6 @@ GET /test_concurrency
 503
 503
 503
---- no_error_log
-[error]
 --- error_log
 The value of the configured key is empty, use client IP instead
 
@@ -491,12 +481,8 @@ The value of the configured key is empty, use client IP instead
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -510,7 +496,5 @@ GET /test_concurrency
 503
 503
 503
---- no_error_log
-[error]
 --- error_log
 The value of the configured key is empty, use client IP instead

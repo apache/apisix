@@ -148,7 +148,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(apisix_nginx_http_current_connections{state=\"total\", instance=~\"$instance\"})",
+          "expr": "sum(apisix_http_requests_total{instance=~\"$instance\"})",
           "intervalFactor": 2,
           "legendFormat": "Total",
           "refId": "A"
@@ -157,7 +157,7 @@
       "thresholds": "",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Total Connections",
+      "title": "Total Requests",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
