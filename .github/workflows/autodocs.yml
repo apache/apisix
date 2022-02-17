@@ -1,4 +1,5 @@
 name: Auto-generated docs
+
 on:
   pull_request:
     branches: [master, 'release/**']
