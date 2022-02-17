@@ -27,7 +27,7 @@ jobs:
       - name: Upload Autodocs
         uses: actions/upload-artifact@v2
         with:
-          name: core.request.md
+          name: pdk.tar.gz
           path: |
-            autodocs/output/core.request.md
+            autodocs/output/pdk.tar.gz
           retention-days: 3
