@@ -19,7 +19,9 @@
 set -ex
 
 install_dependencies() {
-    bash utils/install-dependencies.sh install_luarocks
+    apt-get -y update --fix-missing
+    apt-get -y install lua5.1 liblua5.1-0-dev
+    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
     luarocks install ldoc
 }
 
