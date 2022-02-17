@@ -3,10 +3,6 @@ name: Auto-generated docs
 on:
   pull_request:
     types: [ labeled ]
-    branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
 
 jobs:
   autodocs:
