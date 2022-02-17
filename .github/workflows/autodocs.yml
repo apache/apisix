@@ -9,6 +9,7 @@ on:
 
 jobs:
   autodocs:
+    if: github.event.label.name == 'autodocs'
     runs-on: ubuntu-18.04
     timeout-minutes: 20
 
@@ -29,5 +30,5 @@ jobs:
         with:
           name: pdk.tar.gz
           path: |
-            autodocs/output/pdk.tar.gz
+            autodocs/output/
           retention-days: 3
