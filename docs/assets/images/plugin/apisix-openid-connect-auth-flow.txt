@@ -1,0 +1,41 @@
+#https://www.websequencediagrams.com/
+title Authentication by Apisix openid-connect plugin
+
+participant User
+participant User_Agent
+participant Api_Gateway
+participant Auth_Server
+participant Resource_Server
+
+User->-User_Agent: Tries to access proxied-protected-resource-url\n e.g. http://localhost:9080/anything?foo=bar
+User_Agent->-Api_Gateway: Tries to access proxied-protected-resource-url
+note over Api_Gateway: Checks access token in the apisix cookie
+alt authentication
+    note over Api_Gateway: Finds out there is not a valid access_token in the apisix cookie
+    Api_Gateway->-User_Agent: Redirects to authentication form (HTTP 302)
+    User_Agent->Auth_Server: Request the authentication form
+    Auth_Server-->-User_Agent: Shows the authentication form
+    User->-User_Agent: Enters username & password, \nsubmits the form
+    User_Agent->-Auth_Server: Sends the credential data and redirect_uri
+    note over Auth_Server: Authenticates the user
+    Auth_Server->-User_Agent: Redirects to proxied-token-url with auth-code\n e.g. http://127.0.0.1:9080/?state=..&session_state=..&code=..
+    User_Agent->Api_Gateway: Requests proxied-token-url with auth-code
+    Api_Gateway->-Auth_Server: Exchanges auth-code for tokens
+    Auth_Server-->-Api_Gateway: Returns tokens (access token, etc)
+    note over Api_Gateway: Caches the access_token
+    note over Api_Gateway: Creates a cookie and saves the access token in it
+    Api_Gateway->-User_Agent: Redirects to proxied-protected-resource-url \nwith cookie\ne.g. /anything?foo=bar
+end
+User_Agent->-Api_Gateway: Requests proxied-protected-resource-url \nwith the cookie\n e.g. http://localhost:9080/anything?foo=bar
+note over Api_Gateway: Extracts access_token from the cookie
+alt apisix_cache_lookup
+    note over Api_Gateway: Validates the access token with Apisix cache
+else introspect_enabled
+    Api_Gateway->-Auth_Server: Introspects the access token
+    Auth_Server-->-Api_Gateway: Returns success or failure
+else public_key_enabled
+    note over Api_Gateway: Validates the access token with public_key
+end
+Api_Gateway->-Resource_Server: Requests protected-resource-url
+Resource_Server-->-Api_Gateway: Returns the response
+Api_Gateway-->-User_Agent: Returns the response

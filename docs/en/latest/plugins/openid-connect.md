@@ -222,3 +222,12 @@ In this case, the plugin can enforce that the access token, the ID token, and th
 ## Troubleshooting
 
 Check/modify the DNS settings (`conf/config.yaml`) if APISIX cannot resolve/connect to the identity provider.
+
+## Authentication flow by Apisix openid-connect plugin
+
+![token introspection](../../../assets/images/plugin/apisix-openid-connect-auth-flow.png)
+
+[Diagram sources](../../../assets/images/plugin/apisix-openid-connect-auth-flow.txt)
+
+
+
