@@ -9,7 +9,7 @@ on:
 
 jobs:
   autodocs:
-    if: github.event.label.name == 'autodocs'
+    if: ${{ github.event.label.name == 'autodocs' }}
     runs-on: ubuntu-18.04
     timeout-minutes: 20
 
