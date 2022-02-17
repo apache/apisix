@@ -34,6 +34,20 @@ no_long_string();
 no_root_location();
 no_shuffle();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!defined $block->error_log && !defined $block->no_error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    $block;
+});
+
 run_tests;
 
 __DATA__
@@ -65,12 +79,8 @@ location /t {
         ngx.say(json.encode(value))
     }
 }
---- request
-GET /t
 --- response_body eval
 qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
---- no_error_log
-[error]
 
 
 
@@ -94,9 +104,5 @@ location /t {
         ngx.say(json.encode(body))
     }
 }
---- request
-GET /t
 --- response_body eval
 qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
---- no_error_log
-[error]

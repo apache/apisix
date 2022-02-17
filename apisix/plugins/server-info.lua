@@ -27,7 +27,6 @@ local type = type
 local load_time = os.time()
 local plugin_name = "server-info"
 local default_report_ttl = 36
-local modified_index = 0
 local lease_id
 
 local schema = {
@@ -125,8 +124,8 @@ local function get_server_info()
 end
 
 
-local function set(key, value, ttl, modified_index)
-    local res_new, err = core.etcd.atomic_set(key, value, ttl, modified_index)
+local function set(key, value, ttl)
+    local res_new, err = core.etcd.set(key, value, ttl)
     if not res_new then
         core.log.error("failed to set server_info: ", err)
         return 503, {error_msg = err}
@@ -186,7 +185,7 @@ local function report(premature, report_ttl)
     end
 
     if not res.body.node then
-        local ok, err = set(key, server_info, report_ttl, modified_index)
+        local ok, err = set(key, server_info, report_ttl)
         if not ok then
             core.log.error("failed to set server_info to etcd: ", err)
             return 503, {error_msg = err}
@@ -195,11 +194,10 @@ local function report(premature, report_ttl)
         return
     end
 
-    modified_index = res.body.node.modifiedIndex
     local ok = core.table.deep_eq(server_info, res.body.node.value)
     -- not equal, update it
     if not ok then
-        local ok, err = set(key, server_info, report_ttl, modified_index)
+        local ok, err = set(key, server_info, report_ttl)
         if not ok then
             core.log.error("failed to set server_info to etcd: ", err)
             return 503, {error_msg = err}
