@@ -7,7 +7,7 @@ on:
       - '**/*.md'
 
 jobs:
-  audodocs:
+  autodocs:
     if: github.event_name == 'pull_request' && github.event.label.name == 'autodocs'
     runs-on: ubuntu-18.04
     timeout-minutes: 20
