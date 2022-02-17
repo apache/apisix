@@ -117,6 +117,10 @@ sudo yum install ./apisix/*.rpm
 
       解决方案: 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
 
+- 4.2 在 MacOS `make install` 安装 Apache APISIX 运行时代码失败，错误信息如：`install: mkdir /usr/share/lua: Operation not permitted`
+
+      根因解析：这很可能受 [SIP](https://support.apple.com/zh-cn/HT204899) 限制，相关操作请参看官方 [博文](https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection)
+
 5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
 ```shell

@@ -117,6 +117,10 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
         Solution: set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
 
+  - 4.2 Under MacOS `make install` failed, error like: `install: mkdir /usr/share/lua: Operation not permitted`
+
+        RootCause: it maybe enfored by [SIP](https://support.apple.com/en-us/HT204899), operations see official blog [here](https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection)
+
 5. If you have no more need for the Apache APISIX runtime, you could uninstall it like this.
 
 ```shell
