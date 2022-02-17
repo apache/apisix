@@ -2,11 +2,14 @@ name: Auto-generated docs
 
 on:
   pull_request:
-    types: [ labeled ]
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 
 jobs:
   autodocs:
-    if: ${{ github.event.label.name == 'autodocs' }}
+    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'autodocs' }}
     runs-on: ubuntu-18.04
     timeout-minutes: 20
 
