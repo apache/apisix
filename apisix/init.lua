@@ -52,7 +52,6 @@ local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
-local tonumber        = tonumber
 local pairs           = pairs
 local control_api_router
 
