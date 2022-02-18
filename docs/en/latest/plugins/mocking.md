@@ -31,7 +31,7 @@ title: mocking
 
 ## Name
 
-Mock API plugin，Binding the plugin returns random mock data in the specified format and is no longer forwarded to the back end.
+Mock API plugin, When the plugin is bound, it returns random mock data in the specified format and is no longer forwarded to the upstreams.
 
 ## Attributes
 
@@ -203,12 +203,10 @@ Use curl to access:
 ```shell
 $ curl http://127.0.0.1:9080/test-mock -i
 HTTP/1.1 201 Created
-Date: Fri, 14 Jan 2022 11:49:34 GMT
+...
 Content-Type: application/json;charset=utf8
-Transfer-Encoding: chunked
-Connection: keep-alive
 x-mock-by: APISIX/2.10.0
-Server: APISIX/2.10.0
+...
 
 {"a":1,"b":2}
 ```
