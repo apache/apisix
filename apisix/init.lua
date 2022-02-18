@@ -589,16 +589,7 @@ function _M.http_header_filter_phase()
 
     local up_status = get_var("upstream_status")
     if up_status then
-        local last_status = up_status
-        if #up_status > 3 then
-            -- the up_status can be "502, 502" or "502, 502 : "
-            if str_byte(up_status, -1) == str_byte(" ") then
-                last_status = str_sub(up_status, -6, -3)
-            else
-                last_status = str_sub(up_status, -3)
-            end
-        end
-        set_resp_upstream_status(last_status)
+        set_resp_upstream_status(up_status)
     end
 
     common_phase("header_filter")
