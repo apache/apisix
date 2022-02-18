@@ -61,7 +61,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "skywalking-logger": {
-                "uri": "http://127.0.0.1:12800"
+                "endpoint_addr": "http://127.0.0.1:12800"
             }
        },
       "upstream": {
