@@ -425,7 +425,7 @@ GET /hello1
 hello1 world
 --- error_log
 failed to perform SSL with host[127.0.0.1] port[9999] handshake failed
---- wait: 3
+--- wait: 1.5
 
 
 
@@ -823,5 +823,64 @@ GET /t
 --- response_body
 failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
 done
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: ssl_verify default is false for comppatibaility
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/hello"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "http-logger": {
+                                    "uri": "http://127.0.0.1:1982/hello",
+                                    "ssl_verify": false
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/opentracing"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
