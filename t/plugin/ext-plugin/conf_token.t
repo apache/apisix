@@ -139,5 +139,3 @@ done
 qr/fetch token from shared dict, token: 233/
 --- grep_error_log_out eval
 qr/(fetch token from shared dict, token: 233){1,}/
---- no_error_log
-[error]

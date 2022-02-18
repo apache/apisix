@@ -1160,8 +1160,6 @@ hello world
 
 
 === TEST 46: test for unsupported algorithm
---- request
-PATCH /apisix/plugin/jwt/sign?key=user-key
 --- config
     location /t {
         content_by_lua_block {
@@ -1177,8 +1175,6 @@ PATCH /apisix/plugin/jwt/sign?key=user-key
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/property "algorithm" validation failed/
 

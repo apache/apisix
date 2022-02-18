@@ -27,14 +27,15 @@ title: Zipkin
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
-  - [run the Zipkin instance](#run-the-zipkin-instance)
+  - [Run the Zipkin instance](#run-the-zipkin-instance)
+  - [Run the Jaeger instance](#run-the-jaeger-instance)
 - [**Disable Plugin**](#disable-plugin)
 
 ## Name
 
-[Zipkin](https://github.com/openzipkin/zipkin) is a OpenTracing plugin.
+[Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
+It's also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), which are support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) format. And of course, it can integrate other tracing systems adapted to Zipkin v1/v2 format as well.
 
 ## Attributes
 
@@ -100,31 +101,78 @@ You also can complete the above operation through the web interface, first add a
 
 ## Test Plugin
 
-### run the Zipkin instance
+### Run the Zipkin instance
 
 e.g. using docker:
 
 ```
-sudo docker run -d -p 9411:9411 openzipkin/zipkin
+docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
 Here is a test example:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
 
-Then you can use a browser to access the webUI of Zipkin:
-
-```
-http://127.0.0.1:9411/zipkin
-```
+Then you can use a browser to access `http://127.0.0.1:9411/zipkin`, the webUI of Zipkin:
 
 ![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
 ![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
+
+### Run the Jaeger instance
+
+Besides Zipkin, this plugin supports reporting the traces to Jaeger as well. Here is a sample run on docker.
+Run Jaeger backend on docker first:
+
+```
+docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 16686:16686 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.31
+```
+
+Create a route with Zipkin plugin like Zipkin's example:
+
+```
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "zipkin": {
+            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+            "sample_ratio": 1,
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "192.168.3.50"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+Access the service:
+
+```shell
+curl http://127.0.0.1:9080/index.html
+HTTP/1.1 200 OK
+...
+```
+
+Then you can access `http://127.0.0.1:16686`, the WebUI of Jaeger, to view traceson browser:
+
+![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
+
+![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
 
 ## Disable Plugin
 
@@ -133,7 +181,7 @@ When you want to disable the zipkin plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
