@@ -251,14 +251,6 @@ local function send_to_clickhouse(log_message)
             .. tostring(port) .. "] " .. err
     end
 
-    if url_decoded.scheme == "https" then
-        ok, err = httpc:ssl_handshake(true, host, true)
-        if not ok then
-            return false, "failed to perform SSL with host[" .. host .. "] "
-                .. "port[" .. tostring(port) .. "] " .. err
-        end
-    end
-
     local entries = {}
     for i = 1, #log_message, 2 do
         table.insert(entries, core.json.encode({data=log_message[i]}))
