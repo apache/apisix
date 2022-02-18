@@ -65,11 +65,8 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
---- grep_error_log eval
-qr/X-APISIX-Upstream-Status: 200/
---- grep_error_log_out
+--- error_log
+X-APISIX-Upstream-Status: 200
 
 
 
