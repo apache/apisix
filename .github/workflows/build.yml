@@ -42,7 +42,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2.2.0
         with:
-          go-version: "1.15"
+          go-version: "1.17"
 
       - name: Cache deps
         uses: actions/cache@v2.1.7
@@ -79,7 +79,7 @@ jobs:
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
 
       - name: Build wasm code
-        if: startsWith(matrix.os_name, 'linux_openresty')
+        if: matrix.os_name == 'linux_openresty'
         run: |
           export TINYGO_VER=0.20.0
           wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
