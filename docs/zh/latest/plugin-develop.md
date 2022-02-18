@@ -24,6 +24,7 @@ title: 插件开发
 ## 目录
 
 - [目录](#目录)
+- [插件放置路径](#插件放置路径)
 - [检查外部依赖](#检查外部依赖)
 - [插件命名，优先级和其他](#插件命名优先级和其他)
 - [配置描述与校验](#配置描述与校验)
@@ -36,7 +37,47 @@ title: 插件开发
 - [注册自定义变量](#注册自定义变量)
 - [编写测试用例](#编写测试用例)
   - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
+## 插件放置路径
+APISIX提供了两种方式来添加新的功能。
 
+1. 修改APISIX的源代码并重新发布 (不推荐)。
+1. 配置  `extra_lua_path` 和 `extra_lua_cpath` 在 `conf/config.yaml`以加载你自己的代码文件。 你应该给自己的代码文件起一个不包含在原来库中的名字，而不是使用相同名称的代码文件，但是如果有需要，你可以使用这种方式覆盖内置的代码文件。
+
+比如，你可以创建一个目录目录结构，像下面这样：
+
+```
+├── example
+│   └── apisix
+│       ├── plugins
+│       │   └── 3rd-party.lua
+│       └── stream
+│           └── plugins
+│               └── 3rd-party.lua
+```
+
+接着，在`conf/config.yaml`文件中添加如下的配置:
+
+```yaml
+apisix:
+    ...
+    extra_lua_path: "/path/to/example/?.lua"
+```
+
+现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件， 比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件.
+
+可能你会想覆盖一个文件中的函数，你可以在`conf/config.yaml`文件中配置`lua_module_hook` 来使你的hook生效。
+
+你的配置可以像下面这样:
+
+```yaml
+apisix:
+    ...
+    extra_lua_path: "/path/to/example/?.lua"
+    lua_module_hook: "my_hook"
+```
+
+ 当APISIX启动的时候，`example/my_hook.lua` 就会被加载，这时你可以使用这个钩子在APISIX中来全局替换掉一个方法。
+这个例子： [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) 可以在项目的`example`路径下被找到。
 ## 检查外部依赖
 
 如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
