@@ -111,7 +111,7 @@ Once the download is complete, execute the `curl` command on the host running Do
 
 ```bash
 # Note: Please execute the curl command on the host where you are running Docker.
-curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9080/apisix/admin/services/" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1"
 ```
 
 The following data is returned to indicate that Apache APISIX was successfully started:
