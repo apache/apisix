@@ -109,7 +109,7 @@ docker-compose -p docker-apisix up -d
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
-curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9080/apisix/admin/services/" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1"
 ```
 
 返回数据如下所示，表示 Apache APISIX 成功启动：
