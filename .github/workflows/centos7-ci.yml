@@ -28,6 +28,13 @@ jobs:
       with:
         submodules: recursive
 
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          plugins:
+            - 'apisix/plugins/**'
+
     - name: Extract branch name
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       id: branch_env
@@ -77,6 +84,18 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: Run test cases
+    - name: Run test cases of core
+      # run when all code files were changed, include 'apisix/plugins'
+      if: steps.filter.outputs.plugins == 'false'
+      env:
+        TEST_FILE_SUB_DIR: ""
+      run: |
+        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+
+      # run only if 'apisix/plugins' files were changed
+    - name: Run test cases of plugins
+      if: steps.filter.outputs.plugins == 'true'
+      env:
+        TEST_FILE_SUB_DIR: "plugin"
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
