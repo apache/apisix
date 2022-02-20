@@ -28,7 +28,7 @@ jobs:
       with:
         submodules: recursive
 
-    - uses: dorny/paths-filter@v2
+    - uses: ./.github/actions/paths-filter@v2
       id: filter
       with:
         filters: |

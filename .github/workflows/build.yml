@@ -39,7 +39,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: dorny/paths-filter@v2
+      - uses: ./.github/actions/paths-filter
         id: filter
         with:
           filters: |
