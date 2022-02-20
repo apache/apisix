@@ -84,7 +84,7 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: Run test cases of core
+    - name: Run test cases
       # run when all code files were changed, include 'apisix/plugins'
       if: steps.filter.outputs.plugins == 'false'
       env:
