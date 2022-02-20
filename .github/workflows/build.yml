@@ -39,7 +39,8 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: ./.github/actions/paths-filter
+      - name: Paths filter
+        uses: ./.github/actions/paths-filter
         id: filter
         with:
           filters: |
