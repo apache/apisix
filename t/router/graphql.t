@@ -232,7 +232,7 @@ query {
 }
 --- error_code: 404
 --- error_log
-failed to read graphql body
+failed to read graphql data
 
 
 
@@ -244,7 +244,7 @@ failed to read graphql body
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [=[{
-                        "methods": ["POST"],
+                        "methods": ["POST", "GET"],
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -283,7 +283,62 @@ hello world
 
 
 
-=== TEST 13: multiple root fields
+=== TEST 13: test send http post json data
+--- request
+POST /hello
+{"query":"query{owner{name}}"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+hello world
+
+
+
+=== TEST 14: test send http get query data
+--- request
+GET /hello?query=query{owner{name}}
+--- response_body
+hello world
+
+
+
+=== TEST 15: test send http get multiple query data success
+--- request
+GET /hello?query=query{owner{name}}&query=query{repo{name}}
+--- response_body
+hello world
+
+
+
+=== TEST 16: test send http get multiple query data failure
+--- request
+GET /hello?query=query{repo{name}}&query=query{owner{name}}
+--- error_code: 404
+
+
+
+=== TEST 17: no body (HTTP GET)
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+failed to read graphql data, args[query] is nil
+
+
+
+=== TEST 18: no body (HTTP POST JSON)
+--- request
+POST /hello
+{}
+--- more_headers
+Content-Type: application/json
+--- error_code: 404
+--- error_log
+failed to read graphql data, json body[query] is nil
+
+
+
+=== TEST 19: multiple root fields
 --- request
 POST /hello
 query {
@@ -299,7 +354,7 @@ hello world
 
 
 
-=== TEST 14: root fields mismatch
+=== TEST 20: root fields mismatch
 --- request
 POST /hello
 query {
@@ -311,9 +366,9 @@ query {
 
 
 
-=== TEST 15: no body
+=== TEST 21: no body
 --- request
 POST /hello
 --- error_code: 404
 --- error_log
-failed to read graphql body: request body has zero size
+failed to read graphql data, request body has zero size

@@ -66,8 +66,8 @@ function _M.check_schema(conf)
 end
 
 
-function _M.rewrite(conf)
-    local headers = ngx.req.get_headers()
+function _M.rewrite(conf, ctx)
+    local headers = core.request.headers(ctx)
 
     if conf.header_schema then
         local ok, err = core.schema.check(conf.header_schema, headers)
