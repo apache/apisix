@@ -93,7 +93,9 @@ Then add prometheus plugin:
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
-First, you need to set up the route for the metrics API, which will use the [public-api](public-api.md) plugin.
+### shared port (default: 9080)
+
+When you use a shared port with APISIX, you need to configure the route using the [public-api](public-api.md) plugin.
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -108,8 +110,18 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f
 Then, we can get the metrics.
 
 ```
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+```
+
+### independent port (setting via configuration file)
+
+APISIX supports configuring separate port for the `prometheus` plugin to secure access. You can set it up like [this](#api).
+
+```
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
+
+### configuring prometheus
 
 Puts this URL address into prometheus, and it will automatically fetch
 these metric data.
