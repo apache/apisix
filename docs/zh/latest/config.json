@@ -117,8 +117,7 @@
               "label": "Metrics",
               "items": [
                 "plugins/prometheus",
-                "plugins/node-status",
-                "plugins/datadog"
+                "plugins/node-status"
               ]
             },
             {
