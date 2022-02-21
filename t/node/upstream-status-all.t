@@ -22,6 +22,16 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
 run_tests();
 
 __DATA__
@@ -55,12 +65,8 @@ apisix:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -104,8 +110,6 @@ X-APISIX-Upstream-Status: 200
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -149,12 +153,8 @@ X-APISIX-Upstream-Status: 504
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -194,12 +194,8 @@ X-APISIX-Upstream-Status: 502
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -237,12 +233,8 @@ X-APISIX-Upstream-Status: 500
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -265,12 +257,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -309,12 +297,8 @@ X-APISIX-Upstream-Status: 502, 200
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -353,12 +337,8 @@ qr/X-APISIX-Upstream-Status: 502, 502, 502/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -400,12 +380,8 @@ qr/X-APISIX-Upstream-Status: 500/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -450,12 +426,8 @@ apisix:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
