@@ -138,7 +138,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335
 
 ## 测试插件
 
-首先，你需要为 batch request 的 API 设置一个路由，它将使用 [public-api](public-api.md) 插件。
+首先，你需要为 batch request 的 API 设置一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
