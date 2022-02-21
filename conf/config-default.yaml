@@ -32,7 +32,7 @@ apisix:
   enable_admin_cors: true           # Admin API support CORS response headers.
   enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
-  enable_all_upstream_status: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
+  show_upstream_status_in_response_header: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
   enable_ipv6: true
   config_center: etcd               # etcd: use etcd to store the config value
                                     # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`

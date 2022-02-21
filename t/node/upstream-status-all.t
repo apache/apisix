@@ -36,10 +36,10 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1) and available upstream and enable_all_upstream_status: true
+=== TEST 1: set route(id: 1) and available upstream and show_upstream_status_in_response_header: true
 --- yaml_config
 apisix:
-  enable_all_upstream_status: true
+  show_upstream_status_in_response_header: true
   admin_key: null
 --- config
     location /t {
@@ -396,10 +396,10 @@ qr/X-APISIX-Upstream-Status: 200/
 
 
 
-=== TEST 18: return 200 status code from APISIX (with enable_all_upstream_status:false)
+=== TEST 18: return 200 status code from APISIX (with show_upstream_status_in_response_header:false)
 --- yaml_config
 apisix:
-    enable_all_upstream_status: false
+    show_upstream_status_in_response_header: false
     admin_key: null
 --- config
     location /t {
