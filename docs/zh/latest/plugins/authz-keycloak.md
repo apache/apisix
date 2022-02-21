@@ -38,17 +38,19 @@ title: authz-keycloak
 
 ## 属性
 
-| 名称                    | 类型          | 必选项 | 默认值      | 有效值                      | 描述                                                                                            |
-| ----------------------- | ------------- | ------ | ----------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
-| token_endpoint          | string        | 必须   |             | [1, 4096]                   | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型  |
-| grant_type              | string        | 可选   | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                                    |
-| audience                | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
-| permissions             | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`              |
-| timeout                 | integer       | 可选   | 3000        | [1000, ...]                 | 与身份认证服务器的 http 连接的超时时间                                                          |
-| access_token_expires_in | integer       | 可选   | 300         |                             |                                                                                      |
-| refresh_token_expires_in| integer       | 可选   | 3600        |                             |                                                                                      |
-| ssl_verify              | boolean       | 可选   | true        |                             | 验证 SSL 证书与主机名是否匹配                                                                   |
-| policy_enforcement_mode | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
+| 名称                        | 类型          | 必选项 | 默认值      | 有效值                      | 描述                                                                                            |
+| -----------------------     | ------------- | ------ | ----------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| token_endpoint              | string        | 必须   |             | [1, 4096]                   | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型  |
+| grant_type                  | string        | 可选   | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                                    |
+| audience                    | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
+| permissions                 | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`              |
+| timeout                     | integer       | 可选   | 3000        | [1000, ...]                 | 与身份认证服务器的 http 连接的超时时间                                                          |
+| access_token_expires_in     | integer       | 可选   | 300         | [1, ...]                            | access token的过期时间
+| access_token_expires_leeway | integer       | 可选   | 0           | [0, ...]                            | access token提前到期时间（如果设置了此值，允许在该时间段内使用相同的access token令牌来解决潜在的网络并发问题）        |
+| refresh_token_expires_in    | integer       | 可选   | 3600        | [1, ...]                            | refresh token的过期时间                                                                               |
+| refresh_token_expires_leeway| integer       | 可选   | 0           | [0, ...]                            | refresh token提前更新时间（如果设置了此值，允许在该时间段内使用相同的refresh token令牌来解决潜在的网络并发问题）                                                                   |
+| ssl_verify                  | boolean       | 可选   | true        | [0, ...]                            | 验证 SSL 证书与主机名是否匹配                                                                   |
+| policy_enforcement_mode     | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
 
 ### 策略执行模式
 
@@ -125,6 +127,7 @@ docker run -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshni
 
 ## 后续开发
 
-- 目前 `authz-plugin` 仅支持通过定义资源名和访问权限范畴来应用 `route` 的访问策略。但是 Keycloak 官方适配的其他语言的客户端 (Java, JS) 还可以通过动态查询 Keycloak 路径以及懒加载身份资源的路径来支持路径匹配。未来版本的 `authz-plugin` 将会支持这项功能。
+- 目前 `authz-plugin` 仅支持通过定义资源名和访问权限范畴来应用 `route` 的访问策略。但是 Keycloak 官方适配的其他语言的客户端 (Java, JS) 还可以通过动态查询 Keycloak
+  路径以及懒加载身份资源的路径来支持路径匹配。未来版本的 `authz-plugin` 将会支持这项功能。
 
 - 支持从 Keycloak JSON 文件中读取权限范畴和其他配置项。

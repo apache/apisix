@@ -61,8 +61,13 @@ local schema = {
         cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
-        keepalive_pool = {type = "integer", minimum = 1, default = 5}
-    },
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        access_token_expires_in = {type = "integer", minimum = 1, default = 300},
+        access_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
+        refresh_token_expires_in = {type = "integer", minimum = 1, default = 3600},
+        refresh_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
+
+},
     allOf = {
         -- Require discovery or token endpoint.
         {
