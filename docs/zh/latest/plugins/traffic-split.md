@@ -224,7 +224,7 @@ world 1981
 
 ### 蓝绿发布
 
-通过请求头获取 `match` 规则参数(也可以通过请求参数获取或NGINX变量)，在 `match` 规则匹配通过后，表示所有请求都命中到插件配置的 upstream ，否则所有请求只命中 `route` 上配置的 upstream 。
+通过请求头获取 `match` 规则参数(也可以通过请求参数获取 NGINX 变量)，在 `match` 规则匹配通过后，表示所有请求都命中到插件配置的 upstream ，否则所有请求只命中 `route` 上配置的 upstream 。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

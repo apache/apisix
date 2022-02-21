@@ -31,7 +31,7 @@ title: proxy-control
 
 ## 名称
 
-`proxy-control` 能够动态地控制Nginx代理的行为。
+`proxy-control` 能够动态地控制 Nginx 代理的行为。
 
 **这个插件需要APISIX在 [APISIX-OpenResty](../how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)上运行。**
 
