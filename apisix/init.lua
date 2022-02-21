@@ -589,24 +589,32 @@ function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
-    if up_status and #up_status == 3
-       and tonumber(up_status) >= 500
-       and tonumber(up_status) <= 599
-    then
-        set_resp_upstream_status(up_status)
-    elseif up_status and #up_status > 3 then
-        -- the up_status can be "502, 502" or "502, 502 : "
-        local last_status
-        if str_byte(up_status, -1) == str_byte(" ") then
-            last_status = str_sub(up_status, -6, -3)
-        else
-            last_status = str_sub(up_status, -3)
-        end
-
-        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+    if up_status then
+        local_conf = core.config.local_conf();
+        if local_conf.apisix and local_conf.apisix.enable_all_upstream_status then
             set_resp_upstream_status(up_status)
+        else
+            if #up_status == 3
+                    and tonumber(up_status) >= 500
+                    and tonumber(up_status) <= 599
+            then
+                set_resp_upstream_status(up_status)
+            elseif #up_status > 3 then
+                -- the up_status can be "502, 502" or "502, 502 : "
+                local last_status
+                if str_byte(up_status, -1) == str_byte(" ") then
+                    last_status = str_sub(up_status, -6, -3)
+                else
+                    last_status = str_sub(up_status, -3)
+                end
+
+                if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+                    set_resp_upstream_status(up_status)
+                end
+            end
         end
     end
+
 
     common_phase("header_filter")
 
