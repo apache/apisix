@@ -118,11 +118,11 @@ The following data is returned to indicate that Apache APISIX was successfully s
 
 ```json
 {
-  "count":1,
+  "count":0,
   "action":"get",
   "node":{
     "key":"/apisix/services",
-    "nodes":{},
+    "nodes":[],
     "dir":true
   }
 }
