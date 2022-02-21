@@ -362,9 +362,9 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
-                                "buffer_duration": 1,
-                                "inactive_timeout": 1,
-                                "ssl_verify": true
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "ssl_verify": false
                             }
                         },
                         "upstream": {
@@ -384,9 +384,9 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                                     "batch_max_size": 1,
                                     "max_retry_count": 1,
                                     "retry_delay": 2,
-                                    "buffer_duration": 1,
-                                    "inactive_timeout": 1,
-                                    "ssl_verify": true
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2,
+                                    "ssl_verify": false
                                 }
                             },
                             "upstream": {
@@ -424,7 +424,7 @@ GET /hello1
 --- response_body
 hello1 world
 --- error_log
-failed to perform SSL with host[127.0.0.1] port[9999] handshake failed
+Batch Processor[http logger] successfully processed the entries
 --- wait: 1.5
 
 
@@ -838,7 +838,9 @@ done
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1982/hello"
+                                "uri": "http://127.0.0.1:1982/hello",
+                                "ssl_verify": true,
+                                "inactive_timeout": 1
                             }
                         },
                         "upstream": {
@@ -855,7 +857,8 @@ done
                             "plugins": {
                                 "http-logger": {
                                     "uri": "http://127.0.0.1:1982/hello",
-                                    "ssl_verify": false
+                                    "ssl_verify": true,
+                                    "inactive_timeout": 1
                                 }
                             },
                             "upstream": {
@@ -884,3 +887,12 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: access wrong https endpoint
+--- request
+GET /opentracing
+--- error_log
+failed to perform SSL with host[127.0.0.1] port[1982] handshake failed
+--- wait: 3
