@@ -236,6 +236,8 @@ local function send_to_clickhouse(log_message)
 
     local entries = {}
     for i = 1, #log_message, 2 do
+        -- TODO Here save error log as a whole string to clickhouse 'data' column.
+        -- We will add more columns in the future.
         table.insert(entries, core.json.encode({data=log_message[i]}))
     end
 

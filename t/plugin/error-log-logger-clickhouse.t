@@ -66,11 +66,11 @@ __DATA__
             local ok, err = plugin.check_schema(
                 {
                     clickhouse = {
-                                user = "default",
-                                password = "a",
-                                database = "default",
-                                logtable = "t",
-                                endpoint_addr = "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        user = "default",
+                        password = "a",
+                        database = "default",
+                        logtable = "t",
+                        endpoint_addr = "http://127.0.0.1:10420/error-logger-clickhouse/test"
                     }
                 },
                 core.schema.TYPE_METADATA
@@ -82,12 +82,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -99,7 +95,7 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
@@ -120,10 +116,9 @@ plugins:
             core.log.warn("this is a warning message for test2.")
         }
     }
---- request
-GET /tg
 --- response_body
 --- error_log
+this is a warning message for test2
 clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
@@ -140,7 +135,7 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
@@ -148,24 +143,23 @@ plugins:
                 ngx.HTTP_PUT,
                 [[{
                     "clickhouse": {
-                                "user": "default",
-                                "password": "a",
-                                "database": "default",
-                                "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        "user": "default",
+                        "password": "a",
+                        "database": "default",
+                        "logtable": "t",
+                        "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
                     },
                     "batch_max_size": 15,
                     "inactive_timeout": 1
                 }]]
                 )
             ngx.sleep(2)
-            core.log.warn("this is an error message for test3.")
+            core.log.warn("this is a warning message for test3.")
         }
     }
---- request
-GET /tg
 --- response_body
 --- error_log
+this is a warning message for test3
 clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
@@ -182,16 +176,15 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             core.log.warn("this is a warning message for test4.")
         }
     }
---- request
-GET /tg
 --- response_body
 --- error_log
+this is a warning message for test4
 clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
@@ -208,16 +201,15 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             core.log.warn("this is a warning message for test5.")
         }
     }
---- request
-GET /tg
 --- response_body
 --- error_log
+this is a warning message for test5
 clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
@@ -234,14 +226,12 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             core.log.info("this is an info message for test6.")
         }
     }
---- request
-GET /tg
 --- response_body
 --- error_log
 this is an info message for test6
@@ -257,7 +247,7 @@ apisix:
 plugins:
   - error-log-logger
 --- config
-    location /tg {
+    location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
@@ -271,9 +261,5 @@ plugins:
             ngx.say(body)
         }
     }
---- request
-GET /tg
 --- response_body
 passed
---- no_error_log
-[error]

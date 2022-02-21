@@ -133,6 +133,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 ## How to set the clickhouse
 
 The plugin sends the error log as a string to the `data` field of the clickhouse table.
+*TODO Here save error log as a whole string to clickhouse 'data' column. We will add more columns in the future.*
 Step: update the attributes of the plugin
 
 ```shell
