@@ -43,7 +43,7 @@ local function _headers(ctx)
     end
     local headers = ctx.headers
     if not headers then
-        headers = get_headers()
+        headers = get_headers(0)
         ctx.headers = headers
     end
 

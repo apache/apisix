@@ -101,7 +101,7 @@
         },
         {
           "type": "category",
-          "label": "Monitoring",
+          "label": "Observability",
           "items": [
             {
               "type": "category",

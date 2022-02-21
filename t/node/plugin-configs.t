@@ -154,8 +154,6 @@ conf_version: \d+#2
 
         }
     }
---- request
-GET /t
 --- error_code: 403
 
 
@@ -176,8 +174,6 @@ GET /t
             assert(core.etcd.delete("/plugin_configs/1"))
         }
     }
---- request
-GET /t
 --- error_log
 property "block_rules" validation failed
 

@@ -217,6 +217,13 @@ if ($version =~ m/\/apisix-nginx-module/) {
 _EOC_
 }
 
+my $a6_ngx_vars = "";
+if ($version =~ m/\/apisix-nginx-module/) {
+    $a6_ngx_vars = <<_EOC_;
+    set \$wasm_process_req_body       '';
+_EOC_
+}
+
 add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
@@ -714,6 +721,7 @@ _EOC_
             set \$upstream_cache_key             '';
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
+            $a6_ngx_vars
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
