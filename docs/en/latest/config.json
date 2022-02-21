@@ -278,6 +278,7 @@
           "type": "category",
           "label": "internal",
           "items": [
+            "internal/plugin-runner",
             "internal/testing-framework"
           ]
         },
