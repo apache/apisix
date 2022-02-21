@@ -93,35 +93,9 @@ Then add prometheus plugin:
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
-### shared port (default: 9080)
-
-When you use a shared port with APISIX, you need to configure the route using the [public-api](public-api.md) plugin.
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/apisix/prometheus/metrics",
-    "plugins": {
-        "public-api": {}
-    }
-}'
-```
-
-Then, we can get the metrics.
-
-```
-curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
-```
-
-### independent port (setting via configuration file)
-
-APISIX supports configuring separate port for the `prometheus` plugin to secure access. You can set it up like [this](#api).
-
 ```
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
-
-### configuring prometheus
 
 Puts this URL address into prometheus, and it will automatically fetch
 these metric data.
@@ -145,18 +119,18 @@ And we can check the status at prometheus console:
 
 ## How to specify export uri
 
-We have the [public-api](public-api.md) plugin, customizing the export uri becomes even easier. We just need to set the `uri` you want when creating the route and change the configuration of the `public-api` plugin.
+We can change the default export uri in the `plugin_attr` section of `conf/config.yaml`.
 
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/metrics",
-    "plugins": {
-        "public-api": {
-            "uri": "/apisix/prometheus/metrics"
-        }
-    }
-}'
+| Name       | Type   | Default                      | Description                       |
+| ---------- | ------ | ---------------------------- | --------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
 ```
 
 ### Grafana dashboard

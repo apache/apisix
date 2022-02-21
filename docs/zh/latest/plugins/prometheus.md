@@ -91,19 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 如何提取指标数据
 
-我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`。为此，您需要先为它配置一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/apisix/prometheus/metrics",
-    "plugins": {
-        "public-api": {}
-    }
-}'
-```
-
-然后，我们就可以获取指标数据了。
+我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
 
 ```
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
@@ -130,18 +118,18 @@ scrape_configs:
 
 ## 如何修改暴露指标的 uri
 
-我们可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件轻易的改变暴露指标的 uri。只需要在创建路由时设置需要的 uri 并改变 `public-api` 插件的配置即可。
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的 uri
 
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/p -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/metrics",
-    "plugins": {
-        "public-api": {
-            "uri": "/apisix/prometheus/metrics"
-        }
-    }
-}'
+| 名称       | 类型   | 默认值                       | 描述           |
+| ---------- | ------ | ---------------------------- | -------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的 uri |
+
+配置示例:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
 ```
 
 ### Grafana 面板
