@@ -590,7 +590,7 @@ function _M.http_header_filter_phase()
 
     local up_status = get_var("upstream_status")
     if up_status then
-        local_conf = core.config.local_conf();
+        local_conf = core.config.local_conf()
         if local_conf.apisix and local_conf.apisix.enable_all_upstream_status then
             set_resp_upstream_status(up_status)
         else
