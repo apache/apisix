@@ -615,7 +615,6 @@ function _M.http_header_filter_phase()
         end
     end
 
-
     common_phase("header_filter")
 
     local api_ctx = ngx.ctx.api_ctx

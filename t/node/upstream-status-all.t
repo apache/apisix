@@ -30,6 +30,7 @@ __DATA__
 --- yaml_config
 apisix:
   enable_all_upstream_status: true
+  admin_key: null
 --- config
     location /t {
         content_by_lua_block {
@@ -423,6 +424,7 @@ qr/X-APISIX-Upstream-Status: 200/
 --- yaml_config
 apisix:
     enable_all_upstream_status: false
+    admin_key: null
 --- config
     location /t {
         content_by_lua_block {
