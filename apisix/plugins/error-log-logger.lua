@@ -256,20 +256,21 @@ local function send_to_clickhouse(log_message)
         table.insert(entries, core.json.encode({data=log_message[i]}))
     end
 
-    local httpc_res, httpc_err = httpc:request({
-        method = "POST",
-        path = url_decoded.path,
-        query = url_decoded.query,
-        body = "INSERT INTO " .. config.clickhouse.logtable .." FORMAT JSONEachRow "
-               .. table.concat(entries, " "),
-        keepalive_timeout = config.keepalive * 1000,
-        headers = {
-            ["Content-Type"] = "application/json",
-            ["X-ClickHouse-User"] = config.clickhouse.user,
-            ["X-ClickHouse-Key"] = config.clickhouse.password,
-            ["X-ClickHouse-Database"] = config.clickhouse.database
+    local httpc_res, httpc_err = httpc:request_uri(
+        config.clickhouse.endpoint_addr,
+        {
+            method = "POST",
+            body = "INSERT INTO " .. config.clickhouse.logtable .." FORMAT JSONEachRow "
+                   .. table.concat(entries, " "),
+            keepalive_timeout = config.keepalive * 1000,
+            headers = {
+                ["Content-Type"] = "application/json",
+                ["X-ClickHouse-User"] = config.clickhouse.user,
+                ["X-ClickHouse-Key"] = config.clickhouse.password,
+                ["X-ClickHouse-Database"] = config.clickhouse.database
+            }
         }
-    })
+    )
 
     if not httpc_res then
         return false, "error while sending data to clickhouse["
