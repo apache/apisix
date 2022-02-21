@@ -79,4 +79,3 @@ boofuzz-results/
 # release tar package
 *.tgz
 release/*
-autodocs/output/

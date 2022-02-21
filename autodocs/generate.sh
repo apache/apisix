@@ -18,27 +18,30 @@
 
 set -ex
 
-install_dependencies() {
+# workdir is the root of the apisix, use command: autodocs/generate.sh build to generate the docs,
+# and the output will be in the workdir/autodocs/output/ directory.
+build() {
+    # install dependencies
     apt-get -y update --fix-missing
     apt-get -y install lua5.1 liblua5.1-0-dev
     curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
     luarocks install ldoc
-}
 
-generate_docs() {
+    # generate docs
     rm -rf autodocs/output || true
     mkdir autodocs/output || true
     cd autodocs/output
-    ldoc -c ../config.ld ../../apisix/core/request.lua
-    ldoc -c ../config.ld ../../apisix/core/id.lua
+    path="../../apisix/core"
+    files=$(ls $path)
+    for filename in $files
+    do
+       ldoc -c ../config.ld $path/$filename
+    done
 }
 
 case_opt=$1
 case $case_opt in
-    (install_dependencies)
-        install_dependencies
-        ;;
-    (generate_docs)
-        generate_docs
+    (build)
+        build
         ;;
 esac
