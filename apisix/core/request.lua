@@ -258,6 +258,7 @@ function _M.get_port(ctx)
     return tonumber(ctx.var.server_port)
 end
 
+_M.get_method = ngx.req.get_method
 
 function _M.get_http_version()
     return ngx.req.http_version()
