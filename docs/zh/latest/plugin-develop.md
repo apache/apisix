@@ -38,7 +38,7 @@ title: 插件开发
 - [编写测试用例](#编写测试用例)
   - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
 
-此文档是关于lua语言的插件开发,其他语言请看：[external plugin](./external-plugin.md)。
+此文档是关于 lua 语言的插件开发，其他语言请看：[external plugin](./external-plugin.md)。
 
 ## 插件放置路径
 
