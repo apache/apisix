@@ -21,7 +21,6 @@ local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local http = require("resty.http")
-local url = require("net.url")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -230,26 +229,10 @@ end
 local function send_to_clickhouse(log_message)
     local err_msg
     local res = true
-    local url_decoded = url.parse(config.clickhouse.endpoint_addr)
-    local host = url_decoded.host
-    local port = url_decoded.port
     core.log.info("sending a batch logs to ", config.clickhouse.endpoint_addr)
-
-    if not port then
-        if url_decoded.scheme == "https" then
-            port = 443
-        else
-            port = 80
-        end
-    end
 
     local httpc = http.new()
     httpc:set_timeout(config.timeout * 1000)
-    local ok, err = httpc:connect(host, port)
-    if not ok then
-        return false, "failed to connect to host[" .. host .. "] port["
-            .. tostring(port) .. "] " .. err
-    end
 
     local entries = {}
     for i = 1, #log_message, 2 do
