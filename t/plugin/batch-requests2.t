@@ -65,8 +65,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -109,8 +107,6 @@ plugin_attr:
         }
     }
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -135,8 +131,6 @@ plugin_attr:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 

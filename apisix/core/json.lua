@@ -25,6 +25,7 @@ local cached_tab = {}
 
 local _M = {
     version = 0.1,
+    array_mt = require("cjson.safe").array_mt,
     decode = require("cjson.safe").decode,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because

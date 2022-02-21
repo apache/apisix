@@ -422,3 +422,24 @@ the post form is too large: request body in temp file not supported
 POST /t
 --- response_body
 POST
+
+
+
+=== TEST 14: get header
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.say(core.request.header(ngx.ctx, "X-101"))
+        }
+    }
+--- more_headers eval
+my $i = 1;
+my $s;
+while ($i <= 101) {
+    $s .= "X-$i:$i\n";
+    $i++;
+}
+$s
+--- response_body
+101
