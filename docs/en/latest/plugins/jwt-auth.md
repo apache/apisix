@@ -196,7 +196,7 @@ then add jwt-auth plugin in the Consumer page:
 
 #### Get the Token in `jwt-auth` Plugin:
 
-First you need to setup the route for the API that sign the token, which will use the [public-api](public-api.md) plugin.
+First, you need to set up the route for the API that signs the token, which will use the [public-api](public-api.md) plugin.
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

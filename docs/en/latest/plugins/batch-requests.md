@@ -146,7 +146,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-Then, you can pass your request detail to batch API( `/apisix/batch-requests` ), APISIX can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+Then, you can pass your request detail to batch API(`/apisix/batch-requests`), APISIX can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
