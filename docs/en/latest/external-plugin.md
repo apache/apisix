@@ -47,6 +47,10 @@ run external plugins and return the result back to APISIX.
 The target external plugins and the execution order are configured in the `ext-plugin-*`
 plugins. Like other plugins, they can be enabled and reconfigured on the fly.
 
+## How is it implemented
+
+If you are instested in the implementation of Plugin Runner, please refer to [The Implementation of Plugin Runner](./internal/plugin-runner.md).
+
 ## Supported plugin runners
 
 - Java: https://github.com/apache/apisix-java-plugin-runner

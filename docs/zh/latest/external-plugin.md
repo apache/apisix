@@ -41,6 +41,11 @@ APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内
 
  External Plugin 及其执行顺序在这里 `ext-plugin-*` 配置。与其他插件一样， External Plugin 可以动态启用和重新配置。
 
+## 它是如何实现的
+
+如果你对 Plugin Runner 内部实现感兴趣，请参考这份文档：
+[The Implementation of Plugin Runner](../../en/latest/internal/plugin-runner.md)
+
 ## 支持的 Plugin Runner
 
 - Java: https://github.com/apache/apisix-java-plugin-runner
