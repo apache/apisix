@@ -116,11 +116,11 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 ```json
 {
-  "count":1,
+  "count":0,
   "action":"get",
   "node":{
     "key":"/apisix/services",
-    "nodes":{},
+    "nodes":[],
     "dir":true
   }
 }
