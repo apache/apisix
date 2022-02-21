@@ -39,7 +39,7 @@ title: proxy-control
 
 | 名称      | 类型          | 必选项 | 默认值    | 有效值                                                                    | 描述                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| request_buffering | boolean        | 可选    |  true            |  | 动态设置 `proxy_request_buffering` |
+| request_buffering | boolean        | 可选    |  true            |  | 动态设置 [`proxy_request_buffering`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) |
 
 ## 如何启用
 
