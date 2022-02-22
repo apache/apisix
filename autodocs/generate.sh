@@ -31,12 +31,7 @@ build() {
     rm -rf autodocs/output || true
     mkdir autodocs/output || true
     cd autodocs/output
-    path="../../apisix/core"
-    files=$(ls $path)
-    for filename in $files
-    do
-       ldoc -c ../config.ld $path/$filename
-    done
+    find ../../apisix/core -name "*.lua" -type f -exec ldoc -c ../config.ld {} \;
 
     # generate the markdown files' name
     rm ../md_files_name.txt || true
