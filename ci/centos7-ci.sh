@@ -94,7 +94,7 @@ run_case() {
     make init
     ./utils/set-dns.sh
     # run test cases
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t/${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

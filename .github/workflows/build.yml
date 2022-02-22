@@ -39,14 +39,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Paths filter
-        uses: ./.github/actions/paths-filter
-        id: filter
-        with:
-          filters: |
-            plugins:
-              - 'apisix/plugins/**'
-
       - name: Setup Go
         uses: actions/setup-go@v2.2.0
         with:
@@ -112,13 +104,4 @@ jobs:
           ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        if: steps.filter.outputs.plugins == 'false'
-        env:
-          TEST_FILE_SUB_DIR: ""
-        run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
-
-      - name: Linux Script(test plugins)
-        if: steps.filter.outputs.plugins == 'true'
-        env:
-          TEST_FILE_SUB_DIR: "plugin"
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script

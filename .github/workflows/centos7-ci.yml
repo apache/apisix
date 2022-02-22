@@ -28,14 +28,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Paths filter
-      uses: ./.github/actions/paths-filter
-      id: filter
-      with:
-        filters: |
-          plugins:
-            - 'apisix/plugins/**'
-
     - name: Extract branch name
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       id: branch_env
@@ -85,18 +77,41 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: Run test cases
-      # run when all code files were changed, include 'apisix/plugins'
-      if: steps.filter.outputs.plugins == 'false'
-      env:
-        TEST_FILE_SUB_DIR: ""
-      run: |
-        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+  run_test_cases_1:
+    name: run test cases of t/plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: test_apisix
 
-      # run only if 'apisix/plugins' files were changed
-    - name: Run test cases of plugins
-      if: steps.filter.outputs.plugins == 'true'
-      env:
-        TEST_FILE_SUB_DIR: "plugin"
-      run: |
-        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+    steps:
+      - name: Run test cases of t/plugins
+        env:
+          TEST_FILE_SUB_DIR: "t/plugin"
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+
+  run_test_cases_2:
+    name: run test cases of admin
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: test_apisix
+
+    steps:
+      - name: Run test cases of t/plugins
+        env:
+          TEST_FILE_SUB_DIR: "t/admin"
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+
+  run_test_cases_3:
+    name: run test cases ofsmall test dirs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: test_apisix
+
+    steps:
+      - name: Run test cases of t/plugins
+        env:
+          TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
