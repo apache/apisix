@@ -66,7 +66,6 @@ local schema = {
         access_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
         refresh_token_expires_in = {type = "integer", minimum = 1, default = 3600},
         refresh_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
-
 },
     allOf = {
         -- Require discovery or token endpoint.
