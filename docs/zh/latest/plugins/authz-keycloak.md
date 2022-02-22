@@ -32,9 +32,7 @@ title: authz-keycloak
 
 ## 名字
 
-`authz-keycloak` 是和 Keycloak Identity Server 配合使用的鉴权插件。Keycloak 是一种兼容 OAuth/OIDC 和 UMA 协议的身份认证服务器。尽管本插件是和 Keycloak 服务器配合开发的，但也应该能够适配任意兼容 OAuth/OIDC 和 UMA 协议的身份认证服务器。
-
-有关 Keycloak 的更多信息，可参考 [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) 查看更多信息。
+目前 `authz-plugin` 仅支持通过定义资源名和访问权限范畴来应用 `route` 的访问策略。但是 Keycloak 官方适配的其他语言的客户端 (Java, JS) 还可以通过动态查询 Keycloak 路径以及懒加载身份资源的路径来支持路径匹配。未来版本的 `authz-plugin` 将会支持这项功能。
 
 ## 属性
 
@@ -45,10 +43,10 @@ title: authz-keycloak
 | audience                    | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
 | permissions                 | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`              |
 | timeout                     | integer       | 可选   | 3000        | [1000, ...]                 | 与身份认证服务器的 http 连接的超时时间                                                          |
-| access_token_expires_in     | integer       | 可选   | 300         | [1, ...]                            | access token的过期时间
-| access_token_expires_leeway | integer       | 可选   | 0           | [0, ...]                            | access token提前到期时间（如果设置了此值，允许在该时间段内使用相同的access token令牌来解决潜在的网络并发问题）        |
-| refresh_token_expires_in    | integer       | 可选   | 3600        | [1, ...]                            | refresh token的过期时间                                                                               |
-| refresh_token_expires_leeway| integer       | 可选   | 0           | [0, ...]                            | refresh token提前更新时间（如果设置了此值，允许在该时间段内使用相同的refresh token令牌来解决潜在的网络并发问题）                                                                   |
+| access_token_expires_in     | integer       | 可选   | 300         | [1, ...]                            | access token 的过期时间
+| access_token_expires_leeway | integer       | 可选   | 0           | [0, ...]                            | access token 提前更新时间（如果设置了此值，允许在该时间段内使用相同的 access token 令牌来解决潜在的网络并发问题）        |
+| refresh_token_expires_in    | integer       | 可选   | 3600        | [1, ...]                            | refresh token 的过期时间                                                                               |
+| refresh_token_expires_leeway| integer       | 可选   | 0           | [0, ...]                            | refresh token 提前更新时间（如果设置了此值，允许在该时间段内使用相同的 refresh token 令牌来解决潜在的网络并发问题）                                                                   |
 | ssl_verify                  | boolean       | 可选   | true        | [0, ...]                            | 验证 SSL 证书与主机名是否匹配                                                                   |
 | policy_enforcement_mode     | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
 
