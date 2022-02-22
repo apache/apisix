@@ -57,8 +57,8 @@ jobs:
 
     - name: Run centos7 docker and mapping apisix into container
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
-        # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+        # docker exec centos7instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test
       run: |
@@ -67,20 +67,20 @@ jobs:
 
     - name: Install dependencies
       run: |
-        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
+        docker exec centos7instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
 
     - name: Install rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       run: |
-        docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
+        docker exec centos7instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
         # Dependencies are attached with rpm, so revert `make deps`
-        docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
-        docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
+        docker exec centos7instance bash -c "cd apisix && rm -rf deps"
+        docker exec centos7instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
     - name: Save Docker image to file
       run: |
         mkdir -p /tmp/artifacts
-        docker save centos7Instance > /tmp/artifacts/centos7Instance.tar
+        docker save centos7instance > /tmp/artifacts/centos7instance.tar
 
     - name: Temporarily save Docker image
       uses: actions/upload-artifact@v2
@@ -105,13 +105,13 @@ jobs:
       - name: Docker load
         run: |
           cd /tmp/artifacts
-          docker load < centos7Instance.tar
+          docker load < centos7instance.tar
 
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/plugin"
         run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker exec centos7instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
   run_test_cases_2:
     name: run test cases of admin
@@ -129,13 +129,13 @@ jobs:
       - name: Docker load
         run: |
           cd /tmp/artifacts
-          docker load < centos7Instance.tar
+          docker load < centos7instance.tar
 
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/admin"
         run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker exec centos7instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
   run_test_cases_3:
     name: run test cases ofsmall test dirs
@@ -153,10 +153,10 @@ jobs:
       - name: Docker load
         run: |
           cd /tmp/artifacts
-          docker load < centos7Instance.tar
+          docker load < centos7instance.tar
 
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
         run: |
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker exec centos7instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
