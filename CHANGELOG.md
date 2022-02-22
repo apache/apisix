@@ -50,13 +50,6 @@ title: Changelog
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-## 2.10.5
-
-### Bugfix
-
-- fix: etcd cluster single node failure APISIX startup failure [#6251](https://github.com/apache/apisix/pull/5158)
-- fix(graphql): http get and post json request [#6251](https://github.com/apache/apisix/pull/6343)
-
 ## 2.10.4
 
 ### Bugfix

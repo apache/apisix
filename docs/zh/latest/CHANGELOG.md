@@ -50,13 +50,6 @@ title: CHANGELOG
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-## 2.10.5
-
-### Bugfix
-
-- etcd 集群单节点故障导致 APISIX 启动失败 [#6251](https://github.com/apache/apisix/pull/5158)
-- graphql 处理 http 协议下 application/json 形式的 GET 和 POST 请求 [#6251](https://github.com/apache/apisix/pull/6343)
-
 ## 2.10.4
 
 ### Bugfix
