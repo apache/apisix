@@ -29,6 +29,8 @@ title: skywalking-logger
 
 ## 属性列表
 
+### 属性
+
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | endpoint_addr    | string  | 必须   |               |         | `SkyWalking OAp` 服务器的 URI。                   |
@@ -38,7 +40,9 @@ title: skywalking-logger
 | name             | string  | 可选   | "skywalking logger" |         | 标识 logger 的唯一标识符。                   |
 | include_req_body | boolean | 可选   | false         | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。 |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+### 属性（批处理器）
+
+具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
 
 ## 如何开启
 

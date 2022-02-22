@@ -32,6 +32,8 @@ title: sls-logger
 
 ## 属性列表
 
+### 属性
+
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
 | host |必要的| TCP 服务的 IP 地址或主机名，请参考：[阿里云日志服务列表](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb)，建议配置 IP 取代配置域名。|
@@ -43,8 +45,9 @@ title: sls-logger
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的| 是否包含请求体。|
 |name| 可选的|批处理名字。|
+### 属性（批处理器）
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
 
 ## 如何开启
 

@@ -29,6 +29,8 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ## Attributes
 
+### Attributes
+
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
 | uri              | string  | required    |               |         | The URI of the `HTTP/HTTPS` server.                                                      |
@@ -44,6 +46,10 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+
+### Attributes( Batch-processor)
+
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ## How To Enable
 

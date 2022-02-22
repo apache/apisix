@@ -32,12 +32,11 @@ or when the buffer duration exceeds.
 
 | Name             | Type    | Requirement | Default | Valid   | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ------- | ------------------------------------------------------------ |
-| name             | string  | optional    | logger's name | ["http logger",...] | A unique identifier used to identify the batch processor, which defaults to the name of the logger plug-in that calls the batch processor, such as plug-in "http logger" 's `name` is "http logger. |
-| batch_max_size   | integer | optional    | 1000    | [1,...] | Sets the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the HTTP/HTTPS service. |
-| inactive_timeout | integer | optional    | 5       | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the HTTP/HTTPS service regardless of whether the number of logs in the buffer reaches the maximum number set. |
-| buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed. |
-| max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing the entry from the processing pipeline when an error occurs. |
-| retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process execution should be delayed if the execution fails. |
+| batch_max_size   | integer | optional    | 1000    | [1,...] | Set the maximum number of logs sent in each  batch. When the number of logs reaches the set maximum, all logs will be  automatically pushed to the HTTP/HTTPS service. |
+| inactive_timeout | integer | optional    | 5       | [1,...] | The maximum time to refresh  the buffer (in seconds). When the maximum refresh time is reached, all logs  will be automatically pushed to the HTTP/HTTPS service regardless of whether the number of logs in the buffer  reaches the maximum number set. |
+| buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the  oldest entry in a batch before the batch must be processed. |
+| max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries  before removing from the processing pipe line. |
+| retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process  execution should be delayed if the execution fails. |
 
 The following code shows an example of how to use batch processor in your plugin:
 

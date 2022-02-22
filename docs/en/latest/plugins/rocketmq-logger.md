@@ -32,6 +32,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Attributes
 
+### Attributes
+
 | Name             | Type    | Requirement | Default        | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | -------------- | ------- | ---------------------------------------------------------------------------------------- |
 | nameserver_list  | object  | required    |                |         | An array of rocketmq nameservers.                                                               |
@@ -49,7 +51,9 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
 | include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+### Attributes( Batch-processor)
+
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ### examples of meta_format
 

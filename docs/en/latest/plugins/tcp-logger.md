@@ -34,6 +34,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Attributes
 
+### Attributes
+
 | Name             | Type    | Requirement | Default | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
 | host             | string  | required    |         |         | IP address or the Hostname of the TCP server.                                            |
@@ -43,7 +45,9 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
 | include_req_body | boolean | optional    | false   |         | Whether to include the request body                                                      |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+### Attributes( Batch-processor)
+
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ## How To Enable
 

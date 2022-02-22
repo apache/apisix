@@ -32,6 +32,8 @@ For more info on Batch-Processor in Apache APISIX please refer
 
 ## Attributes
 
+### Attributes
+
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
 |host           |required       | IP address or the Hostname of the TCP server, please reference ali cloud log [Serve List](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb), use IP address instead of domain.|
@@ -43,8 +45,9 @@ For more info on Batch-Processor in Apache APISIX please refer
 | access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
 |name           |optional       |A unique identifier to identity the batch processor.|
+### Attributes( Batch-processor)
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ## How To Enable
 
