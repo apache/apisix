@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 local fetch_local_conf = require("apisix.core.config_local").local_conf
+local array_mt         = require("apisix.core.json").array_mt
 local etcd             = require("resty.etcd")
 local clone_tab        = require("table.clone")
 local health_check     = require("resty.etcd.health_check")
 local ipairs           = ipairs
+local setmetatable     = setmetatable
 local string           = string
 local tonumber         = tonumber
 local _M = {}
@@ -88,7 +90,7 @@ _M.kvs_to_node = kvs_to_node
 
 local function kvs_to_nodes(res)
     res.body.node.dir = true
-    res.body.node.nodes = {}
+    res.body.node.nodes = setmetatable({}, array_mt)
     for i=2, #res.body.kvs do
         res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
     end
