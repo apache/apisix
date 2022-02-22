@@ -24,6 +24,7 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -37,10 +38,6 @@ run_tests();
 __DATA__
 
 === TEST 1: set route(id: 1) and available upstream and show_upstream_status_in_response_header: true
---- yaml_config
-apisix:
-  show_upstream_status_in_response_header: true
-  admin_key: null
 --- config
     location /t {
         content_by_lua_block {
@@ -71,6 +68,9 @@ passed
 
 
 === TEST 2: hit the route and $upstream_status is 200
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- response_body
@@ -118,6 +118,9 @@ passed
 
 
 === TEST 4: hit routes (timeout) and $upstream_status is 504
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /mysleep?seconds=1
 --- error_code: 504
@@ -159,6 +162,9 @@ passed
 
 
 === TEST 6: hit routes and $upstream_status is 502
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- error_code: 502
@@ -200,6 +206,9 @@ passed
 
 
 === TEST 8: hit routes and $upstream_status is 500
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /server_error
 --- error_code: 500
@@ -263,6 +272,9 @@ passed
 
 
 === TEST 11: hit routes and $upstream_status is `502, 200`
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- response_body
@@ -303,6 +315,9 @@ passed
 
 
 === TEST 13: hit routes, retry between upstream failed, $upstream_status is `502, 502, 502`
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- error_code: 502
@@ -343,6 +358,9 @@ passed
 
 
 === TEST 15: hit routes, status code is 500
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- error_code: 500
@@ -386,6 +404,9 @@ passed
 
 
 === TEST 17: hit routes, status code is 200
+--- yaml_config
+apisix:
+  show_upstream_status_in_response_header: true
 --- request
 GET /hello
 --- response_body
@@ -397,10 +418,6 @@ qr/X-APISIX-Upstream-Status: 200/
 
 
 === TEST 18: return 200 status code from APISIX (with show_upstream_status_in_response_header:false)
---- yaml_config
-apisix:
-    show_upstream_status_in_response_header: false
-    admin_key: null
 --- config
     location /t {
         content_by_lua_block {
@@ -432,6 +449,9 @@ passed
 
 
 === TEST 19: hit routes, status code is 200
+--- yaml_config
+apisix:
+    show_upstream_status_in_response_header: false
 --- request
 GET /hello
 --- response_body
