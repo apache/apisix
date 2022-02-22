@@ -120,7 +120,7 @@
               "type": "category",
               "label": "Metrics",
               "items": [
-                "plugins/promethues",
+                "plugins/prometheus",
                 "plugins/node-status",
                 "plugins/datadog"
               ]
