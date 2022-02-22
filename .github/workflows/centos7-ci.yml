@@ -112,7 +112,8 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: "t/plugin"
         run: |
-          docker exec apisixcentos7 bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
   run_test_cases_2:
     name: run test cases of admin
@@ -136,7 +137,8 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: "t/admin"
         run: |
-          docker exec apisixcentos7 bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
   run_test_cases_3:
     name: run test cases ofsmall test dirs
@@ -160,4 +162,5 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
         run: |
-          docker exec apisixcentos7 bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
