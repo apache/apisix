@@ -81,7 +81,7 @@ jobs:
       run: |
         mkdir -p /tmp/artifacts
         docker rename centos7Instance centos7instance
-        docker save centos7Instance > /tmp/artifacts/centos7instance.tar
+        docker save centos7instance > /tmp/artifacts/centos7instance.tar
 
     - name: Temporarily save Docker image
       uses: actions/upload-artifact@v2
