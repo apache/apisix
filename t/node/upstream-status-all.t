@@ -279,8 +279,8 @@ apisix:
 GET /hello
 --- response_body
 hello world
---- error_log
-X-APISIX-Upstream-Status: 502, 200
+--- error_log eval
+qr/X-APISIX-Upstream-Status: 502, 502, 502/
 
 
 
