@@ -21,6 +21,17 @@ title: sls-logger
 #
 -->
 
+## 摘要
+
+- [摘要](#摘要)
+- [定义](#定义)
+- [属性列表](#属性列表)
+  - [属性](#属性)
+  - [属性（批处理器）](#属性批处理器)
+- [如何开启](#如何开启)
+- [测试插件](#测试插件)
+- [禁用插件](#禁用插件)
+
 ## 定义
 
 `sls-logger` 是使用 [RF5424](https://tools.ietf.org/html/rfc5424) 标准将日志数据以JSON格式发送到 [阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
@@ -45,6 +56,7 @@ title: sls-logger
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的| 是否包含请求体。|
 |name| 可选的|批处理名字。|
+
 ### 属性（批处理器）
 
 具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
