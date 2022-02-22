@@ -43,7 +43,7 @@ title: csrf
 | expires |  number | optional | `7200` | | CSRF Cookie 的过期时间(秒) |
 | key | string | required |  |  | 加密 token 的秘钥 |
 
-**注意：当 expires 设置为 0 时插件将忽略所有检查**
+**注意：当 expires 设置为 0 时插件将忽略检查 Token 是否过期**
 
 ## 如何启用
 

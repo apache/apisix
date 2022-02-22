@@ -114,7 +114,7 @@ local function check_csrf_token(conf, ctx, token)
         return false
     end
     local time_now = ngx_time()
-    if time_now - expires > conf.expires then
+    if conf.expires > 0 and time_now - expires > conf.expires then
         core.log.error("token has expired")
         return false
     end
@@ -132,10 +132,6 @@ end
 function _M.access(conf, ctx)
     local method = core.request.get_method(ctx)
     if core.table.array_find(SAFE_METHODS, method) then
-        return
-    end
-
-    if conf.expires == 0 then
         return
     end
 
