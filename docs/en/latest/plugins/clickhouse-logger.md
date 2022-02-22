@@ -36,19 +36,19 @@ title: clickhouse-logger
 
 ## Attributes
 
-| 名称             | 类型    | 必选项  | 默认值         | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| endpoint_addr    | string  | required   |               |         | The `clickhouse` endpoint.                  |
-| database         | string  | required   |               |         | The DB name to store log.                   |
-| logtable         | string  | required   |               |         | The table name.                             |
-| user             | string  | required   |               |         | clickhouse user.                             |
-| password         | string  | required   |               |         | clickhouse password.                         |
-| timeout          | integer | optional   | 3             | [1,...] | Time to keep the connection alive after sending a request.                   |
-| name             | string  | optional   | "clickhouse logger" |         | A unique identifier to identity the logger.                             |
-| batch_max_size   | integer | optional   | 100           | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the clickhouse.  |
-| max_retry_count  | integer | optional   | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.        |
-| retry_delay      | integer | optional   | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.             |
-| ssl_verify       | boolean | optional   | true          | [true,false] | verify ssl.             |
+| Name            | Type    | Requirement  | Default         | Valid  | Description                                             |
+|-----------------|---------| ------ | ------------- | ------- | ------------------------------------------------ |
+| endpoint_addr   | string  | required   |               |         | The `clickhouse` endpoint.                  |
+| database        | string  | required   |               |         | The DB name to store log.                   |
+| logtable        | string  | required   |               |         | The table name.                             |
+| user            | string  | required   |               |         | clickhouse user.                             |
+| password        | string  | required   |               |         | clickhouse password.                         |
+| timeout         | integer | optional   | 3             | [1,...] | Time to keep the connection alive after sending a request.                   |
+| name            | string  | optional   | "clickhouse logger" |         | A unique identifier to identity the logger.                             |
+| batch_max_size  | integer | optional   | 100           | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the clickhouse.  |
+| max_retry_count | integer | optional   | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.        |
+| retry_delay     | integer | optional   | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.             |
+| ssl_verify      | boolean | optional   | true          | [true,false] | verify ssl.             |
 
 ## How To Enable
 
