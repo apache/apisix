@@ -42,7 +42,7 @@ title: 插件开发
 
 ## 插件放置路径
 
-APISIX提供了两种方式来添加新的功能。
+Apache APISIX 提供了两种方式来添加新的功能。
 
 1. 修改 Apache APISIX 的源代码并重新发布 (不推荐)。
 1. 配置  `extra_lua_path` 和 `extra_lua_cpath` 在 `conf/config.yaml`以加载你自己的代码文件。 你应该给自己的代码文件起一个不包含在原来库中的名字，而不是使用相同名称的代码文件，但是如果有需要，你可以使用这种方式覆盖内置的代码文件。
@@ -81,7 +81,7 @@ apisix:
 ```
 
  当APISIX启动的时候，`example/my_hook.lua` 就会被加载，这时你可以使用这个钩子在APISIX中来全局替换掉一个方法。
-这个例子： [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) 可以在项目的`example`路径下被找到。
+这个例子： [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) 可以在项目的 `example` 路径下被找到。
 
 ## 检查外部依赖
 
