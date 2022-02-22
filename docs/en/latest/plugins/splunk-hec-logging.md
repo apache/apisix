@@ -23,11 +23,16 @@ title: splunk-hec-logging
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+  - [Attributes](#attributes-1)
+  - [Attributes(Batch-processor)](#attributesbatch-processor)
+- [How To Enable](#how-to-enable)
+  - [Full configuration](#full-configuration)
+  - [Minimize configuration](#minimize-configuration)
+- [Test Plugin](#test-plugin)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -48,7 +53,8 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | endpoint.channel | optional    |         | Splunk HEC send data channel identifier, refer to: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck) |
 | endpoint.timeout | optional    | 10      | Splunk HEC send data timeout, time unit: (seconds)           |
 | ssl_verify       | optional    | true    | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
-### Attributes( Batch-processor)
+
+### Attributes(Batch-processor)
 
 For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 

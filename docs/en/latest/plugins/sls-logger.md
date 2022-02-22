@@ -23,11 +23,14 @@ title: sls-logger
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+  - [Attributes](#attributes-1)
+  - [Attributes(Batch-processor)](#attributesbatch-processor)
+- [How To Enable](#how-to-enable)
+- [Test Plugin](#test-plugin)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -53,7 +56,8 @@ For more info on Batch-Processor in Apache APISIX please refer
 | access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
 |name           |optional       |A unique identifier to identity the batch processor.|
-### Attributes( Batch-processor)
+
+### Attributes(Batch-processor)
 
 For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 

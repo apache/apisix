@@ -27,7 +27,7 @@ title: error-log-logger
 - [Name](#name)
 - [Attributes](#attributes)
   - [Attributes](#attributes-1)
-  - [Attributes( Batch-processor)](#attributes-batch-processor)
+  - [Attributes(Batch-processor)](#attributesbatch-processor)
 - [How To Enable And Disable](#how-to-enable-and-disable)
   - [Enable plugin](#enable-plugin)
   - [Disable plugin](#disable-plugin)
@@ -65,7 +65,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
 | keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
-### Attributes( Batch-processor)
+
+### Attributes(Batch-processor)
 
 For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
