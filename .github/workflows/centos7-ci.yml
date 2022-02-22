@@ -77,6 +77,18 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
+    - name: Save Docker image to file
+      run: |
+        mkdir -p /tmp/artifacts
+        docker save centos7Instance > /tmp/artifacts/centos7Instance.tar
+
+    - name: Temporarily save Docker image
+      uses: actions/upload-artifact@v2
+      with:
+        name: docker-artifact
+        path: /tmp/artifacts
+        retention-days: 1
+
   run_test_cases_1:
     name: run test cases of t/plugin
     runs-on: ubuntu-latest
@@ -84,6 +96,17 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Retrieve saved Docker image
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-artifact
+          path: /tmp/artifacts
+
+      - name: Docker load
+        run: |
+          cd /tmp/artifacts
+          docker load < centos7Instance.tar
+
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/plugin"
@@ -97,6 +120,17 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Retrieve saved Docker image
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-artifact
+          path: /tmp/artifacts
+
+      - name: Docker load
+        run: |
+          cd /tmp/artifacts
+          docker load < centos7Instance.tar
+
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/admin"
@@ -110,6 +144,17 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Retrieve saved Docker image
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-artifact
+          path: /tmp/artifacts
+
+      - name: Docker load
+        run: |
+          cd /tmp/artifacts
+          docker load < centos7Instance.tar
+
       - name: Run test cases of t/plugins
         env:
           TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
