@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [master, 'release/**']
     paths:
+      - 'docs/**'
       - '**/*.md'
 
 jobs:

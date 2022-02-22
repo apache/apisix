@@ -1817,3 +1817,59 @@ qr/object matches none of the required/
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 51: add route for urlencoded post data validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"}
+                                },
+                                "rejected_msg": "customize reject message"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 52: test urlencoded post data
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- request eval
+"POST /echo
+" . "a=b&" x 101 . "required_payload=101-hello"
+--- response_body eval
+qr/101-hello/
+--- no_error_log
+[error]
