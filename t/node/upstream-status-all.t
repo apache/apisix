@@ -280,7 +280,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log eval
-qr/X-APISIX-Upstream-Status: 502, 200/
+qr/X-APISIX-Upstream-Status: 502, 200|X-APISIX-Upstream-Status: 200/
 
 
 
