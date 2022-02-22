@@ -83,8 +83,6 @@ apisix:
  当APISIX启动的时候，`example/my_hook.lua` 就会被加载，这时你可以使用这个钩子在APISIX中来全局替换掉一个方法。
 这个例子： [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) 可以在项目的`example`路径下被找到。
 
-
-
 ## 检查外部依赖
 
 如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
