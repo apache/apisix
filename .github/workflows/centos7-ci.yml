@@ -80,7 +80,7 @@ jobs:
     - name: Save Docker image to file
       run: |
         mkdir -p /tmp/artifacts
-        docker rename centos7Instance centos7instance
+        docker container rename centos7Instance centos7instance
         docker save centos7instance > /tmp/artifacts/centos7instance.tar
 
     - name: Temporarily save Docker image
