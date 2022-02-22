@@ -37,6 +37,15 @@ build() {
     do
        ldoc -c ../config.ld $path/$filename
     done
+
+    # generate the markdown files' name
+    rm ../md_files_name.txt || true
+    output="./"
+    mds=$(ls $output)
+    for md in $mds
+    do
+       echo $md >> ../md_files_name.txt
+    done
 }
 
 case_opt=$1
