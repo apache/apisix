@@ -228,7 +228,7 @@ X-APISIX-Upstream-Status: 500
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "127.0.0.2:1": 1,
+                        "127.1.0.2:1": 1,
                         "127.0.0.1:1980": 1
                     },
                     "retries": 2,
