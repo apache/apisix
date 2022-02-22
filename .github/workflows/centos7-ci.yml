@@ -97,6 +97,11 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
       - name: Retrieve saved Docker image
         uses: actions/download-artifact@v2
         with:
@@ -122,6 +127,11 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
       - name: Retrieve saved Docker image
         uses: actions/download-artifact@v2
         with:
@@ -147,6 +157,11 @@ jobs:
     needs: test_apisix
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
       - name: Retrieve saved Docker image
         uses: actions/download-artifact@v2
         with:
