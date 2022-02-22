@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+# shellcheck disable=SC2148
+
 set -ex
 
 export_or_prefix() {

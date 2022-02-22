@@ -15,30 +15,14 @@
 # limitations under the License.
 #
 
-# 'make init' operates scripts and related configuration files in the current directory
-# The 'apisix' command is a command in the /usr/local/apisix,
-# and the configuration file for the operation is in the /usr/local/apisix/conf
+# wiki link pattern https://github.com/koalaman/shellcheck/wiki/{code}
+# like SC2148, links to https://github.com/koalaman/shellcheck/wiki/SC2148
 
-# shellcheck disable=SC2148
+#SC2148 Add a shebang
+enable=SC2148
 
-set -ex
-
-check_failure() {
-    cat logs/error.log
-}
-
-clean_up() {
-    if [ $? -gt 0 ]; then
-        check_failure
-    fi
-    make stop || true
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-exit_if_not_customed_nginx() {
-    openresty -V 2>&1 | grep apisix-nginx-module || exit 0
-}
-
-unset APISIX_PROFILE
+disable=SC1083,SC1091
+disable=SC2002,SC2004,SC2006,SC2009,SC2010,SC2016,SC2024,SC2027,SC2034,SC2046,SC2048,SC2059
+disable=SC2068,SC2076,SC2086,SC2089,SC2090
+disable=SC2103,SC2126,SC2143,SC2155,SC2157,SC2164,SC2181
+disable=SC2215,SC2216,SC2251,SC2260,SC3037
