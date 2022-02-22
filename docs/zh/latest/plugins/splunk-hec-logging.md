@@ -38,6 +38,8 @@ title: splunk-hec-logging
 
 ## 属性列表
 
+### 属性
+
 | 名称                  | 是否必需 | 默认值                                                                                                                                                                                         | 描述                                                                                                                                                           |
 | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | endpoint                | 必选   |                                                                                                                                                                                                   | Splunk HEC 端点配置信息                                                                                                                                     |
@@ -46,11 +48,10 @@ title: splunk-hec-logging
 | endpoint.channel        | 可选   |                                                                                                                                                                                                   | Splunk HEC 发送渠道标识，参考：[About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)   |
 | endpoint.timeout        | 可选   | 10                                                                                                                                                                                                | Splunk HEC 数据提交超时时间（以秒为单位）                                                                                                                      |
 | ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证, 参考：[OpenResty文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
-| max_retry_count         | 可选   | 0                                                                                                                                                                                                 | 从处理管道中移除之前的最大重试次数                                                                                                                              |
-| retry_delay             | 可选   | 1                                                                                                                                                                                                 | 如果执行失败，流程执行应延迟的秒数                                                                                                                              |
-| buffer_duration         | 可选   | 60                                                                                                                                                                                                | 必须先处理批次中最旧条目的最大期限（以秒为单位）                                                                                                                  |
-| inactive_timeout        | 可选   | 5                                                                                                                                                                                                 | 刷新缓冲区的最大时间（以秒为单位）                                                                                                                              |
-| batch_max_size          | 可选   | 1000                                                                                                                                                                                              | 每个批处理队列可容纳的最大条目数                                                                                                                               |
+
+### 属性（批处理器）
+
+具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
 
 ## 如何开启
 

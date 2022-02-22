@@ -40,6 +40,8 @@ title: sls-logger
 
 ## 属性列表
 
+### 属性
+
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
 | host |必要的| TCP 服务的 IP 地址或主机名，请参考：[阿里云日志服务列表](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb)，建议配置 IP 取代配置域名。|
@@ -51,11 +53,9 @@ title: sls-logger
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的| 是否包含请求体。|
 |name| 可选的|批处理名字。|
-|batch_max_size |可选的       |每批的最大大小。|
-|inactive_timeout|可选的      |如果不活动，将刷新缓冲区的最大时间（以秒为单位）。|
-|buffer_duration|可选的       |必须先处理批次中最旧条目的最大期限（以秒为单位）。|
-|max_retry_count|可选的       |从处理管道中移除之前的最大重试次数。|
-|retry_delay    |可选的       |如果执行失败，应该延迟进程执行的秒数。|
+### 属性（批处理器）
+
+具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
 
 ## 如何开启
 

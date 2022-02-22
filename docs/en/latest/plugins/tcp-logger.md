@@ -42,6 +42,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Attributes
 
+### Attributes
+
 | Name             | Type    | Requirement | Default | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
 | host             | string  | required    |         |         | IP address or the Hostname of the TCP server.                                            |
@@ -49,12 +51,11 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | timeout          | integer | optional    | 1000    | [1,...] | Timeout for the upstream to send data.                                                   |
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
-| batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
-| retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
 | include_req_body | boolean | optional    | false   |         | Whether to include the request body                                                      |
+
+### Attributes( Batch-processor)
+
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ## How To Enable
 

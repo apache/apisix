@@ -41,6 +41,8 @@ title: error-log-logger
 
 ## 属性列表
 
+### 属性
+
 | 名称                              | 类型     | 必选项 | 默认值                          | 有效值   | 描述                                                                              |
 | -------------------------------- | ------- | ----- | ------------------------------ | ---------------- | -------------------------------------------------------------------------|
 | tcp.host                         | string  | 必须   |                                |                  | TCP 服务的IP地址或主机名                                                    |
@@ -57,11 +59,10 @@ title: error-log-logger
 | timeout                          | integer | 可选   | 3                              | [1,...]          | 连接和发送数据超时间（以秒为单位）                                             |
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）                                        |
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |
-| inactive_timeout                 | integer | 可选   | 3                              | [1,...]          | 刷新缓冲区的最大时间（以秒为单位）                                             |
-| batch_max_size                   | integer | 可选   | 1000                           | [1,...]          | 每批的最大大小                                                             |
-| buffer_duration                  | integer | 可选   | 60                             | [1,...]          | 必须先处理批次中最旧条目的最长期限（以秒为单位）                                 |
-| max_retry_count                  | integer | 可选   | 0                              | [0,...]          | 从处理管道中移除之前的最大重试次数                                             |
-| retry_delay                      | integer | 可选   | 1                              | [0,...]          | 如果执行失败，则应延迟执行流程的秒数                                           |
+
+### 属性（批处理器）
+
+具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
 
 ## 如何开启和禁用
 

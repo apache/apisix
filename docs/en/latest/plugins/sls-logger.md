@@ -40,6 +40,8 @@ For more info on Batch-Processor in Apache APISIX please refer
 
 ## Attributes
 
+### Attributes
+
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
 |host           |required       | IP address or the Hostname of the TCP server, please reference ali cloud log [Serve List](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb), use IP address instead of domain.|
@@ -51,11 +53,9 @@ For more info on Batch-Processor in Apache APISIX please refer
 | access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
 |name           |optional       |A unique identifier to identity the batch processor.|
-|batch_max_size |optional       |Max size of each batch.|
-|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive.|
-|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero.|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1.|
+### Attributes( Batch-processor)
+
+For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
 
 ## How To Enable
 
