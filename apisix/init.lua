@@ -608,6 +608,7 @@ function _M.http_header_filter_phase()
                 set_resp_upstream_status(up_status)
             else
                 local_conf = core.config.local_conf()
+                core.log.error("config properties: ",local_conf.apisix.show_upstream_status_in_response_header)
                 if local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
                     -- do not log
                     core.response.set_header("X-APISIX-Upstream-Status", up_status)
