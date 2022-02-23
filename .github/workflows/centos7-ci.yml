@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      TEST_FILE_SUB_DIR: t/plugin
+      TEST_FILE_SUB_DIR: "t/plugin"
 
     steps:
     - name: Check out code
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      TEST_FILE_SUB_DIR: t/admin
+      TEST_FILE_SUB_DIR: "t/admin"
 
     steps:
       - name: Check out code
@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      TEST_FILE_SUB_DIR: t/config-center-yaml t/control t/debug
+      TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
 
     steps:
       - name: Check out code
