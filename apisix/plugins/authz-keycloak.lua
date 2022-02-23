@@ -320,14 +320,14 @@ end
 -- Return access_token expires_in value (in seconds).
 local function authz_keycloak_access_token_expires_in(conf, expires_in)
     return (expires_in or conf.access_token_expires_in)
-           - 1 - (conf.access_token_expires_leeway)
+           - 1 - conf.access_token_expires_leeway
 end
 
 
 -- Return refresh_token expires_in value (in seconds).
 local function authz_keycloak_refresh_token_expires_in(conf, expires_in)
     return (expires_in or conf.refresh_token_expires_in)
-           - 1 - (conf.refresh_token_expires_leeway)
+           - 1 - conf.refresh_token_expires_leeway
 end
 
 
