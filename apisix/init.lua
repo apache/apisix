@@ -590,13 +590,14 @@ function _M.http_header_filter_phase()
 
     local up_status = get_var("upstream_status")
     local_conf = core.config.local_conf()
-    core.log.error("hello world:", local_conf.apisix.show_upstream_status_in_response_header);
     if up_status then
-        if #up_status == 3
-                and tonumber(up_status) >= 500
-                and tonumber(up_status) <= 599
-        then
-            set_resp_upstream_status(up_status)
+        if #up_status == 3 then
+            if tonumber(up_status) >= 500 and tonumber(up_status) <= 599 then
+                set_resp_upstream_status(up_status)
+            elseif local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
+                -- do not log
+                core.response.set_header("X-APISIX-Upstream-Status", up_status)
+            end
         elseif #up_status > 3 then
             -- the up_status can be "502, 502" or "502, 502 : "
             local last_status
@@ -608,11 +609,9 @@ function _M.http_header_filter_phase()
 
             if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
                 set_resp_upstream_status(up_status)
-            else
-                if local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
-                    -- do not log
-                    core.response.set_header("X-APISIX-Upstream-Status", up_status)
-                end
+            elseif local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
+                -- do not log
+                core.response.set_header("X-APISIX-Upstream-Status", up_status)
             end
         end
     end
