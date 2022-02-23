@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Etcd API in APISIX.
+--
+-- @module core.config_etcd
+
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
@@ -603,6 +607,30 @@ local function _automatic_fetch(premature, self)
     end
 end
 
+
+---
+-- Create a new etcd client connection.
+-- This function should be used in the `init_worker_by_lua` phase.
+--
+-- @function core.config.new
+-- @tparam string etcd directory to be monitored, e.g. "/routes".
+-- @see apisix/constants.lua
+-- @tparam table opts Parameters related to the etcd client connection.
+-- The keys in `opts` are as follows:
+--  * automatic: whether to get the latest etcd data automatically
+--  * item_schema: the jsonschema that checks the value of each item under the **key** directory
+--  * filter: the custom function to filter the value of each item under the **key** directory
+--  * timeout: the timeout for watch operation, default is 30s
+--  * single_item: whether only one item under the **key** directory
+--  * checker: the custom function to check the value of each item under the **key** directory
+-- @treturn table The etcd client connection.
+-- @usage
+-- local plugins_conf, err = core.config.new("/custom_dir", {
+--    automatic = true,
+--    filter = function(item)
+--        -- called once before reload for sync data from admin
+--    end,
+--})
 
 function _M.new(key, opts)
     local local_conf, err = config_local.local_conf()
