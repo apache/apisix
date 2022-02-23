@@ -59,7 +59,7 @@ Apache APISIX 提供了两种方式来添加新的功能。
 │               └── 3rd-party.lua
 ```
 
-接着，在`conf/config.yaml`文件中添加如下的配置:
+接着，在 `conf/config.yaml` 文件中添加如下的配置:
 
 ```yaml
 apisix:
