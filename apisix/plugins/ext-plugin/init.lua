@@ -611,13 +611,13 @@ local rpc_handlers = {
                 end
             end
 
-			local len = rewrite:RespHeadersLength()
-			if len > 0 then
+            local len = rewrite:RespHeadersLength()
+            if len > 0 then
                 for i = 1, len do
                     local entry = rewrite:RespHeaders(i)
                     core.response.set_header(entry:Name(), entry:Value())
                 end
-			end
+            end
 
             local len = rewrite:ArgsLength()
             if len > 0 then
