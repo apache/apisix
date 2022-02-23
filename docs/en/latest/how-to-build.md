@@ -1,5 +1,5 @@
 ---
-title: Building Apache APISIX
+title: Installing Apache APISIX
 ---
 
 <!--
@@ -31,7 +31,7 @@ Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repos
 
 This installation method is suitable for CentOS 7.
 
-If the official OpenResty repository is **not installed yet**, the following command will help you automatically install both the repositories—OpenResty and Apache APISIX.
+If the official OpenResty repository is **not installed yet**, the following command will help you automatically install both OpenResty and Apache APISIX repositories.
 
 ```shell
 sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
@@ -92,13 +92,13 @@ Follow the steps below to install Apache APISIX via the source release package.
   mkdir apisix-${APISIX_VERSION}
   ```
 
-2. Download the [Apache APISIX source release package](https://downloads.apache.org/apisix/APISIX_VERSION/apache-apisix-APISIX_VERSION-src.tgz).
+2. Download the Apache APISIX source release package.
 
   ```shell
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
-  You can also download the Apache APISIX source release package from the [Apache APISIX website](https://apisix.apache.org/downloads/). The website also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
+  You can also download the Apache APISIX source release package from the [Apache APISIX website](https://apisix.apache.org/downloads/). The website also provides source packages for Apache APISIX, APISIX Dashboard, and APISIX Ingress Controller.
 
 3. Unzip the Apache APISIX source release package.
 
@@ -134,11 +134,11 @@ Follow the steps below to install Apache APISIX via the source release package.
 
 ### LTS version installation via Source Release Package
 
-The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`. 
+The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
 
-To install this version, set `APISIX _VERSION`
+To install this version, set `APISIX_VERSION`
 
-Set `APISIX VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
+Set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
 
 ## Step 2: Install etcd
 
@@ -190,7 +190,7 @@ apisix start
 
 Both `apisix quit` and `apisix stop` can stop Apache APISIX. The main difference is that `apisix quit` stops Apache APISIX gracefully, while `apisix stop` stops Apache APISIX immediately.
 
-It is recommended to use gracefully stop command `apisix quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping. On the other hand, `apisix stop` will trigger a forced shutdown and will stop Apache APISIX immediately. This will cause the pending incoming requests to not be processed before shutdown.
+It is recommended to use the "gracefully stop" command `apisix quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping. On the other hand, `apisix stop` will trigger a forced shutdown and will stop Apache APISIX immediately. This will cause the pending incoming requests to not be processed before shutdown.
 
 To perform a graceful shutdown, run:
 
@@ -309,7 +309,7 @@ Content-Type: text/plain
 {"node":{...},"action":"get"}
 ```
 
-If the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, a response with a status code 401 will indicate that the access failed.
+If the key you entered does not match the value of `apisix.admin_key` in `conf/config.yaml`, a response with a status code 401 will indicate that the access failed.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i

@@ -31,7 +31,7 @@ The guide is divided into these three steps:
 2. Creating a Route and binding it with an Upstream
 3. Verifying the results after binding with `curl`
 
-This docs also introduces some of the advanced features and operations in Apache APISIX like authentication, prefixing a Route, using the APISIX Dashboard, and troubleshooting.
+This document also introduces some of the advanced features and operations in Apache APISIX like authentication, prefixing a Route, using the APISIX Dashboard, and troubleshooting.
 
 The following `echo` endpoint is used as an example here. This endpoint will return the parameters we pass.
 
@@ -76,7 +76,7 @@ We receive a JSON response when we send the request:
 
 ## Pre-Requisites
 
-Before you jump head, make sure that you have your machine setup with these tools.
+Before you jump ahead, make sure that you have your machine setup with these tools.
 
 - [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/).
 
@@ -118,11 +118,11 @@ Please remain patient as it will take some time to download the files and spin u
 Once Apache APISIX is running, you can use `curl` to access the Admin API. You can also check if Apache APISIX is running properly by running this command and checking the response.
 
 ```bash
-# Execute in your host machine (machine running Docker)
+# Execute on your host machine (machine running Docker)
 curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
-This response indicate that Apache APISIX is running successfully.
+This response indicates that Apache APISIX is running successfully.
 
 ```json
 {
@@ -138,7 +138,7 @@ This response indicate that Apache APISIX is running successfully.
 
 ## Step 2: Create a Route
 
-[Routes](./architecture-design/route.md) matches to clients requests based on defined rules, loads and executes the corresponding plugins, and forwards the request to the specified upstream.
+[Routes](./architecture-design/route.md) matches the client's requests based on defined rules, loads and executes the corresponding plugins, and forwards the request to the specified upstream.
 
 From the previous step, we have a running instance of Apache APISIX in Docker. Now let's create a Route.
 
@@ -161,7 +161,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 }'
 ```
 
-This configuration basically means that it will forward all matching inbound requests to the upstream service (`httpbin.org:80`) if they meet these specified criterions.
+This configuration means that it will forward all matching inbound requests to the upstream service (`httpbin.org:80`) if they meet these specified criterion.
 
 - The HTTP method of the request is `GET`.
 - The request header contains the `host` field, and its value is `example.com`.
@@ -191,7 +191,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-We use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as our Upstream service with an ID of `1`. See [Admin API](./admin-api.md) for more information about the fields.
+We use `roundrobin` as the load balancing mechanism and set `httpbin.org:80` as our Upstream service with an ID of `1`. See [Admin API](./admin-api.md) for more information about the fields.
 
 <!--
 #
@@ -326,7 +326,7 @@ You can try these troubleshooting steps if you are unable to proceed as suggeste
 
 Please [open an issue](/docs/general/contributor-guide#submit-an-issue) if you run into any bugs or if there are any missing troubleshooting steps.
 
-- Make sure that all required ports (**default 9080/9443/2379**) are available and is not used by other systems or processes.
+- Make sure that all required ports (**default 9080/9443/2379**) are available (not used by other systems or processes).
 
     You can run the command below to terminate the processes that are listening on a specific port (on Unix-based systems).
 
