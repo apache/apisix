@@ -571,6 +571,7 @@ end
 
 local function set_resp_upstream_status(up_status)
     local_conf = core.config.local_conf()
+
     if local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
         core.response.set_header("X-APISIX-Upstream-Status", up_status)
     elseif #up_status == 3 then
