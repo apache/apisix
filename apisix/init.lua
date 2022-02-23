@@ -590,7 +590,6 @@ function _M.http_header_filter_phase()
 
     local up_status = get_var("upstream_status")
     local_conf = core.config.local_conf()
-    core.log.error("up_status error=",up_status)
     if up_status then
         if #up_status == 3 then
             if tonumber(up_status) >= 500 and tonumber(up_status) <= 599 then
