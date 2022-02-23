@@ -82,7 +82,7 @@ jobs:
         mkdir -p /tmp/artifacts
         docker commit centos7Instance apisixcentos7
         docker save apisixcentos7 > /tmp/artifacts/apisixcentos7.tar
-        mv /home/runner/work/apisix/apisix /tmp/artifacts
+        cp -rf /home/runner/work/apisix/apisix/ /tmp/artifacts
 
     - name: Temporarily save build environment
       uses: actions/upload-artifact@v2
