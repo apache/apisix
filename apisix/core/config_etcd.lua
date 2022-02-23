@@ -631,7 +631,6 @@ end
 --        -- called once before reload for sync data from admin
 --    end,
 --})
-
 function _M.new(key, opts)
     local local_conf, err = config_local.local_conf()
     if not local_conf then
