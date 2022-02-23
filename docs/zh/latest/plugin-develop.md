@@ -69,7 +69,7 @@ apisix:
 
 现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件， 比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件.
 
-可能你会想覆盖一个文件中的函数，你可以在`conf/config.yaml`文件中配置`lua_module_hook` 来使你的hook生效。
+可能你会想覆盖一个文件中的函数，你可以在 `conf/config.yaml` 文件中配置 `lua_module_hook` 来使你的 hook 生效。
 
 你的配置可以像下面这样:
 
