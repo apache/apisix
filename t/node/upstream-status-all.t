@@ -75,7 +75,7 @@ apisix:
 GET /hello
 --- response_body
 hello world
---- error_log
+--- response_headers
 X-APISIX-Upstream-Status: 200
 
 
