@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_apisix:
-    name: run ci on centos7
+  run_test_cases_1:
+    name: run ci on centos7(t/plugin)
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -77,92 +77,141 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: Save build environment
+    - name: Run test cases of t/plugins
+      env:
+        TEST_FILE_SUB_DIR: "t/plugin"
       run: |
-        mkdir -p /tmp/artifacts
-        docker commit centos7Instance apisixcentos7
-        docker save apisixcentos7 > /tmp/artifacts/apisixcentos7.tar
-        cp -rf /home/runner/work/apisix/apisix/ /tmp/artifacts
-
-    - name: Temporarily save build environment
-      uses: actions/upload-artifact@v2
-      with:
-        name: build-environment
-        path: |
-          /tmp/artifacts
-        retention-days: 1
-
-  run_test_cases_1:
-    name: run test cases of t/plugin
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
-
-    steps:
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-artifact
-          path: /tmp/artifacts
-
-      - name: Docker load
-        run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
-
-      - name: Run test cases of t/plugins
-        env:
-          TEST_FILE_SUB_DIR: "t/plugin"
-        run: |
-          docker run -itd -v /tmp/artifacts/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
   run_test_cases_2:
-    name: run test cases of admin
+    name: run ci on centos7(t/admin)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
+    timeout-minutes: 90
 
     steps:
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
         with:
-          name: docker-artifact
-          path: /tmp/artifacts
+          submodules: recursive
 
-      - name: Docker load
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
         run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
 
-      - name: Run test cases of t/plugins
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+
+      - name: Build rpm package
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          export VERSION=${{ steps.branch_env.outputs.version }}
+          sudo gem install --no-document fpm
+          git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
+
+          # move codes under build tool
+          mkdir ./apisix-build-tools/apisix
+          for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
+
+          cd apisix-build-tools
+          make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
+          cd ..
+          rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+
+      - name: Run centos7 docker and mapping apisix into container
+        run: |
+          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+          # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+
+      - name: Run other docker containers for test
+        run: |
+          make ci-env-up
+          ./ci/linux-ci-init-service.sh
+
+      - name: Install dependencies
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
+
+      - name: Install rpm package
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
+          # Dependencies are attached with rpm, so revert `make deps`
+          docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
+          docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
+
+      - name: Run test cases of t/admin
         env:
           TEST_FILE_SUB_DIR: "t/admin"
         run: |
-          docker run -itd -v /tmp/artifacts/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
+
   run_test_cases_3:
-    name: run test cases ofsmall test dirs
+    name: run ci on centos7(small test dirs)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
+    timeout-minutes: 90
 
     steps:
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
         with:
-          name: docker-artifact
-          path: /tmp/artifacts
+          submodules: recursive
 
-      - name: Docker load
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
         run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
 
-      - name: Run test cases of t/plugins
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+
+      - name: Build rpm package
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          export VERSION=${{ steps.branch_env.outputs.version }}
+          sudo gem install --no-document fpm
+          git clone -b v2.7.0 https://github.com/api7/apisix-build-tools.git
+
+          # move codes under build tool
+          mkdir ./apisix-build-tools/apisix
+          for dir in `ls|grep -v "^apisix-build-tools$"`;do cp -r $dir ./apisix-build-tools/apisix/;done
+
+          cd apisix-build-tools
+          make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
+          cd ..
+          rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+
+      - name: Run centos7 docker and mapping apisix into container
+        run: |
+          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+          # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
+
+      - name: Run other docker containers for test
+        run: |
+          make ci-env-up
+          ./ci/linux-ci-init-service.sh
+
+      - name: Install dependencies
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh install_dependencies"
+
+      - name: Install rpm package
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          docker exec centos7Instance bash -c "cd apisix && rpm -iv --prefix=/apisix ./apisix-build-tools/output/apisix-${{ steps.branch_env.outputs.version }}-0.el7.x86_64.rpm"
+          # Dependencies are attached with rpm, so revert `make deps`
+          docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
+          docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
+
+      - name: Run test cases of small test dirs
         env:
           TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
         run: |
-          docker run -itd -v /tmp/artifacts/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
