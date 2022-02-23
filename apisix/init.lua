@@ -590,7 +590,7 @@ function _M.http_header_filter_phase()
 
     local up_status = get_var("upstream_status")
     local_conf = core.config.local_conf()
-    core.log.error("config properties: ",local_conf.apisix.show_upstream_status_in_response_header)
+    core.log.error("hello world");
     if up_status then
         if #up_status == 3
                 and tonumber(up_status) >= 500
