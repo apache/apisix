@@ -80,7 +80,7 @@ apisix:
     lua_module_hook: "my_hook"
 ```
 
- 当APISIX启动的时候，`example/my_hook.lua` 就会被加载，这时你可以使用这个钩子在APISIX中来全局替换掉一个方法。
+ 当 APISIX 启动的时候，`example/my_hook.lua` 就会被加载，这时你可以使用这个钩子在 APISIX 中来全局替换掉一个方法。
 这个例子： [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) 可以在项目的 `example` 路径下被找到。
 
 ## 检查外部依赖
