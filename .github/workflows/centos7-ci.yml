@@ -79,7 +79,7 @@ jobs:
 
     - name: Run test cases of t/plugins
       env:
-        TEST_FILE_SUB_DIR: "t/plugin"
+        TEST_FILE_SUB_DIR: t/plugin
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
@@ -145,7 +145,7 @@ jobs:
 
       - name: Run test cases of t/admin
         env:
-          TEST_FILE_SUB_DIR: "t/admin"
+          TEST_FILE_SUB_DIR: t/admin
         run: |
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
@@ -212,6 +212,6 @@ jobs:
 
       - name: Run test cases of small test dirs
         env:
-          TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
+          TEST_FILE_SUB_DIR: t/config-center-yaml t/control t/debug
         run: |
           docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
