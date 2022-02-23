@@ -279,8 +279,9 @@ apisix:
 GET /hello
 --- response_body
 hello world
---- response_headers eval
+--- response_headers_raw_like eval
 qr/X-APISIX-Upstream-Status: 502, 200|X-APISIX-Upstream-Status: 200/
+--- error_log
 
 
 
