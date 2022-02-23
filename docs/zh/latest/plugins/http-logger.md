@@ -23,12 +23,16 @@ title: http-logger
 
 ## 目录
 
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**插件元数据设置**](#插件元数据设置)
-- [**禁用插件**](#禁用插件)
+- [目录](#目录)
+- [定义](#定义)
+- [属性列表](#属性列表)
+  - [属性](#属性)
+  - [支持批处理器的属性](#支持批处理器的属性)
+- [如何开启](#如何开启)
+- [测试插件](#测试插件)
+- [插件元数据设置](#插件元数据设置)
+  - [设置日志格式示例](#设置日志格式示例)
+- [禁用插件](#禁用插件)
 
 ## 定义
 
@@ -51,9 +55,9 @@ title: http-logger
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | concat_method    | string  | 可选   | "json"        | ["json", "new_line"] | 枚举类型： `json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
 
-### 属性（批处理器）
+### 支持批处理器的属性
 
-具体请参考 [Batch-Processor](../batch-processor.md#配置) 中的
+事实上，我们还支持在插件中使用批处理器以提高使用日志的效率，具体配置，请参考 [Batch-Processor](../batch-processor.md#配置) 中的
 
 ## 如何开启
 
