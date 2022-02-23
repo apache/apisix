@@ -87,95 +87,96 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: docker-artifact
-        path: /tmp/artifacts
+        path: |
+          /tmp/artifacts
         retention-days: 1
-
-  run_test_cases_1:
-    name: run test cases of t/plugin
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.4.0
-        with:
-          submodules: recursive
-
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-artifact
-          path: /tmp/artifacts
-
-      - name: Docker load
-        run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
-
-      - name: Run test cases of t/plugins
-        env:
-          TEST_FILE_SUB_DIR: "t/plugin"
-        run: |
-          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-  run_test_cases_2:
-    name: run test cases of admin
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.4.0
-        with:
-          submodules: recursive
-
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-artifact
-          path: /tmp/artifacts
-
-      - name: Docker load
-        run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
-
-      - name: Run test cases of t/plugins
-        env:
-          TEST_FILE_SUB_DIR: "t/admin"
-        run: |
-          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
-
-  run_test_cases_3:
-    name: run test cases ofsmall test dirs
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: test_apisix
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.4.0
-        with:
-          submodules: recursive
-
-      - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v2
-        with:
-          name: docker-artifact
-          path: /tmp/artifacts
-
-      - name: Docker load
-        run: |
-          cd /tmp/artifacts
-          docker load < apisixcentos7.tar
-
-      - name: Run test cases of t/plugins
-        env:
-          TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
-        run: |
-          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
-          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+#
+#  run_test_cases_1:
+#    name: run test cases of t/plugin
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 45
+#    needs: test_apisix
+#
+#    steps:
+#      - name: Check out code
+#        uses: actions/checkout@v2.4.0
+#        with:
+#          submodules: recursive
+#
+#      - name: Retrieve saved Docker image
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: docker-artifact
+#          path: /tmp/artifacts
+#
+#      - name: Docker load
+#        run: |
+#          cd /tmp/artifacts
+#          docker load < apisixcentos7.tar
+#
+#      - name: Run test cases of t/plugins
+#        env:
+#          TEST_FILE_SUB_DIR: "t/plugin"
+#        run: |
+#          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+#          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+#
+#  run_test_cases_2:
+#    name: run test cases of admin
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 45
+#    needs: test_apisix
+#
+#    steps:
+#      - name: Check out code
+#        uses: actions/checkout@v2.4.0
+#        with:
+#          submodules: recursive
+#
+#      - name: Retrieve saved Docker image
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: docker-artifact
+#          path: /tmp/artifacts
+#
+#      - name: Docker load
+#        run: |
+#          cd /tmp/artifacts
+#          docker load < apisixcentos7.tar
+#
+#      - name: Run test cases of t/plugins
+#        env:
+#          TEST_FILE_SUB_DIR: "t/admin"
+#        run: |
+#          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+#          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+#
+#  run_test_cases_3:
+#    name: run test cases ofsmall test dirs
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 45
+#    needs: test_apisix
+#
+#    steps:
+#      - name: Check out code
+#        uses: actions/checkout@v2.4.0
+#        with:
+#          submodules: recursive
+#
+#      - name: Retrieve saved Docker image
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: docker-artifact
+#          path: /tmp/artifacts
+#
+#      - name: Docker load
+#        run: |
+#          cd /tmp/artifacts
+#          docker load < apisixcentos7.tar
+#
+#      - name: Run test cases of t/plugins
+#        env:
+#          TEST_FILE_SUB_DIR: "t/config-center-yaml t/control t/debug"
+#        run: |
+#          docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org apisixcentos7:latest /bin/bash
+#          docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
