@@ -589,6 +589,8 @@ function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
+    local_conf = core.config.local_conf()
+    core.log.error("config properties: ",local_conf.apisix.show_upstream_status_in_response_header)
     if up_status then
         if #up_status == 3
                 and tonumber(up_status) >= 500
@@ -607,8 +609,6 @@ function _M.http_header_filter_phase()
             if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
                 set_resp_upstream_status(up_status)
             else
-                local_conf = core.config.local_conf()
-                core.log.error("config properties: ",local_conf.apisix.show_upstream_status_in_response_header)
                 if local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
                     -- do not log
                     core.response.set_header("X-APISIX-Upstream-Status", up_status)
