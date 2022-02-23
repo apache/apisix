@@ -26,7 +26,7 @@ local type = type
 
 local load_time = os.time()
 local plugin_name = "server-info"
-local default_report_ttl = 36
+local default_report_ttl = 60
 local lease_id
 
 local schema = {
@@ -117,7 +117,7 @@ local function get_server_info()
     local info, err = get()
     if not info then
         core.log.error("failed to get server_info: ", err)
-        return 500
+        return 503
     end
 
     return 200, info
@@ -158,18 +158,18 @@ local function report(premature, report_ttl)
     local server_info, err = get()
     if not server_info then
         core.log.error("failed to get server_info: ", err)
-        return 500, {error_msg = err}
+        return 503, {error_msg = err}
     end
 
     if server_info.etcd_version == "unknown" then
         local res, err = core.etcd.server_version()
         if not res then
             core.log.error("failed to fetch etcd version: ", err)
-            return 500, {error_msg = err}
+            return 503, {error_msg = err}
 
         elseif type(res.body) ~= "table" then
             core.log.error("failed to fetch etcd version: bad version info")
-            return 500, {error_msg = err}
+            return 503, {error_msg = err}
 
         else
             server_info.etcd_version = res.body.etcdcluster
@@ -210,6 +210,7 @@ local function report(premature, report_ttl)
     lease_id, err = internal_status:get("lease_id")
     if not lease_id then
         core.log.error("failed to get lease_id from shdict: ", err)
+        return 503, {error_msg = err}
     end
 
     -- call keepalive
@@ -222,13 +223,13 @@ local function report(premature, report_ttl)
     local data, err = core.json.encode(server_info)
     if not data then
         core.log.error("failed to encode server_info: ", err)
-        return false, err
+        return 503, {error_msg = err}
     end
 
     local ok, err = internal_status:set("server_info", data)
     if not ok then
         core.log.error("failed to encode and save server info: ", err)
-        return false, err
+        return 503, {error_msg = err}
     end
 end
 
