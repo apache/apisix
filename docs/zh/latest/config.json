@@ -96,37 +96,51 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
         {
           "type": "category",
-          "label": "Monitoring",
+          "label": "Observability",
           "items": [
-            "plugins/prometheus",
-            "plugins/zipkin",
-            "plugins/skywalking",
-            "plugins/opentelemetry",
-            "plugins/node-status"
-          ]
-        },
-        {
-          "type": "category",
-          "label": "Loggers",
-          "items": [
-            "plugins/http-logger",
-            "plugins/skywalking-logger",
-            "plugins/tcp-logger",
-            "plugins/kafka-logger",
-            "plugins/rocketmq-logger",
-            "plugins/udp-logger",
-            "plugins/syslog",
-            "plugins/log-rotate",
-            "plugins/error-log-logger",
-            "plugins/sls-logger",
-            "plugins/google-cloud-logging",
-            "plugins/splunk-hec-logging",
-            "plugins/file-logger"
+            {
+              "type": "category",
+              "label": "Tracers",
+              "items": [
+                "plugins/zipkin",
+                "plugins/skywalking",
+                "plugins/opentelemetry"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Metrics",
+              "items": [
+                "plugins/prometheus",
+                "plugins/node-status"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Loggers",
+              "items": [
+                "plugins/http-logger",
+                "plugins/skywalking-logger",
+                "plugins/tcp-logger",
+                "plugins/kafka-logger",
+                "plugins/rocketmq-logger",
+                "plugins/udp-logger",
+                "plugins/clickhouse-logger",
+                "plugins/syslog",
+                "plugins/log-rotate",
+                "plugins/error-log-logger",
+                "plugins/sls-logger",
+                "plugins/google-cloud-logging",
+                "plugins/splunk-hec-logging",
+                "plugins/file-logger"
+              ]
+            }
           ]
         },
         {
@@ -175,7 +189,8 @@
             "discovery",
             "discovery/dns",
             "discovery/nacos",
-            "discovery/eureka"
+            "discovery/eureka",
+            "discovery/kubernetes"
           ]
         },
         {

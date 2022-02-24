@@ -27,6 +27,7 @@ local cached_tab = {}
 cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
+    array_mt = cjson.array_mt,
     decode = cjson.decode,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
