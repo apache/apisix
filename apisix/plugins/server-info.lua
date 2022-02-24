@@ -117,7 +117,7 @@ local function get_server_info()
     local info, err = get()
     if not info then
         core.log.error("failed to get server_info: ", err)
-        return 503
+        return 500
     end
 
     return 200, info
@@ -128,12 +128,12 @@ local function set(key, value, ttl)
     local res_new, err = core.etcd.set(key, value, ttl)
     if not res_new then
         core.log.error("failed to set server_info: ", err)
-        return 503, {error_msg = err}
+        return nil, err
     end
 
     if not res_new.body.lease_id then
         core.log.error("failed to get lease_id: ", err)
-        return 503, {error_msg = err}
+        return nil, err
     end
 
     lease_id = res_new.body.lease_id
@@ -142,10 +142,10 @@ local function set(key, value, ttl)
     local ok, err = internal_status:set("lease_id", lease_id)
     if not ok then
         core.log.error("failed to set lease_id to shdict: ", err)
-        return 503, {error_msg = err}
+        return nil, err
     end
 
-    return 200, nil
+    return true
 end
 
 
@@ -158,18 +158,18 @@ local function report(premature, report_ttl)
     local server_info, err = get()
     if not server_info then
         core.log.error("failed to get server_info: ", err)
-        return 503, {error_msg = err}
+        return
     end
 
     if server_info.etcd_version == "unknown" then
         local res, err = core.etcd.server_version()
         if not res then
             core.log.error("failed to fetch etcd version: ", err)
-            return 503, {error_msg = err}
+            return
 
         elseif type(res.body) ~= "table" then
             core.log.error("failed to fetch etcd version: bad version info")
-            return 503, {error_msg = err}
+            return
 
         else
             server_info.etcd_version = res.body.etcdcluster
@@ -181,14 +181,14 @@ local function report(premature, report_ttl)
     local res, err = core.etcd.get(key)
     if not res or (res.status ~= 200 and res.status ~= 404) then
         core.log.error("failed to get server_info from etcd: ", err)
-        return 503, {error_msg = err}
+        return
     end
 
     if not res.body.node then
         local ok, err = set(key, server_info, report_ttl)
         if not ok then
             core.log.error("failed to set server_info to etcd: ", err)
-            return 503, {error_msg = err}
+            return
         end
 
         return
@@ -200,7 +200,7 @@ local function report(premature, report_ttl)
         local ok, err = set(key, server_info, report_ttl)
         if not ok then
             core.log.error("failed to set server_info to etcd: ", err)
-            return 503, {error_msg = err}
+            return
         end
 
         return
@@ -210,26 +210,26 @@ local function report(premature, report_ttl)
     lease_id, err = internal_status:get("lease_id")
     if not lease_id then
         core.log.error("failed to get lease_id from shdict: ", err)
-        return 503, {error_msg = err}
+        return
     end
 
     -- call keepalive
     local res, err = core.etcd.keepalive(lease_id)
     if not res then
         core.log.error("send heartbeat failed: ", err)
-        return 503, {error_msg = err}
+        return
     end
 
     local data, err = core.json.encode(server_info)
     if not data then
         core.log.error("failed to encode server_info: ", err)
-        return 503, {error_msg = err}
+        return
     end
 
     local ok, err = internal_status:set("server_info", data)
     if not ok then
         core.log.error("failed to encode and save server info: ", err)
-        return 503, {error_msg = err}
+        return
     end
 end
 
