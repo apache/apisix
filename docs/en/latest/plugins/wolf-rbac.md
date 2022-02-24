@@ -110,6 +110,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## Test Plugin
 
+#### Setup routes for public API
+
+Use the `public-api` plugin to expose the public API.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/wolf-rbac/login",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+You also need to setup the `change_pwd` and `user_info` routes together.
+
 #### Login and get `wolf-rbac` token:
 
 The following `appid`, `username`, and `password` must be real ones in the wolf system.
