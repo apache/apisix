@@ -32,6 +32,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
+      TEST_FILE_SUB_DIR: "t/plugin"
 
     steps:
       - name: Check out code
@@ -104,8 +105,6 @@ jobs:
           ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        env:
-          TEST_FILE_SUB_DIR: "t/plugin"
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
 
 
@@ -124,6 +123,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
+      TEST_FILE_SUB_DIR: "t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc"
 
     steps:
       - name: Check out code
@@ -196,8 +196,6 @@ jobs:
           ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        env:
-          TEST_FILE_SUB_DIR: "t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc"
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
 
 
@@ -216,6 +214,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
+      TEST_FILE_SUB_DIR: "t/node t/router t/script t/stream-node t/utils t/wasm"
 
     steps:
       - name: Check out code
@@ -288,6 +287,4 @@ jobs:
           ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        env:
-          TEST_FILE_SUB_DIR: "t/node t/router t/script t/stream-node t/utils t/wasm"
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
