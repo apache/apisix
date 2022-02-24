@@ -58,7 +58,17 @@ plugins:                          # plugin list
   ......
 ```
 
-After starting `APISIX`, you can get status information through the API `/apisix/status`.
+2. Setup the route for the status API, which will use the [public-api](public-api.md) plugin.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/status",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
 
 ## Test Plugin
 
@@ -120,4 +130,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     },
     "plugins": {}
 }'
+```
+
+3. You can also remove the route on `/apisix/status`, no one can access the API.
+
+```sh
+$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
