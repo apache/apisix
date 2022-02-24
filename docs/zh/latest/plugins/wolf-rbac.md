@@ -110,6 +110,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## 测试插件
 
+#### 为 API 设置路由
+
+我们使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露这些 public API.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/wolf-rbac/login",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+你也需要为 `change_pwd` 和 `user_info` 两个 API 配置路由。
+
 #### 首先进行登录获取 `wolf-rbac` token:
 
 下面的 `appid`, `username`, `password` 必须为 wolf 系统中真实存在的.
