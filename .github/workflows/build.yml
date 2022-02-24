@@ -32,7 +32,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
-      TEST_FILE_SUB_DIR: "t/plugin"
+      TEST_FILE_SUB_DIR: t/plugin
 
     steps:
       - name: Check out code
@@ -123,7 +123,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
-      TEST_FILE_SUB_DIR: "t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc"
+      TEST_FILE_SUB_DIR: t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
 
     steps:
       - name: Check out code
@@ -214,7 +214,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
-      TEST_FILE_SUB_DIR: "t/node t/router t/script t/stream-node t/utils t/wasm"
+      TEST_FILE_SUB_DIR: t/node t/router t/script t/stream-node t/utils t/wasm
 
     steps:
       - name: Check out code
