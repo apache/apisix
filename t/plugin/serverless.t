@@ -679,3 +679,54 @@ GET /hello
 --- error_log
 default phase: access
 match uri /hello
+
+
+
+=== TEST 23: add args parse test for serverless
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                        "functions" : ["return function(conf, ctx) local net_url = require(\"net.url\");
+                                        local args = ngx.var.args;
+                                        ngx.print(net_url.parse(args).path);
+                                        end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: check args parse test
+--- request
+GET /echo?args=%40%23%24%25%5E%26
+--- response_body chomp
+args=@#$%^&
+--- no_error_log
+[error]
