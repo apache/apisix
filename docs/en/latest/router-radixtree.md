@@ -294,6 +294,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 We can verify GraphQL matches in the following two ways:
 
 1. 使用 GraphQL 查询字符串
+
     ```shell
     $ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
     query getRepo {
@@ -306,6 +307,7 @@ We can verify GraphQL matches in the following two ways:
     }'
     ```
 2. 使用 JSON 格式
+
     ```shell
     $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
     ```
