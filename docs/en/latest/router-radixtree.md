@@ -306,7 +306,7 @@ We can verify GraphQL matches in the following two ways:
         }
     }'
     ```
-    
+
 2. JSON format
 
     ```shell
