@@ -117,8 +117,9 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
 
       Solution: luarocks supports adding custom package addresses to the project. You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`. You should config as follows:
       1. Install `openldap` locally using tools including but not limited to 'brew';
-      2. Find the location of your local installation of `openldap`. Note here that the default address of `brew` in the macOS of the M1 chip is `/opt/homebrew/cellar/`, and the previous macOS default is `/usr/local/opt/`;
+      2. Locate the 'openldap' local installation directory. Note that the default address for 'brew' in macOS for ARM architecture is '/opt/homebrew/cellar/', and macOS for x86 architecture defaults to '/usr/local/opt/';
       3. Manually set the `LDAP_DIR` variable via `luarocks config`, e.g. `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
+      4. Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file.    
 
 5. If you have no more need for the Apache APISIX runtime, you could uninstall it like this.
 
