@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   test_apisix:
-    name: run ci on centos7(t/plugin)
+    name: run ci on centos7
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -85,6 +85,6 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && rm -rf deps"
         docker exec centos7Instance bash -c "cd apisix && mv usr/bin . && mv usr/local/apisix/* ."
 
-    - name: Run test cases of t/plugins
+    - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
