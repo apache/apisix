@@ -53,7 +53,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ### Attributes( Batch-processor)
 
-For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
+In fact, we also have some common parameters processed by the batch processor to  perform some aggregation operations to improve the efficiency of using logs. For specific parameter information, please refer to [Batch-Processor](.. /batch-processor.md# Configuration).
 
 ## How To Enable
 

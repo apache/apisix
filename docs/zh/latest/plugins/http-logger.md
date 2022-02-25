@@ -57,7 +57,7 @@ title: http-logger
 
 ### 支持批处理器的属性
 
-事实上，我们还支持在插件中使用批处理器以提高使用日志的效率，具体配置，请参考 [Batch-Processor](../batch-processor.md#配置) 中的
+事实上，我们还有一些公共参数交由批处理器，来进行聚合操作，提高使用日志的效率。具体参数信息，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 如何开启
 
