@@ -314,6 +314,34 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
     ```
 
+接下来，尝试一下 GET 请求。
+我们首先配置这样的路由：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "methods": ["GET"],
+    "uri": "/_graphql",
+    "vars": [
+        ["graphql_operation", "==", "query"],
+        ["graphql_name", "==", "getRepo"],
+        ["graphql_root_fields", "has", "owner"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:4000": 1
+        }
+    }
+}'
+```
+
+我们可以通过以下方式去验证 GraphQL 匹配：
+
+```shell
+curl -H 'content-type: application/graphql' -X GET "http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
+```
+
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
 来自请求体的数据。 此限制是通过以下方式配置的：
 
