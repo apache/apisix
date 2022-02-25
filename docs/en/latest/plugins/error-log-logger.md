@@ -26,11 +26,7 @@ title: error-log-logger
 - [Summary](#summary)
 - [Name](#name)
 - [Attributes](#attributes)
-  - [Attributes](#attributes-1)
-  - [Attributes(Batch-processor)](#attributesbatch-processor)
 - [How To Enable And Disable](#how-to-enable-and-disable)
-  - [Enable plugin](#enable-plugin)
-  - [Disable plugin](#disable-plugin)
 - [How to set the TCP server address](#how-to-set-the-tcp-server-address)
 - [How to set the SkyWalking OAP server address](#how-to-set-the-skywalking-oap-server-address)
 
@@ -46,8 +42,6 @@ For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
 
 ## Attributes
-
-### Attributes
 
 | Name                             | Type    | Requirement | Default                        | Valid   | Description                                                                                          |
 | -------------------------------- | ------- | ----------- | ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
@@ -66,9 +60,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
 
-### Attributes(Batch-processor)
-
-For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
+The plugin uses a component(batch processor) to aggregate entries(logs data) and processes them in a batch. This helps in reducing the number of requests that are being sent from the plugin per time frame. Out of the box, the plugin provides a default batch processor configuration, so you don't have to worry about it. If you wish to know more about the parameters related to batch processor and tweak it for a specific purpose please visit the [Batch-Processor](../batch-processor.md#Configurations) configuration section and pass the modified key value attributes inside the plugin configuration.
 
 ## How To Enable And Disable
 

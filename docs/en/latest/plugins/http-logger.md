@@ -38,8 +38,6 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ## Attributes
 
-### Attributes
-
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
 | uri              | string  | required    |               |         | The URI of the `HTTP/HTTPS` server.                                                      |
@@ -51,9 +49,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 | include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 | concat_method    | string  | optional    | "json"        | ["json", "new_line"] | Enum type: `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
 
-### Attributes( Batch-processor)
-
-In fact, we also have some common parameters processed by the batch processor to  perform some aggregation operations to improve the efficiency of using logs. For specific parameter information, please refer to [Batch-Processor](.. /batch-processor.md# Configuration).
+The plugin uses a component(batch processor) to aggregate entries(logs data) and processes them in a batch. This helps in reducing the number of requests that are being sent from the plugin per time frame. Out of the box, the plugin provides a default batch processor configuration, so you don't have to worry about it. If you wish to know more about the parameters related to batch processor and tweak it for a specific purpose please visit the [Batch-Processor](../batch-processor.md#Configurations) configuration section and pass the modified key value attributes inside the plugin configuration.
 
 ## How To Enable
 

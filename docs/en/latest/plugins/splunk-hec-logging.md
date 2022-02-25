@@ -26,8 +26,6 @@ title: splunk-hec-logging
 - [Summary](#summary)
 - [Name](#name)
 - [Attributes](#attributes)
-  - [Attributes](#attributes-1)
-  - [Attributes(Batch-processor)](#attributesbatch-processor)
 - [How To Enable](#how-to-enable)
   - [Full configuration](#full-configuration)
   - [Minimize configuration](#minimize-configuration)
@@ -43,8 +41,6 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 
 ## Attributes
 
-### Attributes
-
 | Name             | Requirement | Default | Description                                                  |
 | ---------------- | ----------- | ------- | ------------------------------------------------------------ |
 | endpoint         | required    |         | Splunk HEC endpoint configuration info                       |
@@ -54,9 +50,7 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | endpoint.timeout | optional    | 10      | Splunk HEC send data timeout, time unit: (seconds)           |
 | ssl_verify       | optional    | true    | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
 
-### Attributes(Batch-processor)
-
-For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
+The plugin uses a component(batch processor) to aggregate entries(logs data) and processes them in a batch. This helps in reducing the number of requests that are being sent from the plugin per time frame. Out of the box, the plugin provides a default batch processor configuration, so you don't have to worry about it. If you wish to know more about the parameters related to batch processor and tweak it for a specific purpose please visit the [Batch-Processor](../batch-processor.md#Configurations) configuration section and pass the modified key value attributes inside the plugin configuration.
 
 ## How To Enable
 

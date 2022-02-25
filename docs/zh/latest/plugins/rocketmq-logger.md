@@ -41,8 +41,6 @@ title: rocketmq-logger
 
 ## 属性
 
-### 属性
-
 | 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | nameserver_list  | object  | 必须   |                |         | 要推送的 rocketmq 的 nameserver 列表。        |
@@ -60,9 +58,7 @@ title: rocketmq-logger
 | include_resp_body| boolean | 可选   | false          | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 
-### 属性（批处理器）
-
-具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
+本插件支持使用批处理器来聚合条目（日志数据），并批量处理它们。这样可以减少每个时间范围内从插件发送的请求数。当然本插件提供默认的批处理器配置，因此您不必担心会有额外的问题。如果你想了解有关批处理器相关参数的更多信息，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ### meta_format 参考示例
 

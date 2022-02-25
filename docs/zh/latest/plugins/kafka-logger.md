@@ -41,8 +41,6 @@ title: kafka-logger
 
 ## 属性
 
-### 属性
-
 | 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
@@ -59,9 +57,7 @@ title: kafka-logger
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | cluster_name     | integer | 可选   | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
 
-### 属性（批处理器）
-
-具体请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分中的属性列表。
+本插件支持使用批处理器来聚合条目（日志数据），并批量处理它们。这样可以减少每个时间范围内从插件发送的请求数。当然本插件提供默认的批处理器配置，因此您不必担心会有额外的问题。如果你想了解有关批处理器相关参数的更多信息，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ### meta_format 参考示例
 

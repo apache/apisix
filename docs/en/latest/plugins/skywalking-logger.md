@@ -38,8 +38,6 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 
 ## Attributes
 
-### Attributes
-
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
 | endpoint_addr    | string  | required    |               |         | The URI of the `SkyWalking OAP` server.                                                  |
@@ -49,9 +47,7 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 | name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
 | include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 
-### Attributes( Batch-processor)
-
-For details, see the attribute list in the [Batch-Processor](../batch-processor.md#Configurations) Configuration section.
+The plugin uses a component(batch processor) to aggregate entries(logs data) and processes them in a batch. This helps in reducing the number of requests that are being sent from the plugin per time frame. Out of the box, the plugin provides a default batch processor configuration, so you don't have to worry about it. If you wish to know more about the parameters related to batch processor and tweak it for a specific purpose please visit the [Batch-Processor](../batch-processor.md#Configurations) configuration section and pass the modified key value attributes inside the plugin configuration.
 
 ## How To Enable
 
