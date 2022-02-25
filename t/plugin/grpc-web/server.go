@@ -73,15 +73,14 @@ func (rss *routeServiceServer) LoadRoutes() {
 }
 
 var exampleData = []byte(`[
-    {
-        "name":"hello",
-        "path":"/hello"
-    },
-    {
-        "name":"world",
-        "path":"/world"
-    }
-]`)
+{
+	"name":"hello",
+	"path":"/hello"
+},
+{
+	"name":"world",
+	"path":"/world"
+}]`)
 
 var ServerPort = ":50001"
 
