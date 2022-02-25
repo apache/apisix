@@ -340,7 +340,7 @@ We can verify GraphQL matches in the following way:
 ```shell
 curl -H 'content-type: application/graphql' -X GET "http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
 ```
-H
+
 To prevent spending too much time reading invalid GraphQL request body, we only read the first 1 MiB
 data from the request body. This limitation is configured via:
 
