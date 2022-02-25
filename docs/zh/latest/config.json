@@ -96,6 +96,7 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
@@ -117,8 +118,7 @@
               "label": "Metrics",
               "items": [
                 "plugins/prometheus",
-                "plugins/node-status",
-                "plugins/datadog"
+                "plugins/node-status"
               ]
             },
             {
@@ -189,7 +189,8 @@
             "discovery",
             "discovery/dns",
             "discovery/nacos",
-            "discovery/eureka"
+            "discovery/eureka",
+            "discovery/kubernetes"
           ]
         },
         {

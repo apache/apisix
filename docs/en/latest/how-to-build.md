@@ -1,5 +1,5 @@
 ---
-title: How to build Apache APISIX
+title: Installing Apache APISIX
 ---
 
 <!--
@@ -21,27 +21,29 @@ title: How to build Apache APISIX
 #
 -->
 
+This guide walks you through how you can build and get Apache APISIX running on your environment. Please refer the [Getting Started](./getting-started.md) guide for a quick walkthrough on running Apache APISIX.
+
 ## Step 1: Install Apache APISIX
 
-You can install Apache APISIX via RPM Repository, Docker, Helm Chart, source release package, and source release package ( LTS version ). Please choose one from the following options.
+Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repository-centos-7), [Docker image](#installation-via-docker), [Helm Chart](#installation-via-helm-chart) or the [source release package](#installation-via-source-release-package). You can install via any one of these options.
 
-### Installation via RPM Repository(CentOS 7)
+### Installation via RPM Repository (CentOS 7)
 
 This installation method is suitable for CentOS 7.
 
-If the official OpenResty repository is not installed yet, the following command will help you automatically install both the repositories of OpenResty and Apache APISIX.
+If the official OpenResty repository is **not installed yet**, the following command will help you automatically install both OpenResty and Apache APISIX repositories.
 
 ```shell
 sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 ```
 
-If the official OpenResty repository is installed, the following command will help you automatically install the repositories of Apache APISIX.
+If the official OpenResty repository **is installed**, the following command will help you automatically install the repositories of Apache APISIX.
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
 ```
 
-Please run the following commands to install the repository and Apache APISIX.
+Run the following commands to install the repository and Apache APISIX.
 
 ```shell
 # View the information of the latest apisix package
@@ -54,9 +56,9 @@ sudo yum --showduplicates list apisix
 sudo yum install apisix
 ```
 
-### Installation via RPM Offline Package(CentOS 7)
+### Installation via RPM Offline Package (CentOS 7)
 
-Download APISIX offline RPM package to `./apisix` folder
+First, download Apache APISIX offline RPM package to `./apisix` folder.
 
 ```shell
 sudo mkdir -p apisix
@@ -65,7 +67,7 @@ sudo yum clean all && yum makecache
 sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 ```
 
-Copy `./apisix` folder to the target host, run the following command to install Apache APISIX.
+Then copy `./apisix` folder to the target host and run the following command to install.
 
 ```shell
 sudo yum install ./apisix/*.rpm
@@ -73,13 +75,15 @@ sudo yum install ./apisix/*.rpm
 
 ### Installation via Docker
 
-Please refer to: [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
+Please refer to [Installing Apache APISIX with Docker](https://hub.docker.com/r/apache/apisix).
 
 ### Installation via Helm Chart
 
-Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/apache/apisix-helm-chart).
+Please refer to [Installing Apache APISIX with Helm Chart](https://github.com/apache/apisix-helm-chart).
 
 ### Installation via Source Release Package
+
+Follow the steps below to install Apache APISIX via the source release package.
 
 1. Create a directory named `apisix-2.12.0`.
 
@@ -88,15 +92,15 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   mkdir apisix-${APISIX_VERSION}
   ```
 
-2. Download Apache APISIX Release source package.
+2. Download the Apache APISIX source release package.
 
   ```shell
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
-  You can also download the Apache APISIX Release source package from the Apache APISIX website. The [Apache APISIX Official Website - Download Page](https://apisix.apache.org/downloads/) also provides source packages for Apache APISIX, APISIX Dashboard and APISIX Ingress Controller.
+  You can also download the Apache APISIX source release package from the [Apache APISIX website](https://apisix.apache.org/downloads/). The website also provides source packages for Apache APISIX, APISIX Dashboard, and APISIX Ingress Controller.
 
-3. Unzip the Apache APISIX Release source package.
+3. Unzip the Apache APISIX source release package.
 
   ```shell
   tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
@@ -113,7 +117,7 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
   make install
   ```
 
-  - 4.1 `make deps` install `lualdap` failed, error like: `Could not find header file for LDAP`
+  **Note**: If `make deps` fails with "install `lualdap` failed" with an error like `Could not find header file for LDAP` try the solution below.
 
       Solution: luarocks supports adding custom package addresses to the project. You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`. You should config as follows:
       1. Install `openldap` locally using tools including but not limited to 'brew';
@@ -121,26 +125,30 @@ Please refer to: [Installing Apache APISIX with Helm Chart](https://github.com/a
       3. Manually set the `LDAP_DIR` variable via `luarocks config`, e.g. `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
       4. Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file.    
 
-5. If you have no more need for the Apache APISIX runtime, you could uninstall it like this.
+5. To uninstall the Apache APISIX runtime, run:
 
-```shell
-  # Uninstall apisix command
-  make uninstall
-  # Purge dependencies
-  make undeps
-```
+   ```shell
+   # Uninstall apisix command
+   make uninstall
+   # Purge dependencies
+   make undeps
+   ```
 
-  Attention please, this operation will totally **remove** the related files.
+   **Note**: This operation will remove the files completely.
 
-### LTS version Installation via Source Release Package
+### LTS version installation via Source Release Package
 
-The current LTS VERSION of Apache APISIX is `2.10.3`. Set `APISIX VERSION` in [install by source package](# Install by source package) to `2.10.3` and follow the other steps.
+The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
 
-## Step 2: Install ETCD
+To install this version, set `APISIX_VERSION`
 
-This step is required if you have installed only Apache APISIX via RPM, Docker or source code but not ETCD.
+Set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
 
-You can install ETCD via Docker or binary etc. The following command installs ETCD via binary.
+## Step 2: Install etcd
+
+This step is required only if you haven't installed [etcd](https://github.com/etcd-io/etcd).
+
+Run the command below to install etcd via the binary.
 
 ```shell
 ETCD_VERSION='3.4.13'
@@ -153,9 +161,9 @@ nohup etcd >/tmp/etcd.log 2>&1 &
 
 ## Step 3: Manage Apache APISIX Server
 
-We can initialize dependencies, start service, and stop service with commands in the Apache APISIX directory, we can also view all commands and their corresponding functions with the `apisix help` command.
+In the Apache APISIX directory, you can initialize dependencies, start service and stop service with commands. Run `apisix help` to get a full list of available commands.
 
-### Initializing Dependencies
+### Initializing dependencies
 
 Run the following command to initialize the NGINX configuration file and etcd.
 
@@ -164,7 +172,7 @@ Run the following command to initialize the NGINX configuration file and etcd.
 apisix init
 ```
 
-### Test configuration file
+### Test the configuration file
 
 Run the following command to test the configuration file. APISIX will generate `nginx.conf` from `config.yaml` and check whether the syntax of `nginx.conf` is correct.
 
@@ -186,54 +194,54 @@ apisix start
 
 Both `apisix quit` and `apisix stop` can stop Apache APISIX. The main difference is that `apisix quit` stops Apache APISIX gracefully, while `apisix stop` stops Apache APISIX immediately.
 
-It is recommended to use gracefully stop command `apisix quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping down. In contrast, `apisix stop` will trigger a forced shutdown, it stops Apache APISIX immediately, in which case the incoming requests will not be processed before the shutdown.
+It is recommended to use the "gracefully stop" command `apisix quit` because it ensures that Apache APISIX will complete all the requests it has received before stopping. On the other hand, `apisix stop` will trigger a forced shutdown and will stop Apache APISIX immediately. This will cause the pending incoming requests to not be processed before shutdown.
 
-The command to perform a graceful shutdown is shown below.
+To perform a graceful shutdown, run:
 
 ```shell
 # stop Apache APISIX server gracefully
 apisix quit
 ```
 
-The command to perform a forced shutdown is shown below.
+To perform a forced shutdown, run:
 
 ```shell
 # stop Apache APISIX server immediately
 apisix stop
 ```
 
-### View Other Operations
+### Other operations
 
-Run the `apisix help` command to see the returned results and get commands and descriptions of other operations.
+You can get help and learn more about all the available operations in Apache APISIX by running the `help` command as shown below.
 
 ```shell
-# more actions find by `help`
+# show a list of available operations
 apisix help
 ```
 
 ## Step 4: Run Test Cases
 
-1. Install `cpanminus`, the package manager for `perl`.
+To run the test cases, run the steps outlined below.
 
-Please refer to: [Installing package manager `cpanminus`](https://metacpan.org/pod/App::cpanminus#INSTALLATION).
+1. [Install `cpanminus`](https://metacpan.org/pod/App::cpanminus#INSTALLATION), the package manager for `perl`.
 
-2. Then install the test-nginx dependencies via `cpanm`:
+2. Install the test-nginx dependencies via `cpanm` as shown below.
 
   ```shell
   sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
   ```
 
-3. Run the `git clone` command to clone the latest source code locally, please use the version we forked out：
+3. Clone the latest source code locally by using the forked out version.
 
   ```shell
   git clone https://github.com/iresty/test-nginx.git
   ```
 
-4. Here are two ways of running tests:
+4. There are two ways to run the tests.
 
-  - Append the current directory to the perl module directory: `export PERL5LIB=.:$PERL5LIB`, then run `make test` command.
+  1. Append the current directory to the perl module directory: `export PERL5LIB=.:$PERL5LIB` and then run `make test` command.
 
-  - Or you can specify the NGINX binary path by running this command: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`.
+  2. Specify the NGINX binary path by running `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`.
 
   <!--
   #
@@ -249,9 +257,9 @@ Please refer to: [Installing package manager `cpanminus`](https://metacpan.org/p
   Some of the tests rely on external services and system configuration modification. For a complete test environment build, you can refer to `ci/linux_openresty_common_runner.sh`.
   :::
 
-### Troubleshoot Testing
+### Troubleshoot testing
 
-**Configuring NGINX Path**
+#### Configuring NGINX path
 
 The solution to the `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` error is as shown below.
 
@@ -263,21 +271,21 @@ Ensure that OpenResty is set to the default NGINX, and export the path as follow
   * MacOS default installation path via homebrew:
     * `export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH`
 
-**Run a Single Test Case**
+#### Running a single test case
 
-Run the specified test case using the following command.
+To run a specific test case, use the command below.
 
 ```shell
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-For more details on the test cases, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md).
+For more details on the test cases, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md) document.
 
-## Step 5: Update Admin API token to Protect Apache APISIX
+## Step 5: Update Admin API token to Secure Apache APISIX
 
-You need to modify the Admin API key to protect Apache APISIX.
+You can modify the Admin API key to secure your Apache APISIX deployment.
 
-Please modify `apisix.admin_key` in `conf/config.yaml` and restart the service as shown below.
+This can be done by modifying the `apisix.admin_key` in `conf/config.yaml` and restarting the service.
 
 ```yaml
 apisix:
@@ -289,13 +297,13 @@ apisix:
       role: admin
 ```
 
-When we need to access the Admin API, we can use the key above, as shown below.
+Then to access the Admin API, you can use the above key.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
 ```
 
-The status code 200 in the returned result indicates that the access was successful, as shown below.
+A status code of 200 in the returned result will indicate that the access was successful.
 
 ```shell
 HTTP/1.1 200 OK
@@ -305,13 +313,11 @@ Content-Type: text/plain
 {"node":{...},"action":"get"}
 ```
 
-At this point, if the key you enter does not match the value of `apisix.admin_key` in `conf/config.yaml`, for example, we know that the correct key is `abcdefghabcdefgh`, but we enter an incorrect key, such as `wrong-key`, as shown below.
+If the key you entered does not match the value of `apisix.admin_key` in `conf/config.yaml`, a response with a status code 401 will indicate that the access failed.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes?api_key=wrong-key -i
 ```
-
-The status code `401` in the returned result indicates that the access failed because the `key` entered was incorrect and did not pass authentication, triggering an `Unauthorized` error, as shown below.
 
 ```shell
 HTTP/1.1 401 Unauthorized
@@ -324,16 +330,16 @@ Content-Type: text/html
 ## Step 6: Build OpenResty for Apache APISIX
 
 Some features require additional NGINX modules to be introduced into OpenResty.
-If you need these features, you can build the APISIX OpenResty.
-You can refer to the source of [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) for how to set up the build environment and build the APISIX OpenResty.
 
-## Step 7: Add Systemd Unit File for Apache APISIX
+If you need these features, you can build APISIX OpenResty. You can refer to the source of [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) for setting up your build environment and building APISIX OpenResty.
 
-If you are using CentOS 7 and you installed Apache APISIX via the RPM package in step 2, the configuration file is already in place automatically and you can run the following command directly.
+## Step 7: Add Systemd unit file for Apache APISIX
+
+If you are using CentOS 7 and you installed [Apache APISIX via the RPM package](#installation-via-rpm-repository-centos-7), the configuration file will already be in place and you can run the following command directly.
 
 ```shell
 systemctl start apisix
 systemctl stop apisix
 ```
 
-If you installed Apache APISIX by other methods, you can refer to the [configuration file template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service) for modification and put it in the `/usr/lib/systemd/system/apisix.service` path.
+If you installed Apache APISIX by other methods, please refer to the [configuration file template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service) for a modification guide and copy it to the `/usr/lib/systemd/system/apisix.service` path.
