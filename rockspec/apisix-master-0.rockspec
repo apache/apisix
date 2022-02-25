@@ -75,6 +75,7 @@ dependencies = {
     "lua-resty-rocketmq = 0.3.0-0",
     "opentelemetry-lua = 0.1-2",
     "net-url = 0.9-1",
+    "xml2lua = 1.5-2",
 }
 
 build = {

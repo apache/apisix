@@ -23,7 +23,7 @@ title: Debug Function
 
 ## `5xx` response status code
 
-Similar `5xx` status codes such as 500, 502, 503, etc., are the status codes in response to a server error. When a request has a `5xx` status code; it may come from `APISIX` or `Upstream`. How to identify the source of these response status codes is a very meaningful thing. It can quickly help us determine the problem.
+Similar `5xx` status codes such as 500, 502, 503, etc., are the status codes in response to a server error. When a request has a `5xx` status code; it may come from `APISIX` or `Upstream`. How to identify the source of these response status codes is a very meaningful thing. It can quickly help us determine the problem. (When modifying the configuration `show_upstream_status_in_response_header` in `conf/config.yaml` to `true`, all upstream status codes will be returned, not only `5xx` status.)
 
 ## How to identify the source of the `5xx` response status code
 

@@ -32,6 +32,7 @@ apisix:
   enable_admin_cors: true           # Admin API support CORS response headers.
   enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
+  show_upstream_status_in_response_header: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
   enable_ipv6: true
   config_center: etcd               # etcd: use etcd to store the config value
                                     # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
@@ -329,6 +330,7 @@ plugins:                          # plugin list (sorted by priority)
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
+  - mocking                        # priority: 10900
   - serverless-pre-function        # priority: 10000
   #- batch-requests                # priority: 4010
   - cors                           # priority: 4000
@@ -439,8 +441,7 @@ plugin_attr:
       ip: 127.0.0.1
       port: 9091
   server-info:
-    report_interval: 60  # server info report interval (unit: second)
-    report_ttl: 3600     # live time for server info in etcd (unit: second)
+    report_ttl: 60   # live time for server info in etcd (unit: second)
   dubbo-proxy:
     upstream_multiplex_count: 32
   request-id:
