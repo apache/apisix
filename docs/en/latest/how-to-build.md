@@ -119,11 +119,18 @@ Follow the steps below to install Apache APISIX via the source release package.
 
   **Note**: If `make deps` fails with "install `lualdap` failed" with an error like `Could not find header file for LDAP` try the solution below.
 
-      Solution: luarocks supports adding custom package addresses to the project. You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`. You should config as follows:
+      Solution: luarocks supports adding custom package filepaths to the project. You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`. You should config as follows:
       1. Install `openldap` locally using tools including but not limited to 'brew';
-      2. Locate the 'openldap' local installation directory. Note that the default address for 'brew' in macOS for ARM architecture is '/opt/homebrew/cellar/', and macOS for x86 architecture defaults to '/usr/local/opt/';
+      2. Locate the 'openldap' local installation directory. If you are macOS and use `brew` to install `openldap`, you can find the local installation directory with the `brew --prefix openldap` command.
       3. Manually set the `LDAP_DIR` variable via `luarocks config`, e.g. `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
-      4. Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file.    
+      4. Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file. Example as follows:
+      ```lua
+      variables = {
+          LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+          LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+      }
+      ```
+      If you have similar problems installing other dependencies, you can refer to this solution as well.
 
 5. To uninstall the Apache APISIX runtime, run:
 

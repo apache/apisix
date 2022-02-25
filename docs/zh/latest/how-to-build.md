@@ -117,9 +117,16 @@ sudo yum install ./apisix/*.rpm
 
       解决方案: luarocks 支持添加自定义的包地址到项目中。通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`，你应该按照下面流程设置：
       1. 使用包括但不仅限于 `brew` 等工具将 `openldap` 安装到本地;
-      2. 找到 `openldap` 的本地安装目录。需要注意，ARM 架构的 macOS 中 `brew` 的默认地址是  `/opt/homebrew/cellar/`，x86 架构的 macOS 默认是 `/usr/local/opt/`;
+      2. 找到 `openldap` 的本地安装目录。如果是 macOS 系统，并使用 `brew` 安装 `openldap` 的话，可以通过 `brew --prefix openldap` 命令找到本地安装目录。
       3. 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`。
-      4. 当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录。
+      4. 当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录。示例如下：
+      ```lua
+      variables = {
+          LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+          LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+      }
+      ```
+      如果在安装其他依赖项时遇到类似的问题，也可以参考此解决方案。
 
 5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
