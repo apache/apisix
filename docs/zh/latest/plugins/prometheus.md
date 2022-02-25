@@ -132,6 +132,24 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
+## 如何自定义附加标签
+
+该插件支持在`conf/config`的`plugin_attr`部分自定义度量标签`Status codes`和`Latency`。亚马尔`
+
+| 名称       | 类型   | 默认值   | 描述                       
+| --------- | ----- | -------- | ------------------------- |
+| labels    | array |          | 使用 [Nginx 变量](http://nginx.org/en/docs/varindex.html)作为自定义标签 |
+
+下面是一个例子：
+
+```yaml:
+plugin_attr:
+  prometheus:
+    labels:
+      - request_method
+      - server_addr
+```
+
 ### Grafana 面板
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。

@@ -129,8 +129,26 @@ Here is an example:
 
 ```yaml
 plugin_attr:
-  prometheus:
+prometheus:
     export_uri: /apisix/metrics
+```
+
+## How to custom additional labels
+
+The plugin is supported to custom labels for metrics, `Status codes` and `Latency`, in the `plugin_attr` section of `conf/config.yaml`
+
+| Name       | Type   | Default | Description                       |
+| ---------- | ------ | ------- | --------------------------------- |
+| labels     | array  |         | custom labels from [Nginx variables](http://nginx.org/en/docs/varindex.html) |
+
+Here is an example:
+
+```yaml:
+plugin_attr:
+  prometheus:
+    labels:
+      - request_method
+      - server_addr
 ```
 
 ### Grafana dashboard

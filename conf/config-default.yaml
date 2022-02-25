@@ -438,6 +438,9 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
+        #    labels:
+        #remote_addr: $remote_addr
+        #request_method: $request_method
   server-info:
     report_interval: 60  # server info report interval (unit: second)
     report_ttl: 3600     # live time for server info in etcd (unit: second)
