@@ -51,7 +51,8 @@ end
 -- --
 -- -- you can get the value of `fallback_sni` by:
 -- local local_conf = core.config.local_conf()
--- local fallback_sni = core.table.try_read_attr(local_conf, "apisix", "ssl", "fallback_sni")
+-- local fallback_sni = core.table.try_read_attr(
+--                        local_conf, "apisix", "ssl", "fallback_sni") -- "a.test2.com"
 function _M.local_conf(force)
     if not force and config_data then
         return config_data

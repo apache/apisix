@@ -14,6 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Collection of util functions
+--
+-- @module core.config_util
 local core_tab = require("apisix.core.table")
 local str_byte = string.byte
 local str_char = string.char
@@ -68,6 +72,8 @@ function _M.cancel_clean_handler(item, idx, fire)
 end
 
 
+---
+-- Convert different time units to seconds as time units.
 -- Time intervals can be specified in milliseconds, seconds, minutes, hours, days and so on,
 -- using the following suffixes:
 -- ms	milliseconds
@@ -81,6 +87,12 @@ end
 -- Multiple units can be combined in a single value by specifying them in the order from the most
 -- to the least significant, and optionally separated by whitespace.
 -- A value without a suffix means seconds.
+--
+-- @function core.config_util.parse_time_unit
+-- @tparam number|string Strings with time units, e.g. "60m".
+-- @treturn number Number of seconds after conversion
+-- @usage
+-- local seconds = core.config_util.parse_time_unit("60m") -- 3600
 function _M.parse_time_unit(s)
     local typ = type(s)
     if typ == "number" then

@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
---- Etcd API in APISIX.
+--- Get configuration information.
 --
 -- @module core.config_etcd
 
@@ -609,7 +609,7 @@ end
 
 
 ---
--- Create a new etcd client connection.
+-- Create a new connection to communicate with the control plane.
 -- This function should be used in the `init_worker_by_lua` phase.
 --
 -- @function core.config.new
