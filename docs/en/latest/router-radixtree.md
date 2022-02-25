@@ -295,23 +295,23 @@ We can verify GraphQL matches in the following two ways:
 
 1. GraphQL query strings
 
-    ```shell
-    $ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
-    query getRepo {
-        owner {
-            name
-        }
-        repo {
-            created
-        }
-    }'
-    ```
+```shell
+$ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
+query getRepo {
+    owner {
+        name
+    }
+    repo {
+        created
+    }
+}'
+```
 
 2. JSON format
 
-    ```shell
-    $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
-    ```
+```shell
+$ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
+```
 
 Next, try a GET request.
 Let's first configure a route like this:

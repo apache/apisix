@@ -296,23 +296,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 1. 使用 GraphQL 查询字符串
 
-    ```shell
-    $ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
-    query getRepo {
-        owner {
-            name
-        }
-        repo {
-            created
-        }
-    }'
-    ```
+```shell
+$ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
+query getRepo {
+    owner {
+        name
+    }
+    repo {
+        created
+    }
+}'
+```
 
 2. 使用 JSON 格式
 
-    ```shell
-    $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
-    ```
+```shell
+$ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
+```
 
 接下来，尝试一下 GET 请求。
 我们首先配置这样的路由：
