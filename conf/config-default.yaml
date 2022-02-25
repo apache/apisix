@@ -330,6 +330,7 @@ plugins:                          # plugin list (sorted by priority)
   - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
+  - mocking                        # priority: 10900
   - serverless-pre-function        # priority: 10000
   #- batch-requests                # priority: 4010
   - cors                           # priority: 4000
