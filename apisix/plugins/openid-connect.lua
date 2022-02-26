@@ -69,8 +69,7 @@ local schema = {
         },
         post_logout_redirect_uri = {
             type = "string",
-            description = "the redirect_uri should be added " ..
-                "when request to the auth server",
+            description = "the URI will be redirect when request logout_path",
         },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
