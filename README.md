@@ -239,6 +239,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 [![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
 ## User Stories
+
 - [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
 - [More Stories](https://apisix.apache.org/blog/tags/user-case)
