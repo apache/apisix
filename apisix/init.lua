@@ -621,7 +621,7 @@ function _M.http_header_filter_phase()
 
     local debug_headers = api_ctx.debug_headers
     if debug_headers then
-        local deduplicate = core.table.new(#debug_headers, 0)
+        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
         for k, v in pairs(debug_headers) do
             core.table.insert(deduplicate, k)
         end
