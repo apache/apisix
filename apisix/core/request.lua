@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
---- Get the information of the client request.
+--- Get or set the information of the client request.
 --
 -- @module core.request
 

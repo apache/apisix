@@ -18,6 +18,7 @@
 --- Collection of util functions
 --
 -- @module core.config_util
+
 local core_tab = require("apisix.core.table")
 local str_byte = string.byte
 local str_char = string.char

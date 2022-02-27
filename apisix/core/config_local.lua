@@ -18,6 +18,7 @@
 --- Get configuration information.
 --
 -- @module core.config_local
+
 local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 

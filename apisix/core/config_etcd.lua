@@ -614,7 +614,6 @@ end
 --
 -- @function core.config.new
 -- @tparam string etcd directory to be monitored, e.g. "/routes".
--- @see apisix/constants.lua
 -- @tparam table opts Parameters related to the etcd client connection.
 -- The keys in `opts` are as follows:
 --  * automatic: whether to get the latest etcd data automatically
