@@ -27,7 +27,7 @@ A `Plugin` configuration can be bout directly to a [`Route`](./route.md), a [`Se
 
 Note: While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Service`.
 
-While [configuring APISIX](./apisix.md#configuring-apisix), you can declare the Plugins that are supported by the local APISIX node. 
+While [configuring APISIX](./apisix.md#configuring-apisix), you can declare the Plugins that are supported by the local APISIX node.
 
 This acts as a whitelisting mechanism as Plugins that are not in this whitelist will be automatically ignored. So, this feature can be used to temporarily turn off/turn on specific plugins.
 

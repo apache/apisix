@@ -54,7 +54,7 @@ If the debug information cannot be included in a response header (say when the p
 
 Advanced debug mode can also be enabled by modifying the configuration in the `conf/debug.yaml` file.
 
-Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. 
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file.
 
 The checker checks every second for changes to the configuration files. An `#END` flag is added to let the checker know that it should only look for changes till that point.
 
