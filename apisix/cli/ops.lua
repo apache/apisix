@@ -252,8 +252,13 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     local enabled_plugins = {}
-    for i, name in ipairs(yaml_conf.plugins) do
+    for i, name in ipairs(yaml_conf.plugins or {}) do
         enabled_plugins[name] = true
+    end
+
+    local enabled_stream_plugins = {}
+    for i, name in ipairs(yaml_conf.stream_plugins or {}) do
+        enabled_stream_plugins[name] = true
     end
 
     if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
@@ -547,6 +552,7 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
+        enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,

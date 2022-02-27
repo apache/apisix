@@ -551,12 +551,12 @@ end
 
 
 function _M.init_worker()
+    _M.load()
+
     -- some plugins need to be initialized in init* phases
-    if ngx.config.subsystem == "http" then
+    if ngx.config.subsystem == "http" and local_plugins_hash["prometheus"] then
         require("apisix.plugins.prometheus.exporter").init()
     end
-
-    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
