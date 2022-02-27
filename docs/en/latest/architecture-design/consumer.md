@@ -21,32 +21,34 @@ title: Consumer
 #
 -->
 
-For the API gateway, it is usually possible to identify a certain type of requester by using a domain name such as a request domain name, a client IP address, etc., and then perform plugin filtering and forward the request to the specified upstream, but sometimes the depth is insufficient.
+For an API gateway, it is usually possible to identify the type of the requester by using things like their request domain name and client IP address. A gateway like APISIX can then filter these requests using [Plugins](./plugin.md) and forward it to the specified [Upstream](./upstream.md).
+
+But this level of depth can be insufficient in some occasions.
 
 ![consumer-who](../../../assets/images/consumer-who.png)
 
-As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
+An API gateway should know who the consumer of the API is to configure different rules for different consumers.
+
+This is where the Consumer construct comes in APISIX. The fields are defined below.
 
 | Field    | Required | Description                                                                                                                                                                                      |
 | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| username | Yes      | Consumer Name.                                                                                                                                                                                   |
-| plugins  | No       | The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](plugin.md) section. |
+| username | Yes      | Name of the consumer.                                                                                                                                                                                   |
+| plugins  | No       | Plugin configuration of the Consumer. has the highest priority: Consumer > Route > Service. For specific Plugin configurations, refer the [Plugins](./plugin.md) section. |
 
-In APISIX, the process of identifying a Consumer is as follows:
+The process of identifying a Consumer in APISIX is described below:
 
 ![consumer-internal](../../../assets/images/consumer-internal.png)
 
-1. Authorization certification: e.g [key-auth](../plugins/key-auth.md), [JWT](../plugins/jwt-auth.md), etc.
-2. Get consumer_name: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
-3. Get the Plugin or Upstream information bound to the Consumer: Complete the different configurations for different Consumers.
+1. The first step is Authentication. This is achieved by Authentication Plugins like [key-auth](../plugins/key-auth.md) and [JWT](../plugins/jwt-auth.md).
+2. After authenticating, you can obtain the `id` of the Consumer. This `id` will be the unique identifier of a Consumer.
+3. The configurations like Plugins and Upstream bound to the Consumer are then executed.
 
-To sum up, Consumer is a consumer of certain types of services and needs to be used in conjunction with the user authentication system.
+Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These needs to be used in conjunction with the user authentication system.
 
-For example, different consumers request the same API, and the gateway service corresponds to different Plugin or Upstream configurations according to the current request user information.
+Refer the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
 
-In addition, you can refer to the [key-auth](../plugins/key-auth.md) authentication authorization plugin call logic to help you further understand the Consumer concept and usage.
-
-How to enable a specific plugin for a Consumer, you can see the following example:
+The example below shows how you can enable a Plugin for a specific Consumer.
 
 ```shell
 # Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
@@ -95,7 +97,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-Use the [consumer-restriction](../plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
+We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin to restrict our user "Jack" from accessing the API.
 
 ```shell
 # Add Jack to the blacklist
