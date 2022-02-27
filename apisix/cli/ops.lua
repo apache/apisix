@@ -296,15 +296,13 @@ Please modify "admin_key" in conf/config.yaml .
     -- listen in admin use a separate port, support specific IP, compatible with the original style
     local admin_server_addr
     if yaml_conf.apisix.enable_admin then
-        if yaml_conf.apisix.admin_listen or yaml_conf.apisix.port_admin then
-            if yaml_conf.apisix.admin_listen then
-                admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
-                                            yaml_conf.apisix.admin_listen.ip,
-                                            9180, yaml_conf.apisix.admin_listen.port)
-            else
-                admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
-                                            9180, yaml_conf.apisix.port_admin)
-            end
+        if yaml_conf.apisix.admin_listen then
+            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
+                                        yaml_conf.apisix.admin_listen.ip,
+                                        9180, yaml_conf.apisix.admin_listen.port)
+        elseif yaml_conf.apisix.port_admin then
+            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
+                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 
