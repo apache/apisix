@@ -18,6 +18,7 @@ local core_str     = require("apisix.core.string")
 local core_tab     = require("apisix.core.table")
 local request      = require("apisix.core.request")
 local log          = require("apisix.core.log")
+local json         = require("apisix.core.json")
 local config_local = require("apisix.core.config_local")
 local tablepool    = require("tablepool")
 local get_var      = require("resty.ngxvar").fetch
@@ -36,7 +37,52 @@ local pcall        = pcall
 
 
 local _M = {version = 0.2}
-local GRAPHQL_DEFAULT_MAX_SIZE = 1048576               -- 1MiB
+local GRAPHQL_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
+local GRAPHQL_REQ_DATA_KEY           = "query"
+local GRAPHQL_REQ_METHOD_HTTP_GET    = "GET"
+local GRAPHQL_REQ_METHOD_HTTP_POST   = "POST"
+local GRAPHQL_REQ_MIME_JSON          = "application/json"
+
+
+local fetch_graphql_data = {
+    [GRAPHQL_REQ_METHOD_HTTP_GET] = function(ctx, max_size)
+        local body = request.get_uri_args(ctx)[GRAPHQL_REQ_DATA_KEY]
+        if not body then
+            return nil, "failed to read graphql data, args[" ..
+                        GRAPHQL_REQ_DATA_KEY .. "] is nil"
+        end
+
+        if type(body) == "table" then
+            body = body[1]
+        end
+
+        return body
+    end,
+
+    [GRAPHQL_REQ_METHOD_HTTP_POST] = function(ctx, max_size)
+        local body, err = request.get_body(max_size, ctx)
+        if not body then
+            return nil, "failed to read graphql data, " .. (err or "request body has zero size")
+        end
+
+        if request.header(ctx, "Content-Type") == GRAPHQL_REQ_MIME_JSON then
+            local res
+            res, err = json.decode(body)
+            if not res then
+                return nil, "failed to read graphql data, " .. err
+            end
+
+            if not res[GRAPHQL_REQ_DATA_KEY] then
+                return nil, "failed to read graphql data, json body[" ..
+                            GRAPHQL_REQ_DATA_KEY .. "] is nil"
+            end
+
+            body = res[GRAPHQL_REQ_DATA_KEY]
+        end
+
+        return body
+    end
+}
 
 
 local function parse_graphql(ctx)
@@ -51,9 +97,16 @@ local function parse_graphql(ctx)
         max_size = size
     end
 
-    local body, err = request.get_body(max_size, ctx)
+    local method = request.get_method()
+    local func = fetch_graphql_data[method]
+    if not func then
+        return nil, "graphql not support `" .. method .. "` request"
+    end
+
+    local body
+    body, err = func(ctx, max_size)
     if not body then
-        return nil, "failed to read graphql body: " .. (err or "request body has zero size")
+        return nil, err
     end
 
     local ok, res = pcall(gq_parse, body)

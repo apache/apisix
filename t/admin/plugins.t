@@ -29,6 +29,10 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    if (!defined $block->error_log && !defined $block->no_error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
     $block;
 });
 
@@ -37,7 +41,6 @@ run_tests;
 __DATA__
 
 === TEST 1: get plugins' name
---- request
 --- config
     location /t {
         content_by_lua_block {
@@ -56,8 +59,6 @@ __DATA__
             end
         }
     }
---- request
-GET /t
 
 --- response_body
 real-ip
@@ -67,6 +68,7 @@ ext-plugin-pre-req
 zipkin
 request-id
 fault-injection
+mocking
 serverless-pre-function
 cors
 ip-restriction
@@ -117,15 +119,13 @@ rocketmq-logger
 syslog
 udp-logger
 file-logger
+clickhouse-logger
 example-plugin
 aws-lambda
 azure-functions
 openwhisk
 serverless-post-function
 ext-plugin-post-req
-
---- no_error_log
-[error]
 
 
 
@@ -135,8 +135,6 @@ GET /apisix/admin/plugins
 --- error_code: 400
 --- response_body
 {"error_msg":"not found plugin name"}
---- no_error_log
-[error]
 
 
 
@@ -156,8 +154,6 @@ GET /apisix/admin/plugins
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -180,8 +176,6 @@ plugins:
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -201,8 +195,6 @@ plugins:
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -222,8 +214,6 @@ plugins:
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -243,8 +233,6 @@ plugins:
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -275,8 +263,6 @@ plugins:
     }
 --- response_body eval
 qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
---- no_error_log
-[error]
 
 
 
@@ -316,8 +302,6 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
     }
 --- response_body eval
 qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
---- no_error_log
-[error]
 
 
 
@@ -350,8 +334,6 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
     }
 --- response_body eval
 qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
---- no_error_log
-[error]
 
 
 
@@ -382,8 +364,6 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
     }
 --- response_body
 {"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
---- no_error_log
-[error]
 
 
 
@@ -426,5 +406,3 @@ plugins:
     }
 --- response_body
 {"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
---- no_error_log
-[error]

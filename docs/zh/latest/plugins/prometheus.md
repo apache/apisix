@@ -54,7 +54,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-同时，您还需要使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
+并使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何开启插件
 
@@ -227,13 +227,15 @@ apisix_etcd_reachable 1
 apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",service="",consumer="",node="127.0.0.1"} 4
 apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="",consumer="",node="127.0.0.1"} 4
 apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""} 1
+# HELP apisix_http_requests_total The total number of client requests
+# TYPE apisix_http_requests_total gauge
+apisix_http_requests_total 1191780
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge
 apisix_nginx_http_current_connections{state="accepted"} 11994
 apisix_nginx_http_current_connections{state="active"} 2
 apisix_nginx_http_current_connections{state="handled"} 11994
 apisix_nginx_http_current_connections{state="reading"} 0
-apisix_nginx_http_current_connections{state="total"} 1191780
 apisix_nginx_http_current_connections{state="waiting"} 1
 apisix_nginx_http_current_connections{state="writing"} 1
 # HELP apisix_nginx_metric_errors_total Number of nginx-lua-prometheus errors

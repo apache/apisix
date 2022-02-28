@@ -195,22 +195,20 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri
     end
 
-    if not conf.headers then
-        return
-    end
+    if conf.headers then
+        if not conf.headers_arr then
+            conf.headers_arr = {}
 
-    if not conf.headers_arr then
-        conf.headers_arr = {}
-
-        for field, value in pairs(conf.headers) do
-            core.table.insert_tail(conf.headers_arr, field, value)
+            for field, value in pairs(conf.headers) do
+                core.table.insert_tail(conf.headers_arr, field, value)
+            end
         end
-    end
 
-    local field_cnt = #conf.headers_arr
-    for i = 1, field_cnt, 2 do
-        core.request.set_header(ctx, conf.headers_arr[i],
-                                core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
+        local field_cnt = #conf.headers_arr
+        for i = 1, field_cnt, 2 do
+            core.request.set_header(ctx, conf.headers_arr[i],
+                                    core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
+        end
     end
 
     if conf.method then
