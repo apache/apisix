@@ -19,8 +19,6 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-# shellcheck disable=SC2148
-
 set -ex
 
 check_failure() {
