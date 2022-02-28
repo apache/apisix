@@ -968,21 +968,3 @@ if ! grep "access-tokens 2m;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the http lua_shared_dict related parameter in nginx.conf"
-
-# test proxy_ssl_trusted_certificate
-git checkout conf/config.yaml
-
-echo '
-apisix:
-  ssl:
-    ssl_trusted_certificate: t/certs/mtls_ca.crt
-' > conf/config.yaml
-
-make init
-
-if ! grep "proxy_ssl_trusted_certificate /usr/local/Cellar/apisix/t/certs/mtls_ca.crt;" conf/nginx.conf > /dev/null; then
-    echo "failed: set proxy_ssl_trusted_certificate failed"
-    exit 1
-fi
-
-echo "passed: set proxy_ssl_trusted_certificate success"
