@@ -227,7 +227,7 @@ We can define the following route:
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "methods": ["POST"],
+    "methods": ["POST", "GET"],
     "uri": "/_post",
     "vars": [
         ["post_arg_name", "==", "json"]
@@ -275,7 +275,7 @@ We can filter such route out with:
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "methods": ["POST"],
+    "methods": ["POST", "GET"],
     "uri": "/_graphql",
     "vars": [
         ["graphql_operation", "==", "query"],
@@ -313,29 +313,7 @@ query getRepo {
 $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
 ```
 
-Next, try a GET request.
-Let's first configure a route like this:
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "methods": ["GET"],
-    "uri": "/_graphql",
-    "vars": [
-        ["graphql_operation", "==", "query"],
-        ["graphql_name", "==", "getRepo"],
-        ["graphql_root_fields", "has", "owner"]
-    ],
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:4000": 1
-        }
-    }
-}'
-```
-
-We can verify GraphQL matches in the following way:
+3. Try 'GET' request match
 
 ```shell
 curl -H 'content-type: application/graphql' -X GET "http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
