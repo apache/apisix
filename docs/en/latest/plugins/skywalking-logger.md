@@ -47,7 +47,20 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 | name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
 | include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 
-The plugin uses a component(batch processor) to aggregate entries(logs data) and processes them in a batch. This helps in reducing the number of requests that are being sent from the plugin per time frame. Out of the box, the plugin provides a default batch processor configuration, so you don't have to worry about it. If you wish to know more about the parameters related to batch processor and tweak it for a specific purpose please visit the [Batch-Processor](../batch-processor.md#Configurations) configuration section and pass the modified key value attributes inside the plugin configuration.
+The plugin also has some common parameters that are handled by the batch processor(a component of APISIX ). The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
+This helps in reducing the number of requests that are being sent from the plugin per time frame to improve performance. 
+Of course the batch processors provide an out-of-the-box configuration, so you don't have to worry about it. 
+A brief overview of the parameters is provided here to help you choose.
+
+| Parameters      | Descriptions                                                                                                    |   |   |   |
+|------------------|----------------------------------------------------------------------------------------------------------------|---|---|---|
+| batch_max_size   | When the value is set to 0, the processor executes immediately. When the value is set to greater than or equal to 1, entries are aggregated until the maximum value or timeout is reached. |   |   |   |
+| inactive_timeout | This parameter indicates the maximum age in seconds that the buffer will be flushed without plugin activity information.                                     |   |   |   |
+| buffer_duration  | This parameter indicates the maximum age in seconds that the oldest entries in the batch must first be processed.                                               |   |   |   |
+| max_retry_count  | This parameter indicates the maximum number of retries before removal from the processing pipeline.                                                             |   |   |   |
+| retry_delay      | This parameter indicates the number of seconds the process should be delayed if it fails.                                                           |   |   |   |
+
+If you want to learn more about batch processors, please refer to [Batch-Processor](../batch-processor.md#配置) configuration section.
 
 ## How To Enable
 
