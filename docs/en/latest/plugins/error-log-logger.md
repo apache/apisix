@@ -50,6 +50,11 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | skywalking.endpoint_addr         | string  | optional   | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
 | skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                                 |
 | skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
+| clickhouse.endpoint_addr         | String  | optional   | http://127.0.0.1:8213          |          |  clickhouse HTTP endpoint, default http://127.0.0.1:8213                    |
+| clickhouse.user                  | String  | optional   | default                        |          |  clickhouse user                                                           |
+| clickhouse.password              | String  | optional   |                                |          |  clickhouse password                                                          |
+| clickhouse.database              | String  | optional   |                                |          |  clickhouse for error log DB name                                             |
+| clickhouse.logtable              | String  | optional   |                                |          |  clickhouse for error log table name                                            |
 | host                             | string  | optional    |                                |         | (`Deprecated`, use `tcp.host` instead) IP address or the Hostname of the TCP server.               |
 | port                             | integer | optional    |                                | [0,...] | (`Deprecated`, use `tcp.port` instead) Target upstream port.                                       |
 | tls                              | boolean | optional    | false                          |         | (`Deprecated`, use `tcp.tls` instead) Control whether to perform SSL verification.                 |
@@ -122,5 +127,24 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
     "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
   },
   "inactive_timeout": 1
+}'
+```
+
+## How to set the clickhouse
+
+The plugin sends the error log as a string to the `data` field of the clickhouse table.
+*TODO Here save error log as a whole string to clickhouse 'data' column. We will add more columns in the future.*
+Step: update the attributes of the plugin
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "clickhouse": {
+      "user": "default",
+      "password": "a",
+      "database": "error_log",
+      "logtable": "t",
+      "endpoint_addr": "http://127.0.0.1:8123"
+  }
 }'
 ```
