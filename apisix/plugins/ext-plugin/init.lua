@@ -613,25 +613,23 @@ local rpc_handlers = {
 
             local len = rewrite:RespHeadersLength()
             local excludeRespHeader = {
-                "Connection",
-                "Content-Length",
-                "Transfer-Encoding",
-                "Location",
-                "Server",
-                "WWW-Authenticate",
-                "Content-Encoding",
-                "Content-Type",
-                "Content-Location",
-                "Content-Type",
-                "Content-Language"
+                ["connection"] = true,
+                ["content-length"] = true,
+                ["transfer-encoding"] = true,
+                ["location"] = true,
+                ["server"] = true,
+                ["www-authenticate"] = true,
+                ["content-encoding"] = true,
+                ["content-type"] = true,
+                ["content-location"] = true,
+                ["content-language"] = true,
             }
             if len > 0 then
                 for i = 1, len do
                     local entry = rewrite:RespHeaders(i)
-                    for j = 1, #excludeRespHeader do
-                        if str_lower(entry:Name()) ~= str_lower(excludeRespHeader(j)) then
-                        core.response.set_header(entry:Name(), entry:Value())
-                        end
+                    local name = entry:Name()
+                    if excludeRespHeader[str_lower(name)] == nil then
+                        core.response.set_header(name, entry:Value())
                     end
                 end
             end
