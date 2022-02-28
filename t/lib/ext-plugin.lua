@@ -390,10 +390,7 @@ function _M.go(case)
             local vec = builder:EndVector(len)
 
             http_req_call_rewrite.Start(builder)
-            if case.check_default_status ~= true then
-                http_req_call_rewrite.AddStatus(builder, 405)
-            end
-            http_req_call_rewrite.AddHeaders(builder, vec)
+            http_req_call_rewrite.AddRespHeaders(builder, vec)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
