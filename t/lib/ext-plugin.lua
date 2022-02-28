@@ -67,7 +67,7 @@ function _M.go(case)
             ty = constants.RPC_ERROR
             err_resp.Start(builder)
             err_resp.AddCode(builder, err_code.BAD_REQUEST)
-            local req = prepare_conf_req.End(builder)
+                local req = prepare_conf_req.End(builder)
             builder:Finish(req)
             data = builder:Output()
 
@@ -364,6 +364,36 @@ function _M.go(case)
             local path = builder:CreateString("/plugin_proxy_rewrite_args?a=2")
             http_req_call_rewrite.Start(builder)
             http_req_call_rewrite.AddPath(builder, path)
+            local action = http_req_call_rewrite.End(builder)
+            build_action(action, http_req_call_action.Rewrite)
+
+        elseif case.rewrite_resp_header == true then
+            local hdrs = {
+                {"X-Resp", "foo"},
+                {"X-Req", "bar"},
+            }
+            local len = #hdrs
+            local textEntries = {}
+            for i = 1, len do
+                local name = builder:CreateString(hdrs[i][1])
+                local value = builder:CreateString(hdrs[i][2])
+                text_entry.Start(builder)
+                text_entry.AddName(builder, name)
+                text_entry.AddValue(builder, value)
+                local c = text_entry.End(builder)
+                textEntries[i] = c
+            end
+            http_req_call_rewrite.StartRespHeadersVector(builder, len)
+            for i = len, 1, -1 do
+                builder:PrependUOffsetTRelative(textEntries[i])
+            end
+            local vec = builder:EndVector(len)
+
+            http_req_call_rewrite.Start(builder)
+            if case.check_default_status ~= true then
+                http_req_call_rewrite.AddStatus(builder, 405)
+            end
+            http_req_call_rewrite.AddHeaders(builder, vec)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 

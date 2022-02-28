@@ -524,6 +524,8 @@ function _M.google_logging_entries()
     ngx.say(data)
 end
 
+
+
 -- Please add your fake upstream above
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
@@ -534,6 +536,13 @@ function _M.go()
 
     inject_headers()
     return _M[action]()
+end
+
+function _M.plugin_proxy_rewrite_resp_header()
+    ngx.req.read_body()
+    local s = "plugin_proxy_rewrite_resp_header"
+    ngx.header['Content-Length'] = #s + 1
+    ngx.say(s)
 end
 
 

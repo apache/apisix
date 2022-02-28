@@ -537,3 +537,22 @@ cat
 --- response_headers
 X-Resp: foo
 X-Req: bar
+
+
+=== TEST 19: rewrite resp_header
+--- request
+GET /plugin_proxy_rewrite_resp_header
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
