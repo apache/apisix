@@ -282,53 +282,39 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ports_to_check = {}
 
+    local function validate_and_get_listen_addr(port_name, default_ip, configured_ip,
+                                                default_port, configured_port)
+        local ip = configured_ip or default_ip
+        local port = tonumber(configured_port) or default_port
+        if ports_to_check[port] ~= nil then
+            util.die(port_name .. " ", port, " conflicts with ", ports_to_check[port], "\n")
+        end
+        ports_to_check[port] = port_name
+        return ip .. ":" .. port
+    end
+
     -- listen in admin use a separate port, support specific IP, compatible with the original style
     local admin_server_addr
     if yaml_conf.apisix.enable_admin then
-        if yaml_conf.apisix.admin_listen or yaml_conf.apisix.port_admin then
-            local ip = "0.0.0.0"
-            local port = yaml_conf.apisix.port_admin or 9180
-
-            if yaml_conf.apisix.admin_listen then
-                ip = yaml_conf.apisix.admin_listen.ip or ip
-                port = tonumber(yaml_conf.apisix.admin_listen.port) or port
-            end
-
-            if ports_to_check[port] ~= nil then
-                util.die("admin port ", port, " conflicts with ", ports_to_check[port], "\n")
-            end
-
-            admin_server_addr = ip .. ":" .. port
-            ports_to_check[port] = "admin"
+        if yaml_conf.apisix.admin_listen then
+            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
+                                        yaml_conf.apisix.admin_listen.ip,
+                                        9180, yaml_conf.apisix.admin_listen.port)
+        elseif yaml_conf.apisix.port_admin then
+            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
+                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 
     local control_server_addr
     if yaml_conf.apisix.enable_control then
         if not yaml_conf.apisix.control then
-            if ports_to_check[9090] ~= nil then
-                util.die("control port 9090 conflicts with ", ports_to_check[9090], "\n")
-            end
-            control_server_addr = "127.0.0.1:9090"
-            ports_to_check[9090] = "control"
+            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1", nil,
+                                          9090, nil)
         else
-            local ip = yaml_conf.apisix.control.ip
-            local port = tonumber(yaml_conf.apisix.control.port)
-
-            if ip == nil then
-                ip = "127.0.0.1"
-            end
-
-            if not port then
-                port = 9090
-            end
-
-            if ports_to_check[port] ~= nil then
-                util.die("control port ", port, " conflicts with ", ports_to_check[port], "\n")
-            end
-
-            control_server_addr = ip .. ":" .. port
-            ports_to_check[port] = "control"
+            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1",
+                                          yaml_conf.apisix.control.ip,
+                                          9090, yaml_conf.apisix.control.port)
         end
     end
 
@@ -336,23 +322,9 @@ Please modify "admin_key" in conf/config.yaml .
     if yaml_conf.plugin_attr.prometheus then
         local prometheus = yaml_conf.plugin_attr.prometheus
         if prometheus.enable_export_server then
-            local ip = prometheus.export_addr.ip
-            local port = tonumber(prometheus.export_addr.port)
-
-            if ip == nil then
-                ip = "127.0.0.1"
-            end
-
-            if not port then
-                port = 9091
-            end
-
-            if ports_to_check[port] ~= nil then
-                util.die("prometheus port ", port, " conflicts with ", ports_to_check[port], "\n")
-            end
-
-            prometheus_server_addr = ip .. ":" .. port
-            ports_to_check[port] = "prometheus"
+            prometheus_server_addr = validate_and_get_listen_addr("prometheus port", "127.0.0.1",
+                                             prometheus.export_addr.ip,
+                                             9091, prometheus.export_addr.port)
         end
     end
 
