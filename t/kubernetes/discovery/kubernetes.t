@@ -678,7 +678,7 @@ discovery:
 
 
 
-=== TEST 15: scale endpoints
+=== TEST 14: scale endpoints
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
