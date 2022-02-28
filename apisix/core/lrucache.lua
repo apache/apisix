@@ -160,7 +160,8 @@ end
 -- @tparam table api_ctx The request context.
 -- @tparam string extra_key Additional parameters for generating the lrucache identification key.
 -- @tparam function create_obj_func Functions for creating cache objects.
--- If the object does not exist in the lrucache, this function is called to create it and cache it in the lrucache.
+-- If the object does not exist in the lrucache, this function is
+-- called to create it and cache it in the lrucache.
 -- @treturn table The object cached in lrucache.
 -- @usage
 -- local function create_obj() {

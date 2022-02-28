@@ -19,7 +19,6 @@
 --
 -- @module core.json
 
-local json_encode = require("cjson.safe").encode
 local cjson = require("cjson.safe")
 local json_encode = cjson.encode
 local clear_tab = require("table.clear")
