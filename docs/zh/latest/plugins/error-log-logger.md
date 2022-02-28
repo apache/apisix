@@ -50,6 +50,11 @@ title: error-log-logger
 | skywalking.endpoint_addr         | string  | 可选   | http://127.0.0.1:12900/v3/logs |                  | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800             |
 | skywalking.service_name          | string  | 可选   | APISIX                         |                  | skywalking 上报的 service 名称                                            |
 | skywalking.service_instance_name | String  | 可选   | APISIX Instance Name           |                  | skywalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
+| clickhouse.endpoint_addr         | String  | 可选   | http://127.0.0.1:8213          |                  |  clickhouse 的 HTTP endpoint 地址，例如 http://127.0.0.1:8213                    |
+| clickhouse.user                  | String  | 可选   | default                        |                  |  clickhouse 的用户名                                                           |
+| clickhouse.password              | String  | 可选   |                                |                  |  clickhouse 的密码                                                          |
+| clickhouse.database              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的数据库                                             |
+| clickhouse.logtable              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的表                                             |
 | host                             | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.host`) TCP 服务的IP地址或主机名                           |
 | port                             | integer | 可选   |                                | [0,...]          | (`弃用`，替换成`tcp.port`) 目标端口                                         |
 | tls                              | boolean | 可选   | false                          |                  | (`弃用`，替换成`tcp.tls`) 用于控制是否执行SSL验证                             |
@@ -120,5 +125,24 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
     "endpoint_addr": "http://127.0.0.1:12800/v3/logs"
   },
   "inactive_timeout": 1
+}'
+```
+
+## 如何设置接收日志的 clickhouse 数据库
+
+插件将 error log 作为一个字符串发送到 clickhouse 表的 `data` 字段。
+*TODO 将error log 作为一个字符串保持到clickhouse数据库的data字段，未来我们将会增加更多的字段。*
+步骤：更新插件属性
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "clickhouse": {
+      "user": "default",
+      "password": "a",
+      "database": "error_log",
+      "logtable": "t",
+      "endpoint_addr": "http://127.0.0.1:8123"
+  }
 }'
 ```
