@@ -66,8 +66,6 @@ end
 
 ---
 -- Returns all headers of the current request.
--- This function returns up to 100 headers by default,
--- which is sufficient in most cases.
 -- The name and value of the header in return table is in lower case.
 --
 -- @function core.request.headers

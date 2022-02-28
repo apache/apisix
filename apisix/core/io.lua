@@ -25,7 +25,7 @@ local open = io.open
 local _M = {}
 
 ---
--- Get etcd cluster and server version.
+-- Read the contents of a file.
 --
 -- @function core.io.get_file
 -- @tparam string file_name either an absolute path or

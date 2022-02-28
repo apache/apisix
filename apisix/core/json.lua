@@ -102,7 +102,6 @@ local delay_tab = setmetatable({data = "", force = false}, {
 
 ---
 -- Delayed encoding of input data, avoid unnecessary encode operations.
--- This is a non-thread safe implementation, it works well with log.
 -- When really writing logs, if the given parameter is table, it will be converted to string in
 -- OpenResty by checking if there is a metamethod registered for `__tostring`, and if so,
 -- calling this method to convert it to string.
