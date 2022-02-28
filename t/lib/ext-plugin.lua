@@ -67,7 +67,7 @@ function _M.go(case)
             ty = constants.RPC_ERROR
             err_resp.Start(builder)
             err_resp.AddCode(builder, err_code.BAD_REQUEST)
-                local req = prepare_conf_req.End(builder)
+            local req = prepare_conf_req.End(builder)
             builder:Finish(req)
             data = builder:Output()
 
