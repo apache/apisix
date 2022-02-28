@@ -23,12 +23,17 @@ title: rocketmq-logger
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Info**](#info)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+  - [examples of meta_format](#examples-of-meta_format)
+- [Info](#info)
+  - [Sample Nameserver list](#sample-nameserver-list)
+- [How To Enable](#how-to-enable)
+- [Test Plugin](#test-plugin)
+- [Metadata](#metadata)
+  - [Example](#example)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -59,11 +64,11 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 
 The plugin also has some common parameters that are handled by the batch processor(a component of APISIX ). The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
-This helps in reducing the number of requests that are being sent from the plugin per time frame to improve performance. 
-Of course the batch processors provide an out-of-the-box configuration, so you don't have to worry about it. 
+This helps in reducing the number of requests that are being sent from the plugin per time frame to improve performance.
+Of course the batch processors provide an out-of-the-box configuration, so you don't have to worry about it.
 A brief overview of the parameters is provided here to help you choose.
 
-| Parameters      | Descriptions                                                                                                    |   |   |   |
+| Parameters       | Descriptions                                                                                                    |   |   |   |
 |------------------|----------------------------------------------------------------------------------------------------------------|---|---|---|
 | batch_max_size   | When the value is set to 0, the processor executes immediately. When the value is set to greater than or equal to 1, entries are aggregated until the maximum value or timeout is reached. |   |   |   |
 | inactive_timeout | This parameter indicates the maximum age in seconds that the buffer will be flushed without plugin activity information.                                     |   |   |   |
