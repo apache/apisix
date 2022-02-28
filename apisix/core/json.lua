@@ -20,6 +20,8 @@
 -- @module core.json
 
 local json_encode = require("cjson.safe").encode
+local cjson = require("cjson.safe")
+local json_encode = cjson.encode
 local clear_tab = require("table.clear")
 local ngx = ngx
 local tostring = tostring
@@ -28,10 +30,11 @@ local pairs = pairs
 local cached_tab = {}
 
 
+cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
-    array_mt = require("cjson.safe").array_mt,
-    decode = require("cjson.safe").decode,
+    array_mt = cjson.array_mt,
+    decode = cjson.decode,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
     -- it doesn't maintain the object key order.

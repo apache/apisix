@@ -174,7 +174,11 @@ done
                                 cache_ttl_seconds = 1000,
                                 keepalive = true,
                                 keepalive_timeout = 10000,
-                                keepalive_pool = 5
+                                keepalive_pool = 5,
+                                access_token_expires_in = 300,
+                                access_token_expires_leeway = 0,
+                                refresh_token_expires_in = 3600,
+                                refresh_token_expires_leeway = 0,
                             })
             if not ok then
                 ngx.say(err)
