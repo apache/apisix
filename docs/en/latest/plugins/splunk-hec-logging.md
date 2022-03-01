@@ -53,17 +53,7 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 The plugin also has some common parameters that are handled by the batch processor(a component of APISIX ). The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
 This helps in reducing the number of requests that are being sent from the plugin per time frame to improve performance.
 Of course the batch processors provide an out-of-the-box configuration, so you don't have to worry about it.
-A brief overview of the parameters is provided here to help you choose.
-
-| Parameters       | Descriptions                                                                                                    |   |   |   |
-|------------------|----------------------------------------------------------------------------------------------------------------|---|---|---|
-| batch_max_size   | When the value is set to 0, the processor executes immediately. When the value is set to greater than or equal to 1, entries are aggregated until the maximum value or timeout is reached. |   |   |   |
-| inactive_timeout | This parameter indicates the maximum age in seconds that the buffer will be flushed without plugin activity information.                                     |   |   |   |
-| buffer_duration  | This parameter indicates the maximum age in seconds that the oldest entries in the batch must first be processed.                                               |   |   |   |
-| max_retry_count  | This parameter indicates the maximum number of retries before removal from the processing pipeline.                                                             |   |   |   |
-| retry_delay      | This parameter indicates the number of seconds the process should be delayed if it fails.                                                           |   |   |   |
-
-If you want to learn more about batch processors, please refer to [Batch-Processor](../batch-processor.md#配置) configuration section.
+A brief overview of the parameters is provided here to help you choose. If you want to learn more about batch processors, please refer to [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 
