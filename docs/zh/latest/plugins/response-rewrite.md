@@ -23,19 +23,21 @@ title: response-rewrite
 
 ## 目录
 
-- [**response-rewrite**](#response-rewrite)
+- [**简介**](#简介)
 - [**配置参数**](#配置参数)
 - [**开启插件**](#开启插件)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 - [**注意事项**](#注意事项)
 
-## response-rewrite
+## 简介
 
 该插件支持修改上游服务或网关本身返回的 body 和 header 信息。
 
 使用场景：
+
 1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS （跨域资源共享）的功能。
+
 2、另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 [redirect](redirect.md) 插件。
 
 ## 配置参数
