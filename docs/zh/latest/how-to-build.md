@@ -115,7 +115,7 @@ sudo yum install ./apisix/*.rpm
 
    **注意**：如果使用 `make deps` 安装 `lualdap` 失败, 错误信息如： `Could not find header file for LDAP`，那么可以肯定这是一类关于安装依赖失败的问题。同理，遇到 `PCRE`、`openssl` 等依赖包安装失败问题，皆可以使用本方法解决问题。
 
-  解决思路：根据 luarocks 支持添加自定义包到项目中的思想，使用第三方工具安装缺失的包，并将其地址添加到项目的配置文件中以识别。
+  解决思路：根据 luarocks 支持添加自定义包到项目中的思想（你可以在这个[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format)里找到相关依据），使用第三方工具安装缺失的包，并将其地址添加到项目的配置文件中以识别。
 
   macOS 具体解决步骤：
 
