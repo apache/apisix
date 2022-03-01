@@ -21,7 +21,7 @@ title: Route
 #
 -->
 
-Routes matches the client's request based on defined rules, loads and executes the corresponding [plugins](./plugin.md), and forwards the request to the specified [Upstream](./upstream.md).
+Routes match the client's request based on defined rules, loads and executes the corresponding [plugins](./plugin.md), and forwards the request to the specified [Upstream](./upstream.md).
 
 A Route mainly consists of three parts:
 

@@ -23,7 +23,7 @@ title: Upstream
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to the configured rules.
 
-Although Upstream can directly configured to the [Route](./route.md) or [Service](./route.md), using an Upstream object is recommended when there is duplication as shown below.
+Although Upstream can be directly configured to the [Route](./route.md) or [Service](./route.md), using an Upstream object is recommended when there is duplication as shown below.
 
 ![upstream-example](../../../assets/images/upstream-example.png)
 

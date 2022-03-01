@@ -23,9 +23,9 @@ title: Plugin
 
 This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle.
 
-A `Plugin` configuration can be bout directly to a [`Route`](./route.md), a [`Service`](./service.md) or a [`Consumer`](./consumer.md).
+A `Plugin` configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md) or a [`Consumer`](./consumer.md).
 
-Note: While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Service`.
+**Note**: While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Service`.
 
 While [configuring APISIX](./apisix.md#configuring-apisix), you can declare the Plugins that are supported by the local APISIX node.
 
@@ -47,7 +47,7 @@ local _M = {
 }
 ```
 
-A Plugin configuration is submitted as part of the Route or Service and is placed under `plugins`. It internally uses the Plugin name as the hash's key to hold configuration items for the different Plugins.
+A Plugin configuration is submitted as part of the Route or Service and is placed under `plugins`. It internally uses the Plugin name as the hash key to hold the configuration items for the different Plugins.
 
 ```json
 {
@@ -64,7 +64,7 @@ A Plugin configuration is submitted as part of the Route or Service and is place
 }
 ```
 
-Not all plugins have specific configuration items (for example, [prometheus](/docs/apisix/plugins/prometheus/)). In such cases, an empty object identifier can be used.
+Not all Plugins have specific configuration items (for example, [prometheus](/docs/apisix/plugins/prometheus/)). In such cases, an empty object identifier can be used.
 
 A warn level log as shown below indicates that the request was rejected by the Plugin.
 
@@ -78,7 +78,7 @@ APISIX Plugins are hot-loaded.
 
 This means that there is no need to restart the service if you add, delete, modify plugins or even if you update the plugin code.
 
-To hot-reload, you can send an HTTP request through the [Admin API](docs/apisix/admin-api):
+To hot-reload, you can send an HTTP request through the [Admin API](../admin-api.md):
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT

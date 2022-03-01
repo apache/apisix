@@ -34,7 +34,7 @@ This is where the Consumer construct comes in APISIX. The fields are defined bel
 | Field    | Required | Description                                                                                                                                                                                      |
 | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | username | Yes      | Name of the consumer.                                                                                                                                                                                   |
-| plugins  | No       | Plugin configuration of the Consumer. has the highest priority: Consumer > Route > Service. For specific Plugin configurations, refer the [Plugins](./plugin.md) section. |
+| plugins  | No       | Plugin configuration of the Consumer. It has the highest priority: Consumer > Route > Service. For specific Plugin configurations, refer the [Plugins](./plugin.md) section. |
 
 The process of identifying a Consumer in APISIX is described below:
 
@@ -44,7 +44,7 @@ The process of identifying a Consumer in APISIX is described below:
 2. After authenticating, you can obtain the `id` of the Consumer. This `id` will be the unique identifier of a Consumer.
 3. The configurations like Plugins and Upstream bound to the Consumer are then executed.
 
-Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These needs to be used in conjunction with the user authentication system.
+Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These need to be used in conjunction with the user authentication system.
 
 Refer the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
 
