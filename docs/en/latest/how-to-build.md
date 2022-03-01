@@ -117,20 +117,20 @@ Follow the steps below to install Apache APISIX via the source release package.
   make install
   ```
 
-  **Note**: If `make deps` fails with "install `lualdap` failed" with an error like `Could not find header file for LDAP` try the solution below.
+  **Note**: It will definitely be a problem set of dependency failed installation, If you fail to install with `make deps` and get an error message like `Could not find header file for LDAP`. Similarly, you can use this method to solve installation problems such as `Could not find header file for PCRE` or others.
 
-      Solution: luarocks supports adding custom package filepaths to the project. You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`. You should config as follows:
-      1. Install `openldap` locally using tools including but not limited to 'brew';
-      2. Locate the 'openldap' local installation directory. If you are macOS and use `brew` to install `openldap`, you can find the local installation directory with the `brew --prefix openldap` command.
-      3. Manually set the `LDAP_DIR` variable via `luarocks config`, e.g. `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
-      4. Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file. Example as follows:
-      ```lua
-      variables = {
-          LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
-          LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
-      }
-      ```
-      If you have similar problems installing other dependencies, you can refer to this solution as well.
+  Solution for macOS:
+
+    1. Install `openldap` with `brew install openldap`;
+    2. Locate installation directory with `brew --prefix openldap`;
+    3. Add the path to the project configuration file(choose one of the following two methods):
+       1. Solution A: You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`;
+       2. Solution B: Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file;
+       3. Example as follows:
+          variables = {
+              LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+              LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+          }
 
 5. To uninstall the Apache APISIX runtime, run:
 
