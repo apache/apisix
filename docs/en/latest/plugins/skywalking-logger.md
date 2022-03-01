@@ -48,10 +48,7 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 | name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
 | include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 
-The plugin also has some common parameters that are handled by the batch processor(a component of APISIX ). The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
-This helps in reducing the number of requests that are being sent from the plugin per time frame to improve performance.
-Of course the batch processors provide an out-of-the-box configuration, so you don't have to worry about it.
-A brief overview of the parameters is provided here to help you choose. If you want to learn more about batch processors, please refer to [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This plug-in supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every '5' seconds or when the data in the queue reaches '1000'. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

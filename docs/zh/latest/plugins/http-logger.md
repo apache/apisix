@@ -51,9 +51,7 @@ title: http-logger
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | concat_method    | string  | 可选   | "json"        | ["json", "new_line"] | 枚举类型： `json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
 
-事实上，该插件还有一些通用参数交由批处理器（APISIX 的一个组成部分）来进行处理。批处理器通过这些参数来聚合条目（日志数据），并批量处理它们。这样做可以减少降低请求数，提高性能。
-当然本插件提供默认的批处理器配置，因此不用担心额外的学习成本，你将会很轻易地上手。
-这边提供参数的简要概述，希望能帮助您进行选择。如果你想了解更多有关批处理器的信息，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到  `1000`  条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
