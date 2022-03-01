@@ -116,26 +116,32 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
 1. **request_headers** 从 `client` 转发请求头到 `authorization` 服务
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 123' \
--d '{
+curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+```
+
+```
+{
     "headers": {
         "Authorization": "123",
         "Next": "More-headers"
     }
-}'
+}
 ```
 
 2. **upstream_headers** 转发 `authorization` 服务响应头到 `upstream`
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 321' \
--d '{
+curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+```
+
+```
+{
     "headers": {
         "Authorization": "321",
         "X-User-ID": "i-am-user",
         "Next": "More-headers"
     }
-}'
+}
 ```
 
 3. **client_headers** 当授权失败时转发 `authorization` 服务响应头到 `client`
