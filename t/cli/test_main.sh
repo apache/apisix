@@ -932,11 +932,6 @@ if ! grep "plugin-limit-count-redis-cluster-slot-lock 2m;" conf/nginx.conf > /de
     exit 1
 fi
 
-if ! grep "tracing_buffer 20m;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'tracing_buffer 20m;' not in nginx.conf"
-    exit 1
-fi
-
 if ! grep "plugin-api-breaker 20m;" conf/nginx.conf > /dev/null; then
     echo "failed: 'plugin-api-breaker 20m;' not in nginx.conf"
     exit 1
