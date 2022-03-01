@@ -35,8 +35,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2.4.0
-        with:
-          submodules: true
 
       - name: Shellcheck code
         run: |
