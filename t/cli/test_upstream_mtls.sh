@@ -78,7 +78,7 @@ sleep 0.1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
 
 if [ ! $code -eq 200 ]; then
-    echo "failed: connection to upstream with mtTLS failed"
+    echo "failed: connection to upstream with mTLS failed"
     exit 1
 fi
 
@@ -86,13 +86,9 @@ sleep 0.1
 
 make stop
 
-echo "passed: connection to upstream with mtTLS failed success"
+echo "passed: connection to upstream with mTLS failed success"
 
 # test proxy_ssl_trusted_certificate and use incorrect ca cert
-git checkout conf/config.yaml
-
-exit_if_not_customed_nginx
-
 echo '
 apisix:
   admin_key:
