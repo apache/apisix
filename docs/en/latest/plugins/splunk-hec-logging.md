@@ -50,7 +50,7 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | endpoint.timeout | optional    | 10      | Splunk HEC send data timeout, time unit: (seconds)           |
 | ssl_verify       | optional    | true    | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
 
-This plug-in supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every '5' seconds or when the data in the queue reaches '1000'. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

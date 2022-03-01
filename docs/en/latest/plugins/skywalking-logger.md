@@ -48,7 +48,7 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 | name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
 | include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 
-This plug-in supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every '5' seconds or when the data in the queue reaches '1000'. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 
