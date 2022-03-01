@@ -113,20 +113,24 @@ sudo yum install ./apisix/*.rpm
   make install
   ```
 
-- 4.1 `make deps` 安装 `lualdap` 失败, 错误信息如: `Could not find header file for LDAP`
+注意：如果使用 `make deps` 安装 `lualdap` 失败, 错误信息如： `Could not find header file for LDAP`，可以肯定的是这是一类关于安装依赖失败的问题，如果遇到 `PCRE`、`openssl` 等依赖包安装失败问题，皆可以使用本方法解决问题。
 
-      解决方案: luarocks 支持添加自定义的包地址到项目中。通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`，你应该按照下面流程设置：
-      1. 使用包括但不仅限于 `brew` 等工具将 `openldap` 安装到本地;
-      2. 找到 `openldap` 的本地安装目录。如果是 macOS 系统，并使用 `brew` 安装 `openldap` 的话，可以通过 `brew --prefix openldap` 命令找到本地安装目录。
-      3. 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`。
-      4. 当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录。示例如下：
-      ```lua
-      variables = {
-          LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
-          LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
-      }
-      ```
-      如果在安装其他依赖项时遇到类似的问题，也可以参考此解决方案。
+  解决思路：根据 luarocks 支持添加自定义包到项目中的思想，使用第三方工具安装缺失的包，并将其地址添加到项目的配置文件中以识别。
+
+  macOS 具体解决步骤：
+  1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地;
+  2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
+  3. 将路径添加到项目配置文件中：
+      1. 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`；
+      2. 当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录；
+      3. 配置文件示例如下：
+
+          ```lua
+          variables = {
+              LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+              LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+          }
+          ```
 
 5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
