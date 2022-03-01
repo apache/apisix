@@ -557,6 +557,10 @@ http {
         {% end %}
         {% end %}
 
+        {% if ssl.ssl_trusted_certificate ~= nil then %}
+        proxy_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        {% end %}
+
         # http server configuration snippet starts
         {% if http_server_configuration_snippet then %}
         {* http_server_configuration_snippet *}
