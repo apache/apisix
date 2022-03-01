@@ -314,7 +314,7 @@ query getRepo {
 $ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
 ```
 
-3. 尝试 GET 请求
+3. 尝试 `GET` 请求
 
 ```shell
 curl -H 'content-type: application/graphql' -X GET "http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
