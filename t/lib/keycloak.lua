@@ -32,11 +32,6 @@ function _M.login_keycloak(uri, username, password)
         -- Use 500 to indicate error.
         return nil, "Initial request was not redirected to ID provider authorization endpoint."
     else
-        -- Redirect to ID provider's authorization endpoint.
-        -- Extract nonce and state from response header.
-        local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
-        local state = res.headers['Location']:match('.*state=([^&]+).*')
-
         -- Extract cookies. Important since OIDC module tracks state with a session cookie.
         local cookies = res.headers['Set-Cookie']
 
@@ -49,7 +44,8 @@ function _M.login_keycloak(uri, username, password)
         -- possibly even the version used.
         res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
         if not res then
-            -- No response, must be an error.  return nil, err
+            -- No response, must be an error.
+            return nil, err
         elseif res.status ~= 200 then
             -- Unexpected response.
             return nil, res.body
@@ -72,7 +68,8 @@ function _M.login_keycloak(uri, username, password)
         -- Concatenate cookies into one string as expected when sent in request header.
         local auth_cookie_str = _M.concatenate_cookies(auth_cookies)
 
-        -- Invoke the submit URI with parameters and cookies, adding username and password in the body.
+        -- Invoke the submit URI with parameters and cookies, adding username
+        -- and password in the body.
         -- Note: Username and password are specific to the Keycloak Docker image used.
         res, err = httpc:request_uri(uri .. "?" .. params, {
                 method = "POST",
@@ -107,7 +104,8 @@ function _M.login_keycloak(uri, username, password)
             return nil, err
         elseif res.status ~= 302 then
             -- Not a redirect which we expect.
-            return nil, "Invoking redirect URI with authorization code did not return redirect to original URI."
+            return nil, "Invoking redirect URI with authorization code" ..
+                "did not return redirect to original URI."
         end
 
         return res, nil
@@ -117,6 +115,7 @@ end
 
 -- Concatenate cookies into one string as expected when sent in request header.
 function _M.concatenate_cookies(cookies)
+    local cookie_str = ""
     if type(cookies) == 'string' then
         cookie_str = cookies:match('([^;]*); .*')
     else
