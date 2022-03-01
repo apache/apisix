@@ -86,7 +86,7 @@ sleep 0.1
 
 make stop
 
-echo "passed: connection to upstream with mTLS failed success"
+echo "passed: connection to upstream with mTLS success"
 
 # test proxy_ssl_trusted_certificate and use incorrect ca cert
 echo '
