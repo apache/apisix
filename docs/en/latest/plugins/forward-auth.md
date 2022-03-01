@@ -117,26 +117,32 @@ We can perform the following three tests.
 1. **request_headers** Send Authorization header from `client` to `authorization` service
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 123' \
--d '{
+curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+```
+
+```
+{
     "headers": {
         "Authorization": "123",
         "Next": "More-headers"
     }
-}'
+}
 ```
 
 2. **upstream_headers** Send `authorization` service response header to the `upstream`
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 321' \
--d '{
+curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+```
+
+```
+{
     "headers": {
         "Authorization": "321",
         "X-User-ID": "i-am-user",
         "Next": "More-headers"
     }
-}'
+}
 ```
 
 3. **client_headers** Send `authorization` service response header to `client` when authorizing failed
