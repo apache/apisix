@@ -54,3 +54,29 @@ if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: define custom shdict in the old way"
+
+echo "
+plugins:
+    - ip-restriction
+" > conf/config.yaml
+
+make init
+
+if grep "plugin-limit-conn" conf/nginx.conf > /dev/null; then
+    echo "failed: enable shdict on demand"
+    exit 1
+fi
+
+echo "
+plugins:
+    - limit-conn
+" > conf/config.yaml
+
+make init
+
+if ! grep "plugin-limit-conn" conf/nginx.conf > /dev/null; then
+    echo "failed: enable shdict on demand"
+    exit 1
+fi
+
+echo "passed: enable shdict on demand"
