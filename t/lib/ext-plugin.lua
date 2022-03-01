@@ -367,10 +367,12 @@ function _M.go(case)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
-        elseif case.rewrite_resp_header == true then
+        elseif case.rewrite_resp_header == true or case.rewrite_vital_resp_header == true then
             local hdrs = {
                 {"X-Resp", "foo"},
                 {"X-Req", "bar"},
+                {"Content-Type", "application/json"},
+                {"Content-Encoding", "deflate"},
             }
             local len = #hdrs
             local textEntries = {}
@@ -389,8 +391,11 @@ function _M.go(case)
             end
             local vec = builder:EndVector(len)
 
+            local path = builder:CreateString("/plugin_proxy_rewrite_resp_header")
+
             http_req_call_rewrite.Start(builder)
             http_req_call_rewrite.AddRespHeaders(builder, vec)
+            http_req_call_rewrite.AddPath(builder, path)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
