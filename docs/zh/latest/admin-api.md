@@ -105,7 +105,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 route 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",                            # id，非必填
     "uris": ["/a","/b"],                  # 一组 URL 路径
@@ -330,7 +330,7 @@ HTTP/1.1 200 OK
 
 service 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",                # id
     "plugins": {},            # 指定 service 绑定的插件
@@ -338,7 +338,7 @@ service 对象 json 配置内容：
     "upstream": {},           # upstream 信息对象，不建议使用
     "name": "测试svc",         # service 名称
     "desc": "hello world",    # service 描述
-    "enable_websocket": true, #启动 websocket 功能
+    "enable_websocket": true, # 启动 websocket 功能
     "hosts": ["foo.com"]
 }
 ```
@@ -598,7 +598,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 **upstream 对象 json 配置内容：**
 
-```json
+```shell
 {
     "id": "1",                  # id
     "retries": 1,               # 请求重试次数
@@ -817,7 +817,7 @@ $ curl http://127.0.0.1:9080/get
 
 ssl 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",          # id
     "cert": "cert",     # 证书

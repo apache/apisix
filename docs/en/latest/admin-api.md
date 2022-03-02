@@ -105,7 +105,7 @@ There are two points that need special attention:
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",                            # id, unnecessary.
     "uris": ["/a","/b"],                  # A set of uri.
@@ -330,7 +330,7 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",                # id
     "plugins": {},            # Bound plugin
@@ -474,7 +474,7 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
     "plugins": {},          # Bound plugin
     "username": "name",     # Consumer name
@@ -594,7 +594,7 @@ Its children fields, like `requests`, can be used to configure the upstream keep
 
 **Config Example:**
 
-```json
+```shell
 {
     "id": "1",                  # id
     "retries": 1,               # retry times
@@ -815,7 +815,7 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",           # id
     "cert": "cert",      # Certificate
