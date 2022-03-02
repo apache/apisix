@@ -112,8 +112,7 @@ Config Example:
     "methods": ["GET","POST"],            # Can fill multiple methods
     "hosts": ["a.com","b.com"],           # A set of host.
     "plugins": {},                        # Bound plugin
-    "priority": 0,                        # If different routes contain the same `uri`, 
-    determine which route is matched first based on the attribute` priority`, the default value is 0.
+    "priority": 0,                        # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
     "name": "route-xxx",
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],        # A set of Client IP.
