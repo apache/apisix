@@ -246,7 +246,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 ### 如何通过 GraphQL 属性过滤路由
 
-目前为止，APISIX 可以处理 HTTP GET 和 POST 方法。同时请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。
+目前，APISIX 可以处理 HTTP GET 和 POST 方法。请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。
 
 APISIX 支持通过 GraphQL 的一些属性过滤路由。 目前我们支持：
 
