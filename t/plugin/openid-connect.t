@@ -280,194 +280,44 @@ passed
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
             local httpc = http.new()
 
-            -- Invoke /uri endpoint w/o bearer token. Should receive redirect to Keycloak authorization endpoint.
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
-            local res, err = httpc:request_uri(uri, {method = "GET"})
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- Make the final call back to the original URI.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
 
             if not res then
                 -- No response, must be an error.
                 ngx.status = 500
                 ngx.say(err)
                 return
-            elseif res.status ~= 302 then
-                -- Not a redirect which we expect.
+            elseif res.status ~= 200 then
+                -- Not a valid response.
                 -- Use 500 to indicate error.
                 ngx.status = 500
-                ngx.say("Initial request was not redirected to ID provider authorization endpoint.")
+                ngx.say("Invoking the original URI didn't return the expected result.")
                 return
-            else
-                -- Redirect to ID provider's authorization endpoint.
-
-                -- Extract nonce and state from response header.
-                local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
-                local state = res.headers['Location']:match('.*state=([^&]+).*')
-
-                -- Extract cookies. Important since OIDC module tracks state with a session cookie.
-                local cookies = res.headers['Set-Cookie']
-
-                -- Concatenate cookies into one string as expected when sent in request header.
-                local cookie_str = ""
-
-                if type(cookies) == 'string' then
-                    cookie_str = cookies:match('([^;]*); .*')
-                else
-                    -- Must be a table.
-                    local len = #cookies
-                    if len > 0 then
-                        cookie_str = cookies[1]:match('([^;]*); .*')
-                        for i = 2, len do
-                            cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                        end
-                    end
-                end
-
-                -- Call authorization endpoint we were redirected to.
-                -- Note: This typically returns a login form which is the case here for Keycloak as well.
-                -- However, how we process the form to perform the login is specific to Keycloak and
-                -- possibly even the version used.
-                res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
-
-                if not res then
-                    -- No response, must be an error.
-                    ngx.status = 500
-                    ngx.say(err)
-                    return
-                elseif res.status ~= 200 then
-                    -- Unexpected response.
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                    return
-                end
-
-                -- Check if response code was ok.
-                if res.status == 200 then
-                    -- From the returned form, extract the submit URI and parameters.
-                    local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-
-                    -- Substitute escaped ampersand in parameters.
-                    params = params:gsub("&amp;", "&")
-
-                    -- Get all cookies returned. Probably not so important since not part of OIDC specification.
-                    local auth_cookies = res.headers['Set-Cookie']
-
-                    -- Concatenate cookies into one string as expected when sent in request header.
-                    local auth_cookie_str = ""
-
-                    if type(auth_cookies) == 'string' then
-                        auth_cookie_str = auth_cookies:match('([^;]*); .*')
-                    else
-                        -- Must be a table.
-                        local len = #auth_cookies
-                        if len > 0 then
-                            auth_cookie_str = auth_cookies[1]:match('([^;]*); .*')
-                            for i = 2, len do
-                                auth_cookie_str = auth_cookie_str .. "; " .. auth_cookies[i]:match('([^;]*); .*')
-                            end
-                        end
-                    end
-
-                    -- Invoke the submit URI with parameters and cookies, adding username and password in the body.
-                    -- Note: Username and password are specific to the Keycloak Docker image used.
-                    res, err = httpc:request_uri(uri .. "?" .. params, {
-                            method = "POST",
-                            body = "username=teacher@gmail.com&password=123456",
-                            headers = {
-                                ["Content-Type"] = "application/x-www-form-urlencoded",
-                                ["Cookie"] = auth_cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 302 then
-                        -- Not a redirect which we expect.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Login form submission did not return redirect to redirect URI.")
-                        return
-                    end
-
-                    -- Extract the redirect URI from the response header.
-                    -- TODO: Consider validating this against the plugin configuration.
-                    local redirect_uri = res.headers['Location']
-
-                    -- Invoke the redirect URI (which contains the authorization code as an URL parameter).
-                    res, err = httpc:request_uri(redirect_uri, {
-                            method = "GET",
-                            headers = {
-                                ["Cookie"] = cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 302 then
-                        -- Not a redirect which we expect.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Invoking redirect URI with authorization code did not return redirect to original URI.")
-                        return
-                    end
-
-                    -- Get all cookies returned. This should update the session cookie maintained by the OIDC module with the new state.
-                    -- E.g. the session cookie should now contain the access token, ID token and user info.
-                    -- The cookie itself should however be treated as opaque.
-                    cookies = res.headers['Set-Cookie']
-
-                    -- Concatenate cookies into one string as expected when sent in request header.
-                    if type(cookies) == 'string' then
-                        cookie_str = cookies:match('([^;]*); .*')
-                    else
-                        -- Must be a table.
-                        local len = #cookies
-                        if len > 0 then
-                            cookie_str = cookies[1]:match('([^;]*); .*')
-                            for i = 2, len do
-                                cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                            end
-                        end
-                    end
-
-                    -- Get the final URI out of the Location response header. This should be the original URI that was requested.
-                    -- TODO: Consider checking the URI against the original request URI.
-                    redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
-
-                    -- Make the final call back to the original URI.
-                    res, err = httpc:request_uri(redirect_uri, {
-                            method = "GET",
-                            headers = {
-                                ["Cookie"] = cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 200 then
-                        -- Not a valid response.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Invoking the original URI didn't return the expected result.")
-                        return
-                    end
-
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                else
-                    -- Response from Keycloak not ok.
-                    ngx.say(false)
-                end
             end
+
+            ngx.status = res.status
+            ngx.say(res.body)
         }
     }
 --- request
@@ -573,194 +423,44 @@ passed
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
             local httpc = http.new()
 
-            -- Invoke /uri endpoint w/o bearer token. Should receive redirect to Keycloak authorization endpoint.
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
-            local res, err = httpc:request_uri(uri, {method = "GET"})
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- Make the final call back to the original URI.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
 
             if not res then
                 -- No response, must be an error.
                 ngx.status = 500
                 ngx.say(err)
                 return
-            elseif res.status ~= 302 then
-                -- Not a redirect which we expect.
+            elseif res.status ~= 200 then
+                -- Not a valid response.
                 -- Use 500 to indicate error.
                 ngx.status = 500
-                ngx.say("Initial request was not redirected to ID provider authorization endpoint.")
+                ngx.say("Invoking the original URI didn't return the expected result.")
                 return
-            else
-                -- Redirect to ID provider's authorization endpoint.
-
-                -- Extract nonce and state from response header.
-                local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
-                local state = res.headers['Location']:match('.*state=([^&]+).*')
-
-                -- Extract cookies. Important since OIDC module tracks state with a session cookie.
-                local cookies = res.headers['Set-Cookie']
-
-                -- Concatenate cookies into one string as expected when sent in request header.
-                local cookie_str = ""
-
-                if type(cookies) == 'string' then
-                    cookie_str = cookies:match('([^;]*); .*')
-                else
-                    -- Must be a table.
-                    local len = #cookies
-                    if len > 0 then
-                        cookie_str = cookies[1]:match('([^;]*); .*')
-                        for i = 2, len do
-                            cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                        end
-                    end
-                end
-
-                -- Call authorization endpoint we were redirected to.
-                -- Note: This typically returns a login form which is the case here for Keycloak as well.
-                -- However, how we process the form to perform the login is specific to Keycloak and
-                -- possibly even the version used.
-                res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
-
-                if not res then
-                    -- No response, must be an error.
-                    ngx.status = 500
-                    ngx.say(err)
-                    return
-                elseif res.status ~= 200 then
-                    -- Unexpected response.
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                    return
-                end
-
-                -- Check if response code was ok.
-                if res.status == 200 then
-                    -- From the returned form, extract the submit URI and parameters.
-                    local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-
-                    -- Substitute escaped ampersand in parameters.
-                    params = params:gsub("&amp;", "&")
-
-                    -- Get all cookies returned. Probably not so important since not part of OIDC specification.
-                    local auth_cookies = res.headers['Set-Cookie']
-
-                    -- Concatenate cookies into one string as expected when sent in request header.
-                    local auth_cookie_str = ""
-
-                    if type(auth_cookies) == 'string' then
-                        auth_cookie_str = auth_cookies:match('([^;]*); .*')
-                    else
-                        -- Must be a table.
-                        local len = #auth_cookies
-                        if len > 0 then
-                            auth_cookie_str = auth_cookies[1]:match('([^;]*); .*')
-                            for i = 2, len do
-                                auth_cookie_str = auth_cookie_str .. "; " .. auth_cookies[i]:match('([^;]*); .*')
-                            end
-                        end
-                    end
-
-                    -- Invoke the submit URI with parameters and cookies, adding username and password in the body.
-                    -- Note: Username and password are specific to the Keycloak Docker image used.
-                    res, err = httpc:request_uri(uri .. "?" .. params, {
-                            method = "POST",
-                            body = "username=teacher@gmail.com&password=123456",
-                            headers = {
-                                ["Content-Type"] = "application/x-www-form-urlencoded",
-                                ["Cookie"] = auth_cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 302 then
-                        -- Not a redirect which we expect.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Login form submission did not return redirect to redirect URI.")
-                        return
-                    end
-
-                    -- Extract the redirect URI from the response header.
-                    -- TODO: Consider validating this against the plugin configuration.
-                    local redirect_uri = res.headers['Location']
-
-                    -- Invoke the redirect URI (which contains the authorization code as an URL parameter).
-                    res, err = httpc:request_uri(redirect_uri, {
-                            method = "GET",
-                            headers = {
-                                ["Cookie"] = cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 302 then
-                        -- Not a redirect which we expect.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Invoking redirect URI with authorization code did not return redirect to original URI.")
-                        return
-                    end
-
-                    -- Get all cookies returned. This should update the session cookie maintained by the OIDC module with the new state.
-                    -- E.g. the session cookie should now contain the access token, ID token and user info.
-                    -- The cookie itself should however be treated as opaque.
-                    cookies = res.headers['Set-Cookie']
-
-                    -- Concatenate cookies into one string as expected when sent in request header.
-                    if type(cookies) == 'string' then
-                        cookie_str = cookies:match('([^;]*); .*')
-                    else
-                        -- Must be a table.
-                        local len = #cookies
-                        if len > 0 then
-                            cookie_str = cookies[1]:match('([^;]*); .*')
-                            for i = 2, len do
-                                cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                            end
-                        end
-                    end
-
-                    -- Get the final URI out of the Location response header. This should be the original URI that was requested.
-                    -- TODO: Consider checking the URI against the original request URI.
-                    redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
-
-                    -- Make the final call back to the original URI.
-                    res, err = httpc:request_uri(redirect_uri, {
-                            method = "GET",
-                            headers = {
-                                ["Cookie"] = cookie_str
-                            }
-                        })
-
-                    if not res then
-                        -- No response, must be an error.
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    elseif res.status ~= 200 then
-                        -- Not a valid response.
-                        -- Use 500 to indicate error.
-                        ngx.status = 500
-                        ngx.say("Invoking the original URI didn't return the expected result.")
-                        return
-                    end
-
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                else
-                    -- Response from Keycloak not ok.
-                    ngx.say(false)
-                end
             end
+
+            ngx.status = res.status
+            ngx.say(res.body)
         }
     }
 --- request
@@ -1665,3 +1365,124 @@ GET /t
 false
 --- error_log
 OIDC introspection failed: invalid jwt: invalid jwt string
+
+
+
+=== TEST 28: Modify route to match catch-all URI `/*` and add post_logout_redirect_uri option.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": false,
+                                "set_id_token_header": true,
+                                "set_userinfo_header": true,
+                                "post_logout_redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/hello"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: Access route w/o bearer token and request logout to redirect to post_logout_redirect_uri.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+
+            -- Request the logout uri with the log-in cookie
+            local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            res, err = httpc:request_uri(logout_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+            })
+            if not res then
+                -- No response, must be an error
+                -- Use 500 to indicate error
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 302 then
+                ngx.status = 500
+                ngx.say("Request the logout URI didn't return the expected status.")
+                return
+            end
+
+            -- Request the location, it's a URL of keycloak and contains the post_logout_redirect_uri
+            -- Like:
+            -- http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/logout?post_logout_redirect=http://127.0.0.1:1984/hello
+            local location = res.headers["Location"]
+            res, err = httpc:request_uri(location, {
+               method = "GET"
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 302 then
+                ngx.status = 500
+                ngx.say("Request the keycloak didn't return the expected status.")
+                return
+            end
+
+            ngx.status = 200
+            ngx.say(res.headers["Location"])
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+http://127.0.0.1:.*/hello
+--- no_error_log
+[error]
