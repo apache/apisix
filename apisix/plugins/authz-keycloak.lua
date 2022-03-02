@@ -61,7 +61,8 @@ local schema = {
         cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
-        keepalive_pool = {type = "integer", minimum = 1, default = 5}
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        access_denied_redirect_uri = {type = "string", minLength = 1, maxLength = 2048}
     },
     allOf = {
         -- Require discovery or token endpoint.
@@ -591,6 +592,10 @@ local function evaluate_permissions(conf, ctx, token)
     -- Return 403 if permission is empty and enforcement mode is "ENFORCING".
     if #permission == 0 and conf.policy_enforcement_mode == "ENFORCING" then
         -- Return Keycloak-style message for consistency.
+        if conf.access_denied_redirect_uri then 
+            core.response.set_header("Location", conf.access_denied_redirect_uri) 
+            return 302
+        end
         return 403, '{"error":"access_denied","error_description":"not_authorized"}'
     end
 
