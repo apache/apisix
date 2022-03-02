@@ -276,7 +276,7 @@ We can filter such route out with:
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "methods": ["POST", "GET"],
-    "uri": "/_graphql",
+    "uri": "/graphql",
     "vars": [
         ["graphql_operation", "==", "query"],
         ["graphql_name", "==", "getRepo"],
@@ -310,13 +310,15 @@ query getRepo {
 2. JSON format
 
 ```shell
-$ curl -H 'content-type: application/json' -X POST http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
+$ curl -H 'content-type: application/json' -X POST \
+http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
 ```
 
 3. Try `GET` request match
 
 ```shell
-curl -H 'content-type: application/graphql' -X GET "http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
+curl -H 'content-type: application/graphql' -X GET \
+"http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
 ```
 
 To prevent spending too much time reading invalid GraphQL request body, we only read the first 1 MiB
