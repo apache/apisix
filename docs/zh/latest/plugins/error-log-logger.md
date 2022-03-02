@@ -58,7 +58,7 @@ title: error-log-logger
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）                                        |
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到  `1000`  条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启和禁用
 

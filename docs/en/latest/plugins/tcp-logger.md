@@ -52,7 +52,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
 | include_req_body | boolean | optional    | false   |         | Whether to include the request body                                                      |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. for information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 
