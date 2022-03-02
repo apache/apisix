@@ -332,12 +332,12 @@ service 对象 json 配置内容：
 
 ```json
 {
-    "id": "1",              # id
-    "plugins": {},          # 指定 service 绑定的插件
-    "upstream_id": "1",     # upstream 对象在 etcd 中的 id ，建议使用此值
-    "upstream": {},         # upstream 信息对象，不建议使用
-    "name": "测试svc",  # service 名称
-    "desc": "hello world",  # service 描述
+    "id": "1",                # id
+    "plugins": {},            # 指定 service 绑定的插件
+    "upstream_id": "1",       # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream": {},           # upstream 信息对象，不建议使用
+    "name": "测试svc",         # service 名称
+    "desc": "hello world",    # service 描述
     "enable_websocket": true, #启动 websocket 功能
     "hosts": ["foo.com"]
 }
@@ -598,7 +598,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 **upstream 对象 json 配置内容：**
 
-```shell
+```json
 {
     "id": "1",                  # id
     "retries": 1,               # 请求重试次数
@@ -608,7 +608,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
         "read":15,
     },
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + 端口`
-    # 等价于 "nodes": [ {"host":"host", "port":80, "weight": 100} ],
+                                # 等价于 "nodes": [ {"host":"host", "port":80, "weight": 100} ],
     "type":"roundrobin",
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
