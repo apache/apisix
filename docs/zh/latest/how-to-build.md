@@ -122,13 +122,16 @@ sudo yum install ./apisix/*.rpm
      1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地;
      2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
      3. 将路径添加到项目配置文件中（选择两种方法中的一种即可）：
-         1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`；
+         1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`；
          2. 方法二：当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录；
          3. 参考配置文件示例如下：
              variables = {
                  LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
                  LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
              }
+
+     `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。
+     `/usr/local/opt/openldap/` 是 `brew` 在 macOS(Intel) 上安装 `openldap` 的默认位置。
 
 5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 

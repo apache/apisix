@@ -126,13 +126,16 @@ Follow the steps below to install Apache APISIX via the source release package.
     1. Install `openldap` with `brew install openldap`;
     2. Locate installation directory with `brew --prefix openldap`;
     3. Add the path to the project configuration file(choose one of the following two methods):
-       1. Solution A: You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`;
+       1. Solution A: You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`;
        2. Solution B: Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file;
        3. Example as follows:
           variables = {
               LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
               LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
           }
+
+     `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
+     `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel)using brew.
 
 5. To uninstall the Apache APISIX runtime, run:
 
