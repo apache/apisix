@@ -17,147 +17,59 @@
 
 global.XMLHttpRequest = require('xhr2')
 
-const {Empty, Request, Route} = require('./a6/routes_pb')
-const RouteServiceBinProtocolClient = require('./a6/routes_grpc_web_bin_pb').RouteServiceClient
-const RouteServiceTextProtocolClient = require('./a6/routes_grpc_web_text_pb').RouteServiceClient
+const RouteServiceQuery = require('./a6/route_pb').Query
+const RouteServiceBinProtocolClient = require('./a6/route_grpc_web_bin_pb').RouteServiceClient
+const RouteServiceTextProtocolClient = require('./a6/route_grpc_web_text_pb').RouteServiceClient
 
 const MODE_TEXT = "TEXT"
-const MODE_BIN  = "BIN"
+const MODE_BIN = "BIN"
 
 const modes = [MODE_TEXT, MODE_BIN];
 
-const FUNCTION_ALL = "ALL"
-const FUNCTION_GET = "GET"
-const FUNCTION_POST = "POST"
-const FUNCTION_PUT = "PUT"
-const FUNCTION_DEL = "DEL"
-const FUNCTION_FLUSH = "FLUSH"
 
-const functions = [FUNCTION_ALL, FUNCTION_GET, FUNCTION_POST, FUNCTION_PUT, FUNCTION_DEL, FUNCTION_FLUSH]
+const TYPE_UNARY = "UNARY"
+const TYPE_STREAM = "STREAM"
+
+const types = [TYPE_UNARY, TYPE_STREAM];
+
 
 class gRPCWebClient {
     constructor() {
         this.clients = {}
-        this.clients[MODE_BIN] = new RouteServiceBinProtocolClient("http://127.0.0.1:1984/grpc")
-        this.clients[MODE_TEXT] = new RouteServiceTextProtocolClient("http://127.0.0.1:1984/grpc")
+        this.clients[MODE_BIN] = new RouteServiceBinProtocolClient("http://127.0.0.1:1984/grpc/web");
+        this.clients[MODE_TEXT] = new RouteServiceTextProtocolClient("http://127.0.0.1:1984/grpc/web");
     };
 
-    flush(mode) {
-        let request = new Empty()
-        this.clients[mode].flushAll(request, {}, function (error, response) {
+    unary(mode) {
+        let query = new RouteServiceQuery()
+        query.setName("hello")
+        this.clients[mode].getRoute(query, {}, function (error, response) {
             if (error) {
-                console.log(error)
+                console.log(error);
                 return
             }
-            console.log(JSON.stringify(response.toObject().routesMap))
+            console.log(JSON.stringify(response.toObject()));
         });
     }
 
-    all(mode) {
-        let request = new Empty()
-        this.clients[mode].getAll(request, {}, function (error, response) {
-            if (error) {
-                console.log(error)
-                return
-            }
-            console.log(JSON.stringify(response.toObject().routesMap))
+    stream(mode) {
+        let query = new RouteServiceQuery()
+        var stream = this.clients[mode].getRoutes(query, {});
+        stream.on('data', function(response) {
+          console.log(JSON.stringify(response.toObject()));
         });
-    }
 
-    get(mode, params) {
-        if (params[0] === null) {
-            console.log("route ID invalid")
-            return
-        }
-        let request = new Request()
-        request.setId(params[0])
-        this.clients[mode].get(request, {}, function (error, response) {
-            if (error) {
-                console.log(error)
-                return
-            }
-            console.log(JSON.stringify(response.toObject().route))
+        stream.on('end', function(end) {
+            stream.cancel();
         });
-    }
-
-    post(mode, params) {
-        if (params[0] === null) {
-            console.log("route ID invalid")
-            return
-        }
-        if (params[1] === null) {
-            console.log("route Name invalid")
-            return
-        }
-        if (params[2] === null) {
-            console.log("route Path invalid")
-            return
-        }
-        let request = new Request()
-        let route = new Route()
-        request.setId(params[0])
-        route.setName(params[1])
-        route.setPath(params[2])
-        request.setRoute(route)
-        this.clients[mode].insert(request, {}, function (error, response) {
-            if (error) {
-                console.log(error)
-                return
-            }
-            console.log(JSON.stringify(response.toObject().routesMap))
-        });
-    }
-
-    put(mode, params) {
-        if (params[0] === null) {
-            console.log("route ID invalid")
-            return
-        }
-        if (params[1] === null) {
-            console.log("route Name invalid")
-            return
-        }
-        if (params[2] === null) {
-            console.log("route Path invalid")
-            return
-        }
-        let request = new Request()
-        let route = new Route()
-        request.setId(params[0])
-        route.setName(params[1])
-        route.setPath(params[2])
-        request.setRoute(route)
-        this.clients[mode].update(request, {}, function (error, response) {
-            if (error) {
-                console.log(error)
-                return
-            }
-            console.log(JSON.stringify(response.toObject().routesMap))
-        })
-    }
-
-    del(mode) {
-        if (params[0] === null) {
-            console.log("route ID invalid")
-            return
-        }
-        let request = new Request()
-        request.setId(params[0])
-        this.clients[mode].remove(request, {}, function (error, response) {
-            if (error) {
-                console.log(error)
-                return
-            }
-            console.log(JSON.stringify(response.toObject().routesMap))
-        })
     }
 }
 
 
 const arguments = process.argv.splice(2)
 
-if (arguments.length < 2) {
-    console.log("please input dispatch function, e.g: node client.js [mode] [action] [params...]")
+if (arguments.length !== 2) {
+    console.log("please input dispatch function, e.g: node client.js [mode] [type]")
     return
 }
 
@@ -167,26 +79,16 @@ if (!modes.includes(mode)) {
     return
 }
 
-const func = arguments[1].toUpperCase()
-if (!functions.includes(func)) {
-    console.log("dispatch function not found")
+const t = arguments[1].toUpperCase()
+if (!types.includes(t)) {
+    console.log("dispatch types not found")
     return
 }
 
-const params = arguments.splice(2)
-
 let grpc = new gRPCWebClient();
 
-if (func === FUNCTION_GET) {
-    grpc.get(mode, params)
-} else if (func === FUNCTION_POST) {
-    grpc.post(mode, params)
-} else if (func === FUNCTION_PUT) {
-    grpc.put(mode, params)
-} else if (func === FUNCTION_DEL) {
-    grpc.del(mode, params)
-} else if (func === FUNCTION_FLUSH) {
-    grpc.flush(mode)
+if (t === TYPE_UNARY) {
+    grpc.unary(mode)
 } else {
-    grpc.all(mode)
+    grpc.stream(mode)
 }

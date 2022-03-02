@@ -52,7 +52,8 @@
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
-            "plugins/fault-injection"
+            "plugins/fault-injection",
+            "plugins/mocking"
           ]
         },
         {
@@ -120,7 +121,7 @@
               "type": "category",
               "label": "Metrics",
               "items": [
-                "plugins/promethues",
+                "plugins/prometheus",
                 "plugins/node-status",
                 "plugins/datadog"
               ]

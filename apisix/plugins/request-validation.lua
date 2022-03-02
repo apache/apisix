@@ -88,7 +88,9 @@ function _M.rewrite(conf, ctx)
         end
 
         if headers["content-type"] == "application/x-www-form-urlencoded" then
-            req_body, err = ngx.decode_args(body)
+            -- use 0 to avoid truncated result and keep the behavior as the
+            -- same as other platforms
+            req_body, err = ngx.decode_args(body, 0)
         else -- JSON as default
             req_body, err = core.json.decode(body)
         end

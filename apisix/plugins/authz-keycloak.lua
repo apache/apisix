@@ -62,8 +62,12 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
-        access_denied_redirect_uri = {type = "string", minLength = 1, maxLength = 2048}
-    },
+        access_denied_redirect_uri = {type = "string", minLength = 1, maxLength = 2048},
+        access_token_expires_in = {type = "integer", minimum = 1, default = 300},
+        access_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
+        refresh_token_expires_in = {type = "integer", minimum = 1, default = 3600},
+        refresh_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
+},
     allOf = {
         -- Require discovery or token endpoint.
         {
@@ -316,15 +320,15 @@ end
 
 -- Return access_token expires_in value (in seconds).
 local function authz_keycloak_access_token_expires_in(conf, expires_in)
-    return (expires_in or conf.access_token_expires_in or 300)
-           - 1 - (conf.access_token_expires_leeway or 0)
+    return (expires_in or conf.access_token_expires_in)
+           - 1 - conf.access_token_expires_leeway
 end
 
 
 -- Return refresh_token expires_in value (in seconds).
 local function authz_keycloak_refresh_token_expires_in(conf, expires_in)
-    return (expires_in or conf.refresh_token_expires_in or 3600)
-           - 1 - (conf.refresh_token_expires_leeway or 0)
+    return (expires_in or conf.refresh_token_expires_in)
+           - 1 - conf.refresh_token_expires_leeway
 end
 
 

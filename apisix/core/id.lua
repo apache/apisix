@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Instance id of APISIX
+--
+-- @module core.id
+
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local try_read_attr    = require("apisix.core.table").try_read_attr
 local log              = require("apisix.core.log")
@@ -84,7 +89,13 @@ function _M.init()
     end
 end
 
-
+---
+-- Returns the instance id of the running APISIX
+--
+-- @function core.id.get
+-- @treturn string the instance id
+-- @usage
+-- local apisix_id = core.id.get()
 function _M.get()
     return apisix_uid
 end

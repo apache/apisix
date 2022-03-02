@@ -1,0 +1,90 @@
+name: CI Kubernetes
+
+on:
+  push:
+    branches: [ master, 'release/**' ]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [ master, 'release/**' ]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kubernetes-discovery:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-18.04
+        os_name:
+          - linux_openresty
+          - linux_openresty_1_17
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 15
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
+        run: |
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+
+      - name: Setup kubernetes cluster
+        run: |
+          KIND_VERSION="v0.11.1"
+          KUBECTL_VERSION="v1.22.0"
+          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-$(uname)-amd64"
+          curl -Lo ./kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x ./kind
+          chmod +x ./kubectl
+
+          ./kind create cluster --name apisix-test --config ./t/kubernetes/configs/kind.yaml
+
+          ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
+
+          ./kubectl apply -f ./t/kubernetes/configs/account.yaml
+
+          ./kubectl apply -f ./t/kubernetes/configs/endpoint.yaml
+
+          KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
+
+          KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
+
+          KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}/token
+
+          mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
+          echo -n "$KUBERNETES_CLIENT_TOKEN_CONTENT" > ${KUBERNETES_CLIENT_TOKEN_FILE}
+
+          echo 'KUBERNETES_SERVICE_HOST=127.0.0.1'
+          echo 'KUBERNETES_SERVICE_PORT=6443'
+          echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
+          echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
+
+          ./kubectl proxy -p 6445 &
+
+      - name: Linux Install
+        run: |
+          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+          sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+          sudo --preserve-env=OPENRESTY_VERSION ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Run test cases
+        run: |
+          ./ci/kubernetes-ci.sh run_case

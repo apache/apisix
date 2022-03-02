@@ -52,7 +52,8 @@
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
-            "plugins/fault-injection"
+            "plugins/fault-injection",
+            "plugins/mocking"
           ]
         },
         {
@@ -96,6 +97,7 @@
             "plugins/api-breaker",
             "plugins/traffic-split",
             "plugins/request-id",
+            "plugins/proxy-control",
             "plugins/client-control"
           ]
         },
@@ -116,9 +118,8 @@
               "type": "category",
               "label": "Metrics",
               "items": [
-                "plugins/promethues",
-                "plugins/node-status",
-                "plugins/datadog"
+                "plugins/prometheus",
+                "plugins/node-status"
               ]
             },
             {
@@ -189,7 +190,8 @@
             "discovery",
             "discovery/dns",
             "discovery/nacos",
-            "discovery/eureka"
+            "discovery/eureka",
+            "discovery/kubernetes"
           ]
         },
         {

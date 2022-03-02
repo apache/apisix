@@ -74,8 +74,11 @@ stream {
     {% end %}
 
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
-    lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
+
+    {% if enabled_stream_plugins["limit-conn"] then %}
+    lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
+    {% end %}
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
@@ -179,33 +182,58 @@ http {
     {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
-    lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
-    lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
-    lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
-    lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
     lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
-    lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
-    lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
+    {% if enabled_plugins["limit-conn"] then %}
+    lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
+    {% end %}
+
+    {% if enabled_plugins["limit-req"] then %}
+    lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
+    {% end %}
+
+    {% if enabled_plugins["limit-count"] then %}
+    lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    {% end %}
+
+    {% if enabled_plugins["prometheus"] then %}
+    lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
+    {% end %}
+
+    {% if enabled_plugins["skywalking"] then %}
+    lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
+    {% end %}
+
+    {% if enabled_plugins["api-breaker"] then %}
+    lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
+    {% end %}
+
+    {% if enabled_plugins["openid-connect"] or enabled_plugins["authz-keycloak"] then %}
     # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
+    {% end %}
 
+    {% if enabled_plugins["openid-connect"] then %}
     # for openid-connect plugin
     lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
+    {% end %}
 
+    {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
+    {% end %}
 
-    # for ext-plugin
+    {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
 
     # for custom shared dict
     {% if http.custom_lua_shared_dict then %}
@@ -527,6 +555,10 @@ http {
         {% else %}
         ssl_session_tickets off;
         {% end %}
+        {% end %}
+
+        {% if ssl.ssl_trusted_certificate ~= nil then %}
+        proxy_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
         {% end %}
 
         # http server configuration snippet starts

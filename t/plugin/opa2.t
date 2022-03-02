@@ -185,3 +185,42 @@ apikey: test-key
 --- error_code: 403
 --- response_body_unlike eval
 qr/\"service\"/ and qr/\"consumer\"/
+
+
+
+=== TEST 7: setup route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opa": {
+                            "host": "http://127.0.0.1:8181",
+                            "policy": "example"
+                        }
+                    },
+                    "upstream_id": "u1",
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: hit route (with JSON empty array)
+--- request
+GET /hello?user=elisa
+--- error_code: 403
+--- response_body chomp
+{"info":[]}

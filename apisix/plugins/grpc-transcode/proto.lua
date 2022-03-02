@@ -77,20 +77,22 @@ local function compile_proto_bin(content)
         return nil
     end
 
+    local files = pb.decode("google.protobuf.FileDescriptorSet", content).file
     local index = {}
-    for name, _, methods in pb.services() do
-        local method_index = {}
-        for _, m in ipairs(methods) do
-            method_index[m.name] = m
+    for _, f in ipairs(files) do
+        for _, s in ipairs(f.service or {}) do
+            local method_index = {}
+            for _, m in ipairs(s.method) do
+                method_index[m.name] = m
+            end
+
+            index[f.package .. '.' .. s.name] = method_index
         end
-        -- remove the prefix '.'
-        index[name:sub(2)] = method_index
     end
 
     local compiled = {}
     compiled[proto_fake_file] = {}
     compiled[proto_fake_file].index = index
-
     return compiled
 end
 

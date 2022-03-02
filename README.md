@@ -42,10 +42,9 @@ The technical architecture of Apache APISIX:
 ## Community
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
-- QQ Group - 781365357
+- QQ Group - 552030619, 781365357
 - Slack Workspace - Please [subscribe the mailing list](https://apisix.apache.org/docs/general/subscribe-guide) then ask for invitation link
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [bilibili video](https://space.bilibili.com/551921247)
 - **Good first issues**:
   - [Apache APISIX®](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX® Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -239,30 +238,32 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 [![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
 
-## Videos And Articles
-
-- [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
-- [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
-- [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
-- [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
-
 ## User Stories
 
-- [Sina Weibo: the road to customization of Sina Weibo API gateway based on Apache APISIX(Chinese)](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
-- [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
-- [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
-- [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
-- [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller? (Chinese)](https://www.upyun.com/opentalk/448.html)
-- [aispeech: Why we create a new k8s ingress controller? (Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+- [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
+- [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
+- [More Stories](https://apisix.apache.org/blog/tags/user-case)
 
 ## Who Uses APISIX?
 
-A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
+A wide variety of companies and organizations use APISIX for research, production and commercial product, below are some of them:
 
-<img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
-
-Users are encouraged to add themselves to the [Powered By](powered-by.md) page.
+- Airwallex
+- Bilibili
+- European eFactory Platform
+- European Copernicus Reference System
+- HONOR
+- iQIYI
+- NASA JPL
+- Nayuki
+- OPPO
+- QingCloud
+- Swisscom
+- Tencent Game
+- Travelsky
+- VIIO
+- weibo
+- WPS
 
 ## Landscape
 

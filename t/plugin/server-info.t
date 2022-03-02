@@ -34,6 +34,20 @@ no_long_string();
 no_root_location();
 no_shuffle();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!defined $block->error_log && !defined $block->no_error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    $block;
+});
+
 run_tests;
 
 __DATA__
@@ -46,7 +60,7 @@ plugins:
     - server-info
 plugin_attr:
     server-info:
-        report_interval: 60
+        report_ttl: 60
 --- config
 location /t {
     content_by_lua_block {
@@ -65,58 +79,12 @@ location /t {
         ngx.say(json.encode(value))
     }
 }
---- request
-GET /t
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"version":"[\d\.]+"}$/
---- no_error_log
-[error]
---- error_log
-timer created to report server info, interval: 60
+qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
 
 
 
-=== TEST 2: verify the data integrity after reloading
---- yaml_config
-apisix:
-    id: 123456
-plugins:
-    - server-info
-plugin_attr:
-    server-info:
-        report_interval: 60
---- config
-location /t {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        local key = "/data_plane/server_info/" .. core.id.get()
-        local res, err = core.etcd.get(key)
-        if err ~= nil then
-            ngx.status = 500
-            ngx.say(err)
-            return
-        end
-
-        local value = res.body.node.value
-        if value.up_time >= 2 then
-            ngx.say("integral")
-        else
-            ngx.say("reset")
-        end
-    }
-}
---- request
-GET /t
---- response_body
-integral
---- no_error_log
-[error]
---- error_log
-timer created to report server info, interval: 60
-
-
-
-=== TEST 3: get server_info from plugin control API
+=== TEST 2: get server_info from plugin control API
 --- yaml_config
 apisix:
     id: 123456
@@ -136,9 +104,5 @@ location /t {
         ngx.say(json.encode(body))
     }
 }
---- request
-GET /t
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"version":"[\d\.]+"}$/
---- no_error_log
-[error]
+qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
