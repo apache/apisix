@@ -176,6 +176,17 @@ local function get_base_uri()
 end
 
 
+local function de_duplication(services, namespace_id, group_name, service_name, scheme)
+    for _, service in ipairs(services) do
+        if service.namespace_id == namespace_id and service.group_name == group_name
+                and service.service_name == service_name and service.scheme == scheme then
+            return true
+        end
+    end
+    return false
+end
+
+
 local function iter_and_add_service(services, values)
     if not values then
         return
@@ -199,6 +210,12 @@ local function iter_and_add_service(services, values)
 
         local group_name = (up.discovery_args and up.discovery_args.group_name)
                            or default_group_name
+
+        local dup = de_duplication(services, namespace_id, group_name,
+                up.service_name, up.scheme)
+        if dup then
+            goto CONTINUE
+        end
 
         if up.discovery_type == 'nacos' then
             core.table.insert(services, {
