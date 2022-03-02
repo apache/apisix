@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Json schema validation module.
+--
+-- @module core.schema
+
 local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})

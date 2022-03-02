@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Wrapped dns search client.
+--
+-- @module core.dns.client
+
 local require = require
 local config_local = require("apisix.core.config_local")
 local log = require("apisix.core.log")

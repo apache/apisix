@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Get configuration information in Stand-alone mode.
+--
+-- @module core.config_yaml
+
 local config_local = require("apisix.core.config_local")
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
