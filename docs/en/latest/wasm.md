@@ -103,6 +103,7 @@ For example, when the first request hits the route which has WASM plugin configu
 * `proxy_on_http_request_headers`: run in the access/rewrite phase, depends on the configuration of `http_request_phase`.
 * `proxy_on_http_request_body`: run in the same phase of `proxy_on_http_request_headers`. To run this callback, we need to set property `wasm_process_req_body` to non-empty value in `proxy_on_http_request_headers`. See `t/wasm/request-body/main.go` as an example.
 * `proxy_on_http_response_headers`: run in the header_filter phase.
+* `proxy_on_http_response_body`: run in the body_filter phase. To run this callback, we need to set property `wasm_process_resp_body` to non-empty value in `proxy_on_http_response_headers`. See `t/wasm/response-rewrite/main.go` as an example.
 
 ## Example
 
