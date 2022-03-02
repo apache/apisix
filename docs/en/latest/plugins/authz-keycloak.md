@@ -64,7 +64,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
-| access_denied_redirect_uri                 | string       | optional    |                                             | [1, 2048]                                              | Uri redirected when access fails.                                                                                                      |
+| access_denied_redirect_uri     | string        | optional    |                                               | [1, 2048]                                              | Uri redirected when access fails.|
 
 ### Discovery and Endpoints
 

@@ -49,7 +49,8 @@ title: authz-keycloak
 | refresh_token_expires_leeway| integer       | 可选   | 0           | [0, ...]                            | refresh token 提前更新时间（秒，如果设置了此值，允许在该时间段内使用相同的 refresh token 令牌来解决潜在的网络并发问题）                                                                   |
 | ssl_verify                  | boolean       | 可选   | true        | [0, ...]                            | 验证 SSL 证书与主机名是否匹配                                                                   |
 | policy_enforcement_mode     | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
-| access_denied_redirect_uri     | string        | 可选   |  | [1, 2048]       |当访问失败时重定向的uri                                                                    |
+| access_denied_redirect_uri  | string        | 可选   |             | [1, 2048]                           |当访问失败时重定向的 uri
+|
 
 ### 策略执行模式
 
