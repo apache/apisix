@@ -113,13 +113,13 @@ sudo yum install ./apisix/*.rpm
   make install
   ```
 
-   **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败, 错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
+   **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
 
-   解决思路：`luarocks` 支持添加自定义包到项目中（参考自[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format))。使用第三方工具安装缺失的包，并将其安装目录添加到项目的配置文件中。方法适用于 macOS、ubuntu、Centos 等主流操作系统，此处暂给出 macOS 的具体解决步骤仅供参考。
+   解决思路：`luarocks` 支持添加自定义包到项目中（参考自[luarocks Config file format](https://github.com/luarocks/luarocks/wiki/Config-file-format))。使用第三方工具安装缺失的包，并将其安装目录添加到项目的配置文件中。方法适用于 macOS、Ubuntu、CentOS 等主流操作系统，此处暂给出 macOS 的具体解决步骤仅供参考。
 
    macOS 具体解决步骤：
 
-     1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地;
+     1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地；
      2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
      3. 将路径添加到项目配置文件中（选择两种方法中的一种即可）：
          1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`；
