@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Wrapped string module.
+--
+-- @module core.string
+
 local error = error
 local type = type
 local str_byte = string.byte
@@ -43,7 +48,15 @@ function _M.find(haystack, needle, from)
     return str_find(haystack, needle, from or 1, true)
 end
 
-
+---
+--  Tests whether the string s begins with prefix.
+--
+-- @function core.string.has_prefix
+-- @tparam string s The string being tested.
+-- @tparam string prefix Specify the prefix.
+-- @treturn boolean Test result, true means the string s begins with prefix.
+-- @usage
+-- local res = core.string.has_prefix("/apisix/admin/routes", "/apisix/") -- true
 function _M.has_prefix(s, prefix)
     if type(s) ~= "string" or type(prefix) ~= "string" then
         error("unexpected type: s:" .. type(s) .. ", prefix:" .. type(prefix))

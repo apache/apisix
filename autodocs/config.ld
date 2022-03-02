@@ -1,0 +1,11 @@
+project='Apache APISIX'
+title='Plugin Develop Docs'
+description='Functions in APISIX core'
+format='markdown'
+backtick_references = false
+no_lua_ref = true
+all = false
+no_space_before_args = true
+ext = "md"
+template = true -- use the ldoc.ltp as markdown template
+template_escape = ">"

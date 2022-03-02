@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Collection of util functions.
+--
+-- @module core.utils
+
 local config_local   = require("apisix.core.config_local")
 local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
@@ -235,7 +240,14 @@ function _M.validate_header_value(value)
 end
 
 
+---
+-- Returns the standard host name of the local host.
 -- only use this method in init/init_worker phase.
+--
+-- @function core.utils.gethostname
+-- @treturn string The host name of the local host.
+-- @usage
+-- local hostname = core.utils.gethostname() -- "localhost"
 function _M.gethostname()
     if hostname then
         return hostname
