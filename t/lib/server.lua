@@ -46,6 +46,7 @@ local function inject_headers()
     end
 end
 
+
 function _M.hello()
     ngx.req.read_body()
     local s = "hello world"
