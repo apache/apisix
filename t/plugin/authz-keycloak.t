@@ -631,14 +631,15 @@ passed
                     ["Authorization"] = "Bearer " .. "fake access token",
                 }
              })
-
-            ngx.say(res.body)
+            if res.status >= 300 then
+                ngx.status = res.status
+                ngx.header["Location"] = res.headers["Location"]
+            end
         }
     }
 --- request
 GET /t
 --- response_headers
 Location: http://127.0.0.1/test
---- response_body
-
+--- error_code: 302
 --- no_error_log

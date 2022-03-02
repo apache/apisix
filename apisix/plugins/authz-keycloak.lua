@@ -589,7 +589,7 @@ local function evaluate_permissions(conf, ctx, token)
         permission = conf.permissions
     end
 
-    -- Return 403 if permission is empty and enforcement mode is "ENFORCING".
+    -- Return 403 or 302 if permission is empty and enforcement mode is "ENFORCING".
     if #permission == 0 and conf.policy_enforcement_mode == "ENFORCING" then
         -- Return Keycloak-style message for consistency.
         if conf.access_denied_redirect_uri then 
