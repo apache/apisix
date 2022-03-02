@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Get or set the information of the client request.
+--
+-- @module core.request
+
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
@@ -60,9 +64,27 @@ local function _validate_header_name(name)
     return name
 end
 
+---
+-- Returns all headers of the current request.
+-- The name and value of the header in return table is in lower case.
+--
+-- @function core.request.headers
+-- @tparam table ctx The context of the current request.
+-- @treturn table all headers
+-- @usage
+-- local headers = core.request.headers(ctx)
 _M.headers = _headers
 
-
+---
+-- Returns the value of the header with the specified name.
+--
+-- @function core.request.header
+-- @tparam table ctx The context of the current request.
+-- @tparam string name The header name, example: "Content-Type".
+-- @treturn string|nil the value of the header, or nil if not found.
+-- @usage
+-- -- You can use upper case for header "Content-Type" here to get the value.
+-- local content_type = core.request.header(ctx, "Content-Type") -- "application/json"
 function _M.header(ctx, name)
     if not ctx then
         ctx = ngx.ctx.api_ctx
