@@ -46,6 +46,14 @@ local function inject_headers()
     end
 end
 
+local function str_split(str, reps)
+    local str_list = {}
+    string.gsub(str, '[^' .. reps .. ']+', function(w)
+        table.insert(str_list, w)
+    end)
+    return str_list
+end
+
 
 function _M.hello()
     ngx.req.read_body()
@@ -429,6 +437,45 @@ function _M.log_request()
     for _, key in ipairs(keys) do
         ngx.log(ngx.WARN, key, ": ", headers[key])
     end
+end
+
+function _M.test_http_logger_center()
+    local args = ngx.req.get_uri_args()
+    local query = args.query or nil
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+
+    if query then
+        if type(query) == "string" then
+            query = {query}
+        end
+
+        local data, err = json_decode(body)
+        if err then
+            ngx.log(ngx.ERR, "logs:", body)
+        end
+
+        for i = 1, #query do
+            local fields = str_split(query[i], ".")
+            local val
+            for j = 1, #fields do
+                local key = fields[j]
+                if j == 1 then
+                    val = data[key]
+                else
+                    val = val[key]
+                end
+            end
+            ngx.log(ngx.ERR ,query[i], ":", val)
+        end
+    else
+        ngx.log(ngx.ERR, "logs:", body)
+    end
+end
+
+
+function _M.test_http_logger_response()
+    ngx.say("test-http-logger-response")
 end
 
 

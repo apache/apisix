@@ -141,3 +141,57 @@ GET /opentracing
 --- no_error_log
 removing batch processor stale object
 --- wait: 1.5
+
+
+
+=== TEST 6: set fetch request body and response body route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST"],
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/test/http/logger/center?query[]=request.body&query[]=response.body",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_req_body": true,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/http/logger/response"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: test fetch request body and response body route
+--- request
+POST /test/http/logger/response
+test-http-logger-request
+--- response_body
+test-http-logger-response
+--- error_log
+request.body:test-http-logger-request
+response.body:test-http-logger-response
+--- wait: 1.5
