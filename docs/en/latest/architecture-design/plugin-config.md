@@ -21,10 +21,9 @@ title: Plugin Config
 #
 -->
 
-To reuse common plugin configurations, you can extract them into a plugin config and
-bind it with a route directly.
+Plugin Configs are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Route](./route.md).
 
-For instance, you can do something like:
+The example below illustrates how this can be used:
 
 ```shell
 # create a plugin config
@@ -54,12 +53,11 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-When we can't find the corresponding plugin config with the id, the requests hit the route will be terminated with HTTP status code 503.
+When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of 503.
 
-When a route already have `plugins` field configured, the `plugins` in the plugin config
-will be merged into it. The same plugin in the plugin config will override one in the `plugins`.
+If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will override the ones configured directly in the Route.
 
-For example, when we configure a plugin config
+For example, if we configure a Plugin Config as shown below
 
 ```
 {
@@ -80,7 +78,7 @@ For example, when we configure a plugin config
 }
 ```
 
-to
+to a Route as shown below,
 
 ```
 {
@@ -108,7 +106,7 @@ to
 }
 ```
 
-is equal to
+the effective configuration will be as the one shown below:
 
 ```
 {
