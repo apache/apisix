@@ -65,6 +65,18 @@ local type = type
 
 
 local events_list
+local exclude_resp_header = {
+    ["connection"] = true,
+    ["content-length"] = true,
+    ["transfer-encoding"] = true,
+    ["location"] = true,
+    ["server"] = true,
+    ["www-authenticate"] = true,
+    ["content-encoding"] = true,
+    ["content-type"] = true,
+    ["content-location"] = true,
+    ["content-language"] = true,
+}
 
 local function new_lrucache()
     return core.lrucache.new({
@@ -612,18 +624,6 @@ local rpc_handlers = {
             end
 
             local len = rewrite:RespHeadersLength()
-            local exclude_resp_header = {
-                ["connection"] = true,
-                ["content-length"] = true,
-                ["transfer-encoding"] = true,
-                ["location"] = true,
-                ["server"] = true,
-                ["www-authenticate"] = true,
-                ["content-encoding"] = true,
-                ["content-type"] = true,
-                ["content-location"] = true,
-                ["content-language"] = true,
-            }
             if len > 0 then
                 for i = 1, len do
                     local entry = rewrite:RespHeaders(i)
