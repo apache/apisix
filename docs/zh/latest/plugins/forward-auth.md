@@ -69,7 +69,18 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
         "serverless-pre-function": {
             "phase": "rewrite",
             "functions": [
-                "return function (conf, ctx) local core = require(\"apisix.core\"); local authorization = core.request.header(ctx, \"Authorization\"); if authorization == \"123\" then core.response.exit(200); elseif authorization == \"321\" then core.response.set_header(\"X-User-ID\", \"i-am-user\"); core.response.exit(200); else core.response.set_header(\"Location\", \"http://example.com/auth\"); core.response.exit(403); end end"
+                "return function (conf, ctx)
+                    local core = require(\"apisix.core\");
+                    local authorization = core.request.header(ctx, \"Authorization\");
+                    if authorization == \"123\" then
+                        core.response.exit(200);
+                    elseif authorization == \"321\" then
+                        core.response.set_header(\"X-User-ID\", \"i-am-user\");
+                        core.response.exit(200);
+                    else core.response.set_header(\"Location\", \"http://example.com/auth\");
+                        core.response.exit(403);
+                    end
+                end"
             ]
         }
     }
@@ -79,13 +90,13 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 下一步, 我们创建一个测试路由。
 
 ```shell
-curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -d '{
     "uri": "/headers",
     "plugins": {
         "forward-auth": {
-            "host": "http://127.0.0.1:9080/auth",
+            "uri": "http://127.0.0.1:9080/auth",
             "request_headers": ["Authorization"],
             "upstream_headers": ["X-User-ID"],
             "client_headers": ["Location"]
@@ -106,6 +117,9 @@ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
 
 ```shell
 curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+```
+
+```
 {
     "headers": {
         "Authorization": "123",
@@ -118,6 +132,9 @@ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
 
 ```shell
 curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+```
+
+```
 {
     "headers": {
         "Authorization": "321",
@@ -131,6 +148,9 @@ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 
 ```shell
 curl -i http://127.0.0.1:9080/headers
+```
+
+```
 HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
 ```
