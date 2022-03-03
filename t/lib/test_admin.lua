@@ -168,6 +168,7 @@ function _M.test(uri, method, body, pattern, headers)
     end
 
     if type(body) == "table" then
+        -- {} will be encoded as '[]' whether decode_array_with_array_mt or not
         body = json.encode(body)
     end
 

@@ -85,7 +85,7 @@ install_dependencies() {
     cd ../../../
 
     # install dependencies
-    git clone https://github.com/iresty/test-nginx.git test-nginx
+    git clone https://github.com/openresty/test-nginx.git test-nginx
     create_lua_deps
 }
 
@@ -94,7 +94,7 @@ run_case() {
     make init
     ./utils/set-dns.sh
     # run test cases
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

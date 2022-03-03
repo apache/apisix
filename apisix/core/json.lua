@@ -14,7 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_encode = require("cjson.safe").encode
+
+--- Wrapped serialization and deserialization modules for json and lua tables.
+--
+-- @module core.json
+
+local cjson = require("cjson.safe")
+local json_encode = cjson.encode
 local clear_tab = require("table.clear")
 local ngx = ngx
 local tostring = tostring
@@ -23,10 +29,11 @@ local pairs = pairs
 local cached_tab = {}
 
 
+cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
-    array_mt = require("cjson.safe").array_mt,
-    decode = require("cjson.safe").decode,
+    array_mt = cjson.array_mt,
+    decode = cjson.decode,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
     -- it doesn't maintain the object key order.
@@ -93,8 +100,18 @@ local delay_tab = setmetatable({data = "", force = false}, {
 })
 
 
--- this is a non-thread safe implementation
--- it works well with log, eg: log.info(..., json.delay_encode({...}))
+---
+-- Delayed encoding of input data, avoid unnecessary encode operations.
+-- When really writing logs, if the given parameter is table, it will be converted to string in
+-- OpenResty by checking if there is a metamethod registered for `__tostring`, and if so,
+-- calling this method to convert it to string.
+--
+-- @function core.json.delay_encode
+-- @tparam string|table data The data to be encoded.
+-- @tparam boolean force Whether to clear the log buffer.
+-- @treturn table The table with the __tostring function overridden.
+-- @usage
+-- core.log.info("conf  : ", core.json.delay_encode(conf))
 function _M.delay_encode(data, force)
     delay_tab.data = data
     delay_tab.force = force

@@ -89,3 +89,37 @@ if ! grep "t/certs/mtls_ca.crt;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: set trust certificate"
+
+echo "
+apisix:
+    stream_proxy:
+        tcp:
+            - addr: 9100
+stream_plugins:
+    - ip-restriction
+" > conf/config.yaml
+
+make init
+
+if grep "plugin-limit-conn-stream" conf/nginx.conf > /dev/null; then
+    echo "failed: enable shdict on demand"
+    exit 1
+fi
+
+echo "
+apisix:
+    stream_proxy:
+        tcp:
+            - addr: 9100
+stream_plugins:
+    - limit-conn
+" > conf/config.yaml
+
+make init
+
+if ! grep "plugin-limit-conn-stream" conf/nginx.conf > /dev/null; then
+    echo "failed: enable shdict on demand"
+    exit 1
+fi
+
+echo "passed: enable shdict on demand"

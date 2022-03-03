@@ -79,7 +79,7 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev
+    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
 }
 
 # Install dependencies on mac osx

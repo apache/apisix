@@ -220,7 +220,7 @@ apisix help
 3. 运行 `git clone` 命令，将最新的源码克隆到本地，请使用我们 fork 出来的版本：
 
   ```shell
-  git clone https://github.com/iresty/test-nginx.git
+  git clone https://github.com/openresty/test-nginx.git
   ```
 
 4. 有两种方法运行测试：

@@ -18,36 +18,89 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"flag"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"log"
 	"net"
-
-	"apisix.apache.org/plugin/grpc-web/a6"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	pb "apisix.apache.org/plugin/grpc-web/a6"
 )
 
-var grpcListenAddress string
-
-func init() {
-	flag.StringVar(&grpcListenAddress, "listen", ":50001", "address for grpc")
+type routeServiceServer struct {
+	savedRoutes []*pb.Route
 }
+
+func (rss *routeServiceServer) GetRoute(ctx context.Context, req *pb.Query) (*pb.Route, error) {
+	var r *pb.Route
+	if len(req.Name) <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "query params invalid")
+	}
+
+	for _, savedRoute := range rss.savedRoutes {
+		if savedRoute.Name == req.Name {
+			r = savedRoute
+			break
+		}
+	}
+
+	if r == nil {
+		return nil, status.Errorf(codes.NotFound, "route not found")
+	}
+
+	return r, nil
+}
+
+func (rss *routeServiceServer) GetRoutes(req *pb.Query, srv pb.RouteService_GetRoutesServer) error {
+	if len(rss.savedRoutes) <= 0 {
+		return status.Errorf(codes.NotFound, "routes data is empty")
+	}
+	for _, savedRoute := range rss.savedRoutes {
+		if err := srv.Send(savedRoute); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (rss *routeServiceServer) LoadRoutes() {
+	if err := json.Unmarshal(exampleData, &rss.savedRoutes); err != nil {
+		log.Fatalf("Failed to load default routes: %v", err)
+	}
+}
+
+var exampleData = []byte(`[
+{
+	"name":"hello",
+	"path":"/hello"
+},
+{
+	"name":"world",
+	"path":"/world"
+}]`)
+
+var ServerPort = ":50001"
 
 func main() {
 	flag.Parse()
-	listen, err := net.Listen("tcp", grpcListenAddress)
+
+	lis, err := net.Listen("tcp", ServerPort)
 	if err != nil {
 		log.Fatalf("failed to listen gRPC-Web Test Server: %v", err)
 	} else {
-		log.Printf("successful to listen gRPC-Web Test Server, address %s", grpcListenAddress)
+		log.Printf("successful to listen gRPC-Web Test Server, address %s", ServerPort)
 	}
 
-	s := a6.RouteServer{}
-	grpcServer := grpc.NewServer()
-	reflection.Register(grpcServer)
-	a6.RegisterRouteServiceServer(grpcServer, &s)
+	s := routeServiceServer{}
+	s.LoadRoutes()
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+	pb.RegisterRouteServiceServer(grpcServer, &s)
 
-	if err = grpcServer.Serve(listen); err != nil {
+	if err = grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }

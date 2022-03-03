@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Wrapped timer module, can cancel the running timers.
+--
+-- @module core.timer
+
 local log = require("apisix.core.log")
 local sleep = require("apisix.core.utils").sleep
 local timer_every = ngx.timer.every

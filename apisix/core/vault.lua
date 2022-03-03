@@ -15,6 +15,11 @@
 -- limitations under the License.
 --
 
+--- Vault Tools.
+--  Vault is an identity-based secrets and encryption management system.
+--
+-- @module core.vault
+
 local core = require("apisix.core")
 local http = require("resty.http")
 local json = require("cjson")

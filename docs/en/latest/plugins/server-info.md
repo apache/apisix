@@ -38,9 +38,7 @@ The meaning of each item in server information is following:
 
 | Name    | Type | Description |
 |---------|------|-------------|
-| up_time | integer | Elapsed time (in seconds) since APISIX instance was launched, value will be reset when you hot updating APISIX but is kept for intact if you just reloading APISIX. |
 | boot_time | integer | Bootstrap time (UNIX timestamp) of the APISIX instance, value will be reset when you hot updating APISIX but is kept for intact if you just reloading APISIX. |
-| last_report_time | integer | Last reporting time (UNIX timestamp). |
 | id | string | APISIX instance id. |
 | etcd_version | string | The etcd cluster version that APISIX is using, value will be `"unknown"` if the network (to etcd) is partitioned. |
 | version | string | APISIX version. |
@@ -75,16 +73,14 @@ We can change the report configurations in the `plugin_attr` section of `conf/co
 
 | Name         | Type   | Default  | Description                                                          |
 | ------------ | ------ | -------- | -------------------------------------------------------------------- |
-| report_interval | integer | 60 | the interval to report server info to etcd (unit: second, maximum: 3600, minimum: 60). |
-| report_ttl | integer | 7200 | the live time for server info in etcd (unit: second, maximum: 86400, minimum: 3600). |
+| report_ttl | integer | 36 | the live time for server info in etcd (unit: second, maximum: 86400, minimum: 3). |
 
-Here is an example, which modifies the `report_interval` to 10 minutes and sets the `report_ttl` to one hour.
+Here is an example, which modifies the `report_ttl` to one minute.
 
 ```yaml
 plugin_attr:
   server-info:
-    report_interval: 600,
-    report_ttl: 3600
+    report_ttl: 60
 ```
 
 ## Test Plugin
@@ -95,8 +91,6 @@ After enabling this plugin, you can access these data through the plugin Control
 $ curl http://127.0.0.1:9090/v1/server_info -s | jq .
 {
   "etcd_version": "3.5.0",
-  "up_time": 9460,
-  "last_report_time": 1608531519,
   "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
   "hostname": "fedora32",
   "version": "2.1",

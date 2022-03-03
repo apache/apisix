@@ -1,0 +1,98 @@
+> local iter = ldoc.modules.iter
+> local display_name = ldoc.display_name
+> local function trim_newline(s)
+>   return (s:gsub("\n", "\r"))
+> end
+---
+title: APISIX Plugin Development Docs
+---
+
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+## $(ldoc.title)
+
+### $(module.name)
+
+$(module.summary) $(module.description)
+>
+> for kind, items in module.kinds() do
+>    for item in items() do
+
+#### $(trim_newline(display_name(item)))
+>       if item.type == "function" then
+>          if item.summary and item.summary ~= '' then
+
+**Summary**: $(item.summary)
+>          end -- if item.summary
+>          if item.description and item.description ~= '' then
+
+**Description**:
+
+```text$(trim_newline(item.description))
+```
+>          end -- if item.description
+>       end -- if item.type
+>       if item.params and #item.params > 0 then
+>          local subnames = module.kinds:type_of(item).subnames
+>          if subnames then
+
+**$(subnames)**
+
+>          end -- if subnames
+>          -- print the parameters
+>          for par in iter(item.params) do
+>             local param = item:subparam(par)
+>             for p in iter(param) do
+>                local name = item:display_name_of(p)
+>                local tp  = item:type_of_param(p)
+* **$(name)**($(tp)):$(item.params.map[p])
+>                if tp ~= '' then
+>                end -- if tp
+>
+>             end -- for p
+>          end -- for par
+>       end -- if item.params and #item.params > 0
+>
+>       -- print the returns
+>       if item.retgroups then
+>           local groups = item.retgroups
+
+**Returns:**
+
+>          for i, group in ldoc.ipairs(groups) do
+>             for r in group:iter() do
+>                local type, ctypes = item:return_type(r);
+* `$(type)`: $(r.text)
+>             end -- for r in group:iter()
+>          end -- for i,group
+>       end -- if item.retgroups
+
+>       if item.usage then
+**Usage**
+
+>          for usage in item.usage:iter() do
+```lua
+$(trim_newline(usage))
+```
+>          end -- for usage in item.usage:iter()
+>          local usage = item.usage
+>       end -- if item.usage
+>    end -- end for item in items()
+> end -- for kinds, items

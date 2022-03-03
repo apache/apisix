@@ -15,12 +15,26 @@
 -- limitations under the License.
 --
 
+--- I/O operations on files.
+--
+-- @module core.io
+
 local open = io.open
 
 
 local _M = {}
 
-
+---
+-- Read the contents of a file.
+--
+-- @function core.io.get_file
+-- @tparam string file_name either an absolute path or
+-- a relative path based on the APISIX working directory.
+-- @treturn string The file content.
+-- @usage
+-- local file_content, err = core.io.get_file("conf/apisix.uid")
+-- -- the `file_content` maybe the APISIX instance id in uuid format,
+-- -- like "3f0e827b-5f26-440e-8074-c101c8eb0174"
 function _M.get_file(file_name)
     local f, err = open(file_name, 'r')
     if not f then
