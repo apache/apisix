@@ -579,34 +579,9 @@ GET /t
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "policy_enforcement_mode": "ENFORCING",
-                                    "timeout": 3000,
-                                    "access_denied_redirect_uri": "http://127.0.0.1/test"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
-                )
-
+            )
+            
             if code >= 300 then
                 ngx.status = code
             end
@@ -646,4 +621,4 @@ GET /t
 --- response_headers
 Location: http://127.0.0.1/test
 --- error_code: 302
---- no_error_log
+
