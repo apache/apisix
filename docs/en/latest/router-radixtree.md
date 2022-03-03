@@ -291,7 +291,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-We can verify GraphQL matches in the following two ways:
+We can verify GraphQL matches in the following three ways:
 
 1. GraphQL query strings
 
