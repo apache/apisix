@@ -49,10 +49,9 @@ title: udp-logger
 | port             | integer | 必须   |              | [0,...] | 目标端口                                         |
 | timeout          | integer | 可选   | 1000         | [1,...] | 发送数据超时间                                   |
 | name             | string  | 可选   | "udp logger" |         | 用于识别批处理器                                 |
-| batch_max_size   | integer | 可选   | 1000         | [1,...] | 每批的最大大小                                   |
-| inactive_timeout | integer | 可选   | 5            | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
-| buffer_duration  | integer | 可选   | 60           | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
 | include_req_body | boolean | 可选   |              |         | 是否包括请求 body                                |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
