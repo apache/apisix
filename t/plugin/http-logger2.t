@@ -64,7 +64,7 @@ add_block_preprocessor(sub {
 
                     local data, err = require("cjson").decode(body)
                     if err then
-                        ngx.log(ngx.ERR, "logs:", body)
+                        ngx.log(ngx.WARN, "logs:", body)
                     end
 
                     for i = 1, #query do
@@ -78,10 +78,10 @@ add_block_preprocessor(sub {
                                 val = val[key]
                             end
                         end
-                        ngx.log(ngx.ERR ,query[i], ":", val)
+                        ngx.log(ngx.WARN ,query[i], ":", val)
                     end
                 else
-                    ngx.log(ngx.ERR, "logs:", body)
+                    ngx.log(ngx.WARN, "logs:", body)
                 end
             }
         }
@@ -230,36 +230,7 @@ removing batch processor stale object
                             "type": "roundrobin"
                         },
                         "uri": "/http-logger/test"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["POST"],
-                            "plugins": {
-                                "http-logger": {
-                                    "uri": "http://127.0.0.1:12001/http-logger/center?query[]=request.body&query[]=response.body",
-                                    "batch_max_size": 1,
-                                    "max_retry_count": 1,
-                                    "retry_delay": 2,
-                                    "buffer_duration": 2,
-                                    "inactive_timeout": 2,
-                                    "include_req_body": true,
-                                    "include_resp_body": true
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:12001": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/http-logger/test"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }]])
 
             if code >= 300 then
                 ngx.status = code
