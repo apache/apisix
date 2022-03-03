@@ -75,7 +75,6 @@ local function set_directly(ctx, key, ver, conf)
     ctx.upstream_conf = conf
     ctx.upstream_version = ver
     ctx.upstream_key = key
-    ctx.upstream_healthcheck_parent = conf.parent
     return
 end
 _M.set = set_directly
