@@ -23,10 +23,14 @@ title: error-log-logger
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable And Disable**](#how-to-enable-and-disable)
-- [**How to set the TCP server address**](#how-to-set-the-tcp-server-address)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+- [How To Enable And Disable](#how-to-enable-and-disable)
+  - [Enable plugin](#enable-plugin)
+  - [Disable plugin](#disable-plugin)
+- [How to set the TCP server address](#how-to-set-the-tcp-server-address)
+- [How to set the SkyWalking OAP server address](#how-to-set-the-skywalking-oap-server-address)
 
 ## Name
 
@@ -62,11 +66,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
 | keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
-| batch_max_size                   | integer | optional    | 1000                           | [1,...] | Max size of each batch.                                                                              |
-| inactive_timeout                 | integer | optional    | 3                              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive.                                  |
-| buffer_duration                  | integer | optional    | 60                             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.            |
-| max_retry_count                  | integer | optional    | 0                              | [0,...] | Maximum number of retries before removing from the processing pipe line.                             |
-| retry_delay                      | integer | optional    | 1                              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.                    |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable And Disable
 

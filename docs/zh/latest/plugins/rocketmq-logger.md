@@ -53,15 +53,12 @@ title: rocketmq-logger
 | secret_key       | string  | 可选   | ""             |         | ACL认证的secret key。                         |
 | name             | string  | 可选   | "rocketmq logger" |         | batch processor 的唯一标识。               |
 | meta_format      | enum    | 可选   | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|
-| batch_max_size   | integer | 可选   | 1000           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `rocketmq` 服务。|
-| inactive_timeout | integer | 可选   | 5              | [1,...] | 刷新缓冲区的最大时间（以秒为单位），当达到最大的刷新时间时，无论缓冲区中的日志数量是否达到设置的最大条数，也会自动将全部日志推送到 `rocketmq` 服务。 |
-| buffer_duration  | integer | 可选   | 60             | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位）。 |
-| max_retry_count  | integer | 可选   | 0              | [0,...] | 从处理管道中移除之前的最大重试次数。             |
-| retry_delay      | integer | 可选   | 1              | [0,...] | 如果执行失败，则应延迟执行流程的秒数。           |
 | include_req_body | boolean | 可选   | false          | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ；true： 表示包含请求的 body。注意：如果请求 body 没办法完全放在内存中，由于 Nginx 的限制，我们没有办法把它记录下来。|
 | include_req_body_expr | array  | 可选    |           |         | 当 `include_req_body` 开启时, 基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式的结果进行记录。如果该选项存在，只有在表达式为真的时候才会记录请求 body。 |
 | include_resp_body| boolean | 可选   | false          | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ### meta_format 参考示例
 

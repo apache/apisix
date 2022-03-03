@@ -23,12 +23,14 @@ title: http-logger
 
 ## 目录
 
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**插件元数据设置**](#插件元数据设置)
-- [**禁用插件**](#禁用插件)
+- [目录](#目录)
+- [定义](#定义)
+- [属性列表](#属性列表)
+- [如何开启](#如何开启)
+- [测试插件](#测试插件)
+- [插件元数据设置](#插件元数据设置)
+  - [设置日志格式示例](#设置日志格式示例)
+- [禁用插件](#禁用插件)
 
 ## 定义
 
@@ -44,16 +46,13 @@ title: http-logger
 | auth_header      | string  | 可选   | ""            |         | 授权头部。                                    |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "http logger" |         | 标识 logger 的唯一标识符。                     |
-| batch_max_size   | integer | 可选   | 1000          | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `HTTP/HTTPS` 服务。 |
-| inactive_timeout | integer | 可选   | 5             | [1,...] | 刷新缓冲区的最大时间（以秒为单位），当达到最大的刷新时间时，无论缓冲区中的日志数量是否达到设置的最大条数，也会自动将全部日志推送到 `HTTP/HTTPS` 服务。 |
-| buffer_duration  | integer | 可选   | 60            | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位）。   |
-| max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
-| retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
 | include_req_body | boolean | 可选   | false         | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。 |
 | include_resp_body| boolean | 可选   | false         | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | concat_method    | string  | 可选   | "json"        | ["json", "new_line"] | 枚举类型： `json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
 | ssl_verify       | boolean | optional    | false          | [false, true] | 是否验证证书。 |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 

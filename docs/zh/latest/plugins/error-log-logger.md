@@ -62,11 +62,8 @@ title: error-log-logger
 | timeout                          | integer | 可选   | 3                              | [1,...]          | 连接和发送数据超时间（以秒为单位）                                             |
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）                                        |
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |
-| inactive_timeout                 | integer | 可选   | 3                              | [1,...]          | 刷新缓冲区的最大时间（以秒为单位）                                             |
-| batch_max_size                   | integer | 可选   | 1000                           | [1,...]          | 每批的最大大小                                                             |
-| buffer_duration                  | integer | 可选   | 60                             | [1,...]          | 必须先处理批次中最旧条目的最长期限（以秒为单位）                                 |
-| max_retry_count                  | integer | 可选   | 0                              | [0,...]          | 从处理管道中移除之前的最大重试次数                                             |
-| retry_delay                      | integer | 可选   | 1                              | [0,...]          | 如果执行失败，则应延迟执行流程的秒数                                           |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启和禁用
 

@@ -23,12 +23,13 @@ title: skywalking-logger
 
 ## Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Metadata**](#metadata)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+- [Name](#name)
+- [Attributes](#attributes)
+- [How To Enable](#how-to-enable)
+- [Test Plugin](#test-plugin)
+- [Metadata](#metadata)
+- [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -45,12 +46,9 @@ This will provide the ability to send Access Log as JSON objects to `SkyWalking 
 | service_instance_name | string  | optional   |"APISIX Instance Name" |    | service instance name for SkyWalking reporter，  set it to `$hostname` to get local hostname directly.|
 | timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request.                               |
 | name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
-| batch_max_size   | integer | optional    | 1000          | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the `SkyWalking OAP` server. |
-| inactive_timeout | integer | optional    | 5             | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the `SkyWalking OAP` server regardless of whether the number of logs in the buffer reaches the maximum number set. |
-| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
-| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
-| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
 | include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 
