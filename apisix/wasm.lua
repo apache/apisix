@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
+local ngx_var = ngx.var
 
 
 local schema = {
@@ -77,8 +78,12 @@ local function http_request_wrapper(self, conf, ctx)
     end
 
     -- $wasm_process_req_body is predefined in ngx_tpl.lua
-    local handle_body = ctx.var.wasm_process_req_body
+    local handle_body = ngx_var.wasm_process_req_body
     if handle_body ~= '' then
+        -- reset the flag so we can use it for the next Wasm plugin
+        -- use ngx.var to bypass the cache
+        ngx_var.wasm_process_req_body = ''
+
         local body, err = core.request.get_body()
         if err ~= nil then
             core.log.error(name, ": failed to get request body: ", err)
