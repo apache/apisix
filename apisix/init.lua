@@ -461,7 +461,7 @@ function _M.http_access_phase()
                         api_ctx.plugins, nil, runned_plugins)
                 if unrunn_plugins then
                     -- rerun rewrite phase for newly added plugins in consumer
-                    plugin.run_newly_added_plugins_in_consumer(unrunn_plugins, api_ctx)
+                    plugin.run_plugin("rewrite", unrunn_plugins, api_ctx)
                 end
             end
         end
