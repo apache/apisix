@@ -336,7 +336,7 @@ service 对象 json 配置内容：
     "plugins": {},            # 指定 service 绑定的插件
     "upstream_id": "1",       # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},           # upstream 信息对象，不建议使用
-    "name": "测试svc",         # service 名称
+    "name": "test svc",       # service 名称
     "desc": "hello world",    # service 描述
     "enable_websocket": true, # 启动 websocket 功能
     "hosts": ["foo.com"]
