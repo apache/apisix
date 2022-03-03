@@ -31,6 +31,7 @@ master_on();
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+$ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
 sub read_file($) {
     my $infile = shift;
