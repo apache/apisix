@@ -107,24 +107,24 @@ Config Example:
 
 ```shell
 {
-    "id": "1",                  # id, unnecessary.
-    "uris": ["/a","/b"],        # A set of uri.
-    "methods": ["GET","POST"],  # Can fill multiple methods
-    "hosts": ["a.com","b.com"], # A set of host.
-    "plugins": {},              # Bound plugin
-    "priority": 0,              # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
+    "id": "1",                            # id, unnecessary.
+    "uris": ["/a","/b"],                  # A set of uri.
+    "methods": ["GET","POST"],            # Can fill multiple methods
+    "hosts": ["a.com","b.com"],           # A set of host.
+    "plugins": {},                        # Bound plugin
+    "priority": 0,                        # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
     "name": "route-xxx",
     "desc": "hello world",
-    "remote_addrs": ["127.0.0.1"], # A set of Client IP.
+    "remote_addrs": ["127.0.0.1"],        # A set of Client IP.
     "vars": [["http_user", "==", "ios"]], # A list of one or more `[var, operator, val]` elements
-    "upstream_id": "1",         # upstream id, recommended
-    "upstream": {},             # upstream, not recommended
-    "timeout": {                # Set the upstream timeout for connecting, sending and receiving messages of the route.
+    "upstream_id": "1",                   # upstream id, recommended
+    "upstream": {},                       # upstream, not recommended
+    "timeout": {                          # Set the upstream timeout for connecting, sending and receiving messages of the route.
         "connect": 3,
         "send": 3,
         "read": 3
     },
-    "filter_func": "",          # User-defined filtering function
+    "filter_func": "",                    # User-defined filtering function
 }
 ```
 
@@ -329,12 +329,12 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
-    "id": "1",          # id
-    "plugins": {},      # Bound plugin
-    "upstream_id": "1", # upstream id, recommended
-    "upstream": {},     # upstream, not recommended
+    "id": "1",                # id
+    "plugins": {},            # Bound plugin
+    "upstream_id": "1",       # upstream id, recommended
+    "upstream": {},           # upstream, not recommended
     "name": "service-test",
     "desc": "hello world",
     "enable_websocket": true,
@@ -603,7 +603,7 @@ Its children fields, like `requests`, can be used to configure the upstream keep
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
+                                # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
     "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
@@ -816,9 +816,9 @@ Config Example:
 
 ```shell
 {
-    "id": "1",      # id
-    "cert": "cert", # Certificate
-    "key": "key",   # Private key
+    "id": "1",           # id
+    "cert": "cert",      # Certificate
+    "key": "key",        # Private key
     "snis": ["t.com"]    # https SNI
 }
 ```
