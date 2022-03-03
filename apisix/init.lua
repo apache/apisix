@@ -457,7 +457,8 @@ function _M.http_access_phase()
                 local runned_plugins = core.table.deepcopy(api_ctx.plugins)
                 core.table.clear(api_ctx.plugins)
                 local unrunn_plugins
-                api_ctx.plugins, unrunn_plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, runned_plugins)
+                api_ctx.plugins, unrunn_plugins = plugin.filter(api_ctx, route,
+                        api_ctx.plugins, nil, runned_plugins)
                 if unrunn_plugins then
                     -- rerun rewrite phase for newly added plugins in consumer
                     plugin.run_newly_added_plugins_in_consumer(unrunn_plugins, api_ctx)
