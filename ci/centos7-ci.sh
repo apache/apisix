@@ -85,7 +85,7 @@ install_dependencies() {
     cd ../../../
 
     # install dependencies
-    git clone https://github.com/iresty/test-nginx.git test-nginx
+    git clone https://github.com/openresty/test-nginx.git test-nginx
     create_lua_deps
 }
 
