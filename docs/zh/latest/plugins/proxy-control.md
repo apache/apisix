@@ -21,7 +21,6 @@ title: proxy-control
 #
 -->
 
-
 ## 名称
 
 `proxy-control` 能够动态地控制 Nginx 代理的行为。

@@ -21,7 +21,6 @@ title: openid-connect
 #
 -->
 
-
 ## 定义
 
 OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省功能。

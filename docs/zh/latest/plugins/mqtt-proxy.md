@@ -21,7 +21,6 @@ title: mqtt-proxy
 #
 -->
 
-
 ## 名字
 
 `mqtt-proxy` 只工作在流模式，它可以帮助你根据 MQTT 的 `client_id` 实现动态负载均衡。

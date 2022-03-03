@@ -21,7 +21,6 @@ title: client-control
 #
 -->
 
-
 ## 名称
 
 `client-control` 插件能够动态地控制 Nginx 处理客户端的请求的行为。

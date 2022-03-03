@@ -21,7 +21,6 @@ title: batch-requests
 #
 -->
 
-
 ## 简介
 
 `batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 http 请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。

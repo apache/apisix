@@ -21,7 +21,6 @@ title: proxy-rewrite
 #
 -->
 
-
 ## 简介
 
 proxy-rewrite 是上游代理信息重写插件，支持对 `scheme`、`uri`、`host` 等信息的重写。

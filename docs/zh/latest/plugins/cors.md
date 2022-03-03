@@ -21,7 +21,6 @@ title: cors
 #
 -->
 
-
 ## 简介
 
 `cors` 插件可以让你为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) 的返回头。

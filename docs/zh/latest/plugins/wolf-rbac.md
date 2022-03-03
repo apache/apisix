@@ -21,7 +21,6 @@ title: wolf-rbac
 #
 -->
 
-
 ## 名字
 
 `wolf-rbac` 是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。

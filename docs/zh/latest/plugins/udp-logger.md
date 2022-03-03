@@ -21,7 +21,6 @@ title: udp-logger
 #
 -->
 
-
 ## 定义
 
 `udp-logger` 是用于将日志数据发送到 UDP 服务的插件。

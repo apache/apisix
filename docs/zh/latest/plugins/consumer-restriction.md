@@ -21,7 +21,6 @@ title: consumer-restriction
 #
 -->
 
-
 ## 简介
 
 `consumer-restriction` 根据选择的不同对象做相应的访问限制。

@@ -21,7 +21,6 @@ title: dubbo-proxy
 #
 -->
 
-
 ## 简介
 
 `dubbo-proxy` 插件允许将 `HTTP` 请求代理到 [**dubbo**](http://dubbo.apache.org)。

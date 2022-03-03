@@ -21,7 +21,6 @@ title: kafka-logger
 #
 -->
 
-
 ## 简介
 
 `kafka-logger` 是一个插件，可用作ngx_lua nginx 模块的 Kafka 客户端驱动程序。

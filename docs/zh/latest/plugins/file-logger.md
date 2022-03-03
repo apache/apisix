@@ -21,7 +21,6 @@ title: file-logger
 #
 -->
 
-
 ## 定义
 
 `file-logger` 是一个插件，可将 Log 数据流推送到指定位置，例如，可以自定义输出路径：`logs/file.log`。

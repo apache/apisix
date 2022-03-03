@@ -21,7 +21,6 @@ title: grpc-web
 #
 -->
 
-
 ## 定义
 
 `grpc-web` 插件是一个代理插件，用于转换 [gRPC Web](https://github.com/grpc/grpc-web) 客户端到 `gRPC Server` 的请求。
