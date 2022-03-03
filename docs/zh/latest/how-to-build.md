@@ -115,7 +115,7 @@ sudo yum install ./apisix/*.rpm
 
    **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
 
-   解决思路：`luarocks` 支持添加自定义包到项目中（参考自[luarocks Config file format](https://github.com/luarocks/luarocks/wiki/Config-file-format))。使用第三方工具安装缺失的包，并将其安装目录添加到项目的配置文件中。方法适用于 macOS、Ubuntu、CentOS 等主流操作系统，此处暂给出 macOS 的具体解决步骤仅供参考。
+   解决思路：`luarocks` 支持自定义编译时依赖目录（来自此[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format))，使用第三方工具安装缺失的依赖，并将其文件路径添加到 `luarocks` 的变量表中。方法适用于 macOS、Ubuntu、CentOS 等主流操作系统，此处暂给出 macOS 的具体解决步骤仅供参考。
 
    macOS 具体解决步骤：
 
