@@ -21,14 +21,6 @@ title: zipkin
 #
 -->
 
-## 目录
-
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 名字
 
 [Zipkin](https://github.com/openzipkin/zipkin) 是开源的分布调用链追踪系统。该插件基于[Zipkin API规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息，并上报 Zipkin Collector。

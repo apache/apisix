@@ -21,17 +21,6 @@ title: datadog
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [Metadata](#metadata)
-- [Exported Metrics](#exported-metrics)
-- [How To Enable](#how-to-enable)
-- [Disable Plugin](#disable-plugin)
-- [Custom Configuration](#custom-configuration)
-
 ## Name
 
 `datadog` is a monitoring plugin built into Apache APISIX for seamless integration with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications. If enabled, this plugin supports multiple powerful types of metrics capture for every request and response cycle that essentially reflects the behaviour and health of the system.

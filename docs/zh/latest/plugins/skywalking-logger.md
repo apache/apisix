@@ -21,15 +21,6 @@ title: skywalking-logger
 #
 -->
 
-## 目录
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**插件元数据设置**](#插件元数据设置)
-- [**禁用插件**](#禁用插件)
-
 ## 定义
 
 `http-logger` 是一个插件，可将 Access Log 数据通过 `HTTP` 推送到 SkyWalking OAP 服务器。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，并依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/) 。
