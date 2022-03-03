@@ -21,14 +21,6 @@ title: opentelemetry
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**How to set collecting**](#how-to-set-collecting)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 [OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification).

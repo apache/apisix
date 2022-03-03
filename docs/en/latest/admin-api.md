@@ -21,20 +21,6 @@ title: Admin API
 #
 -->
 
-## Table of Contents
-
-- [Description](#description)
-- [Route](#route)
-- [Service](#service)
-- [Consumer](#consumer)
-- [Upstream](#upstream)
-- [SSL](#ssl)
-- [Global Rule](#global-rule)
-- [Plugin Config](#plugin-config)
-- [Plugin Metadata](#plugin-metadata)
-- [Plugin](#plugin)
-- [Stream Route](#stream-route)
-
 ## Description
 
 The Admin API is a group of APIs served for the Apache APISIX, we could pass parameters to APIs to control APISIX Nodes. To have a better understanding about how it works, please see [the architecture design](./architecture-design/apisix.md).

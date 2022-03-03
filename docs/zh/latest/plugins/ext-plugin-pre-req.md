@@ -21,14 +21,6 @@ title: ext-plugin-pre-req
 #
 -->
 
-## 目录
-
-- [**简介**](#简介)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 简介
 
 `ext-plugin-pre-req` 在执行大多数内置 Lua 插件执行之前，在 Plugin Runner 内运行特定 External Plugin。

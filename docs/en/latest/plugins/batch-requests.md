@@ -21,17 +21,6 @@ title: batch-requests
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**How To Configure**](#how-to-configure)
-- [**Metadata**](#metadata)
-- [**Batch Api Request/Response**](#batch-api-requestresponse)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Description
 
 `batch-requests` can accept multiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining), and return an aggregated response to client, which can significantly improve performance when the client needs to access multiple APIs.
