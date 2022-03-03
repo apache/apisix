@@ -21,20 +21,6 @@ title: rocketmq-logger
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-  - [examples of meta_format](#examples-of-meta_format)
-- [Info](#info)
-  - [Sample Nameserver list](#sample-nameserver-list)
-- [How To Enable](#how-to-enable)
-- [Test Plugin](#test-plugin)
-- [Metadata](#metadata)
-  - [Example](#example)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `rocketmq-logger` is a plugin which provides the ability to push requests log data as JSON objects to your external rocketmq clusters.

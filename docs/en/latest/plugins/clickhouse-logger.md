@@ -21,15 +21,6 @@ title: clickhouse-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Metadata**](#metadata)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `clickhouse-logger` is a plugin which push Log data requests to clickhouse.

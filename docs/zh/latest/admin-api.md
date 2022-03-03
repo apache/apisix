@@ -21,19 +21,6 @@ title: Admin API
 #
 -->
 
-## 目录
-
-- [Description](#description)
-- [Route](#route)
-- [Service](#service)
-- [Consumer](#consumer)
-- [Upstream](#upstream)
-- [SSL](#ssl)
-- [Global Rule](#global-rule)
-- [Plugin Config](#plugin-config)
-- [Plugin Metadata](#plugin-metadata)
-- [Plugin](#plugin)
-- [Stream Route](#stream-route)
 
 ## Description
 

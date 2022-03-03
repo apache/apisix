@@ -21,13 +21,6 @@ title: forward-auth
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Data Definition**](#data-definition)
-- [**Example**](#example)
-
 ## Description
 
 The `forward-auth` plugin implements a classic external authentication model. We can implement a custom error return or user redirection to the authentication page if the authentication fails.

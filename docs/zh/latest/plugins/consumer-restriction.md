@@ -21,15 +21,6 @@ title: consumer-restriction
 #
 -->
 
-## 目录
-
-  - [简介](#简介)
-  - [属性](#属性)
-  - [示例](#示例)
-    - [如何限制 consumer_name](#如何限制-consumer_name)
-    - [如何限制 allowed_by_methods](#如何限制-allowed_by_methods)
-    - [如何限制 service_id](#如何限制-service_id)
-  - [禁用插件](#禁用插件)
 
 ## 简介
 

@@ -21,13 +21,6 @@ title: opa
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Data Definition**](#data-definition)
-- [**Example**](#example)
-
 ## Description
 
 The `opa` plugin is used to integrate with [Open Policy Agent](https://www.openpolicyagent.org). By using this plugin, users can decouple functions such as authentication and access to services and reduce the complexity of the application system.
