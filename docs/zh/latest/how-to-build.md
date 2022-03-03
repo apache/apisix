@@ -331,3 +331,15 @@ systemctl stop apisix
 ```
 
 如果通过其他方法安装，可以参考 [配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service) 进行修改，并将其放置在 `/usr/lib/systemd/system/apisix.service` 路径下。
+
+## 升级Apache APISIX
+### CentOS 7升级方案
+> 安装方式使用的是`RPM 仓库安装（CentOS 7）`，就可以使用如下方案升级APISIX，在升级之前先关闭`manager-api`
+> 虽然配置文件不会被覆盖，但是最好你还要备份`ETCD、APISX配置文件`
+
+```
+# apisix quit
+# yum search apisix
+# yum update apisix
+# apisix start
+```
