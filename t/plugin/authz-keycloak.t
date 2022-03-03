@@ -581,7 +581,7 @@ GET /t
                         "uri": "/hello1"
                 }]]
             )
-            
+
             if code >= 300 then
                 ngx.status = code
             end
