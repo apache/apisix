@@ -355,7 +355,17 @@ local function trace_plugins_info_for_debug(ctx, plugins)
 end
 
 
-function _M.filter(ctx, conf, plugins, route_conf)
+local function filter_runned_plugins(runned_plugins)
+    local runned_plugins_names = core.table.new(#runned_plugins / 2, 0)
+    for i = 1, #runned_plugins, 2 do
+        core.table.insert(runned_plugins_names, runned_plugins[i].name)
+    end
+
+    return runned_plugins_names
+end
+
+
+function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
@@ -365,7 +375,14 @@ function _M.filter(ctx, conf, plugins, route_conf)
         return plugins or core.tablepool.fetch("plugins", 0, 0)
     end
 
-    local route_plugin_conf = route_conf and route_conf.value.plugins
+    local unrunn_plugins
+    local runned_plugins_names
+    if runned_plugins and type(runned_plugins) == "table" then
+        runned_plugins_names = filter_runned_plugins(runned_plugins)
+        unrunn_plugins = core.table.new(4, 0)
+    end
+
+    local route_plugin_conf = route_conf and route_conf.value and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
@@ -379,6 +396,11 @@ function _M.filter(ctx, conf, plugins, route_conf)
                 end
             end
 
+            if runned_plugins_names and not core.table.array_find(runned_plugins_names, name) then
+                core.table.insert(unrunn_plugins, plugin_obj)
+                core.table.insert(unrunn_plugins, plugin_conf)
+            end
+
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
 
@@ -388,7 +410,7 @@ function _M.filter(ctx, conf, plugins, route_conf)
 
     trace_plugins_info_for_debug(ctx, plugins)
 
-    return plugins
+    return plugins, unrunn_plugins
 end
 
 
@@ -801,6 +823,32 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version
         api_ctx.conf_id = orig_conf_id
+    end
+end
+
+
+function _M.run_newly_added_plugins_in_consumer(unrunn_plugins, api_ctx)
+    for i = 1, #unrunn_plugins, 2 do
+        -- only run rewrite phase of newly added plugins
+        local phase_func = unrunn_plugins[i]["rewrite"]
+        if phase_func then
+            local code, body = phase_func(unrunn_plugins[i + 1], api_ctx)
+            if code or body then
+                if is_http then
+                    if code >= 400 then
+                        core.log.warn(unrunn_plugins[i].name, " exits with http status code ", code)
+                    end
+
+                    core.response.exit(code, body)
+                else
+                    if code >= 400 then
+                        core.log.warn(unrunn_plugins[i].name, " exits with status code ", code)
+                    end
+
+                    ngx_exit(1)
+                end
+            end
+        end
     end
 end
 
