@@ -397,8 +397,11 @@ function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
             end
 
             if runned_plugins_names and not core.table.array_find(runned_plugins_names, name) then
-                core.table.insert(unrunn_plugins, plugin_obj)
-                core.table.insert(unrunn_plugins, plugin_conf)
+                -- no need to rerun the auth plugins
+                if plugin_obj.type ~= 'auth' then
+                    core.table.insert(unrunn_plugins, plugin_obj)
+                    core.table.insert(unrunn_plugins, plugin_conf)
+                end
             end
 
             core.table.insert(plugins, plugin_obj)
