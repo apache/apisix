@@ -21,14 +21,6 @@ title: csrf
 #
 -->
 
-## 目录
-
-- [**简介**](#简介)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 简介
 
 `CSRF` 插件基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式，保护您的 API 免于 CSRF 攻击。本插件认为 `GET`、`HEAD` 和 `OPTIONS` 方法是安全操作。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。

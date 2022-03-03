@@ -21,18 +21,6 @@ title: traffic-split
 #
 -->
 
-## Summary
-
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable](#how-to-enable)
-- [Example](#example)
-  - [Grayscale Release](#grayscale-release)
-  - [Blue-green Release](#blue-green-release)
-  - [Custom Release](#custom-release)
-  - [Matching rules correspond to upstream](#matching-rules-correspond-to-upstream)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 The traffic split plugin allows users to incrementally direct percentages of traffic between various upstreams.

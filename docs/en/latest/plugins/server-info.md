@@ -21,15 +21,6 @@ title: server-info
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**API**](#api)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `server-info` is a plugin that reports basic server information to etcd periodically.

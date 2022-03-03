@@ -21,13 +21,6 @@ title: error-log-logger
 #
 -->
 
-## 摘要
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启和禁用**](#如何开启和禁用)
-- [**如何更新**](#如何更新)
-
 ## 定义
 
 `error-log-logger` 是用于按用户设定的 log 级别对 APISIX 的 `error.log` 进行筛选，继而将筛选的数据发送到 TCP 服务或者 [Apache SkyWalking](https://skywalking.apache.org/) 的插件。

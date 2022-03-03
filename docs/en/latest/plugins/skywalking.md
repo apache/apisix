@@ -21,17 +21,6 @@ title: skywalking
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**How to set endpoint**](#how-to-set-endpoint)
-- [**Test Plugin**](#test-plugin)
-  - [**Run SkyWalking Example**](#run-skywalking-example)
-- [**Disable Plugin**](#disable-plugin)
-- [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
-
 ## Name
 
 [**SkyWalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.
