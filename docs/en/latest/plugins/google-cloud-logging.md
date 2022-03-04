@@ -21,14 +21,6 @@ title: google-cloud-logging
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `google-cloud-logging` plugin is used to send the access log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).

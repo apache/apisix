@@ -21,17 +21,6 @@ title: openid-connect
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [Modes of operation](#modes-of-operation)
-  - [Token Introspection](#token-introspection)
-  - [Introspecting with public key](#introspecting-with-public-key)
-    - [Authentication through OIDC Relying Party flow](#authentication-through-oidc-relying-party-flow)
-- [Troubleshooting](#troubleshooting)
-
 ## Name
 
 The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspection capability to APISIX.

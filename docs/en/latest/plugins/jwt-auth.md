@@ -21,19 +21,6 @@ title: jwt-auth
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [API](#api)
-- [How To Enable](#how-to-enable)
-  - [Enable jwt-auth with Vault Compatibility](#enable-jwt-auth-with-vault-compatibility)
-- [Test Plugin](#test-plugin)
-    - [Get the Token in `jwt-auth` Plugin:](#get-the-token-in-jwt-auth-plugin)
-    - [Try Request with Token](#try-request-with-token)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.

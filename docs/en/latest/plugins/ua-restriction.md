@@ -21,14 +21,6 @@ title: ua-restriction
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 The `ua-restriction` can restrict access to a Service or a Route by `allowlist` and `denylist` `User-Agent` header.

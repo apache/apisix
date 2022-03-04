@@ -540,6 +540,48 @@ X-Req: bar
 
 
 
+=== TEST 19: rewrite response header and call the upstream service
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
+
+
+
+=== TEST 20: rewrite non-important response headers and call the upstream service
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_vital_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
+Content-Type: text/plain
+Content-Encoding:
+
+
+
 === TEST 21: trace stopped request
 --- config
     location /t {

@@ -21,16 +21,6 @@ title: skywalking-logger
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable](#how-to-enable)
-- [Test Plugin](#test-plugin)
-- [Metadata](#metadata)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `skywalking-logger` is a plugin which push Access Log data to `SkyWalking OAP` server over HTTP. If there is tracing context existing, it sets up the trace-log correlation automatically, and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/).

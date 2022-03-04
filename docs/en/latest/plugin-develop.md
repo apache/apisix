@@ -21,23 +21,6 @@ title: Plugin Develop
 #
 -->
 
-## table of contents
-
-- [table of contents](#table-of-contents)
-- [where to put your plugins](#where-to-put-your-plugins)
-- [check dependencies](#check-dependencies)
-- [name, priority and the others](#name-priority-and-the-others)
-- [schema and check](#schema-and-check)
-- [choose phase to run](#choose-phase-to-run)
-- [implement the logic](#implement-the-logic)
-  - [conf parameter](#conf-parameter)
-  - [ctx parameter](#ctx-parameter)
-- [register public API](#register-public-api)
-- [register control API](#register-control-api)
-- [register custom variable](#register-custom-variable)
-- [write test case](#write-test-case)
-  - [attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
-
 This documentation is about developing plugin in Lua. For other languages,
 see [external plugin](./external-plugin.md).
 

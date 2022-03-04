@@ -21,14 +21,6 @@ title: ext-plugin-pre-req
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 The `ext-plugin-pre-req` runs specific external plugins in the plugin runner, before

@@ -21,12 +21,6 @@ title: public-api
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Example**](#example)
-
 ## Description
 
 The `public-api` plugin is used to enhance the plugin public API access control.

@@ -21,16 +21,6 @@ title: Zipkin
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-  - [Run the Zipkin instance](#run-the-zipkin-instance)
-  - [Run the Jaeger instance](#run-the-jaeger-instance)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 [Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
