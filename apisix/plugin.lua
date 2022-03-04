@@ -355,7 +355,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
 end
 
 
-function _M.filter(ctx, conf, plugins, route_conf)
+function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
