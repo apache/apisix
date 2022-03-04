@@ -246,6 +246,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 ### 如何通过 GraphQL 属性过滤路由
 
+目前，APISIX 可以处理 HTTP GET 和 POST 方法。请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。
+
 APISIX 支持通过 GraphQL 的一些属性过滤路由。 目前我们支持：
 
 * graphql_operation
@@ -274,8 +276,8 @@ query getRepo {
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "methods": ["POST"],
-    "uri": "/_graphql",
+    "methods": ["POST", "GET"],
+    "uri": "/graphql",
     "vars": [
         ["graphql_operation", "==", "query"],
         ["graphql_name", "==", "getRepo"],
@@ -288,6 +290,36 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         }
     }
 }'
+```
+
+我们可以通过以下三种方式分别去验证 GraphQL 匹配：
+
+1. 使用 GraphQL 查询字符串
+
+```shell
+$ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
+query getRepo {
+    owner {
+        name
+    }
+    repo {
+        created
+    }
+}'
+```
+
+2. 使用 JSON 格式
+
+```shell
+$ curl -H 'content-type: application/json' -X POST \
+http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
+```
+
+3. 尝试 `GET` 请求
+
+```shell
+$ curl -H 'content-type: application/graphql' -X GET \
+"http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
 ```
 
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
