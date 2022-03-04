@@ -32,6 +32,64 @@ add_block_preprocessor(sub {
         $block->set_value("no_error_log", "[error]");
     }
 
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 12001;
+
+        location /http-logger/test {
+            content_by_lua_block {
+                ngx.say("test-http-logger-response")
+            }
+        }
+
+        location /http-logger/center {
+            content_by_lua_block {
+                local function str_split(str, reps)
+                    local str_list = {}
+                    string.gsub(str, '[^' .. reps .. ']+', function(w)
+                        table.insert(str_list, w)
+                    end)
+                    return str_list
+                end
+
+                local args = ngx.req.get_uri_args()
+                local query = args.query or nil
+                ngx.req.read_body()
+                local body = ngx.req.get_body_data()
+
+                if query then
+                    if type(query) == "string" then
+                        query = {query}
+                    end
+
+                    local data, err = require("cjson").decode(body)
+                    if err then
+                        ngx.log(ngx.WARN, "logs:", body)
+                    end
+
+                    for i = 1, #query do
+                        local fields = str_split(query[i], ".")
+                        local val
+                        for j = 1, #fields do
+                            local key = fields[j]
+                            if j == 1 then
+                                val = data[key]
+                            else
+                                val = val[key]
+                            end
+                        end
+                        ngx.log(ngx.WARN ,query[i], ":", val)
+                    end
+                else
+                    ngx.log(ngx.WARN, "logs:", body)
+                end
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+
     my $extra_init_by_lua = <<_EOC_;
     local bpm = require("apisix.utils.batch-processor-manager")
     bpm.set_check_stale_interval(1)
@@ -140,4 +198,58 @@ passed
 GET /opentracing
 --- no_error_log
 removing batch processor stale object
+--- wait: 1.5
+
+
+
+=== TEST 6: set fetch request body and response body route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["POST"],
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001/http-logger/center?query[]=request.body&query[]=response.body",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_req_body": true,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:12001": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/http-logger/test"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: test fetch request body and response body route
+--- request
+POST /http-logger/test
+test-http-logger-request
+--- response_body
+test-http-logger-response
+--- error_log
+request.body:test-http-logger-request
+response.body:test-http-logger-response
 --- wait: 1.5
