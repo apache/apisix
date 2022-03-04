@@ -21,7 +21,7 @@ title: Zipkin
 #
 -->
 
-## Name
+## Description
 
 [Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 

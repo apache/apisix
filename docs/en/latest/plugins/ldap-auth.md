@@ -21,7 +21,7 @@ title: ldap-auth
 #
 -->
 
-## Name
+## Description
 
 `ldap-auth` is an authentication plugin that can works with `consumer`. Add Ldap Authentication to a `service` or `route`.
 

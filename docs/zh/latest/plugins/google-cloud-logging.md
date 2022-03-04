@@ -21,7 +21,7 @@ title: google-cloud-logging
 #
 -->
 
-## 定义
+## 描述
 
 `google-cloud-logging` 插件用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
 

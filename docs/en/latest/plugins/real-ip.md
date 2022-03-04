@@ -21,7 +21,7 @@ title: real-ip
 #
 -->
 
-## Name
+## Description
 
 The `real-ip` plugin dynamically changes the client's IP and port seen by APISIX.
 

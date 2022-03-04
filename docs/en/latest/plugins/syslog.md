@@ -21,7 +21,7 @@ title: syslog
 #
 -->
 
-## Name
+## Description
 
 `sys` is a plugin which push Log data requests to Syslog.
 

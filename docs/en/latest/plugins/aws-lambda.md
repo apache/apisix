@@ -21,7 +21,7 @@ title: aws-lambda
 #
 -->
 
-## Name
+## Description
 
 `aws-lambda` is a serverless plugin built into Apache APISIX for seamless integration with [AWS Lambda](https://aws.amazon.com/lambda/), a widely used serverless solution, as a dynamic upstream to proxy all requests for a particular URI to the AWS cloud - one of the highly used public cloud platforms for production environment. If enabled, this plugin terminates the ongoing request to that particular URI and initiates a new request to the AWS lambda gateway uri (the new upstream) on behalf of the client with the suitable authorization details set by the users, request headers, request body, params (all these three components are passed from the original request) and returns the response body, status code and the headers back to the original client that has invoked the request to the APISIX agent.
 At present, the plugin supports authorization via AWS api key and AWS IAM Secrets.

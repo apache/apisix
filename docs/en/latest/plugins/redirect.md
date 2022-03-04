@@ -21,7 +21,7 @@ title: redirect
 #
 -->
 
-## Name
+## Description
 
 URI redirect.
 

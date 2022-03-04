@@ -21,7 +21,7 @@ title: hmac-auth
 #
 -->
 
-## Name
+## Description
 
 `hmac-auth` is an authentication plugin that need to work with `consumer`. Add HMAC Authentication to a `service` or `route`.
 
