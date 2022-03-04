@@ -45,10 +45,9 @@ title: clickhouse-logger
 | password        | string  | required   |               |         | clickhouse password.                         |
 | timeout         | integer | optional   | 3             | [1,...] | Time to keep the connection alive after sending a request.                   |
 | name            | string  | optional   | "clickhouse logger" |         | A unique identifier to identity the logger.                             |
-| batch_max_size  | integer | optional   | 100           | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the clickhouse.  |
-| max_retry_count | integer | optional   | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.        |
-| retry_delay     | integer | optional   | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.             |
 | ssl_verify      | boolean | optional   | true          | [true,false] | verify ssl.             |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

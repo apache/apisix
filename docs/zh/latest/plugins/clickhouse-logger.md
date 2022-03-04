@@ -45,10 +45,9 @@ title: clickhouse-logger
 | password         | string  | 必须   |               |         | clickhouse的密码 。  |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                     |
-| batch_max_size   | integer | 可选   | 100           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `clickhouse` 。 |
-| max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
-| retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
 | ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。             |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## 如何开启
 

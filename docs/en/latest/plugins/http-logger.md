@@ -54,8 +54,6 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
-
 ## How To Enable
 
 The following is an example of how to enable the `http-logger` for a specific route. You could generate a mock HTTP server at [mockbin](http://mockbin.org/bin/create) to view the logs.
