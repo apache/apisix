@@ -227,7 +227,7 @@ We can define the following route:
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "methods": ["POST"],
+    "methods": ["POST", "GET"],
     "uri": "/_post",
     "vars": [
         ["post_arg_name", "==", "json"]
@@ -244,6 +244,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 The route will be matched when the POST form contains `name=json`.
 
 ### How to filter route by GraphQL attributes
+
+APISIX can handle HTTP GET and POST methods. At the same time, the request body can be a GraphQL query string or JSON-formatted content.
 
 APISIX supports filtering route by some attributes of GraphQL. Currently we support:
 
@@ -273,8 +275,8 @@ We can filter such route out with:
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "methods": ["POST"],
-    "uri": "/_graphql",
+    "methods": ["POST", "GET"],
+    "uri": "/graphql",
     "vars": [
         ["graphql_operation", "==", "query"],
         ["graphql_name", "==", "getRepo"],
@@ -287,6 +289,36 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         }
     }
 }'
+```
+
+We can verify GraphQL matches in the following three ways:
+
+1. GraphQL query strings
+
+```shell
+$ curl -H 'content-type: application/graphql' -X POST http://127.0.0.1:9080/graphql -d '
+query getRepo {
+    owner {
+        name
+    }
+    repo {
+        created
+    }
+}'
+```
+
+2. JSON format
+
+```shell
+$ curl -H 'content-type: application/json' -X POST \
+http://127.0.0.1:9080/graphql --data '{"query": "query getRepo { owner {name } repo {created}}"}'
+```
+
+3. Try `GET` request match
+
+```shell
+$ curl -H 'content-type: application/graphql' -X GET \
+"http://127.0.0.1:9080/graphql?query=query getRepo { owner {name } repo {created}}" -g
 ```
 
 To prevent spending too much time reading invalid GraphQL request body, we only read the first 1 MiB
