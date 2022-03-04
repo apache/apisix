@@ -47,7 +47,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: configure non-auth plugins in the consumer and run ti's rewrite phase
+=== TEST 1: configure non-auth plugins in the consumer and run it's rewrite phase
 --- config
     location /t {
         content_by_lua_block {
@@ -144,7 +144,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 4: configure non-auth plugins in the route and run ti's rewrite phase
+=== TEST 4: configure non-auth plugins in the route and run it's rewrite phase
 --- config
     location /t {
         content_by_lua_block {
