@@ -540,7 +540,7 @@ X-Req: bar
 
 
 
-=== TEST 19: trace stopped request
+=== TEST 21: trace stopped request
 --- config
     location /t {
         content_by_lua_block {
@@ -582,7 +582,7 @@ passed
 
 
 
-=== TEST 20: hit
+=== TEST 22: hit
 --- extra_init_by_lua
     local prev_new = require("opentracing.tracer").new
     local function new(...)
