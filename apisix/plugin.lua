@@ -506,7 +506,7 @@ local function merge_consumer_route(route_conf, consumer_conf)
 
         if (route_conf and route_conf.value and route_conf.value.plugins)
                 and not route_conf.value.plugins[name] then
-            new_route_conf.value.plugins[name]["_un_running"] = true
+            new_route_conf.value.plugins[name]["_from_consumer"] = true
         end
     end
 
@@ -813,7 +813,7 @@ end
 function _M.rerun_plugins_of_consumer(plugins, api_ctx)
     for i = 1, #plugins, 2 do
         -- no need to rerun the auth plugins
-        if plugins[i + 1]["_un_running"] and plugins[i].type ~= "auth" then
+        if plugins[i + 1]["_from_consumer"] and plugins[i].type ~= "auth" then
             local phase_func = plugins[i]["rewrite"]
             if phase_func then
                 local code, body = phase_func(plugins[i + 1], api_ctx)
