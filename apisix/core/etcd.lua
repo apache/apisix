@@ -207,6 +207,7 @@ local function set(key, value, ttl)
             return nil, grant_err
         end
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true, lease = data.body.ID})
+        res.body.lease_id = data.body.ID
     else
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true})
     end
@@ -357,6 +358,21 @@ function _M.server_version()
     end
 
     return etcd_cli:version()
+end
+
+
+function _M.keepalive(id)
+    local etcd_cli, _, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    local res, err = etcd_cli:keepalive(id)
+    if not res then
+        return nil, err
+    end
+
+    return res, nil
 end
 
 
