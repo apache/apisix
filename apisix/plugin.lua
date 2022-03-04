@@ -355,7 +355,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
 end
 
 
-function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
+function _M.filter(ctx, conf, plugins, route_conf)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
@@ -365,17 +365,7 @@ function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
         return plugins or core.tablepool.fetch("plugins", 0, 0)
     end
 
-    local unrunn_plugins
-    local runned_plugins_names
-    if runned_plugins and type(runned_plugins) == "table" then
-        runned_plugins_names = core.table.new(#runned_plugins / 2, 0)
-        for i = 1, #runned_plugins, 2 do
-            core.table.insert(runned_plugins_names, runned_plugins[i].name)
-        end
-        unrunn_plugins = core.table.new(4, 0)
-    end
-
-    local route_plugin_conf = route_conf and route_conf.value and route_conf.value.plugins
+    local route_plugin_conf = route_conf and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
@@ -389,14 +379,6 @@ function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
                 end
             end
 
-            if runned_plugins_names and not core.table.array_find(runned_plugins_names, name) then
-                -- no need to rerun the auth plugins
-                if plugin_obj.type ~= 'auth' then
-                    core.table.insert(unrunn_plugins, plugin_obj)
-                    core.table.insert(unrunn_plugins, plugin_conf)
-                end
-            end
-
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
 
@@ -406,7 +388,7 @@ function _M.filter(ctx, conf, plugins, route_conf, runned_plugins)
 
     trace_plugins_info_for_debug(ctx, plugins)
 
-    return plugins, unrunn_plugins
+    return plugins
 end
 
 
@@ -521,6 +503,11 @@ local function merge_consumer_route(route_conf, consumer_conf)
         end
 
         new_route_conf.value.plugins[name] = conf
+
+        if (route_conf and route_conf.value and route_conf.value.plugins)
+                and not route_conf.value.plugins[name] then
+            new_route_conf.value.plugins[name]["_un_running"] = true
+        end
     end
 
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
@@ -822,5 +809,33 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
     end
 end
 
+
+function _M.rerun_plugins_of_consumer(plugins, api_ctx)
+    for i = 1, #plugins, 2 do
+        -- no need to rerun the auth plugins
+        if plugins[i + 1]["_un_running"] and plugins[i].type ~= "auth" then
+            local phase_func = plugins[i]["rewrite"]
+            if phase_func then
+                local code, body = phase_func(plugins[i + 1], api_ctx)
+                if code or body then
+                    if is_http then
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with http status code ", code)
+                        end
+
+                        core.response.exit(code, body)
+                    else
+                        if code >= 400 then
+                            core.log.warn(plugins[i].name, " exits with status code ", code)
+                        end
+
+                        ngx_exit(1)
+                    end
+                end
+            end
+        end
+    end
+    return api_ctx
+end
 
 return _M
