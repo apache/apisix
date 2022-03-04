@@ -22,7 +22,7 @@
 # check supported environment variables in apisix.yaml
 
 yaml_config_variables_clean_up() {
-    git checkout conf/config.yaml
+    clean_up
     git checkout conf/apisix.yaml
 }
 
@@ -64,7 +64,5 @@ if [ ! $code -eq 200 ]; then
     echo "failed: variable is not valid"
     exit 1
 fi
-
-make stop
 
 echo "passed: resolve variables"
