@@ -55,8 +55,8 @@ sudo yum --showduplicates list apisix
 # Will install the latest apisix package
 sudo yum install apisix
 
-# Will install the specified version apisix package
-sudo yum install apisix-x.xx.x-0.el7
+# Will install the specified version 2.10.3 apisix package
+sudo yum install apisix-2.10.3-0.el7
 ```
 
 ### Installation via RPM Offline Package (CentOS 7)
