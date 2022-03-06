@@ -142,15 +142,15 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
-  - [Plugin can be written with Proxy WASM SDK](docs/en/latest/wasm.md)
+  - [Plugin can be written with Proxy Wasm SDK](docs/en/latest/wasm.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
 - **Multi-Language support**
-  - Apache APISIX is a multi-language gateway for plugin development and provides support via `RPC` and `WASM`.
+  - Apache APISIX is a multi-language gateway for plugin development and provides support via `RPC` and `Wasm`.
   ![Multi Language Support into Apache APISIX](docs/assets/images/apisix-multi-lang-support.png)
   - The RPC way, is the current way. Developers can choose the language according to their needs and after starting an independent process with the RPC, it exchanges data with APISIX through local RPC communication. Till this moment, APISIX has support for [Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) and Node.js.
-  - The WASM or WebAssembly, is an experimental way. APISIX can load and run WASM bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a WASM bytecode that runs on WASM VM with APISIX.
+  - The Wasm or WebAssembly, is an experimental way. APISIX can load and run Wasm bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a Wasm bytecode that runs on Wasm VM with APISIX.
 
 - **Serverless**
   - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
