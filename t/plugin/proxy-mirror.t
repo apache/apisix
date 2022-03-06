@@ -602,3 +602,103 @@ GET /t
 [error]
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
+
+
+
+=== TEST 18: custom path
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986",
+                               "path": "/a"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+uri: /a,
+
+
+
+=== TEST 20: hit route with args
+--- request
+GET /hello?a=1
+--- response_body
+hello world
+--- error_log
+uri: /a?a=1
+
+
+
+=== TEST 21: sanity check (path)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               for _, p in ipairs({
+                    "a",
+                    "/a?a=c",
+               }) do
+                    local code, body = t('/apisix/admin/routes/1',
+                        ngx.HTTP_PUT,
+                        [[{
+                            "plugins": {
+                                "proxy-mirror": {
+                                    "host": "http://127.0.0.1:1999",
+                                    "path": "]] .. p .. [["
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        }]]
+                        )
+                    ngx.log(ngx.WARN, body)
+                end
+            }
+       }
+--- request
+GET /t
+--- grep_error_log eval
+qr/property \\"path\\" validation failed: failed to match pattern/
+--- grep_error_log_out
+property \"path\" validation failed: failed to match pattern
+property \"path\" validation failed: failed to match pattern
+--- no_error_log
+[error]

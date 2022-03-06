@@ -708,7 +708,7 @@ _EOC_
         }
 
         location / {
-            set \$upstream_mirror_host        '';
+            set \$upstream_mirror_uri         '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
@@ -794,7 +794,7 @@ _EOC_
 
     if ($version !~ m/\/apisix-nginx-module/) {
         $config .= <<_EOC_;
-            if (\$upstream_mirror_host = "") {
+            if (\$upstream_mirror_uri = "") {
                 return 200;
             }
 _EOC_
@@ -803,7 +803,7 @@ _EOC_
     $config .= <<_EOC_;
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
-            proxy_pass \$upstream_mirror_host\$request_uri;
+            proxy_pass \$upstream_mirror_uri;
         }
 _EOC_
 
