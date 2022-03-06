@@ -19,15 +19,14 @@
 
 . ./t/cli/common.sh
 
-# check supported environment variables in apisix.yaml
-
-yaml_config_variables_clean_up() {
+standalone() {
     clean_up
     git checkout conf/apisix.yaml
 }
 
-trap yaml_config_variables_clean_up EXIT
+trap standalone EXIT
 
+# support environment variables
 echo '
 apisix:
   enable_admin: false
