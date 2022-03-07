@@ -13,7 +13,11 @@ local schema = {
                 properties = {
                     path = { type = "string" },
                     methods = { type = "array", items = { type = "string" }, minItems = 1 },
-                    param_from = { type = "string", default = "header", enum = { "header", "query" } },
+                    param_from = {
+                        type = "string",
+                        default = "header",
+                        enum = { "header", "query" }
+                    },
                     param_name = { type = "string", default = "captcha" },
                 }
             },
