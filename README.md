@@ -261,7 +261,7 @@ A wide variety of companies and organizations use APISIX for research, productio
 - Swisscom
 - Tencent Game
 - Travelsky
-- VIIO
+- VIVO
 - weibo
 - WPS
 
