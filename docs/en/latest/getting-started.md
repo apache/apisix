@@ -19,7 +19,34 @@ title: Getting Started
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--->
+-->  
+
+## What is an API Gateway?
+An API gateway is an API management tool that acts as a mid layer service between a client and a number backend services. Typically, the API gateway receives the clients requests and processes it by summoning multiple microservices, aggregating the services & returning the appropriate results.
+
+## What is Apache APISIX
+Apache APISIX is an open source, dynamic, high-performance, and scalable 7-layer proxy. It is a cloud-native API gateway, that delivers the ultimate performance for all your APIs and microservices. Think of APISIX as a service bus that connects APIs and microservices in your cloud-native architecture.
+Apache APISIX provides services such as load balancing, dynamic upstream, grayscale publishing, refined routing, current and speed limiting, service degradation, service fuse, identity.
+
+### The problem APISIX solves
+  - Help enterprises to solve the difficulties in the transformation of traditional monolithic architecture, so as to achieve rapid iteration of business and products.
+  - Apache APISIX  replaces NGINX and handles traditional north-south traffic. It also replaces Envoy to handle east-west traffic between services. 
+  - Handles Layer 4 and Layer 7 traffic: HTTP, HTTPs, TCP, UDP, MQTT, Dubbo, gRPC, etc.
+  - It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
+  - Use IdP plugin as Zero-Trust gateway
+  - Easy to use: APISIX also consists of a built-in low-code dashboard that offers a powerful and flexible interface. You can write your own custom plugins or use custom load balancing algorithms.
+  - Apache APISIX supports multi-platforms, languages and protocols. 
+
+## Features
+Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with Apache SkyWalking in observability, which greatly improves service governance capabilities. Some of the characteristics of the Apache APISIX gateway include;
+  - All platforms
+  - Full Dynamic
+  - Fine-grained routing
+  - OPS friendly
+  - Highly scalable
+  - Security
+  - Multi protocols
+  - Multi-Language support
 
 ## Summary
 
