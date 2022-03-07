@@ -138,16 +138,6 @@ done
             ngx.say(body)
         }
     }
-    location /login {
-        content_by_lua_block {
-            ngx.say("login success")
-        }
-    }
-    location /reigster {
-        content_by_lua_block {
-            ngx.say("reigster success")
-        }
-    }
 --- request
 GET /t
 --- response_body
