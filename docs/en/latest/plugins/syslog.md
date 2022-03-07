@@ -42,9 +42,9 @@ This will provide the ability to send Log data requests as JSON objects.
 | max_retry_times  | integer | optional    | 1            | [1, ...]      | Max number of retry times after a connect to a log server failed or send log messages to a log server failed.                                                                                        |
 | retry_interval   | integer | optional    | 1            | [0, ...]      | The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server                                                                                         |
 | pool_size        | integer | optional    | 5            | [5, ...]      | Keepalive pool size used by sock:keepalive.                                                                                                                                                          |
-| batch_max_size   | integer | optional    | 1000         | [1, ...]      | Max size of each batch                                                                                                                                                                               |
-| buffer_duration  | integer | optional    | 60           | [1, ...]      | Maximum age in seconds of the oldest entry in a batch before the batch must be processed                                                                                                             |
 | include_req_body | boolean | optional    | false        |               | Whether to include the request body                                                                                                                                                                  |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 
