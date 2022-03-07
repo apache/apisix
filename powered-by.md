@@ -88,6 +88,14 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://appadvice.com/app/e5-8c-bb-e6-82-a3-e5-ae-a2-e6-9c-8d/1502073770" rel="nofollow">上海泽怡信息科技</a>
 1. <a href="https://www.xinpianchang.com" rel="nofollow">北京新片场传媒股份有限公司</a>
 1. <a href="https://www.niimbot.com" rel="nofollow">武汉精臣智慧标识科技有限公司</a>
+1. <a href="http://aiit.org.cn/" rel="nofollow">北京大学信息技术高等研究院</a>
+1. <a href="http://www.utyun.com/" rel="nofollow">优特云</a>
+1. <a href="https://www.hihonor.com/cn/" rel="nofollow">HONOR 荣耀</a>
+1. <a href="https://www.maiscrm.com/" rel="nofollow">群之脉信息科技</a>
+1. <a href="https://www.dafangya.com/" rel="nofollow">大房鸭</a>
+1. <a href="https://www.unipus.cn/" rel="nofollow">外研在线</a>
+1. <a href="https://paramland.com/#/" rel="nofollow">数地科技</a>
+1. <a href="https://www.vhall.com/" rel="nofollow">微吼</a>
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
