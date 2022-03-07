@@ -248,59 +248,23 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 
 A wide variety of companies and organizations use APISIX for research, production and commercial product, below are some of them:
 
-- Advanced Institute of Information Technology Peking University 
 - Airwallex
 - Bilibili
-- chaolian360.com
-- CTRL Cloud
-- dafangya
-- digitalhainan
-- duso.cn
 - European eFactory Platform
 - European Copernicus Reference System
-- E.WORK
-- falcons.ai
-- fansup.mobi
-- Hair U Home
-- Haoyisheng
-- HelloTalk
 - HONOR
-- Hunan New Cloud Network
-- IntSig Information co.,Ltd
 - iQIYI
-- JXJK
-- KaiShu Story
-- ke.com
-- MaiSCRM
-- meicai
-- meizu.com
-- mingyuanyun
 - NASA JPL
 - Nayuki
-- Netease
-- NIIMBOT
 - OPPO
 - QingCloud
-- sinovatech.com
 - Swisscom
-- unipus.com
-- UseRH
-- Taikang Cloud
 - Tencent Game
-- Tencent Qcloud
 - Travelsky
 - VIIO
-- VIVO
 - weibo
-- weihou
 - WPS
-- www.dasouche.com
-- xiaotangkeji
-- xin.com
-- tangdou
-- youte
-- YMM
-- zuzuche.com
+
 ## Landscape
 
 <p align="left">
