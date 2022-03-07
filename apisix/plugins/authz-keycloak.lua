@@ -598,7 +598,11 @@ local function evaluate_permissions(conf, ctx, token)
         -- Return Keycloak-style message for consistency.
         if conf.access_denied_redirect_uri then
             core.response.set_header("Location", conf.access_denied_redirect_uri)
-            return 302
+            if ctx.var.request_method == "POST" then
+                return 307
+            else
+                return 302
+            end
         end
         return 403, '{"error":"access_denied","error_description":"not_authorized"}'
     end
