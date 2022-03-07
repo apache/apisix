@@ -620,4 +620,4 @@ passed
 GET /t
 --- response_headers
 Location: http://127.0.0.1/test
---- error_code: 302
+--- error_code: 307
