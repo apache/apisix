@@ -44,6 +44,7 @@ type header struct {
 type pluginContext struct {
 	types.DefaultPluginContext
 	Headers []header
+	Body    []byte
 }
 
 func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
@@ -56,7 +57,7 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 	var p fastjson.Parser
 	v, err := p.ParseBytes(data)
 	if err != nil {
-		proxywasm.LogErrorf("erorr decoding plugin configuration: %v", err)
+		proxywasm.LogErrorf("error decoding plugin configuration: %v", err)
 		return types.OnPluginStartStatusFailed
 	}
 	headers := v.GetArray("headers")
@@ -67,6 +68,9 @@ func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlu
 			Value: string(hdr.GetStringBytes("value")),
 		}
 	}
+
+	body := v.GetStringBytes("body")
+	ctx.Body = body
 
 	return types.OnPluginStartStatusOK
 }
@@ -85,5 +89,26 @@ func (ctx *httpContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) 
 	for _, hdr := range plugin.Headers {
 		proxywasm.ReplaceHttpResponseHeader(hdr.Name, hdr.Value)
 	}
+
+	if len(plugin.Body) > 0 {
+		proxywasm.SetProperty([]string{"wasm_process_resp_body"}, []byte("true"))
+	}
+
+	return types.ActionContinue
+}
+
+func (ctx *httpContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
+	plugin := ctx.parent
+
+	if len(plugin.Body) > 0 && !endOfStream {
+		// TODO support changing body
+		body, err := proxywasm.GetHttpResponseBody(0, bodySize)
+		if err != nil {
+			proxywasm.LogErrorf("failed to get body: %v", err)
+			return types.ActionContinue
+		}
+		proxywasm.LogWarnf("get body [%s]", string(body))
+	}
+
 	return types.ActionContinue
 }

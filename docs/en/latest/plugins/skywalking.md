@@ -21,17 +21,6 @@ title: skywalking
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**How to set endpoint**](#how-to-set-endpoint)
-- [**Test Plugin**](#test-plugin)
-  - [**Run SkyWalking Example**](#run-skywalking-example)
-- [**Disable Plugin**](#disable-plugin)
-- [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
-
 ## Name
 
 [**SkyWalking**](https://github.com/apache/skywalking) uses its native Nginx LUA tracer to provide tracing, topology analysis, and metrics from service and URI perspective.
@@ -113,7 +102,7 @@ plugin_attr:
     - By default, SkyWalking uses H2 storage, start SkyWalking directly by
 
         ```shell
-        sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server:8.7.0-es6
+        sudo docker run --name skywalking -d -p 1234:1234 -p 12800:12800 --restart always apache/skywalking-oap-server:8.7.0-es6
         ```
 
     - Of Course, you may want to use Elasticsearch storage instead
@@ -133,7 +122,7 @@ plugin_attr:
         3. Finally, run SkyWalking OAP server:
 
             ```shell
-            sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server:8.7.0-es6
+            sudo docker run --name skywalking -d -p 1234:1234 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server:8.7.0-es6
             ```
 
 2. SkyWalking Web UI:
@@ -210,23 +199,15 @@ And then reload APISIX.
 ## Upstream services(Code With SpringBoot)
 
 ```java
-package com.lenovo.ai.controller;
-
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
-/**
- * @author cyxinda
- * @create 2020-05-29 14:02
- * @desc skywalking test controller
- **/
 @RestController
 public class TestController {
     @RequestMapping("/uid/{count}")
     public String getUidList(@PathVariable("count") String countStr, HttpServletRequest request) {
-        System.out.println("counter:::::-----"+countStr);
        return "OK";
     }
 }

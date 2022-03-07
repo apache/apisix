@@ -21,15 +21,6 @@ title: wolf-rbac
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Dependencies**](#dependencies)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a `service` or `route`.
@@ -51,7 +42,7 @@ This plugin will add several API:
 * /apisix/plugin/wolf-rbac/change_pwd
 * /apisix/plugin/wolf-rbac/user_info
 
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+You may need to use [public-api](public-api.md) plugin to expose it.
 
 ## Dependencies
 
@@ -109,6 +100,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 ## Test Plugin
+
+#### Setup routes for public API
+
+Use the `public-api` plugin to expose the public API.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/wolf-rbac/login",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+You also need to setup the `change_pwd` and `user_info` routes together.
 
 #### Login and get `wolf-rbac` token:
 

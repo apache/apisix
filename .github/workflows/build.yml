@@ -26,6 +26,10 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
+        test_dir:
+          - t/plugin
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/router t/script t/stream-node t/utils t/wasm
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -35,14 +39,14 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v2.1.5
+        uses: actions/setup-go@v3
         with:
-          go-version: "1.15"
+          go-version: "1.17"
 
       - name: Cache deps
         uses: actions/cache@v2.1.7
@@ -79,12 +83,12 @@ jobs:
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
 
       - name: Build wasm code
-        if: startsWith(matrix.os_name, 'linux_openresty')
+        if: matrix.os_name == 'linux_openresty'
         run: |
           export TINYGO_VER=0.20.0
           wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
           sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
-          cd t/wasm && find . -type f -name "main.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
+          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -100,8 +104,10 @@ jobs:
 
       - name: Linux Install
         run: |
-            sudo --preserve-env=OPENRESTY_VERSION \
-            ./ci/${{ matrix.os_name }}_runner.sh do_install
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
+        env:
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script

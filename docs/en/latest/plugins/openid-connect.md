@@ -21,15 +21,6 @@ title: openid-connect
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Modes of operation**](#modes-of-operation)
-    - [**Token Introspection**](#token-introspection)
-    - [**Introspecting with public key**](#introspecting-with-public-key)
-- [**Troubleshooting**](#troubleshooting)
-
 ## Name
 
 The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspection capability to APISIX.
@@ -45,12 +36,14 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 | realm                                | string  | optional    | "apisix"              |         | Realm used for the authentication                                                                                               |
 | bearer_only                          | boolean | optional    | false                 |         | Setting this `true` will check for the authorization header in the request with a bearer token                                  |
 | logout_path                          | string  | optional    | "/logout"             |         |                                                                                                                                 |
+| post_logout_redirect_uri             | string  | optional    |                       |         | URL want to redirect when request logout_path                                                                                   |
 | redirect_uri                         | string  | optional    | "ngx.var.request_uri" |         |                                                                                                                                 |
 | timeout                              | integer | optional    | 3                     | [1,...] | Timeout in seconds                                                                                                              |
 | ssl_verify                           | boolean | optional    | false                 |         |                                                                                                                                 |
 | introspection_endpoint               | string  | optional    |                       |         | URL of the token verification endpoint of the identity server                                                                   |
 | introspection_endpoint_auth_method   | string  | optional    | "client_secret_basic" |         | Authentication method name for token introspection                                                                              |
 | public_key                           | string  | optional    |                       |         | The public key to verify the token                                                                                              |
+| use_jwks                             | boolean | optional    |                       |         | Use the jwks endpoint of the identity server to verify the token                                                                |
 | token_signing_alg_values_expected    | string  | optional    |                       |         | Algorithm used to sign the token                                                                                                |
 | set_access_token_header              | boolean | optional    | true                  |         | Whether to ensure the access token is set in a request header.                                                                  |
 | access_token_in_authorization_header | boolean | optional    | false                 |         | If set to `true`, ensure that the access token is set in the `Authorization` header, otherwise use the `X-Access-Token` header. |

@@ -39,7 +39,7 @@ Apache APISIX 的技术架构如下图所示：
 ## 社区
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
-- QQ 群 - 578997126
+- QQ 群 - 781365357
 - Slack - 请 [订阅邮件列表](https://apisix.apache.org/docs/general/subscribe-guide) 后发送邮件获取邀请链接
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
@@ -74,6 +74,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [Dubbo 代理](plugins/dubbo-proxy.md): 动态代理 HTTP 请求到 Dubbo 后端。
   - [动态 MQTT 代理](plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
   - [gRPC 代理](grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+  - [gRPC Web 代理](plugins/grpc-web.md)：通过 APISIX 代理 gRPC Web 请求到上游 gRPC 服务。
   - [gRPC 协议转换](plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
   - Websocket 代理
   - Proxy Protocol
@@ -118,6 +119,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [CORS](plugins/cors.md)：为你的 API 启用 CORS。
   - [URI 拦截器](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
   - [请求验证器](plugins/request-validation.md)。
+  - [CSRF](plugins/csrf.md)：基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式保护你的 API 远离 CSRF 攻击。
 
 - **运维友好**
 
@@ -134,7 +136,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
   - [故障注入](plugins/fault-injection.md)
   - [REST Admin API](admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
-  - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)）
+  - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)、[File Logger](plugins/file-logger.md)）
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**
@@ -144,10 +146,10 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 自定义路由: 支持用户自己实现路由算法。
 
 - **多语言支持**
-- Apache APISIX 是一个通过 `RPC` 和 `WASM` 支持不同语言来进行插件开发的网关.
+- Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关.
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
   - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
-  - WASM 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的 WASM 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 WASM 字节码，即可运行在 APISIX 中的 WASM 虚拟机中。
+  - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
   - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.

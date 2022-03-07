@@ -21,17 +21,6 @@ title: datadog
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [Metadata](#metadata)
-- [Exported Metrics](#exported-metrics)
-- [How To Enable](#how-to-enable)
-- [Disable Plugin](#disable-plugin)
-- [Custom Configuration](#custom-configuration)
-
 ## Name
 
 `datadog` is a monitoring plugin built into Apache APISIX for seamless integration with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications. If enabled, this plugin supports multiple powerful types of metrics capture for every request and response cycle that essentially reflects the behaviour and health of the system.
@@ -49,10 +38,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | Name             | Type   | Requirement  | Default      | Valid       | Description                                                                                |
 | -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
 | prefer_name      | boolean | optional    | true         | true/false  | If set to `false`, would use route/service id instead of name(default) with metric tags.   |
-| batch_max_size   | integer | optional    | 1000         | [1,...]     | Max buffer size of each batch                                                              |
-| inactive_timeout | integer | optional    | 5            | [1,...]     | Maximum age in seconds when the buffer will be flushed if inactive                         |
-| buffer_duration  | integer | optional    | 60           | [1,...]     | Maximum age in seconds of the oldest entry in a batch before the batch must be processed   |
-| max_retry_count  | integer | optional    | 0            | [0,...]     | Maximum number of retries if one entry fails to reach dogstatsd server                     |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## Metadata
 
@@ -91,7 +78,7 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 
 ## How To Enable
 
-The following is an example on how to enable the datadog plugin for a specific route. We are assumming your datadog agent is already up an running.
+The following is an example on how to enable the datadog plugin for a specific route. We are assuming your datadog agent is already up an running.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

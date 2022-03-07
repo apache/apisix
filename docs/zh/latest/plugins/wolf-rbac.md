@@ -21,15 +21,6 @@ title: wolf-rbac
 #
 -->
 
-## 目录
-
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**依赖项**](#依赖项)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 名字
 
 `wolf-rbac` 是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。
@@ -51,7 +42,7 @@ rbac 功能由 [wolf](https://github.com/iGeeky/wolf) 提供, 有关 `wolf` 的�
 * /apisix/plugin/wolf-rbac/change_pwd
 * /apisix/plugin/wolf-rbac/user_info
 
-你可能需要通过 [interceptors](../plugin-interceptors.md) 来保护它们。
+需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 依赖项
 
@@ -109,6 +100,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 ## 测试插件
+
+#### 为 API 设置路由
+
+我们使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露这些 public API.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/wolf-rbac/login",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+你也需要为 `change_pwd` 和 `user_info` 两个 API 配置路由。
 
 #### 首先进行登录获取 `wolf-rbac` token:
 

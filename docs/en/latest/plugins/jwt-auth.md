@@ -21,19 +21,6 @@ title: jwt-auth
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [API](#api)
-- [How To Enable](#how-to-enable)
-  - [Enable jwt-auth with Vault Compatibility](#enable-jwt-auth-with-vault-compatibility)
-- [Test Plugin](#test-plugin)
-    - [Get the Token in `jwt-auth` Plugin:](#get-the-token-in-jwt-auth-plugin)
-    - [Try Request with Token](#try-request-with-token)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
@@ -62,7 +49,7 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 ## API
 
 This plugin will add `/apisix/plugin/jwt/sign` to sign.
-You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+You may need to use [public-api](public-api.md) plugin to expose it.
 
 ## How To Enable
 
@@ -119,7 +106,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### Enable jwt-auth with Vault Compatibility
 
-Sometimes, it's quite natural in production to have a centralized key management solution like vault where you don't have to update the APISIX consumer each time some part of your organization changes the signing secret key (secret for HS256/HS512 or public_key and private_key for RS256) and/or for privacy concerns you don't want to use the key through APISIX admin APIs. APISIX got you covered here. The `jwt-auth` is capable of referencing keys from vault.
+Sometimes, it's quite natural in production to have a centralized key management solution like [HashiCorp Vault](https://www.vaultproject.io/) where you don't have to update the APISIX consumer each time some part of your organization changes the signing secret key (secret for HS256/HS512 or public_key and private_key for RS256) and/or for privacy concerns you don't want to use the key through APISIX admin APIs. APISIX got you covered here. The `jwt-auth` is capable of referencing keys from vault.
 
 **Note**: For early version of this integration support, the plugin expects the key name of secrets stored into the vault path is among [ `secret`, `public_key`, `private_key` ] to successfully use the key. In future releases, we are going to add the support of referencing custom named keys.
 
@@ -142,7 +129,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 Here the plugin looks up for key `secret` inside vault path (`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`) for consumer username `jack` mentioned in the consumer config and uses it for subsequent signing and jwt verification. If the key is not found in the same path, the plugin logs error and fails to perform jwt authentication.
 
-2. RS256 rsa keypairs, both public and private keys are stored into vault.
+2. RS256 rsa key pairs, both public and private keys are stored into vault.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -195,6 +182,20 @@ then add jwt-auth plugin in the Consumer page:
 ## Test Plugin
 
 #### Get the Token in `jwt-auth` Plugin:
+
+First, you need to set up the route for the API that signs the token, which will use the [public-api](public-api.md) plugin.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/jwt/sign",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+Let's get a token.
 
 * without extension payload:
 

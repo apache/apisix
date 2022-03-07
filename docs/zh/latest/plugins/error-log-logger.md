@@ -21,13 +21,6 @@ title: error-log-logger
 #
 -->
 
-## 摘要
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启和禁用**](#如何开启和禁用)
-- [**如何更新**](#如何更新)
-
 ## 定义
 
 `error-log-logger` 是用于按用户设定的 log 级别对 APISIX 的 `error.log` 进行筛选，继而将筛选的数据发送到 TCP 服务或者 [Apache SkyWalking](https://skywalking.apache.org/) 的插件。
@@ -50,6 +43,11 @@ title: error-log-logger
 | skywalking.endpoint_addr         | string  | 可选   | http://127.0.0.1:12900/v3/logs |                  | Skywalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800             |
 | skywalking.service_name          | string  | 可选   | APISIX                         |                  | skywalking 上报的 service 名称                                            |
 | skywalking.service_instance_name | String  | 可选   | APISIX Instance Name           |                  | skywalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
+| clickhouse.endpoint_addr         | String  | 可选   | http://127.0.0.1:8213          |                  |  clickhouse 的 HTTP endpoint 地址，例如 http://127.0.0.1:8213                    |
+| clickhouse.user                  | String  | 可选   | default                        |                  |  clickhouse 的用户名                                                           |
+| clickhouse.password              | String  | 可选   |                                |                  |  clickhouse 的密码                                                          |
+| clickhouse.database              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的数据库                                             |
+| clickhouse.logtable              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的表                                             |
 | host                             | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.host`) TCP 服务的IP地址或主机名                           |
 | port                             | integer | 可选   |                                | [0,...]          | (`弃用`，替换成`tcp.port`) 目标端口                                         |
 | tls                              | boolean | 可选   | false                          |                  | (`弃用`，替换成`tcp.tls`) 用于控制是否执行SSL验证                             |
@@ -57,11 +55,8 @@ title: error-log-logger
 | timeout                          | integer | 可选   | 3                              | [1,...]          | 连接和发送数据超时间（以秒为单位）                                             |
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）                                        |
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |
-| inactive_timeout                 | integer | 可选   | 3                              | [1,...]          | 刷新缓冲区的最大时间（以秒为单位）                                             |
-| batch_max_size                   | integer | 可选   | 1000                           | [1,...]          | 每批的最大大小                                                             |
-| buffer_duration                  | integer | 可选   | 60                             | [1,...]          | 必须先处理批次中最旧条目的最长期限（以秒为单位）                                 |
-| max_retry_count                  | integer | 可选   | 0                              | [0,...]          | 从处理管道中移除之前的最大重试次数                                             |
-| retry_delay                      | integer | 可选   | 1                              | [0,...]          | 如果执行失败，则应延迟执行流程的秒数                                           |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启和禁用
 
@@ -120,5 +115,24 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
     "endpoint_addr": "http://127.0.0.1:12800/v3/logs"
   },
   "inactive_timeout": 1
+}'
+```
+
+## 如何设置接收日志的 clickhouse 数据库
+
+插件将 error log 作为一个字符串发送到 clickhouse 表的 `data` 字段。
+*TODO 将error log 作为一个字符串保持到clickhouse数据库的data字段，未来我们将会增加更多的字段。*
+步骤：更新插件属性
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "clickhouse": {
+      "user": "default",
+      "password": "a",
+      "database": "error_log",
+      "logtable": "t",
+      "endpoint_addr": "http://127.0.0.1:8123"
+  }
 }'
 ```

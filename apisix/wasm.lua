@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
+local ngx_var = ngx.var
 
 
 local schema = {
@@ -63,31 +64,84 @@ end
 
 
 local function http_request_wrapper(self, conf, ctx)
+    local name = self.name
     local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
     if not plugin_ctx then
-        core.log.error("failed to fetch wasm plugin ctx: ", err)
+        core.log.error(name, ": failed to fetch wasm plugin ctx: ", err)
         return 503
     end
 
     local ok, err = wasm.on_http_request_headers(plugin_ctx)
     if not ok then
-        core.log.error("failed to run wasm plugin: ", err)
+        core.log.error(name, ": failed to run wasm plugin: ", err)
         return 503
+    end
+
+    -- $wasm_process_req_body is predefined in ngx_tpl.lua
+    local handle_body = ngx_var.wasm_process_req_body
+    if handle_body ~= '' then
+        -- reset the flag so we can use it for the next Wasm plugin
+        -- use ngx.var to bypass the cache
+        ngx_var.wasm_process_req_body = ''
+
+        local body, err = core.request.get_body()
+        if err ~= nil then
+            core.log.error(name, ": failed to get request body: ", err)
+            return 503
+        end
+
+        local ok, err = wasm.on_http_request_body(plugin_ctx, body, true)
+        if not ok then
+            core.log.error(name, ": failed to run wasm plugin: ", err)
+            return 503
+        end
     end
 end
 
 
 local function header_filter_wrapper(self, conf, ctx)
+    local name = self.name
     local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
     if not plugin_ctx then
-        core.log.error("failed to fetch wasm plugin ctx: ", err)
+        core.log.error(name, ": failed to fetch wasm plugin ctx: ", err)
         return 503
     end
 
     local ok, err = wasm.on_http_response_headers(plugin_ctx)
     if not ok then
-        core.log.error("failed to run wasm plugin: ", err)
+        core.log.error(name, ": failed to run wasm plugin: ", err)
         return 503
+    end
+
+    -- $wasm_process_resp_body is predefined in ngx_tpl.lua
+    local handle_body = ngx_var.wasm_process_resp_body
+    if handle_body ~= '' then
+        -- reset the flag so we can use it for the next Wasm plugin
+        -- use ngx.var to bypass the cache
+        ngx_var.wasm_process_resp_body = ""
+        ctx["wasm_" .. name .. "_process_resp_body"] = true
+    end
+end
+
+
+local function body_filter_wrapper(self, conf, ctx)
+    local name = self.name
+
+    local enabled = ctx["wasm_" .. name .. "_process_resp_body"]
+    if not enabled then
+        return
+    end
+
+    local plugin_ctx, err = fetch_plugin_ctx(conf, ctx, self.plugin)
+    if not plugin_ctx then
+        core.log.error(name, ": failed to fetch wasm plugin ctx: ", err)
+        return
+    end
+
+    local ok, err = wasm.on_http_response_body(plugin_ctx)
+    if not ok then
+        core.log.error(name, ": failed to run wasm plugin: ", err)
+        return
     end
 end
 
@@ -126,6 +180,10 @@ function _M.require(attrs)
 
     mod.header_filter = function (conf, ctx)
         return header_filter_wrapper(mod, conf, ctx)
+    end
+
+    mod.body_filter = function (conf, ctx)
+        return body_filter_wrapper(mod, conf, ctx)
     end
 
     -- the returned values need to be the same as the Lua's 'require'

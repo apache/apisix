@@ -47,48 +47,53 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: use original etcd modified index
+=== TEST 1: setup public API route and test route
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_configs/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "prometheus":{}
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugin_config_id": 1,
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
+            local data = {
+                {
+                    url = "/apisix/admin/plugin_configs/1",
+                    data = [[{
+                        "plugins": {
+                            "prometheus":{}
+                        }
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/1",
+                    data = [[{
+                        "plugin_config_id": 1,
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
                         },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
+                        "uri": "/hello"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/metrics",
+                    data = [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/prometheus/metrics"
+                    }]]
+                },
+            }
 
-            if code >= 300 then
-                ngx.status = code
+            local t = require("lib.test_admin").test
+
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(code..body)
             end
-            ngx.say(body)
         }
     }
---- response_body
-passed
+--- response_body eval
+"201passed\n" x 3
 
 
 
@@ -168,11 +173,10 @@ passed
 === TEST 4: check metrics
 --- yaml_config
 plugins:
+  - public-api
   - error-log-logger
   - prometheus
   - http-logger
---- request
-GET /t
 --- config
     location /t {
         content_by_lua_block {

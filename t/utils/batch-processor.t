@@ -438,3 +438,46 @@ Batch Processor[log buffer] activating flush due to no activity
 --- error_log
 Batch Processor[log buffer] extending buffer timer
 --- wait: 3
+
+
+
+=== TEST 12: partially consumed entries
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local core = require("apisix.core")
+            local config = {
+                max_retry_count  = 1,
+                batch_max_size = 3,
+                retry_delay  = 0,
+                inactive_timeout = 1
+            }
+            local func_to_send = function(elements)
+                core.log.info(require("toolkit.json").encode(elements))
+                return false, "error after consuming single entry", 2
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+            end
+
+            log_buffer:push({msg='1'})
+            log_buffer:push({msg='2'})
+            log_buffer:push({msg='3'})
+            log_buffer:push({msg='4'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log
+[{"msg":"1"},{"msg":"2"},{"msg":"3"}]
+Batch Processor[log buffer] failed to process entries [2/3]: error after consuming single entry
+[{"msg":"2"},{"msg":"3"}]
+Batch Processor[log buffer] failed to process entries [1/2]: error after consuming single entry
+[{"msg":"4"}]
+--- wait: 2

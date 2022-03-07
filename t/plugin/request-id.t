@@ -21,6 +21,19 @@ worker_connections(1024);
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -38,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -60,13 +69,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "include_in_response" validation failed: wrong type: expected boolean, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -117,12 +122,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -148,12 +149,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 request header present
---- no_error_log
-[error]
 
 
 
@@ -201,13 +198,9 @@ request header present
             ngx.say("true")
         }
     }
---- request
-GET /t
 --- wait: 5
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -261,12 +254,8 @@ true
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -292,12 +281,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 request header present
---- no_error_log
-[error]
 
 
 
@@ -350,12 +335,8 @@ request header present
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -381,12 +362,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 request header not present
---- no_error_log
-[error]
 
 
 
@@ -433,12 +410,8 @@ request header not present
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -464,12 +437,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 X-Request-Id and Custom-Header-Name are different
---- no_error_log
-[error]
 
 
 
@@ -504,12 +473,8 @@ location /t {
         ngx.say("ok")
     }
 }
---- request
-GET /t
 --- response_body
 ok
---- no_error_log
-[error]
 
 
 
@@ -525,13 +490,9 @@ ok
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "algorithm" validation failed: matches none of the enum values
 done
---- no_error_log
-[error]
 
 
 
@@ -583,12 +544,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -640,13 +597,9 @@ plugin_attr:
             ngx.say("true")
         }
     }
---- request
-GET /t
 --- wait: 5
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -704,13 +657,9 @@ plugin_attr:
             ngx.say("true")
         }
     }
---- request
-GET /t
 --- wait: 5
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -729,9 +678,51 @@ plugin_attr:
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 --- error_log
 ailed to check the plugin_attr[request-id]: property "snowflake" validation failed: property "delta_offset" validation failed: matches none of the enum values
+
+
+
+=== TEST 18: add plugin with include_in_response true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {
+                                "include_in_response": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: echo back the client's header if given
+--- request
+GET /opentracing
+--- more_headers
+X-Request-ID: 123
+--- response_headers
+X-Request-ID: 123

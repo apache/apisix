@@ -21,14 +21,6 @@ title: sls-logger
 #
 -->
 
-## 摘要
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 定义
 
 `sls-logger` 是使用 [RF5424](https://tools.ietf.org/html/rfc5424) 标准将日志数据以JSON格式发送到 [阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
@@ -51,11 +43,8 @@ title: sls-logger
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的| 是否包含请求体。|
 |name| 可选的|批处理名字。|
-|batch_max_size |可选的       |每批的最大大小。|
-|inactive_timeout|可选的      |如果不活动，将刷新缓冲区的最大时间（以秒为单位）。|
-|buffer_duration|可选的       |必须先处理批次中最旧条目的最大期限（以秒为单位）。|
-|max_retry_count|可选的       |从处理管道中移除之前的最大重试次数。|
-|retry_delay    |可选的       |如果执行失败，应该延迟进程执行的秒数。|
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 

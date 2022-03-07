@@ -31,6 +31,7 @@ master_on();
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+$ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
 sub read_file($) {
     my $infile = shift;
@@ -214,6 +215,14 @@ if ($version =~ m/\/apisix-nginx-module/) {
     apisix_delay_client_max_body_check on;
     apisix_mirror_on_demand on;
     wasm_vm wasmtime;
+_EOC_
+}
+
+my $a6_ngx_vars = "";
+if ($version =~ m/\/apisix-nginx-module/) {
+    $a6_ngx_vars = <<_EOC_;
+    set \$wasm_process_req_body       '';
+    set \$wasm_process_resp_body      '';
 _EOC_
 }
 
@@ -700,7 +709,7 @@ _EOC_
         }
 
         location / {
-            set \$upstream_mirror_host        '';
+            set \$upstream_mirror_uri         '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
@@ -714,6 +723,7 @@ _EOC_
             set \$upstream_cache_key             '';
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
+            $a6_ngx_vars
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
@@ -785,7 +795,7 @@ _EOC_
 
     if ($version !~ m/\/apisix-nginx-module/) {
         $config .= <<_EOC_;
-            if (\$upstream_mirror_host = "") {
+            if (\$upstream_mirror_uri = "") {
                 return 200;
             }
 _EOC_
@@ -794,7 +804,7 @@ _EOC_
     $config .= <<_EOC_;
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
-            proxy_pass \$upstream_mirror_host\$request_uri;
+            proxy_pass \$upstream_mirror_uri;
         }
 _EOC_
 

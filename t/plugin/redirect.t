@@ -1000,3 +1000,55 @@ Location: /hello?type=string&name=json
 --- error_code: 302
 --- no_error_log
 [error]
+
+
+
+=== TEST 41: enable http_to_https (pass X-Forwarded-Proto)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "vars": [
+                        [
+                            "scheme",
+                            "==",
+                            "http"
+                        ]
+                    ],
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: enable http_to_https (pass X-Forwarded-Proto)
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: http
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello

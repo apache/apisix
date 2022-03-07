@@ -36,18 +36,22 @@ rerun_flaky_tests() {
         exit 0
     fi
 
+    if ! tail -1 "$1" | grep "Result: FAIL"; then
+        # CI failure not caused by failed test
+        exit 1
+    fi
+
     local tests
     local n_test
     tests="$(awk '/^t\/.*.t\s+\(.+ Failed: .+\)/{ print $1 }' "$1")"
     n_test="$(echo "$tests" | wc -l)"
-    if [ "$n_test" -eq 0 ] || [ "$n_test" -gt 3 ]; then
-        # CI failure failed test or too many tests failed
+    if [ "$n_test" -gt 3 ]; then
+        # too many tests failed
         exit 1
     fi
 
     echo "Rerun $(echo "$tests" | xargs)"
-    # run in verbose mode
-    FLUSH_ETCD=1 TEST_NGINX_VERBOSE=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
+    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
 install_grpcurl () {

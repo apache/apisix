@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Get configuration information.
+--
+-- @module core.config_etcd
+
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
@@ -579,7 +583,10 @@ local function _automatic_fetch(premature, self)
                     end
                 end
 
-                ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
+                -- etcd watch timeout is an expected error, so there is no need for resync_delay
+                if err ~= "timeout" then
+                    ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
+                end
             elseif not ok then
                 -- no error. reentry the sync with different state
                 ngx_sleep(0.05)
@@ -601,6 +608,28 @@ local function _automatic_fetch(premature, self)
 end
 
 
+---
+-- Create a new connection to communicate with the control plane.
+-- This function should be used in the `init_worker_by_lua` phase.
+--
+-- @function core.config.new
+-- @tparam string etcd directory to be monitored, e.g. "/routes".
+-- @tparam table opts Parameters related to the etcd client connection.
+-- The keys in `opts` are as follows:
+--  * automatic: whether to get the latest etcd data automatically
+--  * item_schema: the jsonschema that checks the value of each item under the **key** directory
+--  * filter: the custom function to filter the value of each item under the **key** directory
+--  * timeout: the timeout for watch operation, default is 30s
+--  * single_item: whether only one item under the **key** directory
+--  * checker: the custom function to check the value of each item under the **key** directory
+-- @treturn table The etcd client connection.
+-- @usage
+-- local plugins_conf, err = core.config.new("/custom_dir", {
+--    automatic = true,
+--    filter = function(item)
+--        -- called once before reload for sync data from admin
+--    end,
+--})
 function _M.new(key, opts)
     local local_conf, err = config_local.local_conf()
     if not local_conf then

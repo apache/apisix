@@ -1,5 +1,5 @@
 {
-  "version": "2.11.0",
+  "version": "2.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -52,7 +52,8 @@
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
-            "plugins/fault-injection"
+            "plugins/fault-injection",
+            "plugins/mocking"
           ]
         },
         {
@@ -81,7 +82,9 @@
             "plugins/ip-restriction",
             "plugins/ua-restriction",
             "plugins/referer-restriction",
-            "plugins/consumer-restriction"
+            "plugins/consumer-restriction",
+            "plugins/csrf",
+            "plugins/public-api"
           ]
         },
         {
@@ -103,31 +106,47 @@
         },
         {
           "type": "category",
-          "label": "Monitoring",
+          "label": "Observability",
           "items": [
-            "plugins/prometheus",
-            "plugins/zipkin",
-            "plugins/skywalking",
-            "plugins/node-status",
-            "plugins/datadog"
-          ]
-        },
-        {
-          "type": "category",
-          "label": "Loggers",
-          "items": [
-            "plugins/http-logger",
-            "plugins/skywalking-logger",
-            "plugins/tcp-logger",
-            "plugins/kafka-logger",
-            "plugins/rocketmq-logger",
-            "plugins/udp-logger",
-            "plugins/syslog",
-            "plugins/log-rotate",
-            "plugins/error-log-logger",
-            "plugins/sls-logger",
-            "plugins/google-cloud-logging",
-            "plugins/splunk-hec-logging"
+            {
+              "type": "category",
+              "label": "Tracers",
+              "items": [
+                "plugins/zipkin",
+                "plugins/skywalking",
+                "plugins/opentelemetry"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Metrics",
+              "items": [
+                "plugins/prometheus",
+                "plugins/node-status",
+                "plugins/datadog"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Loggers",
+              "items": [
+                "plugins/http-logger",
+                "plugins/skywalking-logger",
+                "plugins/tcp-logger",
+                "plugins/kafka-logger",
+                "plugins/rocketmq-logger",
+                "plugins/udp-logger",
+                "plugins/clickhouse-logger",
+                "plugins/syslog",
+                "plugins/log-rotate",
+                "plugins/error-log-logger",
+                "plugins/sls-logger",
+                "plugins/google-cloud-logging",
+                "plugins/splunk-hec-logging",
+                "plugins/file-logger",
+                "plugins/loggly"
+              ]
+            }
           ]
         },
         {
@@ -240,10 +259,6 @@
           "id": "wasm"
         },
         {
-          "type": "doc",
-          "id": "plugin-interceptors"
-        },
-        {
           "type": "link",
           "label": "CODE_STYLE",
           "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
@@ -264,6 +279,7 @@
           "type": "category",
           "label": "internal",
           "items": [
+            "internal/plugin-runner",
             "internal/testing-framework"
           ]
         },

@@ -21,17 +21,6 @@ title: skywalking
 #
 -->
 
-## 目录
-
-- [名字](#名字)
-- [属性](#属性)
-- [如何启用](#如何启用)
-- [如何设置 Endpoint](#如何设置-Endpoint)
-- [测试插件](#测试插件)
-  - [运行 SkyWalking 实例](#运行-SkyWalking-实例)
-- [禁用插件](#禁用插件)
-- [上游服务为 SpringBoot 的示例代码](#上游服务为-SpringBoot-的示例代码)
-
 ## 名字
 
 [**SkyWalking**](https://github.com/apache/skywalking) 使用其原生的 Nginx LUA tracer 提供分布式追踪、拓扑分析以及服务和 URI 级别的 metrics 信息。

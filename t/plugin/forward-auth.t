@@ -66,7 +66,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
 --- config
     location /t {
         content_by_lua_block {
-            local datas = {
+            local data = {
                 {
                     url = "/apisix/admin/upstreams/u1",
                     data = [[{
@@ -170,7 +170,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
 
             local t = require("lib.test_admin").test
 
-            for _, data in ipairs(datas) do
+            for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
                 ngx.say(code..body)
             end

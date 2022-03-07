@@ -21,15 +21,6 @@ title: limit-req
 #
 -->
 
-## Summary
-
-  - [Introduction](#introduction)
-  - [Attributes](#attributes)
-  - [Example](#example)
-    - [How to enable on the `route` or `service`](#how-to-enable-on-the-route-or-service)
-    - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
-  - [Disable Plugin](#disable-plugin)
-
 ## Introduction
 
 limit request rate using the "leaky bucket" method.

@@ -20,7 +20,6 @@ title: jwt-auth
 # limitations under the License.
 #
 -->
-
 ## 目录
 
 - [**目录**](#目录)
@@ -59,8 +58,7 @@ title: jwt-auth
 
 ## 接口
 
-插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。
+插件会增加 `/apisix/plugin/jwt/sign` 这个接口，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何启用
 
@@ -196,11 +194,25 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 2. 创建 Route 或 Service 对象，并开启 jwt-auth 插件：
 
-![enabe jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
+![enable jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
 
 ## 测试插件
 
 #### 首先进行登录获取 `jwt-auth` token:
+
+首先，你需要为签发 token 的 API 设置一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/jwt/sign",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+之后，我们就可以调用它获取 token 了。
 
 * 没有额外的 payload:
 

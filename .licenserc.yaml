@@ -42,5 +42,6 @@ header:
     # Exclude plugin-specific configuration files
     - 't/plugin/authz-casbin'
     - 't/coredns'
+    - 'autodocs/'
 
   comment: on-failure

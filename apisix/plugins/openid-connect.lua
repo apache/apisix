@@ -67,6 +67,10 @@ local schema = {
             type = "string",
             description = "use ngx.var.request_uri if not configured"
         },
+        post_logout_redirect_uri = {
+            type = "string",
+            description = "the URI will be redirect when request logout_path",
+        },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         set_access_token_header = {
@@ -179,8 +183,8 @@ local function introspect(ctx, conf)
 
     -- If we get here, token was found in request.
 
-    if conf.public_key then
-        -- Validate token against public key.
+    if conf.public_key or conf.use_jwks then
+        -- Validate token against public key or jwks document of the oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
@@ -196,6 +200,8 @@ local function introspect(ctx, conf)
         end
 
         -- Token successfully validated.
+        local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
+        core.log.debug("token validate successfully by ", method)
         return res, err, token, nil
     else
         -- Validate token against introspection endpoint.
@@ -210,6 +216,7 @@ local function introspect(ctx, conf)
 
         -- Token successfully validated and response from the introspection
         -- endpoint contains the userinfo.
+        core.log.debug("token validate successfully by introspection")
         return res, err, token, res
     end
 end

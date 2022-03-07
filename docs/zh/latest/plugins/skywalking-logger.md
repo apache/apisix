@@ -21,15 +21,6 @@ title: skywalking-logger
 #
 -->
 
-## 目录
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**插件元数据设置**](#插件元数据设置)
-- [**禁用插件**](#禁用插件)
-
 ## 定义
 
 `http-logger` 是一个插件，可将 Access Log 数据通过 `HTTP` 推送到 SkyWalking OAP 服务器。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，并依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/) 。
@@ -40,15 +31,14 @@ title: skywalking-logger
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| uri              | string  | 必须   |               |         | `SkyWalking OAp` 服务器的 URI。                   |
-| timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
-| name             | string  | 可选   | "skywalking logger" |         | 标识 logger 的唯一标识符。                     |
-| batch_max_size   | integer | 可选   | 1000          | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `HTTP/HTTPS` 服务。 |
-| inactive_timeout | integer | 可选   | 5             | [1,...] | 刷新缓冲区的最大时间（以秒为单位），当达到最大的刷新时间时，无论缓冲区中的日志数量是否达到设置的最大条数，也会自动将全部日志推送到 `HTTP/HTTPS` 服务。 |
-| buffer_duration  | integer | 可选   | 60            | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位）。   |
-| max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
-| retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
+| endpoint_addr    | string  | 必须   |               |         | `SkyWalking OAp` 服务器的 URI。                   |
+| service_name   | string  | 可选   |"APISIX"         |         | `SkyWalking` 服务名称。                           |
+| service_instance_name    | string  | 可选   |"APISIX Instance Name"|         | `SkyWalking`服务实例名称，将其设置为`$hostname`以直接获取本地主机名。 |
+| timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                      |
+| name             | string  | 可选   | "skywalking logger" |         | 标识 logger 的唯一标识符。                   |
 | include_req_body | boolean | 可选   | false         | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。 |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
@@ -59,7 +49,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "skywalking-logger": {
-                "uri": "http://127.0.0.1:12800"
+                "endpoint_addr": "http://127.0.0.1:12800"
             }
        },
       "upstream": {

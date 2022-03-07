@@ -21,9 +21,6 @@ title: DNS
 #
 -->
 
-* [service discovery via DNS](#service-discovery-via-dns)
-    * [SRV record](#srv-record)
-
 ## service discovery via DNS
 
 Some service discovery system, like Consul, support exposing service information

@@ -43,7 +43,7 @@ __DATA__
         content_by_lua_block {
 
             local config = {
-                uri = "/grpc/*",
+                uri = "/grpc/web/*",
                 upstream = {
                     scheme = "grpc",
                     type = "roundrobin",
@@ -72,73 +72,31 @@ passed
 
 
 
-=== TEST 2: Flush all data through APISIX gRPC-Web Proxy
+=== TEST 2: Proxy unary request using APISIX gRPC-Web plugin
 --- exec
-node ./t/plugin/grpc-web/client.js FLUSH
+node ./t/plugin/grpc-web/client.js BIN UNARY
+node ./t/plugin/grpc-web/client.js TEXT UNARY
 --- response_body
-[]
+{"name":"hello","path":"/hello"}
+{"name":"hello","path":"/hello"}
 
 
 
-=== TEST 3: Insert first data through APISIX gRPC-Web Proxy
+=== TEST 3: Proxy server-side streaming request using APISIX gRPC-Web plugin
 --- exec
-node ./t/plugin/grpc-web/client.js POST 1 route01 path01
+node ./t/plugin/grpc-web/client.js BIN STREAM
+node ./t/plugin/grpc-web/client.js TEXT STREAM
 --- response_body
-[["1",{"name":"route01","path":"path01"}]]
+{"name":"hello","path":"/hello"}
+{"name":"world","path":"/world"}
+{"name":"hello","path":"/hello"}
+{"name":"world","path":"/world"}
 
 
 
-=== TEST 4: Update data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js PUT 1 route01 hello
---- response_body
-[["1",{"name":"route01","path":"hello"}]]
-
-
-
-=== TEST 5: Insert second data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js POST 2 route02 path02
---- response_body
-[["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}]]
-
-
-
-=== TEST 6: Insert third data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js POST 3 route03 path03
---- response_body
-[["1",{"name":"route01","path":"hello"}],["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
-
-
-
-=== TEST 7: Delete first data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js DEL 1
---- response_body
-[["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
-
-
-
-=== TEST 8: Get second data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js GET 2
---- response_body
-{"name":"route02","path":"path02"}
-
-
-
-=== TEST 9: Get all data through APISIX gRPC-Web Proxy
---- exec
-node ./t/plugin/grpc-web/client.js all
---- response_body
-[["2",{"name":"route02","path":"path02"}],["3",{"name":"route03","path":"path03"}]]
-
-
-
-=== TEST 10: test options request
+=== TEST 4: test options request
 --- request
-OPTIONS /grpc/a6.RouteService/GetAll
+OPTIONS /grpc/web/a6.RouteService/GetRoute
 --- error_code: 204
 --- response_headers
 Access-Control-Allow-Methods: POST
@@ -147,9 +105,9 @@ Access-Control-Allow-Origin: *
 
 
 
-=== TEST 11: test non-options request
+=== TEST 5: test non-options request
 --- request
-GET /grpc/a6.RouteService/GetAll
+GET /grpc/web/a6.RouteService/GetRoute
 --- error_code: 400
 --- response_headers
 Access-Control-Allow-Origin: *
@@ -158,9 +116,9 @@ request method: `GET` invalid
 
 
 
-=== TEST 12: test non gRPC Web MIME type request
+=== TEST 6: test non gRPC Web MIME type request
 --- request
-POST /grpc/a6.RouteService/GetAll
+POST /grpc/web/a6.RouteService/GetRoute
 --- more_headers
 Content-Type: application/json
 --- error_code: 400
@@ -172,13 +130,13 @@ request Content-Type: `application/json` invalid
 
 
 
-=== TEST 13: set route (absolute match)
+=== TEST 7: set route (absolute match)
 --- config
     location /t {
         content_by_lua_block {
 
             local config = {
-                uri = "/grpc2/a6.RouteService/GetAll",
+                uri = "/grpc/web2/a6.RouteService/GetRoute",
                 upstream = {
                     scheme = "grpc",
                     type = "roundrobin",
@@ -207,9 +165,9 @@ passed
 
 
 
-=== TEST 14: test route (absolute match)
+=== TEST 8: test route (absolute match)
 --- request
-POST /grpc2/a6.RouteService/GetAll
+POST /grpc/web2/a6.RouteService/GetRoute
 --- more_headers
 Content-Type: application/grpc-web
 --- error_code: 400

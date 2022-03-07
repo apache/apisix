@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup go
-        uses: actions/setup-go@v2.1.5
+        uses: actions/setup-go@v3
         with:
           go-version: "1.16"
 
@@ -54,7 +54,7 @@ jobs:
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
           helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm install etcd bitnami/etcd --set replicaCount=3 --set auth.rbac.enabled=false
+          helm install etcd bitnami/etcd --set replicaCount=3 --set auth.rbac.create=false
           kubectl wait pods -l app.kubernetes.io/instance=etcd --for=condition=Ready --timeout=300s --all
 
 
@@ -84,9 +84,3 @@ jobs:
       - name: Run test
         working-directory: ./t/chaos
         run: ginkgo -r --v --progress --trace
-
-      # Debug via SSH if previous steps failed
-      - name: Set up tmate session
-        if: ${{ failure() }}
-        uses: ./.github/actions/action-tmate
-        timeout-minutes: 15

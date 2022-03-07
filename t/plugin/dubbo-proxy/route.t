@@ -90,7 +90,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: hello
     upstream:
         nodes:
@@ -125,7 +125,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: hello
     upstream_id: 1
 --- more_headers
@@ -148,7 +148,7 @@ services:
         plugins:
             dubbo-proxy:
                 service_name: org.apache.dubbo.backend.DemoService
-                service_version: 0.0.0
+                service_version: 1.0.0
                 method: hello
         id: 1
         upstream_id: 1
@@ -202,7 +202,7 @@ plugins:
                     "plugins": {
                         "dubbo-proxy": {
                             "service_name": "org.apache.dubbo.backend.DemoService",
-                            "service_version": "0.0.0",
+                            "service_version": "1.0.0",
                             "method": "hello"
                         },
                         "key-auth": {}
@@ -266,7 +266,7 @@ routes:
             body: "hello world\n"
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: hello
     upstream_id: 1
 
@@ -288,7 +288,7 @@ routes:
                 extra-arg-fruit: banana
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: hello
     upstream_id: 1
 
@@ -307,8 +307,27 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
     upstream_id: 1
 
 --- response_body
 dubbo success
+
+
+
+=== TEST 11: version mismatch
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    plugins:
+        dubbo-proxy:
+            service_name: org.apache.dubbo.backend.DemoService
+            service_version: 0.1.0
+            method: hello
+    upstream_id: 1
+--- more_headers
+Extra-Arg-K: V
+--- error_code: 502
+--- error_log
+may be version or group mismatch

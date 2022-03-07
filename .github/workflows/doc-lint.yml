@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [master, 'release/**']
     paths:
+      - 'docs/**'
       - '**/*.md'
 
 jobs:
@@ -12,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3.0.0
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
@@ -28,7 +29,7 @@ jobs:
           ./utils/fix-zh-doc-segment.py > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
           if grep "find broken newline in file: " /tmp/check.log; then
-            cat /tmp/error.log
+            cat /tmp/check.log
             echo "Newline can't appear in the middle of Chinese sentences."
             echo "You need to run ./utils/fix-zh-doc-segment.py to fix them."
             exit 1

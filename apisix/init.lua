@@ -373,21 +373,11 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
-    if router.api.has_route_not_under_apisix() or
-        core.string.has_prefix(uri, "/apisix/")
-    then
-        local skip = local_conf and local_conf.apisix.global_rule_skip_internal_api
-        local matched = router.api.match(api_ctx, skip)
-        if matched then
-            return
-        end
-    end
-
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
-        -- run global rule
+        -- run global rule when there is no matching route
         plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
         core.log.info("not find any matched route")
@@ -580,8 +570,27 @@ end
 
 
 local function set_resp_upstream_status(up_status)
-    core.response.set_header("X-APISIX-Upstream-Status", up_status)
-    core.log.info("X-APISIX-Upstream-Status: ", up_status)
+    local_conf = core.config.local_conf()
+
+    if local_conf.apisix and local_conf.apisix.show_upstream_status_in_response_header then
+        core.response.set_header("X-APISIX-Upstream-Status", up_status)
+    elseif #up_status == 3 then
+        if tonumber(up_status) >= 500 and tonumber(up_status) <= 599 then
+            core.response.set_header("X-APISIX-Upstream-Status", up_status)
+        end
+    elseif #up_status > 3 then
+        -- the up_status can be "502, 502" or "502, 502 : "
+        local last_status
+        if str_byte(up_status, -1) == str_byte(" ") then
+            last_status = str_sub(up_status, -6, -3)
+        else
+            last_status = str_sub(up_status, -3)
+        end
+
+        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+            core.response.set_header("X-APISIX-Upstream-Status", up_status)
+        end
+    end
 end
 
 
@@ -599,23 +608,8 @@ function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
-    if up_status and #up_status == 3
-       and tonumber(up_status) >= 500
-       and tonumber(up_status) <= 599
-    then
+    if up_status then
         set_resp_upstream_status(up_status)
-    elseif up_status and #up_status > 3 then
-        -- the up_status can be "502, 502" or "502, 502 : "
-        local last_status
-        if str_byte(up_status, -1) == str_byte(" ") then
-            last_status = str_sub(up_status, -6, -3)
-        else
-            last_status = str_sub(up_status, -3)
-        end
-
-        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
-            set_resp_upstream_status(up_status)
-        end
     end
 
     common_phase("header_filter")
@@ -627,7 +621,7 @@ function _M.http_header_filter_phase()
 
     local debug_headers = api_ctx.debug_headers
     if debug_headers then
-        local deduplicate = core.table.new(#debug_headers, 0)
+        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
         for k, v in pairs(debug_headers) do
             core.table.insert(deduplicate, k)
         end

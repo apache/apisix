@@ -21,23 +21,6 @@ title: batch-requests
 #
 -->
 
-## 目录
-
-- [目录](#目录)
-- [简介](#简介)
-- [属性](#属性)
-- [接口](#接口)
-- [如何启用](#如何启用)
-- [如何配置](#如何配置)
-- [元数据](#元数据)
-- [批量接口请求/响应](#批量接口请求响应)
-  - [接口请求参数:](#接口请求参数)
-    - [HttpRequest](#httprequest)
-  - [接口响应参数：](#接口响应参数)
-    - [HttpResponse](#httpresponse)
-- [测试插件](#测试插件)
-- [禁用插件](#禁用插件)
-
 ## 简介
 
 `batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 http 请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
@@ -52,8 +35,7 @@ title: batch-requests
 
 ## 接口
 
-插件会增加 `/apisix/batch-requests` 这个接口，你可能需要通过 [interceptors](../plugin-interceptors.md)
-来保护它。
+插件会增加 `/apisix/batch-requests` 这个接口，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
 ## 如何启用
 
@@ -123,23 +105,35 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 ## 如何修改自定义 uri
 
-我们可以在 `conf/config.yaml` 的 `plugin_attr` 配置项中修改默认的 `uri`
+我们可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件轻易的设置自定义 uri。只需要在创建路由时设置需要的 uri 并改变 `public-api` 插件的配置即可。
 
-| 名称       | 类型   | 必选项	| 默认值                       | 描述           |
-| --------- | ------ | ------ | ---------------------------- | -------------- |
-| uri       | string |  可选  |"/apisix/batch-requests"     | `batch-requests` 插件的自定义 uri    |
-
-配置示例:
-
-```yaml
-plugin_attr:
-  batch-requests:
-    uri: "/api-gw/batch"
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/batch-requests",
+    "plugins": {
+        "public-api": {
+            "uri": "/apisix/batch-requests"
+        }
+    }
+}'
 ```
 
 ## 测试插件
 
-你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
+首先，你需要为 batch request 的 API 设置一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/batch-requests",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+之后，你就可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )了，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
 
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \

@@ -49,7 +49,8 @@ function install_dependencies_with_yum() {
     local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
     if [ "${1}" == "centos" ]; then
         # add APISIX source
-        sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+        local apisix_pkg=apache-apisix-repo-1.0-1.noarch
+        rpm -q --quiet ${apisix_pkg} || sudo yum install -y https://repos.apiseven.com/packages/centos/${apisix_pkg}.rpm
 
         # install apisix-base and some compilation tools
         # shellcheck disable=SC2086
@@ -78,7 +79,7 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev
+    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
 }
 
 # Install dependencies on mac osx
@@ -133,7 +134,7 @@ function main() {
         elif [[ "${OS_NAME}" == "darwin" ]]; then
             install_dependencies_on_mac_osx
         else
-            echo "Non-surported distribution"
+            echo "Non-supported distribution"
         fi
         return
     fi
