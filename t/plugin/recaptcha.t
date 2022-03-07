@@ -284,7 +284,7 @@ GET /users/*/active
 [error]
 
 --- request
-POST /users/*/deactive
+POST /users/*/deactivate
 --- error_code: 404
 --- no_error_log
 [error]
