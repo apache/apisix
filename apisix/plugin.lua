@@ -502,12 +502,10 @@ local function merge_consumer_route(route_conf, consumer_conf)
             new_route_conf.value.plugins = {}
         end
 
-        new_route_conf.value.plugins[name] = conf
-
-        if (route_conf and route_conf.value and route_conf.value.plugins)
-                and not route_conf.value.plugins[name] then
-            new_route_conf.value.plugins[name]["_from_consumer"] = true
+        if new_route_conf.value.plugins[name] == nil then
+            conf._from_consumer = true
         end
+        new_route_conf.value.plugins[name] = conf
     end
 
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
@@ -737,6 +735,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "body_filter"
     then
         for i = 1, #plugins, 2 do
+            if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
+                    and plugins[i].type ~= "auth"then
+                phase = "rewrite"
+            end
             local phase_func = plugins[i][phase]
             if phase_func then
                 plugin_run = true
@@ -809,33 +811,5 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
     end
 end
 
-
-function _M.rerun_plugins_of_consumer(plugins, api_ctx)
-    for i = 1, #plugins, 2 do
-        -- no need to rerun the auth plugins
-        if plugins[i + 1]["_from_consumer"] and plugins[i].type ~= "auth" then
-            local phase_func = plugins[i]["rewrite"]
-            if phase_func then
-                local code, body = phase_func(plugins[i + 1], api_ctx)
-                if code or body then
-                    if is_http then
-                        if code >= 400 then
-                            core.log.warn(plugins[i].name, " exits with http status code ", code)
-                        end
-
-                        core.response.exit(code, body)
-                    else
-                        if code >= 400 then
-                            core.log.warn(plugins[i].name, " exits with status code ", code)
-                        end
-
-                        ngx_exit(1)
-                    end
-                end
-            end
-        end
-    end
-    return api_ctx
-end
 
 return _M

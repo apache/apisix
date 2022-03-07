@@ -457,7 +457,7 @@ function _M.http_access_phase()
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
                 -- rerun rewrite phase for newly added plugins in consumer
-                plugin.rerun_plugins_of_consumer(api_ctx.plugins, api_ctx)
+                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
