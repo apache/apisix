@@ -366,6 +366,7 @@ plugins:                          # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - recaptcha                      # priority: 700
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - grpc-web                       # priority: 505
