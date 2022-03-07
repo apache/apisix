@@ -621,6 +621,7 @@ http {
 
             {% if wasm then %}
             set $wasm_process_req_body       '';
+            set $wasm_process_resp_body      '';
             {% end %}
 
             # http server location configuration snippet starts

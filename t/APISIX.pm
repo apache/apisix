@@ -222,6 +222,7 @@ my $a6_ngx_vars = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_vars = <<_EOC_;
     set \$wasm_process_req_body       '';
+    set \$wasm_process_resp_body      '';
 _EOC_
 }
 
