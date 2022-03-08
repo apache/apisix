@@ -126,7 +126,7 @@ function _M.access(conf, ctx)
             ssl_verify = false
         })
         if err then
-            core.log.warn("request faield: ", err)
+            core.log.warn("request failed: ", err)
             return core.response.exit(500), err
         end
         core.log.debug("recaptcha veirfy result: ", res.body)
