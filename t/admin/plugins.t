@@ -101,6 +101,7 @@ server-info
 traffic-split
 redirect
 response-rewrite
+recaptcha
 grpc-transcode
 grpc-web
 public-api
