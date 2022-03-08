@@ -372,8 +372,7 @@ plugin_attr:
       ip: 127.0.0.1
       port: 9091
   server-info:
-    report_interval: 60  # server info report interval (unit: second)
-    report_ttl: 3600     # live time for server info in etcd (unit: second)
+    report_ttl: 60     # live time for server info in etcd (unit: second)
   dubbo-proxy:
     upstream_multiplex_count: 32
   request-id:
