@@ -25,8 +25,7 @@ local schema = {
     properties = {
         host = {
             type = "string",
-            pattern = [[^http(s)?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]{0,62}]]
-                      .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
+            pattern = [=[^http(s)?:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?$]=],
         },
         path = {
             type = "string",
