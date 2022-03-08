@@ -25,7 +25,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: sanity
 --- config
     location /t {
@@ -93,7 +92,9 @@ done
 --- no_error_log
 [error]
 
-=== TEST 3: add plugin
+
+
+=== TEST 2: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -146,7 +147,8 @@ passed
 [error]
 
 
-=== TEST 4: add fault-injection plugin for mocking upstream api response
+
+=== TEST 3: add fault-injection plugin for mocking upstream api response
 --- config
        location /t {
            content_by_lua_block {
@@ -238,7 +240,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 5: request is terminated by recaptcha plugin due to api /login
+
+
+=== TEST 4: request is terminated by recaptcha plugin due to api /login
 --- request
 POST /login
 --- error_code: 400
@@ -249,7 +253,9 @@ Content-Type: application/json; charset=utf-8
 --- no_error_log
 [error]
 
-=== TEST 6: request is terminated by recaptcha plugin due to api /users/*/active
+
+
+=== TEST 5: request is terminated by recaptcha plugin due to api /users/*/active
 --- request
 POST /users/1/active
 --- error_code: 400
@@ -260,7 +266,9 @@ Content-Type: application/json; charset=utf-8
 --- no_error_log
 [error]
 
-=== TEST 7: request pass cases
+
+
+=== TEST 6: request pass cases
 --- request
 GET /login
 --- error_code: 200
@@ -298,7 +306,8 @@ GET /welcome
 [error]
 
 
-=== TEST 8: recaptcha valid
+
+=== TEST 7: recaptcha valid
 --- request
 POST /login
 --- more_headers
@@ -308,7 +317,9 @@ captcha: test
 --- no_error_log
 [error]
 
-=== TEST 9: recaptcha valid
+
+
+=== TEST 8: recaptcha valid
 --- request
 POST /users/1/active?captcha=test
 --- response_body

@@ -99,7 +99,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
                 "body":"{\"message\":\"invalid captcha\"}\n",
                 "status_code":400
             }
-    		}
+        }
     },
     "upstream": {
         "type": "roundrobin",
@@ -182,5 +182,3 @@ curl http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f03
 ```
 
 This plugin has been disabled now. It works for other plugins.
-
-
