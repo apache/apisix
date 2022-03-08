@@ -119,9 +119,9 @@ Follow the steps below to install Apache APISIX via the source release package.
 
   **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
 
-  The general solution: `luarocks` supports custom compile-time dependency directories(from this [link](https://github.com/luarocks/luarocks/wiki/Config-file-format)). Use a third-party tool to install the missing package and add its installation directory to the `luarocks`'s variables table. The method is applied to macOS, Ubuntu, CentOS and other operating systems, and the specific solution for macOS are given here for reference only.
+  The general solution: `luarocks` supports custom compile-time dependency directories(from this [link](https://github.com/luarocks/luarocks/wiki/Config-file-format)). Use a third-party tool to install the missing package and add its installation directory to the `luarocks`'s variables table. This a general method which can be applied to macOS, Ubuntu, CentOS or other usual operating systems, and the specific solution for macOS are given here for reference only.
 
-  Solution for macOS:
+  The following is the solution of macOS, which is similar to that of other operating systems:
 
     1. Install `openldap` with `brew install openldap`;
     2. Locate installation directory with `brew --prefix openldap`;
