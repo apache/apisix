@@ -126,8 +126,8 @@ function _M.access(conf, ctx)
             ssl_verify = false
         })
         if err then
-            core.log.warn("request failed: ", err)
-            return core.response.exit(500), err
+            core.log.error("request failed: ", err)
+            return 500
         end
         core.log.debug("recaptcha veirfy result: ", res.body)
         local recaptcha_result = core.json.decode(res.body)
@@ -138,8 +138,10 @@ function _M.access(conf, ctx)
 
     if invalid_captcha then
         core.response.set_header("Content-Type", conf.response.content_type)
-        return core.response.exit(conf.response.status_code, conf.response.body)
+        return conf.response.status_code, core.utils.resolve_var(conf.response.body, ctx.var)
     end
+
+    return
 end
 
 return _M
