@@ -158,7 +158,6 @@ passed
 
 
 
-
 === TEST 4: Test plugin endpoint
 --- config
     location /t {
