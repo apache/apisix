@@ -372,7 +372,7 @@ function _M.keepalive(id)
         return nil, err
     end
 
-    return res, nil
+    return res
 end
 
 
