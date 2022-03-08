@@ -21,17 +21,6 @@ title: http-logger
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable](#how-to-enable)
-- [Test Plugin](#test-plugin)
-- [Metadata](#metadata)
-  - [Example](#example)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.

@@ -146,10 +146,10 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 自定义路由: 支持用户自己实现路由算法。
 
 - **多语言支持**
-- Apache APISIX 是一个通过 `RPC` 和 `WASM` 支持不同语言来进行插件开发的网关.
+- Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关.
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
   - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
-  - WASM 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的 WASM 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 WASM 字节码，即可运行在 APISIX 中的 WASM 虚拟机中。
+  - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
   - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.

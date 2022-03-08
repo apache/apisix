@@ -190,7 +190,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
 
-        upstream_mirror_host       = true,
+        upstream_mirror_uri        = true,
 
         upstream_cache_zone        = true,
         upstream_cache_zone_info   = true,

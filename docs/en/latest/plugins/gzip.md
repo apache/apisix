@@ -21,14 +21,6 @@ title: gzip
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 The `gzip` plugin dynamically set the gzip behavior of Nginx.
