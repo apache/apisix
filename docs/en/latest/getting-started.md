@@ -39,14 +39,21 @@ Apache APISIX provides services such as load balancing, dynamic upstream, graysc
 
 ## Features
 Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with Apache SkyWalking in observability, which greatly improves service governance capabilities. Some of the characteristics of the Apache APISIX gateway include;
-  - All platforms
-  - Full Dynamic
-  - Fine-grained routing
-  - OPS friendly
-  - Highly scalable
-  - Security
-  - Multi protocols
-  - Multi-Language support
+  - All platforms:
+  
+  APISIX is a cloud native, open source API gateway. You can run APISIX from bare-metal to Kubernetes. Since APISIX supports ARM6, it avoids the lock-in challenge of the infra technology. It also provides integration to cloud providers like AWS Lambda,Azure Functions, Lua functions, Apache OpenWhisk.
+  - Full Dynamic:
+  
+  The biggest feature of Apache APISIX is that it is fully dynamic. That includes routing, SSL certificates, plugins, upstream etc. All features are dynamically configured through the admin API, without having to restart the service at all.
+  - Fine-grained routing:
+  
+  Support all Nginx built-in variables as conditions for routing, so you can use cookie, args, etc. as routing conditions to implement canary release, A/B testing, etc.  Apache APISIX provides operators that serve as judgment conditions for routing and a custom routing matching function. By using GraphQL attributes, APISIX allows you to filter routes.
+  - OPS friendly:
+  
+  Apache APISIX has been adopted amongst organisation’s DevOps team because of it Ops-friendly strategy.
+  - Multi-Language support:
+  
+  Apache APISIX is a multi-language gateway for plugin development and supports multiple languages via RPCand Wasm. Developers can choose the language according to their needs and only need to write the code according to the SDK before compiling it into a Wasm bytecode. APISIX has support for Java, Golang, Python and Node.js. 
 
 ## Summary
 
