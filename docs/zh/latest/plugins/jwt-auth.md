@@ -160,7 +160,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 如果你不确定如何将公钥和私钥存储到 Vault 键值对中，请使用这个命令。
 
 ```shell
-# provided, your current directory contains the files named "public.pem" and "private.pem"
+# 提供你当前目录包含的 ”public.pem“ 和 ”private.pem“ 文件
 $ vault kv put kv/apisix/consumer/jim/jwt-auth public_key=@public.pem private_key=@private.pem
 Success! Data written to: kv/apisix/consumer/jim/jwt-auth
 ```
