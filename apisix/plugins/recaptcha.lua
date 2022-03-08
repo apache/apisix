@@ -18,6 +18,9 @@ local radix = require("resty.radixtree")
 local core = require("apisix.core")
 local http = require("resty.http")
 
+local ipairs = ipairs
+local table = table
+
 local schema = {
     type = "object",
     properties = {
