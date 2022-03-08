@@ -60,8 +60,8 @@ var_test_path=/test make run
 sleep 0.1
 code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test)
 if [ ! $code -eq 200 ]; then
-    echo "failed: variable is not valid"
+    echo "failed: esolve variables in apisix.yaml conf failed"
     exit 1
 fi
 
-echo "passed: resolve variables"
+echo "passed: resolve variables in apisix.yaml conf success"
