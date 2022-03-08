@@ -43,25 +43,6 @@ __DATA__
                             "key": "auth-one"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                },
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -273,25 +254,6 @@ GET /t
                                 "clock_skew": 1
                             }
                         }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "John_Doe",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "consumer-plugin-John_Doe"
-                                },
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "clock_skew": 1
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

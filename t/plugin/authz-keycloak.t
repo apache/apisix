@@ -293,30 +293,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": ["course_resource#delete"],
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -390,31 +366,6 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": ["course_resource#delete"],
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000,
-                                    "ssl_verify": false
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -487,30 +438,6 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "policy_enforcement_mode": "ENFORCING",
-                                    "timeout": 3000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
