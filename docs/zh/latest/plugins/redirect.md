@@ -121,7 +121,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 $ curl http://127.0.0.1:9080/hello -i
 HTTP/1.1 301 Moved Permanently
 ...
-Location: https://127.0.0.1/hello
+Location: https://127.0.0.1:9443/hello
 
 ...
 ```
