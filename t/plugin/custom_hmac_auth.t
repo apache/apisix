@@ -44,22 +44,6 @@ __DATA__
                             "clock_skew": 10
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 10
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -303,22 +287,6 @@ passed
                             "clock_skew": 1
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "pony",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key2",
-                                    "secret_key": "my-secret-key2",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 1
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

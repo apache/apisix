@@ -366,31 +366,6 @@ request latency is nil
                             "type": "roundrobin"
                         },
                         "uri": "/limit_conn"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-conn": {
-                                    "conn": 1,
-                                    "burst": 0,
-                                    "default_conn_delay": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "$http_a $http_b",
-                                    "key_type": "var_combination"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/limit_conn"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

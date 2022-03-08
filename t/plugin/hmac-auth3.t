@@ -54,22 +54,6 @@ __DATA__
                             "validate_request_body": true
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "robin",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "validate_request_body": true
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -313,23 +297,6 @@ passed
                             "max_req_body": 1024
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "robin",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "validate_request_body": true,
-                                    "max_req_body": 1024
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

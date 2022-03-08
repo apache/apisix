@@ -223,15 +223,6 @@ route_id: 1
                  ngx.HTTP_PUT,
                  [[{
                     "desc": "new_service"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "desc": "new_service"
-                        },
-                        "key": "/apisix/services/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -606,16 +597,6 @@ consumer_name: consumer_name is nil
                     "log_format": {
                         "service_name": "$service_name"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "service_name": "$service_name"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -783,16 +764,6 @@ qr/request log: \{"route_id":"1"\}/
                     "log_format": {
                         "route_name": "$route_name"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "route_name": "$route_name"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -928,17 +899,6 @@ qr/request log: \{"route_id":"1"\}/
                         "route_name": "$route_name",
                         "service_name": "$service_name"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "route_name": "$route_name",
-                                "service_name": "$service_name"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

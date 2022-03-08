@@ -84,19 +84,6 @@ done
                             "key": "auth-one"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -233,18 +220,6 @@ apikey: auth-13
                         "key-auth": {
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "error",
-                            "plugins": {
-                                "key-auth": {
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
