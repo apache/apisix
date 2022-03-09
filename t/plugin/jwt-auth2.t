@@ -37,7 +37,46 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: enable jwt auth plugin using admin api with custom parameter
+=== TEST 1: add consumer with username and plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "jwt-auth": {
+                                    "key": "user-key",
+                                    "secret": "my-secret-key"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+=== TEST 2: enable jwt auth plugin using admin api with custom parameter
 --- config
     location /t {
         content_by_lua_block {
@@ -71,7 +110,7 @@ __DATA__
 --- response_body
 passed
 
-=== TEST 2: verify (in header)
+=== TEST 3: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -79,7 +118,7 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 --- response_body
 hello world
 
-=== TEST 3: verify (in cookie)
+=== TEST 4: verify (in cookie)
 --- request
 GET /hello
 --- more_headers
@@ -87,7 +126,7 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 --- response_body
 hello world
 
-=== TEST 4: verify (in query)
+=== TEST 5: verify (in query)
 --- request
 GET /hello?jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs=
 --- response_body
