@@ -99,7 +99,6 @@ The plugin has been disabled now.
 
 We can customize proxy timeout for the mirrored sub-request in the `plugin_attr` of `conf/config.yaml`. This useful while mirroring traffic to a slow backend in a connection reused scenario.
 
-
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | connect | integer | 60000 | connect timeout in milliseconds to the mirrored upstream |

@@ -98,7 +98,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 我们可以在`conf/config.yaml`的`plugin_attr`中指定子请求的超时时间。这在连接复用的场景下mirror流量到一个非常慢的后端服务时非常有用。
 
-
 | 名称 | 类型 | 默认值 | 描述 |
 | --- | --- | --- | --- |
 | connect | integer | 60000 | 毫秒级镜像请求到上游的连接超时时间 |
