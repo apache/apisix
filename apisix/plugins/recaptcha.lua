@@ -24,7 +24,7 @@ local table = table
 local schema = {
     type = "object",
     properties = {
-        recaptcha_secret_key = { type = "string" },
+        secret_key = { type = "string" },
         apis = {
             type = "array",
             items = {
@@ -53,7 +53,7 @@ local schema = {
 
     },
     additionalProperties = false,
-    required = { "recaptcha_secret_key" },
+    required = { "secret_key" },
 }
 
 local recaptcha_url = "https://www.recaptcha.net"
@@ -115,7 +115,7 @@ function _M.access(conf, ctx)
     local captcha = retrieve_captcha(ctx, api)
     if captcha ~= nil and captcha ~= "" then
         local httpc = http.new()
-        local secret = conf.recaptcha_secret_key
+        local secret = conf.secret_key
         local remote_ip = core.request.get_remote_client_ip(ctx)
         local res, err = httpc:request_uri(recaptcha_url .. "/recaptcha/api/siteverify", {
             method = "POST",

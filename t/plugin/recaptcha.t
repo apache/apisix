@@ -32,7 +32,7 @@ __DATA__
             local plugin = require("apisix.plugins.recaptcha")
             local ok, err = plugin.check_schema({
                 # https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha
-                recaptcha_secret_key = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+                secret_key = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
                 apis = {
                     {
                         path = "/login",
@@ -61,13 +61,13 @@ done
 --- no_error_log
 [error]
 
-== TEST 2: invalid recaptcha_secret_key
+== TEST 2: invalid secret_key
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.recaptcha")
             local ok, err = plugin.check_schema({
-                recaptcha_secret_key = nil,
+                secret_key = nil,
                 apis = {
                     {
                         path = "/login",
@@ -87,7 +87,7 @@ done
 --- request
 GET /t
 --- response_body
-property "recaptcha_secret_key" is required
+property "secret_key" is required
 done
 --- no_error_log
 [error]
@@ -104,7 +104,7 @@ done
                 [[{
                       "plugins": {
                           "recaptcha": {
-                              "recaptcha_secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+                              "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
                               "apis": [
                                   {
                                       "path": "/login",

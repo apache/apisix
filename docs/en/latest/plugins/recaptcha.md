@@ -29,7 +29,7 @@ Restrict access to an upstream service by verifying request captcha token to the
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| recaptcha_secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA service. |
+| secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA service. |
 | response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response of invalid recaptcha token. |
 | apis | array | required |  |  | The list of APIs needs to be verified by reCAPTCHA. |
 
@@ -46,7 +46,7 @@ The example configuration of plugin is
 
 ```json
 {
-    "recaptcha_secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
+    "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
     "apis":[
         {
             "path":"/login",
@@ -79,7 +79,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "uri": "/users",
     "plugins": {
         "recaptcha": {
-            "recaptcha_secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
+            "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
             "apis":[
                 {
                     "path":"/users/self/update",
@@ -117,7 +117,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1 -H 'X-API-KEY: edd1c9f
 {
     "plugins": {
         "recaptcha": {
-            "recaptcha_secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
+            "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
             "apis":[
                 {
                     "path":"/login",
