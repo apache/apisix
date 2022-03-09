@@ -765,10 +765,15 @@ http {
             }
             {% end %}
 
-            {% if proxy_mirror_timeout then %}
-                {% for k, v in pairs(proxy_mirror_timeout) do %}
-            proxy_{* k *}_timeout {* v *}ms;
-                {% end %}
+
+            {% if proxy_mirror_timeouts.connect then %}
+            proxy_connect_timeout {* proxy_mirror_timeouts.connect *}ms;
+            {% end %}
+            {% if proxy_mirror_timeouts.read then %}
+            proxy_read_timeout {* proxy_mirror_timeouts.read *}ms;
+            {% end %}
+            {% if proxy_mirror_timeouts.send then %}
+            proxy_send_timeout {* proxy_mirror_timeouts.send *}ms;
             {% end %}
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;

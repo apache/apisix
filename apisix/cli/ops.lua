@@ -513,9 +513,9 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    local proxy_mirror_timeout
+    local proxy_mirror_timeouts
     if yaml_conf.plugin_attr["proxy-mirror"] then
-        proxy_mirror_timeout = yaml_conf.plugin_attr["proxy-mirror"].timeout
+        proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
     -- Using template.render
@@ -535,7 +535,7 @@ Please modify "admin_key" in conf/config.yaml .
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
-        proxy_mirror_timeout = proxy_mirror_timeout,
+        proxy_mirror_timeouts = proxy_mirror_timeouts,
     }
 
     if not yaml_conf.apisix then
