@@ -50,9 +50,7 @@ local schema = {
                 body = { type = "string", default = '{"message": "invalid captcha"}' }
             }
         },
-
     },
-    additionalProperties = false,
     required = { "secret_key" },
 }
 
