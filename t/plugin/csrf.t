@@ -210,7 +210,85 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yj
 
 
 
-=== TEST 12: set expires 0
+=== TEST 12: set expires 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "csrf": {
+                            "key": "userkey",
+                            "expires": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: token has expired after sleep 2s
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local sleep = require("apisix.core.utils").sleep
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local cookie = res.headers["Set-Cookie"]
+            local token = cookie:match("=([^;]+)")
+
+            sleep(2)
+
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = {
+                    ["apisix-csrf-token"] = token,
+                    ["Cookie"] = cookie,
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            if res.status >= 300 then
+                ngx.status = res.status
+            end
+        }
+    }
+--- error_code: 401
+--- error_log: token has expired
+
+
+
+=== TEST 14: set expires 0
 --- config
     location /t {
         content_by_lua_block {
@@ -245,6 +323,42 @@ passed
 
 
 
-=== TEST 13: request pass when expires is 0
---- request
-POST /hello
+=== TEST 15: token no expired after sleep 1s
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local sleep = require("apisix.core.utils").sleep
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            sleep(1)
+
+            local cookie = res.headers["Set-Cookie"]
+            local token = cookie:match("=([^;]+)")
+
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = {
+                    ["apisix-csrf-token"] = token,
+                    ["Cookie"] = cookie,
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            if res.status >= 300 then
+                ngx.status = res.status
+            end
+        }
+    }
