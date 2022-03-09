@@ -32,15 +32,9 @@ __DATA__
             local plugin = require("apisix.plugins.recaptcha")
             local ok, err = plugin.check_schema({
                 # https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha
-                secret_key = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
-                apis = {
-                    {
-                        path = "/login",
-                        methods = { "POST" },
-                        param_from = "header",
-                        param_name = "recaptcha"
-                    }
-                },
+                secret_key = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe", # Google automated-tests secret key
+                parameter_source = "header",
+                parameter_name = "captcha",
                 response = {
                     content_type = "application/json; charset=utf-8",
                     status_code = 400,
@@ -68,14 +62,6 @@ done
             local plugin = require("apisix.plugins.recaptcha")
             local ok, err = plugin.check_schema({
                 secret_key = nil,
-                apis = {
-                    {
-                        path = "/login",
-                        methods = { "POST" },
-                        param_from = "header",
-                        param_name = "captcha"
-                    }
-                }
             })
             if not ok then
                 ngx.say(err)
@@ -99,37 +85,28 @@ done
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                      "plugins": {
+                       "plugins": {
                           "recaptcha": {
                               "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
-                              "apis": [
-                                  {
-                                      "path": "/login",
-                                      "methods": [
-                                          "POST"
-                                      ],
-                                      "param_from": "header",
-                                      "param_name": "captcha"
-                                  },
-                                  {
-                                      "path": "/users/*/active",
-                                      "methods": [
-                                          "POST"
-                                      ],
-                                      "param_from": "query",
-                                      "param_name": "captcha"
-                                  }
-                              ],
+                              "parameter_source": "header",
+                              "parameter_name": "captcha",
                               "response": {
                                 "content_type": "application/json; charset=utf-8",
                                 "status_code": 400,
                                 "body": "{\"message\":\"invalid captcha\"}\n"
                               }
                           }
-                      }
+                       },
+                       "upstream": {
+                           "nodes": {
+                               "127.0.0.1:1980": 1
+                           },
+                           "type": "roundrobin"
+                       },
+                       "uri": "/index"
                   }]]
                 )
 
@@ -157,12 +134,16 @@ passed
                     ngx.HTTP_PUT,
                     [=[{
                            "plugins": {
-                               "fault-injection": {
-                                   "abort": {
-                                        "http_status": 200,
-                                        "body": "{\"message\": \"login success\"}\n"
-                                    }
-                               }
+                              "recaptcha": {
+                                  "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+                                  "parameter_source": "header",
+                                  "parameter_name": "captcha",
+                                  "response": {
+                                    "content_type": "application/json; charset=utf-8",
+                                    "status_code": 400,
+                                    "body": "{\"message\":\"invalid captcha\"}\n"
+                                  }
+                              }
                            },
                            "upstream": {
                                "nodes": {
@@ -178,16 +159,20 @@ passed
                    ngx.say(body)
                end
 
-               code, body = t('/apisix/admin/routes/2',
+                code, body = t('/apisix/admin/routes/2',
                     ngx.HTTP_PUT,
                     [=[{
                            "plugins": {
-                               "fault-injection": {
-                                   "abort": {
-                                        "http_status": 200,
-                                        "body": "{\"message\": \"active user success\"}\n"
-                                    }
-                               }
+                              "recaptcha": {
+                                  "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+                                  "parameter_source": "query",
+                                  "parameter_name": "captcha",
+                                  "response": {
+                                    "content_type": "application/json; charset=utf-8",
+                                    "status_code": 400,
+                                    "body": "{\"message\":\"invalid captcha\"}\n"
+                                  }
+                              }
                            },
                            "upstream": {
                                "nodes": {
@@ -195,33 +180,7 @@ passed
                                },
                                "type": "roundrobin"
                            },
-                           "uri": "/users/*/active"
-                   }]=]
-                   )
-               if code >= 300 then
-                   ngx.status = code
-                   ngx.say(body)
-               end
-
-
-               code, body = t('/apisix/admin/routes/3',
-                    ngx.HTTP_PUT,
-                    [=[{
-                           "plugins": {
-                               "fault-injection": {
-                                   "abort": {
-                                        "http_status": 200,
-                                        "body": "{\"message\": \"welcome\"}\n"
-                                    }
-                               }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
-                           },
-                           "uri": "/welcome"
+                           "uri": "/active"
                    }]=]
                    )
                if code >= 300 then
@@ -229,8 +188,6 @@ passed
                end
 
                ngx.say(body)
-
-
            }
        }
 --- request
@@ -242,7 +199,7 @@ passed
 
 
 
-=== TEST 4: request is terminated by recaptcha plugin due to api /login
+=== TEST 4: request is terminated by recaptcha plugin
 --- request
 POST /login
 --- error_code: 400
@@ -253,11 +210,8 @@ Content-Type: application/json; charset=utf-8
 --- no_error_log
 [error]
 
-
-
-=== TEST 5: request is terminated by recaptcha plugin due to api /users/*/active
 --- request
-POST /users/1/active
+POST /active
 --- error_code: 400
 --- response_headers
 Content-Type: application/json; charset=utf-8
@@ -268,61 +222,20 @@ Content-Type: application/json; charset=utf-8
 
 
 
-=== TEST 6: request pass cases
---- request
-GET /login
---- error_code: 200
---- response_body
-{"message": "login success"}
---- no_error_log
-[error]
-
---- request
-POST /login_other
---- error_code: 404
---- no_error_log
-[error]
-
---- request
-GET /users/*/active
---- error_code: 200
---- response_body
-{"message": "active user success"}
---- no_error_log
-[error]
-
---- request
-POST /users/*/deactivate
---- error_code: 404
---- no_error_log
-[error]
-
---- request
-GET /welcome
---- error_code: 200
---- response_body
-{"message": "welcome"}
---- no_error_log
-[error]
-
-
-
-=== TEST 7: recaptcha valid
+=== TEST 5: recaptcha valid
 --- request
 POST /login
 --- more_headers
 captcha: test
---- response_body
-{"message": "login success"}
+--- error_code: 404
 --- no_error_log
 [error]
 
 
 
-=== TEST 8: recaptcha valid
+=== TEST 6: recaptcha valid
 --- request
-POST /users/1/active?captcha=test
---- response_body
-{"message": "active user success"}
+POST /active?captcha=test
+--- error_code: 404
 --- no_error_log
 [error]

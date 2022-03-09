@@ -366,7 +366,8 @@ uninstall:
 test: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_GIT) submodule update --init --recursive
-	prove -I../test-nginx/lib -I./ -r -s t/
+#	prove -I../test-nginx/lib -I./ -r -s t/
+	prove -I../test-nginx/lib -I./ -r -s t/plugin/recaptcha.t
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 

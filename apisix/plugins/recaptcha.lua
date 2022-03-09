@@ -14,34 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local radix = require("resty.radixtree")
 local core = require("apisix.core")
 local http = require("resty.http")
-
-local ipairs = ipairs
-local table = table
 
 local schema = {
     type = "object",
     properties = {
         secret_key = { type = "string" },
-        apis = {
-            type = "array",
-            items = {
-                type = "object",
-                properties = {
-                    path = { type = "string" },
-                    methods = { type = "array", items = { type = "string" }, minItems = 1 },
-                    param_from = {
-                        type = "string",
-                        default = "header",
-                        enum = { "header", "query" }
-                    },
-                    param_name = { type = "string", default = "captcha" },
-                }
-            },
-            minItems = 1
-        },
+        parameter_source = { type = "string", default = "header", enum = { "header", "query" } },
+        parameter_name = { type = "string", default = "captcha" },
         response = {
             type = "object",
             properties = {
@@ -67,31 +48,13 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
-local function build_radixtree(apis)
-    local items = {}
-    for _, api in ipairs(apis) do
-        local item = {
-            paths = { api.path },
-            methods = api.methods,
-            metadata = api,
-        }
-        table.insert(items, item)
-    end
-    return radix.new(items)
-end
-
-local function find_api(request, apis)
-    local rx = build_radixtree(apis)
-    return rx:match(request.path, { method = request.method })
-end
-
-local function retrieve_captcha(ctx, api)
+local function retrieve_captcha(ctx, conf)
     local captcha
-    if api.param_from == "header" then
-        captcha = core.request.header(ctx, api.param_name)
-    elseif api.param_from == "query" then
+    if conf.parameter_source == "header" then
+        captcha = core.request.header(ctx, conf.parameter_name)
+    elseif conf.parameter_source == "query" then
         local uri_args = core.request.get_uri_args(ctx) or {}
-        captcha = uri_args[api.param_name]
+        captcha = uri_args[conf.parameter_name]
     end
     return captcha
 end
@@ -102,15 +65,8 @@ function _M.access(conf, ctx)
 
     core.log.debug("path: ", path, ", method: ", method, ", conf: ", core.json.encode(conf))
 
-    local api = find_api({ path = path, method = method }, conf.apis)
-    if not api then
-        return
-    end
-
-    core.log.debug("api found: ", core.json.encode(api))
-
     local invalid_captcha = true
-    local captcha = retrieve_captcha(ctx, api)
+    local captcha = retrieve_captcha(ctx, conf)
     if captcha ~= nil and captcha ~= "" then
         local httpc = http.new()
         local secret = conf.secret_key

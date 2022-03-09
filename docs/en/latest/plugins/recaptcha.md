@@ -4,6 +4,7 @@ title: recaptcha
 
 <!--
 #
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,37 +31,18 @@ Restrict access to an upstream service by verifying request captcha token to the
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA service. |
+| parameter_source | string | optional | header | | The enum of captcha parameter source. Only `header`, `query` are supported. |
+| parameter_name | string | optional | captcha | | The name of captcha parameter. |
 | response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response of invalid recaptcha token. |
 | apis | array | required |  |  | The list of APIs needs to be verified by reCAPTCHA. |
-
-The object definition of apis parameter is
-
-|            | Type   | Default | Description                                                  |
-| ---------- | ------ | ------- | ------------------------------------------------------------ |
-| path       | string |         | The API path                                                 |
-| methods    | string |         | The list of HTTP method                                      |
-| param_from | string | header  | The enum of captcha parameter source. Only `header`, `query` are supported. |
-| param_name | string | captcha | The name of captcha parameter.                               |
 
 The example configuration of plugin is
 
 ```json
 {
     "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
-    "apis":[
-        {
-            "path":"/login",
-            "methods":[ "POST" ],
-            "param_from":"header",
-            "param_name":"captcha"
-        },
-        {
-            "path":"/users/*/active",
-            "methods":[ "POST" ],
-            "param_from":"query",
-            "param_name":"captcha"
-        }
-    ],
+    "parameter_source": "header",
+    "parameter_name": "captcha",
     "response":{
         "content_type":"application/json; charset=utf-8",
         "body":"{\"message\":\"invalid captcha\"}\n",
@@ -76,75 +58,31 @@ Here's an example, enable this plugin on the specified route:
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/users",
     "plugins": {
         "recaptcha": {
-            "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
-            "apis":[
-                {
-                    "path":"/users/self/update",
-                    "methods":[ "POST" ],
-                    "param_from":"header",
-                    "param_name":"captcha"
-                },
-                {
-                    "path":"/users/*/active",
-                    "methods":[ "POST" ],
-                    "param_from":"query",
-                    "param_name":"captcha"
-                }
-            ],
-            "response":{
-                "content_type":"application/json; charset=utf-8",
-                "body":"{\"message\":\"invalid captcha\"}\n",
-                "status_code":400
+            "secret_key": "6LeIxAcTAAAAAGG-XXXXXXXXXXXXXX",
+            "parameter_source": "header",
+            "parameter_name": "captcha",
+            "response": {
+                "content_type": "application/json; charset=utf-8",
+                "status_code": 400,
+                "body": "{\"message\":\"invalid captcha\"}\n"
             }
         }
     },
     "upstream": {
-        "type": "roundrobin",
         "nodes": {
             "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-Here's an example, enable this plugin on the global rule:
-
-```shell
-curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "plugins": {
-        "recaptcha": {
-            "secret_key":"6LeIxAcTAAAAAGGXXXXXXXXXXXXXXXXXXX",
-            "apis":[
-                {
-                    "path":"/login",
-                    "methods":[ "POST" ],
-                    "param_from":"header",
-                    "param_name":"captcha"
-                },
-                {
-                    "path":"/users/*/active",
-                    "methods":[ "POST" ],
-                    "param_from":"query",
-                    "param_name":"captcha"
-                }
-            ],
-            "response":{
-                "content_type":"application/json; charset=utf-8",
-                "body":"{\"message\":\"invalid captcha\"}\n",
-                "status_code":400
-            }
-        }
-    }
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/login"
 }'
 ```
 
 ## Test Plugin
 
-Use curl to access:
+Use curl to request:
 
 ```shell
 curl -X POST 'http://127.0.0.1:9080/login'
@@ -163,20 +101,12 @@ no need to restart the service, it will take effect immediately:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/users",
+    "uri": "/login",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:1980": 1
         }
-    }
-}'
-```
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "plugins": {
     }
 }'
 ```
