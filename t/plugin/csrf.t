@@ -250,7 +250,6 @@ passed
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local sleep = require("apisix.core.utils").sleep
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/hello"
@@ -264,7 +263,7 @@ passed
             local cookie = res.headers["Set-Cookie"]
             local token = cookie:match("=([^;]+)")
 
-            sleep(2)
+            ngx.sleep(2)
 
             local res, err = httpc:request_uri(uri, {
                 method = "POST",
@@ -328,7 +327,6 @@ passed
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local sleep = require("apisix.core.utils").sleep
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/hello"
@@ -340,7 +338,7 @@ passed
                 return
             end
 
-            sleep(1)
+            ngx.sleep(1)
 
             local cookie = res.headers["Set-Cookie"]
             local token = cookie:match("=([^;]+)")
