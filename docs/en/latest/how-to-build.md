@@ -55,7 +55,7 @@ sudo yum --showduplicates list apisix
 # Will install the latest apisix package
 sudo yum install apisix
 
-# Will install the specified version 2.10.3 apisix package
+# Will install a specified version (2.10.3 in this example) apisix package
 sudo yum install apisix-2.10.3-0.el7
 ```
 
