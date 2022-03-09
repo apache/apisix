@@ -51,7 +51,6 @@ router 端配置：
 | query  | string | 可选 | jwt |        | 设置我们从哪个 querystring 获取 token，优先级低于header |
 | cookie  | string | 可选 | jwt |        | 设置我们从哪个 cookie 获取 token，优先级低于query |
 
-
 ## 接口
 
 插件会增加 `/apisix/plugin/jwt/sign` 这个接口，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。

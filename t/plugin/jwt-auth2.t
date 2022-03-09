@@ -76,6 +76,8 @@ __DATA__
 --- response_body
 passed
 
+
+
 === TEST 2: enable jwt auth plugin using admin api with custom parameter
 --- config
     location /t {
@@ -110,6 +112,8 @@ passed
 --- response_body
 passed
 
+
+
 === TEST 3: verify (in header)
 --- request
 GET /hello
@@ -117,6 +121,8 @@ GET /hello
 jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
+
+
 
 === TEST 4: verify (in cookie)
 --- request
@@ -126,11 +132,15 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 --- response_body
 hello world
 
+
+
 === TEST 5: verify (in query)
 --- request
 GET /hello?jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
+
+
 
 === TEST 6: verify (in header with out Bearer)
 --- request
@@ -139,6 +149,8 @@ GET /hello
 jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
+
+
 
 === TEST 7: verify (in header with bearer)
 --- request
