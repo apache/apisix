@@ -114,12 +114,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -153,12 +149,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -177,8 +169,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -198,8 +188,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -219,8 +207,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -254,12 +240,8 @@ Access-Control-Allow-Credentials:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -278,8 +260,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -299,8 +279,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -320,8 +298,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -355,12 +331,8 @@ Access-Control-Allow-Credentials:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -379,5 +351,3 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]

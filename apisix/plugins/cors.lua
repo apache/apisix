@@ -208,7 +208,8 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function process_with_allow_origins(allow_origins_conf, ctx, req_origin, cache_key, cache_version)
+local function process_with_allow_origins(allow_origins_conf, ctx, req_origin,
+                                          cache_key, cache_version)
     local allow_origins = allow_origins_conf
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
@@ -217,7 +218,9 @@ local function process_with_allow_origins(allow_origins_conf, ctx, req_origin, c
     if not (cache_key and cache_version) then
         cache_key, cache_version = core.lrucache.plugin_ctx_id(ctx)
     end
-    local multiple_origin, err = lrucache(cache_key, cache_version, create_multiple_origin_cache, allow_origins_conf)
+    local multiple_origin, err = lrucache(
+            cache_key, cache_version, create_multiple_origin_cache, allow_origins_conf
+    )
     if err then
         return 500, {message = "get multiple origin cache failed: " .. err}
     end
@@ -296,8 +299,10 @@ function _M.header_filter(conf, ctx)
     if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
     end
-    if not match_origins(req_origin, allow_origins) then
-        allow_origins = process_with_allow_origins_by_metadata(conf.allow_origins_by_metadata, ctx, req_origin)
+    if not allow_origins then
+        allow_origins = process_with_allow_origins_by_metadata(
+                conf.allow_origins_by_metadata, ctx, req_origin
+        )
     end
     if allow_origins then
         ctx.cors_allow_origins = allow_origins
