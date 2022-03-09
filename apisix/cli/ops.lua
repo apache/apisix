@@ -513,6 +513,11 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    local proxy_mirror_timeout
+    if yaml_conf.plugin_attr["proxy-mirror"] then
+        proxy_mirror_timeout = yaml_conf.plugin_attr["proxy-mirror"].timeout
+    end
+
     -- Using template.render
     local sys_conf = {
         use_openresty_1_17 = use_openresty_1_17,
@@ -530,6 +535,7 @@ Please modify "admin_key" in conf/config.yaml .
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
+        proxy_mirror_timeout = proxy_mirror_timeout,
     }
 
     if not yaml_conf.apisix then

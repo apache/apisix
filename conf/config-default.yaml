@@ -450,4 +450,8 @@ plugin_attr:
       sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
       data_machine_ttl: 30            # live time for data_machine in etcd (unit: second)
       data_machine_interval: 10       # lease renewal interval in etcd (unit: second)
-
+  #proxy-mirror:
+  #timeout:           # proxy timeout inmirrored sub-request (unit: milliseconds)
+      #connect: 2000
+      #read: 2000
+      #send: 2000

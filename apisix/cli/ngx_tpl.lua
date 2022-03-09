@@ -765,6 +765,11 @@ http {
             }
             {% end %}
 
+            {% if proxy_mirror_timeout then %}
+                {% for k, v in pairs(proxy_mirror_timeout) do %}
+            proxy_{* k *}_timeout {* v *}ms;
+                {% end %}
+            {% end %}
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_uri;
