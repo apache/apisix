@@ -131,3 +131,19 @@ hello world
 GET /hello?jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
+
+=== TEST 6: verify (in header with out Bearer)
+--- request
+GET /hello
+--- more_headers
+jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- response_body
+hello world
+
+=== TEST 7: verify (in header with bearer)
+--- request
+GET /hello
+--- more_headers
+jwt-header: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- response_body
+hello world
