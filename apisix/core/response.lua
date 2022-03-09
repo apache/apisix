@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Get the information form upstream response, or set the information to client response.
+--
+-- @module core.response
+
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local arg = ngx.arg
@@ -131,7 +136,12 @@ function _M.set_header(...)
     set_header(false, ...)
 end
 
-
+---
+-- Add a header to the client response.
+--
+-- @function core.response.add_header
+-- @usage
+-- core.response.add_header("Apisix-Plugins", "no plugin")
 function _M.add_header(...)
     set_header(true, ...)
 end

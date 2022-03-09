@@ -21,16 +21,6 @@ title: consumer-restriction
 #
 -->
 
-## Summary
-
-  - [Introduction](#introduction)
-  - [Attributes](#attributes)
-  - [Example](#example)
-    - [How to restrict consumer_name](#how-to-restrict-consumer_name)
-    - [How to restrict allowed_by_methods](#how-to-restrict-allowed_by_methods)
-    - [How to restrict service_id](#how-to-restrict-service_id)
-  - [Disable Plugin](#disable-plugin)
-
 ## Introduction
 
 The `consumer-restriction` makes corresponding access restrictions based on different objects selected.

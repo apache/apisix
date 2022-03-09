@@ -21,14 +21,6 @@ title: opentelemetry
 #
 -->
 
-## 目录
-
-- [名字](#名字)
-- [属性](#属性)
-- [如何启用](#如何启用)
-- [如何设置数据上报](#如何设置数据上报)
-- [禁用插件](#禁用插件)
-
 ## 名字
 
 [OpenTelemetry](https://opentelemetry.io/) 提供符合 [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification) 协议规范的 Tracing 数据上报。

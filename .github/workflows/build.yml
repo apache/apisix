@@ -26,6 +26,10 @@ jobs:
         os_name:
           - linux_openresty
           - linux_openresty_1_17
+        test_dir:
+          - t/plugin
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/router t/script t/stream-node t/utils t/wasm
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -35,12 +39,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v2.2.0
+        uses: actions/setup-go@v3
         with:
           go-version: "1.17"
 
@@ -104,4 +108,6 @@ jobs:
           ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./ci/${{ matrix.os_name }}_runner.sh script
+        env:
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script

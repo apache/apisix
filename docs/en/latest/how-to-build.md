@@ -230,7 +230,7 @@ To run the test cases, run the steps outlined below.
 3. Clone the latest source code locally by using the forked out version.
 
   ```shell
-  git clone https://github.com/iresty/test-nginx.git
+  git clone https://github.com/openresty/test-nginx.git
   ```
 
 4. There are two ways to run the tests.

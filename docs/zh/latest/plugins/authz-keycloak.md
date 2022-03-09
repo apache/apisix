@@ -21,15 +21,6 @@ title: authz-keycloak
 #
 -->
 
-## 目录
-
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-- [**示例**](#示例)
-
 ## 名字
 
 目前 `authz-plugin` 仅支持通过定义资源名和访问权限范畴来应用 `route` 的访问策略。但是 Keycloak 官方适配的其他语言的客户端 (Java, JS) 还可以通过动态查询 Keycloak 路径以及懒加载身份资源的路径来支持路径匹配。未来版本的 `authz-plugin` 将会支持这项功能。
@@ -49,6 +40,8 @@ title: authz-keycloak
 | refresh_token_expires_leeway| integer       | 可选   | 0           | [0, ...]                            | refresh token 提前更新时间（秒，如果设置了此值，允许在该时间段内使用相同的 refresh token 令牌来解决潜在的网络并发问题）                                                                   |
 | ssl_verify                  | boolean       | 可选   | true        | [0, ...]                            | 验证 SSL 证书与主机名是否匹配                                                                   |
 | policy_enforcement_mode     | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
+| access_denied_redirect_uri  | string        | 可选   |             | [1, 2048]                           |未授权的用户不会返回 `"error_description":"not_authorized"`，而是会定重定向至给定的 uri，如 "http://127.0.0.1/test"
+|
 
 ### 策略执行模式
 

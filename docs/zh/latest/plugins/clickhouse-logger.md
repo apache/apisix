@@ -21,15 +21,6 @@ title: clickhouse-logger
 #
 -->
 
-## 目录
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**插件元数据设置**](#插件元数据设置)
-- [**禁用插件**](#禁用插件)
-
 ## 定义
 
 `clickhouse-logger` 是一个插件，可将Log数据请求推送到clickhouse服务器。
@@ -45,10 +36,9 @@ title: clickhouse-logger
 | password         | string  | 必须   |               |         | clickhouse的密码 。  |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                     |
-| batch_max_size   | integer | 可选   | 100           | [1,...] | 设置每批发送日志的最大条数，当日志条数达到设置的最大值时，会自动推送全部日志到 `clickhouse` 。 |
-| max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数。               |
-| retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数。             |
 | ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。             |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 

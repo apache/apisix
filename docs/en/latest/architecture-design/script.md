@@ -21,15 +21,13 @@ title: Script
 #
 -->
 
-`Script` represents a script that will be executed during the `HTTP` request/response life cycle.
+Scripts lets you write arbitrary Lua code or directly call existing plugins and execute them during the HTTP request/response lifecycle.
 
-The `Script` configuration can be directly bound to the `Route`.
+A Script configuration can be directly bound to a [Route](./route.md).
 
-`Script` and `Plugin` are mutually exclusive, and `Script` is executed first. This means that after configuring `Script`, the `Plugin` configured on `Route` will not be executed.
+Scripts and [Plugins](./plugin.md) are mutually exclusive, and a Script is executed before a Plugin. This means that after configuring a Script, the Plugin configured on the Route will **not** be executed.
 
-In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
-
-`Script` also has the concept of execution phase, supporting `access`, `header_filter`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
+Scripts also have a concept of execution phase which supports the `access`, `header_filter`, `body_filter` and the `log` phase. The corresponding phase will be executed automatically by the system in the Script.
 
 ```json
 {

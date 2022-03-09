@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Domain Resolver.
+--
+-- @module core.resolver
+
 local json = require("apisix.core.json")
 local log = require("apisix.core.log")
 local utils = require("apisix.core.utils")
@@ -28,7 +33,14 @@ function _M.init_resolver(args)
     log.info("dns resolver ", json.delay_encode(dns_resolver, true))
 end
 
-
+---
+--  Resolve domain name to ip.
+--
+-- @function core.resolver.parse_domain
+-- @tparam string host Domain name that need to be resolved.
+-- @treturn string The IP of the domain name after being resolved.
+-- @usage
+-- local ip, err = core.resolver.parse_domain("apache.org") -- "198.18.10.114"
 function _M.parse_domain(host)
     local ip_info, err = utils.dns_parse(host)
     if not ip_info then

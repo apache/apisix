@@ -21,15 +21,6 @@ title: authz-keycloak
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
-
 ## Name
 
 `authz-keycloak` is an authorization plugin to be used with the Keycloak Identity Server. Keycloak is an OAuth/OIDC and
@@ -63,6 +54,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | keepalive                      | boolean       | optional    | true                                          |                                                                    | Enable HTTP keep-alive to keep connections open after use. Set to `true` if you expect a lot of requests to Keycloak.                                       |
 | keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
+| access_denied_redirect_uri     | string        | optional    |                                               | [1, 2048]                                          | Redirect unauthorized user with the given uri like "http://127.0.0.1/test", instead of returning `"error_description":"not_authorized"`.                                             |
 
 ### Discovery and Endpoints
 

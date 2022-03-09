@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Etcd API.
+--
+-- @module core.etcd
+
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local array_mt         = require("apisix.core.json").array_mt
 local etcd             = require("resty.etcd")
@@ -221,6 +226,7 @@ local function set(key, value, ttl)
             return nil, grant_err
         end
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true, lease = data.body.ID})
+        res.body.lease_id = data.body.ID
     else
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true})
     end
@@ -363,7 +369,18 @@ function _M.delete(key)
     return res, nil
 end
 
-
+---
+-- Get etcd cluster and server version.
+--
+-- @function core.etcd.server_version
+-- @treturn table The response of query etcd server version.
+-- @usage
+-- local res, err = core.etcd.server_version()
+-- -- the res.body is as follows:
+-- -- {
+-- --   etcdcluster = "3.5.0",
+-- --   etcdserver = "3.5.0"
+-- -- }
 function _M.server_version()
     local etcd_cli, err = new()
     if not etcd_cli then
@@ -371,6 +388,21 @@ function _M.server_version()
     end
 
     return etcd_cli:version()
+end
+
+
+function _M.keepalive(id)
+    local etcd_cli, _, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    local res, err = etcd_cli:keepalive(id)
+    if not res then
+        return nil, err
+    end
+
+    return res, nil
 end
 
 

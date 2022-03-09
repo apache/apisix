@@ -21,17 +21,6 @@ title: openid-connect
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [Modes of operation](#modes-of-operation)
-  - [Token Introspection](#token-introspection)
-  - [Introspecting with public key](#introspecting-with-public-key)
-    - [Authentication through OIDC Relying Party flow](#authentication-through-oidc-relying-party-flow)
-- [Troubleshooting](#troubleshooting)
-
 ## Name
 
 The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspection capability to APISIX.
@@ -47,6 +36,7 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 | realm                                | string  | optional    | "apisix"              |         | Realm used for the authentication                                                                                               |
 | bearer_only                          | boolean | optional    | false                 |         | Setting this `true` will check for the authorization header in the request with a bearer token                                  |
 | logout_path                          | string  | optional    | "/logout"             |         |                                                                                                                                 |
+| post_logout_redirect_uri             | string  | optional    |                       |         | URL want to redirect when request logout_path                                                                                   |
 | redirect_uri                         | string  | optional    | "ngx.var.request_uri" |         |                                                                                                                                 |
 | timeout                              | integer | optional    | 3                     | [1,...] | Timeout in seconds                                                                                                              |
 | ssl_verify                           | boolean | optional    | false                 |         |                                                                                                                                 |

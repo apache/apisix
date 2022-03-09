@@ -21,16 +21,6 @@ title: limit-count
 #
 -->
 
-## 目录
-
-- [目录](#目录)
-- [简介](#简介)
-- [参数](#参数)
-- [如何使用](#如何使用)
-  - [开启插件](#开启插件)
-- [测试插件](#测试插件)
-- [移除插件](#移除插件)
-
 ## 简介
 
 和 [GitHub API 的限速](https://docs.github.com/en/rest/reference/rate-limit) 类似，

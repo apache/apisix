@@ -537,3 +537,112 @@ cat
 --- response_headers
 X-Resp: foo
 X-Req: bar
+
+
+
+=== TEST 19: rewrite response header and call the upstream service
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
+
+
+
+=== TEST 20: rewrite non-important response headers and call the upstream service
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_vital_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
+Content-Type: text/plain
+Content-Encoding:
+
+
+
+=== TEST 21: trace stopped request
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "zipkin": {
+                            "endpoint": "http://127.0.0.1:1980/mock_zipkin",
+                            "sample_ratio": 1
+                        },
+                        "ext-plugin-pre-req": {
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: hit
+--- extra_init_by_lua
+    local prev_new = require("opentracing.tracer").new
+    local function new(...)
+        ngx.log(ngx.WARN, "tracer attached to stopped request")
+        return prev_new(...)
+    end
+    require("opentracing.tracer").new = new
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({stop = true})
+        }
+    }
+--- error_code: 405
+--- error_log
+tracer attached to stopped request

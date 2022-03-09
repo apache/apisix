@@ -41,42 +41,43 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
+            local data = {
+                uri = "/server_port",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {{
+                            match = {
+                                {vars = {
+                                    {"!AND",
+                                        {"arg_name", "==", "jack"},
+                                        {"arg_age", "!", "<", "18"},
+                                    }
+                                    }
+                                }
+                            },
+                            weighted_upstreams = {
+                                {
+                                    upstream = {
+                                        name = "upstream_A",
+                                        type = "roundrobin",
+                                        nodes = {["127.0.0.1:1981"] = 1}
+                                    },
+                                    weight = 1,
+                                }
+                            }
+                        }}
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                }
+            }
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
-                    "uri": "/server_port",
-                    "plugins": {
-                        "traffic-split": {
-                            "rules": [
-                                {
-                                    "match": [
-                                        {
-                                            "vars": [
-                                                ["!AND",
-                                                 ["arg_name", "==", "jack"],
-                                                 ["arg_age", "!", "<", "18"]
-                                                ]
-                                            ]
-                                        }
-                                    ],
-                                    "weighted_upstreams": [
-                                        {
-                                            "upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":1}},
-                                            "weight": 1
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                    }
-                }]=]
+                json.encode(data)
             )
             if code >= 300 then
                 ngx.status = code

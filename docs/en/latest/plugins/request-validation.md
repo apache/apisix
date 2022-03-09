@@ -21,15 +21,6 @@ title: request-validation
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
-
 ## Name
 
 `request-validation` plugin validates the requests before forwarding to an upstream service. The validation plugin uses

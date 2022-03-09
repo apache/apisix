@@ -21,15 +21,6 @@ title: wolf-rbac
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Dependencies**](#dependencies)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a `service` or `route`.

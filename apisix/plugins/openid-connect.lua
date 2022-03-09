@@ -67,6 +67,10 @@ local schema = {
             type = "string",
             description = "use ngx.var.request_uri if not configured"
         },
+        post_logout_redirect_uri = {
+            type = "string",
+            description = "the URI will be redirect when request logout_path",
+        },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         set_access_token_header = {

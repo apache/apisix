@@ -21,14 +21,6 @@ title: key-auth
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 `key-auth` is an authentication plugin, it should work with `consumer` together.

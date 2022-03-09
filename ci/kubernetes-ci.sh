@@ -21,7 +21,7 @@
 run_case() {
     export_or_prefix
     export PERL5LIB=.:$PERL5LIB
-    prove -Itest-nginx/lib -I./ -r t_kubernetes | tee test-result
+    prove -Itest-nginx/lib -I./ -r t/kubernetes | tee test-result
     rerun_flaky_tests test-result
 }
 

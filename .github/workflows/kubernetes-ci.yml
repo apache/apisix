@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -55,13 +55,13 @@ jobs:
           chmod +x ./kind
           chmod +x ./kubectl
 
-          ./kind create cluster --name apisix-test --config ./t_kubernetes/configs/kind.yaml
+          ./kind create cluster --name apisix-test --config ./t/kubernetes/configs/kind.yaml
 
           ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
-          ./kubectl apply -f ./t_kubernetes/configs/account.yaml
+          ./kubectl apply -f ./t/kubernetes/configs/account.yaml
 
-          ./kubectl apply -f ./t_kubernetes/configs/endpoint.yaml
+          ./kubectl apply -f ./t/kubernetes/configs/endpoint.yaml
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 

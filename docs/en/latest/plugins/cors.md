@@ -21,15 +21,6 @@ title: cors
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Metadata**](#metadata)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Description
 
 `cors` plugin can help you enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) easily.

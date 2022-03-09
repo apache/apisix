@@ -551,3 +551,73 @@ GET /t
 --- response_body
 {"error":"access_denied","error_description":"not_authorized"}
 --- no_error_log
+
+
+
+=== TEST 16: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values , access_denied_redirect_uri is "http://127.0.0.1/test"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "client_id": "course_management",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "policy_enforcement_mode": "ENFORCING",
+                                "timeout": 3000,
+                                "access_denied_redirect_uri": "http://127.0.0.1/test"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: test for permission is empty and enforcement mode is "ENFORCING" , access_denied_redirect_uri is "http://127.0.0.1/test".
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+            if res.status >= 300 then
+                ngx.status = res.status
+                ngx.header["Location"] = res.headers["Location"]
+            end
+        }
+    }
+--- request
+GET /t
+--- response_headers
+Location: http://127.0.0.1/test
+--- error_code: 307

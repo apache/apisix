@@ -64,10 +64,11 @@ __DATA__
 real-ip
 client-control
 proxy-control
-ext-plugin-pre-req
 zipkin
+ext-plugin-pre-req
 request-id
 fault-injection
+mocking
 serverless-pre-function
 cors
 ip-restriction
