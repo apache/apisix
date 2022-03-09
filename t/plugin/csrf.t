@@ -254,7 +254,7 @@ passed
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/hello"
-            
+
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
             if not res then
@@ -332,7 +332,7 @@ passed
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/hello"
-            
+
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
             if not res then
