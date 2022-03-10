@@ -81,7 +81,7 @@ function _M.access(conf, ctx)
         })
         if err then
             core.log.error("request failed: ", err)
-            return 500
+            return 503
         end
         core.log.debug("recaptcha veirfy result: ", res.body)
         local recaptcha_result = core.json.decode(res.body)
