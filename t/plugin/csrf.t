@@ -210,41 +210,6 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yj
 
 
 
-=== TEST 12: set expires 1
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "csrf": {
-                            "key": "userkey",
-                            "expires": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
 === TEST 13: token has expired after sleep 2s
 --- config
     location /t {
@@ -358,5 +323,6 @@ passed
             if res.status >= 300 then
                 ngx.status = res.status
             end
+            ngx.say(res.body)
         }
     }
