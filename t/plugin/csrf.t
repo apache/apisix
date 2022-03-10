@@ -210,7 +210,7 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yj
 
 
 
-=== TEST 13: token has expired after sleep 2s
+=== TEST 12: token has expired after sleep 2s
 --- config
     location /t {
         content_by_lua_block {
@@ -252,7 +252,7 @@ Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMDY3NjAxMDQwMDM5MzI4LCJzaWduIjoiOTE1Yj
 
 
 
-=== TEST 14: set expires 0
+=== TEST 13: set expires 0
 --- config
     location /t {
         content_by_lua_block {
@@ -287,7 +287,7 @@ passed
 
 
 
-=== TEST 15: token no expired after sleep 1s
+=== TEST 14: token no expired after sleep 1s
 --- config
     location /t {
         content_by_lua_block {
