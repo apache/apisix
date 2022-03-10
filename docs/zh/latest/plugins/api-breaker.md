@@ -29,15 +29,15 @@ title: api-breaker
 
 由代码逻辑自动按**触发不健康状态**的次数递增运算：
 
-每当上游服务返回 `unhealthy.http_statuses` 配置中的状态码(比如：500)，达到 `unhealthy.failures` 次时(比如：3 次)，认为上游服务处于不健康状态。
+每当上游服务返回 `unhealthy.http_statuses` 配置中的状态码 (比如：500)，达到 `unhealthy.failures` 次时 (比如：3 次)，认为上游服务处于不健康状态。
 
 第一次触发不健康状态，**熔断 2 秒**。
 
 然后，2 秒过后重新开始转发请求到上游服务，如果继续返回 `unhealthy.http_statuses` 状态码，记数再次达到 `unhealthy.failures` 次时，**熔断 4 秒**（倍数方式）。
 
-依次类推，2, 4, 8, 16, 32, 64, ..., 256, 最大到 300。 300 是 `max_breaker_sec` 的最大值，允许自定义修改。
+依次类推，2, 4, 8, 16, 32, 64, ..., 256，最大到 300。 300 是 `max_breaker_sec` 的最大值，允许自定义修改。
 
-在不健康状态时，当转发请求到上游服务并返回 `healthy.http_statuses` 配置中的状态码(比如：200)，达到 `healthy.successes` 次时(比如：3 次)，认为上游服务恢复健康状态。
+在不健康状态时，当转发请求到上游服务并返回 `healthy.http_statuses` 配置中的状态码 (比如：200)，达到 `healthy.successes` 次时 (比如：3 次)，认为上游服务恢复健康状态。
 
 ## 属性列表
 

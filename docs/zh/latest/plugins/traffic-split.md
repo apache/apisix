@@ -40,7 +40,7 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | upstream.hash_on               | enum   | 可选   | vars | | `hash_on` 支持的类型有 `vars`（Nginx 内置变量），`header`（自定义 header），`cookie`，`consumer`，`vars_combinations`，默认值为 `vars`。更多详细信息请参考 [upstream](../admin-api.md#upstream) 用法。|
 | upstream.key                   | string | 可选   |      |    |  该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id。更多详细信息请参考 [upstream](../admin-api.md#upstream) 用法。 |
 | upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80 等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
-| upstream.timeout               | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
+| upstream.timeout               | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间 (时间单位：秒，都默认为 15 秒)。 |
 | upstream.pass_host             | enum   | 可选   | "pass"   | ["pass", "node", "rewrite"]  | `pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream`  node 中配置的 host； `rewrite`: 使用配置项 `upstream_host` 的值 |
 | upstream.name                  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
 | upstream.upstream_host         | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
@@ -190,7 +190,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**插件测试:**
+**插件测试：**
 
 请求 5 次，3 次请求命中插件 1981 端口的 upstream, 2 次请求命中 `route` 的 1980 端口 upstream。
 
@@ -212,7 +212,7 @@ world 1981
 
 ### 蓝绿发布
 
-通过请求头获取 `match` 规则参数(也可以通过请求参数获取 NGINX 变量)，在 `match` 规则匹配通过后，表示所有请求都命中到插件配置的 upstream ，否则所有请求只命中 `route` 上配置的 upstream 。
+通过请求头获取 `match` 规则参数 (也可以通过请求参数获取 NGINX 变量)，在 `match` 规则匹配通过后，表示所有请求都命中到插件配置的 upstream ，否则所有请求只命中 `route` 上配置的 upstream 。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -281,7 +281,7 @@ hello 1980
 
 `match` 中可以设置多个 `vars` 规则，`vars` 中的多个表达式之间是 `and` 的关系， 多个 `vars` 规则之间是 `or` 的关系；只要其中一个 vars 规则通过，则整个 `match` 通过。
 
-**示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系。在 `weighted_upstreams` 中根据 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 `route` 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
+**示例 1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系。在 `weighted_upstreams` 中根据 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 `route` 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -332,7 +332,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **插件测试：**
 
->1、在 `match` 规则校验通过后, 60% 的请求命中到插件的 1981 端口的 upstream, 40% 的请求命中到 `route` 的 1980 端口的 upstream。
+>1、在 `match` 规则校验通过后，60% 的请求命中到插件的 1981 端口的 upstream, 40% 的请求命中到 `route` 的 1980 端口的 upstream。
 
 match 规则校验成功， 命中端口为 `1981` 的 upstream。
 
@@ -358,7 +358,7 @@ hello 1980
 
 在请求 5 次后，3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务。
 
->2、`match` 规则校验失败(缺少请求头 `apisix-key` ), 响应都为默认 upstream 的数据 `hello 1980`。
+>2、`match` 规则校验失败 (缺少请求头 `apisix-key` ), 响应都为默认 upstream 的数据 `hello 1980`。
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
@@ -369,7 +369,7 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-**示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系， 多个 `vars` 之间是 `or` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
+**示例 2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `and` 的关系， 多个 `vars` 之间是 `or` 的关系。根据 `weighted_upstreams` 中的 `weight` 值将流量按 3:2 划分，其中只有 `weight` 值的部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。**
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -427,7 +427,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件：**
 
->1、两个 `vars` 的表达式匹配成功， `match` 规则校验通过后, 60% 的请求命中到插件的1981端口 upstream, 40% 的请求命中到 `route` 的1980端口upstream。
+>1、两个 `vars` 的表达式匹配成功， `match` 规则校验通过后，60% 的请求命中到插件的 1981 端口 upstream, 40% 的请求命中到 `route` 的 1980 端口 upstream。
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
@@ -449,7 +449,7 @@ hello 1980
 
 在请求 5 次后，3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务。
 
->2、第二个 `vars` 的表达式匹配失败（缺少 `name2` 请求参数），`match` 规则校验通过后, 60% 的请求命中到插件的 1981 端口 upstream, 40% 的请求流量命中到 `route` 的 1980 端口 upstream。
+>2、第二个 `vars` 的表达式匹配失败（缺少 `name2` 请求参数），`match` 规则校验通过后，60% 的请求命中到插件的 1981 端口 upstream, 40% 的请求流量命中到 `route` 的 1980 端口 upstream。
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
@@ -471,7 +471,7 @@ hello 1980
 
 在请求 5 次后，3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务。
 
->3、两个 `vars` 的表达式校验失败（缺少 `name` 和 `name2` 请求参数），`match` 规则校验失败, 响应都为默认 `route` 的 upstream 数据 `hello 1980`。
+>3、两个 `vars` 的表达式校验失败（缺少 `name` 和 `name2` 请求参数），`match` 规则校验失败，响应都为默认 `route` 的 upstream 数据 `hello 1980`。
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -i

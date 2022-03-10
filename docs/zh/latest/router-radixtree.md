@@ -55,7 +55,7 @@ title: 路由 RadixTree
 
 完全匹配 -> 深度前缀匹配
 
-以下是规则:
+以下是规则：
 
 ```text
 /blog/foo/*
@@ -110,7 +110,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-测试:
+测试：
 
 ```shell
 curl http://127.0.0.1:1980/hello
@@ -151,7 +151,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-测试:
+测试：
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -H 'host: localhost.com'
@@ -168,7 +168,7 @@ $ curl http://127.0.0.1:9080/hello
 {"error_msg":"404 Route Not Found"}
 ```
 
-`host` 规则匹配，请求命中对应的上游，`host` 不匹配，请求返回404消息。
+`host` 规则匹配，请求命中对应的上游，`host` 不匹配，请求返回 404 消息。
 
 #### 5. 参数匹配
 
@@ -194,7 +194,7 @@ apisix:
 
 ### 如何通过 Nginx 内置变量过滤路由
 
-具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例:
+具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '

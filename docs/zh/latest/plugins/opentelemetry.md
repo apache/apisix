@@ -55,7 +55,7 @@ plugins:
 
 然后重载 APISIX。
 
-下面是一个示例，在指定的 route 上开启了 opentelemetry 插件:
+下面是一个示例，在指定的 route 上开启了 opentelemetry 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -99,7 +99,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 | batch_span_processor.max_export_batch_size | integer | 256 | 一批 span 的数量，每次上报的 span 数量 |
 | batch_span_processor.inactive_timeout | number | 2 | 每隔多长时间检查是否有一批 span 可以上报，单位秒 |
 
-配置示例:
+配置示例：
 
 ```yaml
 plugin_attr:

@@ -27,7 +27,7 @@ title: response-rewrite
 
 使用场景：
 
-1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS （跨域资源共享）的功能。
+1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS（跨域资源共享）的功能。
 
 2、另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 [redirect](redirect.md) 插件。
 
@@ -82,7 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
-如果看到返回的头部信息和内容都被修改了，即表示 `response-rewrite` 插件生效了,`vars` 将确保仅覆盖状态为 200 的响应。
+如果看到返回的头部信息和内容都被修改了，即表示 `response-rewrite` 插件生效了，`vars` 将确保仅覆盖状态为 200 的响应。
 
 ```shell
 HTTP/1.1 200 OK

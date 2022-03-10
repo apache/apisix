@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功的情况:
+* 成功的情况：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

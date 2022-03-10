@@ -34,3 +34,15 @@ jobs:
             echo "You need to run ./utils/fix-zh-doc-segment.py to fix them."
             exit 1
           fi
+
+  Chinse-Copywriting-lint:
+    name: Chinese Copywriting
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - name: check Chinese copywriting
+        run: |
+          curl -sSL https://git.io/JcGER | bash
+          autocorrect --version
+          git ls-files | grep "^docs/zh/latest/.*.md$" | xargs -t autocorrect --lint

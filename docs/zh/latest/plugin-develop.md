@@ -42,7 +42,7 @@ Apache APISIX 提供了两种方式来添加新的功能。
 │               └── 3rd-party.lua
 ```
 
-接着，在 `conf/config.yaml` 文件中添加如下的配置:
+接着，在 `conf/config.yaml` 文件中添加如下的配置：
 
 ```yaml
 apisix:
@@ -50,11 +50,11 @@ apisix:
     extra_lua_path: "/path/to/example/?.lua"
 ```
 
-现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件， 比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件.
+现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件， 比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件。
 
 可能你会想覆盖一个文件中的函数，你可以在 `conf/config.yaml` 文件中配置 `lua_module_hook` 来使你的 hook 生效。
 
-你的配置可以像下面这样:
+你的配置可以像下面这样：
 
 ```yaml
 apisix:
@@ -101,7 +101,7 @@ local _M = {
 }
 ```
 
-注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同，您可以使用 [control API](./control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的 [确定执行阶段](#确定执行阶段) 这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
+注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同，您可以使用 [control API](./control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级 ( priority ) 值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的 [确定执行阶段](#确定执行阶段) 这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
 
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
@@ -337,7 +337,7 @@ end
 
 ## 注册公共接口
 
-插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
+插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口：
 
 ```lua
 local function gen_token()
@@ -395,7 +395,7 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 ## 注册自定义变量
 
-我们可以在APISIX的许多地方使用变量。例如，在 http-logger 中自定义日志格式，用它作为 `limit-*` 插件的键。在某些情况下，内置的变量是不够的。因此，APISIX允许开发者在全局范围内注册他们的变量，并将它们作为普通的内置变量使用。
+我们可以在 APISIX 的许多地方使用变量。例如，在 http-logger 中自定义日志格式，用它作为 `limit-*` 插件的键。在某些情况下，内置的变量是不够的。因此，APISIX 允许开发者在全局范围内注册他们的变量，并将它们作为普通的内置变量使用。
 
 例如，让我们注册一个叫做 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值。
 

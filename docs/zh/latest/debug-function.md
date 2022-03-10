@@ -31,7 +31,7 @@ title: 调试功能
 
 ## 示例
 
-示例1：`502` 响应状态码来源于 `Upstream` (IP 地址不可用)
+示例 1：`502` 响应状态码来源于 `Upstream` (IP 地址不可用)
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -72,7 +72,7 @@ $ curl http://127.0.0.1:9080/hello -v
 
 具有 `X-APISIX-Upstream-Status: 502` 的响应头。
 
-示例2: `502` 响应状态码来源于 `APISIX`
+示例 2: `502` 响应状态码来源于 `APISIX`
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -106,7 +106,7 @@ Fault Injection!
 
 没有 `X-APISIX-Upstream-Status` 的响应头。
 
-示例3：`Upstream` 具有多节点，并且所有节点不可用
+示例 3：`Upstream` 具有多节点，并且所有节点不可用
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

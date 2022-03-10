@@ -84,7 +84,7 @@ Server: APISIX web server
 | waiting      | 当前等待客户端请求的空闲连接数               |
 | accepted     | 已经接受的客户端连接总数                         |
 | writing      | 当前正在写给客户端响应的连接数               |
-| handled      | 已经处理的连接总数,通常等于 accepted          |
+| handled      | 已经处理的连接总数，通常等于 accepted          |
 | active       | 当前活跃的客户端连接数                       |
 | reading      | 当前正在读取请求头的连接数                   |
 | id           | APISIX uid 信息，保存在 apisix/conf/apisix.uid  |

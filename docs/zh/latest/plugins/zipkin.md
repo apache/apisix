@@ -23,7 +23,7 @@ title: zipkin
 
 ## 名字
 
-[Zipkin](https://github.com/openzipkin/zipkin) 是开源的分布调用链追踪系统。该插件基于[Zipkin API规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息，并上报 Zipkin Collector。
+[Zipkin](https://github.com/openzipkin/zipkin) 是开源的分布调用链追踪系统。该插件基于[Zipkin API 规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息，并上报 Zipkin Collector。
 
 > 它还能够与适配了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) 的 [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)。当然，它也能够与其它支持 Zipkin v1/v2 数据格式的调用链追踪系统集成。
 
@@ -61,7 +61,7 @@ request
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 zipkin 插件:
+下面是一个示例，在指定的 route 上开启了 zipkin 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -99,7 +99,7 @@ e.g. 用 docker:
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
-测试示例:
+测试示例：
 
 ```shell
 curl http://127.0.0.1:9080/index.html
@@ -186,7 +186,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
 
-## 上游服务是Golang的示例代码
+## 上游服务是 Golang 的示例代码
 
 ```golang
 func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {

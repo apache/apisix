@@ -29,7 +29,7 @@ HTTP(s) -> APISIX -> gRPC server
 
 * `content`: `.proto` 或 `.pb` 文件的内容
 
-### 添加proto
+### 添加 proto
 
 路径中最后的数字，会被用作 proto 的 id 做唯一标识，比如下面示例的 proto `id` 是 `1` ：
 
@@ -102,7 +102,7 @@ print(resp.status_code)
 print(resp.text)
 ```
 
-创建proto：
+创建 proto：
 
 ```bash
 chmod +x ./upload_pb.pb
@@ -125,7 +125,7 @@ chmod +x ./upload_pb.pb
 
 ### 使用 grpc-transcode 插件
 
-在指定 route 中，代理 grpc 服务接口:
+在指定 route 中，代理 grpc 服务接口：
 
 * 注意： 这个 route 对应的 upstream 的属性 `scheme` 必须设置为 `grpc`
 * 代理 grpc 服务例子可参考：[grpc_server_example](https://github.com/api7/grpc_server_example)
@@ -173,7 +173,7 @@ Proxy-Connection: keep-alive
 
 ## 使用 grpc-transcode 插件的 pb_option 选项
 
-在指定 route 中，代理 grpc 服务接口:
+在指定 route 中，代理 grpc 服务接口：
 
 ### 选项清单
 
@@ -181,7 +181,7 @@ Proxy-Connection: keep-alive
     * enum_as_name
     * enum_as_value
 
-* 64位整型
+* 64 位整型
     * int64_as_number
     * int64_as_string
     * int64_as_hexstring
@@ -192,7 +192,7 @@ Proxy-Connection: keep-alive
     * use_default_values
     * use_default_metatable
 
-* Hooks开关
+* Hooks 开关
     * enable_hooks
     * disable_hooks
 

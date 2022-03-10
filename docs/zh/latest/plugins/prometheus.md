@@ -61,7 +61,7 @@ plugin_attr:
 `prometheus` 插件可以使用空 {} 开启。
 注意，多个路由/服务可以设置为相同的名称，因此当设置 `prefer_name` 为 `true` 时，注意规范命名否则容易引起误解。
 
-例子如下:
+例子如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -97,20 +97,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
-把该 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把该 uri 地址配置到 prometheus 中去，就会自动完成指标数据提取。
 
-例子如下:
+例子如下：
 
 ```yaml
 scrape_configs:
   - job_name: "apisix"
-    scrape_interval: 15s # 这个值会跟Prometheus QL中rate函数的时间范围有关系, rate函数中的时间范围应该至少两倍于该值.
+    scrape_interval: 15s # 这个值会跟 Prometheus QL 中 rate 函数的时间范围有关系，rate 函数中的时间范围应该至少两倍于该值。
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
       - targets: ["127.0.0.1:9091"]
 ```
 
-我们也可以在 prometheus 控制台中去检查状态:
+我们也可以在 prometheus 控制台中去检查状态：
 
 ![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
@@ -124,7 +124,7 @@ scrape_configs:
 | ---------- | ------ | ---------------------------- | -------------- |
 | export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的 uri |
 
-配置示例:
+配置示例：
 
 ```yaml
 plugin_attr:
@@ -138,7 +138,7 @@ plugin_attr:
 
 下载 [Grafana dashboard 元数据](https://github.com/apache/apisix/blob/master/docs/assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
-你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
+你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据。
 
 ![Grafana chart-1](../../../assets/images/plugin/grafana-1.png)
 
@@ -166,7 +166,7 @@ plugin_attr:
 
     | 名称          |    描述        |
     | -------------| ------------- |
-    | type         | 带宽的类型(`ingress` 或 `egress`)。 |
+    | type         | 带宽的类型 (`ingress` 或 `egress`)。 |
     | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
     | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
     | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
@@ -174,7 +174,7 @@ plugin_attr:
 
 * `etcd reachability`: APISIX 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
 * `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。
-* `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
+* `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin，那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
 * `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。具有的维度：
 
     | 名称          |    描述        |
@@ -186,7 +186,7 @@ plugin_attr:
 
 * `Info`: 当前 APISIX 节点信息。
 
-这里是 APISIX 的原始的指标数据集:
+这里是 APISIX 的原始的指标数据集：
 
 ```shell
 $ curl http://127.0.0.1:9091/apisix/prometheus/metrics

@@ -29,12 +29,12 @@ title: consumer-restriction
 
 | 参数名     | 类型          | 可选项   | 默认值            | 有效值                           | 描述                                                       |
 | --------- | ------------- | ------ | -----------------| --------------------------------| ----------------------------------------------------------|
-| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 根据不同的对象做相应的限制,支持 `consumer_name`、`service_id`、`route_id`。     |
+| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 根据不同的对象做相应的限制，支持 `consumer_name`、`service_id`、`route_id`。     |
 | whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
 | rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
-| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的HTTP methods列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
+| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的 HTTP methods 列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 
@@ -45,7 +45,7 @@ title: consumer-restriction
 
 ### 如何限制 `consumer_name`
 
-下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 consumer 访问:
+下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 consumer 访问：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -92,7 +92,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 **测试插件**
 
-jack1 访问:
+jack1 访问：
 
 ```shell
 curl -u jack2019:123456 http://127.0.0.1:9080/index.html -i
@@ -100,7 +100,7 @@ HTTP/1.1 200 OK
 ...
 ```
 
-jack2 访问:
+jack2 访问：
 
 ```shell
 curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
@@ -207,7 +207,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-2、在 `consumer` 上绑定 `consumer-restriction` 插件(需要与一个授权插件配合才能绑定),并添加 `service_id` 白名单列表
+2、在 `consumer` 上绑定 `consumer-restriction` 插件 (需要与一个授权插件配合才能绑定),并添加 `service_id` 白名单列表
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

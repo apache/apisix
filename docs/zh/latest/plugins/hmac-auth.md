@@ -37,7 +37,7 @@ title: hmac-auth
 | clock_skew       | integer       | 可选   | 0             |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                             |
 | signed_headers   | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 | keep_headers     | boolean       | 可选   | false         | [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。              |
-| encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
+| encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码，例如：`params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 | validate_request_body | boolean  | 可选   | false         | [ true, false ]                             | 是否对请求 body 做签名校验。|
 | max_req_body     | integer        | 可选   | 512 * 1024         |                                             | 最大允许的 body 大小。|
 
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
 2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
-3. **Date**：请求头中的 Date （ GMT 格式 ）。
+3. **Date**：请求头中的 Date（ GMT 格式 ）。
 4. **canonical_query_string**：是对于 URL 中的 query（ query 即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串）进行编码后的结果。
 5. **signed_headers_string**：是从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
 
@@ -98,12 +98,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 * 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
 * 根据 uri 参数是否编码，有下面两种情况：
 * `encode_uri_param` 为 true 时：
-  * 对拆开后的每一项进行编码处理，分以下两种情况:
+  * 对拆开后的每一项进行编码处理，分以下两种情况：
   * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
   * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
   * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
-* `encode_uri_param` 为 false 时:
-  * 对拆开后的每一项进行编码处理，分以下两种情况:
+* `encode_uri_param` 为 false 时：
+  * 对拆开后的每一项进行编码处理，分以下两种情况：
   * 当该项只有 key 时，转换公式为 key + "=" 的形式。
   * 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
   * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
@@ -185,7 +185,7 @@ X-HMAC-DIGEST: base64(hmac-sha(<body>))
 
 当没有请求 body 时，插件会计算长度为 0 的空字符串的 hmac-sha 值。
 
-**注:**当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。插件提供了 `max_req_body`（默认值 512KB） 配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
+**注：**当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。插件提供了 `max_req_body`（默认值 512KB）配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
 
 ### 使用生成好的签名进行请求尝试
 
@@ -239,7 +239,7 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-**注:**
+**注：**
 
 1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
 2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
@@ -319,7 +319,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。需要注意各种语言中对签名字符串的换行符的处理方式，这很容易导致出现 `{"message":"Invalid signature"}` 的问题。
 
-示例入参说明:
+示例入参说明：
 
 | Variable | Value                      |
 | -------- | -------------------------- |

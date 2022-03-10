@@ -33,7 +33,7 @@ Forward Auth 巧妙地将认证和授权逻辑移到了一个专门的外部服�
 | -- | -- | -- | -- | -- | -- |
 | host | string | 必须 |  |  | 设置 `authorization` 服务的地址 (eg. https://localhost:9188) |
 | ssl_verify | boolean | 可选 | true |   | 是否验证证书 |
-| request_headers | array[string] | 可选 |  |  | 设置需要由 `client` 转发到 `authorization` 服务的请求头。未设置时，只有 Apache APISIX 的(X-Forwarded-XXX)会被转发到 `authorization` 服务。 |
+| request_headers | array[string] | 可选 |  |  | 设置需要由 `client` 转发到 `authorization` 服务的请求头。未设置时，只有 Apache APISIX 的 (X-Forwarded-XXX) 会被转发到 `authorization` 服务。 |
 | upstream_headers | array[string] | 可选 |  |  | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。
 | client_headers | array[string] | 可选 |  |  | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。 |
 | timeout | integer | 可选 | 3000ms | [1, 60000]ms | `authorization` 服务请求超时时间 |
@@ -50,7 +50,7 @@ request_headers 属性中转发到 `authorization` 服务中的 Apache APISIX �
 
 ## 示例
 
-首先, 你需要设置一个认证服务。这里使用的是 Apache APISIX 无服务器插件模拟的示例。
+首先，你需要设置一个认证服务。这里使用的是 Apache APISIX 无服务器插件模拟的示例。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
@@ -80,7 +80,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 }'
 ```
 
-下一步, 我们创建一个测试路由。
+下一步，我们创建一个测试路由。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \

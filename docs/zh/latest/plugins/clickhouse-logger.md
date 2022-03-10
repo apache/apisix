@@ -23,7 +23,7 @@ title: clickhouse-logger
 
 ## 定义
 
-`clickhouse-logger` 是一个插件，可将Log数据请求推送到clickhouse服务器。
+`clickhouse-logger` 是一个插件，可将 Log 数据请求推送到 clickhouse 服务器。
 
 ## 属性列表
 
@@ -32,8 +32,8 @@ title: clickhouse-logger
 | endpoint_addr    | string  | 必须   |               |         | `clickhouse` 服务器的 endpoint。                   |
 | database         | string  | 必须   |               |         | 使用的数据库。                                    |
 | logtable         | string  | 必须   |               |         | 写入的表名 。    |
-| user             | string  | 必须   |               |         | clickhouse的用户。 |
-| password         | string  | 必须   |               |         | clickhouse的密码 。  |
+| user             | string  | 必须   |               |         | clickhouse 的用户。 |
+| password         | string  | 必须   |               |         | clickhouse 的密码 。  |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
 | name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                     |
 | ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。             |
@@ -68,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-> 成功:
+> 成功：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/clickhouse-logger -H 'X-
 }'
 ```
 
-创建clickhouse log table
+创建 clickhouse log table
 
 ```sql
 CREATE TABLE default.test (
@@ -108,7 +108,7 @@ CREATE TABLE default.test (
 ) ENGINE = MergeTree()
 ```
 
-在clickhouse上执行`select * from default.test;`，将得到类似下面的数据：
+在 clickhouse 上执行`select * from default.test;`，将得到类似下面的数据：
 
 ```
 ┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐

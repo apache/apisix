@@ -25,7 +25,7 @@ title: skywalking-logger
 
 `http-logger` 是一个插件，可将 Access Log 数据通过 `HTTP` 推送到 SkyWalking OAP 服务器。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，并依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/) 。
 
-这将提供将 Access Log 数据作为JSON对象发送到 SkyWalking OAP 服务器的功能。
+这将提供将 Access Log 数据作为 JSON 对象发送到 SkyWalking OAP 服务器的功能。
 
 ## 属性列表
 
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-> 成功:
+> 成功：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

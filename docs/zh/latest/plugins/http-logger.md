@@ -23,9 +23,9 @@ title: http-logger
 
 ## 定义
 
-`http-logger` 是一个插件，可将Log数据请求推送到 HTTP / HTTPS 服务器。
+`http-logger` 是一个插件，可将 Log 数据请求推送到 HTTP / HTTPS 服务器。
 
-这将提供将 Log 数据请求作为JSON对象发送到监视工具和其他 HTTP 服务器的功能。
+这将提供将 Log 数据请求作为 JSON 对象发送到监视工具和其他 HTTP 服务器的功能。
 
 ## 属性列表
 
@@ -37,7 +37,7 @@ title: http-logger
 | name             | string  | 可选   | "http logger" |         | 标识 logger 的唯一标识符。                     |
 | include_req_body | boolean | 可选   | false         | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。 |
 | include_resp_body| boolean | 可选   | false         | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
-| include_resp_body_expr | array  | 可选    |           |         | 是否采集响体, 基于[lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
+| include_resp_body_expr | array  | 可选    |           |         | 是否采集响体，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | concat_method    | string  | 可选   | "json"        | ["json", "new_line"] | 枚举类型： `json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
 | ssl_verify       | boolean | optional    | false          | [false, true] | 是否验证证书。 |
 
@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-> 成功:
+> 成功：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

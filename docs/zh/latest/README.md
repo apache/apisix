@@ -61,11 +61,11 @@ Apache APISIX 的技术架构如下图所示：
 ## 特性
 
 你可以把 Apache APISIX 当做流量入口，来处理所有的业务数据，包括动态路由、动态上游、动态证书、
-A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
+A/B 测试、金丝雀发布 (灰度发布)、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
 
 - **全平台**
 
-  - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
+  - 云原生：平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
   - 支持 ARM64: 不用担心底层技术的锁定。
 
 - **多协议**
@@ -90,7 +90,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
   - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
   - [健康检查](health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
-  - 熔断器: 智能跟踪不健康上游服务。
+  - 熔断器：智能跟踪不健康上游服务。
   - [代理镜像](plugins/proxy-mirror.md): 提供镜像客户端请求的能力。
   - [流量拆分](plugins/traffic-split.md): 允许用户逐步控制各个上游之间的流量百分比。
 
@@ -101,14 +101,14 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 支持[各类操作符做为路由的判断条件](https://github.com/api7/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
   - 支持[自定义路由匹配函数](https://github.com/api7/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6：支持使用 IPv6 格式匹配路由
-  - 支持路由的[自动过期(TTL)](admin-api.md#route)
+  - 支持路由的[自动过期 (TTL)](admin-api.md#route)
   - [支持路由的优先级](../../en/latest/router-radixtree.md#3-match-priority)
   - [支持批量 Http 请求](plugins/batch-requests.md)
-  - [支持通过GraphQL属性过滤路由](../../en/latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes)
+  - [支持通过 GraphQL 属性过滤路由](../../en/latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes)
 
 - **安全防护**
 
-  - 多种身份认证方式: [key-auth](plugins/key-auth.md), [JWT](plugins/jwt-auth.md), [basic-auth](plugins/basic-auth.md), [wolf-rbac](plugins/wolf-rbac.md), casbin, [keycloak](plugins/authz-keycloak.md)。
+  - 多种身份认证方式：[key-auth](plugins/key-auth.md), [JWT](plugins/jwt-auth.md), [basic-auth](plugins/basic-auth.md), [wolf-rbac](plugins/wolf-rbac.md), casbin, [keycloak](plugins/authz-keycloak.md)。
   - [IP 黑白名单](plugins/ip-restriction.md)
   - [Referer 黑白名单](plugins/referer-restriction.md)
   - [IdP 支持](plugins/openid-connect.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
@@ -123,9 +123,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **运维友好**
 
-  - OpenTracing 可观测性: 支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
+  - OpenTracing 可观测性：支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
   - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md) 和 [Nacos](../../en/latest/discovery/nacos.md)，以及 [Eureka](discovery.md)。
-  - 监控和指标: [Prometheus](plugins/prometheus.md)
+  - 监控和指标：[Prometheus](plugins/prometheus.md)
   - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/)。
   - 高可用：支持配置同一个集群内的多个 etcd 地址。
   - [控制台](https://github.com/apache/apisix-dashboard): 操作 APISIX 集群。
@@ -143,18 +143,18 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [自定义插件](plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filter`，`body filter` 和 `log` 阶段。
   - [插件可以用 Java/Go/Python 编写](../../zh/latest/external-plugin.md)
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
-  - 自定义路由: 支持用户自己实现路由算法。
+  - 自定义路由：支持用户自己实现路由算法。
 
 - **多语言支持**
-- Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关.
+- Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关。
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
   - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
   - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
-  - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.
+  - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数。
   - [Azure functions](docs/en/latest/plugins/azure-functions.md): 能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
-  - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): 与Apache OpenWhisk集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
+  - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): 与 Apache OpenWhisk 集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
 
 ## 立刻开始
 
@@ -224,7 +224,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 | 配置生效时间                            | 事件通知，低于 1 毫秒更新                  | 定期轮询，5 秒           |
 | 自带控制台                             | 是                                      | 否                     |
 | 对接外部身份认证服务                     | 是                                      | 否                     |
-| 配置中心高可用(HA)                      | 是                                      | 否                     |
+| 配置中心高可用 (HA)                      | 是                                      | 否                     |
 | 指定时间窗口的限速                      | 是                                      | 否                     |
 | 支持任何 Nginx 变量做路由条件            | 是                                      | 否                     |
 
@@ -251,7 +251,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ## 用户实际使用案例
 
-- [新浪微博: 基于 Apache APISIX，新浪微博 API 网关的定制化开发之路](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
+- [新浪微博：基于 Apache APISIX，新浪微博 API 网关的定制化开发之路](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
 - [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)

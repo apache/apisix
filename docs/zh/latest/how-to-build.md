@@ -21,7 +21,7 @@ title: 如何构建 Apache APISIX
 #
 -->
 
-## 步骤1：安装 Apache APISIX
+## 步骤 1：安装 Apache APISIX
 
 你可以通过 RPM 仓库、Docker、Helm Chart、源码包、源码包（LTS 版本）等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
@@ -94,7 +94,7 @@ sudo yum install ./apisix/*.rpm
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
-  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网-下载页](https://apisix.apache.org/zh/downloads)。
+  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网 - 下载页](https://apisix.apache.org/zh/downloads)。
 
 3. 解压 Apache APISIX Release 源码包：
 
@@ -122,7 +122,7 @@ sudo yum install ./apisix/*.rpm
      1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地；
      2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
      3. 将路径添加到项目配置文件中（选择两种方法中的一种即可）：
-         1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`；
+         1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量，比如 `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`；
          2. 方法二：当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录；
          3. 参考配置文件示例如下：
              variables = {
@@ -148,7 +148,7 @@ sudo yum install ./apisix/*.rpm
 
 目前 Apache APISIX 的 LTS 版本为 `2.10.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.3` ，其他步骤按顺序进行即可。
 
-## 步骤2：安装 ETCD
+## 步骤 2：安装 ETCD
 
 如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
 
@@ -163,7 +163,7 @@ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
 nohup etcd >/tmp/etcd.log 2>&1 &
 ```
 
-## 步骤3：管理 Apache APISIX 服务
+## 步骤 3：管理 Apache APISIX 服务
 
 我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `apisix help` 命令查看所有命令和对应的功能。
 
@@ -221,7 +221,7 @@ apisix stop
 apisix help
 ```
 
-## 步骤4：运行测试案例
+## 步骤 4：运行测试案例
 
 1. 安装 `perl` 的包管理器 `cpanminus`。
 
@@ -241,7 +241,7 @@ apisix help
 
 4. 有两种方法运行测试：
 
-  - 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
+  - 追加当前目录到 perl 模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
 
   - 或指定 NGINX 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`。
 
@@ -283,7 +283,7 @@ prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 关于测试用例的更多细节，参见 [测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
-## 步骤5：修改 Admin API key
+## 步骤 5：修改 Admin API key
 
 您需要修改 Admin API 的 key，以保护 Apache APISIX。
 
@@ -295,7 +295,7 @@ apisix:
   admin_key
     -
       name: "admin"
-      key: abcdefghabcdefgh # 将原有的 key 修改为abcdefghabcdefgh
+      key: abcdefghabcdefgh # 将原有的 key 修改为 abcdefghabcdefgh
       role: admin
 ```
 
@@ -331,13 +331,13 @@ Content-Type: text/html
 {"node":{...},"action":"get"}
 ```
 
-## 步骤6：为 Apache APISIX 构建 OpenResty
+## 步骤 6：为 Apache APISIX 构建 OpenResty
 
 有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
 如果您需要这些功能，您可以构建 APISIX OpenResty。
 您可以根据 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
-## 步骤7：为 Apache APISIX 添加 systemd 配置文件
+## 步骤 7：为 Apache APISIX 添加 systemd 配置文件
 
 如果您使用的操作系统是 CentOS 7，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
 

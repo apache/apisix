@@ -19,12 +19,12 @@
 
 # 基于 Kubernetes 的服务发现
 
-Kubernetes 服务发现插件以 ListWatch 方式监听 Kubernetes 集群 v1.endpoints 的实时变化,
-并将其值存储在 ngx.shared.dict 中, 同时遵循 APISIX Discovery 规范提供查询接口
+Kubernetes 服务发现插件以 ListWatch 方式监听 Kubernetes 集群 v1.endpoints 的实时变化，
+并将其值存储在 ngx.shared.dict 中，同时遵循 APISIX Discovery 规范提供查询接口
 
 # Kubernetes 服务发现插件的配置
 
-Kubernetes 服务发现插件的样例配置如下:
+Kubernetes 服务发现插件的样例配置如下：
 
 ```yaml
 discovery:
@@ -72,14 +72,14 @@ discovery:
       first="a",second="b"
 ```
 
-如果 Kubernetes 服务插件运行在 Pod 内, 你可以使用最简配置:
+如果 Kubernetes 服务插件运行在 Pod 内，你可以使用最简配置：
 
 ```yaml
 discovery:
   kubernetes: { }
 ```
 
-如果 Kubernetes 服务插件运行在 Pod 外, 你需要新建或选取指定的 ServiceAccount, 获取其 Token 值, 并使用如下配置:
+如果 Kubernetes 服务插件运行在 Pod 外，你需要新建或选取指定的 ServiceAccount，获取其 Token 值，并使用如下配置：
 
 ```yaml
 discovery:
@@ -96,7 +96,7 @@ discovery:
 # Kubernetes 服务发现插件的使用
 
 Kubernetes 服务发现插件提供与其他服务发现插件相同的查询接口 -> nodes(service_name) \
-service_name 的 pattern 如下:
+service_name 的 pattern 如下：
 > _[namespace]/[name]:[portName]_
 
 如果 kubernetes Endpoint 没有定义 portName, Kubernetes 服务发现插件会依次使用 targetPort, port 代替
@@ -104,17 +104,17 @@ service_name 的 pattern 如下:
 # Q&A
 
 > Q: 为什么只支持配置 token 来访问 Kubernetes ApiServer \
-> A: 通常情况下,我们会使用三种方式与 Kubernetes ApiServer 通信 :
+> A: 通常情况下，我们会使用三种方式与 Kubernetes ApiServer 通信 :
 >
 >+ mTLS
 >+ token
 >+ basic authentication
 >
-> 因为 lua-resty-http 目前不支持 mTLS, 以及 basic authentication 不被推荐使用,\
+> 因为 lua-resty-http 目前不支持 mTLS，以及 basic authentication 不被推荐使用，\
 > 所以当前只实现了 token 认证方式
 
 -------
 
-> Q: APISIX 是多进程模型, 是否意味着每个 APISIX 工作进程都会监听 Kubernetes v1.endpoints \
-> A: Kubernetes 服务发现插件只使用特权进程监听 Kubernetes v1.endpoints, 然后将结果存储\
-> 在 ngx.shared.dict 中, 业务进程是通过查询 ngx.shared.dict 来获取结果的
+> Q: APISIX 是多进程模型，是否意味着每个 APISIX 工作进程都会监听 Kubernetes v1.endpoints \
+> A: Kubernetes 服务发现插件只使用特权进程监听 Kubernetes v1.endpoints，然后将结果存储\
+> 在 ngx.shared.dict 中，业务进程是通过查询 ngx.shared.dict 来获取结果的

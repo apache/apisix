@@ -323,8 +323,8 @@ title: CHANGELOG
 ### Plugin
 
 - :sunrise: redirect 插件，支持编码 uri [#4244](https://github.com/apache/apisix/pull/4244)
-- :sunrise: key-auth 插件: 支持自定义鉴权头 [#4013](https://github.com/apache/apisix/pull/4013)
-- :sunrise: response-rewrite 插件: 允许在 header 里面使用变量 [#4194](https://github.com/apache/apisix/pull/4194)
+- :sunrise: key-auth 插件：支持自定义鉴权头 [#4013](https://github.com/apache/apisix/pull/4013)
+- :sunrise: response-rewrite 插件：允许在 header 里面使用变量 [#4194](https://github.com/apache/apisix/pull/4194)
 - :sunrise: 实现 ext-plugin 第一版，APISIX 现在支持使用其他语言编写自定义插件 [#4183](https://github.com/apache/apisix/pull/4183)
 
 ### Bugfix
@@ -347,7 +347,7 @@ title: CHANGELOG
 
 - :sunrise: 支持 etcd 客户端证书校验 [#3905](https://github.com/apache/apisix/pull/3905)
 - :sunrise: 支持表达式使用“或”和“非”的逻辑 [#3809](https://github.com/apache/apisix/pull/3809)
-- :sunrise: 默认启动时会同步etcd配置 [#3799](https://github.com/apache/apisix/pull/3799)
+- :sunrise: 默认启动时会同步 etcd 配置 [#3799](https://github.com/apache/apisix/pull/3799)
 - :sunrise: 负载均衡支持节点优先级 [#3755](https://github.com/apache/apisix/pull/3755)
 - :sunrise: 服务发现提供了一系列 control API [#3742](https://github.com/apache/apisix/pull/3742)
 
@@ -478,11 +478,11 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **支持使用环境变量来配置参数.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **支持使用环境变量来配置参数。** [#2743](https://github.com/apache/apisix/pull/2743)
 - :sunrise: **支持使用 TLS 来连接 etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
-- 自动生成对象的创建和更新时间. [#2740](https://github.com/apache/apisix/pull/2740)
-- 在上游中开启 websocket 时，增加日志来提示此功能即将废弃.[#2691](https://github.com/apache/apisix/pull/2691)
-- 增加日志来提示 consumer id 即将废弃.[#2829](https://github.com/apache/apisix/pull/2829)
+- 自动生成对象的创建和更新时间。[#2740](https://github.com/apache/apisix/pull/2740)
+- 在上游中开启 websocket 时，增加日志来提示此功能即将废弃。[#2691](https://github.com/apache/apisix/pull/2691)
+- 增加日志来提示 consumer id 即将废弃。[#2829](https://github.com/apache/apisix/pull/2829)
 - 增加 `X-APISIX-Upstream-Status` 头来区分 5xx 错误来自上游还是 APISIX 自身。[#2817](https://github.com/apache/apisix/pull/2817)
 - 支持 Nginx 配置片段。[#2803](https://github.com/apache/apisix/pull/2803)
 
@@ -490,7 +490,7 @@ title: CHANGELOG
 
 - :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
 - :sunrise: 新增阿里云 sls 日志服务插件。[#2169](https://github.com/apache/apisix/issues/2169)
-- proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
+- proxy-cache: cache_zone 字段改为可选。[#2776](https://github.com/apache/apisix/pull/2776)
 - 在数据平面校验插件的配置。[#2856](https://github.com/apache/apisix/pull/2856)
 
 ### Bugfix
@@ -501,7 +501,7 @@ title: CHANGELOG
 
 ### 不向下兼容特性预告
 
-- 在 2.3 发布版本中，consumer 将只支持用户名，废弃 id，consumer需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错
+- 在 2.3 发布版本中，consumer 将只支持用户名，废弃 id，consumer 需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错
 - 在 2.3 发布版本中，将不再支持在 upstream 上开启 websocket
 - 在 3.0 版本中，数据平面和控制平面将分开为两个独立的端口，即现在的 9080 端口将只处理数据平面的请求，不再处理 admin API 的请求
 
@@ -530,9 +530,9 @@ title: CHANGELOG
 
 ### Bugfix
 
-- :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。[#2168](https://github.com/apache/apisix/pull/2168)
+- :bug: **`高优先级`** 当数据平面接收到删除某一个资源 (路由、上游等) 的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。[#2168](https://github.com/apache/apisix/pull/2168)
 - 修复路由优先级不生效的问题。[#2447](https://github.com/apache/apisix/pull/2447)
-- 在 `init_worker` 阶段设置随机数, 而不是 `init` 阶段。[#2357](https://github.com/apache/apisix/pull/2357)
+- 在 `init_worker` 阶段设置随机数，而不是 `init` 阶段。[#2357](https://github.com/apache/apisix/pull/2357)
 - 删除 jwt 插件中不支持的算法。[#2356](https://github.com/apache/apisix/pull/2356)
 - 当重定向插件的 `http_to_https` 开启时，返回正确的响应码。[#2311](https://github.com/apache/apisix/pull/2311)
 
@@ -546,8 +546,8 @@ title: CHANGELOG
 
 ### Core
 
-- Admin API：支持使用SSL证书进行身份验证。[1747](https://github.com/apache/apisix/pull/1747)
-- Admin API：同时支持标准的PATCH和子路径PATCH。[1930](https://github.com/apache/apisix/pull/1930)
+- Admin API：支持使用 SSL 证书进行身份验证。[1747](https://github.com/apache/apisix/pull/1747)
+- Admin API：同时支持标准的 PATCH 和子路径 PATCH。[1930](https://github.com/apache/apisix/pull/1930)
 - HealthCheck：支持自定义检查端口。[1914](https://github.com/apache/apisix/pull/1914)
 - Upstream：支持禁用 `Nginx` 默认重试机制。[1919](https://github.com/apache/apisix/pull/1919)
 - URI：支持以配置方式删除 `URI` 末尾的 `/` 符号。[1766](https://github.com/apache/apisix/pull/1766)
@@ -591,7 +591,7 @@ title: CHANGELOG
 - 文档：修正 `README` 中 `gRPC transcoding` 文档路径。[1945](https://github.com/apache/apisix/pull/1945)
 - 文档：修正 `README` 中 `uri-blocker` 文档路径。[1950](https://github.com/apache/apisix/pull/1950)
 - 文档：修正 `README` 中 `grpc-transcode` 文档路径。[1946](https://github.com/apache/apisix/pull/1946)
-- 文档: 删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/apisix/pull/1891)
+- 文档：删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/apisix/pull/1891)
 
 ## 1.4.1
 
@@ -631,7 +631,7 @@ title: CHANGELOG
 ### Plugin
 
 - :sunrise: **新增 batch request 插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
-- 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
+- 实现完成 `sys logger` 插件。[#1414](https://github.com/apache/incubator-apisix/pull/1414)
 
 ## 1.2.0
 
@@ -640,11 +640,11 @@ title: CHANGELOG
 ### Core
 
 - :sunrise: **支持 etcd 集群**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
-- 默认使用本地 DNS resolver, 这对于 k8s 环境更加友好. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
-- 支持在 `header_filter`、`body_filter` 和 `log` 阶段运行全局插件. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
+- 默认使用本地 DNS resolver，这对于 k8s 环境更加友好。[#1387](https://github.com/apache/incubator-apisix/pull/1387)
+- 支持在 `header_filter`、`body_filter` 和 `log` 阶段运行全局插件。[#1364](https://github.com/apache/incubator-apisix/pull/1364)
 - 将目录 `lua/apisix` 修改为 `apisix`(**不向下兼容**). [#1351](https://github.com/apache/incubator-apisix/pull/1351)
-- 增加 dashboard 子模块. [#1360](https://github.com/apache/incubator-apisix/pull/1360)
-- 允许自定义共享字典. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
+- 增加 dashboard 子模块。[#1360](https://github.com/apache/incubator-apisix/pull/1360)
+- 允许自定义共享字典。[#1367](https://github.com/apache/incubator-apisix/pull/1367)
 
 ### Plugin
 
@@ -654,27 +654,27 @@ title: CHANGELOG
 - :sunrise: **新增 UDP logger 插件**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
 - :sunrise: **新增 proxy mirror 插件**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
 - :sunrise: **新增 proxy cache 插件**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
-- 在 proxy-rewrite 插件中废弃 websocket 开关(**不向下兼容**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
-- OAuth 插件中增加基于公钥的自省支持. [#1266](https://github.com/apache/incubator-apisix/pull/1266)
-- response-rewrite 插件通过 base64 来支持传输二进制数据. [#1381](https://github.com/apache/incubator-apisix/pull/1381)
+- 在 proxy-rewrite 插件中废弃 websocket 开关 (**不向下兼容**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
+- OAuth 插件中增加基于公钥的自省支持。[#1266](https://github.com/apache/incubator-apisix/pull/1266)
+- response-rewrite 插件通过 base64 来支持传输二进制数据。[#1381](https://github.com/apache/incubator-apisix/pull/1381)
 - gRPC 转码插件支持 `deadline`. [#1149](https://github.com/apache/incubator-apisix/pull/1149)
-- limit count 插件支持 redis 权限认证. [#1150](https://github.com/apache/incubator-apisix/pull/1150)
-- Zipkin 插件支持名字和本地服务器 ip 的记录. [#1386](https://github.com/apache/incubator-apisix/pull/1386)
-- Wolf-Rbac 插件增加 `change_pwd` 和 `user_info` 参数. [#1204](https://github.com/apache/incubator-apisix/pull/1204)
+- limit count 插件支持 redis 权限认证。[#1150](https://github.com/apache/incubator-apisix/pull/1150)
+- Zipkin 插件支持名字和本地服务器 ip 的记录。[#1386](https://github.com/apache/incubator-apisix/pull/1386)
+- Wolf-Rbac 插件增加 `change_pwd` 和 `user_info` 参数。[#1204](https://github.com/apache/incubator-apisix/pull/1204)
 
 ### Admin API
 
-- :sunrise: 对调用 Admin API 增加 key-auth 权限认证(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
-- 隐藏 SSL 私钥的返回值. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
+- :sunrise: 对调用 Admin API 增加 key-auth 权限认证 (**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
+- 隐藏 SSL 私钥的返回值。[#1240](https://github.com/apache/incubator-apisix/pull/1240)
 
 ### Bugfix
 
 - 在复用 table 之前遗漏了对数据的清理 (**会引发内存泄漏**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)
-- 如果 yaml 中路由非法就打印警告信息. [#1141](https://github.com/apache/incubator-apisix/pull/1141)
+- 如果 yaml 中路由非法就打印警告信息。[#1141](https://github.com/apache/incubator-apisix/pull/1141)
 - 使用空字符串替代空的 balancer IP. [#1166](https://github.com/apache/incubator-apisix/pull/1166)
-- 修改 node-status 和 heartbeat 插件没有 schema 的问题. [#1249](https://github.com/apache/incubator-apisix/pull/1249)
-- basic-auth 增加 required 字段. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
-- 检查上游合法节点的个数. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
+- 修改 node-status 和 heartbeat 插件没有 schema 的问题。[#1249](https://github.com/apache/incubator-apisix/pull/1249)
+- basic-auth 增加 required 字段。[#1251](https://github.com/apache/incubator-apisix/pull/1251)
+- 检查上游合法节点的个数。[#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
 ## 1.1.0
 
@@ -691,7 +691,7 @@ title: CHANGELOG
 
 ### Doc
 
-- 增加 Grafana 元数据下载链接. [#1119](https://github.com/apache/incubator-apisix/pull/1119)
+- 增加 Grafana 元数据下载链接。[#1119](https://github.com/apache/incubator-apisix/pull/1119)
 - 更新 README.md。 [#1118](https://github.com/apache/incubator-apisix/pull/1118)
 - 增加 wolf-rbac 插件说明文档 [#1116](https://github.com/apache/incubator-apisix/pull/1116)
 - 更新 rpm 下载链接。 [#1108](https://github.com/apache/incubator-apisix/pull/1108)
@@ -710,7 +710,7 @@ title: CHANGELOG
 
 ### Plugins
 
-- 「节点状态」插件使用 nginx 内部请求替换原来的外部请求。 [#1109](https://github.com/apache/incubator-apisix/pull/1109)
+- 在「节点状态」插件使用 nginx 内部请求替换原来的外部请求。 [#1109](https://github.com/apache/incubator-apisix/pull/1109)
 - 增加 wolf-rbac 插件。 [#1095](https://github.com/apache/incubator-apisix/pull/1095)
 - 增加 udp-logger 插件。 [#1070](https://github.com/apache/incubator-apisix/pull/1070)
 
@@ -745,7 +745,7 @@ title: CHANGELOG
 
 ## 0.9.0
 
-这个版本带来很多新特性，比如支持使用 Tengine 运行 APISIX，增加了对开发人员更友好的高级调试模式，还有新的URI重定向插件等。
+这个版本带来很多新特性，比如支持使用 Tengine 运行 APISIX，增加了对开发人员更友好的高级调试模式，还有新的 URI 重定向插件等。
 
 ### Core
 
@@ -766,17 +766,17 @@ title: CHANGELOG
 - lua-resty-radixtree
     - 支持将`host + uri`作为索引。
 - lua-resty-jsonschema
-    - 该扩展作用是JSON数据验证器，用于替换现有的 `lua-rapidjson` 扩展。
+    - 该扩展作用是 JSON 数据验证器，用于替换现有的 `lua-rapidjson` 扩展。
 
 ### Bugfix
 
 - 在多个使用者的情况下，`key-auth` 插件无法正确运行。 [#826](https://github.com/apache/incubator-apisix/pull/826)
 - 无法在 `API Server` 中获取 `serverless`插件配置。 [#787](https://github.com/apache/incubator-apisix/pull/787)
-- 解决使用 `proxy-write` 重写URI时GET参数丢失问题。 [#642](https://github.com/apache/incubator-apisix/pull/642)
-- `Zipkin` 插件未将跟踪数据设置为请求头. [#715](https://github.com/apache/incubator-apisix/pull/715)
+- 解决使用 `proxy-write` 重写 URI 时 GET 参数丢失问题。 [#642](https://github.com/apache/incubator-apisix/pull/642)
+- `Zipkin` 插件未将跟踪数据设置为请求头。[#715](https://github.com/apache/incubator-apisix/pull/715)
 - 使用本地文件作为配置中心时，跳过 etcd 初始化。 [#737](https://github.com/apache/incubator-apisix/pull/737)
-- 在APISIX CLI中跳过 luajit 环境的`check cjson`。[#652](https://github.com/apache/incubator-apisix/pull/652)
-- 配置 `Upstream` 时，选择 `balancer` 类型为 `chash` 时，支持更多Nginx内置变量作为计算key。 [#775](https://github.com/apache/incubator-apisix/pull/775)
+- 在 APISIX CLI 中跳过 luajit 环境的`check cjson`。[#652](https://github.com/apache/incubator-apisix/pull/652)
+- 配置 `Upstream` 时，选择 `balancer` 类型为 `chash` 时，支持更多 Nginx 内置变量作为计算 key。 [#775](https://github.com/apache/incubator-apisix/pull/775)
 
 ### Dependencies
 
@@ -786,7 +786,7 @@ title: CHANGELOG
 
 > Released on 2019/09/30
 
-这个版本带来很多新的特性，比如四层协议的代理, 支持 MQTT 协议代理，以及对 ARM 平台的支持, 和代理改写插件等。
+这个版本带来很多新的特性，比如四层协议的代理，支持 MQTT 协议代理，以及对 ARM 平台的支持，和代理改写插件等。
 
 ### Core
 
@@ -817,7 +817,7 @@ title: CHANGELOG
 
 ### Bugfix
 
-- 健康检查: 修复在多 worker 下运行时健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
+- 健康检查：修复在多 worker 下运行时健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
 
 ### Dependencies
 
@@ -827,14 +827,14 @@ title: CHANGELOG
 
 > Released on 2019/09/06
 
-这个版本带来很多新的特性，比如 IP 黑白名单、gPRC 协议转换、支持 IPv6、对接 IdP（身份认证提供商）服务、serverless、默认路由修改为radix tree（**不向下兼容**）等。
+这个版本带来很多新的特性，比如 IP 黑白名单、gPRC 协议转换、支持 IPv6、对接 IdP（身份认证提供商）服务、serverless、默认路由修改为 radix tree（**不向下兼容**）等。
 
 ### Core
 
 - :sunrise: **[gRPC 协议转换](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/grpc-transcoding-cn.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/apache/incubator-apisix/issues/395)
-- :sunrise: **[radix tree 路由](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//router-radixtree.md)**: 默认的路由器更改为 radix tree，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活. **需要注意的是，这个改动不向下兼容，所有使用历史版本的用户，需要手动修改路由才能正常使用**。[#414](https://github.com/apache/incubator-apisix/issues/414)
+- :sunrise: **[radix tree 路由](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//router-radixtree.md)**: 默认的路由器更改为 radix tree，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活。**需要注意的是，这个改动不向下兼容，所有使用历史版本的用户，需要手动修改路由才能正常使用**。[#414](https://github.com/apache/incubator-apisix/issues/414)
 - 动态上游支持更多的参数，可以指定上游的 uri 和 host，以及是否开启 websocket. [#451](https://github.com/apache/incubator-apisix/pull/451)
-- 支持从 `ctx.var` 中直接获取 cookie 中的值. [#449](https://github.com/apache/incubator-apisix/pull/449)
+- 支持从 `ctx.var` 中直接获取 cookie 中的值。[#449](https://github.com/apache/incubator-apisix/pull/449)
 - 路由支持 IPv6. [#331](https://github.com/apache/incubator-apisix/issues/331)
 
 ### Plugins
@@ -846,7 +846,7 @@ title: CHANGELOG
 
 ### CLI
 
-- 增加 `version` 指令，获取 APISIX 的版本号. [#420](https://github.com/apache/incubator-apisix/issues/420)
+- 增加 `version` 指令，获取 APISIX 的版本号。[#420](https://github.com/apache/incubator-apisix/issues/420)
 
 ### Admin
 
@@ -867,13 +867,13 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//health-check.md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接. [#249](https://github.com/apache/incubator-apisix/pull/249)
-- 阻止ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
-- 支持 debug 模式. [#319](https://github.com/apache/incubator-apisix/pull/319)
-- 允许自定义路由. [#364](https://github.com/apache/incubator-apisix/pull/364)
-- 路由支持 host 和 uri 的组合. [#325](https://github.com/apache/incubator-apisix/pull/325)
-- 允许在 balance 阶段注入插件. [#299](https://github.com/apache/incubator-apisix/pull/299)
-- 为 upstream 和 service 在 schema 中增加描述信息. [#289](https://github.com/apache/incubator-apisix/pull/289)
+- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//health-check.md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
+- 阻止 ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
+- 支持 debug 模式。[#319](https://github.com/apache/incubator-apisix/pull/319)
+- 允许自定义路由。[#364](https://github.com/apache/incubator-apisix/pull/364)
+- 路由支持 host 和 uri 的组合。[#325](https://github.com/apache/incubator-apisix/pull/325)
+- 允许在 balance 阶段注入插件。[#299](https://github.com/apache/incubator-apisix/pull/299)
+- 为 upstream 和 service 在 schema 中增加描述信息。[#289](https://github.com/apache/incubator-apisix/pull/289)
 
 ### Plugins
 
@@ -882,7 +882,7 @@ title: CHANGELOG
 
 ### CLI
 
-- `allow` 指令中支持多个 ip 地址. [#340](https://github.com/apache/incubator-apisix/pull/340)
+- `allow` 指令中支持多个 ip 地址。[#340](https://github.com/apache/incubator-apisix/pull/340)
 - 支持在 nginx.conf 中配置 real_ip 指令，以及增加函数来获取 ip. [#236](https://github.com/apache/incubator-apisix/pull/236)
 
 ### Dashboard
@@ -892,6 +892,6 @@ title: CHANGELOG
 ### Test
 
 - 在 Travis CI 中支持 OSX. [#217](https://github.com/apache/incubator-apisix/pull/217)
-- 把所有依赖安装到 `deps` 目录. [#248](https://github.com/apache/incubator-apisix/pull/248)
+- 把所有依赖安装到 `deps` 目录。[#248](https://github.com/apache/incubator-apisix/pull/248)
 
 [Back to TOC](#table-of-contents)

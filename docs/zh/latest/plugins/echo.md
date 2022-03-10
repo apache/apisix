@@ -23,7 +23,7 @@ title: echo
 
 ## 简介
 
-echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
+echo 可以帮助用户尽可能全面地了解如何开发 APISIX 插件。
 
 该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 包括：init, rewrite, access, balancer, header filter, body filter 以及 log。
 
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功:
+* 成功：
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

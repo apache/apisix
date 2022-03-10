@@ -190,7 +190,7 @@ local i = 1
 local s = "apisix"
 ```
 
-变量命名使用 `snake_case`（蛇形命名法） 风格:
+变量命名使用 `snake_case`（蛇形命名法）风格：
 
 ```lua
 --No
@@ -246,7 +246,7 @@ end
 local t = {1, 2, nil, 3}
 ```
 
-如果一定要使用空值，请用 `ngx.null` 来表示:
+如果一定要使用空值，请用 `ngx.null` 来表示：
 
 ```lua
 --Yes
@@ -344,7 +344,7 @@ local function foo()
 end
 ```
 
-为了风格的统一，`require` 和 `ngx` 也需要 `local` 化:
+为了风格的统一，`require` 和 `ngx` 也需要 `local` 化：
 
 ```lua
 --No

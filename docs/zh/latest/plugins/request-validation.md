@@ -29,7 +29,7 @@ title: request-validation
 
 ## 属性
 
-> 注意, `header_schema` 与 `body_schema` 至少填写其中一个
+> 注意，`header_schema` 与 `body_schema` 至少填写其中一个
 
 | Name             | Type   | Requirement | Default | Valid | Description                       |
 | ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
@@ -100,7 +100,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 示例
 
-**枚举（Enums）验证:**
+**枚举（Enums）验证：**
 
 ```json
 {
@@ -118,7 +118,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**布尔（Boolean）验证:**
+**布尔（Boolean）验证：**
 
 ```json
 {
@@ -135,7 +135,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**数字范围（Number or Integer）验证:**
+**数字范围（Number or Integer）验证：**
 
 ```json
 {
@@ -153,7 +153,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**字符串长度（String）验证:**
+**字符串长度（String）验证：**
 
 ```json
 {
@@ -171,7 +171,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**正则表达式（Regex）验证:**
+**正则表达式（Regex）验证：**
 
 ```json
 {
@@ -190,7 +190,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**数组（Array）验证:**
+**数组（Array）验证：**
 
 ```json
 {
@@ -214,7 +214,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**多字段组合（Multiple Fields）验证:**
+**多字段组合（Multiple Fields）验证：**
 
 ```json
 {
@@ -247,7 +247,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**自定义拒绝信息:**
+**自定义拒绝信息：**
 
 ```json
 {

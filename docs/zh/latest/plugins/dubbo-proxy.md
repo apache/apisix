@@ -35,7 +35,7 @@ title: dubbo-proxy
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
 | service_name    | string | 必选  |          |              | dubbo 服务名字 |
 | service_version | string | 必选    |          |              | dubbo 服务版本 |
-| method          | string | 可选    | uri路径 |     | dubbo 服务方法 |
+| method          | string | 可选    | uri 路径 |     | dubbo 服务方法 |
 
 ## 静态属性
 
@@ -45,7 +45,7 @@ title: dubbo-proxy
 
 ## 如何启用
 
-首先，在 `config.yaml` 中启用 `dubbo-proxy` 插件:
+首先，在 `config.yaml` 中启用 `dubbo-proxy` 插件：
 
 ```
 # Add this in config.yaml
@@ -56,7 +56,7 @@ plugins:
 
 然后重载 `APISIX`。
 
-这里有个例子，在指定的路由中启用 `dubbo-proxy` 插件:
+这里有个例子，在指定的路由中启用 `dubbo-proxy` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -135,7 +135,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 现在 `dubbo-proxy` 插件就已经被禁用了。 此方法同样适用于其他插件。
 
 如果你想彻底禁用 `dubbo-proxy` 插件，
-你需要在 `config.yaml` 中注释掉以下内容:
+你需要在 `config.yaml` 中注释掉以下内容：
 
 ```yaml
 plugins:

@@ -58,6 +58,18 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
     - npm based [markdownlint-cli](https://www.npmjs.com/package/markdownlint-cli)
 
+    For linting all files' license header we use:
+
+    - [license-eye](https://github.com/apache/skywalking-eyes)
+
+    For linting our shell files we use:
+
+    - [shellcheck](https://github.com/koalaman/shellcheck)
+
+    For linting our zh document files we use:
+
+    - [autocorrect](https://github.com/huacnlee/autocorrect)
+
 * Active Voice
 
     In general, use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize

@@ -98,7 +98,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 结合 [consumer-restriction](../plugins/consumer-restriction.md) 插件，限制 jack 对该 route 的访问
 
 ```shell
-# 设置黑名单，禁止jack访问该API
+# 设置黑名单，禁止 jack 访问该 API
 
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -119,7 +119,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/hello"
 }'
 
-# 反复测试，均返回 403，jack被禁止访问
+# 反复测试，均返回 403，jack 被禁止访问
 $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 HTTP/1.1 403
 ...

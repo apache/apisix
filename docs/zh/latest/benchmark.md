@@ -25,7 +25,7 @@ title: 压力测试
 
 使用谷歌云的服务器进行测试，型号为 n1-highcpu-8 (8 vCPUs, 7.2 GB memory)
 
-我们最多只使用 4 核去运行 APISIX, 剩下的 4 核用于系统和压力测试工具 [wrk](https://github.com/wg/wrk)。
+我们最多只使用 4 核去运行 APISIX，剩下的 4 核用于系统和压力测试工具 [wrk](https://github.com/wg/wrk)。
 
 ### 测试反向代理
 
@@ -39,13 +39,13 @@ title: 压力测试
 
 #### 延时
 
-请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
+请注意 y 轴延时的单位是**微秒 (μs)**，而不是毫秒：
 
 ![latency-1](../../assets/images/latency-1.jpg)
 
 #### 火焰图
 
-火焰图的采样结果:
+火焰图的采样结果：
 
 ![flamegraph-1](../../assets/images/flamegraph-1.jpg)
 
@@ -61,11 +61,11 @@ title: 压力测试
 
 #### Latency
 
-请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
+请注意 y 轴延时的单位是**微秒 (μs)**，而不是毫秒：
 
 ![latency-2](../../assets/images/latency-2.jpg)
 
 #### 火焰图
 
-火焰图的采样结果:
+火焰图的采样结果：
 ![火焰图采样结果](../../assets/images/flamegraph-2.jpg)

@@ -57,7 +57,7 @@ title: fault-injection
 
 ### 启用插件
 
-示例1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
+示例 1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -96,7 +96,7 @@ Fault Injection!
 
 > http status 返回 `200` 并且响应 `body` 为 `Fault Injection!`，表示该插件已启用。
 
-示例2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
+示例 2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -137,7 +137,7 @@ user    0m0.007s
 sys     0m0.010s
 ```
 
-示例3：为特定路由启用 `fault-injection` 插件，并指定 abort 参数的 vars 规则。
+示例 3：为特定路由启用 `fault-injection` 插件，并指定 abort 参数的 vars 规则。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -195,7 +195,7 @@ Server: APISIX/2.2
 Fault Injection!
 ```
 
-示例4：为特定路由启用 `fault-injection` 插件，并指定 delay 参数的 vars 规则。
+示例 4：为特定路由启用 `fault-injection` 插件，并指定 delay 参数的 vars 规则。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -260,7 +260,7 @@ user    0m0.004s
 sys     0m0.004s
 ```
 
-示例5：为特定路由启用 `fault-injection` 插件，并指定 abort 和 delay 参数的 vars 规则。
+示例 5：为特定路由启用 `fault-injection` 插件，并指定 abort 和 delay 参数的 vars 规则。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -370,7 +370,7 @@ user    0m0.001s
 sys     0m0.005s
 ```
 
-示例6：为特定路由启用 `fault-injection` 插件，并指定 abort 参数的 vars 规则（`or` 的关系）。
+示例 6：为特定路由启用 `fault-injection` 插件，并指定 abort 参数的 vars 规则（`or` 的关系）。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
