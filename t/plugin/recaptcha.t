@@ -211,7 +211,6 @@ Content-Type: application/json; charset=utf-8
 {"message":"invalid captcha"}
 --- no_error_log
 [error]
-
 --- request
 POST /active
 --- error_code: 400
