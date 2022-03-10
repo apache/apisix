@@ -23,7 +23,7 @@ title: Control API
 
 In Apache APISIX, the control API is used to:
 
-* Check the internal state of APISIX.
+* Expose the internal state of APISIX.
 * Control the behavior of a single, isolated APISIX data plane.
 
 To change the default endpoint (`127.0.0.1:9090`) of the Control API server, change the `ip` and `port` in the `control` section in your configuration file (`conf/config.yaml`):
