@@ -48,7 +48,7 @@ router 端配置：
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
 | header  | string | 可选| authorization |        | 设置我们从哪个 header 获取 token。 |
-| query  | string | 可选 | jwt |        | 设置我们从哪个 querystring 获取 token，优先级低于header |
+| query  | string | 可选 | jwt |        | 设置我们从哪个 query string 获取 token，优先级低于header |
 | cookie  | string | 可选 | jwt |        | 设置我们从哪个 cookie 获取 token，优先级低于query |
 
 ## 接口
