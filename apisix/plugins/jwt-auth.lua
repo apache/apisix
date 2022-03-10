@@ -352,7 +352,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local jwt_token, err = fetch_jwt_token(conf,ctx)
+    local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
         return 401, {message = "Missing JWT token in request"}
