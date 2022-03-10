@@ -215,12 +215,17 @@ local function process_with_allow_origins(allow_origins_conf, ctx, req_origin,
         allow_origins = req_origin or '*'
     end
 
-    if not (cache_key and cache_version) then
-        cache_key, cache_version = core.lrucache.plugin_ctx_id(ctx)
+    local multiple_origin, err
+    if cache_key and cache_version then
+        multiple_origin, err = lrucache(
+                cache_key, cache_version, create_multiple_origin_cache, allow_origins_conf
+        )
+    else
+        multiple_origin, err = core.lrucache.plugin_ctx(
+                lrucache, ctx, nil, create_multiple_origin_cache, allow_origins_conf
+        )
     end
-    local multiple_origin, err = lrucache(
-            cache_key, cache_version, create_multiple_origin_cache, allow_origins_conf
-    )
+
     if err then
         return 500, {message = "get multiple origin cache failed: " .. err}
     end
