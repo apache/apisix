@@ -52,20 +52,6 @@ __DATA__
                             "secret": "my-secret-key"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "jwt-auth": {
-                                    "key": "user-key",
-                                    "secret": "my-secret-key"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -142,7 +128,7 @@ hello world
 
 
 
-=== TEST 6: verify (in header with out Bearer)
+=== TEST 6: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
