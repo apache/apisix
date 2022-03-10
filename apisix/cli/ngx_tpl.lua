@@ -768,13 +768,13 @@ http {
 
             {% if proxy_mirror_timeouts then %}
                 {% if proxy_mirror_timeouts.connect then %}
-            proxy_connect_timeout {* proxy_mirror_timeouts.connect *}ms;
+            proxy_connect_timeout {* proxy_mirror_timeouts.connect *};
                 {% end %}
                 {% if proxy_mirror_timeouts.read then %}
-            proxy_read_timeout {* proxy_mirror_timeouts.read *}ms;
+            proxy_read_timeout {* proxy_mirror_timeouts.read *};
                 {% end %}
                 {% if proxy_mirror_timeouts.send then %}
-            proxy_send_timeout {* proxy_mirror_timeouts.send *}ms;
+            proxy_send_timeout {* proxy_mirror_timeouts.send *};
                 {% end %}
             {% end %}
             proxy_http_version 1.1;

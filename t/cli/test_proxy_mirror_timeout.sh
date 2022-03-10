@@ -23,15 +23,20 @@ echo '
 plugin_attr:
   proxy-mirror:
     timeout:
-        connect: 2000
-        read: 2000
-        send: 2000
+        connect: 2000ms
+        read: 2s
+        send: 2000ms
 ' > conf/config.yaml
 
 make init
 
 if ! grep "proxy_connect_timeout 2000ms;" conf/nginx.conf > /dev/null; then
     echo "failed: proxy_connect_timeout not found in nginx.conf"
+    exit 1
+fi
+
+if ! grep "proxy_read_timeout 2s;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_read_timeout not found in nginx.conf"
     exit 1
 fi
 

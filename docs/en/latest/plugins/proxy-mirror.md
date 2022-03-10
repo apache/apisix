@@ -95,21 +95,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 The plugin has been disabled now.
 
-## Customize proxy timeout for mirrored sub-request
+## Customize proxy timeouts for mirrored sub-request
 
-We can customize proxy timeout for the mirrored sub-request in the `plugin_attr` of `conf/config.yaml`. This useful while mirroring traffic to a slow backend in a connection reused scenario.
+We can customize proxy timeouts for the mirrored sub-request in the `plugin_attr` of `conf/config.yaml`. This is useful while mirroring traffic to a slow backend in a long connection scenario.
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| connect | integer | 60000 | connect timeout in milliseconds to the mirrored upstream |
-| read | integer | 60000 | read timeout in milliseconds to the mirrored upstream |
-| send | integer | 60000 | send timeout in milliseconds to the mirrored upstream |
+| connect | string | 60s | connect timeout to the mirrored upstream |
+| read | string | 60s | read timeout to the mirrored upstream |
+| send | string | 60s | send timeout to the mirrored upstream |
 
 ```yaml
 plugin_attr:
   proxy-mirror:
     timeout:
-      connect: 2000
-      read: 2000
-      send: 2000
+      connect: 2000ms
+      read: 2000ms
+      send: 2000ms
 ```
