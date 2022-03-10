@@ -40,7 +40,7 @@ title: jwt-auth
 
 有关 JWT 的更多信息，可参考 [JWT](https://jwt.io/) 查看更多信息。
 
-`jwt-auth` 插件可以与 HashiCorp Vault 集成，用于存储和获取密钥，从其加密的 kv 引擎获取 RSA 密钥对。 阅读下面的 [例子](#enable-jwt-auth-with-vault-compatibility) 来了解它如何工作。
+`jwt-auth` 插件可以与 HashiCorp Vault 集成，用于存储和获取密钥，从其加密的 KV 引擎获取 RSA 密钥对。 阅读下面的 [例子](#enable-jwt-auth-with-vault-compatibility) 来了解它如何工作。
 
 ## 属性
 
@@ -122,7 +122,7 @@ Apache APISIX `jwt-auth` 插件可以被配置为从 Vault 存储中获取简单
 
 要启用 Vault 的兼容性，只需要在 `jwt-auth` 插件内添加空的 Vault 对象。
 
-1. 用在 Vault 储存的 HS256 签名密钥来进行 jwt 签名和认证。
+1. 用在 Vault 储存的 HS256 签名密钥来进行 JWT 签名和认证。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -139,7 +139,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 在这里，插件在 Consumer 配置中提到的 Consumer 用户 `jack` 的 Vault 路径（`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`）中查找密钥 `secret`，并使用它进行后续的签名和 JWT 验证。如果在该路径中没有找到密钥，该插件将记录一个错误，并且无法执行 JWT 验证。
 
-2. RS256 rsa 密钥对, 包括公钥和私钥都存粗在 Vault 中。
+2. RS256 RSA 密钥对, 包括公钥和私钥都存粗在 Vault 中。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -155,12 +155,12 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-该插件在 Vault 键值对路径（`<vault.prefix from conf.yaml>/consumer/jim/jwt-auth`）中为插件 Vault 配置中提到的用户 `jim` 查找 `public_key` 和 `private_key`。如果没有找到，认证失败。
+该插件在 Vault 键值对路径（`<vault.prefix from conf.yaml>/consumer/jim/jwt-auth`）中为插件 Vault 配置中提到的用户 `kowalski` 查找 `public_key` 和 `private_key`。如果没有找到，认证失败。
 
 如果你不确定如何将公钥和私钥存储到 Vault 键值对中，请使用这个命令。
 
 ```shell
-# 提供你当前目录包含的 ”public.pem“ 和 ”private.pem“ 文件
+# 提供你当前目录包含的 "public.pem" 和 "private.pem" 文件
 $ vault kv put kv/apisix/consumer/jim/jwt-auth public_key=@public.pem private_key=@private.pem
 Success! Data written to: kv/apisix/consumer/jim/jwt-auth
 ```
@@ -182,7 +182,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-这个插件使用 Consumer 配置中的 rsa 公钥，并直接使用从 Vault 中获取的私钥。
+这个插件使用 Consumer 配置中的 RSA 公钥，并直接使用从 Vault 中获取的私钥。
 
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
 
