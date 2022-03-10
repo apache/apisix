@@ -117,9 +117,25 @@ Follow the steps below to install Apache APISIX via the source release package.
   make install
   ```
 
-  **Note**: If `make deps` fails with "install `lualdap` failed" with an error like `Could not find header file for LDAP` try the solution below.
+  **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
 
-  Solution: Set `LDAP_DIR` with `luarocks config` manually. For example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
+  The general solution: `luarocks` supports custom compile-time dependency directories(from this [link](https://github.com/luarocks/luarocks/wiki/Config-file-format)). Use a third-party tool to install the missing package and add its installation directory to the `luarocks`'s variables table. This a general method which can be applied to macOS, Ubuntu, CentOS or other usual operating systems, and the specific solution for macOS are given here for reference only.
+
+  The following is the solution of macOS, which is similar to that of other operating systems:
+
+    1. Install `openldap` with `brew install openldap`;
+    2. Locate installation directory with `brew --prefix openldap`;
+    3. Add the path to the project configuration file(choose one of the following two methods):
+       1. Solution A: You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`;
+       2. Solution B: Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file;
+       3. Example as follows:
+          variables = {
+              LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+              LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+          }
+
+     `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
+     `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
 5. To uninstall the Apache APISIX runtime, run:
 
