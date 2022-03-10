@@ -55,6 +55,8 @@ done
 --- no_error_log
 [error]
 
+
+
 == TEST 2: invalid secret_key
 --- config
     location /t {
@@ -125,7 +127,7 @@ passed
 
 
 
-=== TEST 3: add fault-injection plugin for mocking upstream api response
+=== TEST 3: add plugin on routes
 --- config
        location /t {
            content_by_lua_block {
@@ -159,30 +161,30 @@ passed
                    ngx.say(body)
                end
 
-                code, body = t('/apisix/admin/routes/2',
-                    ngx.HTTP_PUT,
-                    [=[{
-                           "plugins": {
-                              "recaptcha": {
-                                  "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
-                                  "parameter_source": "query",
-                                  "parameter_name": "captcha",
-                                  "response": {
-                                    "content_type": "application/json; charset=utf-8",
-                                    "status_code": 400,
-                                    "body": "{\"message\":\"invalid captcha\"}\n"
-                                  }
-                              }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
-                           },
-                           "uri": "/active"
-                   }]=]
-                   )
+               code, body = t('/apisix/admin/routes/2',
+                   ngx.HTTP_PUT,
+                   [=[{
+                          "plugins": {
+                             "recaptcha": {
+                                 "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+                                 "parameter_source": "query",
+                                 "parameter_name": "captcha",
+                                 "response": {
+                                   "content_type": "application/json; charset=utf-8",
+                                   "status_code": 400,
+                                   "body": "{\"message\":\"invalid captcha\"}\n"
+                                 }
+                             }
+                          },
+                          "upstream": {
+                              "nodes": {
+                                  "127.0.0.1:1980": 1
+                              },
+                              "type": "roundrobin"
+                          },
+                          "uri": "/active"
+                  }]=]
+                  )
                if code >= 300 then
                    ngx.status = code
                end
