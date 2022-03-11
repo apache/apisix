@@ -201,7 +201,7 @@ passed
 
 
 
-=== TEST 4: request is terminated by recaptcha plugin
+=== TEST 4: request is terminated by recaptcha plugin 1
 --- request
 POST /login
 --- error_code: 400
@@ -211,6 +211,10 @@ Content-Type: application/json; charset=utf-8
 {"message":"invalid captcha"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: request is terminated by recaptcha plugin 2
 --- request
 POST /active
 --- error_code: 400
@@ -223,7 +227,7 @@ Content-Type: application/json; charset=utf-8
 
 
 
-=== TEST 5: recaptcha valid
+=== TEST 6: recaptcha valid
 --- request
 POST /login
 --- more_headers
@@ -234,7 +238,7 @@ captcha: test
 
 
 
-=== TEST 6: recaptcha valid
+=== TEST 7: recaptcha valid
 --- request
 POST /active?captcha=test
 --- error_code: 404
