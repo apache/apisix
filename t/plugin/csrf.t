@@ -323,6 +323,9 @@ passed
             if res.status >= 300 then
                 ngx.status = res.status
             end
-            ngx.say(res.body)
+            ngx.status = res.status
+            ngx.print(res.body)
         }
     }
+--- response_body
+hello world
