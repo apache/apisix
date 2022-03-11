@@ -22,10 +22,37 @@ local upstream = require("apisix.upstream")
 local ffi = require 'ffi'
 local C = ffi.C
 
+local mock = ffi.load("/usr/local/Cellar/apisix/go/mock.so")
+
 local shdict = ngx.shared.example
 
 ffi.cdef[[
-    void *ngx_http_lua_ffi_shdict_udata_to_zone(void *zone_udata);
+typedef signed char GoInt8;
+typedef unsigned char GoUint8;
+typedef short GoInt16;
+typedef unsigned short GoUint16;
+typedef int GoInt32;
+typedef unsigned int GoUint32;
+typedef long long GoInt64;
+typedef unsigned long long GoUint64;
+typedef GoInt64 GoInt;
+typedef GoUint64 GoUint;
+typedef float GoFloat32;
+typedef double GoFloat64;
+typedef float _Complex GoComplex64;
+typedef double _Complex GoComplex128;
+
+typedef struct { const char *p; ptrdiff_t n; } _GoString_;
+typedef _GoString_ GoString;
+
+typedef void *GoMap;
+typedef void *GoChan;
+typedef struct { void *t; void *v; } GoInterface;
+typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
+
+
+extern void CreateMock(void* writeRoute);
+extern void Log(GoString msg);
 ]]
 
 local schema = {
@@ -89,8 +116,9 @@ function _M.rewrite(conf, ctx)
     core.log.warn("conf_version: ", ctx.conf_version)
 
     local zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(shdict[1])
+    local shd_cdata = ffi.cast("void*", zone)
+    mock.CreateMock(shd_cdata)
 
-    -- pass zone to go mod
 
 end
 
