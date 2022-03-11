@@ -19,6 +19,15 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 
+local ffi = require 'ffi'
+local C = ffi.C
+
+local shdict = ngx.shared.example
+
+ffi.cdef[[
+    void *ngx_http_lua_ffi_shdict_udata_to_zone(void *zone_udata);
+]]
+
 local schema = {
     type = "object",
     properties = {
@@ -78,6 +87,11 @@ function _M.rewrite(conf, ctx)
     core.log.warn("conf_type: ", ctx.conf_type)
     core.log.warn("conf_id: ", ctx.conf_id)
     core.log.warn("conf_version: ", ctx.conf_version)
+
+    local zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(shdict[1])
+
+    -- pass zone to go mod
+
 end
 
 
