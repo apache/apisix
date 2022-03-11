@@ -208,9 +208,8 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function process_with_allow_origins(allow_origins_conf, ctx, req_origin,
+local function process_with_allow_origins(allow_origins, ctx, req_origin,
                                           cache_key, cache_version)
-    local allow_origins = allow_origins_conf
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
     end
@@ -218,11 +217,11 @@ local function process_with_allow_origins(allow_origins_conf, ctx, req_origin,
     local multiple_origin, err
     if cache_key and cache_version then
         multiple_origin, err = lrucache(
-                cache_key, cache_version, create_multiple_origin_cache, allow_origins_conf
+                cache_key, cache_version, create_multiple_origin_cache, allow_origins
         )
     else
         multiple_origin, err = core.lrucache.plugin_ctx(
-                lrucache, ctx, nil, create_multiple_origin_cache, allow_origins_conf
+                lrucache, ctx, nil, create_multiple_origin_cache, allow_origins
         )
     end
 
