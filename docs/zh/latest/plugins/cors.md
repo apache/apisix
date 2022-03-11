@@ -36,8 +36,7 @@ title: cors
 | max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
 | allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
 | allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin，如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
-| allow_origins_by_metadata | array | 可选    | nil   |       | 通过引用插件元数据的 `allow_origins` 配置允许跨域访问的 
- Origin。比如当元数据为 `"allow_origins": {"EXAMPLE": "https://example.com"}` 时，配置 `["EXAMPLE"]` 将允许 Origin `https://example.com` 的访问  |
+| allow_origins_by_metadata | array | 可选    | nil   |       | 通过引用插件元数据的 `allow_origins` 配置允许跨域访问的 Origin。比如当元数据为 `"allow_origins": {"EXAMPLE": "https://example.com"}` 时，配置 `["EXAMPLE"]` 将允许 Origin `https://example.com` 的访问  |
 
 > **提示**
 >
