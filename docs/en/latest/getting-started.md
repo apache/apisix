@@ -21,7 +21,7 @@ title: Getting Started
 #
 -->  
 
-## What is an API Gateway?
+## What is an API Gateway
 An API gateway is an API management tool that acts as a mid layer service between a client and a number backend services. Typically, the API gateway receives the clients requests and processes it by summoning multiple microservices, aggregating the services & returning the appropriate results.
 
 ## What is Apache APISIX
