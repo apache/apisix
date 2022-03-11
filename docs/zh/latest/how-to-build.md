@@ -52,6 +52,9 @@ sudo yum --showduplicates list apisix
 
 # 安装最新的 apisix 软件包
 sudo yum install apisix
+
+# 安装指定版本（本例中为2.10.3版本）的 apisix 软件包
+sudo yum install apisix-2.10.3-0.el7
 ```
 
 ### 通过 RPM 包离线安装（CentOS 7）
