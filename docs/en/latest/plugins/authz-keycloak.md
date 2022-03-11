@@ -55,6 +55,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
 | access_denied_redirect_uri     | string        | optional    |                                               | [1, 2048]                                          | Redirect unauthorized user with the given uri like "http://127.0.0.1/test", instead of returning `"error_description":"not_authorized"`.                                             |
+| token_generation_endpoint      | string        | optional    |                                               | 					                                                | Endpoint path to identify URL pattern based on Path configuration. So that we can generate token if Request Uri match with this path.                       |
 
 ### Discovery and Endpoints
 
@@ -121,6 +122,26 @@ of the same name. The scope is then added to every permission to check.
 
 If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
 in the `permissions` attribute, even if they contain one or more scopes already.
+
+### Token generation endpoint
+
+If user wants to generate a token based on user name and password with the support of grant type `password`.
+
+The user have to configure URI path (E.g. `/api/Token`) in `token_generation_endpoint` which will match with incomming Request URI path and it will generate a new token with using `token_endpoint`.
+
+And for other route config, if will check token and redirect to the resource which are allocated to users.
+
+The user must have to pass Content-Type header as `application/x-www-form-urlencoded` and `username & password` in body part of request.
+
+## Token generation example 
+
+```cURL Code
+curl --location --request POST 'http://127.0.0.1:9080/api/Token' \
+--header 'Accept: application/json, text/plain, */*' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'username=User Name' \
+--data-urlencode 'password=Password'
+```
 
 ## How To Enable
 
