@@ -27,6 +27,7 @@ local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
+local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
@@ -102,6 +103,12 @@ local function read_apisix_yaml(premature, pre_mtime)
     local apisix_yaml_new = yaml.parse(yaml_config)
     if not apisix_yaml_new then
         log.error("failed to parse the content of file " .. apisix_yaml_path)
+        return
+    end
+
+    local ok, err = file.resolve_conf_var(apisix_yaml_new)
+    if not ok then
+        log.error("failed: failed to resolve variables:" .. err)
         return
     end
 

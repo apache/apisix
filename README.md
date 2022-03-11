@@ -43,7 +43,7 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 552030619, 781365357
-- Slack Workspace - Please [subscribe the mailing list](https://apisix.apache.org/docs/general/subscribe-guide) then ask for invitation link
+- Slack Workspace - join [`#apisix` channel](https://join.slack.com/t/the-asf/shared_invite/zt-vlfbf7ch-HkbNHiU_uDlcH_RvaHv9gQ) on ASF Slack to meet the team and ask questions, or send `Request to join APISIX slack` mail to the mail list(dev@apisix.apache.org), we will invite you in.
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - **Good first issues**:
   - [Apache APISIX®](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
@@ -142,15 +142,15 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - [Plugin can be written in Java/Go/Python](docs/en/latest/external-plugin.md)
-  - [Plugin can be written with Proxy WASM SDK](docs/en/latest/wasm.md)
+  - [Plugin can be written with Proxy Wasm SDK](docs/en/latest/wasm.md)
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
 
 - **Multi-Language support**
-  - Apache APISIX is a multi-language gateway for plugin development and provides support via `RPC` and `WASM`.
+  - Apache APISIX is a multi-language gateway for plugin development and provides support via `RPC` and `Wasm`.
   ![Multi Language Support into Apache APISIX](docs/assets/images/apisix-multi-lang-support.png)
   - The RPC way, is the current way. Developers can choose the language according to their needs and after starting an independent process with the RPC, it exchanges data with APISIX through local RPC communication. Till this moment, APISIX has support for [Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) and Node.js.
-  - The WASM or WebAssembly, is an experimental way. APISIX can load and run WASM bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a WASM bytecode that runs on WASM VM with APISIX.
+  - The Wasm or WebAssembly, is an experimental way. APISIX can load and run Wasm bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a Wasm bytecode that runs on Wasm VM with APISIX.
 
 - **Serverless**
   - [Lua functions](docs/en/latest/plugins/serverless.md): Invoke functions in each phase in APISIX.
@@ -261,7 +261,7 @@ A wide variety of companies and organizations use APISIX for research, productio
 - Swisscom
 - Tencent Game
 - Travelsky
-- VIIO
+- VIVO
 - weibo
 - WPS
 

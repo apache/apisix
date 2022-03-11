@@ -101,8 +101,6 @@ apisix:
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
-  global_rule_skip_internal_api: true     # does not run global rule in internal apis
-                                          # api that path starts with "/apisix" is considered to be internal api
   router:
     http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
@@ -326,8 +324,8 @@ plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
+  - zipkin                         # priority: 12011
   - ext-plugin-pre-req             # priority: 12000
-  - zipkin                         # priority: 11011
   - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
   - mocking                        # priority: 10900

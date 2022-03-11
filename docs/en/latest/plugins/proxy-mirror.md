@@ -32,6 +32,7 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 | Name | Type   | Requirement | Default | Valid | Description                                                                                                                 |
 | ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
 | host | string | required    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain scheme: http or https, and without the path part) |
+| path | string | optional    |         |       | Specify the mirror request's path part. Without it the current path will be used. |
 | sample_ratio | number | optional    | 1       |  [0.00001, 1]     | the sample ratio that requests will be mirrored. |
 
 ### Examples

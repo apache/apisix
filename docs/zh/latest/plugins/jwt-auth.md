@@ -21,6 +21,17 @@ title: jwt-auth
 #
 -->
 
+## 目录
+
+- [**目录**](#目录)
+- [**名字**](#名字)
+- [**属性**](#属性)
+- [**接口**](#接口)
+- [**如何启用**](#如何启用)
+  - [**启用具有 Vault 兼容性的 jwt-auth**](#启用具有-Vault-兼容性的-jwt-auth)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
+
 ## 描述
 
 `jwt-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
@@ -28,6 +39,8 @@ title: jwt-auth
 添加 JWT Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其密钥添加到查询字符串参数、请求头或 `cookie` 中以验证其请求。
 
 有关 JWT 的更多信息，可参考 [JWT](https://jwt.io/) 查看更多信息。
+
+`jwt-auth` 插件可以与 HashiCorp Vault 集成，用于存储和获取密钥，从其加密的 KV 引擎获取 RSA 密钥对。 阅读下面的 [例子](#enable-jwt-auth-with-vault-compatibility) 来了解它如何工作。
 
 ## 属性
 
@@ -40,6 +53,9 @@ title: jwt-auth
 | algorithm     | string  | 可选   | "HS256" | ["HS256", "HS512", "RS256"] | 加密算法                                                                                                      |
 | exp           | integer | 可选   | 86400   | [1,...]                     | token 的超时时间                                                                                              |
 | base64_secret | boolean | 可选   | false   |                             | 密钥是否为 base64 编码                                                                                        |
+| vault         | object  | 可选   |         |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索 |
+
+**注意**: 要启用 Vault 集成，首先访问 [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)，更新您的 Vault 服务器配置、主机地址和访问令牌。您可以在 [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) 中 vault 属性下查看 APISIX 的默认配置。
 
 ## 接口
 
@@ -97,6 +113,76 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+### Vault 与 APISIX jwt-auth 插件集成的不同用例
+
+Apache APISIX `jwt-auth` 插件可以被配置为从 Vault 存储中获取简单的文本密钥以及 RS256 公私密钥对。
+
+**注意**：对于该集成支持的早期版本，该插件期望存储在 Vault 路径中的密钥名称为「`secret`，`public_key`，`private_key`」其中之一。在未来的版本中，我们将支持引用自定义命名键。
+
+要启用 Vault 的兼容性，只需要在 `jwt-auth` 插件内添加空的 Vault 对象。
+
+1. 用在 Vault 储存的 HS256 签名密钥来进行 JWT 签名和认证。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "jwt-auth": {
+            "key": "key-1",
+            "vault": {}
+        }
+    }
+}'
+```
+
+在这里，插件在 Consumer 配置中提到的 Consumer 用户 `jack` 的 Vault 路径（`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`）中查找密钥 `secret`，并使用它进行后续的签名和 JWT 验证。如果在该路径中没有找到密钥，该插件将记录一个错误，并且无法执行 JWT 验证。
+
+2. RS256 RSA 密钥对, 包括公钥和私钥都存粗在 Vault 中。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "kowalski",
+    "plugins": {
+        "jwt-auth": {
+            "key": "rsa-keypair",
+            "algorithm": "RS256",
+            "vault": {}
+        }
+    }
+}'
+```
+
+该插件在 Vault 键值对路径（`<vault.prefix from conf.yaml>/consumer/jim/jwt-auth`）中为插件 Vault 配置中提到的用户 `kowalski` 查找 `public_key` 和 `private_key`。如果没有找到，认证失败。
+
+如果你不确定如何将公钥和私钥存储到 Vault 键值对中，请使用这个命令。
+
+```shell
+# 提供你当前目录包含的 "public.pem" 和 "private.pem" 文件
+$ vault kv put kv/apisix/consumer/jim/jwt-auth public_key=@public.pem private_key=@private.pem
+Success! Data written to: kv/apisix/consumer/jim/jwt-auth
+```
+
+3. 公钥在 Consumer 配置中，而私钥在 Vault 中。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "rico",
+    "plugins": {
+        "jwt-auth": {
+            "key": "user-key",
+            "algorithm": "RS256",
+            "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----"
+            "vault": {}
+        }
+    }
+}'
+```
+
+这个插件使用 Consumer 配置中的 RSA 公钥，并直接使用从 Vault 中获取的私钥。
 
 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 web 界面来完成上面的操作。
 

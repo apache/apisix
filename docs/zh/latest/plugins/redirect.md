@@ -117,6 +117,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+基于上述例子的测试示例：
+
+```shell
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 301 Moved Permanently
+...
+Location: https://127.0.0.1:9443/hello
+
+...
+```
+
 #### 禁用插件
 
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：

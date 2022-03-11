@@ -609,7 +609,7 @@ http {
         {% end %}
 
         location / {
-            set $upstream_mirror_host        '';
+            set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
 
@@ -621,6 +621,7 @@ http {
 
             {% if wasm then %}
             set $wasm_process_req_body       '';
+            set $wasm_process_resp_body      '';
             {% end %}
 
             # http server location configuration snippet starts
@@ -759,14 +760,14 @@ http {
             internal;
 
             {% if not use_apisix_openresty then %}
-            if ($upstream_mirror_host = "") {
+            if ($upstream_mirror_uri = "") {
                 return 200;
             }
             {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
-            proxy_pass $upstream_mirror_host$request_uri;
+            proxy_pass $upstream_mirror_uri;
         }
         {% end %}
 

@@ -29,7 +29,7 @@ title: server-info
 
 | 名称             | 类型    | 描述                                                                                                                    |
 | ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| boot_time        | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APIISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。               |
+| boot_time        | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。               |
 | id               | string  | APISIX 服务实例 id 。                                                                                                   |
 | etcd_version     | string  | etcd 集群的版本信息，如果 APISIX 和 etcd 集群之间存在网络分区，该值将设置为 `"unknown"`。                                       |
 | version          | string  | APISIX 版本信息。                                                                                                       |

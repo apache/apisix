@@ -89,33 +89,137 @@ err:status = 502
 
 
 
-=== TEST 2: test complex host
+=== TEST 2: change nacos server auth password
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson")
+            local http = require("resty.http")
+
+            local httpc = http.new()
+            local nacos_host = "http://127.0.0.1:8848"
+            local res, err = httpc:request_uri(nacos_host .. "/nacos/v1/auth/login", {
+                    method = "POST",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                    },
+                    body = ngx.encode_args({username = "nacos", password = "nacos"}),
+                })
+
+            if res.status ~= 200 then
+                ngx.say("nacos auth failed")
+                ngx.exit(401)
+            end
+
+            local res_json = json.decode(res.body)
+            res, err = httpc:request_uri(nacos_host .. "/nacos/v1/auth/users?accessToken=" .. res_json["accessToken"], {
+                    method = "PUT",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                    },
+                    body = ngx.encode_args({username = "nacos", newPassword = "nacos!@#$%^&*()[]"}),
+                })
+            if res.status ~= 200 then
+                ngx.say("nacos token auth failed")
+                ngx.say(res.body)
+                ngx.exit(401)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 3: test complex host
 --- extra_yaml_config
 discovery:
   nacos:
       host:
-        - "http://nacos:nacos#!&[]()*@127.0.0.1:8858"
+        - "http://nacos:nacos!@#$%^&*()[]@127.0.0.1:8848"
       fetch_interval: 1
 --- apisix_yaml
 routes:
   -
     uri: /hello
     upstream:
-      service_name: APISIX-NACOS-DEMO
+      service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
 
 #END
---- request
-GET /hello
---- timeout: 10
---- error_code_like: ^(?:50\d)$
---- error_log
-nacos login fail
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error, error]
 
 
 
-=== TEST 3: same service is registered in route, service and upstream, de-duplicate
+=== TEST 4: restore nacos server auth password
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson")
+            local http = require("resty.http")
+
+            local httpc = http.new()
+            local nacos_host = "http://127.0.0.1:8848"
+            local res, err = httpc:request_uri(nacos_host .. "/nacos/v1/auth/login", {
+                    method = "POST",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                    },
+                    body = ngx.encode_args({username = "nacos", password = "nacos!@#$%^&*()[]"}),
+                })
+
+            if res.status ~= 200 then
+                ngx.say("nacos auth failed")
+                ngx.exit(401)
+            end
+
+            local res_json = json.decode(res.body)
+            res, err = httpc:request_uri(nacos_host .. "/nacos/v1/auth/users?accessToken=" .. res_json["accessToken"], {
+                    method = "PUT",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                    },
+                    body = ngx.encode_args({username = "nacos", newPassword = "nacos"}),
+                })
+            if res.status ~= 200 then
+                ngx.say("nacos token auth failed")
+                ngx.say(res.body)
+                ngx.exit(401)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 5: same service is registered in route, service and upstream, de-duplicate
 --- yaml_config
 apisix:
   node_listen: 1984

@@ -25,6 +25,7 @@ fi
 LUAROCKS_VER=3.8.0
 wget https://github.com/luarocks/luarocks/archive/v"$LUAROCKS_VER".tar.gz
 tar -xf v"$LUAROCKS_VER".tar.gz
+rm -f v"$LUAROCKS_VER".tar.gz
 cd luarocks-"$LUAROCKS_VER" || exit
 
 OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
