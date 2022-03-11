@@ -203,3 +203,66 @@ plugins:
     }
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 5: set prometheus plugin at both global rule and route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: test prometheus plugin at both global rule and route
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/prometheus run \w+/
+--- grep_error_log_out
+prometheus run report
