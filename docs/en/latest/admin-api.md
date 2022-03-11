@@ -39,10 +39,10 @@ By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX 
 
 | Method | Request URI                      | Request Body | Description                                                                                                                   |
 | ------ | -------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| GET    | /apisix/admin/routes             | NULL         | Fetches a list of all configured Routes. list                                                                                 |
+| GET    | /apisix/admin/routes             | NULL         | Fetches a list of all configured Routes.                                                                                 |
 | GET    | /apisix/admin/routes/{id}        | NULL         | Fetches specified Route by id.                                                                                                |
 | PUT    | /apisix/admin/routes/{id}        | {...}        | Creates a Route with the specified id.                                                                                            |
-| POST   | /apisix/admin/routes             | {...}        | Creates a Route and assigns an id.                                                                                            |
+| POST   | /apisix/admin/routes             | {...}        | Creates a Route and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/routes/{id}        | NULL         | Removes the Route with the specified id.                                                                                      |
 | PATCH  | /apisix/admin/routes/{id}        | {...}        | Updates the selected attributes of the specified, existing Route. To delete an attribute, set value of attribute set to null. |
 | PATCH  | /apisix/admin/routes/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
@@ -288,7 +288,7 @@ The relationship between Routes and a Service is usually N:1.
 | GET    | /apisix/admin/services             | NULL         | Fetches a list of available Services.                                                                                           |
 | GET    | /apisix/admin/services/{id}        | NULL         | Fetches specified Service by id.                                                                                                |
 | PUT    | /apisix/admin/services/{id}        | {...}        | Creates a Service with the specified id.                                                                                            |
-| POST   | /apisix/admin/services             | {...}        | Creates a Service and assigns an id.                                                                                            |
+| POST   | /apisix/admin/services             | {...}        | Creates a Service and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/services/{id}        | NULL         | Removes the Service with the specified id.                                                                                      |
 | PATCH  | /apisix/admin/services/{id}        | {...}        | Updates the selected attributes of the specified, existing Service. To delete an attribute, set value of attribute set to null. |
 | PATCH  | /apisix/admin/services/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                   |
@@ -512,7 +512,7 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 | GET    | /apisix/admin/upstreams             | NULL         | Fetch a list of all configured Upstreams.                                                                                        |
 | GET    | /apisix/admin/upstreams/{id}        | NULL         | Fetches specified Upstream by id.                                                                                                |
 | PUT    | /apisix/admin/upstreams/{id}        | {...}        | Creates an Upstream with the specified id.                                                                                           |
-| POST   | /apisix/admin/upstreams             | {...}        | Creates an Upstream and assigns an id.                                                                                           |
+| POST   | /apisix/admin/upstreams             | {...}        | Creates an Upstream and assigns a random id.                                                                                           |
 | DELETE | /apisix/admin/upstreams/{id}        | NULL         | Removes the Upstream with the specified id.                                                                                      |
 | PATCH  | /apisix/admin/upstreams/{id}        | {...}        | Updates the selected attributes of the specified, existing Upstream. To delete an attribute, set value of attribute set to null. |
 | PATCH  | /apisix/admin/upstreams/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                    |
@@ -772,7 +772,7 @@ Currently, the response is returned from etcd.
 | GET    | /apisix/admin/ssl      | NULL         | Fetches a list of all configured SSL resources. |
 | GET    | /apisix/admin/ssl/{id} | NULL         | Fetch specified resource by id.                 |
 | PUT    | /apisix/admin/ssl/{id} | {...}        | Creates a resource with the specified id.           |
-| POST   | /apisix/admin/ssl      | {...}        | Creates a resource and assigns an id.           |
+| POST   | /apisix/admin/ssl      | {...}        | Creates a resource and assigns a random id.           |
 | DELETE | /apisix/admin/ssl/{id} | NULL         | Removes the resource with the specified id.     |
 
 ### Request Body Parameters
@@ -947,7 +947,7 @@ Route used in the [Stream Proxy](./stream-proxy.md).
 | GET    | /apisix/admin/stream_routes      | NULL         | Fetches a list of all configured Stream Routes. |
 | GET    | /apisix/admin/stream_routes/{id} | NULL         | Fetches specified Stream Route by id.           |
 | PUT    | /apisix/admin/stream_routes/{id} | {...}        | Creates a Stream Route with the specified id.       |
-| POST   | /apisix/admin/stream_routes      | {...}        | Creates a Stream Route and assigns an id.       |
+| POST   | /apisix/admin/stream_routes      | {...}        | Creates a Stream Route and assigns a random id.       |
 | DELETE | /apisix/admin/stream_routes/{id} | NULL         | Removes the Stream Route with the specified id. |
 
 ### Request Body Parameters
