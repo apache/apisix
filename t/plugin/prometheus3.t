@@ -246,12 +246,8 @@ qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="12
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -260,8 +256,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/prometheus run \w+/
 --- grep_error_log_out
