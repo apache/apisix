@@ -52,6 +52,9 @@ sudo yum --showduplicates list apisix
 
 # 安装最新的 apisix 软件包
 sudo yum install apisix
+
+# 安装指定版本（本例中为2.10.3版本）的 apisix 软件包
+sudo yum install apisix-2.10.3-0.el7
 ```
 
 ### 通过 RPM 包离线安装（CentOS 7）
@@ -113,9 +116,25 @@ sudo yum install ./apisix/*.rpm
   make install
   ```
 
-- 4.1 `make deps` 安装 `lualdap` 失败, 错误信息如: `Could not find header file for LDAP`
+   **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
 
-      解决方案: 通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`
+   解决思路：`luarocks` 支持自定义编译时依赖目录（来自此[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format))，使用第三方工具安装缺失的依赖，并将其文件路径添加到 `luarocks` 的变量表中。这是一种通用的解决方法，适用于在各种常见操作系统（包括但不仅限于 Ubuntu、Centos、macOS）遇到的“缺失头文件式安装依赖包失败”问题。
+
+   这边暂给出 macOS 上的具体解决步骤，其他操作系统的解决方案类似：
+
+     1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地；
+     2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
+     3. 将路径添加到项目配置文件中（选择两种方法中的一种即可）：
+         1. 方法一：通过 `luarocks config` 手动设置 `LDAP_DIR` 变量, 比如 `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`；
+         2. 方法二：当然你也可以选择直接更改 luarocks 的默认配置文件，执行 `cat ~/.luarocks/config-5.1.lua` 命令，然后在文件中添加 `openldap` 的安装目录；
+         3. 参考配置文件示例如下：
+             variables = {
+                 LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+                 LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+             }
+
+     `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。
+     `/usr/local/opt/openldap/` 是 `brew` 在 macOS(Intel) 上安装 `openldap` 的默认位置。
 
 5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
@@ -220,7 +239,7 @@ apisix help
 3. 运行 `git clone` 命令，将最新的源码克隆到本地，请使用我们 fork 出来的版本：
 
   ```shell
-  git clone https://github.com/iresty/test-nginx.git
+  git clone https://github.com/openresty/test-nginx.git
   ```
 
 4. 有两种方法运行测试：

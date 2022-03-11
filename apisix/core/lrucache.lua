@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- LRU Caching Implementation.
+--
+-- @module core.lrucache
+
 local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
 local log = require("apisix.core.log")
@@ -148,6 +152,24 @@ local function plugin_ctx_key_and_ver(api_ctx, extra_key)
     return key, api_ctx.conf_version
 end
 
+---
+--  Cache some objects for plugins to avoid duplicate resources creation.
+--
+-- @function core.lrucache.plugin_ctx
+-- @tparam table lrucache LRUCache object instance.
+-- @tparam table api_ctx The request context.
+-- @tparam string extra_key Additional parameters for generating the lrucache identification key.
+-- @tparam function create_obj_func Functions for creating cache objects.
+-- If the object does not exist in the lrucache, this function is
+-- called to create it and cache it in the lrucache.
+-- @treturn table The object cached in lrucache.
+-- @usage
+-- local function create_obj() {
+-- --   create the object
+-- --   return the object
+-- }
+-- local obj, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_obj)
+-- -- obj is the object cached in lrucache
 local function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
     local key, ver = plugin_ctx_key_and_ver(api_ctx, extra_key)
     return lrucache(key, ver, create_obj_func, ...)

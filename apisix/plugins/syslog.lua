@@ -29,8 +29,8 @@ local schema = {
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
-        max_retry_times = {type = "integer", minimum = 1, default = 1},
-        retry_interval = {type = "integer", minimum = 0, default = 1},
+        max_retry_times = {type = "integer", minimum = 1},
+        retry_interval = {type = "integer", minimum = 0},
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -48,12 +48,7 @@ local lrucache = core.lrucache.new({
 })
 
 
--- syslog uses max_retry_times/retry_interval/timeout
--- instead of max_retry_count/retry_delay/inactive_timeout
 local schema = batch_processor_manager:wrap_schema(schema)
-schema.max_retry_count = nil
-schema.retry_delay = nil
-schema.inactive_timeout = nil
 
 local _M = {
     version = 0.1,
@@ -69,11 +64,8 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    -- syslog uses max_retry_times/retry_interval/timeout
-    -- instead of max_retry_count/retry_delay/inactive_timeout
-    conf.max_retry_count = conf.max_retry_times
-    conf.retry_delay = conf.retry_interval
-    conf.inactive_timeout = conf.timeout
+    conf.max_retry_count = conf.max_retry_times or conf.max_retry_count
+    conf.retry_delay = conf.retry_interval or conf.retry_delay
     return true
 end
 
@@ -103,8 +95,6 @@ local function send_syslog_data(conf, log_message, api_ctx)
             drop_limit = conf.drop_limit,
             timeout = conf.timeout,
             sock_type = conf.sock_type,
-            max_retry_times = conf.max_retry_times,
-            retry_interval = conf.retry_interval,
             pool_size = conf.pool_size,
             tls = conf.tls,
         }

@@ -79,7 +79,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: hello
     upstream_id: 1
 #END
@@ -96,7 +96,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: fail
     upstream_id: 1
 upstreams:
@@ -119,7 +119,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: timeout
     upstream_id: 1
 upstreams:
@@ -146,7 +146,7 @@ routes:
     plugins:
         dubbo-proxy:
             service_name: org.apache.dubbo.backend.DemoService
-            service_version: 0.0.0
+            service_version: 1.0.0
             method: badStatus
     upstream_id: 1
 upstreams:

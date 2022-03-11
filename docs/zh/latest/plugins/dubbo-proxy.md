@@ -21,23 +21,13 @@ title: dubbo-proxy
 #
 -->
 
-## 摘要
-
-- [**简介**](#简介)
-- [**要求**](#要求)
-- [**运行时属性**](#运行时属性)
-- [**静态属性**](#静态属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 简介
 
 `dubbo-proxy` 插件允许将 `HTTP` 请求代理到 [**dubbo**](http://dubbo.apache.org)。
 
 ## 要求
 
-如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty)。
+如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤6：为-apache-apisix-构建-openresty)。
 
 ## 运行时属性
 

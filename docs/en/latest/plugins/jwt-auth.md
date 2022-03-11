@@ -21,19 +21,6 @@ title: jwt-auth
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [API](#api)
-- [How To Enable](#how-to-enable)
-  - [Enable jwt-auth with Vault Compatibility](#enable-jwt-auth-with-vault-compatibility)
-- [Test Plugin](#test-plugin)
-    - [Get the Token in `jwt-auth` Plugin:](#get-the-token-in-jwt-auth-plugin)
-    - [Try Request with Token](#try-request-with-token)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 `jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
@@ -195,6 +182,20 @@ then add jwt-auth plugin in the Consumer page:
 ## Test Plugin
 
 #### Get the Token in `jwt-auth` Plugin:
+
+First, you need to set up the route for the API that signs the token, which will use the [public-api](public-api.md) plugin.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/plugin/jwt/sign",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
+
+Let's get a token.
 
 * without extension payload:
 

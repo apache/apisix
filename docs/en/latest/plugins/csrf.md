@@ -21,14 +21,6 @@ title: csrf
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Description
 
 The `CSRF` plugin based on the [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.

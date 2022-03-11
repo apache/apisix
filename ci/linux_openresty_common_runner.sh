@@ -40,7 +40,7 @@ do_install() {
     # sudo apt-get install tree -y
     # tree deps
 
-    git clone https://github.com/iresty/test-nginx.git test-nginx
+    git clone https://github.com/openresty/test-nginx.git test-nginx
     make utils
 
     mkdir -p build-cache
@@ -92,7 +92,7 @@ script() {
     done
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r t | tee /tmp/test.result
+    FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

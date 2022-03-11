@@ -23,7 +23,7 @@ title: consul_kv
 
 ## Summary
 
-For users who used [nginx-upsync-module](https://github.com/weibocom/nginx-upsync-module) and consul key value for service discovery way, as we Weibo Mobile Team, maybe need it.
+For users that are using [nginx-upsync-module](https://github.com/weibocom/nginx-upsync-module) and Consul KV as a service discovery, like the Weibo Mobile Team, this may be needed.
 
 Thanks to @fatman-x guy, who developed this module, called `consul_kv`, and its worker process data flow is below:
 ![consul kv module data flow diagram](https://user-images.githubusercontent.com/548385/107141841-6ced3e00-6966-11eb-8aa4-bc790a4ad113.png)

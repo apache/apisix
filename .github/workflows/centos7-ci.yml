@@ -21,10 +21,17 @@ jobs:
     name: run ci on centos7
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test_dir:
+          - t/plugin
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/router t/script t/stream-node t/utils t/wasm
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
       with:
         submodules: recursive
 
@@ -56,8 +63,10 @@ jobs:
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
     - name: Run centos7 docker and mapping apisix into container
+      env:
+        TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Run other docker containers for test

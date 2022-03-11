@@ -23,16 +23,16 @@ title: Debug Mode
 
 ### Basic Debug Mode
 
-Enable basic debug mode via `conf/debug.yaml` file:
+You can enable the basic debug mode by adding this line to your `conf/debug.yaml` file.
 
 ```
 basic:
   enable: true
 ```
 
-Note: before APISIX 2.10, we enabled basic debug mode by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
+**Note**: Before Apache APISIX 2.10, basic debug mode was enabled by setting `apisix.enable_debug = true` in the `conf/config.yaml` file.
 
-e.g Using both `limit-conn` and `limit-count` plugins for a `/hello` request, there will have a response header called `Apisix-Plugins: limit-conn, limit-count`.
+For example, if we are using two plugins `limit-conn` and `limit-count` for a Route `/hello`, we will receive a response with the header `Apisix-Plugins: limit-conn, limit-count` when we enable the basic debug mode.
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
@@ -48,22 +48,25 @@ Server: openresty
 hello world
 ```
 
-If the information can not be delivered via HTTP response header, for example, the plugin is in stream
-subsystem, the information will be logged in the error log with `warn` level.
+If the debug information cannot be included in a response header (say when the plugin is in a stream subsystem), the information will be logged in the error log at a `warn` level.
 
 ### Advanced Debug Mode
 
-Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will be a check every second, only the checker reads the `#END` flag, and the file would be considered as closed.
+Advanced debug mode can also be enabled by modifying the configuration in the `conf/debug.yaml` file.
 
-The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file.
+
+The checker checks every second for changes to the configuration files. An `#END` flag is added to let the checker know that it should only look for changes till that point.
+
+The checker would only check this if the file was updated by checking its last modification time.
 
 | Key                             | Optional | Description                                                                                                                               | Default |
 | ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
-| hook_conf.name                  | required | The module list name of hook which has enabled debug trace.                                                                               |         |
-| hook_conf.log_level             | required | Logging levels for input arguments & returned value.                                                                                      | warn    |
-| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print.                                                                                                     | true    |
-| hook_conf.is_print_return_value | required | Enable/Disable returned value print.                                                                                                      | true    |
+| hook_conf.name                  | required | The module list name of the hook which has enabled debug trace.                                                                               |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned values.                                                                                      | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable printing input arguments.                                                                                                     | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable printing returned values.                                                                                                      | true    |
 
 Example:
 
@@ -86,9 +89,9 @@ hook_phase: # Module Function List, Name: hook_phase
 
 ### Enable Advanced Debug Mode Dynamically
 
-The advanced debug mode can take effect in particular requests by dynamic rule.
+You can also enable the advanced debug mode to take effect on particular requests.
 
-Example:
+For example, to dynamically enable advanced debugging mode on requests with a particular header name `X-APISIX-Dynamic-Debug` you can configure:
 
 ```yaml
 http_filter:
@@ -98,10 +101,10 @@ http_filter:
 #END
 ```
 
-Dynamically enable advanced debugging mode in a particular request like this:
+This will enable the advanced debug mode for requests like:
 
 ```shell
 curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
-Notice: We can not hook the `apisix.http_access_phase` module for particular requests, since whether the advanced debug mode is enabled is determined after these requests enter such phase.
+**Note**: The `apisix.http_access_phase` module cannot be hooked for dynamic rules as the advanced debug mode is enabled based on the request.

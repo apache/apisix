@@ -42,6 +42,9 @@ wasm:
         - name: wasm-request-body
           priority: 7997
           file: t/wasm/request-body/main.go.wasm
+        - name: wasm-request-body2
+          priority: 7996
+          file: t/wasm/request-body/main.go.wasm
 _EOC_
     $block->set_value("extra_yaml_config", $extra_yaml_config);
 });
@@ -150,3 +153,54 @@ hello
 --- grep_error_log eval
 qr/request get body: \w+/
 --- grep_error_log_out
+
+
+
+=== TEST 6: ensure the process body flag is plugin independent
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm-request-body": {
+                            "conf": "{\"processReqBody\":true, \"start\":1, \"size\":3}"
+                        },
+                        "wasm-request-body2": {
+                            "conf": "{\"processReqBody\":false, \"start\":2, \"size\":3}"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: hit
+--- request
+POST /hello
+hello
+--- grep_error_log eval
+qr/request get body: \w+/
+--- grep_error_log_out
+request get body: ell

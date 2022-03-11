@@ -21,7 +21,7 @@ title: Introducing APISIX's testing framework
 #
 -->
 
-APISIX uses a testing framework based on our fork of test-nginx: https://github.com/iresty/test-nginx.
+APISIX uses a testing framework based on our fork of test-nginx: https://github.com/openresty/test-nginx.
 For details, you can check the [documentation](https://metacpan.org/pod/Test::Nginx) of this project.
 
 If you want to test the CLI behavior of APISIX (`./bin/apisix`),
@@ -309,7 +309,7 @@ Note that before adding new methods to `t/lib/server.lua`, make sure that you ca
 
 Assume your current work directory is the root of the apisix source code.
 
-1. Install our fork of [test-nginx](https://github.com/iresty/test-nginx) to `../test-nginx`.
+1. Install our fork of [test-nginx](https://github.com/openresty/test-nginx) to `../test-nginx`.
 2. Run the test: `prove -I. -I../test-nginx/inc -I../test-nginx/lib -r t/path/to/file.t`.
 
 ## Tips
@@ -351,7 +351,7 @@ ONLY:
 --- config
 ...
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":{}}}
+{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":[]}}
 ```
 
 ### Executing Shell Commands

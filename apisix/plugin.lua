@@ -502,6 +502,9 @@ local function merge_consumer_route(route_conf, consumer_conf)
             new_route_conf.value.plugins = {}
         end
 
+        if new_route_conf.value.plugins[name] == nil then
+            conf._from_consumer = true
+        end
         new_route_conf.value.plugins[name] = conf
     end
 
@@ -551,12 +554,12 @@ end
 
 
 function _M.init_worker()
+    _M.load()
+
     -- some plugins need to be initialized in init* phases
-    if ngx.config.subsystem == "http" then
+    if ngx.config.subsystem == "http" and local_plugins_hash["prometheus"] then
         require("apisix.plugins.prometheus.exporter").init()
     end
-
-    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
@@ -732,6 +735,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "body_filter"
     then
         for i = 1, #plugins, 2 do
+            if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
+                    and plugins[i].type ~= "auth"then
+                phase = "rewrite"
+            end
             local phase_func = plugins[i][phase]
             if phase_func then
                 plugin_run = true

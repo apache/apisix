@@ -21,17 +21,6 @@ title: loggly
 #
 -->
 
-## Summary
-
-- [Name](#name)
-- [Attributes](#attributes)
-- [Metadata](#metadata)
-- [How To Enable](#how-to-enable)
-  - [Full configuration](#full-configuration)
-  - [Minimal configuration](#minimal-configuration)
-- [Test Plugin](#test-plugin)
-- [Disable Plugin](#disable-plugin)
-
 ## Name
 
 The `loggly` plugin is used to forward the request log of `Apache APISIX` to `Loggly by SolarWinds` for analysis and storage. After the plugin is enabled, `Apache APISIX` will obtain request context information in `Log Phase` serialize it into [Loggly Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm?cshid=loggly_streaming-syslog-without-using-files) data format which is actually syslog events with [RFC5424](https://datatracker.ietf.org/doc/html/rfc5424) compliant headers and submit it to the batch queue. When the maximum processing capacity of each batch of the batch processing queue or the maximum time to refresh the buffer is triggered, the data in the queue will be submitted to `Loggly` enterprise syslog endpoint.
@@ -52,11 +41,8 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 | include_req_body | boolean | optional    | false          | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. Note: if the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitation. |
 | include_resp_body| boolean | optional    | false         | Whether to include the response body. The response body is included if and only if it is `true`. |
 | include_resp_body_expr  | array  | optional    |          | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
-| max_retry_count     | integer    | optional      | 0                                                                                                                                                                                                 | max number of retries before removing from the processing pipe line                                                                                                              |
-| retry_delay        | integer     | optional      | 1                                                                                                                                                                                                 | number of seconds the process execution should be delayed if the execution fails                                                                                                 |
-| buffer_duration      | integer   | optional      | 60                                                                                                                                                                                                | max age in seconds of the oldest entry in a batch before the batch must be processed                                                                                             |
-| inactive_timeout     | integer   | optional      | 5                                                                                                                                                                                                 | max age in seconds when the buffer will be flushed if inactive                                                                                                                   |
-| batch_max_size    | integer      | optional      | 1000                                                                                                                                                                                              | max size of each batch                                                                                                                                                           |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 To generate a Customer Token, head over to `<your assigned subdomain>/loggly.com/tokens` or navigate to `Logs > Source Setup > Customer Tokens` to generate a new token.
 

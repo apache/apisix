@@ -21,14 +21,6 @@ title: serverless
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Name
 
 There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function`.

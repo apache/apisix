@@ -21,13 +21,6 @@ title: error-log-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable And Disable**](#how-to-enable-and-disable)
-- [**How to set the TCP server address**](#how-to-set-the-tcp-server-address)
-
 ## Name
 
 `error-log-logger` is a plugin which pushes the log data of APISIX's `error.log` to TCP servers or [Apache SkyWalking](https://skywalking.apache.org/).
@@ -50,6 +43,11 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | skywalking.endpoint_addr         | string  | optional   | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
 | skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                                 |
 | skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
+| clickhouse.endpoint_addr         | String  | optional   | http://127.0.0.1:8213          |          |  clickhouse HTTP endpoint, default http://127.0.0.1:8213                    |
+| clickhouse.user                  | String  | optional   | default                        |          |  clickhouse user                                                           |
+| clickhouse.password              | String  | optional   |                                |          |  clickhouse password                                                          |
+| clickhouse.database              | String  | optional   |                                |          |  clickhouse for error log DB name                                             |
+| clickhouse.logtable              | String  | optional   |                                |          |  clickhouse for error log table name                                            |
 | host                             | string  | optional    |                                |         | (`Deprecated`, use `tcp.host` instead) IP address or the Hostname of the TCP server.               |
 | port                             | integer | optional    |                                | [0,...] | (`Deprecated`, use `tcp.port` instead) Target upstream port.                                       |
 | tls                              | boolean | optional    | false                          |         | (`Deprecated`, use `tcp.tls` instead) Control whether to perform SSL verification.                 |
@@ -57,11 +55,8 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
 | keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
-| batch_max_size                   | integer | optional    | 1000                           | [1,...] | Max size of each batch.                                                                              |
-| inactive_timeout                 | integer | optional    | 3                              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive.                                  |
-| buffer_duration                  | integer | optional    | 60                             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.            |
-| max_retry_count                  | integer | optional    | 0                              | [0,...] | Maximum number of retries before removing from the processing pipe line.                             |
-| retry_delay                      | integer | optional    | 1                              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.                    |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable And Disable
 
@@ -122,5 +117,24 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
     "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
   },
   "inactive_timeout": 1
+}'
+```
+
+## How to set the clickhouse
+
+The plugin sends the error log as a string to the `data` field of the clickhouse table.
+*TODO Here save error log as a whole string to clickhouse 'data' column. We will add more columns in the future.*
+Step: update the attributes of the plugin
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "clickhouse": {
+      "user": "default",
+      "password": "a",
+      "database": "error_log",
+      "logtable": "t",
+      "endpoint_addr": "http://127.0.0.1:8123"
+  }
 }'
 ```

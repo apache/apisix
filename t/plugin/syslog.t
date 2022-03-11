@@ -211,13 +211,14 @@ done
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
+                -- before 2.13.0, timeout is incorrectly treated as inactive_timeout
                 [[{
                     "plugins": {
                         "syslog": {
                                 "host" : "127.0.0.1",
                                 "port" : 5044,
                                 "flush_limit" : 1,
-                                "timeout": 1
+                                "inactive_timeout": 1
                             }
                     },
                     "upstream": {

@@ -21,13 +21,15 @@ title: Service
 #
 -->
 
-A `Service` is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to the upstream service abstraction. Between `Route` and `Service`, usually the relationship of N:1, please see the following image.
+A Service is an abstraction of an API (which can also be understood as a set of [Route](./route.md) abstractions). It usually corresponds to an upstream service abstraction.
+
+The relationship between Routes and a Service is usually N:1 as shown in the image below.
 
 ![service-example](../../../assets/images/service-example.png)
 
-Different Route rules are bound to a Service at the same time. These Routes will have the same upstream and plugin configuration, reducing redundant configuration.
+As shown, different Routes could be bound to the same Service. This reduces redundancy as these bounded Routes will have the same [Upstream](./upstream.md) and [Plugin](./plugin.md) configurations.
 
-The following example creates a Service that enables the current-limit plugin, and then binds the Route with the id of `100` and `101` to the Service.
+The following example creates a Service that enables the current-limit Plugin, and then binds it to the Routes with the ids `100` and `101`.
 
 ```shell
 # create new Service
@@ -65,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-Of course, we can also specify different plugin parameters or upstream for Route. Some of the following Routes have different current-limit parameters. Other parts (such as upstream) continue to use the configuration parameters in Service.
+We can also specify different Plugins or Upstream for the Routes than the ones defined in the Service. The example below creates a Route with a limit-count Plugin. This Route will continue to use the other configurations defined in the Service (here, the Upstream configuration).
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -84,4 +86,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-Note: When both Route and Service enable the same plugin, the Route parameter has a higher priority than Service.
+**Note**: When a Route and a Service enable the same Plugin, the one defined in the Route is given the higher priority.

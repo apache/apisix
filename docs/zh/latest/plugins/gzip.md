@@ -21,19 +21,11 @@ title: gzip
 #
 -->
 
-## 目录
-
-- [**简介**](#简介)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 简介
 
 `gzip` 插件能动态设置 `Nginx` 的压缩行为。
 
-**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](./how-to-build.md#步骤6：为-Apache-APISIX-构建-OpenResty) 上。**
+**该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤6：为-apache-apisix-构建-openresty) 上。**
 
 ## 属性
 

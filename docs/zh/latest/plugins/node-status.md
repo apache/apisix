@@ -21,15 +21,6 @@ title: node-status
 #
 -->
 
-## 目录
-
-- [**插件简介**](#插件简介)
-- [**插件属性**](#插件属性)
-- [**插件接口**](#插件接口)
-- [**启用插件**](#启用插件)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 插件简介
 
 `node-status` 是 `APISIX` 的请求状态查询插件，返回基本的状态信息。
@@ -56,7 +47,17 @@ plugins:                          # plugin list
   ......
 ```
 
-启动 `APISIX` 之后，即可访问该插件提供的接口，获得基本的状态信息。
+2. 为状态 API 配置路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/apisix/status",
+    "plugins": {
+        "public-api": {}
+    }
+}'
+```
 
 ## 测试插件
 

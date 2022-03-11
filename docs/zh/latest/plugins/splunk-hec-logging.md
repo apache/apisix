@@ -21,14 +21,6 @@ title: splunk-hec-logging
 #
 -->
 
-## 摘要
-
-- [**定义**](#定义)
-- [**属性列表**](#属性列表)
-- [**如何开启**](#如何开启)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
 ## 定义
 
 `splunk-hec-logging` 插件用于将 `Apache APISIX` 的请求日志转发到 `Splunk HTTP 事件收集器（HEC）` 中进行分析和存储，启用该插件后 `Apache APISIX` 将在 `Log Phase` 获取请求上下文信息并序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Splunk HEC` 中。
@@ -46,11 +38,8 @@ title: splunk-hec-logging
 | endpoint.channel        | 可选   |                                                                                                                                                                                                   | Splunk HEC 发送渠道标识，参考：[About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)   |
 | endpoint.timeout        | 可选   | 10                                                                                                                                                                                                | Splunk HEC 数据提交超时时间（以秒为单位）                                                                                                                      |
 | ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证, 参考：[OpenResty文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
-| max_retry_count         | 可选   | 0                                                                                                                                                                                                 | 从处理管道中移除之前的最大重试次数                                                                                                                              |
-| retry_delay             | 可选   | 1                                                                                                                                                                                                 | 如果执行失败，流程执行应延迟的秒数                                                                                                                              |
-| buffer_duration         | 可选   | 60                                                                                                                                                                                                | 必须先处理批次中最旧条目的最大期限（以秒为单位）                                                                                                                  |
-| inactive_timeout        | 可选   | 5                                                                                                                                                                                                 | 刷新缓冲区的最大时间（以秒为单位）                                                                                                                              |
-| batch_max_size          | 可选   | 1000                                                                                                                                                                                              | 每个批处理队列可容纳的最大条目数                                                                                                                               |
+
+本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
