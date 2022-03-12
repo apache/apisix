@@ -105,7 +105,7 @@ local schema = {
             enum = {"local", "redis", "redis-cluster"},
             default = "local",
         },
-        allow_degradation = {type = "boolean", default = false},
+        allow_degradation = {type = "boolean", default = true},
         show_limit_quota_header = {type = "boolean", default = true}
     },
     required = {"count", "time_window"},
