@@ -67,7 +67,11 @@ local schema = {
         access_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
         refresh_token_expires_in = {type = "integer", minimum = 1, default = 3600},
         refresh_token_expires_leeway = {type = "integer", minimum = 0, default = 0},
-        token_generation_endpoint = {type = "string", minLength = 1, maxLength = 4096},
+        password_grant_token_generation_incoming_uri = {
+            type = "string",
+            minLength = 1,
+            maxLength = 4096
+        },
     },
     allOf = {
         -- Require discovery or token endpoint.
@@ -695,104 +699,109 @@ local function fetch_jwt_token(ctx)
     end
     return token
 end
--- This function is used to split data from array by respective delimitter and return array in result
-local function stringsplit(s, delimiter)
-    local result = {};
+
+local function split_string(s, delimiter)
+    local result = {}
     for match in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, match);
+        table.insert(result, match)
     end
-    return result;
+    return result
 end
 
 -- To get new access token by calling get token api
-local function generate_token(conf,ctx)
-    log.warn("------------Generate Access Token Function Called---------------")    
+local function generate_token_using_password_grant(conf,ctx)
+    log.warn("generate_token_using_password_grant Function Called")
     --Read Body
-    ngx.req.read_body(); --To read requestbody first
+    ngx.req.read_body()
     --Get Body Data
-    local RequestBody=ngx.req.get_body_data();
-    local UserName = ""; local Password = "";    
+    local request_body=ngx.req.get_body_data()
+    local username = nil
+    local password = nil
     --split by &
-    local strBodyArr = stringsplit(RequestBody, "&");
-    if strBodyArr then
-        for k, strBodyValue in ipairs(strBodyArr) do                     
-            if string.find(strBodyValue, "username") then
+    local parameters_array = split_string(request_body, "&")
+    if parameters_array then
+        for k, parameter in ipairs(parameters_array) do
+            if string.find(parameter, "username") then
                 --split by =
-                local usr = stringsplit(strBodyValue, "=");
-                UserName = usr[2];            
+                local username_value_array = split_string(parameter, "=")
+                username = username_value_array[2]
             end
-            if string.find(strBodyValue, "password") then
-                local psw = stringsplit(strBodyValue, "=");
-                Password = psw[2];
+            if string.find(parameter, "password") then
+                --split by =
+                local password_value_array = split_string(parameter, "=")
+                password = password_value_array[2]
             end
         end
+    end
+
+    if not username then
+        local err = "username is missing"
+        log.error(err)
+        return 422, err
+    end
+    if not password then
+        local err = "password is missing"
+        log.error(err)
+        return 422, err
     end
 
     local client_id = authz_keycloak_get_client_id(conf)
-    
+
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
-    
+
     if not token_endpoint then
-        log.error("Unable to determine token endpoint.")
-        return 500, "Unable to determine token endpoint."
+        local err = "Unable to determine token endpoint."
+        log.error(err)
+        return 500, err
     end
-        local httpc = authz_keycloak_get_http_client(conf)
+    local httpc = authz_keycloak_get_http_client(conf)
 
-        local params = {
-            method = "POST",
-            body =  ngx.encode_args({
-                grant_type = "password",
-                client_id = client_id,
-                client_secret = conf.client_secret,
-                username = UserName,
-                password = Password
-            }),
-            headers = {
-                ["Content-Type"] = "application/x-www-form-urlencoded"
-            }
+    local params = {
+        method = "POST",
+        body =  ngx.encode_args({
+            grant_type = "password",
+            client_id = client_id,
+            client_secret = conf.client_secret,
+            username = username,
+            password = password
+        }),
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded"
         }
+    }
 
-        params = authz_keycloak_configure_params(params, conf)
+    params = authz_keycloak_configure_params(params, conf)
 
-        local res, err = httpc:request_uri(token_endpoint, params)
+    local res, err = httpc:request_uri(token_endpoint, params)
 
-        if not res then
-            err = "Accessing token endpoint URL (" .. token_endpoint
-                  .. ") failed: " .. err
-            log.error(err)
-            return 401, {message = err}
-        end
-       
-        log.debug("Response data: " .. res.body)
-        local json, err = authz_keycloak_parse_json_response(res)
-       
-        log.warn(core.json.encode(json))
-        if not json then
-            err = "Could not decode JSON from token endpoint"
-                  .. (err and (": " .. err) or '.')
-            log.error(err)
-            return 401, {message = err}
-        end
-        
-    return  res.status, res.body;
+    if not res then
+        err = "Accessing token endpoint URL (" .. token_endpoint
+              .. ") failed: " .. err
+        log.error(err)
+        return 401, {message = err}
+    end
+
+    log.debug("Response data: " .. res.body)
+    local json, err = authz_keycloak_parse_json_response(res)
+
+    if not json then
+        err = "Could not decode JSON from response"
+              .. (err and (": " .. err) or '.')
+        log.error(err)
+        return 401, {message = err}
+    end
+
+    return  res.status, res.body
 end
 
 function _M.access(conf, ctx)
-    -- Get Requested URI
-    local RequestURI = string.upper(ngx.var.request_uri);
 
-    if conf.token_generation_endpoint then
-	-- Get Token generation end point of key cloak which we have mession in keyclock plugin config
-        local token_generation_endpoint = string.upper(conf.token_generation_endpoint);
-        local curr_req_method = string.upper(ctx.curr_req_matched["_method"]);
-        --Call Generate Access Token function if "\Token" found in URI based on configuration
-        if RequestURI == token_generation_endpoint then
-          if curr_req_method ~= "POST" then
-              log.error("Invalid request type")
-              return 400, {message = "Request method must be POST only.!"}
+    if conf.password_grant_token_generation_incoming_uri then
+        if string.upper(ngx.var.request_uri)
+                == string.upper(conf.password_grant_token_generation_incoming_uri) then
+          if string.upper(ctx.curr_req_matched["_method"]) == "POST" then
+           return generate_token_using_password_grant(conf,ctx)
           end
-
-           return generate_token(conf,ctx);
         end
     end
     log.debug("hit keycloak-auth access")
