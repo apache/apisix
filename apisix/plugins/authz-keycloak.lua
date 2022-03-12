@@ -19,10 +19,12 @@ local http      = require "resty.http"
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
+local util = require("apisix.cli.util")
 local plugin_name = "authz-keycloak"
 
 local log = core.log
 local pairs = pairs
+local ipairs = ipairs
 
 local schema = {
     type = "object",
@@ -700,14 +702,6 @@ local function fetch_jwt_token(ctx)
     return token
 end
 
-local function split_string(s, delimiter)
-    local result = {}
-    for match in (s..delimiter):gmatch("(.-)"..delimiter) do
-        table.insert(result, match)
-    end
-    return result
-end
-
 -- To get new access token by calling get token api
 local function generate_token_using_password_grant(conf,ctx)
     log.warn("generate_token_using_password_grant Function Called")
@@ -718,18 +712,23 @@ local function generate_token_using_password_grant(conf,ctx)
     local username = nil
     local password = nil
     --split by &
-    local parameters_array = split_string(request_body, "&")
-    if parameters_array then
+    local parameters_array = util.split(request_body, "&")
+
+    if #parameters_array == 2 then
         for k, parameter in ipairs(parameters_array) do
             if string.find(parameter, "username") then
                 --split by =
-                local username_value_array = split_string(parameter, "=")
-                username = username_value_array[2]
+                local username_value_array = util.split(parameter, "=")
+                if #username_value_array == 2 then
+                    username = username_value_array[2]
+                end
             end
             if string.find(parameter, "password") then
                 --split by =
-                local password_value_array = split_string(parameter, "=")
-                password = password_value_array[2]
+                local password_value_array = util.split(parameter, "=")
+                if #password_value_array == 2 then
+                    password = password_value_array[2]
+                end
             end
         end
     end
