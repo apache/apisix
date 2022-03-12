@@ -123,7 +123,6 @@ of the same name. The scope is then added to every permission to check.
 If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
 in the `permissions` attribute, even if they contain one or more scopes already.
 
-
 ### Password Grant Token Generation Incoming URI
 
 If you want to generate a token using `password` grant, you can set value of `password_grant_token_generation_incoming_uri`.

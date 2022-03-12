@@ -796,9 +796,9 @@ end
 function _M.access(conf, ctx)
 
     if conf.password_grant_token_generation_incoming_uri then
-        if string.upper(ngx.var.request_uri)
-                == string.upper(conf.password_grant_token_generation_incoming_uri) then
-          if string.upper(ctx.curr_req_matched["_method"]) == "POST" then
+        if ngx.var.request_uri:upper()
+                == conf.password_grant_token_generation_incoming_uri:upper() then
+          if ctx.curr_req_matched["_method"]:upper() == "POST" then
            return generate_token_using_password_grant(conf,ctx)
           end
         end
