@@ -73,7 +73,7 @@ function install_dependencies_with_apt() {
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     arch=$(uname - | tr '[:upper:]' '[:lower:]')
     arch_path=""
-    if [[ $arch == "arm64"]] || [[ $arch == "aarch64" ]]; then
+    if [[ $arch == "arm64" ]] || [[ $arch == "aarch64" ]]; then
         arch_path="/arm64/"
     fi
     if [[ "${1}" == "ubuntu" ]]; then
