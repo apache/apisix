@@ -24,5 +24,5 @@ Note
 5. To resolve merge conflicts, merge master instead of rebasing.
 6. Use "request review" to notify the reviewer after you make changes.
 7. Only a reviewer can mark a conversation as resolved.
- 
+
 -->
