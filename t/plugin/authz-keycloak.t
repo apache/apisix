@@ -179,6 +179,7 @@ done
                                 access_token_expires_leeway = 0,
                                 refresh_token_expires_in = 3600,
                                 refresh_token_expires_leeway = 0,
+                                password_grant_token_generation_incoming_uri = "/api/token",
                             })
             if not ok then
                 ngx.say(err)
@@ -621,3 +622,116 @@ GET /t
 --- response_headers
 Location: http://127.0.0.1/test
 --- error_code: 307
+
+
+
+=== TEST 18: Add https endpoint with password_grant_token_generation_incoming_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource#delete"],
+                                "client_id": "course_management",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                    "permissions": ["course_resource#delete"],
+                                    "client_id": "course_management",
+                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                    "timeout": 3000,
+                                    "password_grant_token_generation_incoming_uri": "/api/token"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello1"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: test for generating token via password grant
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/x-www-form-urlencoded",
+                },
+
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                    password = "123456",
+                }),
+            })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+                local refreshToken = body["refresh_token"]
+
+                if accessToken and refreshToken then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
