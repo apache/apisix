@@ -38,7 +38,7 @@ discovery:
       database: db_tars
       user: root
       password: tars2022
-    full_fetch_interval: 1800
+    full_fetch_interval: 90
     incremental_fetch_interval: 5
 _EOC_
 
@@ -57,7 +57,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.tars")
 
-              ngx.sleep(8)
+              ngx.sleep(11)
 
               ngx.req.read_body()
               local request_body = ngx.req.get_body_data()
@@ -80,7 +80,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.tars")
 
-              ngx.sleep(8)
+              ngx.sleep(11)
 
               ngx.req.read_body()
               local servant = ngx.req.get_body_data()
@@ -144,7 +144,7 @@ run_tests();
 __DATA__
 
 === TEST 1: create initial server and servant
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -188,7 +188,7 @@ values ('A', 'AServer', '172.16.1.1', 'A.AServer.FirstObjAdapter',
 
 
 === TEST 2: add servers on different nodes
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -214,7 +214,7 @@ values ('A', 'AServer', '172.16.1.2', now(), 'taf-cpp', 'active', 'active', 'tar
 
 
 === TEST 3: add servant
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -240,7 +240,7 @@ values ('A', 'AServer', '172.16.1.2', 'A.AServer.FirstObjAdapter',
 
 
 === TEST 4: update servant, update setting_state
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -263,7 +263,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 5: update server setting_state
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -286,7 +286,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 6: update server present_state
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -309,7 +309,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 7: update servant endpoint
---- timeout: 10
+--- timeout: 12
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -337,7 +337,6 @@ A.AServer.SecondObj",
 
 
 === TEST 8: delete servant
---- timeout: 10
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -345,13 +344,28 @@ A.AServer.SecondObj",
 delete from t_adapter_conf where application = 'A' and server_name = 'AServer'
 and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 
+]
+--- response_body eval
+[
+    "DONE\n",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: count after delete servant
+--- timeout: 100
+--- yaml_config eval: $::yaml_config
+--- wait: 92
+--- request eval
+[
 "GET /count
 [\"A.AServer.FirstObj\", \"A.AServer.SecondObj\", \"B.BServer.FirstObj\", \"C.CServer.FirstObj\"]",
 
 ]
 --- response_body eval
 [
-    "DONE\n",
     "{ 2 0 1 1 }\n",
 ]
 --- no_error_log
@@ -359,8 +373,7 @@ and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 
 
 
-=== TEST 9: delete server
---- timeout: 10
+=== TEST 10: delete server
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
@@ -368,13 +381,28 @@ and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 delete from t_server_conf
 where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'",
 
+]
+--- response_body eval
+[
+    "DONE\n",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: count after delete
+--- timeout: 100
+--- yaml_config eval: $::yaml_config
+--- wait: 92
+--- request eval
+[
 "GET /count
 [\"A.AServer.FirstObj\", \"A.AServer.SecondObj\", \"B.BServer.FirstObj\", \"C.CServer.FirstObj\"]",
 
 ]
 --- response_body eval
 [
-    "DONE\n",
     "{ 1 0 1 1 }\n",
 ]
 --- no_error_log

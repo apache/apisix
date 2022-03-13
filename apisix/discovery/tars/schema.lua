@@ -32,7 +32,7 @@ return {
             required = { 'host', 'database', 'user', 'password' }
         },
         full_fetch_interval = {
-            type = 'integer', minimum = 180, maximum = 3600, default = 300,
+            type = 'integer', minimum = 90, maximum = 3600, default = 300,
         },
         incremental_fetch_interval = {
             type = 'integer', minimum = 5, maximum = 60, default = 15,
