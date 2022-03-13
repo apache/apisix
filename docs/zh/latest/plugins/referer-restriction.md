@@ -21,7 +21,7 @@ title: referer-restriction
 #
 -->
 
-## 名字
+## 描述
 
 `referer-restriction` 插件可以根据 Referer 请求头限制访问。
 

@@ -21,7 +21,7 @@ title: jwt-auth
 #
 -->
 
-## Name
+## Description
 
 `jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
 

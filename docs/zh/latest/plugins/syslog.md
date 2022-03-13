@@ -21,7 +21,7 @@ title: syslog
 #
 -->
 
-## 定义
+## 描述
 
 `sys` 是一个将 Log data 请求推送到 Syslog 的插件。
 

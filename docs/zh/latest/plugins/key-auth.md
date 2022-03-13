@@ -21,7 +21,7 @@ title: key-auth
 #
 -->
 
-## 名字
+## 描述
 
 `key-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
 
