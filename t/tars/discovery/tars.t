@@ -38,7 +38,7 @@ discovery:
       database: db_tars
       user: root
       password: tars2022
-    full_fetch_interval: 300
+    full_fetch_interval: 1800
     incremental_fetch_interval: 5
 _EOC_
 
@@ -149,6 +149,12 @@ __DATA__
 --- request eval
 [
 "POST /sql
+truncate table t_server_conf",
+
+"POST /sql
+truncate table t_adapter_conf",
+
+"POST /sql
 insert into t_server_conf(application, server_name, node_name, registry_timestamp,
                           template_name, setting_state, present_state, server_type)
 values ('A', 'AServer', '172.16.1.1', now(), 'taf-cpp', 'active', 'active', 'tars_cpp'),
@@ -170,6 +176,8 @@ values ('A', 'AServer', '172.16.1.1', 'A.AServer.FirstObjAdapter',
 ]
 --- response_body eval
 [
+    "DONE\n",
+    "DONE\n",
     "DONE\n",
     "DONE\n",
     "{ 1 1 1 }\n",
