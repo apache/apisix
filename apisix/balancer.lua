@@ -18,6 +18,7 @@ local require           = require
 local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
+local apisix_upstream   = require("apisix.upstream")
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
@@ -176,6 +177,17 @@ local function set_balancer_opts(route, ctx)
 end
 
 
+local function parse_server_for_upstream_host(picked_server, ctx)
+    local upstream_scheme = ctx.upstream_scheme
+    local standard_port = apisix_upstream.scheme_to_port[upstream_scheme]
+    local host = picked_server.domain or picked_server.host
+    if upstream_scheme and (not standard_port or standard_port ~= picked_server.port) then
+        host = host .. ":" .. picked_server.port
+    end
+    return host
+end
+
+
 -- pick_server will be called:
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
@@ -250,6 +262,7 @@ local function pick_server(route, ctx)
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
     ctx.server_picker = server_picker
+    res.upstream_host = parse_server_for_upstream_host(res, ctx)
 
     return res
 end
@@ -331,7 +344,7 @@ function _M.run(route, ctx, plugin_funcs)
         local header_changed
         local pass_host = ctx.pass_host
         if pass_host == "node" and balancer.recreate_request then
-            local host = server.domain or server.host
+            local host = server.upstream_host
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
                 ctx.var.upstream_host = host

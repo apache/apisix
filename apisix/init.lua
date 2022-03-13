@@ -260,8 +260,8 @@ local function set_upstream_host(api_ctx, picked_server)
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
         api_ctx.var.upstream_host = node.domain or node.host
-    elseif picked_server.domain and ngx_balancer.recreate_request then
-        api_ctx.var.upstream_host = picked_server.domain
+    elseif ngx_balancer.recreate_request then
+        api_ctx.var.upstream_host = picked_server.upstream_host
     end
 end
 
