@@ -21,7 +21,7 @@ title: http-logger
 #
 -->
 
-## 定义
+## 描述
 
 `http-logger` 是一个插件，可将Log数据请求推送到 HTTP / HTTPS 服务器。
 

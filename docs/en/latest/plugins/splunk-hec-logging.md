@@ -21,7 +21,7 @@ title: splunk-hec-logging
 #
 -->
 
-## Name
+## Description
 
 The `splunk-hec-logging` plugin is used to forward the request log of `Apache APISIX` to `Splunk HTTP Event Collector (HEC)` for analysis and storage. After the plugin is enabled, `Apache APISIX` will obtain request context information in `Log Phase` serialize it into [Splunk Event Data format](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) and submit it to the batch queue. When the maximum processing capacity of each batch of the batch processing queue or the maximum time to refresh the buffer is triggered, the data in the queue will be submitted to `Splunk HEC`.
 

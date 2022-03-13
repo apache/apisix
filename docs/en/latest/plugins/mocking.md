@@ -21,7 +21,7 @@ title: mocking
 #
 -->
 
-## Name
+## Description
 
 Mock API plugin, When the plugin is bound, it returns random mock data in the specified format and is no longer forwarded to the upstreams.
 

@@ -21,7 +21,7 @@ title: ua-restriction
 #
 -->
 
-## Name
+## Description
 
 The `ua-restriction` can restrict access to a Service or a Route by `allowlist` and `denylist` `User-Agent` header.
 

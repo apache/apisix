@@ -21,7 +21,7 @@ title: referer-restriction
 #
 -->
 
-## Name
+## Description
 
 The `referer-restriction` can restrict access to a Service or a Route by
 whitelisting/blacklisting request header Referrers.

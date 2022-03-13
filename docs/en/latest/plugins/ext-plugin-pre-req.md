@@ -21,7 +21,7 @@ title: ext-plugin-pre-req
 #
 -->
 
-## Name
+## Description
 
 The `ext-plugin-pre-req` runs specific external plugins in the plugin runner, before
 executing most of the builtin Lua plugins.

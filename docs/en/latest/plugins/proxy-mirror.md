@@ -21,6 +21,8 @@ title: proxy-mirror
 #
 -->
 
+## Description
+
 The proxy-mirror plugin, which provides the ability to mirror client requests.
 
 *Note*: The response returned by the mirror request is ignored.

@@ -21,7 +21,7 @@ title: basic-auth
 #
 -->
 
-## Name
+## Description
 
 `basic-auth` is an authentication plugin that need to work with `consumer`. Add Basic Authentication to a `service` or `route`.
 

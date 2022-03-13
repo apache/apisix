@@ -21,7 +21,7 @@ title: key-auth
 #
 -->
 
-## Name
+## Description
 
 `key-auth` is an authentication plugin, it should work with `consumer` together.
 

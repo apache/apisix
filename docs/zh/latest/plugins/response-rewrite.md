@@ -21,7 +21,7 @@ title: response-rewrite
 #
 -->
 
-## 简介
+## 描述
 
 该插件支持修改上游服务或网关本身返回的 body 和 header 信息。
 

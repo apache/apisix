@@ -21,7 +21,7 @@ title: proxy-control
 #
 -->
 
-## Name
+## Description
 
 The `proxy-control` plugin dynamically controls the behavior of Nginx to proxy.
 
