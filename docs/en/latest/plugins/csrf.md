@@ -35,6 +35,8 @@ In the following we define `GET`, `HEAD` and `OPTIONS` as the `safe-methods` and
 | expires |  number | optional | `7200` | | Expiration time(s) of csrf cookie. |
 | key | string | required |  |  | The secret key used to encrypt the cookie. |
 
+**Note: When expires is set to 0 the plugin will ignore checking if the token is expired or not.**
+
 ## How To Enable
 
 1. Create the route and enable the plugin.
