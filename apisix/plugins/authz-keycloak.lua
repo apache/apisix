@@ -17,6 +17,7 @@
 local core      = require("apisix.core")
 local http      = require "resty.http"
 local sub_str   = string.sub
+local str_find = string.find
 local type      = type
 local ngx       = ngx
 local util = require("apisix.cli.util")
@@ -716,14 +717,14 @@ local function generate_token_using_password_grant(conf,ctx)
 
     if #parameters_array == 2 then
         for k, parameter in ipairs(parameters_array) do
-            if string.find(parameter, "username") then
+            if str_find(parameter, "username") then
                 --split by =
                 local username_value_array = util.split(parameter, "=")
                 if #username_value_array == 2 then
                     username = username_value_array[2]
                 end
             end
-            if string.find(parameter, "password") then
+            if str_find(parameter, "password") then
                 --split by =
                 local password_value_array = util.split(parameter, "=")
                 if #password_value_array == 2 then
