@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local plugin      = require("apisix.plugin")
 local ngx         = ngx
 local plugin_name = "cors"
 local str_find    = core.string.find
@@ -22,11 +23,25 @@ local re_gmatch   = ngx.re.gmatch
 local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
 local ipairs = ipairs
+local origins_pattern = [[^(\*|\*\*|null|\w+://[^,]+(,\w+://[^,]+)*)$]]
 
 
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        allow_origins = {
+            type = "object",
+            additionalProperties = {
+                type = "string",
+                pattern = origins_pattern
+            }
+        },
+    },
+}
 
 local schema = {
     type = "object",
@@ -37,7 +52,7 @@ local schema = {
                 "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
                 "multiple origin use ',' to split. default: *.",
             type = "string",
-            pattern = [[^(\*|\*\*|null|\w+://[^,]+(,\w+://[^,]+)*)$]],
+            pattern = origins_pattern,
             default = "*"
         },
         allow_methods = {
@@ -92,6 +107,18 @@ local schema = {
             minItems = 1,
             uniqueItems = true,
         },
+        allow_origins_by_metadata = {
+            type = "array",
+            description =
+                "set allowed origins by referencing origins in plugin metadata",
+            items = {
+                type = "string",
+                minLength = 1,
+                maxLength = 4096,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
     }
 }
 
@@ -100,15 +127,16 @@ local _M = {
     priority = 4000,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
-local function create_multiple_origin_cache(conf)
-    if not str_find(conf.allow_origins, ",") then
+local function create_multiple_origin_cache(allow_origins)
+    if not str_find(allow_origins, ",") then
         return nil
     end
     local origin_cache = {}
-    local iterator, err = re_gmatch(conf.allow_origins, "([^,]+)", "jiox")
+    local iterator, err = re_gmatch(allow_origins, "([^,]+)", "jiox")
     if not iterator then
         core.log.error("match origins failed: ", err)
         return nil
@@ -128,7 +156,10 @@ local function create_multiple_origin_cache(conf)
 end
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -177,13 +208,23 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function process_with_allow_origins(conf, ctx, req_origin)
-    local allow_origins = conf.allow_origins
+local function process_with_allow_origins(allow_origins, ctx, req_origin,
+                                          cache_key, cache_version)
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
     end
-    local multiple_origin, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                                create_multiple_origin_cache, conf)
+
+    local multiple_origin, err
+    if cache_key and cache_version then
+        multiple_origin, err = lrucache(
+                cache_key, cache_version, create_multiple_origin_cache, allow_origins
+        )
+    else
+        multiple_origin, err = core.lrucache.plugin_ctx(
+                lrucache, ctx, nil, create_multiple_origin_cache, allow_origins
+        )
+    end
+
     if err then
         return 500, {message = "get multiple origin cache failed: " .. err}
     end
@@ -225,6 +266,25 @@ local function match_origins(req_origin, allow_origins)
     return req_origin == allow_origins or allow_origins == '*'
 end
 
+local function process_with_allow_origins_by_metadata(allow_origins_by_metadata, ctx, req_origin)
+    if allow_origins_by_metadata == nil then
+        return
+    end
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if metadata and metadata.value.allow_origins then
+        local allow_origins_map = metadata.value.allow_origins
+        for _, key in ipairs(allow_origins_by_metadata) do
+            local allow_origins_conf = allow_origins_map[key]
+            local allow_origins = process_with_allow_origins(allow_origins_conf, ctx, req_origin,
+                    plugin_name .. "#" .. key, metadata.modifiedIndex)
+            if match_origins(req_origin, allow_origins) then
+                return req_origin
+            end
+        end
+    end
+end
+
 
 function _M.rewrite(conf, ctx)
     -- save the original request origin as it may be changed at other phase
@@ -239,9 +299,14 @@ function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
     -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
     local allow_origins
-    allow_origins = process_with_allow_origins(conf, ctx, req_origin)
+    allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
     if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
+    end
+    if not allow_origins then
+        allow_origins = process_with_allow_origins_by_metadata(
+                conf.allow_origins_by_metadata, ctx, req_origin
+        )
     end
     if allow_origins then
         ctx.cors_allow_origins = allow_origins
