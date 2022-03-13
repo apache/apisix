@@ -21,7 +21,7 @@ title: response-rewrite
 #
 -->
 
-## Name
+## Description
 
 response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
 

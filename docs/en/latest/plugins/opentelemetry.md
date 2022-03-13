@@ -21,7 +21,7 @@ title: opentelemetry
 #
 -->
 
-## Name
+## Description
 
 [OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification).
 

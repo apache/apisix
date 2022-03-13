@@ -21,7 +21,7 @@ title: server-info
 #
 -->
 
-## Name
+## Description
 
 `server-info` is a plugin that reports basic server information to etcd periodically.
 

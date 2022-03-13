@@ -21,7 +21,7 @@ title: tcp-logger
 #
 -->
 
-## Name
+## Description
 
 `tcp-logger` is a plugin which push Log data requests to TCP servers.
 

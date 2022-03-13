@@ -21,7 +21,7 @@ title: udp-logger
 #
 -->
 
-## Name
+## Description
 
 `udp-logger` is a plugin which push Log data requests to UDP servers.
 

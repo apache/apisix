@@ -21,7 +21,7 @@ title: gzip
 #
 -->
 
-## Name
+## Description
 
 The `gzip` plugin dynamically set the gzip behavior of Nginx.
 
