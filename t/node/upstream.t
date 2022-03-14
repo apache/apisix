@@ -510,3 +510,54 @@ GET /uri
 qr/host: localhost/
 --- error_log
 proxy request to 127.0.0.1:1980
+
+
+
+=== TEST 21: check that including port in host header is supported when pass_host = node and port is not standard
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/server_upstream_host"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1979": 1,
+                                "127.0.0.1:1980": 1000
+                            },
+                            "type": "roundrobin",
+                            "pass_host": "node"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: hit route
+--- request
+GET /hello
+--- response_body
+127.0.0.1:1980
+--- no_error_log
+[error]
