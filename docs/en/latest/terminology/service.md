@@ -21,6 +21,8 @@ title: Service
 #
 -->
 
+## Description
+
 A Service is an abstraction of an API (which can also be understood as a set of [Route](./route.md) abstractions). It usually corresponds to an upstream service abstraction.
 
 The relationship between Routes and a Service is usually N:1 as shown in the image below.
@@ -29,7 +31,9 @@ The relationship between Routes and a Service is usually N:1 as shown in the ima
 
 As shown, different Routes could be bound to the same Service. This reduces redundancy as these bounded Routes will have the same [Upstream](./upstream.md) and [Plugin](./plugin.md) configurations.
 
-The following example creates a Service that enables the current-limit Plugin, and then binds it to the Routes with the ids `100` and `101`.
+## Examples
+
+The following example creates a Service that enables the current-limit Plugin and then binds it to the Routes with the ids `100` and `101`.
 
 ```shell
 # create new Service
@@ -86,4 +90,5 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-**Note**: When a Route and a Service enable the same Plugin, the one defined in the Route is given the higher priority.
+:::note
+When a Route and a Service enable the same Plugin, the one defined in the Route is given the higher priority.

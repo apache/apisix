@@ -21,9 +21,11 @@ title: Global Rule
 #
 -->
 
-A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests?
+## Description
 
-This is where we register a global Plugin with Global Rule.
+A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests? This is where we register a global Plugin with Global Rule.
+
+## Example
 
 The example below shows how you can use the `limit-count` Plugin on all requests:
 
