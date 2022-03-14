@@ -108,6 +108,18 @@ function _M.access(conf, ctx)
 end
 
 
+function _M.body_filter(conf, ctx)
+    core.log.warn("plugin body_filter phase, eof: ", ngx.arg[2],
+                  ", conf: ", core.json.encode(conf))
+end
+
+
+function _M.delayed_body_filter(conf, ctx)
+    core.log.warn("plugin delayed_body_filter phase, eof: ", ngx.arg[2],
+                  ", conf: ", core.json.encode(conf))
+end
+
+
 local function hello()
     local args = ngx.req.get_uri_args()
     if args["json"] then
