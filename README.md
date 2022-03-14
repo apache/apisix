@@ -189,7 +189,7 @@ For more documents, please refer to [Apache APISIX Documentation site](https://a
 
 Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of only 0.2 ms.
 
-[Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
+[Benchmark script](benchmark/run.sh) has been open source, welcome to try and contribute.
 
 ## Contributor Over Time
 
