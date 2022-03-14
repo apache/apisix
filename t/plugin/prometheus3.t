@@ -94,6 +94,7 @@ __DATA__
     }
 --- response_body eval
 "201passed\n" x 3
+--- SKIP
 
 
 
@@ -102,6 +103,7 @@ __DATA__
 ["GET /hello", "GET /apisix/prometheus/metrics"]
 --- error_code eval
 [200, 200]
+--- SKIP
 
 
 
@@ -167,6 +169,7 @@ __DATA__
     }
 --- response_body
 passed
+--- SKIP
 
 
 
@@ -203,6 +206,7 @@ plugins:
     }
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="127.0.0.1"\} \d+/
+--- SKIP
 
 
 
@@ -264,4 +268,4 @@ opentracing
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1\"} \d+/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1\"} 1/
