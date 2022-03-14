@@ -94,7 +94,6 @@ __DATA__
     }
 --- response_body eval
 "201passed\n" x 3
---- SKIP
 
 
 
@@ -103,7 +102,6 @@ __DATA__
 ["GET /hello", "GET /apisix/prometheus/metrics"]
 --- error_code eval
 [200, 200]
---- SKIP
 
 
 
@@ -169,7 +167,6 @@ __DATA__
     }
 --- response_body
 passed
---- SKIP
 
 
 
@@ -206,7 +203,6 @@ plugins:
     }
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="127.0.0.1"\} \d+/
---- SKIP
 
 
 
