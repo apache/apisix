@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 use t::APISIX 'no_plan';
-
+ 
 repeat_each(2);
 no_long_string();
 no_root_location();
@@ -398,8 +398,9 @@ passed
                     }
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -673,8 +674,9 @@ GET /hello
                     }
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

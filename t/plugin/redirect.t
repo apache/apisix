@@ -584,8 +584,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data)
             )
-
-        ngx.status = code
+        
+        if code >= 300 then
+            ngx.status = code
+        end
         ngx.say(body)
     }
 }
