@@ -24,16 +24,16 @@ title: recaptcha
 
 ## 简介
 
-通过向 Google reCAPTCHA 服务校验客户端传递的验证码来限制对上游服务的访问。插件支持自定义无效校验码的响应体。
+通过向 Google reCAPTCHA 服务校验客户端传递的验证码来限制对上游服务的访问。插件支持自定义无效校验码的响应体。注意，此插件只支持 Google reCAPTCHA v2 版本。
 
 ## 属性
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| secret_key | string        | 必须    |            |  | Google reCAPTCHA 的 secret key |
+| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                         |
+| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ |-------------------------------------|
+| secret_key | string        | 必须    |            |  | Google reCAPTCHA v2 的 secret key    |
 | parameter_source | string | 可选 | header | | 验证码参数的来源枚举值。当前仅支持 `header`, `query` |
-| parameter_name | string | 可选 | captcha | | 验证码参数的名称 |
-| response | object | 可选    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | 无效验证码的 HTTP 响应体 |
+| parameter_name | string | 可选 | captcha | | 验证码参数的名称                            |
+| response | object | 可选    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | 无效验证码的 HTTP 响应体                     |
 
 插件的配置如下:
 

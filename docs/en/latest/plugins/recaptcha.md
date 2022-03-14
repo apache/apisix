@@ -24,13 +24,13 @@ title: recaptcha
 
 ## Name
 
-Restrict access to an upstream service by verifying request captcha token to the Google reCAPTCHA service. The Plugin supports customizing the invalid captcha response.
+Restrict access to an upstream service by verifying request captcha token to the Google reCAPTCHA service. The Plugin supports customizing the invalid captcha response. Note that the plugin only supports reCAPTCHA v2(verify requests with a challenge).
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA service. |
+| secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA v2 service. |
 | parameter_source | string | optional | header | | The enum of captcha parameter source. Only `header`, `query` are supported. |
 | parameter_name | string | optional | captcha | | The name of captcha parameter. |
 | response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response of invalid recaptcha token. |
