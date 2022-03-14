@@ -84,7 +84,7 @@ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-注意：如果你想针对特定平台打包 Apache APISIX，请更新 https://github.com/api7/apisix-build-tools。
+注意：如果你想针对特定平台打包 Apache APISIX，请参考 https://github.com/api7/apisix-build-tools 。
 以下步骤仅用于设置 Apache APISIX 的开发环境。
 
 1. 安装依赖
