@@ -226,7 +226,9 @@ route_id: 1
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -599,8 +601,9 @@ consumer_name: consumer_name is nil
                     }
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
