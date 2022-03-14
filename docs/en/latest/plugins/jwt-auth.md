@@ -33,6 +33,8 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
+For consumer side:
+
 | Name          | Type    | Requirement | Default | Valid                       | Description                                                                                                                                      |
 |:--------------|:--------|:------------|:--------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
 | key           | string  | required    |         |                             | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
@@ -45,6 +47,14 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
 
 **Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) under the vault attributes.
+
+For route side:
+
+| Name | Type   | Requirement | Default | Valid | Description                                                                  |
+| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| header  | string | optional    | authorization        |       | the header we get the token from |
+| query   | string | optional    | jwt        |       | the query string we get the token from, which priority is lower than header |
+| cookie | string | optional    | jwt |       | the cookie we get the token from, which priority is lower than querystring |
 
 ## API
 
