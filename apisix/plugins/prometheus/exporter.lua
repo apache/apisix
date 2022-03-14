@@ -171,8 +171,6 @@ function _M.log(conf, ctx)
 
     metrics.bandwidth:inc(vars.bytes_sent,
         gen_arr("egress", route_id, service_id, consumer_name, balancer_ip))
-
-    core.log.info("prometheus run report")
 end
 
 

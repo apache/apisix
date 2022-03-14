@@ -256,7 +256,12 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- grep_error_log eval
-qr/prometheus run \w+/
---- grep_error_log_out
-prometheus run report
+--- error_code: 200
+
+
+
+=== TEST 7: fetch prometheus plugin at both global rule and route data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1\"} \d+/
