@@ -191,48 +191,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 [Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
-## Apache APISIX vs. Kong
-
-#### Both of them have been covered core features of API gateway
-
-| **Features**         | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **Dynamic upstream** | Yes               | Yes      |
-| **Dynamic router**   | Yes               | Yes      |
-| **Health check**     | Yes               | Yes      |
-| **Dynamic SSL**      | Yes               | Yes      |
-| **L4 and L7 proxy**  | Yes               | Yes      |
-| **Opentracing**      | Yes               | Yes      |
-| **Custom plugin**    | Yes               | Yes      |
-| **REST API**         | Yes               | Yes      |
-| **CLI**              | Yes               | Yes      |
-
-#### The advantages of Apache APISIX
-
-| **Features**                                                    | **Apache APISIX**                                 | **Kong**                |
-| :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
-| Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
-| Tech Architecture                                               | Nginx + etcd                                      | Nginx + Postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, [GitHub](https://github.com/apache/apisix/issues), [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg), meetup | GitHub, Freenode, forum |
-| Single-core CPU, QPS(enable limit-count and Prometheus plugins) | 18000                                             | 1700                    |
-| Latency                                                         | 0.2 ms                                            | 2 ms                    |
-| Dubbo                                                           | Yes                                               | No                      |
-| Configuration rollback                                          | Yes                                               | No                      |
-| Route with TTL                                                  | Yes                                               | No                      |
-| Plug-in hot loading                                             | Yes                                               | No                      |
-| Custom LB and route                                             | Yes                                               | No                      |
-| REST API <--> gRPC transcoding                                  | Yes                                               | No                      |
-| MQTT                                                            | Yes                                               | No                      |
-| Configuration effective time                                    | Event-driven, < 1ms                               | polling, 5 seconds      |
-| Dashboard                                                       | Yes                                               | No                      |
-| IdP                                                             | Yes                                               | No                      |
-| Configuration Center HA                                         | Yes                                               | No                      |
-| Speed limit for a specified time window                         | Yes                                               | No                      |
-| Support any Nginx variable as routing condition                 | Yes                                               | No                      |
-
-Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
-
-### Contributor Over Time
+## Contributor Over Time
 
 > [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
 
