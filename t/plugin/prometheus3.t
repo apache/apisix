@@ -256,7 +256,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- error_code: 200
 
 
 
