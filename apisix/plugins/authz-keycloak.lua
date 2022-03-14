@@ -17,15 +17,12 @@
 local core      = require("apisix.core")
 local http      = require "resty.http"
 local sub_str   = string.sub
-local str_find = string.find
 local type      = type
 local ngx       = ngx
-local util = require("apisix.cli.util")
 local plugin_name = "authz-keycloak"
 
 local log = core.log
 local pairs = pairs
-local ipairs = ipairs
 
 local schema = {
     type = "object",
@@ -705,42 +702,25 @@ end
 
 -- To get new access token by calling get token api
 local function generate_token_using_password_grant(conf,ctx)
-    log.warn("generate_token_using_password_grant Function Called")
-    --Read Body
-    ngx.req.read_body()
-    --Get Body Data
-    local request_body=ngx.req.get_body_data()
-    local username = nil
-    local password = nil
-    --split by &
-    local parameters_array = util.split(request_body, "&")
+    log.debug("generate_token_using_password_grant Function Called")
 
-    if #parameters_array == 2 then
-        for k, parameter in ipairs(parameters_array) do
-            if str_find(parameter, "username") then
-                --split by =
-                local username_value_array = util.split(parameter, "=")
-                if #username_value_array == 2 then
-                    username = username_value_array[2]
-                end
-            end
-            if str_find(parameter, "password") then
-                --split by =
-                local password_value_array = util.split(parameter, "=")
-                if #password_value_array == 2 then
-                    password = password_value_array[2]
-                end
-            end
-        end
+    local body, err = core.request.get_body()
+    if err or not body then
+        log.error("Failed to get request body: ", err)
+        return 503
     end
+    local parameters = ngx.decode_args(body)
+
+    local username = parameters["username"]
+    local password = parameters["password"]
 
     if not username then
-        local err = "username is missing"
+        local err = "username is missing."
         log.error(err)
         return 422, err
     end
     if not password then
-        local err = "password is missing"
+        local err = "password is missing."
         log.error(err)
         return 422, err
     end
@@ -791,18 +771,16 @@ local function generate_token_using_password_grant(conf,ctx)
         return 401, {message = err}
     end
 
-    return  res.status, res.body
+    return res.status, res.body
 end
 
 function _M.access(conf, ctx)
 
-    if conf.password_grant_token_generation_incoming_uri then
-        if ngx.var.request_uri:upper()
-                == conf.password_grant_token_generation_incoming_uri:upper() then
-          if ctx.curr_req_matched["_method"]:upper() == "POST" then
-           return generate_token_using_password_grant(conf,ctx)
-          end
-        end
+    if conf.password_grant_token_generation_incoming_uri and
+        ngx.var.request_uri:upper() ==
+        conf.password_grant_token_generation_incoming_uri:upper() and
+        ctx.curr_req_matched["_method"]:upper() == "POST" then
+            return generate_token_using_password_grant(conf,ctx)
     end
     log.debug("hit keycloak-auth access")
     local jwt_token, err = fetch_jwt_token(ctx)
