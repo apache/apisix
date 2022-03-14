@@ -1,19 +1,24 @@
-name: "Feature request"
-description: Ask for a new feature or an improvement of an existing one
-title: "feat: As a User, I want to ... so that ..."
+name: "Feature Request"
+description: Suggest an enhancement to APISIX.
+title: "feat: As a user, I want to ..., so that ..."
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        The more information you fill in, the better we can help you.
+        _The more information you share, the faster we can help you._
 
-        - Please use English on public channel.
-        - Encourage using words rather than pictures to describe your demand.
-        - Encourage pre-searching with keywords in the issue.
+        Prior to opening the issue, please make sure that you:
+
+        - Use English to communicate.
+        - Search the [open issues](https://github.com/apache/apisix/issues) and [discussion forum](https://github.com/apache/apisix/discussions) to avoid duplicating the issue.
+
   - type: textarea
     id: description
     attributes:
-      label: Issue description
-      description: Provide a clear and concise description of what you want.
+      label: Description
+      description: Describe the feature you would like to see.
+      placeholder: |
+        As a user, I want to ..., so that...
     validations:
       required: true
