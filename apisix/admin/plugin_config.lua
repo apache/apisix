@@ -170,7 +170,7 @@ function _M.patch(id, conf, sub_path)
         end
         utils.inject_timestamp(node_value, nil, true)
     else
-        node_value = core.table.merge(node_value, conf);
+        node_value = core.table.merge(node_value, conf)
         utils.inject_timestamp(node_value, nil, conf)
     end
 
