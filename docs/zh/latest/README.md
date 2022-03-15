@@ -187,50 +187,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
+[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh) 已经开源，欢迎补充。
 
-## Apache APISIX 和 Kong 的比较
-
-#### API 网关核心功能点，两者均已覆盖
-
-| **功能**             | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **动态上游**         | 支持              | 支持     |
-| **动态路由**         | 支持              | 支持     |
-| **健康检查和熔断器** | 支持              | 支持     |
-| **动态 SSL 证书**    | 支持              | 支持     |
-| **七层和四层代理**   | 支持              | 支持     |
-| **分布式追踪**       | 支持              | 支持     |
-| **自定义插件**       | 支持              | 支持     |
-| **REST API**         | 支持              | 支持     |
-| **CLI**              | 支持              | 支持     |
-
-#### Apache APISIX 的优势
-
-| **功能**                               | **Apache APISIX**                       | **KONG**               |
-| :------------------------------------ | :-------------------------------------- | :--------------------- |
-| 项目归属                               | Apache 软件基金会                         | Kong Inc.              |
-| 技术架构                               | Nginx + etcd                            | Nginx + postgres       |
-| 交流渠道                               | 微信群、QQ 群、邮件列表、[GitHub](https://github.com/apache/apisix/issues)、[Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg)、meetup | GitHub、论坛、freenode |
-| 单核 QPS (开启限流和 prometheus 插件)    | 18000                                   | 1700                   |
-| 平均延迟                               | 0.2 毫秒                                 | 2 毫秒                 |
-| 支持 Dubbo 代理                        | 是                                      | 否                     |
-| 配置回滚                               | 是                                      | 否                     |
-| 支持生命周期的路由                       | 是                                      | 否                     |
-| 插件热更新                             | 是                                      | 否                     |
-| 用户自定义：负载均衡算法、路由             | 是                                      | 否                     |
-| resty <--> gRPC 转码                  | 是                                      | 否                     |
-| MQTT 协议支持                          | 是                                      | 否                     |
-| 配置生效时间                            | 事件通知，低于 1 毫秒更新                  | 定期轮询，5 秒           |
-| 自带控制台                             | 是                                      | 否                     |
-| 对接外部身份认证服务                     | 是                                      | 否                     |
-| 配置中心高可用(HA)                      | 是                                      | 否                     |
-| 指定时间窗口的限速                      | 是                                      | 否                     |
-| 支持任何 Nginx 变量做路由条件            | 是                                      | 否                     |
-
-性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
-
-### 贡献者变化
+## 贡献者变化
 
 > [访问此处](https://www.apiseven.com/contributor-graph) 使用贡献者数据服务。
 
