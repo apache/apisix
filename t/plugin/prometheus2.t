@@ -151,7 +151,9 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

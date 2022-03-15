@@ -96,7 +96,9 @@ done
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -1114,6 +1116,20 @@ base64_secret required but the secret is not in base64 format
                             "secret": "my-secret-key"
                         }
                     }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "kerouac",
+                            "plugins": {
+                                "jwt-auth": {
+                                    "key": "exp-not-set",
+                                    "secret": "my-secret-key"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
                 }]]
                 )
 
