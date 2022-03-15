@@ -733,6 +733,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
+        and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
             if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer

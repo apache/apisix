@@ -303,12 +303,25 @@ In APISIX, only the authentication logic can be run in the rewrite phase. Other 
 The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 
 ```lua
-function _M.log(conf)
+function _M.log(conf, ctx)
 -- Implement logic here
 end
 ```
 
 **Note : we can't invoke `ngx.exit` or `core.respond.exit` in rewrite phase and access phase. if need to exit, just return the status and body, the plugin engine will make the exit happen with the returned status and body. [example](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
+
+### extra phase
+
+Besides OpenResty's phases, we also provide extra phases to satisfy specific purpose:
+
+* `delayed_body_filter`
+
+```lua
+function _M.delayed_body_filter(conf, ctx)
+    -- delayed_body_filter is called after body_filter
+    -- it is used by the tracing plugins to end the span right after body_filter
+end
+```
 
 ## implement the logic
 
