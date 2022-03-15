@@ -325,6 +325,8 @@ plugins:                          # plugin list (sorted by priority)
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
   - zipkin                         # priority: 12011
+  #- skywalking                    # priority: 12010
+  #- opentelemetry                 # priority: 12009
   - ext-plugin-pre-req             # priority: 12000
   - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
@@ -387,8 +389,6 @@ plugins:                          # plugin list (sorted by priority)
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
-  #- skywalking                    # priority: -1100
-  #- opentelemetry                 # priority: -1200
   - aws-lambda                     # priority: -1899
   - azure-functions                # priority: -1900
   - openwhisk                      # priority: -1901
