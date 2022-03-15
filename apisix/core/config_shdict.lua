@@ -22,6 +22,7 @@
 local base              = require("resty.core.base")
 local config_local      = require("apisix.core.config_local")
 local table             = table
+local error             = error
 local is_http           = ngx.config.subsystem == "http"
 local string            = string
 local io                = io
