@@ -84,14 +84,23 @@ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.12.0` 的目录。
+注意：如果你想针对特定平台打包 Apache APISIX，请更新 https://github.com/api7/apisix-build-tools。
+以下步骤仅用于设置 Apache APISIX 的开发环境。
+
+1. 安装依赖
+
+  ```shell
+  curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
+  ```
+
+2. 创建一个名为 `apisix-2.12.0` 的目录。
 
   ```shell
   APISIX_VERSION='2.12.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
-2. 下载 Apache APISIX Release 源码包：
+3. 下载 Apache APISIX Release 源码包：
 
   ```shell
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
@@ -99,13 +108,13 @@ sudo yum install ./apisix/*.rpm
 
   您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网 - 下载页](https://apisix.apache.org/zh/downloads)。
 
-3. 解压 Apache APISIX Release 源码包：
+4. 解压 Apache APISIX Release 源码包：
 
   ```shell
   tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
-4. 安装运行时依赖的 Lua 库：
+5. 安装运行时依赖的 Lua 库：
 
   ```shell
   # 切换到 apisix-${APISIX_VERSION} 目录
@@ -147,15 +156,15 @@ sudo yum install ./apisix/*.rpm
 
   请注意，该操作将完整**删除**相关文件。
 
-### 通过源码包安装 LTS 版本
+#### 通过源码包安装 LTS 版本
 
-目前 Apache APISIX 的 LTS 版本为 `2.10.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.3` ，其他步骤按顺序进行即可。
+目前 Apache APISIX 的 LTS 版本为 `2.10.4`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.4` ，其他步骤按顺序进行即可。
 
 ## 步骤 2：安装 ETCD
 
-如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
+如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 etcd，则需要这一步。
 
-你可以通过 Docker 或者二进制等方式安装 ETCD。以下命令通过二进制方式安装 ETCD。
+你可以通过 Docker 或者二进制等方式安装 etcd。以下命令通过二进制方式在 Linux 上安装 etcd。
 
 ```shell
 ETCD_VERSION='3.4.13'
@@ -164,6 +173,14 @@ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
   sudo cp -a etcd etcdctl /usr/bin/
 nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+以下命令在 Mac 上安装 etcd:
+
+```shell
+brew install etcd
+# start etcd server
+brew services start etcd
 ```
 
 ## 步骤 3：管理 Apache APISIX 服务

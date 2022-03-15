@@ -21,7 +21,7 @@ title: limit-count
 #
 -->
 
-## 简介
+## 描述
 
 和 [GitHub API 的限速](https://docs.github.com/en/rest/reference/rate-limit) 类似，
 在指定的时间范围内，限制总的请求个数。并且在 HTTP 响应头中返回剩余可以请求的个数。

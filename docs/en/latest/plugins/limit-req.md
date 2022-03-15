@@ -21,7 +21,7 @@ title: limit-req
 #
 -->
 
-## Introduction
+## Description
 
 limit request rate using the "leaky bucket" method.
 

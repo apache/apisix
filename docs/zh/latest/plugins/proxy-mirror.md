@@ -21,6 +21,8 @@ title: proxy-mirror
 #
 -->
 
+## 描述
+
 代理镜像插件，该插件提供了镜像客户端请求的能力。
 
 注：镜像请求返回的响应会被忽略。
@@ -93,3 +95,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 这时该插件已被禁用。
+
+## 指定mirror子请求的超时时间
+
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 中指定子请求的超时时间。这在连接复用的场景下 mirror 流量到一个非常慢的后端服务时非常有用。
+
+| 名称 | 类型 | 默认值 | 描述 |
+| --- | --- | --- | --- |
+| connect | string | 60s | 镜像请求到上游的连接超时时间 |
+| read | string | 60s | 镜像请求到上游的读超时时间 |
+| send | string | 60s | 镜像请求到上游的写超时时间 |
+
+```yaml
+plugin_attr:
+  proxy-mirror:
+    timeout:
+      connect: 2000ms
+      read: 2000ms
+      send: 2000ms
+```

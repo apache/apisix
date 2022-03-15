@@ -21,7 +21,7 @@ title: rocketmq-logger
 #
 -->
 
-## 简介
+## 描述
 
 `rocketmq-logger` 插件可以将接口请求日志以 JSON 的形式推送给外部 rocketmq 集群。
 

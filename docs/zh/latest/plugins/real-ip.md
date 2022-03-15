@@ -21,7 +21,7 @@ title: real-ip
 #
 -->
 
-## 简介
+## 描述
 
 `real-ip` 插件用于动态改变传递到 `APISIX` 的客户端的 `IP` 和端口。
 

@@ -1,8 +1,5 @@
----
-title: ext-plugin-post-req
----
+#!/usr/bin/env bash
 
-<!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -19,13 +16,28 @@ title: ext-plugin-post-req
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--->
 
-## Description
+. ./t/cli/common.sh
 
-`ext-plugin-post-req` is almost the same as `ext-plugin-pre-req`.
+echo '
+plugin_attr:
+  proxy-mirror:
+    timeout:
+        connect: 2000ms
+        read: 2s
+        send: 2000ms
+' > conf/config.yaml
 
-The only difference is that it runs after executing builtin Lua plugins and
-before proxying to the upstream.
+make init
 
-See the documentation of [ext-plugin-pre-req](./ext-plugin-pre-req.md) for how to configure it.
+if ! grep "proxy_connect_timeout 2000ms;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_connect_timeout not found in nginx.conf"
+    exit 1
+fi
+
+if ! grep "proxy_read_timeout 2s;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_read_timeout not found in nginx.conf"
+    exit 1
+fi
+
+echo "passed: proxy timeout configuration is validated"

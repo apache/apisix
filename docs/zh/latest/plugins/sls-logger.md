@@ -21,7 +21,7 @@ title: sls-logger
 #
 -->
 
-## 定义
+## 描述
 
 `sls-logger` 是使用 [RF5424](https://tools.ietf.org/html/rfc5424) 标准将日志数据以 JSON 格式发送到 [阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
 

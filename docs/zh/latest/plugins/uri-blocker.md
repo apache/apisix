@@ -21,7 +21,7 @@ title: uri-blocker
 #
 -->
 
-## 定义
+## 描述
 
 该插件可帮助我们拦截用户请求，只需要指定 `block_rules` 即可。
 
