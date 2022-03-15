@@ -74,7 +74,7 @@ apisix:
     location /t {
         content_by_lua_block {
             -- wait for Amesh library sync data
-            ngx.sleep(3.5)
+            ngx.sleep(1.5)
             local core = require("apisix.core")
             local value = ngx.shared["router-config"]:get("/apisix/routes/1")
             local route_conf, err = core.json.decode(value)
