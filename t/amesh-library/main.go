@@ -31,7 +31,9 @@ extern void ngx_http_lua_ffi_shdict_store(void *zone, int op,
 import "C"
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
 	"time"
 	"unsafe"
 )
@@ -39,10 +41,16 @@ import (
 func main() {
 }
 
+
 //export initial
 func initial(zone unsafe.Pointer) {
-	time.Sleep(time.Second)
-	value := fmt.Sprintf(`{
+	ctx := context.Background()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second * time.Duration(rand.Intn(3))):
+			value := fmt.Sprintf(`{
 "status": 1,
 "update_time": 1647250524,
 "create_time": 1646972532,
@@ -65,7 +73,9 @@ func initial(zone unsafe.Pointer) {
 }
 }`)
 
-	writeShdict(zone, "/apisix/routes/1", value)
+			writeShdict(zone, "/apisix/routes/1", value)
+		}
+	}
 }
 
 func writeShdict(zone unsafe.Pointer, key, value string) {

@@ -78,7 +78,7 @@ local function load_shared_lib(lib_name)
 end
 
 
-local function load_ameshagent(lib_name)
+local function load_libamesh(lib_name)
     ngx_timer_at(0, function(premature)
         if premature then
             return
@@ -105,7 +105,7 @@ function _M.init_worker()
     local lib_name = "libamesh.so"
 
     if process.type() == "privileged agent" then
-        load_ameshagent(lib_name)
+        load_libamesh(lib_name)
     end
 
     return true
