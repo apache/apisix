@@ -39,6 +39,7 @@ local _M = {
     name = plugin_name,
     log  = exporter.log,
     schema = schema,
+    run_policy = "prefer_route",
 }
 
 
