@@ -49,6 +49,19 @@ __DATA__
                             "key": "auth-jack"
                         }
                     }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "key-auth": {
+                                    "key": "auth-jack"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
                 }]]
                 )
 
@@ -67,6 +80,19 @@ __DATA__
                             "key": "auth-tom"
                         }
                     }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "tom",
+                            "plugins": {
+                                "key-auth": {
+                                    "key": "auth-tom"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
                 }]]
                 )
             ngx.say(code .. " " ..body)
