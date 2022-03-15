@@ -125,10 +125,10 @@ in the `permissions` attribute, even if they contain one or more scopes already.
 
 ### Password Grant Token Generation Incoming URI
 
-If you want to generate a token using `password` grant, you can set value of `password_grant_token_generation_incoming_uri`.
+If you want to generate a token using `password` grant, you can set the value of `password_grant_token_generation_incoming_uri`.
 
-Incoming request URI will be matched with this value and if matched, it will generate token using `Token Endpoint`.
-It will also check, if REST method is `POST`.
+Incoming request URI will be matched with this value and if matched, it will generate a token using `Token Endpoint`.
+It will also check if the request method is `POST`.
 
 You need to pass `application/x-www-form-urlencoded` as `Content-Type` header and `username`, `password` as parameters.
 

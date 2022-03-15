@@ -775,11 +775,10 @@ local function generate_token_using_password_grant(conf,ctx)
 end
 
 function _M.access(conf, ctx)
-
     if conf.password_grant_token_generation_incoming_uri and
         ngx.var.request_uri:upper() ==
         conf.password_grant_token_generation_incoming_uri:upper() and
-        ctx.curr_req_matched["_method"]:upper() == "POST" then
+        core.request.get_method() == "POST" then
             return generate_token_using_password_grant(conf,ctx)
     end
     log.debug("hit keycloak-auth access")
