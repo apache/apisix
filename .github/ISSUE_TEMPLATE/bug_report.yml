@@ -1,7 +1,6 @@
 name: "Bug Report"
 description: Report a bug to help improve the project.
 title: "bug: "
-labels: ["bug"]
 body:
   - type: markdown
     attributes:
