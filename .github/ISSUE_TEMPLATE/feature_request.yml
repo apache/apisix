@@ -1,7 +1,6 @@
 name: "Feature Request"
 description: Suggest an enhancement to APISIX.
 title: "feat: As a user, I want to ..., so that ..."
-labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
