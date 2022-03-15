@@ -51,7 +51,7 @@ local endpoint_dict
 local default_weight
 
 local last_fetch_full_time = 0
-local last_fetch_error
+local last_db_error
 
 local endpoint_lrucache = core.lrucache.new({
     ttl = 300,
@@ -61,6 +61,12 @@ local endpoint_lrucache = core.lrucache.new({
 local activated_buffer = core.table.new(10, 0)
 local nodes_buffer = core.table.new(0, 5)
 
+
+--[[
+endpoints format as follows:
+  tcp -h 172.16.1.1 -p 11 -t 6000 -e 0,tcp -e 0 -p 12 -h 172.16.1.1,tcp -p 13 -h 172.16.1.1
+we need extract host and port value via regex
+--]]
 local endpoints_pattern = core.table.concat(
         { [[tcp(\s*-[te]\s*(\S+)){0,2}\s*-([hpHP])\s*(\S+)(\s*-[teTE]\s*(\S+))]],
           [[{0,2}\s*-([hpHP])\s*(\S+)(\s*-[teTE]\s*(\S+)){0,2}\s*(,|$)]] }
@@ -74,12 +80,12 @@ local function update_endpoint(servant, nodes)
     local _, err
     _, err = endpoint_dict:safe_set(servant .. "#version", endpoint_version)
     if err then
-        core.log.error("set endpoint version into discovery DICT failed, ", err)
+        core.log.error("set endpoint version into nginx shared dict failed, ", err)
         return
     end
     _, err = endpoint_dict:safe_set(servant, endpoint_content)
     if err then
-        core.log.error("set endpoint into discovery DICT failed, ", err)
+        core.log.error("set endpoint into nginx shared dict failed, ", err)
         endpoint_dict:delete(servant .. "#version")
     end
 end
@@ -92,16 +98,16 @@ local function delete_endpoint(servant)
 end
 
 
-local function create_endpoint_lrucache(servant)
-    local endpoint_content = endpoint_dict:get_stale(servant)
+local function add_endpoint_to_lrucache(servant)
+    local endpoint_content, err = endpoint_dict:get_stale(servant)
     if not endpoint_content then
-        core.log.error("get empty endpoint content from discovery DICT, servant: ", servant)
+        core.log.error("get empty endpoint content, servant: ", servant, ", err: ", err)
         return nil
     end
 
-    local endpoint = core.json.decode(endpoint_content)
+    local endpoint, err = core.json.decode(endpoint_content)
     if not endpoint then
-        core.log.error("decode endpoint content failed, content: ", endpoint_content)
+        core.log.error("decode json failed, content: ", endpoint_content, ", err: ", err)
         return nil
     end
 
@@ -110,12 +116,14 @@ end
 
 
 local function get_endpoint(servant)
-    local endpoint_version = endpoint_dict:get_stale(servant .. "#version")
-    if not endpoint_version then
+    local endpoint_version, err = endpoint_dict:get_stale(servant .. "#version")
+    if not endpoint_version  then
+        if err then
+            core.log.error("get empty endpoint version, servant: ", servant, ", err: ", err)
+        end
         return nil
     end
-
-    return endpoint_lrucache(servant, endpoint_version, create_endpoint_lrucache, servant)
+    return endpoint_lrucache(servant, endpoint_version, add_endpoint_to_lrucache, servant)
 end
 
 
@@ -170,7 +178,25 @@ local function extract_endpoint(query_result)
     end
 end
 
+--[[
+result of full_query_sql is as follows:
+{
+    {
+        servant = "A.AServer.FirstObj",
+        endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
+    },
+    {
+        servant = "A.AServer.SecondObj",
+        endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
+    },
+}
 
+between two fetch_full(), some servant may be deleted, and cannot be reflected in the result
+so :
+  before read result, we should to execute endpoint_dict:flush_all()
+  after read result, we should to execute endpoint_dict:flush_expired()
+
+--]]
 local function fetch_full(db_cli)
     local res, err, errcode, sqlstate = db_cli:query(full_query_sql)
     if not res then
@@ -186,8 +212,8 @@ local function fetch_full(db_cli)
         if not res then
             if err then
                 core.log.error("read result failed, error: ", err, ", ", errcode, " ", sqlstate)
-                return err
             end
+            return err
         end
         extract_endpoint(res)
     end
@@ -195,6 +221,31 @@ local function fetch_full(db_cli)
 end
 
 
+--[[
+result of incremental_query_sql is as follows:
+{
+    {
+        activated=1,
+        servant = "A.AServer.FirstObj",
+        endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
+    },
+    {
+        activated=0,
+        servant = "A.AServer.FirstObj",
+        endpoints = "tcp -t 3000 -p 10001 -h 172.16.1.3"
+    },
+    {
+        activated=0,
+        servant = "B.BServer.FirstObj",
+        endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
+    },
+}
+
+for each item:
+    if activated==1 , set into endpoints_dict
+    if activated==0 , there is a item had same servant and activate==1, ignore
+    if activated==0 , there is no item had same servant, delete
+--]]
 local function fetch_incremental(db_cli)
     local res, err, errcode, sqlstate = db_cli:query(incremental_query_sql)
     if not res then
@@ -210,7 +261,6 @@ local function fetch_incremental(db_cli)
         if not res then
             if err then
                 core.log.error("read result failed, error: ", err, ", ", errcode, " ", sqlstate)
-                return err
             end
             return err
         end
@@ -239,14 +289,14 @@ local function fetch_endpoint(premature, conf)
 
     local now = ngx.time()
 
-    if last_fetch_error or last_fetch_full_time + conf.full_fetch_interval <= now then
+    if last_db_error or last_fetch_full_time + conf.full_fetch_interval <= now then
         last_fetch_full_time = now
-        last_fetch_error = fetch_full(db_cli)
+        last_db_error = fetch_full(db_cli)
     else
-        last_fetch_error = fetch_incremental(db_cli)
+        last_db_error = fetch_incremental(db_cli)
     end
 
-    if not last_fetch_error then
+    if not last_db_error then
         db_cli:set_keepalive(120 * 1000, 1)
     end
 end
@@ -258,10 +308,9 @@ end
 
 
 function _M.init_worker()
-    -- TODO: maybe we can read dict name from discovery config
-    endpoint_dict = ngx.shared.discovery
+    endpoint_dict = ngx.shared.tars
     if not endpoint_dict then
-        error("failed to get nginx shared dict: discovery, please check your APISIX version")
+        error("failed to get nginx shared dict: tars, please check your APISIX version")
     end
 
     if process.type() ~= "privileged agent" then
@@ -269,7 +318,7 @@ function _M.init_worker()
     end
 
     local conf = local_conf.discovery.tars
-    default_weight = local_conf.discovery.tars.default_weight or 100
+    default_weight = conf.default_weight
 
     core.log.info("conf ", core.json.encode(conf, true))
     local backtrack_time = conf.incremental_fetch_interval + 5

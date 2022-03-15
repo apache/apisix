@@ -17,7 +17,7 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('debug');
+log_level('warn');
 no_root_location();
 no_shuffle();
 workers(4);
@@ -137,6 +137,11 @@ _EOC_
 _EOC_
 
     $block->set_value("config", $config);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
 });
 
 run_tests();
@@ -145,7 +150,6 @@ __DATA__
 
 === TEST 1: create initial server and servant
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -182,14 +186,11 @@ values ('A', 'AServer', '172.16.1.1', 'A.AServer.FirstObjAdapter',
     "DONE\n",
     "{ 1 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 2: add servers on different nodes
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -208,14 +209,11 @@ values ('A', 'AServer', '172.16.1.2', now(), 'taf-cpp', 'active', 'active', 'tar
     "DONE\n",
     "{ 1 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 3: add servant
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -234,14 +232,11 @@ values ('A', 'AServer', '172.16.1.2', 'A.AServer.FirstObjAdapter',
     "DONE\n",
     "{ 2 1 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 4: update servant, update setting_state
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -257,14 +252,11 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
     "DONE\n",
     "{ 1 0 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 5: update server setting_state
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -280,14 +272,11 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
     "DONE\n",
     "{ 1 0 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 6: update server present_state
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -303,14 +292,11 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
     "DONE\n",
     "{ 2 1 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 7: update servant endpoint
 --- timeout: 12
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "GET /nodes
@@ -331,13 +317,10 @@ A.AServer.SecondObj",
     "DONE\n",
     "{172.16.1.2:10003,}\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 8: delete servant
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -349,14 +332,11 @@ and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 [
     "DONE\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 9: count after delete servant
 --- timeout: 100
---- yaml_config eval: $::yaml_config
 --- wait: 92
 --- request eval
 [
@@ -368,13 +348,10 @@ and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 [
     "{ 2 0 1 1 }\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 10: delete server
---- yaml_config eval: $::yaml_config
 --- request eval
 [
 "POST /sql
@@ -386,14 +363,11 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
 [
     "DONE\n",
 ]
---- no_error_log
-[error]
 
 
 
 === TEST 11: count after delete
 --- timeout: 100
---- yaml_config eval: $::yaml_config
 --- wait: 92
 --- request eval
 [
@@ -405,5 +379,3 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
 [
     "{ 1 0 1 1 }\n",
 ]
---- no_error_log
-[error]

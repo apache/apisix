@@ -190,6 +190,10 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
+    {% end %}
+
     {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     {% end %}
