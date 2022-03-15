@@ -91,7 +91,6 @@ jobs:
           cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Build amesh agent lib
-        if: matrix.os_name == 'linux_openresty'
         run: |
           cd t/amesh-agent
           go build -o libameshagent.so -buildmode=c-shared main.go
