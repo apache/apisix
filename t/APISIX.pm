@@ -239,7 +239,7 @@ apisix:
 _EOC_
     }
 
-    my $lua_deps_path = <<_EOC_;
+    my $lua_deps_path = $block->lua_deps_path // <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
     lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 _EOC_
@@ -507,6 +507,7 @@ _EOC_
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
+    lua_shared_dict router-config 1m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;

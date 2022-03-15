@@ -110,6 +110,11 @@ function _M.http_init_worker()
     end
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer")
+
+    if core.config == require("apisix.core.config_shdict") then
+        core.config.init_worker()
+    end
+
     require("apisix.admin.init").init_worker()
 
     require("apisix.timers").init_worker()

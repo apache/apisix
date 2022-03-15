@@ -235,6 +235,10 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
+    {% if config_center == "shdict" then %}
+    lua_shared_dict router-config  10m;
+    {% end %}
+
     # for custom shared dict
     {% if http.custom_lua_shared_dict then %}
     {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
