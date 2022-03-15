@@ -553,6 +553,7 @@ proxy request to 127.0.0.1:1980
     }
 --- request
 GET /t
+--- skip_nginx: 5: < 1.19.0
 --- response_body
 passed
 --- no_error_log
@@ -563,6 +564,7 @@ passed
 === TEST 22: hit route
 --- request
 GET /uri
+--- skip_nginx: 5: < 1.19.0
 --- response_body
 uri: /uri
 host: localhost:1980
@@ -612,6 +614,7 @@ x-real-ip: 127.0.0.1
     }
 --- request
 GET /t
+--- skip_nginx: 5: < 1.19.0
 --- response_body
 passed
 --- no_error_log
@@ -622,6 +625,7 @@ passed
 === TEST 24: hit route
 --- request
 GET /uri
+--- skip_nginx: 5: < 1.19.0
 --- response_body
 uri: /uri
 host: localhost:1980
