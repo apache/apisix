@@ -531,11 +531,6 @@ function _M.plugin_proxy_rewrite_resp_header()
     ngx.say(s)
 end
 
-function _M.server_upstream_host()
-    local headers = ngx.req.get_headers()
-    ngx.say(headers["host"])
-end
-
 -- Please add your fake upstream above
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)

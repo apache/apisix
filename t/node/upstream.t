@@ -518,24 +518,30 @@ proxy request to 127.0.0.1:1980
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:1979": 1,
+                        "localhost:1980": 1000
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "node"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
-                        "plugins": {
-                            "proxy-rewrite": {
-                                "uri": "/server_upstream_host"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1979": 1,
-                                "127.0.0.1:1980": 1000
-                            },
-                            "type": "roundrobin",
-                            "pass_host": "node"
-                        },
-                        "uri": "/hello"
+                        "upstream_id": "1",
+                        "uri": "/uri"
                 }]]
                 )
 
@@ -556,8 +562,69 @@ passed
 
 === TEST 22: hit route
 --- request
-GET /hello
+GET /uri
 --- response_body
-127.0.0.1:1980
+uri: /uri
+host: localhost:1980
+x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: check that including port in host header is supported when retrying and pass_host = node and port is not standard
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:1979": 1000,
+                        "localhost:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "node"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream_id": "1",
+                        "uri": "/uri"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: hit route
+--- request
+GET /uri
+--- response_body
+uri: /uri
+host: localhost:1980
+x-real-ip: 127.0.0.1
+--- error_log
+proxy request to 127.0.0.1:1980
