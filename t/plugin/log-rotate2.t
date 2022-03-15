@@ -163,6 +163,8 @@ plugin_attr:
                 return
             end
 
+            ngx.sleep(2)
+
             local now_time = ngx.time()
             local interval = 3600
             local rotate_time = now_time + interval - (now_time % interval)
