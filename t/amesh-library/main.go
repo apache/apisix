@@ -39,8 +39,8 @@ import (
 func main() {
 }
 
-//export CreateMock
-func CreateMock(zone unsafe.Pointer) {
+//export initial
+func initial(zone unsafe.Pointer) {
 	time.Sleep(time.Second)
 	value := fmt.Sprintf(`{
 "status": 1,

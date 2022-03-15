@@ -37,7 +37,7 @@ add_block_preprocessor(sub {
 
     my $lua_deps_path = $block->lua_deps_path // <<_EOC_;
         lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-        lua_package_cpath "$apisix_home/?.so;$apisix_home/t/amesh-agent/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+        lua_package_cpath "$apisix_home/?.so;$apisix_home/t/amesh-library/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 _EOC_
 
     $block->set_value("lua_deps_path", $lua_deps_path);
@@ -47,7 +47,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: load amesh agent so successfully
+=== TEST 1: load Amesh library so successfully
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -60,11 +60,11 @@ apisix:
         }
     }
 --- no_error_log eval
-qr/can not load amesh agent/
+qr/can not load Amesh library/
 
 
 
-=== TEST 2: read data form shdict that wirted by amesh agent
+=== TEST 2: read data form shdict that wirted by Amesh library
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -73,7 +73,7 @@ apisix:
 --- config
     location /t {
         content_by_lua_block {
-            -- wait for amesh agent sync data
+            -- wait for Amesh library sync data
             ngx.sleep(1.5)
             local core = require("apisix.core")
             local value = ngx.shared["router-config"]:get("/apisix/routes/1")

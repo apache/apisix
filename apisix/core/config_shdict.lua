@@ -29,7 +29,7 @@ local io                = io
 local package           = package
 local new_tab           = base.new_tab
 local ngx_timer_at      = ngx.timer.at
-local ffi               = require 'ffi'
+local ffi               = require ("ffi")
 local C                 = ffi.C
 local router_config     = ngx.shared["router-config"]
 
@@ -40,7 +40,7 @@ end
 
 
 ffi.cdef[[
-extern void CreateMock(void* writeRoute);
+extern void initial(void* writeRoute);
 ]]
 
 
@@ -88,27 +88,21 @@ local function load_ameshagent(lib_name)
 
         if not ameshagent then
             tried_paths[#tried_paths + 1] = 'tried above paths but can not load '
-                    .. lib_name
-            error("can not load amesh agent, tried paths: " ..
-                    table.concat(tried_paths, '\r\n', 1, #tried_paths))
+                                            .. lib_name
+            error("can not load Amesh library, tried paths: " ..
+                           table.concat(tried_paths, '\r\n', 1, #tried_paths))
         end
 
         local router_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(router_config[1])
         local router_shd_cdata = ffi.cast("void*", router_zone)
-        ameshagent.CreateMock(router_shd_cdata)
+        ameshagent.initial(router_shd_cdata)
     end)
 end
 
 
 
 function _M.init_worker()
-    local lib_name = "libameshagent"
-
-    local postfix = ".so"
-    if ffi.os == "OSX" then
-        postfix = ".dylib"
-    end
-    lib_name = lib_name .. postfix
+    local lib_name = "libamesh.so"
 
     if process.type() == "privileged agent" then
         load_ameshagent(lib_name)
