@@ -21,7 +21,7 @@ title: request-validation
 #
 -->
 
-## 名称
+## 描述
 
 `request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
 

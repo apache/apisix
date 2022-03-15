@@ -639,6 +639,7 @@ end
 
 function _M.http_body_filter_phase()
     common_phase("body_filter")
+    common_phase("delayed_body_filter")
 end
 
 

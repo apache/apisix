@@ -21,7 +21,7 @@ title: ua-restriction
 #
 -->
 
-## 名字
+## 描述
 
 `ua-restriction` 可以通过将指定 `User-Agent` 列入白名单或黑名单的方式来限制对服务或接口的访问。
 

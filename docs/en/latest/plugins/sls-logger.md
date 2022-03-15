@@ -21,7 +21,7 @@ title: sls-logger
 #
 -->
 
-## Name
+## Description
 
 `sls-logger` is a plugin which push Log data requests to ali cloud [Log Server](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u) with  [RF5424](https://tools.ietf.org/html/rfc5424).
 

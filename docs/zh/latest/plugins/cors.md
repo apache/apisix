@@ -21,7 +21,7 @@ title: cors
 #
 -->
 
-## 简介
+## 描述
 
 `cors` 插件可以让你为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) 的返回头。
 
@@ -36,11 +36,18 @@ title: cors
 | max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
 | allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
 | allow_origins_by_regex | array | 可选   | nil  |        | 使用正则表达式数组来匹配允许跨域访问的 Origin，如[".*\.test.com"] 可以匹配任何test.com的子域名`*`。 |
+| allow_origins_by_metadata | array | 可选    | nil   |       | 通过引用插件元数据的 `allow_origins` 配置允许跨域访问的 Origin。比如当元数据为 `"allow_origins": {"EXAMPLE": "https://example.com"}` 时，配置 `["EXAMPLE"]` 将允许 Origin `https://example.com` 的访问  |
 
 > **提示**
 >
 > 请注意 `allow_credential` 是一个很敏感的选项，谨慎选择开启。开启之后，其他参数默认的 `*` 将失效，你必须显式指定它们的值。
 > 使用 `**` 时要充分理解它引入了一些安全隐患，比如 CSRF，所以确保这样的安全等级符合自己预期再使用。
+
+## 元数据
+
+| 名称           | 类型    | 必选项  | 默认值 | 有效值 | 描述                       |
+| -----------   | ------  | ------ | ----- | ----- |  ------------------        |
+| allow_origins | object  | 可选    |       |       | 定义允许跨域访问的 Origin；它的键为 `allow_origins_by_metadata` 使用的引用键， 值则为允许跨域访问的 Origin，其语义与 `allow_origins` 相同 |
 
 ## 如何启用
 

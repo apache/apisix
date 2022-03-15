@@ -21,7 +21,7 @@ title: consumer-restriction
 #
 -->
 
-## Introduction
+## Description
 
 The `consumer-restriction` makes corresponding access restrictions based on different objects selected.
 

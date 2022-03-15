@@ -21,7 +21,7 @@ title: request-id
 #
 -->
 
-## Name
+## Description
 
 `request-id` plugin adds a unique ID (UUID) to each request proxied through APISIX. This plugin can be used to track an
 API request. The plugin will not add a request id if the `header_name` is already present in the request.

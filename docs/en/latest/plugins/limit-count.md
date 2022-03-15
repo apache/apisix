@@ -21,7 +21,7 @@ title: limit-count
 #
 -->
 
-## Name
+## Description
 
 Limit request rate by a fixed number of requests in a given time window.
 
