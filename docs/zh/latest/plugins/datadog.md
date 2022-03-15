@@ -23,11 +23,11 @@ title: datadog
 
 ## 简介
 
-`datadog` 是一个内置于 Apache APISIX 的监控插件，可与 [Datadog](https://www.datadoghq.com/)（云计算应用最常用的监控和观察平台之一）无缝集成。如果启用，这个插件支持对每个请求和响应周期进行多种指标参数的获取，这些指标参数基本上反映了系统的行为和健康状况。
+`datadog` 是 Apache APISIX 内置的监控插件，可与 [Datadog](https://www.datadoghq.com/)（云应用最常用的监控和可观测性平台之一）无缝集成。`datadog` 插件支持对每个请求和响应周期进行多种指标参数的获取，这些指标参数基本反映了系统的行为和健康状况。
 
-该插件通过 UDP 协议将其自定义指标推送给 DogStatsD 服务器，该服务器与 Datadog 代理捆绑在一起（要了解更多关于如何安装 Datadog 代理，请访问[这里](https://docs.datadoghq.com/agent/) ）。DogStatsD 基本上是 StatsD 协议的一个实现，它为 Apache APISIX 代理收集自定义指标，并将其聚合成一个数据点，发送到配置的 Datadog 服务器。要了解更多关于 DogStatsD 的信息，请访问 [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) 文档。
+该插件通过 UDP 协议将其自定义指标推送给 DogStatsD 服务器，该服务器与 Datadog 代理捆绑在一起（关于如何安装 Datadog 代理，请参考[Agent](https://docs.datadoghq.com/agent/) ）。DogStatsD 基本上是 StatsD 协议的实现，它将收集到的 Apache APISIX 代理的自定义指标聚合成单个数据点，并发送到设置的 Datadog 服务器上。更多关于 DogStatsD 的信息，请参考 [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) 。
 
-这个插件具备将多个指标组成一个批处理，一起推送给外部 Datadog 代理的能力，且重复使用同一个数据报套接字。如果你没有收到日志数据，不要担心，给它一些时间。在我们批处理程序中的定时器功能到期后，它会自动发送日志。
+`datadog` 插件具有将多个指标组成一个批处理并统一推送给外部 Datadog 代理的能力，并且可以重复使用同一个数据报套接字。如果没有收到日志数据，请耐心等待，它会在批处理程序中的定时器功能到期后自动发送日志。
 
 关于 Apache APISIX 的批处理程序的更多信息，请参考 [Batch-Processor](../batch-processor.md#配置)
 
@@ -56,7 +56,7 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 
 | Metric Name               | StatsD Type   | Description               |
 | -----------               | -----------   | -------                   |
-| Request Counter           | Counter       | No of requests received.   |
+| Request Counter           | Counter       | 收到的请求数量。   |
 | Request Latency           | Histogram     | 处理该请求所需的时间（以毫秒为单位）。 |
 | Upstream latency          | Histogram     | 代理请求到上游服务器直到收到响应所需的时间（以毫秒为单位）。 |
 | APISIX Latency            | Histogram     | APISIX 代理处理该请求的时间（以毫秒为单位）。|
@@ -76,7 +76,7 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 
 ## 如何启用
 
-下面是一个例子，用于说明如何为一个特定的路由启用 datadog 插件。在此之前请确保你的 datadog 代理已经启动并运行。
+本小节介绍了如何为特定路由启用 `datadog` 插件。进行以下操作之前请确认您的 `datadog` 代理已经启动并正常运行
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -99,10 +99,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## 禁用插件
 
 删除插件配置中相应的 json 配置以禁用 `datadog`。
-APISIX 插件是支持热加载的，所以不用重新启动配置也能生效。
+APISIX 插件是支持热加载的，所以不用重新启动 APISIX，配置就能生效。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -123,7 +123,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 向 _/apisix/admin/plugin_metadata_ 端点发出请求，更新后的元数据如下。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "host": "172.168.45.29",
     "port": 8126,
@@ -140,6 +140,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY:
 在这种情况下，如果你想把 datadog 元数据 schema 恢复到默认值，只需向同一个端点再发出一个 body 为空的 PUT 请求。举例如下：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog \
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
 ```
