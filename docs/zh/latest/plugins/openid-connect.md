@@ -57,8 +57,8 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 
 ![token introspection](../../../assets/images/plugin/oauth-1.png)
 
-以下是 curl 命令，用于将插件启用到外部服务。
-通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get（echo 服务）。
+以下是一个示例，将插件启用到外部服务。
+通过自身请求头中提供的令牌，用于保护此路由 https://httpbin.org/get 服务。
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
