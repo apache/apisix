@@ -17,7 +17,7 @@ Fixes # (issue)
 
 Note
 
-1. Mark PR as draft until it's ready to be reviewed.
+1. Mark the PR as draft until it's ready to be reviewed.
 2. Always add/update tests for any changes unless you have a good reason.
 3. Always update the documentation to reflect the changes made in the PR.
 4. Make a new commit to resolve conversations instead of `push -f`.
