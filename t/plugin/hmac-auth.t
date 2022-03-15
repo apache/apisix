@@ -43,7 +43,9 @@ __DATA__
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -448,7 +450,9 @@ X-HMAC-ACCESS-KEY: my-access-key3
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -674,7 +678,7 @@ GET /hello
                     }
                 }]]
                 )
-                
+
             if code >= 300 then
                 ngx.status = code
             end

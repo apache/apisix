@@ -56,8 +56,9 @@ __DATA__
                     }
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

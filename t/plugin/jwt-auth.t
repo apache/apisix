@@ -347,7 +347,10 @@ code: true body: passed
                     }
                 }]]
                 )
-            ngx.status = code
+
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -538,7 +541,10 @@ property "key" is required
                     }
                 }]]
                 )
-            ngx.status = code
+
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
