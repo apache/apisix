@@ -76,7 +76,7 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 
 ## 如何启用
 
-本小节介绍了如何为特定路由启用 `datadog` 插件。进行以下操作之前请确认您的 `datadog` 代理已经启动并正常运行
+本小节介绍了如何为特定路由启用 `datadog` 插件。进行以下操作之前请确认您的 `datadog` 代理已经启动并正常运行。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
