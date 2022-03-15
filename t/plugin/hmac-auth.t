@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 use t::APISIX 'no_plan';
- 
+
 repeat_each(2);
 no_long_string();
 no_root_location();
