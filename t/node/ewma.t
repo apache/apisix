@@ -40,22 +40,6 @@ __DATA__
                             "type": "ewma"
                         },
                         "uri": "/ewma"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 100,
-                                    "127.0.0.1:1981": 100
-                                },
-                                "type": "ewma"
-                            },
-                            "uri": "/ewma"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

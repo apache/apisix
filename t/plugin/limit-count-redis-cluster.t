@@ -150,36 +150,6 @@ passed
                         },
                         "type": "roundrobin"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr",
-                                    "policy": "redis-cluster",
-                                    "redis_timeout": 1000,
-                                    "redis_cluster_nodes": [
-                                        "127.0.0.1:5000",
-                                        "127.0.0.1:5001"
-                                    ],
-                                    "redis_cluster_name": "redis-cluster-1"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

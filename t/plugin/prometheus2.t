@@ -148,23 +148,12 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d
                             "key": "auth-one"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
