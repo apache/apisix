@@ -141,31 +141,6 @@ property "function_uri" is required
                             "type": "roundrobin"
                         },
                         "uri": "/azure"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "azure-functions": {
-                                    "keepalive": true,
-                                    "timeout": 3000,
-                                    "ssl_verify": true,
-                                    "keepalive_timeout": 60000,
-                                    "keepalive_pool": 5,
-                                    "function_uri": "http://localhost:8765/httptrigger"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/azure"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -335,17 +310,8 @@ Authz-Header - must_not_be_overrided
                 ngx.HTTP_PUT,
                 [[{
                     "master_apikey":"metadata_key"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "master_apikey": "metadata_key",
-                            "master_clientid": ""
-                        },
-                        "key": "/apisix/plugin_metadata/azure-functions"
-                    },
-                    "action": "set"
-                }]])
+                }]]
+                )
 
             if code >= 300 then
                 ngx.status = code

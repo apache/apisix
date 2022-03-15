@@ -129,33 +129,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                 "kafka-logger": {
-                                    "broker_list" :
-                                      {
-                                        "127.0.0.1":9092
-                                      },
-                                    "kafka_topic" : "test2",
-                                    "key" : "key1",
-                                    "timeout" : 1,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
@@ -206,34 +179,6 @@ hello world
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "kafka-logger": {
-                                    "broker_list" :
-                                      {
-                                        "127.0.0.1":9092,
-                                        "127.0.0.1":9093
-                                      },
-                                    "kafka_topic" : "test2",
-                                    "producer_type": "sync",
-                                    "key" : "key1",
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
@@ -445,32 +390,6 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                 "kafka-logger": {
-                                    "broker_list" :
-                                      {
-                                        "127.0.0.1":9092
-                                      },
-                                    "kafka_topic" : "test2",
-                                    "timeout" : 1,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
