@@ -62,8 +62,8 @@ func CreateMock(zone unsafe.Pointer) {
 	"hash_on": "vars",
 	"pass_host": "pass",
 	"scheme": "http"
-}
-}`, time.Now().Unix())
+  }
+}`)
 
 	writeShdict(zone, "/apisix/routes/1", value)
 }
