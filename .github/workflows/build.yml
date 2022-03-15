@@ -29,7 +29,7 @@ jobs:
         test_dir:
           - t/plugin
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
-          - t/node t/router t/script t/stream-node t/utils t/wasm t/amesh-agent
+          - t/node t/router t/script t/stream-node t/utils t/wasm t/amesh-library
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
