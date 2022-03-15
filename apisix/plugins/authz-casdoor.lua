@@ -18,8 +18,9 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
 local ngx = ngx
+local rand = math.random
 
-local plugin_name = "auth-casdoor"
+local plugin_name = "authz-casdoor"
 local schema = {
     type = "object",
     properties = {
@@ -41,10 +42,13 @@ local _M = {
     schema = schema
 }
 
-local function fetch_access_token(ctx, conf)
+local function fetch_access_token(ctx, conf,state_in_session)
     local args = core.request.get_uri_args(ctx)
     if not args or not args.code or not args.state then
         return nil, "failed when accessing token. Invalid code or state"
+    end
+    if not args.state == state_in_session then
+        return nil,"invalid state"
     end
     local client = http.new()
     local url = conf.endpoint_addr .. "/api/login/oauth/access_token"
@@ -58,8 +62,9 @@ local function fetch_access_token(ctx, conf)
             client_secret = conf.client_secret
         }
     })
+
     if not res then return nil, err end
-    local data, err = core.cjson.decode(res.body)
+    local data, err = core.json.decode(res.body)
 
     if err or not data then
         err = "failed to parse casdoor response data: " .. err
@@ -69,6 +74,9 @@ local function fetch_access_token(ctx, conf)
     if not data.access_token then
         return nil, "failed when accessing token: no access_token contained"
     end
+    if not data.expires_in or data.expires_in == 0 then
+        return nil, "failed when accessing token: invalid access_token"
+    end
 
     return data.access_token, nil
 end
@@ -76,21 +84,38 @@ end
 function _M.check_schema(conf) return core.schema.check(schema, conf) end
 
 function _M.access(conf, ctx)
-    -- log.info("hit auth-casdoor access")
     local current_uri = ctx.var.uri
     local session_obj_read, session_present = session.open()
-
     -- step 1: check whether hits the callback
-    local real_callback_url=ngx.re.match(conf.callback_url, ".-//[^/]+(/.*)")
+    local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)")
+    if err or not m then
+        core.log.error(err)
+        return 503, err
+    end
+    local real_callback_url=m[1]
     if current_uri == real_callback_url then
-        local access_token, err = fetch_access_token(ctx, conf)
+        if not session_present then
+            err = "no session found"
+            core.log.error(err)
+            return 503, err
+        end
+        local state_in_session = session_obj_read.data.state
+        if not state_in_session then
+            err = "no state found in session"
+            core.log.error(err)
+            return 503, err
+        end
+        local access_token, err = fetch_access_token(ctx, conf,state_in_session)
+        if err then
+            core.log.error(err)
+            return 503, err
+        end
         if access_token then
-            if not session_present then
-                return 503, "no session found"
-            end
             local original_url = session_obj_read.data.original_uri
             if not original_url then
-                return 503, "no original_url found in session"
+                err = "no original_url found in session"
+                core.log.error(err)
+                return 503, err
             end
             local session_obj_write = session.start()
             session_obj_write.data.access_token = access_token
@@ -105,12 +130,14 @@ function _M.access(conf, ctx)
     -- step 2: check whether session exists
     if not (session_present and session_obj_read.data.access_token) then
         -- session not exists, redirect to login page
+        local state=rand(0x7fffffff)
         local session_obj_write = session.start()
         session_obj_write.data.original_uri = current_uri
+        session_obj_write.data.state=state
         session_obj_write:save()
         local redirect_url = conf.endpoint_addr ..
                                  "/login/oauth/authorize?response_type=code&scope=read" ..
-                                 "&state=casdoor&client_id=" .. conf.client_id ..
+                                 "&state="..state.."&client_id=" .. conf.client_id ..
                                  "&redirect_uri=" .. conf.callback_url
         core.response.set_header("Location", redirect_url)
         return 302

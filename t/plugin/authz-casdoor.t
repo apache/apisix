@@ -38,7 +38,7 @@ add_block_preprocessor(sub {
             content_by_lua_block {
                 local json_encode = require("toolkit.json").encode
                 ngx.status = 200
-                ngx.say(json_encode({ access_token = "aaaaaaaaaaaaaaaa" }))
+                ngx.say(json_encode({ access_token = "aaaaaaaaaaaaaaaa", expires_in = 1000000 }))
             }
         }
     }
@@ -54,7 +54,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local fake_uri = "http://127.0.0.1:" .. ngx.var.server_port
             local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
                                     "/anything/callback"
@@ -98,7 +98,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local core = require("apisix.core")
             local log = core.log
             local t = require("lib.test_admin").test
@@ -110,7 +110,7 @@ done
                                 "methods": ["GET"],
                                 "uri": "/anything/*",
                                 "plugins": {
-                                    "auth-casdoor": {
+                                    "authz-casdoor": {
                                         "callback_url":"]] .. callback_url .. [[",
                                         "endpoint_addr":"]] .. fake_uri .. [[",
                                         "client_id":"7ceb9b7fda4a9061ec1c",
@@ -138,7 +138,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local core = require("apisix.core")
             local log = core.log
             local t = require("lib.test_admin").test
@@ -189,7 +189,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local core = require("apisix.core")
             local log = core.log
             local t = require("lib.test_admin").test
@@ -217,7 +217,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local core = require("apisix.core")
             local log = core.log
             local t = require("lib.test_admin").test
@@ -225,15 +225,21 @@ done
             local fake_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
                                 "/anything/d?param1=foo&param2=bar"
             local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
-                                    "/anything/callback?code=aaa&state=bbb"
+                                    "/anything/callback?code=aaa&state="
 
             local httpc = require("resty.http").new()
             local res1, err1 = httpc:request_uri(fake_uri, {method = "GET"})
             if not res1 then ngx.say(err1) end
 
             local cookie = res1.headers["Set-Cookie"]
+            local re_url = res1.headers["Location"]
+            local m,err=ngx.re.match(re_url, "state=([0-9]*)")
+            if err or not m then
+                log.error(err)
+            end
+            state=m[1]
 
-            local res2, err2 = httpc:request_uri(callback_url, {
+            local res2, err2 = httpc:request_uri(callback_url..state, {
                 method = "GET",
                 headers = {Cookie = cookie}
             })
@@ -261,7 +267,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.auth-casdoor")
+            local plugin = require("apisix.plugins.authz-casdoor")
             local core = require("apisix.core")
             local log = core.log
             local t = require("lib.test_admin").test
@@ -274,6 +280,58 @@ done
             local res1, err1 = httpc:request_uri(callback_url, {method = "GET"})
             if not res1.status == 503 then ngx.say(res1.status) end
             ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+no session found
+
+
+
+=== TEST 8: incorrect state handling
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-casdoor")
+            local core = require("apisix.core")
+            local log = core.log
+            local t = require("lib.test_admin").test
+            local cjson = require("cjson")
+            local fake_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                "/anything/d?param1=foo&param2=bar"
+            local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                    "/anything/callback?code=aaa&state="
+
+            local httpc = require("resty.http").new()
+            local res1, err1 = httpc:request_uri(fake_uri, {method = "GET"})
+            if not res1 then ngx.say(err1) end
+
+            local cookie = res1.headers["Set-Cookie"]
+            local re_url = res1.headers["Location"]
+            local m,err=ngx.re.match(re_url, "state=([0-9]*)")
+            if err or not m then
+                log.error(err)
+            end
+            state=m[1]+10
+
+            local res2, err2 = httpc:request_uri(callback_url..state, {
+                method = "GET",
+                headers = {Cookie = cookie}
+            })
+            if not res2 then ngx.say(err) end
+            if not res2.code == 302 then log.error(res2.code) end
+
+            local cookie2 = res1.headers["Set-Cookie"]
+            local res3, err3 = httpc:request_uri(fake_uri, {
+                method = "GET",
+                headers = {Cookie = cookie2}
+
+            })
+            if not res3 then ngx.say(err) end
+            if not res3.status == 503 then log.error(res3.status) end
+            ngx.say("done")
+
         }
     }
 --- response_body

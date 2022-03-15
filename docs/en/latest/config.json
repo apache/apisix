@@ -71,7 +71,7 @@
             "plugins/jwt-auth",
             "plugins/basic-auth",
             "plugins/authz-keycloak",
-            "plugins/auth-casdoor",
+            "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/hmac-auth",
