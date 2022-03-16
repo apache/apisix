@@ -21,7 +21,7 @@ title: jwt-auth
 #
 -->
 
-## Name
+## Description
 
 `jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
 
@@ -32,6 +32,8 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 `jwt-auth` plugin can be integrated with HashiCorp Vault for storing and fetching secrets, RSA key pairs from its encrypted kv engine. See the [examples](#enable-jwt-auth-with-vault-compatibility) below to have an overview of how things work.
 
 ## Attributes
+
+For consumer side:
 
 | Name          | Type    | Requirement | Default | Valid                       | Description                                                                                                                                      |
 |:--------------|:--------|:------------|:--------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -45,6 +47,14 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
 
 **Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) under the vault attributes.
+
+For route side:
+
+| Name | Type   | Requirement | Default | Valid | Description                                                                  |
+| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| header  | string | optional    | authorization        |       | the header we get the token from |
+| query   | string | optional    | jwt        |       | the query string we get the token from, which priority is lower than `header` |
+| cookie | string | optional    | jwt |       | the cookie we get the token from, which priority is lower than `query` |
 
 ## API
 

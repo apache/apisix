@@ -21,7 +21,7 @@ title: authz-casbin
 #
 -->
 
-## Name
+## Description
 
 `authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models.
 

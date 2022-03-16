@@ -21,7 +21,7 @@ title: mqtt-proxy
 #
 -->
 
-## Name
+## Description
 
 The plugin `mqtt-proxy` only works in stream model, it help you to dynamic load
 balance by `client_id` of MQTT.

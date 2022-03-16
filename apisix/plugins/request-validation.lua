@@ -87,23 +87,32 @@ function _M.rewrite(conf, ctx)
             return conf.rejected_code, conf.rejected_msg
         end
 
+        local body_is_json = true
         if headers["content-type"] == "application/x-www-form-urlencoded" then
             -- use 0 to avoid truncated result and keep the behavior as the
             -- same as other platforms
             req_body, err = ngx.decode_args(body, 0)
+            body_is_json = false
         else -- JSON as default
             req_body, err = core.json.decode(body)
         end
 
         if not req_body then
-          core.log.error('failed to decode the req body', err)
-          return conf.rejected_code, conf.rejected_msg or err
+            core.log.error('failed to decode the req body: ', err)
+            return conf.rejected_code, conf.rejected_msg or err
         end
 
         local ok, err = core.schema.check(conf.body_schema, req_body)
         if not ok then
-          core.log.error("req schema validation failed", err)
-          return conf.rejected_code, conf.rejected_msg or err
+            core.log.error("req schema validation failed: ", err)
+            return conf.rejected_code, conf.rejected_msg or err
+        end
+
+        if body_is_json then
+            -- ensure the JSON we check is the JSON we pass to the upstream,
+            -- see https://bishopfox.com/blog/json-interoperability-vulnerabilities
+            req_body = core.json.encode(req_body)
+            ngx.req.set_body_data(req_body)
         end
     end
 end

@@ -1,35 +1,36 @@
-name: "Request help"
-description: Please use this template for requesting help.
-title: "request help: "
+name: "Request Help"
+description: Stuck? Ask for help!
+title: "help request: "
 body:
   - type: markdown
     attributes:
       value: |
-        The more information you fill in, the better we can help you.
+        _The more information you share, the faster we can help you._
 
-        - Please use English on public channel.
-        - Encourage using words rather than pictures to describe errors.
-        - Encourage pre-searching with keywords in the issue.
+        Prior to opening the issue, please make sure that you:
+
+        - Use English to communicate.
+        - Search the [open issues](https://github.com/apache/apisix/issues) and [discussion forum](https://github.com/apache/apisix/discussions) to avoid duplicating the issue.
 
   - type: textarea
     id: description
     attributes:
-      label: Issue description
-      description: Provide a clear and concise description of the help you need.
+      label: Description
+      description: Describe the issue you are facing and what you need help with.
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Request help without environment information will be ignored or closed.
+      description: Share your environment details. Reports without proper environment details will likely be closed.
       value: |
-        - apisix version (cmd: `apisix version`):
-        - OS (cmd: `uname -a`):
-        - OpenResty / Nginx version (cmd: `nginx -V` or `openresty -V`):
-        - etcd version, if have (cmd: run `curl http://127.0.0.1:9090/v1/server_info` to get the info from server-info API):
-        - apisix-dashboard version, if have:
-        - the plugin runner version, if the issue is about a plugin runner (cmd: depended on the kind of runner):
-        - luarocks version, if the issue is about installation (cmd: `luarocks --version`):
+        - APISIX version (run `apisix version`):
+        - Operating system (run `uname -a`):
+        - OpenResty / Nginx version (run `openresty -V` or `nginx -V`):
+        - etcd version, if relevant (run `curl http://127.0.0.1:9090/v1/server_info`):
+        - APISIX Dashboard version, if relevant:
+        - Plugin runner version, for issues related to plugin runners:
+        - LuaRocks version, for installation issues (run `luarocks --version`):
     validations:
       required: true

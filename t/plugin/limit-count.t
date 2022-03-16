@@ -557,17 +557,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "rejected_code": 503
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 
@@ -605,17 +594,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "rejected_code": 503
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 
@@ -655,17 +633,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "rejected_code": 503
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 
@@ -696,17 +663,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "rejected_code": 503
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 
@@ -746,17 +702,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "rejected_code": 503
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 

@@ -71,10 +71,15 @@ function install_dependencies_with_apt() {
     sudo apt-get update
     sudo apt-get -y install software-properties-common wget lsb-release
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+    arch=$(uname -m | tr '[:upper:]' '[:lower:]')
+    arch_path=""
+    if [[ $arch == "arm64" ]] || [[ $arch == "aarch64" ]]; then
+        arch_path="arm64/"
+    fi
     if [[ "${1}" == "ubuntu" ]]; then
-        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+        sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
     elif [[ "${1}" == "debian" ]]; then
-        sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_release -sc) openresty"
+        sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}debian $(lsb_release -sc) openresty"
     fi
     sudo apt-get update
 
@@ -85,10 +90,7 @@ function install_dependencies_with_apt() {
 # Install dependencies on mac osx
 function install_dependencies_on_mac_osx() {
     # install OpenResty, etcd and some compilation tools
-    brew install openresty/brew/openresty luarocks lua@5.1 etcd curl git pcre openldap
-
-    # start etcd server
-    brew services start etcd
+    brew install openresty/brew/openresty luarocks lua@5.1 wget curl git pcre openldap
 }
 
 # Identify the different distributions and call the corresponding function
@@ -106,16 +108,6 @@ function multi_distro_installation() {
     else
         echo "Non-supported operating system version"
     fi
-}
-
-# Install etcd
-function install_etcd() {
-    ETCD_VERSION='3.4.13'
-    wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-    tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
-        cd etcd-v${ETCD_VERSION}-linux-amd64 && \
-        sudo cp -a etcd etcdctl /usr/bin/
-    nohup etcd &
 }
 
 # Install LuaRocks
@@ -141,14 +133,8 @@ function main() {
 
     case_opt=$1
     case "${case_opt}" in
-        "install_etcd")
-            install_etcd
-        ;;
         "install_luarocks")
             install_luarocks
-        ;;
-        "multi_distro_installation")
-            multi_distro_installation
         ;;
         *)
             echo "Unsupported method: ${case_opt}"

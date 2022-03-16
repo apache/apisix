@@ -21,7 +21,7 @@ title: clickhouse-logger
 #
 -->
 
-## Name
+## Description
 
 `clickhouse-logger` is a plugin which push Log data requests to clickhouse.
 

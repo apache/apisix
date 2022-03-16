@@ -21,7 +21,7 @@ title: proxy-rewrite
 #
 -->
 
-## Name
+## Description
 
 The `proxy-rewrite` is an upstream proxy information rewriting plugin, which supports the rewriting of information such as `scheme`, `uri`, and `host`.
 

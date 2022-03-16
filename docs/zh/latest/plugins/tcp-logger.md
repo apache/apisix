@@ -21,7 +21,7 @@ title: tcp-logger
 #
 -->
 
-## 定义
+## 描述
 
 `tcp-logger` 是用于将日志数据发送到 TCP 服务的插件。
 

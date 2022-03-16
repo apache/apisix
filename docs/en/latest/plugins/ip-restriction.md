@@ -21,7 +21,7 @@ title: ip-restriction
 #
 -->
 
-## Name
+## Description
 
 The `ip-restriction` can restrict access to a Service or a Route by either
 whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
