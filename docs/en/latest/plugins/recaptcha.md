@@ -34,6 +34,7 @@ Restrict access to an upstream service by verifying request captcha token to the
 | parameter_source | string | optional | header | | The enum of captcha parameter source. Only `header`, `query` are supported. |
 | parameter_name | string | optional | captcha | | The name of captcha parameter. |
 | response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response of invalid recaptcha token. |
+| ssl_verify | boolean | optional | true | | verify if SSL cert matches hostname. |
 
 The example configuration of plugin is
 

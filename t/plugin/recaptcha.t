@@ -39,7 +39,8 @@ __DATA__
                     content_type = "application/json; charset=utf-8",
                     status_code = 400,
                     body = "{\"message\":\"invalid captcha\"}\n"
-                }
+                },
+                ssl_verify = false,
             })
             if not ok then
                 ngx.say(err)
@@ -99,7 +100,8 @@ done
                                 "content_type": "application/json; charset=utf-8",
                                 "status_code": 400,
                                 "body": "{\"message\":\"invalid captcha\"}\n"
-                              }
+                              },
+                              "ssl_verify": false
                           }
                        },
                        "upstream": {
@@ -144,7 +146,8 @@ passed
                                     "content_type": "application/json; charset=utf-8",
                                     "status_code": 400,
                                     "body": "{\"message\":\"invalid captcha\"}\n"
-                                  }
+                                  },
+                                  "ssl_verify": false
                               }
                            },
                            "upstream": {
@@ -173,7 +176,8 @@ passed
                                    "content_type": "application/json; charset=utf-8",
                                    "status_code": 400,
                                    "body": "{\"message\":\"invalid captcha\"}\n"
-                                 }
+                                 },
+                                 "ssl_verify": false
                              }
                           },
                           "upstream": {

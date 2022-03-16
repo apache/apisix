@@ -23,6 +23,7 @@ local schema = {
         secret_key = { type = "string" },
         parameter_source = { type = "string", default = "header", enum = { "header", "query" } },
         parameter_name = { type = "string", default = "captcha" },
+        ssl_verify = { type = "boolean", default = true },
         response = {
             type = "object",
             properties = {
@@ -77,7 +78,7 @@ function _M.access(conf, ctx)
             headers = {
                 ["Content-Type"] = "application/x-www-form-urlencoded",
             },
-            ssl_verify = false
+            ssl_verify = conf.ssl_verify
         })
         if err then
             core.log.error("request failed: ", err)
