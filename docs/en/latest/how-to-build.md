@@ -124,7 +124,7 @@ Follow the steps below to install Apache APISIX via the source release package.
   # Switch to the apisix-${APISIX_VERSION} directory
   cd apisix-${APISIX_VERSION}
   # Create dependencies
-  make deps
+  make deps # -j$(nproc) ## use this parameter for make building go fast. 
   # Install apisix command
   make install
   ```
