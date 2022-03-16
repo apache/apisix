@@ -176,7 +176,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1200, -- last running plugin, but before serverless post func
+    priority = 12009,
     name = plugin_name,
     schema = schema,
     attr_schema = attr_schema,
@@ -306,10 +306,14 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
-function _M.body_filter(conf, api_ctx)
+function _M.delayed_body_filter(conf, api_ctx)
     if ngx.arg[2] then
-        local upstream_status = core.response.get_upstream_status(api_ctx)
         local ctx = context:current()
+        if not ctx then
+            return
+        end
+
+        local upstream_status = core.response.get_upstream_status(api_ctx)
         ctx:detach()
 
         -- get span from current context
