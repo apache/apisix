@@ -48,7 +48,6 @@ Apache APISIX not only covers the traditional functions of NGINX, but also deepl
   APISIX is a cloud native, open source API gateway. You can run APISIX from bare-metal to Kubernetes. Since APISIX supports ARM64, it avoids the lock-in challenge of the infrastructure technology. It also provides integration to cloud providers like AWS Lambda, Azure Functions, Lua functions and Apache OpenWhisk.
   - Fully Dynamic:
   The biggest feature of Apache APISIX is that it is fully dynamic. That includes routing, SSL certificates, plugins, upstream etc. All features are dynamically configured through the admin API, without having to restart the service at all.
-  
   - Fine-grained routing:
   
   Support all Nginx built-in variables as conditions for routing, so you can use cookie, args, etc. as routing conditions to implement canary release, A/B testing, etc.  Apache APISIX provides operators that serve as judgment conditions for routing and a custom routing matching function. By using GraphQL attributes, APISIX allows you to filter routes.
