@@ -553,7 +553,6 @@ proxy request to 127.0.0.1:1980
     }
 --- request
 GET /t
---- skip_nginx: 5: < 1.19.0
 --- response_body
 passed
 --- no_error_log
@@ -564,7 +563,6 @@ passed
 === TEST 22: hit route
 --- request
 GET /uri
---- skip_nginx: 5: < 1.19.0
 --- response_body eval
 qr/host: localhost:1980/
 --- no_error_log
@@ -610,6 +608,7 @@ qr/host: localhost:1980/
             ngx.say(body)
         }
     }
+--- skip_nginx: 5: < 1.19.0
 --- request
 GET /t
 --- response_body
@@ -621,6 +620,7 @@ passed
 
 === TEST 24: hit route
 --- log_level: debug
+--- skip_nginx: 5: < 1.19.0
 --- request
 GET /uri
 --- error_log
