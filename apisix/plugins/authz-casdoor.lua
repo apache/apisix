@@ -24,11 +24,11 @@ local plugin_name = "authz-casdoor"
 local schema = {
     type = "object",
     properties = {
-        --Note: endpoint_addr and callback_url should not end with '/'
+        -- Note: endpoint_addr and callback_url should not end with '/'
         endpoint_addr = {type = "string", pattern = "^[^%?]+[^/]$"},
         client_id = {type = "string"},
         client_secret = {type = "string"},
-        callback_url = {type = "string", pattern = "^[^%?]+[^/]$"},
+        callback_url = {type = "string", pattern = "^[^%?]+[^/]$"}
     },
     required = {
         "callback_url", "endpoint_addr", "client_id", "client_secret"
@@ -42,13 +42,13 @@ local _M = {
     schema = schema
 }
 
-local function fetch_access_token(ctx, conf,state_in_session)
+local function fetch_access_token(ctx, conf, state_in_session)
     local args = core.request.get_uri_args(ctx)
     if not args or not args.code or not args.state then
         return nil, "failed when accessing token. Invalid code or state"
     end
     if not args.state == state_in_session then
-        return nil,"invalid state"
+        return nil, "invalid state"
     end
     local client = http.new()
     local url = conf.endpoint_addr .. "/api/login/oauth/access_token"
@@ -92,7 +92,7 @@ function _M.access(conf, ctx)
         core.log.error(err)
         return 503, err
     end
-    local real_callback_url=m[1]
+    local real_callback_url = m[1]
     if current_uri == real_callback_url then
         if not session_present then
             err = "no session found"
@@ -105,7 +105,8 @@ function _M.access(conf, ctx)
             core.log.error(err)
             return 503, err
         end
-        local access_token, err = fetch_access_token(ctx, conf,state_in_session)
+        local access_token, err =
+            fetch_access_token(ctx, conf, state_in_session)
         if err then
             core.log.error(err)
             return 503, err
@@ -130,15 +131,16 @@ function _M.access(conf, ctx)
     -- step 2: check whether session exists
     if not (session_present and session_obj_read.data.access_token) then
         -- session not exists, redirect to login page
-        local state=rand(0x7fffffff)
+        local state = rand(0x7fffffff)
         local session_obj_write = session.start()
         session_obj_write.data.original_uri = current_uri
-        session_obj_write.data.state=state
+        session_obj_write.data.state = state
         session_obj_write:save()
         local redirect_url = conf.endpoint_addr ..
                                  "/login/oauth/authorize?response_type=code&scope=read" ..
-                                 "&state="..state.."&client_id=" .. conf.client_id ..
-                                 "&redirect_uri=" .. conf.callback_url
+                                 "&state=" .. state .. "&client_id=" ..
+                                 conf.client_id .. "&redirect_uri=" ..
+                                 conf.callback_url
         core.response.set_header("Location", redirect_url)
         return 302
     end
