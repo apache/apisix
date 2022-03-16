@@ -565,10 +565,8 @@ passed
 --- request
 GET /uri
 --- skip_nginx: 5: < 1.19.0
---- response_body
-uri: /uri
-host: localhost:1980
-x-real-ip: 127.0.0.1
+--- response_body eval
+qr/host: localhost:1980/
 --- no_error_log
 [error]
 
@@ -626,9 +624,7 @@ passed
 --- request
 GET /uri
 --- skip_nginx: 5: < 1.19.0
---- response_body
-uri: /uri
-host: localhost:1980
-x-real-ip: 127.0.0.1
+--- response_body eval
+qr/host: localhost:1980/
 --- error_log
 proxy request to 127.0.0.1:1980
