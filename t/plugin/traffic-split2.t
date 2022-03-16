@@ -111,42 +111,39 @@ GET /server_port?name=jack&age=18
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local data = {
+                uri = "/uri",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {{
+                            match = { {
+                              vars = { { "arg_name", "==", "jack" } }
+                            } },
+                            weighted_upstreams = {
+                                {
+                                    upstream = {
+                                        type = "roundrobin",
+                                        pass_host = "pass",
+                                        nodes = {["127.0.0.1:1981"] = 1}
+                                    }
+                                }
+                            }
+                        }}
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                }
+            }
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
-                    "uri": "/uri",
-                    "plugins": {
-                        "traffic-split": {
-                            "rules": [
-                                {
-                                    "match": [
-                                        {
-                                            "vars": [["arg_name", "==", "jack"]]
-                                        }
-                                    ],
-                                    "weighted_upstreams": [
-                                        {
-                                            "upstream": {
-                                                "type": "roundrobin",
-                                                "pass_host": "pass",
-                                                "nodes": {
-                                                    "127.0.0.1:1981":1
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                    }
-                }]=]
+                json.encode(data)
             )
+
             if code >= 300 then
                 ngx.status = code
             end
