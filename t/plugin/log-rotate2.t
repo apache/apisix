@@ -25,17 +25,8 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
-    if (!defined $block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
-});
-
-our $yaml_config = <<_EOC_;
+    if (!defined $block->yaml_config) {
+        my $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   admin_key: ~
@@ -48,12 +39,24 @@ plugin_attr:
     enable_compression: true
 _EOC_
 
+        $block->set_value("yaml_config", $yaml_config);
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
 run_tests;
 
 __DATA__
 
 === TEST 1: log rotate, with enable log file compression
---- yaml_config eval: $::yaml_config
 --- config
     location /t {
         content_by_lua_block {
@@ -99,7 +102,6 @@ start xxxxxx
 
 
 === TEST 3: check file changes (enable compression)
---- yaml_config eval: $::yaml_config
 --- config
     location /t {
         content_by_lua_block {
