@@ -125,7 +125,7 @@ Follow the steps below to install Apache APISIX via the source release package.
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
-  # Install apisix command
+  # Install apisix command (only for luarocks)
   make install
   ```
 
