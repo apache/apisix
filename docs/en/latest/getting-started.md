@@ -29,6 +29,7 @@ Apache APISIX is an open-source, dynamic and high-performance cloud-native API g
 Apache APISIX facilitates interface traffic handling for Websites, Mobile and IoT applications by providing services such as load balancing, dynamic upstream, grayscale publishing, refined routing, current and speed limiting, and many more.
 
 ### The problem APISIX solves
+
   - Help enterprises to solve the difficulties in the transformation of traditional monolithic architecture, so as to achieve rapid iteration of business and products.
   - Apache APISIX replaces NGINX and handles traditional north-south traffic. It also replaces Envoy to handle east-west traffic between services.
   - Handles Layer 4 and Layer 7 traffic: HTTP, HTTPs, TCP, UDP, MQTT, Dubbo, gRPC, etc.
