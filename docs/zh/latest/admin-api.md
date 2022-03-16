@@ -571,7 +571,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 4. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 5. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
-以下特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤-6为-apache-apisix-构建-openresty)：
+以下特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤-6：为-apache-apisix-构建-openresty)：
 
 `scheme` 可以设置成 `tls`，表示 "TLS over TCP"。
 
@@ -580,7 +580,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤-6为-apache-apisix-构建-openresty)。
+这个特性需要 APISIX 运行于 [APISIX-OpenResty](./how-to-build.md#步骤-6：为-apache-apisix-构建-openresty)。
 
 **upstream 对象 json 配置内容：**
 

@@ -27,7 +27,7 @@ title: dubbo-proxy
 
 ## 要求
 
-如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤-6为-apache-apisix-构建-openresty)。
+如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [如何编译](../how-to-build.md#步骤-6：为-apache-apisix-构建-openresty)。
 
 ## 运行时属性
 
