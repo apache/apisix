@@ -204,3 +204,28 @@ ok
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: deepcopy should keep metatable
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local t = setmetatable({}, core.json.array_mt)
+            local actual = core.json.encode(deepcopy(t))
+            local expect = "[]"
+            if actual ~= expect then
+                ngx.say("expect ", expect, ", actual ", actual)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+--- no_error_log
+[error]

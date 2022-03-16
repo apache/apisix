@@ -114,6 +114,11 @@ do
             end
         end
 
+        local mt = getmetatable(orig)
+        if mt ~= nil then
+            setmetatable(copy, mt)
+        end
+
         return copy
     end
 
