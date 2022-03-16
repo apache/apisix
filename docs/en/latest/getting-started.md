@@ -38,7 +38,7 @@ Apache APISIX facilitates interface traffic handling for Websites, Mobile and Io
   - It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
   - Use IdP plugin as Zero-Trust gateway
   - Easy to use: APISIX also consists of a built-in low-code dashboard that offers a powerful and flexible interface. You can write your own custom plugins or use custom load balancing algorithms.
-  - Apache APISIX supports multi-platforms, languages and protocols. 
+  - Apache APISIX supports multi-platforms, languages and protocols.
 
 ## Features
 
