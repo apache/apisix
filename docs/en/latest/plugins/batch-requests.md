@@ -75,8 +75,8 @@ The plugin will create a API in `apisix` to handle your batch request.
 
 | Name     | Type                        | Requirement | Default | Valid | Description                           |
 | -------- | --------------------------- | ----------- | ------- | ----- | ------------------------------------- |
-| query    | object                      | optional    |         |       | Specify `QueryString` for all request |
-| headers  | object                      | optional    |         |       | Specify `Header` for all request      |
+| query    | object                      | optional    |         |       | Specify `query string` for all request |
+| headers  | object                      | optional    |         |       | Specify `header` for all request      |
 | timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
 | pipeline | [HttpRequest](#httprequest) | required    |         |       | Request's detail                      |
 
@@ -86,8 +86,8 @@ The plugin will create a API in `apisix` to handle your batch request.
 | ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
 | method     | string  | optional    | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | http method                                                                                             |
-| query      | object  | optional    |         |                                                                                  | request's `QueryString`, if `Key` is conflicted with global `query`, this setting's value will be used. |
-| headers    | object  | optional    |         |                                                                                  | request's `Header`, if `Key` is conflicted with global `headers`, this setting's value will be used.    |
+| query      | object  | optional    |         |                                                                                  | request's `query string`, if `Key` is conflicted with global `query`, this setting's value will be used. |
+| headers    | object  | optional    |         |                                                                                  | request's `header`, if `Key` is conflicted with global `headers`, this setting's value will be used.    |
 | path       | string  | required    |         |                                                                                  | http request's path                                                                                     |
 | body       | string  | optional    |         |                                                                                  | http request's body                                                                                     |
 | ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
