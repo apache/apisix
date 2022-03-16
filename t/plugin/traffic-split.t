@@ -676,38 +676,40 @@ qr/dns resolver domain: apiseven.com to \d+.\d+.\d+.\d+/
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local json = require("toolkit.json")
-
-            local data = {
-                uri = "/server_port",
-                plugins = {
-                    ["traffic-split"] = {
-                        rules = {{
-                            weighted_upstreams = {
-                                {
-                                    upstream = {
-                                        name = "upstream_A",
-                                        type = "roundrobin",
-                                        nodes = {["127.0.0.1:1981"] = 1}
-                                    },
-                                    weight = 2
-                                },
-                                {
-                                    weight = 1
-                                }
-                            }
-                        }}
-                    }
-                },
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {["127.0.0.1:1980"] = 1}
-                }
-            }
-
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                json.encode(data)
+                [[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream": {
+                                                "name": "upstream_A",
+                                                "type": "roundrobin",
+                                                "nodes": {
+                                                    "127.0.0.1:1981":1
+                                                }
+                                            },
+                                            "weight": 2
+                                        },
+                                        {
+                                            "weight": 1
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
