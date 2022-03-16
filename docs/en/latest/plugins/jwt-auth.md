@@ -53,8 +53,8 @@ For route side:
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | header  | string | optional    | authorization        |       | the header we get the token from |
-| query   | string | optional    | jwt        |       | the query string we get the token from, which priority is lower than header |
-| cookie | string | optional    | jwt |       | the cookie we get the token from, which priority is lower than querystring |
+| query   | string | optional    | jwt        |       | the query string we get the token from, which priority is lower than `header` |
+| cookie | string | optional    | jwt |       | the cookie we get the token from, which priority is lower than `query` |
 
 ## API
 
