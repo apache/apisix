@@ -21,7 +21,7 @@ title: clickhouse-logger
 #
 -->
 
-## 定义
+## 描述
 
 `clickhouse-logger` 是一个插件，可将 Log 数据请求推送到 clickhouse 服务器。
 

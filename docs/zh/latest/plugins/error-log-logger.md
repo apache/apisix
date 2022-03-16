@@ -21,13 +21,13 @@ title: error-log-logger
 #
 -->
 
-## 定义
+## 描述
 
 `error-log-logger` 是用于按用户设定的 log 级别对 APISIX 的 `error.log` 进行筛选，继而将筛选的数据发送到 TCP 服务或者 [Apache SkyWalking](https://skywalking.apache.org/) 的插件。
 
 以实现将 error.log 中的数据进行筛选并发送到监控工具或其它 TCP 服务，和通过 HTTP 发送到 SkyWalking 的能力。
 
-该插件提供了将日志数据作为批处理推送到外部 TCP 服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+该插件提供了将日志数据作为批处理推送到外部 TCP 服务器的功能。如果您没有收到日志数据，不用担心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
 有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
 [Batch-Processor](../batch-processor.md)

@@ -21,7 +21,7 @@ title: serverless
 #
 -->
 
-## Name
+## Description
 
 There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function`.
 

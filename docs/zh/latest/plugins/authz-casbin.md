@@ -21,7 +21,7 @@ title: authz-casbin
 #
 -->
 
-## 简介
+## 描述
 
 `authz-casbin` 是一个基于 [Lua Casbin](https://github.com/casbin/lua-casbin/) 的访问控制插件，该插件支持基于各种访问控制模型的授权场景。
 

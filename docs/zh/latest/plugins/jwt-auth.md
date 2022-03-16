@@ -32,7 +32,7 @@ title: jwt-auth
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-## 名字
+## 描述
 
 `jwt-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
 
@@ -43,6 +43,8 @@ title: jwt-auth
 `jwt-auth` 插件可以与 HashiCorp Vault 集成，用于存储和获取密钥，从其加密的 KV 引擎获取 RSA 密钥对。 阅读下面的 [例子](#enable-jwt-auth-with-vault-compatibility) 来了解它如何工作。
 
 ## 属性
+
+consumer 端配置：
 
 | 名称          | 类型    | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
 | :------------ | :------ | :----- | :------ | :-------------------------- | :------------------------------------------------------------------------------------------------------------ |
@@ -56,6 +58,14 @@ title: jwt-auth
 | vault         | object  | 可选   |         |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索 |
 
 **注意**: 要启用 Vault 集成，首先访问 [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)，更新您的 Vault 服务器配置、主机地址和访问令牌。您可以在 [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) 中 vault 属性下查看 APISIX 的默认配置。
+
+router 端配置：
+
+| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
+| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
+| header  | string | 可选 | authorization |        | 设置我们从哪个 header 获取 token。 |
+| query  | string | 可选 | jwt |        | 设置我们从哪个 query string 获取 token，优先级低于 header |
+| cookie  | string | 可选 | jwt |        | 设置我们从哪个 cookie 获取 token，优先级低于 query |
 
 ## 接口
 

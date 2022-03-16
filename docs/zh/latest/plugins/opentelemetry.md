@@ -21,7 +21,7 @@ title: opentelemetry
 #
 -->
 
-## 名字
+## 描述
 
 [OpenTelemetry](https://opentelemetry.io/) 提供符合 [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification) 协议规范的 Tracing 数据上报。
 

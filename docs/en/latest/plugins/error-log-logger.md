@@ -21,7 +21,7 @@ title: error-log-logger
 #
 -->
 
-## Name
+## Description
 
 `error-log-logger` is a plugin which pushes the log data of APISIX's `error.log` to TCP servers or [Apache SkyWalking](https://skywalking.apache.org/).
 

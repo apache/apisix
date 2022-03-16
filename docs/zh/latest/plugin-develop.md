@@ -273,6 +273,19 @@ end
 
 **注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
 
+### APISIX 的自定义阶段
+
+除了 OpenResty 的阶段，我们还提供额外的阶段来满足特定的目的：
+
+* `delayed_body_filter`
+
+```lua
+function _M.delayed_body_filter(conf, ctx)
+    -- delayed_body_filter 在 body_filter 之后被调用。
+    -- 它被 tracing 类型插件用来在 body_filter 之后立即结束 span。
+end
+```
+
 ## 编写执行逻辑
 
 在对应的阶段方法里编写功能的逻辑代码，在阶段方法中具有 `conf` 和 `ctx` 两个参数，以 `limit-conn` 插件配置为例。

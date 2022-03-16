@@ -21,7 +21,7 @@ title: openid-connect
 #
 -->
 
-## Name
+## Description
 
 The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspection capability to APISIX.
 

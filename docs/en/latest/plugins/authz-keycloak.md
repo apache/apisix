@@ -21,7 +21,7 @@ title: authz-keycloak
 #
 -->
 
-## Name
+## Description
 
 `authz-keycloak` is an authorization plugin to be used with the Keycloak Identity Server. Keycloak is an OAuth/OIDC and
 UMA compliant Identity Server. Although, it's developed working in conjunction with Keycloak it should work with any

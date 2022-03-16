@@ -84,28 +84,37 @@ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-1. 创建一个名为 `apisix-2.12.0` 的目录。
+注意：如果你想针对特定平台打包 Apache APISIX，请更新 https://github.com/api7/apisix-build-tools。
+以下步骤仅用于设置 Apache APISIX 的开发环境。
+
+1. 安装依赖
+
+  ```shell
+  curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
+  ```
+
+2. 创建一个名为 `apisix-2.12.0` 的目录。
 
   ```shell
   APISIX_VERSION='2.12.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
-2. 下载 Apache APISIX Release 源码包：
+3. 下载 Apache APISIX Release 源码包：
 
   ```shell
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
   ```
 
-  您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网 - 下载页](https://apisix.apache.org/zh/downloads)。
+您也可以通过 Apache APISIX 官网下载 Apache APISIX Release 源码包。 Apache APISIX 官网也提供了 Apache APISIX、APISIX Dashboard 和 APISIX Ingress Controller 的源码包，详情请参考 [Apache APISIX 官网 - 下载页](https://apisix.apache.org/zh/downloads)。
 
-3. 解压 Apache APISIX Release 源码包：
+4. 解压 Apache APISIX Release 源码包：
 
   ```shell
   tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
-4. 安装运行时依赖的 Lua 库：
+5. 安装运行时依赖的 Lua 库：
 
   ```shell
   # 切换到 apisix-${APISIX_VERSION} 目录
@@ -116,11 +125,11 @@ sudo yum install ./apisix/*.rpm
   make install
   ```
 
-   **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
+**注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
 
-   解决思路：`luarocks` 支持自定义编译时依赖目录（来自此[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format))，使用第三方工具安装缺失的依赖，并将其文件路径添加到 `luarocks` 的变量表中。这是一种通用的解决方法，适用于在各种常见操作系统（包括但不仅限于 Ubuntu、Centos、macOS）遇到的“缺失头文件式安装依赖包失败”问题。
+解决思路：`luarocks` 支持自定义编译时依赖目录（来自此[链接](https://github.com/luarocks/luarocks/wiki/Config-file-format))，使用第三方工具安装缺失的依赖，并将其文件路径添加到 `luarocks` 的变量表中。这是一种通用的解决方法，适用于在各种常见操作系统（包括但不仅限于 Ubuntu、Centos、macOS）遇到的“缺失头文件式安装依赖包失败”问题。
 
-   这边暂给出 macOS 上的具体解决步骤，其他操作系统的解决方案类似：
+这边暂给出 macOS 上的具体解决步骤，其他操作系统的解决方案类似：
 
      1. 使用 `brew install openldap` 命令将 `openldap` 安装到本地；
      2. 使用 `brew --prefix openldap` 命令找到本地安装目录；
@@ -145,17 +154,17 @@ sudo yum install ./apisix/*.rpm
   make undeps
 ```
 
-  请注意，该操作将完整**删除**相关文件。
+请注意，该操作将完整**删除**相关文件。
 
-### 通过源码包安装 LTS 版本
+#### 通过源码包安装 LTS 版本
 
-目前 Apache APISIX 的 LTS 版本为 `2.10.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.3` ，其他步骤按顺序进行即可。
+目前 Apache APISIX 的 LTS 版本为 `2.10.4`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.4` ，其他步骤按顺序进行即可。
 
-## 步骤 2：安装 ETCD
+## 步骤 2：安装 etcd
 
-如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 ETCD，则需要这一步。
+如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 etcd，则需要这一步。
 
-你可以通过 Docker 或者二进制等方式安装 ETCD。以下命令通过二进制方式安装 ETCD。
+你可以通过 Docker 或者二进制等方式安装 etcd。以下命令通过二进制方式在 Linux 上安装 etcd。
 
 ```shell
 ETCD_VERSION='3.4.13'
@@ -164,6 +173,14 @@ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
   sudo cp -a etcd etcdctl /usr/bin/
 nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+以下命令在 Mac 上安装 etcd:
+
+```shell
+brew install etcd
+# start etcd server
+brew services start etcd
 ```
 
 ## 步骤 3：管理 Apache APISIX 服务
@@ -244,9 +261,9 @@ apisix help
 
 4. 有两种方法运行测试：
 
-  - 追加当前目录到 perl 模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
+- 追加当前目录到 perl 模块目录： `export PERL5LIB=.:$PERL5LIB`，然后运行 `make test` 命令。
 
-  - 或指定 NGINX 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`。
+- 或指定 NGINX 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`。
 
   <!--
   #
@@ -258,9 +275,9 @@ apisix help
   #
   -->
 
-  :::note 说明
-  部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，可以参考 `ci/linux_openresty_common_runner.sh`。
-  :::
+:::note 说明
+部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，可以参考 `ci/linux_openresty_common_runner.sh`。
+:::
 
 ### 问题排查
 
@@ -271,10 +288,10 @@ apisix help
 确保将 OpenResty 设置为默认的 NGINX，并按如下所示导出路径：
 
 * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
-  * Linux 默认安装路径：
-    * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
-  * MacOS 通过 homebrew 默认安装路径：
-    * `export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH`
+    * Linux 默认安装路径：
+        * `export PATH=/usr/local/openresty/nginx/sbin:$PATH`
+    * MacOS 通过 homebrew 默认安装路径：
+        * `export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH`
 
 **运行单个测试用例**
 

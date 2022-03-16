@@ -21,7 +21,7 @@ title: uri-blocker
 #
 -->
 
-## Name
+## Description
 
 The plugin helps we intercept user requests, we only need to indicate the `block_rules`.
 

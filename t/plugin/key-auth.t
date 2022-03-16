@@ -84,23 +84,12 @@ done
                             "key": "auth-one"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -233,18 +222,6 @@ apikey: auth-13
                         "key-auth": {
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "error",
-                            "plugins": {
-                                "key-auth": {
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

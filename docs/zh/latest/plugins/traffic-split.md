@@ -21,7 +21,7 @@ title: traffic-split
 #
 -->
 
-## 名字
+## 描述
 
 traffic-split 插件使用户可以逐步引导各个上游之间的流量百分比。
 

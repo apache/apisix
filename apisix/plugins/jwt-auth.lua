@@ -36,7 +36,20 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        header = {
+            type = "string",
+            default = "authorization"
+        },
+        query = {
+            type = "string",
+            default = "jwt"
+        },
+        cookie = {
+            type = "string",
+            default = "jwt"
+        }
+    },
 }
 
 local consumer_schema = {
@@ -171,8 +184,8 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function fetch_jwt_token(ctx)
-    local token = core.request.header(ctx, "authorization")
+local function fetch_jwt_token(conf, ctx)
+    local token = core.request.header(ctx, conf.header)
     if token then
         local prefix = sub_str(token, 1, 7)
         if prefix == 'Bearer ' or prefix == 'bearer ' then
@@ -182,12 +195,12 @@ local function fetch_jwt_token(ctx)
         return token
     end
 
-    token = ctx.var.arg_jwt
+    token = ctx.var["arg_" .. conf.query]
     if token then
         return token
     end
 
-    local val = ctx.var.cookie_jwt
+    local val = ctx.var["cookie_" .. conf.cookie]
     if not val then
         return nil, "JWT not found in cookie"
     end
@@ -339,7 +352,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local jwt_token, err = fetch_jwt_token(ctx)
+    local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
         return 401, {message = "Missing JWT token in request"}

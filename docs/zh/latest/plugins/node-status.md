@@ -21,7 +21,7 @@ title: node-status
 #
 -->
 
-## 插件简介
+## 描述
 
 `node-status` 是 `APISIX` 的请求状态查询插件，返回基本的状态信息。
 

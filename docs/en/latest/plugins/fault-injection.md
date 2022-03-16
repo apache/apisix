@@ -21,7 +21,7 @@ title: fault-injection
 #
 -->
 
-## Name
+## Description
 
 Fault injection plugin, this plugin can be used with other plugins and will be executed before other plugins.  The `abort` attribute will directly return the user-specified http code to the client and terminate the subsequent plugins. The `delay` attribute will delay a request and execute subsequent plugins.
 

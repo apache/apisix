@@ -114,28 +114,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "zipkin": {
-                                    "endpoint": "http://127.0.0.1:1980/mock_zipkin?server_addr=127.0.0.1",
-                                    "sample_ratio": 1,
-                                    "service_name":"APISIX"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -184,27 +162,6 @@ GET /opentracing
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "zipkin": {
-                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
-                                    "sample_ratio": 0.00001
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -250,23 +207,6 @@ opentracing
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

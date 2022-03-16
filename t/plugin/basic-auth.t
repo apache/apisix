@@ -86,24 +86,11 @@ done
                             "password": "bar"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "foo",
-                            "plugins": {
-                                "basic-auth": {
-                                    "username": "foo",
-                                    "password": "bar"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

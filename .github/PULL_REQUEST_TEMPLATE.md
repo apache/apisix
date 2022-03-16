@@ -1,21 +1,28 @@
-### What this PR does / why we need it:
-<!--- Why is this change required? What problem does it solve? -->
-<!--- If it fixes an open issue, please link to the issue here. -->
+### Description
 
-### Pre-submission checklist:
+<!-- Please include a summary of the change and which issue is fixed. -->
+<!-- Please also include relevant motivation and context. -->
+
+Fixes # (issue)
+
+### Checklist
+
+- [ ] I have explained the need for this PR and the problem it solves
+- [ ] I have explained the changes or the new features added to this PR
+- [ ] I have added tests corresponding to this change
+- [ ] I have updated the documentation to reflect this change
+- [ ] I have verified that this change is backward compatible (If not, please discuss on the [APISIX mailing list](https://github.com/apache/apisix/tree/master#community) first)
 
 <!--
-Please follow the PR manners:
-1. Use Draft if the PR is not ready to be reviewed
-2. Test is required for the feat/fix PR, unless you have a good reason
-3. Doc is required for the feat PR
-4. Use a new commit to resolve review instead of `push -f`
-5. If you need to resolve merge conflicts after the PR is reviewed, please merge master but do not rebase
-6. Use "request review" to notify the reviewer once you have resolved the review
-7. Only reviewer can click "Resolve conversation" to mark the reviewer's review resolved
--->
 
-* [ ] Did you explain what problem does this PR solve? Or what new features have been added?
-* [ ] Have you added corresponding test cases?
-* [ ] Have you modified the corresponding document?
-* [ ] Is this PR backward compatible? **If it is not backward compatible, please discuss on the [mailing list](https://github.com/apache/apisix/tree/master#community) first**
+Note
+
+1. Mark the PR as draft until it's ready to be reviewed.
+2. Always add/update tests for any changes unless you have a good reason.
+3. Always update the documentation to reflect the changes made in the PR.
+4. Make a new commit to resolve conversations instead of `push -f`.
+5. To resolve merge conflicts, merge master instead of rebasing.
+6. Use "request review" to notify the reviewer after making changes.
+7. Only a reviewer can mark a conversation as resolved.
+
+-->

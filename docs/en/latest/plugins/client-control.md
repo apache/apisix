@@ -21,7 +21,7 @@ title: client-control
 #
 -->
 
-## Name
+## Description
 
 The `client-control` plugin dynamically controls the behavior of Nginx to
 handle the client request.

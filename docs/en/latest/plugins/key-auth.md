@@ -21,11 +21,11 @@ title: key-auth
 #
 -->
 
-## Name
+## Description
 
 `key-auth` is an authentication plugin, it should work with `consumer` together.
 
-Add Key Authentication (also sometimes referred to as an API key) to a Service or a Route. Consumers then add their key either in a querystring parameter or a header to authenticate their requests.
+Add Key Authentication (also sometimes referred to as an API key) to a Service or a Route. Consumers then add their key either in a query string parameter or a header to authenticate their requests.
 
 ## Attributes
 
@@ -40,7 +40,7 @@ For route side:
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | header  | string | optional    | apikey        |       | the header we get the key from |
-| query   | string | optional    | apikey        |       | the querystring we get the key from, which priority is lower than header |
+| query   | string | optional    | apikey        |       | the query string we get the key from, which priority is lower than `header` |
 
 ## How To Enable
 

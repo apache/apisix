@@ -21,6 +21,8 @@ title: redirect
 #
 -->
 
+## 描述
+
 URI 重定向插件。
 
 ### 参数

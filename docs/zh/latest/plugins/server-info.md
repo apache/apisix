@@ -21,7 +21,7 @@ title: server-info
 #
 -->
 
-## 插件简介
+## 描述
 
 `server-info` 是一款能够定期将服务基本信息上报至 etcd 的插件。
 

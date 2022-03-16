@@ -88,16 +88,7 @@ hello world
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                core.json.encode(data),
-                [[{
-                    "node": {
-                        "value": {
-                            "status": 0
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
-                }]]
+                core.json.encode(data)
                 )
 
             if code >= 300 then
@@ -185,16 +176,7 @@ hello world
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                core.json.encode(data),
-                [[{
-                    "node": {
-                        "value": {
-                            "status": 0
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
-                }]]
+                core.json.encode(data)
                 )
 
             if code >= 300 then
