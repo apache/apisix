@@ -246,7 +246,7 @@ x-real-ip: 127.0.0.1
                                     upstream = {
                                         type = "roundrobin",
                                         pass_host = "node",
-                                        nodes = {["127.0.0.1:1981"] = 1}
+                                        nodes = {["localhost:1981"] = 1}
                                     }
                                 }
                             }
