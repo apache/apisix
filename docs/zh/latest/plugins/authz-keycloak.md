@@ -80,7 +80,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ## 测试插件
-
+获取`{JWT Token}`
+```shell
+curl \
+  -d "client_id=<YOUR_CLIENT_ID>" \
+  -d "username=<YOUR_USERNAMED>" \
+  -d "password=<YOUR_PASSWORD>" \
+  -d "grant_type=password" \
+  "http://localhost:8080/realms/${realm}/protocol/openid-connect/token"
+```
+验证
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 ```
