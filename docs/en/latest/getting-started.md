@@ -38,6 +38,7 @@ Apache APISIX facilitates interface traffic handling for Websites, Mobile and Io
   - Apache APISIX supports multi-platforms, languages and protocols. 
 
 ## Features
+
 Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with Apache SkyWalking in observability, which greatly improves service governance capabilities. Some of the characteristics of the Apache APISIX gateway include:
 
   - All platforms:
