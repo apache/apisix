@@ -201,6 +201,7 @@ local function pick_server(route, ctx)
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
+        node.upstream_host = parse_server_for_upstream_host(node, ctx)
         return node
     end
 
