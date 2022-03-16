@@ -29,7 +29,7 @@ title: authz-keycloak
 
 | 名称                        | 类型          | 必选项 | 默认值      | 有效值                      | 描述                                                                                            |
 | -----------------------     | ------------- | ------ | ----------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
-| token_endpoint              | string        | 必须   |             | [1, 4096]                   | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型  |
+| token_endpoint              | string        | 必须   |             |                              | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型  |
 | grant_type                  | string        | 可选   | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                                    |
 | audience                    | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
 | permissions                 | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`              |
