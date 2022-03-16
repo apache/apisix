@@ -612,7 +612,6 @@ qr/host: localhost:1980/
     }
 --- request
 GET /t
---- skip_nginx: 5: < 1.19.0
 --- response_body
 passed
 --- no_error_log
@@ -621,10 +620,8 @@ passed
 
 
 === TEST 24: hit route
+--- log_level: debug
 --- request
 GET /uri
---- skip_nginx: 5: < 1.19.0
---- response_body eval
-qr/host: localhost:1980/
 --- error_log
-proxy request to 127.0.0.1:1980
+Host: 127.0.0.1:1979
