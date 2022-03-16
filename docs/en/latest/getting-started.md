@@ -25,6 +25,7 @@ title: Getting Started
 An API gateway is an API management tool that acts as a mid-layer service between a client and a number of backend services. Typically, the API gateway receives the clients' requests and processes them by summoning multiple microservices, aggregating the services, and returning the appropriate results.
 
 ## What is Apache APISIX
+
 Apache APISIX is an open-source, dynamic and high-performance cloud-native API gateway that delivers the ultimate performance for all your APIs and microservices. Think of APISIX as a service bus that connects APIs and microservices in your cloud-native architecture.
 Apache APISIX facilitates interface traffic handling for Websites, Mobile and IoT applications by providing services such as load balancing, dynamic upstream, grayscale publishing, refined routing, current and speed limiting, and many more.
 
