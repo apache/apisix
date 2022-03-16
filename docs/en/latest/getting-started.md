@@ -60,7 +60,7 @@ Apache APISIX not only covers the traditional functions of NGINX, but also deepl
   
   - Multi-Language support:
   
-  Apache APISIX is a multi-language gateway for plugin development and supports multiple languages via RPC and Wasm. Developers can choose the language according to their needs and only need to write the code according to the SDK before compiling it to Wasm bytecode. APISIX has support for Java, Golang, Python and Node.js. 
+  Apache APISIX is a multi-language gateway for plugin development and supports multiple languages via RPC and Wasm. Developers can choose the language according to their needs and only need to write the code according to the SDK before compiling it to Wasm bytecode. APISIX has support for Java, Golang, Python and Node.js.
 
 ## Summary
 
