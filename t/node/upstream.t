@@ -522,7 +522,6 @@ proxy request to 127.0.0.1:1980
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
-                        "127.0.0.1:1979": 1,
                         "localhost:1980": 1000
                     },
                     "type": "roundrobin",
