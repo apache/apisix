@@ -57,7 +57,7 @@ title: authz-keycloak
 
 ## 如何启用
 
-创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件,`${realm}`是`Keycloak`中的`realm`名称：
+创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件, `${realm}` 是 `Keycloak` 中的 `realm` 名称：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
