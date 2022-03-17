@@ -30,7 +30,7 @@ title: sls-logger
 有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
-## 属性列表
+## 属性
 
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
