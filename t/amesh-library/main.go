@@ -66,10 +66,10 @@ func initial(zone unsafe.Pointer) {
 }
 }`)
 
-	writeShdict(zone, "/apisix/routes/1", value)
+	write_route(zone, "/apisix/routes/1", value)
 }
 
-func writeShdict(zone unsafe.Pointer, key, value string) {
+func write_route(zone unsafe.Pointer, key, value string) {
 	var keyCStr = C.CString(key)
 	defer C.free(unsafe.Pointer(keyCStr))
 	var keyLen = C.size_t(len(key))
