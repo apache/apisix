@@ -22,9 +22,11 @@ title: recaptcha
 #
 -->
 
-## Name
+## Description
 
-Restrict access to an upstream service by verifying request captcha token to the Google reCAPTCHA service. The Plugin supports customizing the invalid captcha response. Note that the plugin only supports reCAPTCHA v2(verify requests with a challenge).
+Restrict access to an upstream service by verifying request captcha token to the Google reCAPTCHA service. The Plugin supports customizing the invalid captcha response.
+
+> Note that the plugin only supports reCAPTCHA v2(verify requests with a challenge).
 
 ## Attributes
 
@@ -33,7 +35,7 @@ Restrict access to an upstream service by verifying request captcha token to the
 | secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA v2 service. |
 | parameter_source | string | optional | header | | The enum of captcha parameter source. Only `header`, `query` are supported. |
 | parameter_name | string | optional | captcha | | The name of captcha parameter. |
-| response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response of invalid recaptcha token. |
+| response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response for invalid recaptcha token. |
 | ssl_verify | boolean | optional | true | | verify if SSL cert matches hostname. |
 
 The example configuration of plugin is
@@ -56,7 +58,7 @@ The example configuration of plugin is
 Here's an example, enable this plugin on the specified route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "recaptcha": {
@@ -85,10 +87,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 Use curl to request:
 
 ```shell
-curl -X POST 'http://127.0.0.1:9080/login'
+$ curl -X POST 'http://127.0.0.1:9080/login'
 {"message":"invalid captcha"}
 
-curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
+$ curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
 {"message":"invalid captcha"}
 ```
 
@@ -99,7 +101,7 @@ you can delete the corresponding JSON configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/login",
     "upstream": {

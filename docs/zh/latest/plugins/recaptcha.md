@@ -22,9 +22,11 @@ title: recaptcha
 #
 -->
 
-## 简介
+## 描述
 
-通过向 Google reCAPTCHA 服务校验客户端传递的验证码来限制对上游服务的访问。插件支持自定义无效校验码的响应体。注意，此插件只支持 Google reCAPTCHA v2 版本。
+通过向 Google reCAPTCHA 服务校验客户端传递的验证码来限制对上游服务的访问。插件支持自定义无效校验码的响应体。
+
+> 注意，此插件只支持 Google reCAPTCHA v2 版本。
 
 ## 属性
 
@@ -56,7 +58,7 @@ title: recaptcha
 下面是一个示例，在指定的 `route` 上开启了 `recaptcha` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "recaptcha": {
@@ -85,10 +87,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 使用 `curl` 访问：
 
 ```shell
-curl -X POST 'http://127.0.0.1:9080/login'
+$ curl -X POST 'http://127.0.0.1:9080/login'
 {"message":"invalid captcha"}
 
-curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
+$ curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
 {"message":"invalid captcha"}
 ```
 
@@ -97,7 +99,7 @@ curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
 想要禁用该插件时很简单，在路由 `plugins` 配置块中删除对应 `JSON` 配置，不需要重启服务，即可立即生效禁用该插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/login",
     "upstream": {
