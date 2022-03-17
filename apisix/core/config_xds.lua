@@ -56,6 +56,7 @@ local _M = {
 local function load_shared_lib(lib_name)
     local cpath = package.cpath
     local tried_paths = new_tab(32, 0)
+    local i = 1
 
     local iter, err = ngx_re_gmatch(cpath, "[^;]+", "jo")
     if not iter then
@@ -77,6 +78,7 @@ local function load_shared_lib(lib_name)
             return ffi.load(spath)
         end
         tried_paths[i] = spath
+        i = i + 1
 
         if not it then
             break
