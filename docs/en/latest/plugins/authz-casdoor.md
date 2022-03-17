@@ -23,15 +23,12 @@ title: authz-casdoor
 
 ## Summary
 
-- [**Name**](#name)
+- [**Description**](#description)
 - [**Attributes**](#attributes)
-- [**Metadata**](#metadata)
 - [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
+- [**Example**](#example)
 
-## Name
+## Description
 
 `authz-casdoor` is an authorization plugin based on [Casdoor](https://casdoor.org/). Casdoor is a centralized authentication / Single-Sign-On (SSO) platform supporting OAuth 2.0, OIDC and SAML, integrated with Casbin RBAC and ABAC permission management.
 

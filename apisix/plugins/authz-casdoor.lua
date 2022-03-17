@@ -19,6 +19,8 @@ local http = require("resty.http")
 local session = require("resty.session")
 local ngx = ngx
 local rand = math.random
+local tostring = tostring
+
 
 local plugin_name = "authz-casdoor"
 local schema = {
@@ -45,49 +47,57 @@ local _M = {
 local function fetch_access_token(ctx, conf, state_in_session)
     local args = core.request.get_uri_args(ctx)
     if not args or not args.code or not args.state then
-        return nil, "failed when accessing token. Invalid code or state"
+        return nil, nil, "failed when accessing token. Invalid code or state"
     end
-    if not args.state == state_in_session then
-        return nil, "invalid state"
+    if args.state ~= tostring(state_in_session) then
+        return nil, nil, "invalid state"
     end
     local client = http.new()
     local url = conf.endpoint_addr .. "/api/login/oauth/access_token"
 
     local res, err = client:request_uri(url, {
         method = "POST",
-        query = {
+        body =  ngx.encode_args({
             code = args.code,
             grant_type = "authorization_code",
             client_id = conf.client_id,
             client_secret = conf.client_secret
+        }),
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded"
         }
     })
 
-    if not res then return nil, err end
+    if not res then
+        return nil, err
+    end
     local data, err = core.json.decode(res.body)
 
     if err or not data then
-        err = "failed to parse casdoor response data: " .. err
-        return nil, err
+        err = "failed to parse casdoor response data: " .. err .. ", body: " .. res.body
+        return nil, nil, err
     end
 
     if not data.access_token then
-        return nil, "failed when accessing token: no access_token contained"
+        return nil, nil,
+               "failed when accessing token: no access_token contained"
     end
     if not data.expires_in or data.expires_in == 0 then
-        return nil, "failed when accessing token: invalid access_token"
+        return nil, nil, "failed when accessing token: invalid access_token"
     end
 
-    return data.access_token, nil
+    return data.access_token, data.expires_in, nil
 end
 
-function _M.check_schema(conf) return core.schema.check(schema, conf) end
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
 
 function _M.access(conf, ctx)
     local current_uri = ctx.var.uri
     local session_obj_read, session_present = session.open()
     -- step 1: check whether hits the callback
-    local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)")
+    local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)", "jo")
     if err or not m then
         core.log.error(err)
         return 503, err
@@ -105,7 +115,7 @@ function _M.access(conf, ctx)
             core.log.error(err)
             return 503, err
         end
-        local access_token, err =
+        local access_token, lifetime, err =
             fetch_access_token(ctx, conf, state_in_session)
         if err then
             core.log.error(err)
@@ -118,12 +128,16 @@ function _M.access(conf, ctx)
                 core.log.error(err)
                 return 503, err
             end
-            local session_obj_write = session.start()
+            local session_obj_write = session.new {
+                cookie = {lifetime = lifetime}
+            }
+            session_obj_write:start()
             session_obj_write.data.access_token = access_token
             session_obj_write:save()
             core.response.set_header("Location", original_url)
             return 302
         else
+            err = "failed to retrieve access_token"
             return 503, err
         end
     end

@@ -37,6 +37,18 @@ add_block_preprocessor(sub {
         location /api/login/oauth/access_token {
             content_by_lua_block {
                 local json_encode = require("toolkit.json").encode
+                ngx.req.read_body()
+                local arg = ngx.req.get_post_args()["code"]
+
+                local core = require("apisix.core")
+                local log = core.log
+
+                if arg=="wrong" then
+                    ngx.status = 200
+                    ngx.say(json_encode({ access_token = "bbbbbbbbbb", expires_in = 0 }))
+                    return
+                end
+
                 ngx.status = 200
                 ngx.say(json_encode({ access_token = "aaaaaaaaaaaaaaaa", expires_in = 1000000 }))
             }
@@ -65,7 +77,9 @@ __DATA__
                 client_secret = "3416238e1edf915eac08b8fe345b2b95cdba7e04"
             }
             local ok, err = plugin.check_schema(conf)
-            if not ok then ngx.say(err) end
+            if not ok then
+                ngx.say(err)
+            end
 
             local conf2 = {
                 callback_url = callback_url .. "/?code=aaa",
@@ -74,7 +88,9 @@ __DATA__
                 client_secret = "3416238e1edf915eac08b8fe345b2b95cdba7e04"
             }
             local ok2, err2 = plugin.check_schema(conf2)
-            if ok2 then ngx.say(err) end
+            if ok2 then
+                ngx.say(err)
+            end
 
             local conf3 = {
                 callback_url = callback_url,
@@ -83,7 +99,9 @@ __DATA__
                 client_secret = "3416238e1edf915eac08b8fe345b2b95cdba7e04"
             }
             local ok3, err3 = plugin.check_schema(conf3)
-            if ok3 then ngx.say(err) end
+            if ok3 then
+                ngx.say(err)
+            end
 
             ngx.say("done")
 
@@ -106,25 +124,30 @@ done
             local fake_uri = "http://127.0.0.1:10420"
             local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
                                     "/anything/callback"
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
-                                "methods": ["GET"],
-                                "uri": "/anything/*",
-                                "plugins": {
-                                    "authz-casdoor": {
-                                        "callback_url":"]] .. callback_url .. [[",
-                                        "endpoint_addr":"]] .. fake_uri .. [[",
-                                        "client_id":"7ceb9b7fda4a9061ec1c",
-                                        "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
-                                    }
-                                },
-                                "upstream": {
-                                    "type": "roundrobin",
-                                    "nodes": {
-                                    "httpbin.org:80": 1
-                                    }
-                                }
-                            }]])
-            if not code == 200 then ngx.say("failed to set up routing rule") end
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/anything/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. callback_url .. [[",
+                            "endpoint_addr":"]] .. fake_uri .. [[",
+                            "client_id":"7ceb9b7fda4a9061ec1c",
+                            "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                        "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+            if not code == 200 then
+                ngx.say("failed to set up routing rule")
+            end
             ngx.say("done")
 
         }
@@ -144,7 +167,9 @@ done
             local t = require("lib.test_admin").test
 
             local code, body = t('/anything/d?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
-            if not code == 302 then ngx.say("should have redirected") end
+            if not code == 302 then
+                ngx.say("should have redirected")
+            end
 
             ngx.say("done")
 
@@ -198,12 +223,16 @@ passed
             local fake_uri = "http://127.0.0.1:10420/api/login/oauth/access_token"
 
             local res, err = httpc:request_uri(fake_uri, {method = "GET"})
-            if not res then ngx.say(err) end
-
+            if not res then
+                ngx.say(err)
+            end
             local data = cjson.decode(res.body)
-            if not data then ngx.say("invalid res.body") end
-
-            if not data.access_token == "aaaaaaaaaaaaaaaa" then ngx.say("invalid token") end
+            if not data then
+                ngx.say("invalid res.body")
+            end
+            if not data.access_token == "aaaaaaaaaaaaaaaa" then
+                ngx.say("invalid token")
+            end
             ngx.say("done")
 
         }
@@ -229,22 +258,29 @@ done
 
             local httpc = require("resty.http").new()
             local res1, err1 = httpc:request_uri(fake_uri, {method = "GET"})
-            if not res1 then ngx.say(err1) end
+            if not res1 then
+                ngx.say(err1)
+            end
 
             local cookie = res1.headers["Set-Cookie"]
             local re_url = res1.headers["Location"]
-            local m,err=ngx.re.match(re_url, "state=([0-9]*)")
+            local m, err = ngx.re.match(re_url, "state=([0-9]*)")
             if err or not m then
                 log.error(err)
+                ngx.exit()
             end
-            state=m[1]
+            local state = m[1]
 
             local res2, err2 = httpc:request_uri(callback_url..state, {
                 method = "GET",
                 headers = {Cookie = cookie}
             })
-            if not res2 then ngx.say(err) end
-            if not res2.code == 302 then log.error(res2.code) end
+            if not res2 then
+                ngx.say(err)
+            end
+            if not res2.code == 302 then
+                log.error(res2.code)
+            end
 
             local cookie2 = res1.headers["Set-Cookie"]
             local res3, err3 = httpc:request_uri(fake_uri, {
@@ -252,8 +288,12 @@ done
                 headers = {Cookie = cookie2}
 
             })
-            if not res3 then ngx.say(err) end
-            if not res3.status == 200 then log.error(res3.status) end
+            if not res3 then
+                ngx.say(err)
+            end
+            if not res3.status == 200 then
+                log.error(res3.status)
+            end
             ngx.say("done")
 
         }
@@ -278,7 +318,9 @@ done
 
             local httpc = require("resty.http").new()
             local res1, err1 = httpc:request_uri(callback_url, {method = "GET"})
-            if not res1.status == 503 then ngx.say(res1.status) end
+            if not res1.status == 503 then
+                ngx.say(res1.status)
+            end
             ngx.say("done")
         }
     }
@@ -305,7 +347,9 @@ no session found
 
             local httpc = require("resty.http").new()
             local res1, err1 = httpc:request_uri(fake_uri, {method = "GET"})
-            if not res1 then ngx.say(err1) end
+            if not res1 then
+                ngx.say(err1)
+            end
 
             local cookie = res1.headers["Set-Cookie"]
             local re_url = res1.headers["Location"]
@@ -313,14 +357,80 @@ no session found
             if err or not m then
                 log.error(err)
             end
-            state=m[1]+10
+            local state = m[1]+10
 
             local res2, err2 = httpc:request_uri(callback_url..state, {
                 method = "GET",
                 headers = {Cookie = cookie}
             })
-            if not res2 then ngx.say(err) end
-            if not res2.code == 302 then log.error(res2.code) end
+            if not res2 then
+                ngx.say(err)
+            end
+            if not res2.code == 302 then
+                log.error(res2.code)
+            end
+
+            local cookie2 = res1.headers["Set-Cookie"]
+            local res3, err3 = httpc:request_uri(fake_uri, {
+                method = "GET",
+                headers = {Cookie = cookie2}
+            })
+            if not res3 then
+                ngx.say(err)
+            end
+            if not res3.status == 503 then
+                log.error(res3.status)
+            end
+            ngx.say("done")
+
+        }
+    }
+--- response_body
+done
+--- error_log
+invalid state
+
+
+
+=== TEST 9: test incorrect access_token
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-casdoor")
+            local core = require("apisix.core")
+            local log = core.log
+            local t = require("lib.test_admin").test
+            local cjson = require("cjson")
+            local fake_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                "/anything/d?param1=foo&param2=bar"
+            local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                    "/anything/callback?code=wrong&state="
+
+            local httpc = require("resty.http").new()
+            local res1, err1 = httpc:request_uri(fake_uri, {method = "GET"})
+            if not res1 then
+                ngx.say(err1)
+            end
+
+            local cookie = res1.headers["Set-Cookie"]
+            local re_url = res1.headers["Location"]
+            local m, err = ngx.re.match(re_url, "state=([0-9]*)")
+            if err or not m then
+                log.error(err)
+                ngx.exit()
+            end
+            local state = m[1]
+
+            local res2, err2 = httpc:request_uri(callback_url..state, {
+                method = "GET",
+                headers = {Cookie = cookie}
+            })
+            if not res2 then
+                ngx.say(err)
+            end
+            if not res2.code == 302 then
+                log.error(res2.code)
+            end
 
             local cookie2 = res1.headers["Set-Cookie"]
             local res3, err3 = httpc:request_uri(fake_uri, {
@@ -328,11 +438,16 @@ no session found
                 headers = {Cookie = cookie2}
 
             })
-            if not res3 then ngx.say(err) end
-            if not res3.status == 503 then log.error(res3.status) end
+            if not res3 then
+                ngx.say(err)
+            end
+            if not res3.status == 503 then
+                log.error(res3.status)
+            end
             ngx.say("done")
-
         }
     }
 --- response_body
 done
+--- error_log
+failed when accessing token: invalid access_token
