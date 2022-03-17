@@ -81,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-获取`{JWT Token}`
+获取 `{JWT Token}`
 
 ```shell
 curl \
