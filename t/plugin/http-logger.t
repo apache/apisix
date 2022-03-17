@@ -173,7 +173,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:8888/hello-world-http",
+                                "uri": "http://127.0.0.1:1982/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -227,7 +227,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:8888/hello-world-http",
+                                "uri": "https://127.0.0.1:1982/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -267,7 +267,7 @@ GET /hello1
 --- response_body
 hello1 world
 --- error_log
-failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
+failed to perform SSL with host[127.0.0.1] port[1982] handshake failed
 --- wait: 1.5
 
 
@@ -282,7 +282,7 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -337,7 +337,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 2,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -407,7 +407,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:9991/hello-world-http",
+                                "uri": "http://127.0.0.1:9991/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -674,7 +674,7 @@ passed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -711,5 +711,5 @@ passed
 --- request
 GET /hello1
 --- error_log
-self signed certificate in certificate chain
+self signed certificate
 --- wait: 3
