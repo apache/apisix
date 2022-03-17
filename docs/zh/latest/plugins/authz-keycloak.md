@@ -89,7 +89,7 @@ curl \
   -d "username=<YOUR_USERNAMED>" \
   -d "password=<YOUR_PASSWORD>" \
   -d "grant_type=password" \
-  "http://localhost:8080/realms/${realm}/protocol/openid-connect/token"
+  "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
 ```
 
 验证
