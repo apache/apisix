@@ -50,7 +50,7 @@ rbac 功能由 [wolf](https://github.com/iGeeky/wolf) 提供，有关 `wolf` 的
 
 [Wolf 快速起步](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README-CN.md)
 
-### 添加应用，管理员，普通用户，权限，资源 及给用户授权。
+### 添加应用，管理员，普通用户，权限，资源 及给用户授权
 
 [Wolf 管理使用](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
 
