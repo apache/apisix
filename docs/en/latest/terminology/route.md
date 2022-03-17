@@ -21,11 +21,13 @@ title: Route
 #
 -->
 
-Routes match the client's request based on defined rules, loads and executes the corresponding [plugins](./plugin.md), and forwards the request to the specified [Upstream](./upstream.md).
+## Description
+
+Routes match the client's request based on defined rules, load and execute the corresponding [plugins](./plugin.md), and forwards the request to the specified [Upstream](./upstream.md).
 
 A Route mainly consists of three parts:
 
-1. Matching rules (uri, host, remote address)
+1. Matching rules (`uri`, `host`, `remote address`)
 2. Plugin configuration (current-limit, rate-limit)
 3. Upstream information
 
@@ -38,6 +40,8 @@ All the parameters are configured directly in the Route. It is easy to set up, a
 When Routes have repetitive configurations (say, enabling the same plugin configuration or Upstream information), to update it, we need to traverse all the Routes and modify them. This adds a lot of complexity, making it difficult to maintain.
 
 These shortcomings are independently abstracted in APISIX by two concepts: [Service](service.md) and [Upstream](upstream.md).
+
+## Example
 
 The Route example shown below proxies the request with the URL `/index.html` to the Upstream service with the address `127.0.0.1:1980`.
 
@@ -66,5 +70,7 @@ Server: APISIX web server
 ```
 
 A successful response indicates that the route was created.
+
+## Configuration
 
 For specific options of Route, please refer to the [Admin API](../admin-api.md#route).
