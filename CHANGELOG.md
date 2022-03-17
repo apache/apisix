@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.13.0](#2130)
 - [2.12.1](#2121)
 - [2.12.0](#2120)
 - [2.11.0](#2110)
@@ -52,6 +53,54 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.0
+
+### Change
+
+- change(syslog): correct the configuration [#6551](https://github.com/apache/apisix/pull/6551)
+- change(server-info): use a new approach(keepalive) to report DP info [#6202](https://github.com/apache/apisix/pull/6202)
+- change(admin): empty nodes should be encoded as array [#6384](https://github.com/apache/apisix/pull/6384)
+- change(prometheus): replace wrong apisix_nginx_http_current_connections{state="total"} label [#6327](https://github.com/apache/apisix/pull/6327)
+- change: don't expose public API by default & remove plugin interceptor [#6196](https://github.com/apache/apisix/pull/6196)
+
+### Core
+
+- :sunrise: feat: add delayed_body_filter phase [#6605](https://github.com/apache/apisix/pull/6605)
+- :sunrise: feat: support for reading environment variables from yaml configuration files [#6505](https://github.com/apache/apisix/pull/6505)
+- :sunrise: feat: rerun rewrite phase for newly added plugins in consumer [#6502](https://github.com/apache/apisix/pull/6502)
+- :sunrise: feat: add config to control write all status to x-upsream-apisix-status [#6392](https://github.com/apache/apisix/pull/6392)
+- :sunrise: feat: add kubernetes discovery module [#4880](https://github.com/apache/apisix/pull/4880)
+- :sunrise: feat(graphql): support http get and post json request [#6343](https://github.com/apache/apisix/pull/6343)
+
+### Plugin
+
+- :sunrise: feat: jwt-auth support custom parameters [#6561](https://github.com/apache/apisix/pull/6561)
+- :sunrise: feat: set cors allow origins by plugin metadata [#6546](https://github.com/apache/apisix/pull/6546)
+- :sunrise: feat: support post_logout_redirect_uri config in openid-connect plugin [#6455](https://github.com/apache/apisix/pull/6455)
+- :sunrise: feat: mocking plugin [#5940](https://github.com/apache/apisix/pull/5940)
+- :sunrise: feat(error-log-logger): add clickhouse for error-log-logger [#6256](https://github.com/apache/apisix/pull/6256)
+- :sunrise: feat: clickhouse logger [#6215](https://github.com/apache/apisix/pull/6215)
+- :sunrise: feat(grpc-transcode): support .pb file [#6264](https://github.com/apache/apisix/pull/6264)
+- :sunrise: feat: development of Loggly logging plugin [#6113](https://github.com/apache/apisix/pull/6113)
+- :sunrise: feat: add opentelemetry plugin [#6119](https://github.com/apache/apisix/pull/6119)
+- :sunrise: feat: add public api plugin [#6145](https://github.com/apache/apisix/pull/6145)
+- :sunrise: feat: add CSRF plugin [#5727](https://github.com/apache/apisix/pull/5727)
+
+### Bugfix
+
+- fix(skywalking,opentelemetry): trace request rejected by auth [#6617](https://github.com/apache/apisix/pull/6617)
+- fix(log-rotate): should rotate logs strictly hourly(or minutely) [#6521](https://github.com/apache/apisix/pull/6521)
+- fix: deepcopy doesn't copy the metatable [#6623](https://github.com/apache/apisix/pull/6623)
+- fix(request-validate): handle duplicate key in JSON [#6625](https://github.com/apache/apisix/pull/6625)
+- fix(prometheus): conflict between global rule and route configure [#6579](https://github.com/apache/apisix/pull/6579)
+- fix(proxy-rewrite): when conf.headers are missing,conf.method can make effect [#6300](https://github.com/apache/apisix/pull/6300)
+- fix(traffic-split): failed to match rule when the first rule failed [#6292](https://github.com/apache/apisix/pull/6292)
+- fix(config_etcd): skip resync_delay while etcd watch timeout [#6259](https://github.com/apache/apisix/pull/6259)
+- fix(proto): avoid sharing state [#6199](https://github.com/apache/apisix/pull/6199)
+- fix(limit-count): keep the counter if the plugin conf is the same [#6151](https://github.com/apache/apisix/pull/6151)
+- fix(admin): correct the count field of plugin-metadata/global-rule [#6155](https://github.com/apache/apisix/pull/6155)
+- fix: add missing labels after merging route and service [#6177](https://github.com/apache/apisix/pull/6177)
 
 ## 2.12.1
 
