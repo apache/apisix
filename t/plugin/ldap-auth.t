@@ -90,23 +90,12 @@ done
                             "user_dn": "cn=user01,ou=users,dc=example,dc=org"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "user01",
-                            "plugins": {
-                                "ldap-auth": {
-                                    "user_dn": "cn=user01,ou=users,dc=example,dc=org"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
