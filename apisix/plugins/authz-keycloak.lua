@@ -380,7 +380,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
                 local params = {
                     method = "POST",
-                    body =  ngx.encode_args({
+                    body = ngx.encode_args({
                         grant_type = "refresh_token",
                         client_id = client_id,
                         client_secret = conf.client_secret,
@@ -456,7 +456,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
         local params = {
             method = "POST",
-            body =  ngx.encode_args({
+            body = ngx.encode_args({
                 grant_type = "client_credentials",
                 client_id = client_id,
                 client_secret = conf.client_secret,
@@ -644,7 +644,7 @@ local function evaluate_permissions(conf, ctx, token)
 
     local params = {
         method = "POST",
-        body =  ngx.encode_args({
+        body = ngx.encode_args({
             grant_type = conf.grant_type,
             audience = authz_keycloak_get_client_id(conf),
             response_mode = "decision",
@@ -732,13 +732,13 @@ local function generate_token_using_password_grant(conf,ctx)
     if not token_endpoint then
         local err = "Unable to determine token endpoint."
         log.error(err)
-        return 500, err
+        return 503, err
     end
     local httpc = authz_keycloak_get_http_client(conf)
 
     local params = {
         method = "POST",
-        body =  ngx.encode_args({
+        body = ngx.encode_args({
             grant_type = "password",
             client_id = client_id,
             client_secret = conf.client_secret,
@@ -775,9 +775,11 @@ local function generate_token_using_password_grant(conf,ctx)
 end
 
 function _M.access(conf, ctx)
+    local headers = core.request.headers(ctx)
     if conf.password_grant_token_generation_incoming_uri and
-        ngx.var.request_uri:upper() ==
-        conf.password_grant_token_generation_incoming_uri:upper() and
+        ngx.var.request_uri ==
+        conf.password_grant_token_generation_incoming_uri and
+        headers["content-type"] == "application/x-www-form-urlencoded" and
         core.request.get_method() == "POST" then
             return generate_token_using_password_grant(conf,ctx)
     end

@@ -652,35 +652,8 @@ Location: http://127.0.0.1/test
                             "type": "roundrobin"
                         },
                         "uri": "/api/token"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": ["course_resource#view"],
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000,
-                                    "ssl_verify": false,
-                                    "password_grant_token_generation_incoming_uri": "/api/token"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/api/token"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
