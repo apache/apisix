@@ -21,20 +21,26 @@ title: Consumer
 #
 -->
 
+## Description
+
 For an API gateway, it is usually possible to identify the type of the requester by using things like their request domain name and client IP address. A gateway like APISIX can then filter these requests using [Plugins](./plugin.md) and forward it to the specified [Upstream](./upstream.md).
 
-But this level of depth can be insufficient in some occasions.
+But this level of depth can be insufficient on some occasions.
 
 ![consumer-who](../../../assets/images/consumer-who.png)
 
-An API gateway should know who the consumer of the API is to configure different rules for different consumers.
+An API gateway should know who the consumer of the API is to configure different rules for different consumers. This is where the **Consumer** construct comes in APISIX.
 
-This is where the Consumer construct comes in APISIX. The fields are defined below.
+### Configuration options
 
-| Field    | Required | Description                                                                                                                                                                                      |
-| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| username | Yes      | Name of the consumer.                                                                                                                                                                                   |
-| plugins  | No       | Plugin configuration of the Consumer. It has the highest priority: Consumer > Route > Service. For specific Plugin configurations, refer the [Plugins](./plugin.md) section. |
+The fields for defining a Consumer are defined as below.
+
+| Field      | Required | Description                                                                                                                                                                      |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `username` | Yes      | Name of the consumer                                                                                                                                                             |
+| `plugins`  | No       | Plugin configuration of the **Consumer**. It has the highest priority: Consumer > Route > Service. For specific Plugin configurations, refer the [Plugins](./plugin.md) section. |
+
+## Identifying a Consumer
 
 The process of identifying a Consumer in APISIX is described below:
 
@@ -46,7 +52,9 @@ The process of identifying a Consumer in APISIX is described below:
 
 Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These need to be used in conjunction with the user authentication system.
 
-Refer the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
+Refer to the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
+
+## Example
 
 The example below shows how you can enable a Plugin for a specific Consumer.
 
