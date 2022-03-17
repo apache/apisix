@@ -103,8 +103,8 @@ service_name 的 pattern 如下：
 
 # Q&A
 
-> Q: 为什么只支持配置 token 来访问 Kubernetes ApiServer \
-> A: 通常情况下，我们会使用三种方式与 Kubernetes ApiServer 通信 :
+> Q：为什么只支持配置 token 来访问 Kubernetes ApiServer \
+> A：通常情况下，我们会使用三种方式与 Kubernetes ApiServer 通信：
 >
 >+ mTLS
 >+ token

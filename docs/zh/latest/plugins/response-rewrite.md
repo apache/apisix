@@ -27,9 +27,9 @@ title: response-rewrite
 
 使用场景：
 
-1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS（跨域资源共享）的功能。
+1. 可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS（跨域资源共享）的功能。
 
-2、另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 [redirect](redirect.md) 插件。
+2. 另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 [redirect](redirect.md) 插件。
 
 ## 配置参数
 

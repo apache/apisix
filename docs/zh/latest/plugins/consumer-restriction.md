@@ -27,14 +27,14 @@ title: consumer-restriction
 
 ## 属性
 
-| 参数名     | 类型          | 可选项   | 默认值            | 有效值                           | 描述                                                       |
-| --------- | ------------- | ------ | -----------------| --------------------------------| ----------------------------------------------------------|
-| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 根据不同的对象做相应的限制，支持 `consumer_name`、`service_id`、`route_id`。     |
-| whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
-| blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
-| rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
-| rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。|
-| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的 HTTP methods 列表 , HTTP methods 可以为 `["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"]`                                                                        |
+| 参数名     | 类型          | 可选项   | 默认值            | 有效值                           | 描述                                                                                                                            |
+| --------- | ------------- | ------ | -----------------| --------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 根据不同的对象做相应的限制，支持 `consumer_name`、`service_id`、`route_id`。                                                                     |
+| whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。                                                                                       |
+| blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。                                                                                       |
+| rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。                                                                                                         |
+| rejected_msg | String   | 可选    |               |                        | 当请求被拒绝时，返回的消息内容。                                                                                                              |
+| allowed_by_methods | array[object] | 可选     |            |                        | 为用户设置允许的 HTTP methods 列表 , HTTP methods 可以为 `["GET"，"POST"，"PUT"，"DELETE"，"PATCH"，"HEAD"，"OPTIONS"，"CONNECT"，"TRACE"]` |
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
 

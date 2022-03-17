@@ -39,7 +39,7 @@ title: 压力测试
 
 #### 延时
 
-请注意 y 轴延时的单位是**微秒 (μs)**，而不是毫秒：
+请注意 y 轴延时的单位是**微秒（μs）**，而不是毫秒：
 
 ![latency-1](../../assets/images/latency-1.jpg)
 
@@ -61,7 +61,7 @@ title: 压力测试
 
 #### Latency
 
-请注意 y 轴延时的单位是**微秒 (μs)**，而不是毫秒：
+请注意 y 轴延时的单位是**微秒（μs）**，而不是毫秒：
 
 ![latency-2](../../assets/images/latency-2.jpg)
 
