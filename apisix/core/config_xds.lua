@@ -56,19 +56,31 @@ local _M = {
 local function load_shared_lib(lib_name)
     local cpath = package.cpath
     local tried_paths = new_tab(32, 0)
-    local i = 1
 
-    for k, _ in ngx_re_gmatch(cpath, "[^;]+") do
-        local fpath = ngx_re_match(k, "(.*/)")
-        fpath = fpath .. lib_name
+    local iter, err = ngx_re_gmatch(cpath, "[^;]+", "jo")
+    if not iter then
+        error("failed to gmatch: " .. err)
+    end
 
-        local f = io_open(fpath)
+    while true do
+        local it = iter()
+        local fpath
+        fpath, err = ngx_re_match(it[0], "(.*/)",  "jo")
+        if err then
+            error("failed to match: " .. err)
+        end
+        local spath = fpath[0] .. lib_name
+
+        local f = io_open(spath)
         if f ~= nil then
             io_close(f)
-            return ffi.load(fpath)
+            return ffi.load(spath)
         end
-        tried_paths[i] = fpath
-        i = i + 1
+        tried_paths[i] = spath
+
+        if not it then
+            break
+        end
     end
 
     return nil, tried_paths

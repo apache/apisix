@@ -78,7 +78,7 @@ apisix:
         }
     }
 --- no_error_log eval
-qr/can not load Amesh library/
+qr/can not load xDS library/
 
 
 
