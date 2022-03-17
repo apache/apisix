@@ -40,6 +40,8 @@ fi
 ./configure $WITH_LUA_OPT \
     > build.log 2>&1 || (cat build.log && exit 1)
 
+rm -rf luarocks-"$LUAROCKS_VER"
+
 make build > build.log 2>&1 || (cat build.log && exit 1)
 sudo make install > build.log 2>&1 || (cat build.log && exit 1)
 cd .. || exit
