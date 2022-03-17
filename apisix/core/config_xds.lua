@@ -75,10 +75,10 @@ local function load_shared_lib(lib_name)
 end
 
 
-local function load_libamesh(lib_name)
-    local ameshagent, tried_paths = load_shared_lib(lib_name)
+local function load_libxds(lib_name)
+    local xdsagent, tried_paths = load_shared_lib(lib_name)
 
-    if not ameshagent then
+    if not xdsagent then
         tried_paths[#tried_paths + 1] = 'tried above paths but can not load ' .. lib_name
         error("can not load Amesh library, tried paths: " ..
               table.concat(tried_paths, '\r\n', 1, #tried_paths))
@@ -86,16 +86,16 @@ local function load_libamesh(lib_name)
 
     local router_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(router_config[1])
     local router_shd_cdata = ffi.cast("void*", router_zone)
-    ameshagent.initial(router_shd_cdata)
+    xdsagent.initial(router_shd_cdata)
 end
 
 
 
 function _M.init_worker()
-    local lib_name = "libamesh.so"
+    local lib_name = "libxds.so"
 
     if process.type() == "privileged agent" then
-        load_libamesh(lib_name)
+        load_libxds(lib_name)
     end
 
     return true
