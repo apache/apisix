@@ -23,9 +23,9 @@ title: http-logger
 
 ## 描述
 
-`http-logger` 是一个插件，可将Log数据请求推送到 HTTP / HTTPS 服务器。
+`http-logger` 是一个插件，可将 Log 数据请求推送到 HTTP / HTTPS 服务器。
 
-这将提供将 Log 数据请求作为JSON对象发送到监视工具和其他 HTTP 服务器的功能。
+这将提供将 Log 数据请求作为 JSON 对象发送到监视工具和其他 HTTP 服务器的功能。
 
 ## 属性
 
