@@ -29,7 +29,7 @@ jobs:
         test_dir:
           - t/plugin
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
-          - t/amesh-library t/node t/router t/script t/stream-node t/utils t/wasm
+          - t/xds-library t/node t/router t/script t/stream-node t/utils t/wasm
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -90,9 +90,9 @@ jobs:
           sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
           cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
-      - name: Build Amesh library
+      - name: Build xDS library
         run: |
-          cd t/amesh-library
+          cd t/xds-library
           go build -o libamesh.so -buildmode=c-shared main.go
 
       - name: Linux Before install

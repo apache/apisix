@@ -111,7 +111,7 @@ function _M.http_init_worker()
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer")
 
-    if core.config == require("apisix.core.config_shdict") then
+    if core.config == require("apisix.core.config_xds") then
         core.config.init_worker()
     end
 

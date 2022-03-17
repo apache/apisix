@@ -24,14 +24,16 @@ local config_local      = require("apisix.core.config_local")
 local table             = table
 local error             = error
 local is_http           = ngx.config.subsystem == "http"
-local string            = string
 local io                = io
+local io_open           = io.open
+local io_close          = io.close
 local package           = package
 local new_tab           = base.new_tab
-local ngx_timer_at      = ngx.timer.at
 local ffi               = require ("ffi")
 local C                 = ffi.C
 local router_config     = ngx.shared["router-config"]
+local ngx_re_match      = ngx.re.match
+local ngx_re_gmatch     = ngx.re.gmatch
 
 local process
 if is_http then
@@ -52,17 +54,12 @@ local _M = {
 
 -- todo: refactor this function in chash.lua and radixtree.lua
 local function load_shared_lib(lib_name)
-    local string_gmatch = string.gmatch
-    local string_match = string.match
-    local io_open = io.open
-    local io_close = io.close
-
     local cpath = package.cpath
     local tried_paths = new_tab(32, 0)
     local i = 1
 
-    for k, _ in string_gmatch(cpath, "[^;]+") do
-        local fpath = string_match(k, "(.*/)")
+    for k, _ in ngx_re_gmatch(cpath, "[^;]+") do
+        local fpath = ngx_re_match(k, "(.*/)")
         fpath = fpath .. lib_name
 
         local f = io_open(fpath)
