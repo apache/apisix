@@ -17,7 +17,7 @@
 
 --- Get configuration form ngx.shared.DICT.
 --
--- @module core.config_shdict
+-- @module core.config_xds
 
 local base              = require("resty.core.base")
 local config_local      = require("apisix.core.config_local")
@@ -40,7 +40,7 @@ end
 
 
 ffi.cdef[[
-extern void initial(void* writeRoute);
+extern void initial(void* router_zone_ptr);
 ]]
 
 
@@ -79,24 +79,17 @@ end
 
 
 local function load_libamesh(lib_name)
-    ngx_timer_at(0, function(premature)
-        if premature then
-            return
-        end
+    local ameshagent, tried_paths = load_shared_lib(lib_name)
 
-        local ameshagent, tried_paths = load_shared_lib(lib_name)
+    if not ameshagent then
+        tried_paths[#tried_paths + 1] = 'tried above paths but can not load ' .. lib_name
+        error("can not load Amesh library, tried paths: " ..
+              table.concat(tried_paths, '\r\n', 1, #tried_paths))
+    end
 
-        if not ameshagent then
-            tried_paths[#tried_paths + 1] = 'tried above paths but can not load '
-                                            .. lib_name
-            error("can not load Amesh library, tried paths: " ..
-                           table.concat(tried_paths, '\r\n', 1, #tried_paths))
-        end
-
-        local router_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(router_config[1])
-        local router_shd_cdata = ffi.cast("void*", router_zone)
-        ameshagent.initial(router_shd_cdata)
-    end)
+    local router_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(router_config[1])
+    local router_shd_cdata = ffi.cast("void*", router_zone)
+    ameshagent.initial(router_shd_cdata)
 end
 
 
@@ -109,12 +102,6 @@ function _M.init_worker()
     end
 
     return true
-end
-
-
-function _M.new(key, opts)
-    -- mock for test
-    return { true }
 end
 
 

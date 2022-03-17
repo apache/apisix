@@ -560,7 +560,6 @@ Please modify "admin_key" in conf/config.yaml .
     end
     sys_conf["wasm"] = yaml_conf.wasm
 
-    sys_conf["config_center"] = yaml_conf.apisix.config_center
 
     local wrn = sys_conf["worker_rlimit_nofile"]
     local wc = sys_conf["event"]["worker_connections"]

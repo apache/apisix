@@ -41,6 +41,24 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("lua_deps_path", $lua_deps_path);
+
+    my $extra_init_by_lua = <<_EOC_;
+    --
+    local config_xds = require("apisix.core.config_xds")
+
+    local inject = function(mod, name)
+        local old_f = mod[name]
+        mod[name] = function (...)
+            ngx.log(ngx.WARN, "config_xds run ", name)
+            return { true }
+        end
+    end
+
+    inject(config_xds, "new")
+
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -51,7 +69,7 @@ __DATA__
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: shdict
+  config_center: xds
   enable_admin: false
 --- config
     location /t {
@@ -68,7 +86,7 @@ qr/can not load Amesh library/
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: shdict
+  config_center: xds
   enable_admin: false
 --- config
     location /t {
