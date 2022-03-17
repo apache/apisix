@@ -711,5 +711,56 @@ passed
 --- request
 GET /hello1
 --- error_log
-self signed certificate
+certificate host mismatch
+
+
+
+=== TEST 22: set correct https endpoint and ssl verify false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "https://127.0.0.1:1983/echo",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "ssl_verify": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: access correct https endpoint but ssl verify ok
+--- request
+GET /hello1
+--- no_error_log
+[error]
 --- wait: 3
