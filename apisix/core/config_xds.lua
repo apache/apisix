@@ -35,6 +35,9 @@ local router_config     = ngx.shared["router-config"]
 local ngx_re_match      = ngx.re.match
 local ngx_re_gmatch     = ngx.re.gmatch
 
+local xds_lib_name = "libxds.so"
+
+
 local process
 if is_http then
     process = require("ngx.process")
@@ -106,10 +109,8 @@ end
 
 
 function _M.init_worker()
-    local lib_name = "libxds.so"
-
     if process.type() == "privileged agent" then
-        load_libxds(lib_name)
+        load_libxds(xds_lib_name)
     end
 
     return true
