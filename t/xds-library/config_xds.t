@@ -76,7 +76,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: load Amesh library so successfully
+=== TEST 1: load xDS library successfully
 --- config
     location /t {
         content_by_lua_block {
@@ -88,7 +88,7 @@ qr/can not load xDS library/
 
 
 
-=== TEST 2: read data form shdict that wirted by Amesh library
+=== TEST 2: read data form shdict that wirted by xDS library
 --- config
     location /t {
         content_by_lua_block {
