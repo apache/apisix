@@ -177,8 +177,7 @@ local function set_balancer_opts(route, ctx)
 end
 
 
-local function parse_server_for_upstream_host(picked_server, ctx)
-    local upstream_scheme = ctx.upstream_scheme
+local function parse_server_for_upstream_host(picked_server, upstream_scheme)
     local standard_port = apisix_upstream.scheme_to_port[upstream_scheme]
     local host = picked_server.domain or picked_server.host
     if upstream_scheme and (not standard_port or standard_port ~= picked_server.port) then
@@ -201,7 +200,7 @@ local function pick_server(route, ctx)
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
-        node.upstream_host = parse_server_for_upstream_host(node, ctx)
+        node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
         return node
     end
 
@@ -263,7 +262,7 @@ local function pick_server(route, ctx)
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
     ctx.server_picker = server_picker
-    res.upstream_host = parse_server_for_upstream_host(res, ctx)
+    res.upstream_host = parse_server_for_upstream_host(res, ctx.upstream_scheme)
 
     return res
 end
