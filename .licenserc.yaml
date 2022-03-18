@@ -27,6 +27,7 @@ header:
     - '**/*.key'
     - '**/*.crt'
     - '**/*.pem'
+    - '**/*.pb.go'
     - '.github/'
     - 'conf/mime.types'
     # Exclude CI env_file

@@ -47,10 +47,6 @@ do_install() {
     # install and start grpc_server_example
     cd t/grpc_server_example
 
-    if [ ! "$(ls -A . )" ]; then # for local development only
-        git submodule init
-        git submodule update
-    fi
     CGO_ENABLED=0 go build
     cd ../../
 
