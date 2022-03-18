@@ -59,6 +59,17 @@ _EOC_
 _EOC_
 
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+
+    if (!$block->yaml_config) {
+        my $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    config_center: xds
+    enable_admin: false
+_EOC_
+
+        $block->set_value("yaml_config", $yaml_config);
+    }
 });
 
 run_tests;
@@ -66,11 +77,6 @@ run_tests;
 __DATA__
 
 === TEST 1: load Amesh library so successfully
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: xds
-  enable_admin: false
 --- config
     location /t {
         content_by_lua_block {
@@ -83,11 +89,6 @@ qr/can not load xDS library/
 
 
 === TEST 2: read data form shdict that wirted by Amesh library
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: xds
-  enable_admin: false
 --- config
     location /t {
         content_by_lua_block {
