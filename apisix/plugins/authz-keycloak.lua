@@ -776,12 +776,12 @@ end
 
 function _M.access(conf, ctx)
     local headers = core.request.headers(ctx)
-    if conf.password_grant_token_generation_incoming_uri and
-        ngx.var.request_uri ==
-        conf.password_grant_token_generation_incoming_uri and
+    local need_grant_token = conf.password_grant_token_generation_incoming_uri and
+        ngx.var.request_uri == conf.password_grant_token_generation_incoming_uri and
         headers["content-type"] == "application/x-www-form-urlencoded" and
-        core.request.get_method() == "POST" then
-            return generate_token_using_password_grant(conf,ctx)
+        core.request.get_method() == "POST"
+    if need_grant_token then
+        return generate_token_using_password_grant(conf,ctx)
     end
     log.debug("hit keycloak-auth access")
     local jwt_token, err = fetch_jwt_token(ctx)
