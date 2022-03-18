@@ -35,7 +35,7 @@ Apache APISIX facilitates interface traffic handling for Websites, Mobile and Io
   - Help enterprises to solve the difficulties in the transformation of traditional monolithic architecture, so as to achieve rapid iteration of business and products.
   - Apache APISIX replaces NGINX and handles traditional north-south traffic. It also replaces Envoy to handle east-west traffic between services.
   - Handles Layer 4 and Layer 7 traffic: HTTP, HTTPs, TCP, UDP, MQTT, Dubbo, gRPC, etc.
-  - It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
+  - It can also be used as a [K8s ingress controller](https://github.com/apache/apisix-ingress-controller).
   - Use IdP plugin as Zero-Trust gateway
   - Easy to use: APISIX also consists of a built-in low-code dashboard that offers a powerful and flexible interface. You can write your own custom plugins or use custom load balancing algorithms.
   - Apache APISIX supports multi-platforms, languages and protocols.
