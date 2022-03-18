@@ -258,5 +258,5 @@ host: www.sni.com
 Receive SNI: localhost
 --- response_body
 uri: /uri
-host: localhost
+host: localhost:1983
 x-real-ip: 127.0.0.1
