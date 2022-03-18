@@ -42,6 +42,12 @@ function fetch_api_router()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
+                if route.uri == nil then
+                    core.log.error("got nil uri in api route: ",
+                                   core.json.delay_encode(route, true))
+                    break
+                end
+
                 local typ_uri = type(route.uri)
                 if not has_route_not_under_apisix then
                     if typ_uri == "string" then
