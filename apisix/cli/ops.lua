@@ -251,6 +251,11 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_openresty = false
     end
 
+    local enabled_discoveries = {}
+    for name in pairs(yaml_conf.discovery or {}) do
+        enabled_discoveries[name] = true
+    end
+
     local enabled_plugins = {}
     for i, name in ipairs(yaml_conf.plugins or {}) do
         enabled_plugins[name] = true
@@ -523,6 +528,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
+        enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
