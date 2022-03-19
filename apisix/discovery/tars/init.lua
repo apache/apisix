@@ -24,6 +24,11 @@ local core = require("apisix.core")
 local mysql = require("resty.mysql")
 local process = require("ngx.process")
 
+local endpoint_dict = ngx.shared.tars
+if not endpoint_dict then
+    error("failed to get nginx shared dict: tars, please check your APISIX version")
+end
+
 local full_query_sql = [[ select servant, group_concat(endpoint order by endpoint) as endpoints
 from t_server_conf left join t_adapter_conf tac using (application, server_name, node_name)
 where setting_state = 'active' and present_state = 'active'
@@ -47,7 +52,6 @@ local _M = {
     version = 0.1,
 }
 
-local endpoint_dict
 local default_weight
 
 local last_fetch_full_time = 0
@@ -65,7 +69,7 @@ local nodes_buffer = core.table.new(0, 5)
 --[[
 endpoints format as follows:
   tcp -h 172.16.1.1 -p 11 -t 6000 -e 0,tcp -e 0 -p 12 -h 172.16.1.1,tcp -p 13 -h 172.16.1.1
-we need extract host and port value via regex
+we extract host and port value via endpoints_pattern
 --]]
 local endpoints_pattern = core.table.concat(
         { [[tcp(\s*-[te]\s*(\S+)){0,2}\s*-([hpHP])\s*(\S+)(\s*-[teTE]\s*(\S+))]],
@@ -178,27 +182,36 @@ local function extract_endpoint(query_result)
     end
 end
 
---[[
-result of full_query_sql is as follows:
-{
-    {
-        servant = "A.AServer.FirstObj",
-        endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
-    },
-    {
-        servant = "A.AServer.SecondObj",
-        endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
-    },
-}
 
-between two fetch_full(), some servant may be deleted, and cannot be reflected in the result
-so :
-  before read result, we should to execute endpoint_dict:flush_all()
-  after read result, we should to execute endpoint_dict:flush_expired()
-
---]]
 local function fetch_full(db_cli)
     local res, err, errcode, sqlstate = db_cli:query(full_query_sql)
+    --[[
+    res format is as follows:
+    {
+        {
+            servant = "A.AServer.FirstObj",
+            endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
+        },
+        {
+            servant = "A.AServer.SecondObj",
+            endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
+        },
+    }
+
+    if current endpoint_dict is as follows:
+      key1:nodes1, key2:nodes2, key3:nodes3
+
+    then fetch_full get follow results:
+      key1:nodes1, key4:nodes4, key5:nodes5
+
+    at this time, we need
+      1: setup key4:nodes4, key5:nodes5
+      2: delete key2:nodes2, key3:nodes3
+
+    to achieve goals, we should:
+      1: before setup results, execute endpoint_dict:flush_all()
+      2:  after setup results, execute endpoint_dict:flush_expired()
+    --]]
     if not res then
         core.log.error("query failed, error: ", err, ", ", errcode, " ", sqlstate)
         return err
@@ -221,33 +234,33 @@ local function fetch_full(db_cli)
 end
 
 
---[[
-result of incremental_query_sql is as follows:
-{
-    {
-        activated=1,
-        servant = "A.AServer.FirstObj",
-        endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
-    },
-    {
-        activated=0,
-        servant = "A.AServer.FirstObj",
-        endpoints = "tcp -t 3000 -p 10001 -h 172.16.1.3"
-    },
-    {
-        activated=0,
-        servant = "B.BServer.FirstObj",
-        endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
-    },
-}
-
-for each item:
-    if activated==1 , set into endpoints_dict
-    if activated==0 , there is a item had same servant and activate==1, ignore
-    if activated==0 , there is no item had same servant, delete
---]]
 local function fetch_incremental(db_cli)
     local res, err, errcode, sqlstate = db_cli:query(incremental_query_sql)
+    --[[
+    res is as follows:
+    {
+        {
+            activated=1,
+            servant = "A.AServer.FirstObj",
+            endpoints = "tcp -h 172.16.1.1 -p 10001 -e 0 -t 3000,tcp -p 10002 -h 172.16.1.2 -t 3000"
+        },
+        {
+            activated=0,
+            servant = "A.AServer.FirstObj",
+            endpoints = "tcp -t 3000 -p 10001 -h 172.16.1.3"
+        },
+        {
+            activated=0,
+            servant = "B.BServer.FirstObj",
+            endpoints = "tcp -t 3000 -p 10002 -h 172.16.1.2"
+        },
+    }
+
+    for each item:
+      if activated==1, setup
+      if activated==0, if there is a other item had same servant and activate==1, ignore
+      if activated==0, and there is no other item had same servant, delete
+    --]]
     if not res then
         core.log.error("query failed, error: ", err, ", ", errcode, " ", sqlstate)
         return err
@@ -308,11 +321,6 @@ end
 
 
 function _M.init_worker()
-    endpoint_dict = ngx.shared.tars
-    if not endpoint_dict then
-        error("failed to get nginx shared dict: tars, please check your APISIX version")
-    end
-
     if process.type() ~= "privileged agent" then
         return
     end
@@ -320,7 +328,7 @@ function _M.init_worker()
     local conf = local_conf.discovery.tars
     default_weight = conf.default_weight
 
-    core.log.info("conf ", core.json.encode(conf, true))
+    core.log.info("conf ", core.json.delay_encode(conf))
     local backtrack_time = conf.incremental_fetch_interval + 5
     incremental_query_sql = format(incremental_query_sql, backtrack_time, backtrack_time)
 

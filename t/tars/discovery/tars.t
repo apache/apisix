@@ -38,8 +38,8 @@ discovery:
       database: db_tars
       user: root
       password: tars2022
-    full_fetch_interval: 90
-    incremental_fetch_interval: 5
+    full_fetch_interval: 3
+    incremental_fetch_interval: 1
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -51,13 +51,25 @@ _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
 
+    my $extra_init_by_lua = <<_EOC_;
+        -- reduce incremental_fetch_interval,full_fetch_interval
+        local core = require("apisix.core")
+        local schema = require("apisix.discovery.tars.schema")
+        schema.properties.incremental_fetch_interval.minimum=1
+        schema.properties.incremental_fetch_interval.default=1
+        schema.properties.full_fetch_interval.minimum = 3
+        schema.properties.full_fetch_interval.default = 3
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+
     my $config = $block->config // <<_EOC_;
         location /count {
             content_by_lua_block {
               local core = require("apisix.core")
               local d = require("apisix.discovery.tars")
 
-              ngx.sleep(11)
+              ngx.sleep(2)
 
               ngx.req.read_body()
               local request_body = ngx.req.get_body_data()
@@ -80,7 +92,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.tars")
 
-              ngx.sleep(11)
+              ngx.sleep(2)
 
               ngx.req.read_body()
               local servant = ngx.req.get_body_data()
@@ -149,7 +161,7 @@ run_tests();
 __DATA__
 
 === TEST 1: create initial server and servant
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -190,7 +202,7 @@ values ('A', 'AServer', '172.16.1.1', 'A.AServer.FirstObjAdapter',
 
 
 === TEST 2: add servers on different nodes
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -213,7 +225,7 @@ values ('A', 'AServer', '172.16.1.2', now(), 'taf-cpp', 'active', 'active', 'tar
 
 
 === TEST 3: add servant
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -236,7 +248,7 @@ values ('A', 'AServer', '172.16.1.2', 'A.AServer.FirstObjAdapter',
 
 
 === TEST 4: update servant, update setting_state
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -256,7 +268,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 5: update server setting_state
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -276,7 +288,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 6: update server present_state
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "POST /sql
@@ -296,7 +308,7 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.2'
 
 
 === TEST 7: update servant endpoint
---- timeout: 12
+--- timeout: 3
 --- request eval
 [
 "GET /nodes
@@ -336,8 +348,8 @@ and node_name = '172.16.1.2' and servant = 'A.AServer.SecondObj'",
 
 
 === TEST 9: count after delete servant
---- timeout: 100
---- wait: 92
+--- timeout: 4
+--- wait: 3
 --- request eval
 [
 "GET /count
@@ -367,8 +379,8 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
 
 
 === TEST 11: count after delete
---- timeout: 100
---- wait: 92
+--- timeout: 4
+--- wait: 3
 --- request eval
 [
 "GET /count
