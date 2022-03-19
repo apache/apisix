@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local http = require("resty.http")
+local ngx = ngx
 
 local schema = {
     type = "object",
@@ -45,27 +46,22 @@ local _M = {
     schema = schema,
 }
 
-function _M.check_schema(conf, schema_type)
+function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
 local function retrieve_captcha(ctx, conf)
-    local captcha
     if conf.parameter_source == "header" then
-        captcha = core.request.header(ctx, conf.parameter_name)
-    elseif conf.parameter_source == "query" then
-        local uri_args = core.request.get_uri_args(ctx) or {}
-        captcha = uri_args[conf.parameter_name]
+        return core.request.header(ctx, conf.parameter_name)
     end
-    return captcha
+
+    if conf.parameter_source == "query" then
+        local uri_args = core.request.get_uri_args(ctx) or {}
+        return uri_args[conf.parameter_name]
+    end
 end
 
 function _M.access(conf, ctx)
-    local path = ctx.var.uri
-    local method = core.request.get_method()
-
-    core.log.debug("path: ", path, ", method: ", method, ", conf: ", core.json.encode(conf))
-
     local invalid_captcha = true
     local captcha = retrieve_captcha(ctx, conf)
     if captcha ~= nil and captcha ~= "" then
@@ -74,7 +70,7 @@ function _M.access(conf, ctx)
         local remote_ip = core.request.get_remote_client_ip(ctx)
         local res, err = httpc:request_uri(recaptcha_url .. "/recaptcha/api/siteverify", {
             method = "POST",
-            body = "secret=" .. secret .. "&response=" .. captcha .. "&remoteip=" .. remote_ip,
+            body = ngx.encode_args({ secret = secret, response = captcha, remoteip = remote_ip }),
             headers = {
                 ["Content-Type"] = "application/x-www-form-urlencoded",
             },
@@ -84,9 +80,12 @@ function _M.access(conf, ctx)
             core.log.error("request failed: ", err)
             return 503
         end
-        core.log.debug("recaptcha veirfy result: ", res.body)
-        local recaptcha_result = core.json.decode(res.body)
-        if recaptcha_result.success == true then
+        core.log.debug("recaptcha verify result: ", res.body)
+        local recaptcha_result, err = core.json.decode(res.body)
+        if err then
+            core.log.error("faield to decode the recaptcha response json: ", err)
+        end
+        if recaptcha_result and recaptcha_result.success == true then
             invalid_captcha = false
         end
     end
