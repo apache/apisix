@@ -120,6 +120,17 @@ end
 
 
 local function get_endpoint(servant)
+
+    --[[
+    fetch_full function will:
+         1: call endpoint_dict:flush_all()
+         2: setup servant:nodes pairs into endpoint_dict
+         3: call endpoint_dict:flush_expired()
+
+    get_endpoint may be called during the 2 step of the fetch_full function,
+    so we must use endpoint_dict:get_stale() to get value instead endpoint_dict:get()
+    --]]
+
     local endpoint_version, err = endpoint_dict:get_stale(servant .. "#version")
     if not endpoint_version  then
         if err then
@@ -231,6 +242,8 @@ local function fetch_full(db_cli)
         extract_endpoint(res)
     end
     endpoint_dict:flush_expired()
+
+    return nil
 end
 
 
@@ -279,6 +292,8 @@ local function fetch_incremental(db_cli)
         end
         extract_endpoint(res)
     end
+
+    return nil
 end
 
 
