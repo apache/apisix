@@ -29,6 +29,8 @@ install_dependencies() {
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    # solve CI error, see https://github.com/apache/apisix/runs/5615847934?check_suite_focus=true
+    yum --enablerepo=openresty clean metadata
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
 
     # install luarocks
