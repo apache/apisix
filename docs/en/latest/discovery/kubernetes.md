@@ -23,25 +23,25 @@ title: Kubernetes
 
 ## Summary
 
-The kubernetes service discovery plugin list&watch real-time changes of kubernetes cluster v1.endpoints, \
-then store its value into ngx.shared.kubernetes.\
-Discovery plugin also provides a query interface in accordance with the _APISIX Discovery specification_
+The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources,
+then store theirs value into ngx.shared.kubernetes \
+Discovery also provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
 ## Configuration
 
-A detailed configuration for the kubernetes service discovery plugin is as follows:
+A detailed configuration for the kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
   kubernetes:
     service:
-      # apiserver schema, options [http, https]
+      # APIServer schema, options [http, https]
       schema: https #default https
 
-      # apiserver host, options [ipv4, ipv6, domain, environment variable]
+      # APIServer host, options [ipv4, ipv6, domain, environment variable]
       host: ${KUBERNETES_SERVICE_HOST} #default ${KUBERNETES_SERVICE_HOST}
 
-      # apiserver port, options [port number, environment variable]
+      # APIServer port, options [port number, environment variable]
       port: ${KUBERNETES_SERVICE_PORT}  #default ${KUBERNETES_SERVICE_PORT}
 
     client:
@@ -77,23 +77,23 @@ discovery:
       first="a",second="b"
 ```
 
-If the kubernetes service discovery plugin runs inside a pod, you can use minimal configuration:
+If the kubernetes service discovery runs inside a pod, you can use minimal configuration:
 
 ```yaml
 discovery:
   kubernetes: { }
 ```
 
-If the kubernetes service discovery plugin runs outside a pod, you need to create or select a specified _ServiceAccount_,
-get its token value, then use following configuration:
+If the kubernetes service discovery runs outside a pod, you need to create or select a specified [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/),
+then get its token value, and use following configuration:
 
 ```yaml
 discovery:
   kubernetes:
     service:
       schema: https
-      host: # enter apiserver host value here
-      port: # enter apiServer port value here
+      host: # enter APIServer host value here
+      port: # enter APIServer port value here
     client:
       token: # enter serviceaccount token value here
       #token_file: # enter file path here
@@ -101,7 +101,7 @@ discovery:
 
 ## Interface
 
-the kubernetes service discovery plugin provides a query interface in accordance with the _APISIX Discovery specification_
+the kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
 **function:** \
  nodes(service_name)
@@ -110,14 +110,14 @@ the kubernetes service discovery plugin provides a query interface in accordance
   nodes() function attempts to look up the ngx.shared.kubernetes for nodes corresponding to service_name, \
   service_name should match pattern: _[namespace]/[name]:[portName]_
 
-  + namespace: The namespace where the kubernetes endpoint is located
+  + namespace: The namespace where the kubernetes endpoints is located
 
-  + name: The name of the kubernetes endpoint
+  + name: The name of the kubernetes endpoints
 
-  + portName: The portName of the kubernetes endpoint, if there is no portName, use targetPort, port instead
+  + portName: The portName of the kubernetes endpoints, if there is no portName, use targetPort, port instead
 
 **return value:** \
-  if the kubernetes endpoint value is as follows:
+  if the kubernetes endpoints value is as follows:
 
   ```yaml
   apiVersion: v1
@@ -140,20 +140,20 @@ the kubernetes service discovery plugin provides a query interface in accordance
        {
            host="10.5.10.109",
            port= 3306,
-           weight= 100,
+           weight= 50,
        },
        {
            host="10.5.10.110",
            port= 3306,
-           weight= 100,
+           weight= 50,
        },
    }
   ```
 
 ## Q&A
 
-> Q: Why only support configuration token to access _Kubernetes ApiServer_ \
-> A: Usually, we will use three ways to complete the authentication of _Kubernetes ApiServer_:
+> Q: Why only support configuration token to access _Kubernetes APIServer_ \
+> A: Usually, we will use three ways to complete the authentication of _Kubernetes APIServer_:
 >
 >+ mTLS
 >+ token
@@ -162,8 +162,27 @@ the kubernetes service discovery plugin provides a query interface in accordance
 > Because lua-resty-http does not currently support mTLS, and basic authentication is not recommended,\
 > So currently only the token authentication method is implemented
 
--------
+---
 
-> Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will list&watch kubernetes v1.endpoints \
-> A: Kubernetes service discovery plugin only uses privileged processes to listen&watch kubernetes v1.endpoints, then store the result\
-> in ngx.shared.kubernetes, worker processes get results by querying ngx.shared.kubernetes
+> Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources \
+> A: The kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources, then store theirs value \
+> into ngx.shared.kubernetes, worker processes get results by querying ngx.shared.kubernetes
+
+---
+
+> Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value \
+> A: Assume your _ServiceAccount_ located in namespace apisix and name is kubernetes-discovery, you can use the following steps to get token value
+>
+> 1. Get secret name: \
+> you can execute the following command, the output of the first column is the secret name we want
+>
+> ```shell
+> kubectl -n apisix get secrets | grep kubernetes-discovery
+> ```
+>
+> 2. Get token value: \
+> assume secret resources name is kubernetes-discovery-token-c64cv, you can execute the following command, the output is the service account token value we want
+>
+> ```shell
+> kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
+> ```

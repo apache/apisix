@@ -30,10 +30,7 @@ local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
 
-local endpoint_dict = ngx.shared.kubernetes
-if not endpoint_dict then
-    error("failed to get nginx shared dict: kubernetes, please check your APISIX version")
-end
+local endpoint_dict
 
 local default_weight
 
@@ -327,13 +324,18 @@ end
 
 
 function _M.init_worker()
+    endpoint_dict = ngx.shared.kubernetes
+    if not endpoint_dict then
+        error("failed to get lua_shared_dict: kubernetes, please check your APISIX version")
+    end
+
     if process.type() ~= "privileged agent" then
         return
     end
 
     local discovery_conf = local_conf.discovery.kubernetes
 
-    default_weight = discovery_conf.default_weight or 50
+    default_weight = discovery_conf.default_weight
 
     local apiserver, err = get_apiserver(discovery_conf)
     if err then
