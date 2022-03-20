@@ -24,10 +24,7 @@ local core = require("apisix.core")
 local mysql = require("resty.mysql")
 local process = require("ngx.process")
 
-local endpoint_dict = ngx.shared.tars
-if not endpoint_dict then
-    error("failed to get nginx shared dict: tars, please check your APISIX version")
-end
+local endpoint_dict
 
 local full_query_sql = [[ select servant, group_concat(endpoint order by endpoint) as endpoints
 from t_server_conf left join t_adapter_conf tac using (application, server_name, node_name)
@@ -336,6 +333,11 @@ end
 
 
 function _M.init_worker()
+    endpoint_dict = ngx.shared.tars
+    if not endpoint_dict then
+        error("failed to get lua_shared_dict: tars, please check your APISIX version")
+    end
+
     if process.type() ~= "privileged agent" then
         return
     end
