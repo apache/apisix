@@ -155,6 +155,7 @@ plugin_attr:
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(0.1)
             local log_file = ngx.config.prefix() .. "logs/error.log"
             local file = io.open(log_file, "r")
             local log = file:read("*a")
