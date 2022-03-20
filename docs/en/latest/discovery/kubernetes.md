@@ -35,13 +35,13 @@ A detailed configuration for the kubernetes service discovery is as follows:
 discovery:
   kubernetes:
     service:
-      # APIServer schema, options [http, https]
+      # apiserver schema, options [http, https]
       schema: https #default https
 
-      # APIServer host, options [ipv4, ipv6, domain, environment variable]
+      # apiserver host, options [ipv4, ipv6, domain, environment variable]
       host: ${KUBERNETES_SERVICE_HOST} #default ${KUBERNETES_SERVICE_HOST}
 
-      # APIServer port, options [port number, environment variable]
+      # apiserver port, options [port number, environment variable]
       port: ${KUBERNETES_SERVICE_PORT}  #default ${KUBERNETES_SERVICE_PORT}
 
     client:
@@ -92,8 +92,8 @@ discovery:
   kubernetes:
     service:
       schema: https
-      host: # enter APIServer host value here
-      port: # enter APIServer port value here
+      host: # enter apiserver host value here
+      port: # enter apiserver port value here
     client:
       token: # enter serviceaccount token value here
       #token_file: # enter file path here
@@ -171,7 +171,7 @@ the kubernetes service discovery provides a query interface in accordance with t
 ---
 
 > Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value \
-> A: Assume your _ServiceAccount_ located in namespace apisix and name is kubernetes-discovery, you can use the following steps to get token value
+> A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is kubernetes-discovery, you can use the following steps to get token value
 >
 > 1. Get secret name: \
 > you can execute the following command, the output of the first column is the secret name we want
