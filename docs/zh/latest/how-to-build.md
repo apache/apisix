@@ -121,7 +121,7 @@ sudo yum install ./apisix/*.rpm
   cd apisix-${APISIX_VERSION}
   # 安装依赖
   LUAROCKS_SERVER=https://luarocks.cn make deps
-  # 安装 apisix 命令
+  # 安装 apisix 命令(开发者不需要遵循这个步骤)
   make install
   ```
 
