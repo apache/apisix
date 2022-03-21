@@ -51,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -83,8 +79,6 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 
@@ -111,8 +105,6 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "uri" is required
 done
@@ -153,8 +145,6 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -205,8 +195,6 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -258,8 +246,6 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -311,8 +297,6 @@ failed to perform SSL with host[127.0.0.1] port[1982] handshake failed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -363,8 +347,6 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -431,8 +413,6 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -482,8 +462,6 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 
@@ -572,8 +550,6 @@ done
             ngx.print(body4)
         }
     }
---- request
-GET /t
 --- wait: 0.5
 --- response_body
 passedopentracing
@@ -612,8 +588,6 @@ sending a batch logs to http://127.0.0.1:1982/hello1
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
 done
@@ -649,8 +623,6 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -690,8 +662,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -740,8 +710,6 @@ certificate host mismatch
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
