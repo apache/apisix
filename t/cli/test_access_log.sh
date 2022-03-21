@@ -209,14 +209,14 @@ sleep 4
 tail -n 2 logs/access.log > output.log
 
 # APISIX
-if ! grep '"https://localhost" -' output.log; then
+if ! grep '"https://localhost:9180" -' output.log; then
     echo "failed: should find upstream scheme"
     cat output.log
     exit 1
 fi
 
 # admin
-if ! grep '"http://localhost" localhost' output.log; then
+if ! grep '"http://localhost:9180" localhost' output.log; then
     echo "failed: should find upstream scheme"
     cat output.log
     exit 1

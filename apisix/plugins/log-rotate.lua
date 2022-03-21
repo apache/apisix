@@ -243,7 +243,7 @@ local function rotate()
     local now_time = ngx_time()
     if not rotate_time then
         -- first init rotate time
-        rotate_time = now_time + interval
+        rotate_time = now_time + interval - (now_time % interval)
         core.log.info("first init rotate time is: ", rotate_time)
         return
     end
