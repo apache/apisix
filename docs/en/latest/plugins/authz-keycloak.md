@@ -148,6 +148,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
+Get `{JWT Token}`
+
+```shell
+curl \
+  -d "client_id=<YOUR_CLIENT_ID>" \
+  -d "username=<YOUR_USERNAMED>" \
+  -d "password=<YOUR_PASSWORD>" \
+  -d "grant_type=password" \
+  "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+```
+
+Request with token
+
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 ```
