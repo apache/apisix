@@ -76,7 +76,7 @@ function _M.access(conf, ctx)
             },
             ssl_verify = conf.ssl_verify
         })
-        if err then
+        if not res then
             core.log.error("request failed: ", err)
             return 503
         end
