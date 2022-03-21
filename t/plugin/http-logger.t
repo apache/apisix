@@ -20,6 +20,20 @@ log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
 run_tests;
 
 __DATA__
@@ -73,8 +87,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -104,8 +116,6 @@ GET /t
 --- response_body
 property "uri" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -147,8 +157,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -201,8 +209,6 @@ Batch Processor[http logger] successfully processed the entries
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -256,8 +262,6 @@ Batch Processor[http logger] successfully processed the entries
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -311,8 +315,6 @@ failed to perform SSL with host[127.0.0.1] port[1982] handshake failed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -365,8 +367,6 @@ Batch Processor[http logger] successfully processed the entries
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -435,8 +435,6 @@ Batch Processor[http logger] successfully processed the entries
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -488,8 +486,6 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -621,8 +617,6 @@ GET /t
 --- response_body
 failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
 done
---- no_error_log
-[error]
 
 
 
@@ -659,8 +653,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -702,8 +694,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -754,14 +744,10 @@ certificate host mismatch
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 23: access correct https endpoint but ssl verify ok
 --- request
 GET /hello1
---- no_error_log
-[error]
 --- wait: 3
