@@ -31,6 +31,7 @@ local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
 
 local endpoint_dict
+
 local default_weight
 
 local endpoint_lrucache = core.lrucache.new({
@@ -39,7 +40,6 @@ local endpoint_lrucache = core.lrucache.new({
 })
 
 local endpoint_buffer = {}
-local empty_table = {}
 
 local function sort_nodes_cmp(left, right)
     if left.host ~= right.host then
@@ -60,10 +60,10 @@ local function on_endpoint_modified(informer, endpoint)
     core.table.clear(endpoint_buffer)
 
     local subsets = endpoint.subsets
-    for _, subset in ipairs(subsets or empty_table) do
+    for _, subset in ipairs(subsets or {}) do
         if subset.addresses then
             local addresses = subset.addresses
-            for _, port in ipairs(subset.ports or empty_table) do
+            for _, port in ipairs(subset.ports or {}) do
                 local port_name
                 if port.name then
                     port_name = port.name
@@ -166,7 +166,7 @@ local function setup_namespace_selector(conf, informer)
             local match = conf.namespace_selector.match
             local m, err
             for _, v in ipairs(match) do
-                m, err = ngx.re.match(namespace, v, "j")
+                m, err = ngx.re.match(namespace, v, "jo")
                 if m and m[0] == namespace then
                     return true
                 end
@@ -324,10 +324,9 @@ end
 
 
 function _M.init_worker()
-    -- TODO: maybe we can read dict name from discovery config
-    endpoint_dict = ngx.shared.discovery
+    endpoint_dict = ngx.shared.kubernetes
     if not endpoint_dict then
-        error("failed to get nginx shared dict: discovery, please check your APISIX version")
+        error("failed to get lua_shared_dict: kubernetes, please check your APISIX version")
     end
 
     if process.type() ~= "privileged agent" then
@@ -336,7 +335,7 @@ function _M.init_worker()
 
     local discovery_conf = local_conf.discovery.kubernetes
 
-    default_weight = discovery_conf.default_weight or 50
+    default_weight = discovery_conf.default_weight
 
     local apiserver, err = get_apiserver(discovery_conf)
     if err then
