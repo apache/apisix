@@ -206,7 +206,8 @@
             "discovery/dns",
             "discovery/consul_kv",
             "discovery/nacos",
-            "discovery/eureka"
+            "discovery/eureka",
+            "discovery/kubernetes"
           ]
         },
         {
